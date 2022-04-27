@@ -1,0 +1,11 @@
+<?php
+
+use Mastering\SampleModule\Block\Hello;
+
+/** @var Hello $block */
+?>
+
+<strong><?php echo $block->getLabel(); ?></strong>
+<?php foreach ($block->getItems() as $item): ?>
+    <p><?php echo $item->getName(); ?>: <?php echo $item->getDescription(); ?></p>
+<?php endforeach; ?>

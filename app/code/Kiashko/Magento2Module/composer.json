@@ -1,0 +1,23 @@
+{
+    "name": "kiashko/magento-2-module",
+    "description": "My first Magento 2 module",
+    "type": "magento2-module",
+    "version": "1.0.0",
+    "require": {
+        "php": ">=5.5.22|~5.6.0|7.0.2|7.0.4|~7.0.6",
+        "magento/framework": "100.0.*|100.1.*"
+    },
+    "repositories": {
+        "type": "composer",
+        "url": "https://repo.magento.com/"
+    },
+    "minimum-stability": "stable",
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "Kiashko\\Magento2Module\\": ""
+        }
+    }
+}
