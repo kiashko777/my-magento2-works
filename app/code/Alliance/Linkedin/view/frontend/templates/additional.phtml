@@ -1,0 +1,12 @@
+<div class="field linkedin_profile required" data-mage-init='{"validation": {}}'>
+    <h3>Additional info</h3>
+    <label class="label" for="linkedin_profile">
+        <span><?= $block->escapeHtml(__('LinkedIn Profile')) ?></span>
+    </label>
+    <div class="control">
+        <input type="text" name="linkedin_profile" id="linkedin_profile" value=""
+               title="<?= $block->escapeHtmlAttr(__('LinkedIn Profile')) ?>"
+               class="input-text" data-validate="{required:true,'validate-clean-url':true}" maxlength="250">
+    </div>
+</div>
+
