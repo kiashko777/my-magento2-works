@@ -1,0 +1,24 @@
+{
+    "name": "Devall/Customform",
+    "description": "Custom signup sheet",
+    "minimum-stability": "stable",
+    "type": "magento2-module",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "kiashko777",
+            "email": "kiashko@gmail.com"
+        }
+    ],
+    "require": {
+    },
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "Devall\\Customform\\": ""
+        }
+    }
+}
+

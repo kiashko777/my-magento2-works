@@ -1,0 +1,23 @@
+{
+    "name": "Alliance/Linkedin",
+    "description": "Custom Linkedin extension",
+    "minimum-stability": "stable",
+    "type": "magento2-module",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "kiashko777",
+            "email": "kiashko@gmail.com"
+        }
+    ],
+    "require": {
+    },
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "Alliance\\Linkedin\\": ""
+        }
+    }
+}
