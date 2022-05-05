@@ -1,0 +1,49 @@
+<form class="form customform"
+      action="<?php echo $block->getBaseUrl() . 'customform/index/save'; ?>"
+      id="devall-customform-form"
+      method="post"
+      data-hasrequired="<?= $block->escapeHtmlAttr(__('* Required Fields')) ?>"
+      data-mage-init='{"validation":{}}'>
+    <fieldset class="fieldset">
+        <legend class="legend"><span><?= $block->escapeHtml(__('Customer inquiry Form ')) ?></span>
+        </legend>
+
+        <div class="field note no-label"><?= $block->escapeHtml(__('Marked fields are required.')) ?></div>
+        <div class="field name required">
+            <label class="label" for="name"><span><?= $block->escapeHtml(__('Your name:')) ?></span></label>
+            <div class="control">
+                <input name="name"
+                       id="name"
+                       title="<?= $block->escapeHtmlAttr(__('Your name')) ?>"
+                       class="input-text"
+                       type="text"
+                       data-validate="{required:true}"/>
+            </div>
+        </div>
+
+        <div class="control field datepicker required">
+            <label class="label" for="datepicker"><span><?= $block->escapeHtml(__('Date:')) ?></span></label>
+            <input type="text" name="datepicker" id="datepicker"
+                   value="" class="datepicker" required>
+            <script>
+                require(["jquery", "mage/calendar"], function ($) {
+                    $("#datepicker").datepicker({
+                        showMonthAfterYear: false,
+                        dateFormat: 'mm/dd/yy',
+                        changeMonth: true,
+                        changeYear: true,
+                        yearRange: '2000:2040',
+                    })
+                });
+            </script>
+        </div>
+
+    </fieldset>
+    <div class="actions-toolbar">
+        <div class="primary">
+            <button type="submit" title="<?= $block->escapeHtmlAttr(__('Submit')) ?>" class="action submit primary">
+                <span><?= $block->escapeHtml(__('Submit')) ?></span>
+            </button>
+        </div>
+    </div>
+</form>

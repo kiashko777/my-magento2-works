@@ -8,15 +8,9 @@
             <column name="id"/>
         </constraint>
         <column name="name" nullable="false" xsi:type="text" comment="Name"/>
-        <column name="date" nullable="false" xsi:type="int" padding="10" default="0" identity="false" comment="Date"/>
+        <column name="datepicker" nullable="false" xsi:type="text"
+                comment="Date"/>
         <column name="created_at" nullable="false" xsi:type="datetime" comment="Created Date"
                 default="CURRENT_TIMESTAMP"/>
-
-        <index referenceId="DEVALL_CUSTOMFORM_NAME" indexType="fulltext">
-            <column name="name"/>
-        </index>
-        <index referenceId="DEVALL_CUSTOMFORM_DATE" indexType="fulltext">
-            <column name="date"/>
-        </index>
     </table>
 </schema>

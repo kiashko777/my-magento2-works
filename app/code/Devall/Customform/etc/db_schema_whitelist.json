@@ -3,12 +3,8 @@
         "column": {
             "id": true,
             "name": true,
-            "date": true,
+            "datepicker": true,
             "created_at": true
-        },
-        "index": {
-            "DEVALL_CUSTOMFORM_NAME": true,
-            "DEVALL_CUSTOMFORM_DATE": true
         },
         "constraint": {
             "PRIMARY": true
