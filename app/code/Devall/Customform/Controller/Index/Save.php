@@ -45,9 +45,9 @@ class Save extends \Magento\Framework\App\Action\Action
         $customform = $this->_customform->create();
         $customform->setData($data);
         if ($customform->save()) {
-            $this->messageManager->addSuccessMessage(__('You saved the data.'));
+            $this->messageManager->addSuccessMessage(__('Congrats!You saved the data!'));
         } else {
-            $this->messageManager->addErrorMessage(__('Data was not saved.'));
+            $this->messageManager->addErrorMessage(__('Sorry!Data was not saved!'));
         }
         $resultRedirect = $this->resultRedirectFactory->create();
         $resultRedirect->setPath('customform');
@@ -62,10 +62,10 @@ class Save extends \Magento\Framework\App\Action\Action
     {
         $request = $this->getRequest();
         if (trim($request->getParam('name')) === '') {
-            throw new LocalizedException(__('Enter the Your Name and try again.'));
+            throw new LocalizedException(__('Enter your Name and try again!'));
         }
         if (trim($request->getParam('datepicker')) === '') {
-            throw new LocalizedException(__('Enter the Date and try again.'));
+            throw new LocalizedException(__('Enter the Date and try again!'));
         }
 
         return $request->getParams();
