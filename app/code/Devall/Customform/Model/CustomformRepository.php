@@ -90,10 +90,6 @@ class CustomformRepository implements CustomformRepositoryInterface
         \Devall\Customform\Api\Data\CustomformInterface $customform
     )
     {
-        /* if (empty($customform->getStoreId())) {
-            $storeId = $this->storeManager->getStore()->getId();
-            $customform->setStoreId($storeId);
-        } */
 
         $customformData = $this->extensibleDataObjectConverter->toNestedArray(
             $customform,

@@ -39,7 +39,6 @@ class Save extends \Magento\Framework\App\Action\Action
         if (!$this->getRequest()->isPost()) {
             return $this->resultRedirectFactory->create()->setPath('*/*/');
         }
-//        $data = $this->getRequest()->getParams();
         $data = $this->validatedParams();
 
         $customform = $this->_customform->create();

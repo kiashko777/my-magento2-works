@@ -10,6 +10,8 @@
         <column name="name" nullable="false" xsi:type="text" comment="Name"/>
         <column name="datepicker" nullable="false" xsi:type="text"
                 comment="Date"/>
+        <column name="status" padding="11" unsigned="false" nullable="false" xsi:type="int" default="1" identity="false"
+                comment="Status"/>
         <column name="created_at" nullable="false" xsi:type="datetime" comment="Created Date"
                 default="CURRENT_TIMESTAMP"/>
     </table>

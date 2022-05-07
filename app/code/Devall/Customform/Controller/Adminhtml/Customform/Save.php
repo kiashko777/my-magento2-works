@@ -42,26 +42,14 @@ class Save extends \Magento\Backend\App\Action
 
             $model = $this->_objectManager->create(\Devall\Customform\Model\Customform::class)->load($id);
             if (!$model->getId() && $id) {
-                $this->messageManager->addErrorMessage(__('This Customform no longer exists!'));
+                $this->messageManager->addErrorMessage(__('This Customer no longer exists!'));
                 return $resultRedirect->setPath('*/*/');
-            }
-
-            if (isset($data['image'][0]['name']) && isset($data['image'][0]['tmp_name'])) {
-                $data['image'] = $data['image'][0]['name'];
-                $this->imageUploader = \Magento\Framework\App\ObjectManager::getInstance()->get(
-                    'Devall\Customform\CustomformImageUpload'
-                );
-                $this->imageUploader->moveFileFromTmp($data['image']);
-            } elseif (isset($data['image'][0]['name']) && !isset($data['image'][0]['tmp_name'])) {
-                $data['image'] = $data['image'][0]['name'];
-            } else {
-                $data['image'] = null;
             }
             $model->setData($data);
 
             try {
                 $model->save();
-                $this->messageManager->addSuccessMessage(__('You saved the Customform!'));
+                $this->messageManager->addSuccessMessage(__('You saved the Customer!'));
                 $this->dataPersistor->clear('mladmincustomform');
 
                 if ($this->getRequest()->getParam('back')) {
@@ -71,7 +59,7 @@ class Save extends \Magento\Backend\App\Action
             } catch (LocalizedException $e) {
                 $this->messageManager->addErrorMessage($e->getMessage());
             } catch (\Exception $e) {
-                $this->messageManager->addExceptionMessage($e, __('Something went wrong while saving the Customform!'));
+                $this->messageManager->addExceptionMessage($e, __('Something went wrong while saving the Customer!'));
             }
 
             $this->dataPersistor->set('mladmincustomform', $data);

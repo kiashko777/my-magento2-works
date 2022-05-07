@@ -27,7 +27,7 @@ class Delete extends \Devall\Customform\Controller\Adminhtml\Customform
                 $model->load($id);
                 $model->delete();
                 // display success message
-                $this->messageManager->addSuccessMessage(__('You deleted the Customform!'));
+                $this->messageManager->addSuccessMessage(__('You deleted the Customer!'));
                 // go to grid
                 return $resultRedirect->setPath('*/*/');
             } catch (\Exception $e) {
@@ -38,7 +38,7 @@ class Delete extends \Devall\Customform\Controller\Adminhtml\Customform
             }
         }
         // display error message
-        $this->messageManager->addErrorMessage(__('We can\'t find a Customform to delete!'));
+        $this->messageManager->addErrorMessage(__('We can\'t find a Customer to delete!'));
         // go to grid
         return $resultRedirect->setPath('*/*/');
     }

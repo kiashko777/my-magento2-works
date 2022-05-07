@@ -12,7 +12,7 @@ use Devall\Customform\Model\ResourceModel\Customform\CollectionFactory;
 
 /**
  * Class MassDelete
- * @package Magelearn\Customform\Controller\Adminhtml\Customform
+ * @package Devall\Customform\Controller\Adminhtml\Customform
  */
 class MassDelete extends \Magento\Backend\App\Action
 {

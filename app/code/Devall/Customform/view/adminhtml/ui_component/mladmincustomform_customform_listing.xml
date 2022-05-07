@@ -13,13 +13,13 @@
         <deps>
             <dep>mladmincustomform_customform_listing.devall_customform_listing_data_source</dep>
         </deps>
-<!--        <buttons>-->
-        <!--            <button name="add">-->
-        <!--                <url path="*/*/new"/>-->
-        <!--                <class>primary</class>-->
-        <!--                <label translate="true">Add new Customform</label>-->
-        <!--            </button>-->
-        <!--        </buttons>-->
+        <buttons>
+            <button name="add">
+                <url path="*/*/new"/>
+                <class>primary</class>
+                <label translate="true">Add new Customer</label>
+            </button>
+        </buttons>
     </settings>
     <dataSource name="devall_customform_listing_data_source" component="Magento_Ui/js/grid/provider">
         <settings>
@@ -213,7 +213,6 @@
                 </editor>
             </settings>
         </column>
-
         <actionsColumn name="actions" class="Devall\Customform\Ui\Component\Listing\Column\CustomformActions">
             <settings>
                 <indexField>id</indexField>

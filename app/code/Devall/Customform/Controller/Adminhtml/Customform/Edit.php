@@ -45,7 +45,7 @@ class Edit extends \Devall\Customform\Controller\Adminhtml\Customform
         if ($id) {
             $model->load($id);
             if (!$model->getId()) {
-                $this->messageManager->addErrorMessage(__('This Customform no longer exists!'));
+                $this->messageManager->addErrorMessage(__('This Customer no longer exists!'));
                 /** @var Redirect $resultRedirect */
                 $resultRedirect = $this->resultRedirectFactory->create();
                 return $resultRedirect->setPath('*/*/');
@@ -61,7 +61,7 @@ class Edit extends \Devall\Customform\Controller\Adminhtml\Customform
             $id ? __('Edit Customform') : __('New Customform')
         );
         $resultPage->getConfig()->getTitle()->prepend(__('Customforms'));
-        $resultPage->getConfig()->getTitle()->prepend($model->getId() ? __('Edit Customform %1', $model->getId()) : __('New Customform'));
+        $resultPage->getConfig()->getTitle()->prepend($model->getId() ? __('Edit Customer %1', $model->getId()) : __('New Customform'));
         return $resultPage;
     }
 }
