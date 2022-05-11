@@ -4,7 +4,7 @@
     <acl>
         <resources>
             <resource id="Magento_Backend::admin">
-                <resource id="Devall_Customform::Customform" title="Customform" sortOrder="10">
+                <resource id="Devall_Customform::Customform" title="Customform" sortOrder="10" translate="title">
                     <resource id="Devall_Customform::Customform_save" title="Save Customform" sortOrder="10"/>
                     <resource id="Devall_Customform::Customform_delete" title="Delete Customform" sortOrder="20"/>
                     <resource id="Devall_Customform::Customform_update" title="Update Customform" sortOrder="30"/>

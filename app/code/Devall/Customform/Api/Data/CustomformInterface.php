@@ -20,19 +20,19 @@ interface CustomformInterface extends \Magento\Framework\Api\ExtensibleDataInter
     /**
      * Set id
      * @param string $id
-     * @return CustomformInterface
+     * @return \Devall\Customform\Api\Data\CustomformInterface
      */
     public function setId($id);
 
     /**
      * Retrieve existing extension attributes object or create a new one.
-     * @return CustomformExtensionInterface|null
+     * @return \Devall\Customform\Api\Data\CustomformExtensionInterface|null
      */
     public function getExtensionAttributes();
 
     /**
      * Set an extension attributes object.
-     * @param CustomformExtensionInterface $extensionAttributes
+     * @param \Devall\Customform\Api\Data\CustomformExtensionInterface $extensionAttributes
      * @return $this
      */
     public function setExtensionAttributes(
@@ -48,7 +48,7 @@ interface CustomformInterface extends \Magento\Framework\Api\ExtensibleDataInter
     /**
      * Set name
      * @param string $name
-     * @return CustomformInterface
+     * @return \Devall\Customform\Api\Data\CustomformInterface
      */
     public function setName($name);
 
@@ -62,7 +62,7 @@ interface CustomformInterface extends \Magento\Framework\Api\ExtensibleDataInter
     /**
      * Set datepicker
      * @param string $datepicker
-     * @return CustomformInterface
+     * @return \Devall\Customform\Api\Data\CustomformInterface
      */
     public function setDatepicker($datepicker);
 
@@ -75,7 +75,7 @@ interface CustomformInterface extends \Magento\Framework\Api\ExtensibleDataInter
     /**
      * Set status
      * @param string $status
-     * @return CustomformInterface
+     * @return \Devall\Customform\Api\Data\CustomformInterface
      */
     public function setStatus($status);
 
@@ -88,7 +88,7 @@ interface CustomformInterface extends \Magento\Framework\Api\ExtensibleDataInter
     /**
      * Set created_at
      * @param string $createdAt
-     * @return CustomformInterface
+     * @return \Devall\Customform\Api\Data\CustomformInterface
      */
     public function setCreatedAt($createdAt);
 }

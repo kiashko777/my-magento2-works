@@ -334,16 +334,16 @@
         },
         {
             "name": "aws/aws-sdk-php",
-            "version": "3.222.2",
+            "version": "3.222.9",
             "source": {
                 "type": "git",
                 "url": "https://github.com/aws/aws-sdk-php.git",
-                "reference": "17db4851c065b92e76466d8e6ddef0a7e8367416"
+                "reference": "cb1db65be035cc90de1019391bc3a57ca3cb1762"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/17db4851c065b92e76466d8e6ddef0a7e8367416",
-                "reference": "17db4851c065b92e76466d8e6ddef0a7e8367416",
+                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/cb1db65be035cc90de1019391bc3a57ca3cb1762",
+                "reference": "cb1db65be035cc90de1019391bc3a57ca3cb1762",
                 "shasum": ""
             },
             "require": {
@@ -419,9 +419,9 @@
             "support": {
                 "forum": "https://forums.aws.amazon.com/forum.jspa?forumID=80",
                 "issues": "https://github.com/aws/aws-sdk-php/issues",
-                "source": "https://github.com/aws/aws-sdk-php/tree/3.222.2"
+                "source": "https://github.com/aws/aws-sdk-php/tree/3.222.9"
             },
-            "time": "2022-04-29T18:14:00+00:00"
+            "time": "2022-05-10T18:14:43+00:00"
         },
         {
             "name": "bacon/bacon-qr-code",
@@ -3043,16 +3043,16 @@
         },
         {
             "name": "laminas/laminas-di",
-            "version": "3.4.0",
+            "version": "3.5.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laminas/laminas-di.git",
-                "reference": "fc8a5547db10908a25b03ed16452d22318b75090"
+                "reference": "4b88fb2eaee6245ac1189f47d6d191c3b679f67d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laminas/laminas-di/zipball/fc8a5547db10908a25b03ed16452d22318b75090",
-                "reference": "fc8a5547db10908a25b03ed16452d22318b75090",
+                "url": "https://api.github.com/repos/laminas/laminas-di/zipball/4b88fb2eaee6245ac1189f47d6d191c3b679f67d",
+                "reference": "4b88fb2eaee6245ac1189f47d6d191c3b679f67d",
                 "shasum": ""
             },
             "require": {
@@ -3115,7 +3115,7 @@
                     "type": "community_bridge"
                 }
             ],
-            "time": "2022-02-26T15:43:05+00:00"
+            "time": "2022-05-09T06:06:21+00:00"
         },
         {
             "name": "laminas/laminas-escaper",
@@ -26293,16 +26293,16 @@
         },
         {
             "name": "phpstan/phpdoc-parser",
-            "version": "1.4.5",
+            "version": "1.5.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpstan/phpdoc-parser.git",
-                "reference": "129a63b3bc7caeb593c224c41f420675e63cfefc"
+                "reference": "981cc368a216c988e862a75e526b6076987d1b50"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpdoc-parser/zipball/129a63b3bc7caeb593c224c41f420675e63cfefc",
-                "reference": "129a63b3bc7caeb593c224c41f420675e63cfefc",
+                "url": "https://api.github.com/repos/phpstan/phpdoc-parser/zipball/981cc368a216c988e862a75e526b6076987d1b50",
+                "reference": "981cc368a216c988e862a75e526b6076987d1b50",
                 "shasum": ""
             },
             "require": {
@@ -26331,9 +26331,9 @@
             "description": "PHPDoc parser with support for nullable, intersection and generic types",
             "support": {
                 "issues": "https://github.com/phpstan/phpdoc-parser/issues",
-                "source": "https://github.com/phpstan/phpdoc-parser/tree/1.4.5"
+                "source": "https://github.com/phpstan/phpdoc-parser/tree/1.5.1"
             },
-            "time": "2022-04-22T11:11:01+00:00"
+            "time": "2022-05-05T11:32:40+00:00"
         },
         {
             "name": "phpstan/phpstan",
