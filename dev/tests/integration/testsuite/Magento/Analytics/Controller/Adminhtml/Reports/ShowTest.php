@@ -23,6 +23,7 @@ class ShowTest extends AbstractBackendController
      * @inheritDoc
      */
     protected $uri = 'backend/analytics/reports/show';
+
     /**
      * @inheritDoc
      */

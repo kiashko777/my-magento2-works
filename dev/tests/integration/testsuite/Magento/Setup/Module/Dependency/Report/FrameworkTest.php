@@ -3,11 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Dependency\Report;
 
 use Magento\Setup\Module\Dependency\ServiceLocator;
+use PHPUnit\Framework\TestCase;
 
-class FrameworkTest extends \PHPUnit\Framework\TestCase
+class FrameworkTest extends TestCase
 {
     /**
      * @var string
@@ -28,15 +30,6 @@ class FrameworkTest extends \PHPUnit\Framework\TestCase
      * @var BuilderInterface
      */
     protected $builder;
-
-    protected function setUp(): void
-    {
-        $this->fixtureDir = realpath(__DIR__ . '/../_files') . '/';
-        $this->fixtureDirModule = $this->fixtureDir . 'code/Magento/FirstModule/';
-        $this->sourceFilename = $this->fixtureDir . 'framework-dependencies.csv';
-
-        $this->builder = ServiceLocator::getFrameworkDependenciesReportBuilder();
-    }
 
     public function testBuild()
     {
@@ -75,6 +68,15 @@ class FrameworkTest extends \PHPUnit\Framework\TestCase
             $this->fixtureDir . 'expected/without-framework-dependencies.csv',
             $this->sourceFilename
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->fixtureDir = realpath(__DIR__ . '/../_files') . '/';
+        $this->fixtureDirModule = $this->fixtureDir . 'code/Magento/FirstModule/';
+        $this->sourceFilename = $this->fixtureDir . 'framework-dependencies.csv';
+
+        $this->builder = ServiceLocator::getFrameworkDependenciesReportBuilder();
     }
 
     protected function tearDown(): void

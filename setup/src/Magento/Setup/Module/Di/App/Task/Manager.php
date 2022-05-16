@@ -3,7 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Di\App\Task;
+
+use Closure;
 
 class Manager
 {
@@ -22,7 +25,8 @@ class Manager
      */
     public function __construct(
         OperationFactory $operationFactory
-    ) {
+    )
+    {
         $this->operationFactory = $operationFactory;
     }
 
@@ -45,7 +49,7 @@ class Manager
      * @param callable $afterCallback
      * @return void
      */
-    public function process(\Closure $beforeCallback = null, \Closure $afterCallback = null)
+    public function process(Closure $beforeCallback = null, Closure $afterCallback = null)
     {
         /** @var OperationInterface $operation */
         foreach ($this->operationsList as $operation) {

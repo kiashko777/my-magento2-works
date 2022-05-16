@@ -23,7 +23,8 @@ class DeleteTopicRelatedMessages
      */
     public function __construct(
         Message $queueMessageResource
-    ) {
+    )
+    {
         $this->queueMessageResource = $queueMessageResource;
     }
 

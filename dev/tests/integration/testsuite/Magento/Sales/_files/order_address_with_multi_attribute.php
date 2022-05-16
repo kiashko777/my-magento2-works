@@ -5,13 +5,13 @@
  */
 declare(strict_types=1);
 
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Eav\Model\Config;
-use Magento\Eav\Model\Entity\Attribute\Set;
 use Magento\Customer\Model\Attribute;
-use Magento\Eav\Model\Entity\Type;
+use Magento\Eav\Model\Config;
 use Magento\Eav\Model\Entity\Attribute\Backend\ArrayBackend;
+use Magento\Eav\Model\Entity\Attribute\Set;
+use Magento\Eav\Model\Entity\Type;
 use Magento\Sales\Model\Order\Address;
+use Magento\TestFramework\Helper\Bootstrap;
 
 $objectManager = Bootstrap::getObjectManager();
 $addressData = [

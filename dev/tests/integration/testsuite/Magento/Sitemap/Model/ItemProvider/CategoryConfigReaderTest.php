@@ -8,18 +8,14 @@ namespace Magento\Sitemap\Model\ItemProvider;
 
 use Magento\Store\Model\Store;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class CategoryConfigReaderTest extends \PHPUnit\Framework\TestCase
+class CategoryConfigReaderTest extends TestCase
 {
     /**
      * @var CategoryConfigReader
      */
     private $model = null;
-
-    protected function setUp(): void
-    {
-        $this->model = Bootstrap::getObjectManager()->get(CategoryConfigReader::class);
-    }
 
     /**
      * @magentoConfigFixture default_store sitemap/category/changefreq monthly
@@ -37,5 +33,10 @@ class CategoryConfigReaderTest extends \PHPUnit\Framework\TestCase
     {
         $this->assertEquals(0.5, $this->model->getPriority(Store::DEFAULT_STORE_ID));
         $this->assertEquals(100, $this->model->getPriority(Store::DISTRO_STORE_ID));
+    }
+
+    protected function setUp(): void
+    {
+        $this->model = Bootstrap::getObjectManager()->get(CategoryConfigReader::class);
     }
 }

@@ -5,24 +5,33 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Model\ResourceModel\Db;
 
+use Magento\Framework\App\DeploymentConfig;
+use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Config\ConfigOptionsListConstants;
+use Magento\Framework\DB\Adapter\TableNotFoundException;
+use Magento\TestFramework\Db\Adapter\Mysql;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+use Zend_Db_Adapter_Pdo_Abstract;
+use Zend_Db_Profiler;
+use Zend_Db_Profiler_Query;
 
 /**
  * Test profiler on database queries
  */
-class ProfilerTest extends \PHPUnit\Framework\TestCase
+class ProfilerTest extends TestCase
 {
-    /**
-     * @var \Magento\Framework\App\ResourceConnection
-     */
-    protected $_model;
-
     /**
      * @var string
      */
     protected static $_testResourceName = 'testtest_0000_setup';
+    /**
+     * @var ResourceConnection
+     */
+    protected $_model;
 
     /**
      * @inheritdoc
@@ -46,29 +55,6 @@ class ProfilerTest extends \PHPUnit\Framework\TestCase
         \Magento\Framework\Profiler::disable();
     } // phpcs:enable
 
-    protected function setUp(): void
-    {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Framework\App\ResourceConnection::class);
-    }
-
-    /**
-     * @return \Magento\TestFramework\Db\Adapter\Mysql
-     */
-    protected function _getConnection()
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $reader = $objectManager->get(\Magento\Framework\App\DeploymentConfig::class);
-        $dbConfig = $reader->getConfigData(ConfigOptionsListConstants::KEY_DB);
-        $connectionConfig = $dbConfig['connection']['default'];
-        $connectionConfig['profiler'] = [
-            'class' => \Magento\Framework\Model\ResourceModel\Db\Profiler::class,
-            'enabled' => 'true',
-        ];
-
-        return $objectManager->create(\Magento\TestFramework\Db\Adapter\Mysql::class, ['config' => $connectionConfig]);
-    }
-
     /**
      * Init profiler during creation of DB connect
      *
@@ -80,29 +66,46 @@ class ProfilerTest extends \PHPUnit\Framework\TestCase
     {
         $connection = $this->_getConnection();
 
-        /** @var \Magento\Framework\App\ResourceConnection $resource */
-        $resource = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\App\ResourceConnection::class);
+        /** @var ResourceConnection $resource */
+        $resource = Bootstrap::getObjectManager()
+            ->get(ResourceConnection::class);
         $testTableName = $resource->getTableName('setup_module');
         $selectQuery = sprintf($selectQuery, $testTableName);
 
         $result = $connection->query($selectQuery);
-        if ($queryType == \Zend_Db_Profiler::SELECT) {
+        if ($queryType == Zend_Db_Profiler::SELECT) {
             $result->fetchAll();
         }
 
-        /** @var \Magento\Framework\Model\ResourceModel\Db\Profiler $profiler */
+        /** @var Profiler $profiler */
         $profiler = $connection->getProfiler();
-        $this->assertInstanceOf(\Magento\Framework\Model\ResourceModel\Db\Profiler::class, $profiler);
+        $this->assertInstanceOf(Profiler::class, $profiler);
 
         $queryProfiles = $profiler->getQueryProfiles($queryType);
         $this->assertCount(1, $queryProfiles);
 
-        /** @var \Zend_Db_Profiler_Query $queryProfile */
+        /** @var Zend_Db_Profiler_Query $queryProfile */
         $queryProfile = end($queryProfiles);
         $this->assertInstanceOf('Zend_Db_Profiler_Query', $queryProfile);
 
         $this->assertEquals($selectQuery, $queryProfile->getQuery());
+    }
+
+    /**
+     * @return Mysql
+     */
+    protected function _getConnection()
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $reader = $objectManager->get(DeploymentConfig::class);
+        $dbConfig = $reader->getConfigData(ConfigOptionsListConstants::KEY_DB);
+        $connectionConfig = $dbConfig['connection']['default'];
+        $connectionConfig['profiler'] = [
+            'class' => Profiler::class,
+            'enabled' => 'true',
+        ];
+
+        return $objectManager->create(Mysql::class, ['config' => $connectionConfig]);
     }
 
     /**
@@ -135,12 +138,12 @@ class ProfilerTest extends \PHPUnit\Framework\TestCase
      */
     public function testProfilerDuringSqlException()
     {
-        /** @var \Zend_Db_Adapter_Pdo_Abstract $connection */
+        /** @var Zend_Db_Adapter_Pdo_Abstract $connection */
         $connection = $this->_getConnection();
 
         try {
             $connection->select()->from('unknown_table')->query()->fetch();
-        } catch (\Magento\Framework\DB\Adapter\TableNotFoundException $exception) {
+        } catch (TableNotFoundException $exception) {
             $this->assertNotEmpty($exception);
         }
 
@@ -148,17 +151,23 @@ class ProfilerTest extends \PHPUnit\Framework\TestCase
             $this->fail("Expected exception wasn't thrown!");
         }
 
-        /** @var \Magento\Framework\App\ResourceConnection $resource */
-        $resource = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\App\ResourceConnection::class);
+        /** @var ResourceConnection $resource */
+        $resource = Bootstrap::getObjectManager()
+            ->get(ResourceConnection::class);
         $testTableName = $resource->getTableName('setup_module');
         $connection->select()->from($testTableName)->query()->fetch();
 
-        /** @var \Magento\Framework\Model\ResourceModel\Db\Profiler $profiler */
+        /** @var Profiler $profiler */
         $profiler = $connection->getProfiler();
-        $this->assertInstanceOf(\Magento\Framework\Model\ResourceModel\Db\Profiler::class, $profiler);
+        $this->assertInstanceOf(Profiler::class, $profiler);
 
         $queryProfiles = $profiler->getQueryProfiles(\Magento\Framework\DB\Profiler::SELECT);
         $this->assertCount(2, $queryProfiles);
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()
+            ->create(ResourceConnection::class);
     }
 }

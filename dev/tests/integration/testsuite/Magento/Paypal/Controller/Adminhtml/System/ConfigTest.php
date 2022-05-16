@@ -10,11 +10,12 @@ namespace Magento\Paypal\Controller\Adminhtml\System;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class ConfigTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class ConfigTest extends AbstractBackendController
 {
     /**
      * @magentoAppIsolation enabled

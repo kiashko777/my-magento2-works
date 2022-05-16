@@ -3,14 +3,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
 
-/** @var \Magento\Sales\Api\OrderRepositoryInterface $orderRepository */
-$orderRepository = $objectManager->create(\Magento\Sales\Api\OrderRepositoryInterface::class);
+use Magento\Framework\Stdlib\DateTime\DateTimeFactory;
+use Magento\Sales\Api\OrderRepositoryInterface;
+use Magento\Sales\Model\Order;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
+
+/** @var OrderRepositoryInterface $orderRepository */
+$orderRepository = $objectManager->create(OrderRepositoryInterface::class);
 /** @var \Magento\Framework\Stdlib\DateTime\DateTime $dateTime */
-$dateTime = $objectManager->create(\Magento\Framework\Stdlib\DateTime\DateTimeFactory::class)
+$dateTime = $objectManager->create(DateTimeFactory::class)
     ->create();
-/** @var \Magento\Sales\Model\Order $order */
+/** @var Order $order */
 $order = $objectManager->create(Magento\Sales\Model\Order::class)->loadByIncrementId('100000001');
 $newOrderCreatedAtTimestamp = $dateTime->timestamp($order->getCreatedAt()) - 864000;
 $newOrderCreatedDate = $dateTime->date(null, $newOrderCreatedAtTimestamp);

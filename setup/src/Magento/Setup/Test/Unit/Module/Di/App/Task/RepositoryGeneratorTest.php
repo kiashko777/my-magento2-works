@@ -38,6 +38,27 @@ class RepositoryGeneratorTest extends TestCase
      */
     private $model;
 
+    public function testDoOperation()
+    {
+        $this->classesScannerMock->expects($this->once())
+            ->method('getList')
+            ->with('path/to/app');
+        $this->repositoryScannerMock->expects($this->once())
+            ->method('setUseAutoload')
+            ->with(false);
+        $files = ['file1', 'file2'];
+        $this->configurationScannerMock->expects($this->once())
+            ->method('scan')
+            ->with('di.xml')
+            ->willReturn($files);
+        $this->repositoryScannerMock->expects($this->once())
+            ->method('collectEntities')
+            ->with($files)
+            ->willReturn([]);
+
+        $this->model->doOperation();
+    }
+
     protected function setUp(): void
     {
         $this->repositoryScannerMock =
@@ -61,26 +82,5 @@ class RepositoryGeneratorTest extends TestCase
                 'data' => ['paths' => ['path/to/app']]
             ]
         );
-    }
-
-    public function testDoOperation()
-    {
-        $this->classesScannerMock->expects($this->once())
-            ->method('getList')
-            ->with('path/to/app');
-        $this->repositoryScannerMock->expects($this->once())
-            ->method('setUseAutoload')
-            ->with(false);
-        $files = ['file1', 'file2'];
-        $this->configurationScannerMock->expects($this->once())
-            ->method('scan')
-            ->with('di.xml')
-            ->willReturn($files);
-        $this->repositoryScannerMock->expects($this->once())
-            ->method('collectEntities')
-            ->with($files)
-            ->willReturn([]);
-
-        $this->model->doOperation();
     }
 }

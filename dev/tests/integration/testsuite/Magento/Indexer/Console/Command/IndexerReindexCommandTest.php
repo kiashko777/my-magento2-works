@@ -44,19 +44,6 @@ class IndexerReindexCommandTest extends TestCase
     private $command;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-
-        $this->inputMock = $this->getMockBuilder(InputInterface::class)->getMockForAbstractClass();
-        $this->outputMock = $this->getMockBuilder(OutputInterface::class)->getMockForAbstractClass();
-
-        $this->command = $this->objectManager->get(IndexerReindexCommand::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Store/_files/second_store_group_with_second_website.php
      * @return void
      */
@@ -76,5 +63,18 @@ class IndexerReindexCommandTest extends TestCase
     {
         $status = $this->command->run($this->inputMock, $this->outputMock);
         $this->assertEquals(Cli::RETURN_FAILURE, $status, 'index didn\'t return failure code');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->inputMock = $this->getMockBuilder(InputInterface::class)->getMockForAbstractClass();
+        $this->outputMock = $this->getMockBuilder(OutputInterface::class)->getMockForAbstractClass();
+
+        $this->command = $this->objectManager->get(IndexerReindexCommand::class);
     }
 }

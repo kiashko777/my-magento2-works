@@ -10,11 +10,11 @@ declare(strict_types=1);
 namespace Magento\PageCache\Plugin;
 
 use Magento\Framework\App\FrontController;
-use Magento\Framework\App\RequestInterface;
-use PHPUnit\Framework\TestCase;
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Data\Form\FormKey\Validator as FormKeyValidator;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 class RegisterFormKeyFromCookieTest extends TestCase
 {
@@ -34,19 +34,6 @@ class RegisterFormKeyFromCookieTest extends TestCase
     private $formKeyValidator;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->request = $objectManager->get(RequestInterface::class);
-        $this->frontController = $objectManager->get(
-            FrontController::class
-        );
-        $this->formKeyValidator = $objectManager->get(FormKeyValidator::class);
-    }
-
-    /**
      * @magentoAppArea frontend
      */
     public function testTakenFromCookie()
@@ -64,5 +51,18 @@ class RegisterFormKeyFromCookieTest extends TestCase
         $this->request->setRequestUri('core/index/index');
         $this->frontController->dispatch($this->request);
         $this->assertTrue($this->formKeyValidator->validate($this->request));
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->request = $objectManager->get(RequestInterface::class);
+        $this->frontController = $objectManager->get(
+            FrontController::class
+        );
+        $this->formKeyValidator = $objectManager->get(FormKeyValidator::class);
     }
 }

@@ -57,6 +57,25 @@ class DropDown extends AbstractAttributeDataWithOptions
     /**
      * @inheritdoc
      */
+    protected function getUpdateExpectedData(): array
+    {
+        $updatePostData = $this->getUpdatePostData();
+        return array_merge(
+            $updatePostData,
+            [
+                'frontend_label' => 'Drop-Down Attribute Update',
+                'attribute_code' => 'dropdown_attribute',
+                'default_value' => null,
+                'frontend_class' => null,
+                'is_user_defined' => '1',
+                'backend_type' => 'varchar',
+            ]
+        );
+    }
+
+    /**
+     * @inheritdoc
+     */
     protected function getUpdatePostData(): array
     {
         return [
@@ -83,24 +102,5 @@ class DropDown extends AbstractAttributeDataWithOptions
             'used_in_product_listing' => '0',
             'used_for_sort_by' => '1',
         ];
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function getUpdateExpectedData(): array
-    {
-        $updatePostData = $this->getUpdatePostData();
-        return array_merge(
-            $updatePostData,
-            [
-                'frontend_label' => 'Drop-Down Attribute Update',
-                'attribute_code' => 'dropdown_attribute',
-                'default_value' => null,
-                'frontend_class' => null,
-                'is_user_defined' => '1',
-                'backend_type' => 'varchar',
-            ]
-        );
     }
 }

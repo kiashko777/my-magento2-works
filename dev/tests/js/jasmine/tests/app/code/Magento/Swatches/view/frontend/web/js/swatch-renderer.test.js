@@ -91,10 +91,10 @@ define([
                 })
             };
 
-            widget.element =  {
+            widget.element = {
                 parents: jasmine.createSpy().and.returnValue(productPriceMock)
             };
-            widget._getNewPrices  = jasmine.createSpy().and.returnValue(undefined);
+            widget._getNewPrices = jasmine.createSpy().and.returnValue(undefined);
             widget._UpdatePrice();
             expect(productPriceMock.find().find.calls.count()).toBe(1);
         });

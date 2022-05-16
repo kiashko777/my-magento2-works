@@ -38,15 +38,6 @@ class TransparentTest extends TestCase
     private $management;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->management = $this->objectManager->get(PaymentInformationManagementInterface::class);
-    }
-
-    /**
      * Checks a case when order should be placed in "Suspected Fraud" status based on account verification.
      *
      * @magentoDataFixture Magento/Checkout/_files/quote_with_shipping_method.php
@@ -71,7 +62,7 @@ class TransparentTest extends TestCase
         self::assertEquals(Order::STATUS_FRAUD, $order->getStatus());
         self::assertEquals(Order::STATE_PAYMENT_REVIEW, $order->getState());
 
-        $transactions = $this->getPaymentTransactionList((int) $orderId);
+        $transactions = $this->getPaymentTransactionList((int)$orderId);
         self::assertCount(1, $transactions, 'Only one transaction should be present.');
 
         /** @var TransactionInterface $transaction */
@@ -163,5 +154,14 @@ class TransparentTest extends TestCase
         $comment = reset($comments);
 
         return $comment ? $comment->getComment() : '';
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->management = $this->objectManager->get(PaymentInformationManagementInterface::class);
     }
 }

@@ -6,7 +6,9 @@
 
 namespace Magento\TestModule3\Service\V1\Entity;
 
-class Parameter extends \Magento\Framework\Api\AbstractExtensibleObject
+use Magento\Framework\Api\AbstractExtensibleObject;
+
+class Parameter extends AbstractExtensibleObject
 {
     /**
      * Get Name.

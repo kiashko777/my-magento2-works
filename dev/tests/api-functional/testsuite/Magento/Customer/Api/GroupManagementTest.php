@@ -6,11 +6,14 @@
 
 namespace Magento\Customer\Api;
 
+use Exception;
 use Magento\Customer\Model\Data\Group as CustomerGroup;
 use Magento\Customer\Model\GroupRegistry;
 use Magento\Customer\Model\ResourceModel\GroupRepository;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
+use SoapFault;
 
 /**
  * Customer Group Management API test
@@ -32,16 +35,6 @@ class GroupManagementTest extends WebapiAbstract
     private $groupRepository;
 
     /**
-     * Execute per test initialization.
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->groupRegistry = $objectManager->get(\Magento\Customer\Model\GroupRegistry::class);
-        $this->groupRepository = $objectManager->get(\Magento\Customer\Model\ResourceModel\GroupRepository::class);
-    }
-
-    /**
      * Verify the retrieval of the default group for storeId equal to 1.
      *
      * @param int $storeId The store Id
@@ -54,7 +47,7 @@ class GroupManagementTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/default/$storeId",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -108,7 +101,7 @@ class GroupManagementTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/default/$nonExistentStoreId",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -122,13 +115,13 @@ class GroupManagementTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, $requestData);
             $this->fail("Expected exception");
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString(
                 $expectedMessage,
                 $e->getMessage(),
                 "SoapFault does not contain expected message."
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->assertStringContainsString(
                 $expectedMessage,
                 $e->getMessage(),
@@ -151,7 +144,7 @@ class GroupManagementTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/$groupId/permissions",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -195,7 +188,7 @@ class GroupManagementTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/$groupId/permissions",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -211,13 +204,13 @@ class GroupManagementTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, $requestData);
             $this->fail("Expected exception.");
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString(
                 $expectedMessage,
                 $e->getMessage(),
                 "SoapFault does not contain expected message."
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->assertStringContainsString(
                 $expectedMessage,
                 $e->getMessage(),
@@ -225,5 +218,15 @@ class GroupManagementTest extends WebapiAbstract
             );
             $this->assertStringContainsString((string)$groupId, $e->getMessage());
         }
+    }
+
+    /**
+     * Execute per test initialization.
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->groupRegistry = $objectManager->get(GroupRegistry::class);
+        $this->groupRepository = $objectManager->get(GroupRepository::class);
     }
 }

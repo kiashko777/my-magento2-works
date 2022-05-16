@@ -3,56 +3,28 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Search\Model\SearchEngine;
 
+use Magento\Framework\App\Cache\Manager;
+use Magento\Framework\Config\FileResolverInterface;
+use Magento\Framework\Search\SearchEngine\Config\Reader;
+use Magento\Search\Model\SearchEngine\Config\Data;
+use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class ConfigTest
  *
  * @magentoAppIsolation enabled
  */
-class ConfigTest extends \PHPUnit\Framework\TestCase
+class ConfigTest extends TestCase
 {
     /**
-     * @var \Magento\Search\Model\SearchEngine\Config|MockObject
+     * @var Config|MockObject
      */
     private $config;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $xmlPath = __DIR__ . '/../../_files/search_engine.xml';
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-
-        // Clear out the cache
-        $cacheManager = $objectManager->create(\Magento\Framework\App\Cache\Manager::class);
-        /** @var \Magento\Framework\App\Cache\Manager $cacheManager */
-        $cacheManager->clean($cacheManager->getAvailableTypes());
-
-        $fileResolver = $this->getMockForAbstractClass(
-            \Magento\Framework\Config\FileResolverInterface::class,
-            [],
-            '',
-            false
-        );
-        $fileResolver->expects($this->any())->method('get')->willReturn([file_get_contents($xmlPath)]);
-
-        $configReader = $objectManager->create(
-            \Magento\Framework\Search\SearchEngine\Config\Reader::class,
-            ['fileResolver' => $fileResolver]
-        );
-        $dataStorage = $objectManager->create(
-            \Magento\Search\Model\SearchEngine\Config\Data::class,
-            ['reader' => $configReader]
-        );
-        $this->config = $objectManager->create(
-            \Magento\Search\Model\SearchEngine\Config::class,
-            ['dataStorage' => $dataStorage]
-        );
-    }
 
     /**
      * Data provider for the test
@@ -84,16 +56,6 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
             ]
 
         ];
-    }
-
-    /**
-     * @param string $searchEngine
-     * @param array $expectedResult
-     * @dataProvider loadGetDeclaredFeaturesDataProvider
-     */
-    public function testGetDeclaredFeatures($searchEngine, $expectedResult)
-    {
-        $this->assertEquals($expectedResult, $this->config->getDeclaredFeatures($searchEngine));
     }
 
     /**
@@ -164,6 +126,16 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @param string $searchEngine
+     * @param array $expectedResult
+     * @dataProvider loadGetDeclaredFeaturesDataProvider
+     */
+    public function testGetDeclaredFeatures($searchEngine, $expectedResult)
+    {
+        $this->assertEquals($expectedResult, $this->config->getDeclaredFeatures($searchEngine));
+    }
+
+    /**
+     * @param string $searchEngine
      * @param string $feature
      * @param array $expectedResult
      * @dataProvider loadIsFeatureSupportedDataProvider
@@ -171,5 +143,40 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
     public function testIsFeatureSupported($searchEngine, $feature, $expectedResult)
     {
         $this->assertEquals($expectedResult, $this->config->isFeatureSupported($searchEngine, $feature));
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $xmlPath = __DIR__ . '/../../_files/search_engine.xml';
+        $objectManager = Bootstrap::getObjectManager();
+
+        // Clear out the cache
+        $cacheManager = $objectManager->create(Manager::class);
+        /** @var Manager $cacheManager */
+        $cacheManager->clean($cacheManager->getAvailableTypes());
+
+        $fileResolver = $this->getMockForAbstractClass(
+            FileResolverInterface::class,
+            [],
+            '',
+            false
+        );
+        $fileResolver->expects($this->any())->method('get')->willReturn([file_get_contents($xmlPath)]);
+
+        $configReader = $objectManager->create(
+            Reader::class,
+            ['fileResolver' => $fileResolver]
+        );
+        $dataStorage = $objectManager->create(
+            Data::class,
+            ['reader' => $configReader]
+        );
+        $this->config = $objectManager->create(
+            Config::class,
+            ['dataStorage' => $dataStorage]
+        );
     }
 }

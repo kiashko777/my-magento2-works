@@ -3,16 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Customer\Controller\Adminhtml\Index;
 
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\Message\MessageInterface;
+use Magento\Security\Model\PasswordResetRequestEvent;
+use Magento\Security\Model\PasswordResetRequestEventFactory;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * ResetPassword controller test.
  *
  * @magentoAppArea Adminhtml
  */
-class ResetPasswordTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class ResetPasswordTest extends AbstractBackendController
 {
     /**
      * Base controller URL
@@ -32,15 +37,34 @@ class ResetPasswordTest extends \Magento\TestFramework\TestCase\AbstractBackendC
     public function testResetPasswordSuccess()
     {
         $this->passwordResetRequestEventCreate(
-            \Magento\Security\Model\PasswordResetRequestEvent::CUSTOMER_PASSWORD_RESET_REQUEST
+            PasswordResetRequestEvent::CUSTOMER_PASSWORD_RESET_REQUEST
         );
         $this->getRequest()->setPostValue(['customer_id' => '1'])->setMethod(HttpRequest::METHOD_GET);
         $this->dispatch('backend/customer/index/resetPassword');
         $this->assertSessionMessages(
             $this->equalTo(['The customer will receive an email with a link to reset password.']),
-            \Magento\Framework\Message\MessageInterface::TYPE_SUCCESS
+            MessageInterface::TYPE_SUCCESS
         );
         $this->assertRedirect($this->stringStartsWith($this->baseControllerUrl . 'edit'));
+    }
+
+    /**
+     * Create and save reset request event with provided request type.
+     *
+     * @param int $requestType
+     */
+    private function passwordResetRequestEventCreate($requestType)
+    {
+        $passwordResetRequestEventFactory = $this->_objectManager->get(
+            PasswordResetRequestEventFactory::class
+        );
+        $passwordResetRequestEvent = $passwordResetRequestEventFactory->create();
+        $passwordResetRequestEvent
+            ->setRequestType($requestType)
+            ->setAccountReference('customer@example.com')
+            ->setCreatedAt(strtotime('now'))
+            ->setIp('3232249856')
+            ->save();
     }
 
     /**
@@ -53,7 +77,7 @@ class ResetPasswordTest extends \Magento\TestFramework\TestCase\AbstractBackendC
     public function testResetPasswordWithPost()
     {
         $this->passwordResetRequestEventCreate(
-            \Magento\Security\Model\PasswordResetRequestEvent::CUSTOMER_PASSWORD_RESET_REQUEST
+            PasswordResetRequestEvent::CUSTOMER_PASSWORD_RESET_REQUEST
         );
         $this->getRequest()->setPostValue(['customer_id' => '1'])->setMethod(HttpRequest::METHOD_POST);
         $this->dispatch('backend/customer/index/resetPassword');
@@ -72,13 +96,13 @@ class ResetPasswordTest extends \Magento\TestFramework\TestCase\AbstractBackendC
     public function testResetPasswordMinTimeError()
     {
         $this->passwordResetRequestEventCreate(
-            \Magento\Security\Model\PasswordResetRequestEvent::CUSTOMER_PASSWORD_RESET_REQUEST
+            PasswordResetRequestEvent::CUSTOMER_PASSWORD_RESET_REQUEST
         );
         $this->getRequest()->setPostValue(['customer_id' => '1'])->setMethod(HttpRequest::METHOD_GET);
         $this->dispatch('backend/customer/index/resetPassword');
         $this->assertSessionMessages(
             $this->equalTo(['The customer will receive an email with a link to reset password.']),
-            \Magento\Framework\Message\MessageInterface::TYPE_SUCCESS
+            MessageInterface::TYPE_SUCCESS
         );
         $this->assertRedirect($this->stringStartsWith($this->baseControllerUrl . 'edit'));
     }
@@ -95,13 +119,13 @@ class ResetPasswordTest extends \Magento\TestFramework\TestCase\AbstractBackendC
     public function testResetPasswordLimitError()
     {
         $this->passwordResetRequestEventCreate(
-            \Magento\Security\Model\PasswordResetRequestEvent::CUSTOMER_PASSWORD_RESET_REQUEST
+            PasswordResetRequestEvent::CUSTOMER_PASSWORD_RESET_REQUEST
         );
         $this->getRequest()->setPostValue(['customer_id' => '1'])->setMethod(HttpRequest::METHOD_GET);
         $this->dispatch('backend/customer/index/resetPassword');
         $this->assertSessionMessages(
             $this->equalTo(['The customer will receive an email with a link to reset password.']),
-            \Magento\Framework\Message\MessageInterface::TYPE_SUCCESS
+            MessageInterface::TYPE_SUCCESS
         );
         $this->assertRedirect($this->stringStartsWith($this->baseControllerUrl . 'edit'));
     }
@@ -117,36 +141,17 @@ class ResetPasswordTest extends \Magento\TestFramework\TestCase\AbstractBackendC
     public function testResetPasswordWithSecurityViolationException()
     {
         $this->passwordResetRequestEventCreate(
-            \Magento\Security\Model\PasswordResetRequestEvent::CUSTOMER_PASSWORD_RESET_REQUEST
+            PasswordResetRequestEvent::CUSTOMER_PASSWORD_RESET_REQUEST
         );
         $this->passwordResetRequestEventCreate(
-            \Magento\Security\Model\PasswordResetRequestEvent::ADMIN_PASSWORD_RESET_REQUEST
+            PasswordResetRequestEvent::ADMIN_PASSWORD_RESET_REQUEST
         );
         $this->getRequest()->setPostValue(['customer_id' => '1'])->setMethod(HttpRequest::METHOD_GET);
         $this->dispatch('backend/customer/index/resetPassword');
         $this->assertSessionMessages(
             $this->equalTo(['The customer will receive an email with a link to reset password.']),
-            \Magento\Framework\Message\MessageInterface::TYPE_SUCCESS
+            MessageInterface::TYPE_SUCCESS
         );
         $this->assertRedirect($this->stringStartsWith($this->baseControllerUrl . 'edit'));
-    }
-
-    /**
-     * Create and save reset request event with provided request type.
-     *
-     * @param int $requestType
-     */
-    private function passwordResetRequestEventCreate($requestType)
-    {
-        $passwordResetRequestEventFactory = $this->_objectManager->get(
-            \Magento\Security\Model\PasswordResetRequestEventFactory::class
-        );
-        $passwordResetRequestEvent = $passwordResetRequestEventFactory->create();
-        $passwordResetRequestEvent
-            ->setRequestType($requestType)
-            ->setAccountReference('customer@example.com')
-            ->setCreatedAt(strtotime('now'))
-            ->setIp('3232249856')
-            ->save();
     }
 }

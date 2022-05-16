@@ -3,9 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Developer\Model\Config\Backend;
 
-class AllowedIpsTest extends \PHPUnit\Framework\TestCase
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class AllowedIpsTest extends TestCase
 {
     /**
      * @param string $value
@@ -16,10 +20,10 @@ class AllowedIpsTest extends \PHPUnit\Framework\TestCase
     public function testSaveWithEscapeHtml($value, $expected)
     {
         /**
-         * @var \Magento\Developer\Model\Config\Backend\AllowedIps
+         * @var AllowedIps
          */
-        $model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Developer\Model\Config\Backend\AllowedIps::class
+        $model = Bootstrap::getObjectManager()->create(
+            AllowedIps::class
         );
         $model->setValue($value);
         $model->setPath('path');
@@ -34,8 +38,8 @@ class AllowedIpsTest extends \PHPUnit\Framework\TestCase
     public function fieldDataProvider()
     {
         return [
-            ['<'.'script>alert(\'XSS\')</script>', '' ],
-            ['10.64.202.22, <'.'script>alert(\'XSS\')</script>', '10.64.202.22' ]
+            ['<' . 'script>alert(\'XSS\')</script>', ''],
+            ['10.64.202.22, <' . 'script>alert(\'XSS\')</script>', '10.64.202.22']
         ];
     }
 }

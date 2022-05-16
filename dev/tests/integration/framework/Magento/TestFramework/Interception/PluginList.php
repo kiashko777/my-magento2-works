@@ -3,10 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Interception;
 
+use Magento\Framework\Config\CacheInterface;
+use Magento\Framework\Config\ReaderInterface;
+use Magento\Framework\Config\ScopeInterface;
 use Magento\Framework\Interception\ConfigLoaderInterface;
 use Magento\Framework\Interception\PluginListGenerator;
+use Magento\Framework\ObjectManager\ConfigInterface;
+use Magento\Framework\ObjectManager\DefinitionInterface;
+use Magento\Framework\ObjectManager\RelationsInterface;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Serialize\SerializerInterface;
 
 /**
@@ -22,14 +30,14 @@ class PluginList extends \Magento\Framework\Interception\PluginList\PluginList
     /**
      * Constructor
      *
-     * @param \Magento\Framework\Config\ReaderInterface $reader
-     * @param \Magento\Framework\Config\ScopeInterface $configScope
-     * @param \Magento\Framework\Config\CacheInterface $cache
-     * @param \Magento\Framework\ObjectManager\RelationsInterface $relations
-     * @param \Magento\Framework\ObjectManager\ConfigInterface $omConfig
+     * @param ReaderInterface $reader
+     * @param ScopeInterface $configScope
+     * @param CacheInterface $cache
+     * @param RelationsInterface $relations
+     * @param ConfigInterface $omConfig
      * @param \Magento\Framework\Interception\DefinitionInterface $definitions
-     * @param \Magento\Framework\ObjectManagerInterface $objectManager
-     * @param \Magento\Framework\ObjectManager\DefinitionInterface $classDefinitions
+     * @param ObjectManagerInterface $objectManager
+     * @param DefinitionInterface $classDefinitions
      * @param array $scopePriorityScheme
      * @param string|null $cacheId
      * @param SerializerInterface|null $serializer
@@ -38,20 +46,21 @@ class PluginList extends \Magento\Framework\Interception\PluginList\PluginList
      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
      */
     public function __construct(
-        \Magento\Framework\Config\ReaderInterface $reader,
-        \Magento\Framework\Config\ScopeInterface $configScope,
-        \Magento\Framework\Config\CacheInterface $cache,
-        \Magento\Framework\ObjectManager\RelationsInterface $relations,
-        \Magento\Framework\ObjectManager\ConfigInterface $omConfig,
-        \Magento\Framework\Interception\DefinitionInterface $definitions,
-        \Magento\Framework\ObjectManagerInterface $objectManager,
-        \Magento\Framework\ObjectManager\DefinitionInterface $classDefinitions,
-        array $scopePriorityScheme,
-        $cacheId = 'plugins',
-        SerializerInterface $serializer = null,
-        ConfigLoaderInterface $configLoader = null,
-        PluginListGenerator $pluginListGenerator = null
-    ) {
+        ReaderInterface            $reader,
+        ScopeInterface             $configScope,
+        CacheInterface             $cache,
+        RelationsInterface  $relations,
+        ConfigInterface     $omConfig,
+        \Magento\Framework\Interception\DefinitionInterface  $definitions,
+        ObjectManagerInterface            $objectManager,
+        DefinitionInterface $classDefinitions,
+        array                                                $scopePriorityScheme,
+                                                             $cacheId = 'plugins',
+        SerializerInterface                                  $serializer = null,
+        ConfigLoaderInterface                                $configLoader = null,
+        PluginListGenerator                                  $pluginListGenerator = null
+    )
+    {
         parent::__construct(
             $reader,
             $configScope,

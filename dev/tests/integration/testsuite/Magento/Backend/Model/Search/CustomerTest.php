@@ -7,48 +7,15 @@
 namespace Magento\Backend\Model\Search;
 
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  * @magentoDataFixture Magento/Customer/_files/three_customers.php
  * @magentoDataFixture Magento/Customer/_files/customer_address.php
  */
-class CustomerTest extends \PHPUnit\Framework\TestCase
+class CustomerTest extends TestCase
 {
-    /**
-     * @dataProvider loadDataProvider
-     */
-    public function testLoad($query, $limit, $start, $expectedResult)
-    {
-        /** Preconditions */
-        $objectManager = Bootstrap::getObjectManager();
-        /** @var \Magento\Backend\Model\Search\Customer $customerSearch */
-        $customerSearch = $objectManager->create(\Magento\Backend\Model\Search\Customer::class);
-        $customerSearch->setQuery($query);
-        $customerSearch->setLimit($limit);
-        $customerSearch->setStart($start);
-        $customerSearch->load();
-
-        /** SUT Execution */
-        $searchResults = $customerSearch->getResults();
-
-        /** Ensure that search results are correct */
-        $this->assertCount(count($expectedResult), $searchResults, 'Quantity of search result items is invalid.');
-        foreach ($expectedResult as $itemIndex => $expectedItem) {
-            /** Validate URL to item */
-            $customerId = substr($expectedItem['id'], 11); // 'customer/1/' is added to all actual customer IDs
-            $this->assertStringContainsString(
-                "customer/index/edit/id/$customerId",
-                $searchResults[$itemIndex]['url'],
-                'Item URL is invalid.'
-            );
-            unset($searchResults[$itemIndex]['url']);
-
-            /** Validate other item data */
-            $this->assertEquals($expectedItem, $searchResults[$itemIndex], "Data of item #$itemIndex is invalid.");
-        }
-    }
-
     public static function loadDataProvider()
     {
         return [
@@ -117,5 +84,39 @@ class CustomerTest extends \PHPUnit\Framework\TestCase
                 ],
             ],
         ];
+    }
+
+    /**
+     * @dataProvider loadDataProvider
+     */
+    public function testLoad($query, $limit, $start, $expectedResult)
+    {
+        /** Preconditions */
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var Customer $customerSearch */
+        $customerSearch = $objectManager->create(Customer::class);
+        $customerSearch->setQuery($query);
+        $customerSearch->setLimit($limit);
+        $customerSearch->setStart($start);
+        $customerSearch->load();
+
+        /** SUT Execution */
+        $searchResults = $customerSearch->getResults();
+
+        /** Ensure that search results are correct */
+        $this->assertCount(count($expectedResult), $searchResults, 'Quantity of search result items is invalid.');
+        foreach ($expectedResult as $itemIndex => $expectedItem) {
+            /** Validate URL to item */
+            $customerId = substr($expectedItem['id'], 11); // 'customer/1/' is added to all actual customer IDs
+            $this->assertStringContainsString(
+                "customer/index/edit/id/$customerId",
+                $searchResults[$itemIndex]['url'],
+                'Item URL is invalid.'
+            );
+            unset($searchResults[$itemIndex]['url']);
+
+            /** Validate other item data */
+            $this->assertEquals($expectedItem, $searchResults[$itemIndex], "Data of item #$itemIndex is invalid.");
+        }
     }
 }

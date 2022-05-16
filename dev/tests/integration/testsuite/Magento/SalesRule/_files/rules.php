@@ -4,8 +4,12 @@
  * See COPYING.txt for license details.
  */
 
-/** @var \Magento\SalesRule\Model\Rule $rule1 */
-$rule1 = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\SalesRule\Model\Rule::class);
+/** @var Rule $rule1 */
+
+use Magento\SalesRule\Model\Rule;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$rule1 = Bootstrap::getObjectManager()->create(Rule::class);
 $rule1->setName(
     '#1'
 )->setIsActive(
@@ -27,8 +31,8 @@ $rule1->setName(
 )->setSortOrder(1)
     ->save();
 
-/** @var \Magento\SalesRule\Model\Rule $rule2 */
-$rule2 = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\SalesRule\Model\Rule::class);
+/** @var Rule $rule2 */
+$rule2 = Bootstrap::getObjectManager()->create(Rule::class);
 $rule2->setName(
     '#2'
 )->setIsActive(
@@ -50,8 +54,8 @@ $rule2->setName(
 )->setSortOrder(2)
     ->save();
 
-/** @var \Magento\SalesRule\Model\Rule $rule3 */
-$rule3 = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\SalesRule\Model\Rule::class);
+/** @var Rule $rule3 */
+$rule3 = Bootstrap::getObjectManager()->create(Rule::class);
 $rule3->setName(
     '#3'
 )->setIsActive(
@@ -73,8 +77,8 @@ $rule3->setName(
 )->setSortOrder(3)
     ->save();
 
-/** @var \Magento\SalesRule\Model\Rule $rule4 */
-$rule4 = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\SalesRule\Model\Rule::class);
+/** @var Rule $rule4 */
+$rule4 = Bootstrap::getObjectManager()->create(Rule::class);
 $rule4->setName(
     '#4'
 )->setIsActive(
@@ -96,8 +100,8 @@ $rule4->setName(
 )->setSortOrder(4)
     ->save();
 
-/** @var \Magento\SalesRule\Model\Rule $rule5 */
-$rule5 = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\SalesRule\Model\Rule::class);
+/** @var Rule $rule5 */
+$rule5 = Bootstrap::getObjectManager()->create(Rule::class);
 $rule5->setName(
     '#5'
 )->setIsActive(

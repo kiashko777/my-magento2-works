@@ -3,12 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestModule1\Service\V2;
 
+use Magento\Framework\Api\Filter;
 use Magento\TestModule1\Service\V2\Entity\Item;
 use Magento\TestModule1\Service\V2\Entity\ItemFactory;
 
-class AllSoapAndRest implements \Magento\TestModule1\Service\V2\AllSoapAndRestInterface
+class AllSoapAndRest implements AllSoapAndRestInterface
 {
     /**
      * @var ItemFactory
@@ -42,7 +44,7 @@ class AllSoapAndRest implements \Magento\TestModule1\Service\V2\AllSoapAndRestIn
 
         /** Simple filtration implementation */
         if (!empty($filters)) {
-            /** @var \Magento\Framework\Api\Filter $filter */
+            /** @var Filter $filter */
             foreach ($filters as $filter) {
                 if ('id' == $filter->getField() && $filter->getValue() == 1) {
                     $result[] = $firstItem;

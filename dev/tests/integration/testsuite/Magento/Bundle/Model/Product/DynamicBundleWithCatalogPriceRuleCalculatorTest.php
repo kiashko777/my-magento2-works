@@ -6,6 +6,9 @@
 
 namespace Magento\Bundle\Model\Product;
 
+use Magento\Catalog\Pricing\Price\FinalPrice;
+use Magento\Framework\Pricing\PriceInfo\Base;
+
 /**
  * @codingStandardsIgnoreStart
  * @magentoDataFixtureBeforeTransaction Magento/Bundle/_files/PriceCalculator/dynamic_bundle_product_with_catalog_rule.php
@@ -26,9 +29,9 @@ class DynamicBundleWithCatalogPriceRuleCalculatorTest extends BundlePriceAbstrac
         $this->prepareFixture($strategyModifiers, 'bundle_product');
         $bundleProduct = $this->productRepository->get('bundle_product', false, null, true);
 
-        /** @var \Magento\Framework\Pricing\PriceInfo\Base $priceInfo */
+        /** @var Base $priceInfo */
         $priceInfo = $bundleProduct->getPriceInfo();
-        $priceCode = \Magento\Catalog\Pricing\Price\FinalPrice::PRICE_CODE;
+        $priceCode = FinalPrice::PRICE_CODE;
 
         $this->assertEquals(
             $expectedResults['minimalPrice'],

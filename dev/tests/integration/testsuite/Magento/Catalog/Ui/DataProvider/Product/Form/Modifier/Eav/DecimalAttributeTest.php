@@ -30,18 +30,6 @@ class DecimalAttributeTest extends AbstractEavTest
     }
 
     /**
-     * @return void
-     */
-    public function testModifyData(): void
-    {
-        $product = $this->getProduct();
-        $attributeData = ['decimal_attribute' => '10.00'];
-        $this->saveProduct($product, $attributeData);
-        $expectedData = $this->addDataNesting($attributeData);
-        $this->callModifyDataAndAssert($product, $expectedData);
-    }
-
-    /**
      * @return array
      */
     private function getAttributeMeta(): array
@@ -63,5 +51,17 @@ class DecimalAttributeTest extends AbstractEavTest
             ],
             'addbefore' => '$'
         ];
+    }
+
+    /**
+     * @return void
+     */
+    public function testModifyData(): void
+    {
+        $product = $this->getProduct();
+        $attributeData = ['decimal_attribute' => '10.00'];
+        $this->saveProduct($product, $attributeData);
+        $expectedData = $this->addDataNesting($attributeData);
+        $this->callModifyDataAndAssert($product, $expectedData);
     }
 }

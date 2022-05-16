@@ -7,20 +7,26 @@
 /**
  * Test class for \Magento\Wishlist\Block\Customer\Wishlist\Item\Options.
  */
+
 namespace Magento\Wishlist\Block\Customer\Wishlist\Item;
 
-class OptionsTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\DataObject;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class OptionsTest extends TestCase
 {
     public function testGetTemplate()
     {
-        $block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
+        $block = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
         )->createBlock(
-            \Magento\Wishlist\Block\Customer\Wishlist\Item\Options::class
+            Options::class
         );
         $this->assertEmpty($block->getTemplate());
-        $product = new \Magento\Framework\DataObject(['type_id' => 'test']);
-        $item = new \Magento\Framework\DataObject(['product' => $product]);
+        $product = new DataObject(['type_id' => 'test']);
+        $item = new DataObject(['product' => $product]);
         $block->setItem($item);
         $this->assertNotEmpty($block->getTemplate());
         $block->setTemplate('template');

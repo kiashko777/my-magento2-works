@@ -5,15 +5,15 @@
  */
 declare(strict_types=1);
 
+use Magento\Catalog\Api\AttributeSetRepositoryInterface;
 use Magento\Eav\Model\AttributeSetSearchResults;
 use Magento\Eav\Model\Entity\Attribute\Set;
+use Magento\Eav\Model\Entity\Type;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Api\SortOrderBuilder;
 use Magento\Framework\Data\Collection;
 use Magento\Framework\Registry;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Catalog\Api\AttributeSetRepositoryInterface;
-use Magento\Eav\Model\Entity\Type;
 
 $objectManager = Bootstrap::getObjectManager();
 
@@ -49,7 +49,7 @@ try {
         $attributeSet = reset($items);
         $attributeSetRepository->deleteById($attributeSet->getId());
     }
-} catch (\Exception $e) {
+} catch (Exception $e) {
     // In case of test run with DB isolation there is already no object in database
     // since rollback fixtures called after transaction rollback.
 }

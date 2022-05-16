@@ -25,7 +25,7 @@ $objectManager = Bootstrap::getObjectManager();
 /** @var ProductRepositoryInterface $productRepository */
 $productRepository = $objectManager->create(ProductRepositoryInterface::class);
 $product = $productRepository->get('simple');
-/** @var \Magento\Sales\Model\Order $order */
+/** @var Order $order */
 $order = $objectManager->get(OrderInterfaceFactory::class)->create()->loadByIncrementId('100000001');
 /** @var InvoiceManagementInterface $orderService */
 $orderService = $objectManager->create(InvoiceManagementInterface::class);

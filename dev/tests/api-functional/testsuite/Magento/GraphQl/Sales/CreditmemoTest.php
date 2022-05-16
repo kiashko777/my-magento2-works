@@ -9,10 +9,13 @@ namespace Magento\GraphQl\Sales;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\DB\Transaction;
 use Magento\Framework\Exception\AuthenticationException;
+use Magento\Framework\Registry;
 use Magento\GraphQl\GetCustomerAuthenticationHeader;
 use Magento\GraphQl\Sales\Fixtures\CustomerPlaceOrder;
 use Magento\Sales\Api\CreditmemoRepositoryInterface;
+use Magento\Sales\Api\InvoiceManagementInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\CreditmemoFactory;
@@ -53,30 +56,6 @@ class CreditmemoTest extends GraphQlAbstract
 
     /** @var SearchCriteriaBuilder */
     private $searchCriteriaBuilder;
-
-    /**
-     * Set up
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->customerAuthenticationHeader = $objectManager->get(
-            GetCustomerAuthenticationHeader::class
-        );
-        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
-        $this->creditMemoFactory = $objectManager->get(CreditmemoFactory::class);
-        $this->order = $objectManager->create(Order::class);
-        $this->searchCriteriaBuilder = $objectManager->get(SearchCriteriaBuilder::class);
-        $this->orderCollection = $objectManager->get(OrderCollection::class);
-        $this->orderRepository = $objectManager->get(OrderRepositoryInterface::class);
-        $this->creditMemoService = $objectManager->get(CreditmemoService::class);
-    }
-
-    protected function tearDown(): void
-    {
-        $this->cleanUpCreditMemos();
-        $this->deleteOrder();
-    }
 
     /**
      * @magentoApiDataFixture Magento/Sales/_files/customer_creditmemo_with_two_items.php
@@ -153,6 +132,121 @@ class CreditmemoTest extends GraphQlAbstract
         $this->assertArrayHasKey('credit_memos', $firstOrderItem);
         $creditMemos = $firstOrderItem['credit_memos'];
         $this->assertResponseFields($creditMemos, $expectedCreditMemoData);
+    }
+
+    /**
+     *  Get CustomerOrder with credit memo details
+     *
+     * @return array
+     * @throws AuthenticationException
+     * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
+     */
+    private function getCustomerOrderWithCreditMemoQuery(): array
+    {
+        $query =
+            <<<QUERY
+query {
+  customer {
+    orders {
+        items {
+            invoices {
+               items {
+                    product_name
+                    product_sku
+                    product_sale_price {
+                        value
+                    }
+                    ... on BundleInvoiceItem {
+                      bundle_options {
+                        label
+                        values {
+                          product_sku
+                          product_name
+                          quantity
+                          price {
+                            value
+                            currency
+                          }
+                        }
+                      }
+                    }
+                    discounts { amount{value currency} label }
+                    quantity_invoiced
+                    discounts { amount{value currency} label }
+               }
+            }
+            credit_memos {
+                comments {
+                    message
+                }
+                items {
+                    product_name
+                    product_sku
+                    product_sale_price {
+                        value
+                    }
+                    ... on BundleCreditMemoItem {
+                      bundle_options {
+                        label
+                        values {
+                          product_sku
+                          product_name
+                          quantity
+                          price {
+                            value
+                            currency
+                          }
+                        }
+                      }
+                    }
+                    discounts { amount{value currency} label }
+                    quantity_refunded
+                }
+                total {
+                    subtotal {
+                        value
+                    }
+                    base_grand_total  {
+                        value
+                        currency
+                    }
+                    grand_total {
+                        value
+                        currency
+                    }
+                    total_shipping {
+                        value
+                    }
+                    total_tax {
+                        value
+                    }
+                    shipping_handling {
+                         amount_including_tax{value}
+                         amount_excluding_tax{value}
+                         total_amount{value}
+                         taxes {amount{value} title rate}
+                         discounts {amount{value}}
+                    }
+                    adjustment {
+                        value
+                    }
+                }
+            }
+        }
+    }
+  }
+}
+QUERY;
+
+        $currentEmail = 'customer@example.com';
+        $currentPassword = 'password';
+        $response = $this->graphQlQuery(
+            $query,
+            [],
+            '',
+            $this->customerAuthenticationHeader->execute($currentEmail, $currentPassword)
+        );
+        return $response;
     }
 
     /**
@@ -325,6 +419,30 @@ class CreditmemoTest extends GraphQlAbstract
     }
 
     /**
+     * Prepare invoice for the order
+     *
+     * @param string $orderNumber
+     * @param int|null $qty
+     */
+    private function prepareInvoice(string $orderNumber, int $qty = null)
+    {
+        /** @var Order $order */
+        $order = Bootstrap::getObjectManager()
+            ->create(Order::class)->loadByIncrementId($orderNumber);
+        $orderItem = current($order->getItems());
+        $orderService = Bootstrap::getObjectManager()->create(
+            InvoiceManagementInterface::class
+        );
+        $invoice = $orderService->prepareInvoice($order, [$orderItem->getId() => $qty]);
+        $invoice->register();
+        $order = $invoice->getOrder();
+        $order->setIsInProcess(true);
+        $transactionSave = Bootstrap::getObjectManager()
+            ->create(Transaction::class);
+        $transactionSave->addObject($invoice)->addObject($order)->save();
+    }
+
+    /**
      * Test customer order with credit memo details for bundle products with taxes and discounts
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      * @magentoApiDataFixture Magento/Bundle/_files/bundle_product_two_dropdown_options.php
@@ -433,7 +551,7 @@ class CreditmemoTest extends GraphQlAbstract
                         'value' => 10
                     ],
                     'total_tax' => [
-                        'value'=> 1.69
+                        'value' => 1.69
                     ],
                     'shipping_handling' => [
                         'amount_including_tax' => [
@@ -445,7 +563,7 @@ class CreditmemoTest extends GraphQlAbstract
                         'total_amount' => [
                             'value' => 10
                         ],
-                        'taxes'=> [
+                        'taxes' => [
                             0 => [
                                 'amount' => ['value' => 0.67],
                                 'title' => 'US-TEST-*-Rate-1',
@@ -454,7 +572,7 @@ class CreditmemoTest extends GraphQlAbstract
                         ],
                         'discounts' => [
                             [
-                                'amount'=> ['value'=> 1]
+                                'amount' => ['value' => 1]
                             ]
                         ],
                     ],
@@ -472,46 +590,27 @@ class CreditmemoTest extends GraphQlAbstract
     }
 
     /**
-     * Prepare invoice for the order
-     *
-     * @param string $orderNumber
-     * @param int|null $qty
+     * Set up
      */
-    private function prepareInvoice(string $orderNumber, int $qty = null)
+    protected function setUp(): void
     {
-        /** @var \Magento\Sales\Model\Order $order */
-        $order = Bootstrap::getObjectManager()
-            ->create(\Magento\Sales\Model\Order::class)->loadByIncrementId($orderNumber);
-        $orderItem = current($order->getItems());
-        $orderService = Bootstrap::getObjectManager()->create(
-            \Magento\Sales\Api\InvoiceManagementInterface::class
+        $objectManager = Bootstrap::getObjectManager();
+        $this->customerAuthenticationHeader = $objectManager->get(
+            GetCustomerAuthenticationHeader::class
         );
-        $invoice = $orderService->prepareInvoice($order, [$orderItem->getId() => $qty]);
-        $invoice->register();
-        $order = $invoice->getOrder();
-        $order->setIsInProcess(true);
-        $transactionSave = Bootstrap::getObjectManager()
-            ->create(\Magento\Framework\DB\Transaction::class);
-        $transactionSave->addObject($invoice)->addObject($order)->save();
+        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
+        $this->creditMemoFactory = $objectManager->get(CreditmemoFactory::class);
+        $this->order = $objectManager->create(Order::class);
+        $this->searchCriteriaBuilder = $objectManager->get(SearchCriteriaBuilder::class);
+        $this->orderCollection = $objectManager->get(OrderCollection::class);
+        $this->orderRepository = $objectManager->get(OrderRepositoryInterface::class);
+        $this->creditMemoService = $objectManager->get(CreditmemoService::class);
     }
 
-    /**
-     * @return void
-     */
-    private function deleteOrder(): void
+    protected function tearDown(): void
     {
-        /** @var \Magento\Framework\Registry $registry */
-        $registry = Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
-        $registry->unregister('isSecureArea');
-        $registry->register('isSecureArea', true);
-
-        /** @var $order \Magento\Sales\Model\Order */
-        $orderCollection = Bootstrap::getObjectManager()->create(OrderCollection::class);
-        foreach ($orderCollection as $order) {
-            $this->orderRepository->delete($order);
-        }
-        $registry->unregister('isSecureArea');
-        $registry->register('isSecureArea', false);
+        $this->cleanUpCreditMemos();
+        $this->deleteOrder();
     }
 
     /**
@@ -519,8 +618,8 @@ class CreditmemoTest extends GraphQlAbstract
      */
     private function cleanUpCreditMemos(): void
     {
-        /** @var \Magento\Framework\Registry $registry */
-        $registry = Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
+        /** @var Registry $registry */
+        $registry = Bootstrap::getObjectManager()->get(Registry::class);
         $registry->unregister('isSecureArea');
         $registry->register('isSecureArea', true);
         $creditmemoRepository = Bootstrap::getObjectManager()->get(CreditmemoRepositoryInterface::class);
@@ -533,117 +632,21 @@ class CreditmemoTest extends GraphQlAbstract
     }
 
     /**
-     *  Get CustomerOrder with credit memo details
-     *
-     * @return array
-     * @throws AuthenticationException
-     * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
+     * @return void
      */
-    private function getCustomerOrderWithCreditMemoQuery(): array
+    private function deleteOrder(): void
     {
-        $query =
-            <<<QUERY
-query {
-  customer {
-    orders {
-        items {
-            invoices {
-               items {
-                    product_name
-                    product_sku
-                    product_sale_price {
-                        value
-                    }
-                    ... on BundleInvoiceItem {
-                      bundle_options {
-                        label
-                        values {
-                          product_sku
-                          product_name
-                          quantity
-                          price {
-                            value
-                            currency
-                          }
-                        }
-                      }
-                    }
-                    discounts { amount{value currency} label }
-                    quantity_invoiced
-                    discounts { amount{value currency} label }
-               }
-            }
-            credit_memos {
-                comments {
-                    message
-                }
-                items {
-                    product_name
-                    product_sku
-                    product_sale_price {
-                        value
-                    }
-                    ... on BundleCreditMemoItem {
-                      bundle_options {
-                        label
-                        values {
-                          product_sku
-                          product_name
-                          quantity
-                          price {
-                            value
-                            currency
-                          }
-                        }
-                      }
-                    }
-                    discounts { amount{value currency} label }
-                    quantity_refunded
-                }
-                total {
-                    subtotal {
-                        value
-                    }
-                    base_grand_total  {
-                        value
-                        currency
-                    }
-                    grand_total {
-                        value
-                        currency
-                    }
-                    total_shipping {
-                        value
-                    }
-                    total_tax {
-                        value
-                    }
-                    shipping_handling {
-                         amount_including_tax{value}
-                         amount_excluding_tax{value}
-                         total_amount{value}
-                         taxes {amount{value} title rate}
-                         discounts {amount{value}}
-                    }
-                    adjustment {
-                        value
-                    }
-                }
-            }
-        }
-    }
-  }
-}
-QUERY;
+        /** @var Registry $registry */
+        $registry = Bootstrap::getObjectManager()->get(Registry::class);
+        $registry->unregister('isSecureArea');
+        $registry->register('isSecureArea', true);
 
-        $currentEmail = 'customer@example.com';
-        $currentPassword = 'password';
-        $response = $this->graphQlQuery(
-            $query,
-            [],
-            '',
-            $this->customerAuthenticationHeader->execute($currentEmail, $currentPassword)
-        );
-        return $response;
+        /** @var $order Order */
+        $orderCollection = Bootstrap::getObjectManager()->create(OrderCollection::class);
+        foreach ($orderCollection as $order) {
+            $this->orderRepository->delete($order);
+        }
+        $registry->unregister('isSecureArea');
+        $registry->register('isSecureArea', false);
     }
 }

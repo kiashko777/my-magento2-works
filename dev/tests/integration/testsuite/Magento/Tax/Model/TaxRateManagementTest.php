@@ -3,14 +3,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Tax\Model;
 
+use Magento\Tax\Api\TaxRateManagementInterface;
+use Magento\Tax\Api\TaxRateRepositoryInterface;
+use Magento\Tax\Api\TaxRuleRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class TaxRateManagementTest extends \PHPUnit\Framework\TestCase
+class TaxRateManagementTest extends TestCase
 {
     /**
-     * @var \Magento\Tax\Api\TaxRuleRepositoryInterface
+     * @var TaxRuleRepositoryInterface
      */
     private $taxRuleRepository;
 
@@ -47,23 +52,14 @@ class TaxRateManagementTest extends \PHPUnit\Framework\TestCase
     private $taxRules;
 
     /**
-     * @var \Magento\Tax\Api\TaxRateRepositoryInterface
+     * @var TaxRateRepositoryInterface
      */
     private $taxRateRepository;
 
     /**
-     * @var \Magento\Tax\Api\TaxRateManagementInterface
+     * @var TaxRateManagementInterface
      */
     private $taxRateManagement;
-
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->taxRuleRepository = $objectManager->get(\Magento\Tax\Api\TaxRuleRepositoryInterface::class);
-        $this->taxRateManagement = $objectManager->get(\Magento\Tax\Api\TaxRateManagementInterface::class);
-        $this->taxRateRepository = $objectManager->get(\Magento\Tax\Api\TaxRateRepositoryInterface::class);
-        $this->taxRuleFixtureFactory = new TaxRuleFixtureFactory();
-    }
 
     /**
      * @magentoDbIsolation enabled
@@ -109,5 +105,14 @@ class TaxRateManagementTest extends \PHPUnit\Framework\TestCase
                 'calculate_subtotal' => 1,
             ],
         ]);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->taxRuleRepository = $objectManager->get(TaxRuleRepositoryInterface::class);
+        $this->taxRateManagement = $objectManager->get(TaxRateManagementInterface::class);
+        $this->taxRateRepository = $objectManager->get(TaxRateRepositoryInterface::class);
+        $this->taxRuleFixtureFactory = new TaxRuleFixtureFactory();
     }
 }

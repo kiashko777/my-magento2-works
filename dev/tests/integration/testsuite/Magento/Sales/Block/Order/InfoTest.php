@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Sales\Block\Order;
 
+use IntlDateFormatter;
 use Magento\Directory\Model\CountryFactory;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Registry;
@@ -42,30 +43,6 @@ class InfoTest extends TestCase
     private $countryFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
-        $this->countryFactory = $this->objectManager->get(CountryFactory::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->registry->unregister('current_order');
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Sales/_files/order_with_customer.php
      *
      * @return void
@@ -79,6 +56,18 @@ class InfoTest extends TestCase
     }
 
     /**
+     * Register order in registry.
+     *
+     * @param OrderInterface $order
+     * @return void
+     */
+    private function registerOrder(OrderInterface $order): void
+    {
+        $this->registry->unregister('current_order');
+        $this->registry->register('current_order', $order);
+    }
+
+    /**
      * @magentoDataFixture Magento/Sales/_files/order_with_customer.php
      *
      * @return void
@@ -89,7 +78,7 @@ class InfoTest extends TestCase
         $this->registerOrder($order);
         $block = $this->layout->createBlock(Info::class)->setTemplate('Magento_Sales::order/order_date.phtml');
         $this->assertStringContainsString(
-            (string)__('Order Date: %1', $block->formatDate($order->getCreatedAt(), \IntlDateFormatter::LONG)),
+            (string)__('Order Date: %1', $block->formatDate($order->getCreatedAt(), IntlDateFormatter::LONG)),
             strip_tags($block->toHtml())
         );
     }
@@ -159,14 +148,26 @@ class InfoTest extends TestCase
     }
 
     /**
-     * Register order in registry.
-     *
-     * @param OrderInterface $order
-     * @return void
+     * @inheritdoc
      */
-    private function registerOrder(OrderInterface $order): void
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
+        $this->countryFactory = $this->objectManager->get(CountryFactory::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
     {
         $this->registry->unregister('current_order');
-        $this->registry->register('current_order', $order);
+
+        parent::tearDown();
     }
 }

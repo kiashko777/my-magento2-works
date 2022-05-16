@@ -31,19 +31,6 @@ class AddSimpleProductToCartSingleMutationTest extends GraphQlAbstract
     private $getCartItemOptionsFromUID;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->getCartItemOptionsFromUID = $objectManager->get(GetCartItemOptionsFromUID::class);
-        $this->getCustomOptionsWithIDV2ForQueryBySku = $objectManager->get(
-            GetCustomOptionsWithUIDForQueryBySku::class
-        );
-    }
-
-    /**
      * Test adding a simple product to the shopping cart with all supported
      * customizable options assigned
      *
@@ -84,7 +71,7 @@ class AddSimpleProductToCartSingleMutationTest extends GraphQlAbstract
         foreach ($customizableOptionsOutput as $key => $customizableOptionOutput) {
             $customizableOptionOutputValues = [];
             foreach ($customizableOptionOutput['values'] as $customizableOptionOutputValue) {
-                $customizableOptionOutputValues[] =  $customizableOptionOutputValue['value'];
+                $customizableOptionOutputValues[] = $customizableOptionOutputValue['value'];
 
                 $decodedOptionValue = base64_decode($customizableOptionOutputValue['customizable_option_value_uid']);
                 $decodedArray = explode('/', $decodedOptionValue);
@@ -117,10 +104,64 @@ class AddSimpleProductToCartSingleMutationTest extends GraphQlAbstract
             );
 
             self::assertEquals(
-                base64_encode((string) 'custom-option/' . $customizableOptionOutput['id']),
+                base64_encode((string)'custom-option/' . $customizableOptionOutput['id']),
                 $customizableOptionOutput['customizable_option_uid']
             );
         }
+    }
+
+    /**
+     * Returns GraphQl query string
+     *
+     * @param string $maskedQuoteId
+     * @param int $qty
+     * @param string $sku
+     * @param string $customizableOptions
+     * @return string
+     */
+    private function getAddToCartMutation(
+        string $maskedQuoteId,
+        int    $qty,
+        string $sku,
+        string $customizableOptions
+    ): string
+    {
+        return <<<MUTATION
+mutation {
+    addProductsToCart(
+        cartId: "{$maskedQuoteId}",
+        cartItems: [
+            {
+                sku: "{$sku}"
+                quantity: {$qty}
+                {$customizableOptions}
+            }
+        ]
+    ) {
+        cart {
+            total_quantity
+            items {
+                quantity
+                ... on SimpleCartItem {
+                    customizable_options {
+                        label
+                        id
+                        customizable_option_uid
+                          values {
+                            value
+                            customizable_option_value_uid
+                            id
+                        }
+                    }
+                }
+            }
+        },
+        user_errors {
+            message
+        }
+    }
+}
+MUTATION;
     }
 
     /**
@@ -234,55 +275,15 @@ class AddSimpleProductToCartSingleMutationTest extends GraphQlAbstract
     }
 
     /**
-     * Returns GraphQl query string
-     *
-     * @param string $maskedQuoteId
-     * @param int $qty
-     * @param string $sku
-     * @param string $customizableOptions
-     * @return string
+     * @inheritdoc
      */
-    private function getAddToCartMutation(
-        string $maskedQuoteId,
-        int $qty,
-        string $sku,
-        string $customizableOptions
-    ): string {
-        return <<<MUTATION
-mutation {
-    addProductsToCart(
-        cartId: "{$maskedQuoteId}",
-        cartItems: [
-            {
-                sku: "{$sku}"
-                quantity: {$qty}
-                {$customizableOptions}
-            }
-        ]
-    ) {
-        cart {
-            total_quantity
-            items {
-                quantity
-                ... on SimpleCartItem {
-                    customizable_options {
-                        label
-                        id
-                        customizable_option_uid
-                          values {
-                            value
-                            customizable_option_value_uid
-                            id
-                        }
-                    }
-                }
-            }
-        },
-        user_errors {
-            message
-        }
-    }
-}
-MUTATION;
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->getCartItemOptionsFromUID = $objectManager->get(GetCartItemOptionsFromUID::class);
+        $this->getCustomOptionsWithIDV2ForQueryBySku = $objectManager->get(
+            GetCustomOptionsWithUIDForQueryBySku::class
+        );
     }
 }

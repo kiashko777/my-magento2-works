@@ -6,14 +6,19 @@
 
 namespace Magento\Framework\Model\ResourceModel\Type\Db\Pdo;
 
-class MysqlTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\DB\LoggerInterface;
+use Magento\Framework\DB\Profiler;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class MysqlTest extends TestCase
 {
     public function testGetConnection()
     {
-        $db = \Magento\TestFramework\Helper\Bootstrap::getInstance()->getBootstrap()->getApplication()->getDbInstance();
+        $db = Bootstrap::getInstance()->getBootstrap()->getApplication()->getDbInstance();
         $config = [
             'profiler' => [
-                'class' => \Magento\Framework\DB\Profiler::class,
+                'class' => Profiler::class,
                 'enabled' => true,
             ],
             'type' => 'pdo_mysql',
@@ -23,19 +28,19 @@ class MysqlTest extends \PHPUnit\Framework\TestCase
             'dbname' => $db->getSchema(),
             'active' => true,
         ];
-        /** @var \Magento\Framework\Model\ResourceModel\Type\Db\Pdo\Mysql $object */
-        $object = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\Model\ResourceModel\Type\Db\Pdo\Mysql::class,
+        /** @var Mysql $object */
+        $object = Bootstrap::getObjectManager()->create(
+            Mysql::class,
             ['config' => $config]
         );
 
         $connection = $object->getConnection(
-            \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-                \Magento\Framework\DB\LoggerInterface::class
+            Bootstrap::getObjectManager()->get(
+                LoggerInterface::class
             )
         );
         $this->assertInstanceOf(\Magento\Framework\DB\Adapter\Pdo\Mysql::class, $connection);
         $profiler = $connection->getProfiler();
-        $this->assertInstanceOf(\Magento\Framework\DB\Profiler::class, $profiler);
+        $this->assertInstanceOf(Profiler::class, $profiler);
     }
 }

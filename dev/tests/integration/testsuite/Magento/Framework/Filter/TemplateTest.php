@@ -3,23 +3,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Filter;
 
+use Exception;
 use Magento\Framework\DataObject;
-use Magento\Store\Model\Store;
 use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
-class TemplateTest extends \PHPUnit\Framework\TestCase
+class TemplateTest extends TestCase
 {
     /**
      * @var Template
      */
     private $templateFilter;
-
-    protected function setUp(): void
-    {
-        $this->templateFilter = ObjectManager::getInstance()->create(Template::class);
-    }
 
     /**
      * @param array $results
@@ -183,7 +180,7 @@ EXPECTED_RESULT;
                 'address' => new class {
                     public function format()
                     {
-                        throw new \Exception('Should not run');
+                        throw new Exception('Should not run');
                     }
                 }
             ]
@@ -298,14 +295,14 @@ EXPECTED_RESULT;
         );
 
         $template = '{{var customer_data.name}}'
-        . ' {{var customer_data.address.street.0}}'
-        . ' {{var customer_data.address.zip.bar}}'
-        . ' {{var}}'
-        . ' {{var myint}}'
-        . ' {{var myfloat}}'
-        . ' {{var mystring}}'
-        . ' {{var mybool}}'
-        . ' {{var myboolf}}';
+            . ' {{var customer_data.address.street.0}}'
+            . ' {{var customer_data.address.zip.bar}}'
+            . ' {{var}}'
+            . ' {{var myint}}'
+            . ' {{var myfloat}}'
+            . ' {{var mystring}}'
+            . ' {{var mybool}}'
+            . ' {{var myboolf}}';
 
         $expected = 'John Doe easy yay {{var}} 123 1.23 abc 1 ';
         self::assertEquals($expected, $this->templateFilter->filter($template));
@@ -408,5 +405,10 @@ EXPECTED_RESULT;
             'strictMode' => [true],
             'legacyMode' => [false]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->templateFilter = ObjectManager::getInstance()->create(Template::class);
     }
 }

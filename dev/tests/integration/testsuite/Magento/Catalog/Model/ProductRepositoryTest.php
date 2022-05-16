@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Magento\Catalog\Model;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product\Attribute\LayoutUpdateManager;
 use Magento\Catalog\Model\Product\Media\ConfigInterface;
 use Magento\Catalog\Model\ResourceModel\Product as ProductResource;
 use Magento\Framework\Api\SearchCriteriaBuilder;
@@ -23,6 +24,7 @@ use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Catalog\Model\ProductLayoutUpdateManager;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
+use Throwable;
 
 /**
  * Provide tests for ProductRepository model.
@@ -85,47 +87,6 @@ class ProductRepositoryTest extends TestCase
      * @var array
      */
     private $productSkusToDelete = [];
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        Bootstrap::getObjectManager()->configure([
-            'preferences' => [
-                \Magento\Catalog\Model\Product\Attribute\LayoutUpdateManager::class =>
-                    \Magento\TestFramework\Catalog\Model\ProductLayoutUpdateManager::class
-            ]
-        ]);
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
-        $this->productFactory = $this->objectManager->get(ProductFactory::class);
-        $this->productResource = $this->objectManager->get(ProductResource::class);
-        $this->layoutManager = $this->objectManager->get(ProductLayoutUpdateManager::class);
-        $this->mediaConfig = $this->objectManager->get(ConfigInterface::class);
-        $this->mediaDirectory = $this->objectManager->get(Filesystem::class)
-            ->getDirectoryWrite(DirectoryList::MEDIA);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        foreach ($this->productSkusToDelete as $productSku) {
-            try {
-                $this->productRepository->deleteById($productSku);
-            } catch (NoSuchEntityException $e) {
-                //Products already removed
-            }
-        }
-
-        parent::tearDown();
-    }
 
     /**
      * Checks filtering by store_id
@@ -235,7 +196,7 @@ class ProductRepositoryTest extends TestCase
      *
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
      * @return void
-     * @throws \Throwable
+     * @throws Throwable
      */
     public function testCustomLayout(): void
     {
@@ -291,11 +252,12 @@ class ProductRepositoryTest extends TestCase
      * @param string $expectedNameCheckedStore
      */
     public function testProductUpdate(
-        int $storeId,
-        int $checkStoreId,
+        int    $storeId,
+        int    $checkStoreId,
         string $expectedNameStore,
         string $expectedNameCheckedStore
-    ): void {
+    ): void
+    {
         $sku = self::STUB_PRODUCT_SKU;
 
         $product = $this->productRepository->get($sku, false, $storeId);
@@ -329,5 +291,46 @@ class ProductRepositoryTest extends TestCase
                 self::STUB_PRODUCT_NAME,
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Bootstrap::getObjectManager()->configure([
+            'preferences' => [
+                LayoutUpdateManager::class =>
+                    ProductLayoutUpdateManager::class
+            ]
+        ]);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
+        $this->productFactory = $this->objectManager->get(ProductFactory::class);
+        $this->productResource = $this->objectManager->get(ProductResource::class);
+        $this->layoutManager = $this->objectManager->get(ProductLayoutUpdateManager::class);
+        $this->mediaConfig = $this->objectManager->get(ConfigInterface::class);
+        $this->mediaDirectory = $this->objectManager->get(Filesystem::class)
+            ->getDirectoryWrite(DirectoryList::MEDIA);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        foreach ($this->productSkusToDelete as $productSku) {
+            try {
+                $this->productRepository->deleteById($productSku);
+            } catch (NoSuchEntityException $e) {
+                //Products already removed
+            }
+        }
+
+        parent::tearDown();
     }
 }

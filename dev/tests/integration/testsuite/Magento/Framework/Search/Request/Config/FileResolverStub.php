@@ -5,9 +5,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Search\Request\Config;
 
-class FileResolverStub implements \Magento\Framework\Config\FileResolverInterface
+use Magento\Framework\Config\FileIterator;
+use Magento\Framework\Config\FileResolverInterface;
+use Magento\Framework\Filesystem\DriverPool;
+use Magento\Framework\Filesystem\File\ReadFactory;
+
+class FileResolverStub implements FileResolverInterface
 {
     /**
      * {@inheritdoc}
@@ -16,8 +22,8 @@ class FileResolverStub implements \Magento\Framework\Config\FileResolverInterfac
     {
         $path = realpath(__DIR__ . '/../../_files/etc');
         $paths = [$path . '/search_request_1.xml', $path . '/search_request_2.xml'];
-        return new \Magento\Framework\Config\FileIterator(
-            new \Magento\Framework\Filesystem\File\ReadFactory(new \Magento\Framework\Filesystem\DriverPool),
+        return new FileIterator(
+            new ReadFactory(new DriverPool),
             $paths
         );
     }

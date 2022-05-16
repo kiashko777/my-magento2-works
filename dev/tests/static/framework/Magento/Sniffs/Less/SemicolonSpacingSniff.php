@@ -3,10 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sniffs\Less;
 
-use PHP_CodeSniffer\Sniffs\Sniff;
 use PHP_CodeSniffer\Files\File;
+use PHP_CodeSniffer\Sniffs\Sniff;
 
 /**
  * Class SemicolonSpacingSniff
@@ -106,9 +107,9 @@ class SemicolonSpacingSniff implements Sniff
         }
 
         if ($tokens[($semicolonPtr - 1)]['code'] === T_WHITESPACE) {
-            $length  = strlen($tokens[($semicolonPtr - 1)]['content']);
+            $length = strlen($tokens[($semicolonPtr - 1)]['content']);
             $error = 'Expected 0 spaces before semicolon in style definition; %s found';
-            $data  = [$length];
+            $data = [$length];
             $phpcsFile->addError($error, $stackPtr, 'SpaceFound', $data);
         }
     }

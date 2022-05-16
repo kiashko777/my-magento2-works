@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 namespace Magento\Test\Integrity\DBSchema;
 
+use DOMDocument;
 use Magento\Framework\App\Utility\Files;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Setup\Declaration\Schema\Config\Converter;
@@ -43,7 +44,7 @@ class PrimaryKeyTest extends TestCase
                         );
                 }
                 $errorMessage .= 'Table ' . $tableName . ' does not have primary key. ' . $message . "\n";
-                $failedTableCtr ++;
+                $failedTableCtr++;
             }
         }
         if (!empty($errorMessage)) {
@@ -53,34 +54,22 @@ class PrimaryKeyTest extends TestCase
     }
 
     /**
-     * Check table schema and verify if the table has primary key defined.
+     * Return primary key exemption tables list
      *
-     * @param array $tableSchemaDeclaration
-     * @return bool
+     * @return string[]
      */
-    private function hasPrimaryKey(array $tableSchemaDeclaration): bool
+    private function getExemptionList(): array
     {
-        if (isset($tableSchemaDeclaration['constraint'])) {
-            foreach ($tableSchemaDeclaration['constraint'] as $constraint) {
-                if ($constraint['type'] == 'primary') {
-                    return true;
-                }
-            }
+        $exemptionListFiles = str_replace(
+            '\\',
+            '/',
+            realpath(__DIR__) . '/_files/primary_key_exemption_list*.txt'
+        );
+        $exemptionList = [];
+        foreach (glob($exemptionListFiles) as $fileName) {
+            $exemptionList[] = file($fileName, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         }
-        return false;
-    }
-
-    /**
-     * Get database schema declarations from file.
-     *
-     * @param string $filePath
-     * @return array
-     */
-    private function getDbSchemaDeclarationByFile(string $filePath): array
-    {
-        $dom = new \DOMDocument();
-        $dom->loadXML(file_get_contents($filePath));
-        return (new Converter())->convert($dom);
+        return array_merge([], ...$exemptionList);
     }
 
     /**
@@ -118,21 +107,33 @@ class PrimaryKeyTest extends TestCase
     }
 
     /**
-     * Return primary key exemption tables list
+     * Get database schema declarations from file.
      *
-     * @return string[]
+     * @param string $filePath
+     * @return array
      */
-    private function getExemptionList(): array
+    private function getDbSchemaDeclarationByFile(string $filePath): array
     {
-        $exemptionListFiles = str_replace(
-            '\\',
-            '/',
-            realpath(__DIR__) . '/_files/primary_key_exemption_list*.txt'
-        );
-        $exemptionList = [];
-        foreach (glob($exemptionListFiles) as $fileName) {
-            $exemptionList[] = file($fileName, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        $dom = new DOMDocument();
+        $dom->loadXML(file_get_contents($filePath));
+        return (new Converter())->convert($dom);
+    }
+
+    /**
+     * Check table schema and verify if the table has primary key defined.
+     *
+     * @param array $tableSchemaDeclaration
+     * @return bool
+     */
+    private function hasPrimaryKey(array $tableSchemaDeclaration): bool
+    {
+        if (isset($tableSchemaDeclaration['constraint'])) {
+            foreach ($tableSchemaDeclaration['constraint'] as $constraint) {
+                if ($constraint['type'] == 'primary') {
+                    return true;
+                }
+            }
         }
-        return array_merge([], ...$exemptionList);
+        return false;
     }
 }

@@ -3,33 +3,25 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Reports\Block\Adminhtml;
 
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Framework\Locale\ResolverInterface;
 use Magento\Framework\App\RequestInterface;
+use Magento\Framework\Locale\ResolverInterface;
 use Magento\Reports\Model\ResourceModel\Product\Sold\Collection\Initial;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\Reports\Block\Adminhtml\Grid
  * @magentoAppArea Adminhtml
  */
-class GridTest extends \PHPUnit\Framework\TestCase
+class GridTest extends TestCase
 {
     /**
-     * @var $block \Magento\Reports\Block\Adminhtml\Grid
+     * @var $block Grid
      */
     private $block;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->block = Bootstrap::getObjectManager()->get(
-            \Magento\Reports\Block\Adminhtml\Grid::class
-        );
-    }
 
     public function testGetDateFormat()
     {
@@ -48,7 +40,7 @@ class GridTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetPreparedCollection($from, $to, $period, $locale, $expected)
     {
-        $encodedFilter = base64_encode('report_from='. $from . '&report_to=' . $to . '&report_period=' . $period);
+        $encodedFilter = base64_encode('report_from=' . $from . '&report_to=' . $to . '&report_period=' . $period);
 
         $this->block->setVarNameFilter('filtername');
         /** @var $request RequestInterface */
@@ -80,9 +72,19 @@ class GridTest extends \PHPUnit\Framework\TestCase
     public function getSalesRepresentativeIdDataProvider()
     {
         return [
-            'Data for US locale' =>             ['08/15/2018', '08/20/2018', 'day', 'en_US', 6],
-            'Data for Australian locale' =>     ['15/08/2018', '31/08/2018', 'day', 'en_AU', 17],
-            'Data for French locale' =>         ['20.08.2018', '30.08.2018', 'day', 'fr_FR', 11],
+            'Data for US locale' => ['08/15/2018', '08/20/2018', 'day', 'en_US', 6],
+            'Data for Australian locale' => ['15/08/2018', '31/08/2018', 'day', 'en_AU', 17],
+            'Data for French locale' => ['20.08.2018', '30.08.2018', 'day', 'fr_FR', 11],
         ];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->block = Bootstrap::getObjectManager()->get(
+            Grid::class
+        );
     }
 }

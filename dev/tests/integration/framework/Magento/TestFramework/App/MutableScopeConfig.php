@@ -31,6 +31,20 @@ class MutableScopeConfig implements MutableScopeConfigInterface
     }
 
     /**
+     * Retrieve test app config instance
+     *
+     * @return Config
+     */
+    private function getTestAppConfig()
+    {
+        if (!$this->testAppConfig) {
+            $this->testAppConfig = ObjectManager::getInstance()->get(ScopeConfigInterface::class);
+        }
+
+        return $this->testAppConfig;
+    }
+
+    /**
      * @inheritdoc
      */
     public function getValue($path, $scopeType = ScopeConfigInterface::SCOPE_TYPE_DEFAULT, $scopeCode = null)
@@ -44,9 +58,10 @@ class MutableScopeConfig implements MutableScopeConfigInterface
     public function setValue(
         $path,
         $value,
-        $scopeType = \Magento\Framework\App\Config\ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
+        $scopeType = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
         $scopeCode = null
-    ) {
+    )
+    {
         return $this->getTestAppConfig()->setValue($path, $value, $scopeType, $scopeCode);
     }
 
@@ -59,19 +74,5 @@ class MutableScopeConfig implements MutableScopeConfigInterface
     public function clean()
     {
         $this->getTestAppConfig()->clean();
-    }
-
-    /**
-     * Retrieve test app config instance
-     *
-     * @return \Magento\TestFramework\App\Config
-     */
-    private function getTestAppConfig()
-    {
-        if (!$this->testAppConfig) {
-            $this->testAppConfig = ObjectManager::getInstance()->get(ScopeConfigInterface::class);
-        }
-
-        return $this->testAppConfig;
     }
 }

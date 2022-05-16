@@ -4,11 +4,17 @@
  * See COPYING.txt for license details.
  */
 
-/** @var \Magento\Framework\Filesystem\Directory\Write $mediaDirectory */
-$mediaDirectory = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-    \Magento\Framework\Filesystem::class
+/** @var Write $mediaDirectory */
+
+use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Filesystem;
+use Magento\Framework\Filesystem\Directory\Write;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$mediaDirectory = Bootstrap::getObjectManager()->get(
+    Filesystem::class
 )->getDirectoryWrite(
-    \Magento\Framework\App\Filesystem\DirectoryList::MEDIA
+    DirectoryList::MEDIA
 );
 $mediaDirectory->create('import/m/a');
 $dirPath = $mediaDirectory->getAbsolutePath('import');

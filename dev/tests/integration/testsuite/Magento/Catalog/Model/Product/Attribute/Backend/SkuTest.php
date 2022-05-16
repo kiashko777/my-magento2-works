@@ -3,21 +3,31 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Model\Product\Attribute\Backend;
+
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Copier;
+use Magento\Catalog\Model\Product\Type;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Catalog\Model\ProductRepository;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\Catalog\Model\Products\Attribute\Backend\Sku.
  * @magentoAppArea Adminhtml
  */
-class SkuTest extends \PHPUnit\Framework\TestCase
+class SkuTest extends TestCase
 {
     /**
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
      */
     public function testGenerateUniqueSkuExistingProduct()
     {
-        $repository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\ProductRepository::class
+        $repository = Bootstrap::getObjectManager()->create(
+            ProductRepository::class
         );
         $product = $repository->get('simple');
         $product->setId(null);
@@ -27,7 +37,7 @@ class SkuTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @param $product \Magento\Catalog\Model\Product
+     * @param $product Product
      * @dataProvider uniqueSkuDataProvider
      */
     public function testGenerateUniqueSkuNotExistingProduct($product)
@@ -44,15 +54,15 @@ class SkuTest extends \PHPUnit\Framework\TestCase
      */
     public function testGenerateUniqueLongSku()
     {
-        $repository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\ProductRepository::class
+        $repository = Bootstrap::getObjectManager()->create(
+            ProductRepository::class
         );
         $product = $repository->get('simple');
         $product->setSku('0123456789012345678901234567890123456789012345678901234567890123');
 
-        /** @var \Magento\Catalog\Model\Product\Copier $copier */
-        $copier = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Catalog\Model\Product\Copier::class
+        /** @var Copier $copier */
+        $copier = Bootstrap::getObjectManager()->get(
+            Copier::class
         );
         $copier->copy($product);
         $this->assertEquals('0123456789012345678901234567890123456789012345678901234567890123', $product->getSku());
@@ -74,16 +84,16 @@ class SkuTest extends \PHPUnit\Framework\TestCase
     /**
      * Get product form data provider
      *
-     * @return \Magento\Catalog\Model\Product
+     * @return Product
      */
     protected function _getProduct()
     {
-        /** @var $product \Magento\Catalog\Model\Product */
-        $product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\Product::class
+        /** @var $product Product */
+        $product = Bootstrap::getObjectManager()->create(
+            Product::class
         );
         $product->setTypeId(
-            \Magento\Catalog\Model\Product\Type::TYPE_SIMPLE
+            Type::TYPE_SIMPLE
         )->setId(
             1
         )->setAttributeSetId(
@@ -99,9 +109,9 @@ class SkuTest extends \PHPUnit\Framework\TestCase
         )->setDescription(
             'Description with <b>html tag</b>'
         )->setVisibility(
-            \Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH
+            Visibility::VISIBILITY_BOTH
         )->setStatus(
-            \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED
+            Status::STATUS_ENABLED
         )->setCategoryIds(
             [2]
         )->setStockData(

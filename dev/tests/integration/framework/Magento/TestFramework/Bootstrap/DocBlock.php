@@ -3,9 +3,31 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Bootstrap;
 
+use Magento\TestFramework\Annotation\AdminConfigFixture;
+use Magento\TestFramework\Annotation\AppArea;
+use Magento\TestFramework\Annotation\AppIsolation;
+use Magento\TestFramework\Annotation\Cache;
+use Magento\TestFramework\Annotation\ComponentRegistrarFixture;
+use Magento\TestFramework\Annotation\ConfigFixture;
+use Magento\TestFramework\Annotation\DataFixture;
+use Magento\TestFramework\Annotation\DataFixtureBeforeTransaction;
+use Magento\TestFramework\Annotation\DbIsolation;
+use Magento\TestFramework\Annotation\IndexerDimensionMode;
 use Magento\TestFramework\Application;
+use Magento\TestFramework\Event\Magento;
+use Magento\TestFramework\Event\PhpUnit;
+use Magento\TestFramework\Event\Transaction;
+use Magento\TestFramework\EventManager;
+use Magento\TestFramework\Isolation\AppConfig;
+use Magento\TestFramework\Isolation\DeploymentConfig;
+use Magento\TestFramework\Isolation\WorkingDirectory;
+use Magento\TestFramework\Workaround\Cleanup\StaticProperties;
+use Magento\TestFramework\Workaround\Cleanup\TestCaseProperties;
+use Magento\TestFramework\Workaround\Override\Fixture\Resolver\TestSetter;
+use Magento\TestFramework\Workaround\Segfault;
 
 /**
  * Bootstrap of the custom DocBlock annotations
@@ -34,9 +56,9 @@ class DocBlock
      */
     public function registerAnnotations(Application $application)
     {
-        $eventManager = new \Magento\TestFramework\EventManager($this->_getSubscribers($application));
-        \Magento\TestFramework\Event\PhpUnit::setDefaultEventManager($eventManager);
-        \Magento\TestFramework\Event\Magento::setDefaultEventManager($eventManager);
+        $eventManager = new EventManager($this->_getSubscribers($application));
+        PhpUnit::setDefaultEventManager($eventManager);
+        Magento::setDefaultEventManager($eventManager);
     }
 
     /**
@@ -52,30 +74,30 @@ class DocBlock
     protected function _getSubscribers(Application $application)
     {
         return [
-            new \Magento\TestFramework\Workaround\Segfault(),
-            new \Magento\TestFramework\Workaround\Cleanup\TestCaseProperties(),
-            new \Magento\TestFramework\Workaround\Cleanup\StaticProperties(),
-            new \Magento\TestFramework\Isolation\WorkingDirectory(),
-            new \Magento\TestFramework\Isolation\DeploymentConfig(),
-            new \Magento\TestFramework\Workaround\Override\Fixture\Resolver\TestSetter(),
-            new \Magento\TestFramework\Annotation\AppIsolation($application),
-            new \Magento\TestFramework\Annotation\IndexerDimensionMode(),
-            new \Magento\TestFramework\Isolation\AppConfig(),
-            new \Magento\TestFramework\Annotation\ConfigFixture(),
-            new \Magento\TestFramework\Annotation\DataFixtureBeforeTransaction(),
-            new \Magento\TestFramework\Event\Transaction(
-                new \Magento\TestFramework\EventManager(
+            new Segfault(),
+            new TestCaseProperties(),
+            new StaticProperties(),
+            new WorkingDirectory(),
+            new DeploymentConfig(),
+            new TestSetter(),
+            new AppIsolation($application),
+            new IndexerDimensionMode(),
+            new AppConfig(),
+            new ConfigFixture(),
+            new DataFixtureBeforeTransaction(),
+            new Transaction(
+                new EventManager(
                     [
-                        new \Magento\TestFramework\Annotation\DbIsolation(),
-                        new \Magento\TestFramework\Annotation\DataFixture(),
+                        new DbIsolation(),
+                        new DataFixture(),
                     ]
                 )
             ),
-            new \Magento\TestFramework\Annotation\ComponentRegistrarFixture($this->_fixturesBaseDir),
-            new \Magento\TestFramework\Annotation\AppArea($application),
-            new \Magento\TestFramework\Annotation\Cache(),
-            new \Magento\TestFramework\Annotation\AdminConfigFixture(),
-            new \Magento\TestFramework\Annotation\ConfigFixture(),
+            new ComponentRegistrarFixture($this->_fixturesBaseDir),
+            new AppArea($application),
+            new Cache(),
+            new AdminConfigFixture(),
+            new ConfigFixture(),
         ];
     }
 }

@@ -6,10 +6,22 @@
 
 namespace Magento\Paypal\Controller\Billing;
 
+use Magento\Customer\Model\Session;
+use Magento\Framework\App\Action\Context;
+use Magento\Framework\App\RequestInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Payment\Helper\Data;
+use Magento\Paypal\Controller\Billing\Agreement\ReturnWizard;
+use Magento\Paypal\Model\Express;
+use Magento\Paypal\Model\ResourceModel\Billing\Agreement\Collection;
+use Magento\Store\Model\StoreManager;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractController;
+
 /**
  * Test class for \Magento\Paypal\Controller\Billing\Agreement
  */
-class AgreementTest extends \Magento\TestFramework\TestCase\AbstractController
+class AgreementTest extends AbstractController
 {
     /**
      * Test billing agreement record creation in Magento DB.
@@ -27,35 +39,35 @@ class AgreementTest extends \Magento\TestFramework\TestCase\AbstractController
         $token = "token_value";
         $referenceId = "Reference-id-1";
 
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
 
         /** Mock Request */
-        $requestMock = $this->getMockForAbstractClass(\Magento\Framework\App\RequestInterface::class, [], '', false);
+        $requestMock = $this->getMockForAbstractClass(RequestInterface::class, [], '', false);
         $requestMock
             ->expects($this->any())
             ->method('getParam')
             ->willReturnMap(
-                
-                    [
-                        ['payment_method', null, $paymentMethod],
-                        ['token', null, $token],
-                    ]
-                
+
+                [
+                    ['payment_method', null, $paymentMethod],
+                    ['token', null, $token],
+                ]
+
             );
 
         /**
          * Disable billing agreement placement using calls to remote system
          * in \Magento\Paypal\Model\Billing\Agreement::place()
          */
-        $objectManagerMock = $this->createMock(\Magento\Framework\ObjectManagerInterface::class);
+        $objectManagerMock = $this->createMock(ObjectManagerInterface::class);
         $paymentMethodMock = $this->createPartialMock(
-            \Magento\Paypal\Model\Express::class,
+            Express::class,
             ['getTitle', 'setStore', 'placeBillingAgreement']
         );
         $paymentMethodMock->expects($this->any())->method('placeBillingAgreement')->willReturnSelf();
         $paymentMethodMock->expects($this->any())->method('getTitle')->willReturn($paymentMethod);
 
-        $paymentHelperMock = $this->createPartialMock(\Magento\Payment\Helper\Data::class, ['getMethodInstance']);
+        $paymentHelperMock = $this->createPartialMock(Data::class, ['getMethodInstance']);
         $paymentHelperMock
             ->expects($this->any())
             ->method('getMethodInstance')
@@ -71,35 +83,35 @@ class AgreementTest extends \Magento\TestFramework\TestCase\AbstractController
             ->method('create')
             ->with(\Magento\Paypal\Model\Billing\Agreement::class, [])
             ->willReturn($billingAgreement);
-        $storeManager = $objectManager->get(\Magento\Store\Model\StoreManager::class);
-        $customerSession = $objectManager->get(\Magento\Customer\Model\Session::class);
+        $storeManager = $objectManager->get(StoreManager::class);
+        $customerSession = $objectManager->get(Session::class);
         $objectManagerMock
             ->expects($this->any())
             ->method('get')
             ->willReturnMap(
-                
-                    [
-                        [\Magento\Store\Model\StoreManager::class, $storeManager],
-                        [\Magento\Customer\Model\Session::class, $customerSession],
-                    ]
-                
+
+                [
+                    [StoreManager::class, $storeManager],
+                    [Session::class, $customerSession],
+                ]
+
             );
         $contextMock = $objectManager->create(
-            \Magento\Framework\App\Action\Context::class,
+            Context::class,
             [
                 'objectManager' => $objectManagerMock,
                 'request' => $requestMock
             ]
         );
-        /** @var \Magento\Paypal\Controller\Billing\Agreement $billingAgreementController */
+        /** @var Agreement $billingAgreementController */
         $billingAgreementController = $objectManager->create(
-            \Magento\Paypal\Controller\Billing\Agreement\ReturnWizard::class,
+            ReturnWizard::class,
             ['context' => $contextMock]
         );
 
         /** Initialize current customer */
-        /** @var \Magento\Customer\Model\Session $customerSession */
-        $customerSession = $objectManager->get(\Magento\Customer\Model\Session::class);
+        /** @var Session $customerSession */
+        $customerSession = $objectManager->get(Session::class);
         $fixtureCustomerId = 1;
         $customerSession->setCustomerId($fixtureCustomerId);
 
@@ -107,9 +119,9 @@ class AgreementTest extends \Magento\TestFramework\TestCase\AbstractController
         $billingAgreementController->execute();
 
         /** Ensure that billing agreement record was created in the DB */
-        /** @var \Magento\Paypal\Model\ResourceModel\Billing\Agreement\Collection $billingAgreementCollection */
+        /** @var Collection $billingAgreementCollection */
         $billingAgreementCollection = $objectManager->create(
-            \Magento\Paypal\Model\ResourceModel\Billing\Agreement\Collection::class
+            Collection::class
         );
         /** @var \Magento\Paypal\Model\Billing\Agreement $createdBillingAgreement */
         $createdBillingAgreement = $billingAgreementCollection->getLastItem();

@@ -35,30 +35,6 @@ class AttributeTest extends TestCase
     private $request;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        /** @var ProductAttributeInterface $attribute */
-        $attribute = $objectManager->get(ProductAttributeInterface::class);
-        $attribute->loadByCode('catalog_product', 'attribute_with_option');
-        foreach ($attribute->getSource()->getAllOptions() as $optionInfo) {
-            if ($optionInfo['label'] == 'Option Label') {
-                $this->_attributeOptionId = $optionInfo['value'];
-                break;
-            }
-        }
-
-        /** @var LayerCategory $layer */
-        $layer = $objectManager->get(LayerCategory::class);
-        $this->request = $objectManager->get(Request::class);
-        $this->_model = $objectManager->create(Attribute::class, ['layer' => $layer]);
-        $this->_model->setAttributeModel($attribute);
-        $this->_model->setRequestVar('attribute');
-    }
-
-    /**
      * @return void
      */
     public function testOptionIdNotEmpty()
@@ -101,5 +77,29 @@ class AttributeTest extends TestCase
 
         $this->assertIsArray($items);
         $this->assertEmpty($items);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var ProductAttributeInterface $attribute */
+        $attribute = $objectManager->get(ProductAttributeInterface::class);
+        $attribute->loadByCode('catalog_product', 'attribute_with_option');
+        foreach ($attribute->getSource()->getAllOptions() as $optionInfo) {
+            if ($optionInfo['label'] == 'Option Label') {
+                $this->_attributeOptionId = $optionInfo['value'];
+                break;
+            }
+        }
+
+        /** @var LayerCategory $layer */
+        $layer = $objectManager->get(LayerCategory::class);
+        $this->request = $objectManager->get(Request::class);
+        $this->_model = $objectManager->create(Attribute::class, ['layer' => $layer]);
+        $this->_model->setAttributeModel($attribute);
+        $this->_model->setRequestVar('attribute');
     }
 }

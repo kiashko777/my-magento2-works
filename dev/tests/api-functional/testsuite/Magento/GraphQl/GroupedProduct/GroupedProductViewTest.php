@@ -23,15 +23,6 @@ class GroupedProductViewTest extends GraphQlAbstract
     private $productRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->productRepository = ObjectManager::getInstance()->get(ProductRepositoryInterface::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/GroupedProduct/_files/product_grouped.php
      */
     public function testAllFieldsGroupedProduct()
@@ -108,7 +99,7 @@ QUERY;
                 [
                     'sku' => $associatedProductSku,
                     'type_id' => $groupedProductLinks[$itemIndex]->getLinkedProductType(),
-                    'url_key'=> $associatedProduct->getUrlKey(),
+                    'url_key' => $associatedProduct->getUrlKey(),
                     'name' => $associatedProduct->getName()
 
                 ]
@@ -140,5 +131,14 @@ QUERY;
                 $linkedItem['link_type']
             );
         }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->productRepository = ObjectManager::getInstance()->get(ProductRepositoryInterface::class);
     }
 }

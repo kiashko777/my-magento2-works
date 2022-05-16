@@ -40,6 +40,49 @@ class ConfigurableTest extends TestCase
     private $registry;
 
     /**
+     * @magentoDataFixture Magento/Catalog/_files/product_simple_duplicated.php
+     * @return void
+     */
+    public function testGetProduct(): void
+    {
+        $product = $this->productRepository->get('simple-1');
+        $this->registerProduct($product);
+        $blockProduct = $this->block->getProduct();
+        $this->assertSame($product, $blockProduct);
+        $this->assertEquals(
+            $product->getId(),
+            $blockProduct->getId(),
+            'The expected product is missing in the Configurable block!'
+        );
+        $this->assertNotNull($blockProduct->getTypeInstance()->getStoreFilter($blockProduct));
+    }
+
+    /**
+     * Register the product
+     *
+     * @param ProductInterface $product
+     * @return void
+     */
+    private function registerProduct(ProductInterface $product): void
+    {
+        $this->registry->unregister('product');
+        $this->registry->register('product', $product);
+    }
+
+    /**
+     * @magentoDataFixture Magento/ConfigurableProduct/_files/configurable_products.php
+     * @return void
+     */
+    public function testGetJsonConfig(): void
+    {
+        $product = $this->productRepository->get('configurable');
+        $this->registerProduct($product);
+        $config = $this->serializer->unserialize($this->block->getJsonConfig());
+        $this->assertTrue($config['disablePriceReload']);
+        $this->assertTrue($config['stablePrices']);
+    }
+
+    /**
      * @inheritdoc
      */
     protected function setUp(): void
@@ -61,48 +104,5 @@ class ConfigurableTest extends TestCase
         $this->registry->unregister('product');
 
         parent::tearDown();
-    }
-
-    /**
-     * @magentoDataFixture Magento/Catalog/_files/product_simple_duplicated.php
-     * @return void
-     */
-    public function testGetProduct(): void
-    {
-        $product = $this->productRepository->get('simple-1');
-        $this->registerProduct($product);
-        $blockProduct = $this->block->getProduct();
-        $this->assertSame($product, $blockProduct);
-        $this->assertEquals(
-            $product->getId(),
-            $blockProduct->getId(),
-            'The expected product is missing in the Configurable block!'
-        );
-        $this->assertNotNull($blockProduct->getTypeInstance()->getStoreFilter($blockProduct));
-    }
-
-    /**
-     * @magentoDataFixture Magento/ConfigurableProduct/_files/configurable_products.php
-     * @return void
-     */
-    public function testGetJsonConfig(): void
-    {
-        $product = $this->productRepository->get('configurable');
-        $this->registerProduct($product);
-        $config = $this->serializer->unserialize($this->block->getJsonConfig());
-        $this->assertTrue($config['disablePriceReload']);
-        $this->assertTrue($config['stablePrices']);
-    }
-
-    /**
-     * Register the product
-     *
-     * @param ProductInterface $product
-     * @return void
-     */
-    private function registerProduct(ProductInterface $product): void
-    {
-        $this->registry->unregister('product');
-        $this->registry->register('product', $product);
     }
 }

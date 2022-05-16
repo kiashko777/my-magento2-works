@@ -14,7 +14,7 @@ use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Store/_files/website.php');
 
-$objectManager =  Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 /** @var ProductFactory $productFactory */
 $productFactory = $objectManager->create(ProductFactory::class);
 /** @var ProductRepositoryInterface $productRepository */

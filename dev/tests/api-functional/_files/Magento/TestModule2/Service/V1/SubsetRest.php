@@ -3,12 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestModule2\Service\V1;
 
 use Magento\TestModule2\Service\V1\Entity\Item;
 use Magento\TestModule2\Service\V1\Entity\ItemFactory;
 
-class SubsetRest implements \Magento\TestModule2\Service\V1\SubsetRestInterface
+class SubsetRest implements SubsetRestInterface
 {
     /**
      * @var ItemFactory

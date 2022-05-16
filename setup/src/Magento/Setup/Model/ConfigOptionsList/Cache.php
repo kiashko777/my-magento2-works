@@ -7,14 +7,16 @@ declare(strict_types=1);
 
 namespace Magento\Setup\Model\ConfigOptionsList;
 
-use Magento\Framework\Setup\ConfigOptionsListInterface;
 use Magento\Framework\App\DeploymentConfig;
+use Magento\Framework\Cache\Backend\Redis;
 use Magento\Framework\Config\Data\ConfigData;
 use Magento\Framework\Config\File\ConfigFilePool;
+use Magento\Framework\Setup\ConfigOptionsListInterface;
 use Magento\Framework\Setup\Option\FlagConfigOption;
 use Magento\Framework\Setup\Option\SelectConfigOption;
 use Magento\Framework\Setup\Option\TextConfigOption;
 use Magento\Setup\Validator\RedisConnectionValidator;
+use function hash;
 
 /**
  * Deployment configuration options for the default cache
@@ -22,7 +24,7 @@ use Magento\Setup\Validator\RedisConnectionValidator;
 class Cache implements ConfigOptionsListInterface
 {
     const INPUT_VALUE_CACHE_REDIS = 'redis';
-    const CONFIG_VALUE_CACHE_REDIS = \Magento\Framework\Cache\Backend\Redis::class;
+    const CONFIG_VALUE_CACHE_REDIS = Redis::class;
 
     const INPUT_KEY_CACHE_BACKEND = 'cache-backend';
     const INPUT_KEY_CACHE_BACKEND_REDIS_SERVER = 'cache-backend-redis-server';
@@ -185,6 +187,47 @@ class Cache implements ConfigOptionsListInterface
     }
 
     /**
+     * Generate default cache ID prefix based on installation dir
+     *
+     * @return string
+     */
+    private function generateCachePrefix(): string
+    {
+        return substr(hash('sha256', dirname(__DIR__, 6)), 0, 3) . '_';
+    }
+
+    /**
+     * Set default values for the Redis configuration.
+     *
+     * @param DeploymentConfig $deploymentConfig
+     * @param ConfigData $configData
+     * @return ConfigData
+     */
+    private function setDefaultRedisConfig(DeploymentConfig $deploymentConfig, ConfigData $configData)
+    {
+        foreach ($this->inputKeyToConfigPathMap as $inputKey => $configPath) {
+            $configData->set($configPath, $deploymentConfig->get($configPath, $this->getDefaultConfigValue($inputKey)));
+        }
+
+        return $configData;
+    }
+
+    /**
+     * Get default value for input key
+     *
+     * @param string $inputKey
+     * @return string
+     */
+    private function getDefaultConfigValue($inputKey)
+    {
+        if (isset($this->defaultConfigValues[$inputKey])) {
+            return $this->defaultConfigValues[$inputKey];
+        } else {
+            return '';
+        }
+    }
+
+    /**
      * @inheritdoc
      */
     public function validate(array $options, DeploymentConfig $deploymentConfig)
@@ -253,46 +296,5 @@ class Cache implements ConfigOptionsListInterface
             );
 
         return $this->redisValidator->isValidConnection($config);
-    }
-
-    /**
-     * Set default values for the Redis configuration.
-     *
-     * @param DeploymentConfig $deploymentConfig
-     * @param ConfigData $configData
-     * @return ConfigData
-     */
-    private function setDefaultRedisConfig(DeploymentConfig $deploymentConfig, ConfigData $configData)
-    {
-        foreach ($this->inputKeyToConfigPathMap as $inputKey => $configPath) {
-            $configData->set($configPath, $deploymentConfig->get($configPath, $this->getDefaultConfigValue($inputKey)));
-        }
-
-        return $configData;
-    }
-
-    /**
-     * Get default value for input key
-     *
-     * @param string $inputKey
-     * @return string
-     */
-    private function getDefaultConfigValue($inputKey)
-    {
-        if (isset($this->defaultConfigValues[$inputKey])) {
-            return $this->defaultConfigValues[$inputKey];
-        } else {
-            return '';
-        }
-    }
-
-    /**
-     * Generate default cache ID prefix based on installation dir
-     *
-     * @return string
-     */
-    private function generateCachePrefix(): string
-    {
-        return substr(\hash('sha256', dirname(__DIR__, 6)), 0, 3) . '_';
     }
 }

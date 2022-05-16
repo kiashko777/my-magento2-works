@@ -3,13 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestModule1\Service\V1;
 
-use Magento\TestModuleMSC\Model\Data\CustomAttributeDataObjectFactory;
 use Magento\TestModule1\Service\V1\Entity\Item;
 use Magento\TestModule1\Service\V1\Entity\ItemFactory;
+use Magento\TestModuleMSC\Model\Data\CustomAttributeDataObjectFactory;
 
-class AllSoapAndRest implements \Magento\TestModule1\Service\V1\AllSoapAndRestInterface
+class AllSoapAndRest implements AllSoapAndRestInterface
 {
     /**
      * @var ItemFactory
@@ -26,9 +27,10 @@ class AllSoapAndRest implements \Magento\TestModule1\Service\V1\AllSoapAndRestIn
      * @param CustomAttributeDataObjectFactory $customAttributeNestedDataObjectFactory
      */
     public function __construct(
-        ItemFactory $itemFactory,
+        ItemFactory                      $itemFactory,
         CustomAttributeDataObjectFactory $customAttributeNestedDataObjectFactory
-    ) {
+    )
+    {
         $this->itemFactory = $itemFactory;
         $this->customAttributeDataObjectFactory = $customAttributeNestedDataObjectFactory;
     }

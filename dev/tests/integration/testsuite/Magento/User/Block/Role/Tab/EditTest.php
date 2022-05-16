@@ -3,34 +3,23 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\User\Block\Role\Tab;
+
+use Magento\Authorization\Model\Role;
+use Magento\Framework\App\RequestInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class EditTest extends \PHPUnit\Framework\TestCase
+class EditTest extends TestCase
 {
     /**
-     * @var \Magento\User\Block\Role\Tab\Edit
+     * @var Edit
      */
     protected $_block;
-
-    protected function setUp(): void
-    {
-        $roleAdmin = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Authorization\Model\Role::class);
-        $roleAdmin->load(\Magento\TestFramework\Bootstrap::ADMIN_ROLE_NAME, 'role_name');
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\App\RequestInterface::class
-        )->setParam(
-            'rid',
-            $roleAdmin->getId()
-        );
-
-        $this->_block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\User\Block\Role\Tab\Edit::class
-        );
-    }
 
     public function testConstructor()
     {
@@ -42,5 +31,22 @@ class EditTest extends \PHPUnit\Framework\TestCase
     {
         $encodedTree = $this->_block->getTree();
         $this->assertNotEmpty($encodedTree);
+    }
+
+    protected function setUp(): void
+    {
+        $roleAdmin = Bootstrap::getObjectManager()
+            ->create(Role::class);
+        $roleAdmin->load(\Magento\TestFramework\Bootstrap::ADMIN_ROLE_NAME, 'role_name');
+        Bootstrap::getObjectManager()->get(
+            RequestInterface::class
+        )->setParam(
+            'rid',
+            $roleAdmin->getId()
+        );
+
+        $this->_block = Bootstrap::getObjectManager()->create(
+            Edit::class
+        );
     }
 }

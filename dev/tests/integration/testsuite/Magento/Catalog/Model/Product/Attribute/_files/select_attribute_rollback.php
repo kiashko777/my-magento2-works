@@ -5,7 +5,10 @@
  */
 
 /** @var $attribute \Magento\Catalog\Model\ResourceModel\Eav\Attribute */
-$attribute = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+
+use Magento\TestFramework\Helper\Bootstrap;
+
+$attribute = Bootstrap::getObjectManager()->create(
     \Magento\Catalog\Model\ResourceModel\Eav\Attribute::class
 );
 $attribute->load('select_attribute', 'attribute_code');

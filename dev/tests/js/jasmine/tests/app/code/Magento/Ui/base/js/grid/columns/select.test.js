@@ -10,8 +10,8 @@ define([
     'use strict';
 
     describe('Ui/js/grid/columns/select', function () {
-        var fieldName    = 'selectField',
-            opts         = [{
+        var fieldName = 'selectField',
+            opts = [{
                 label: 'a', value: 1
             }, {
                 label: 'b', value: 2

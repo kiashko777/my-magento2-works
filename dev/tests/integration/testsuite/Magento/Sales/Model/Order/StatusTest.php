@@ -6,11 +6,16 @@
 
 namespace Magento\Sales\Model\Order;
 
+use Magento\Framework\App\State;
+use Magento\Sales\Model\Order;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
 /**
  * Class ShipmentTest
  * @package Magento\Sales\Model\Order
  */
-class StatusTest extends \PHPUnit\Framework\TestCase
+class StatusTest extends TestCase
 {
     public function theCorrectLabelIsUsedDependingOnTheAreaProvider()
     {
@@ -37,11 +42,11 @@ class StatusTest extends \PHPUnit\Framework\TestCase
      */
     public function testTheCorrectLabelIsUsedDependingOnTheArea($area, $result)
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $objectManager->get(\Magento\Framework\App\State::class)->setAreaCode($area);
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->get(State::class)->setAreaCode($area);
 
-        /** @var \Magento\Sales\Model\Order $order */
-        $order = $objectManager->create(\Magento\Sales\Model\Order::class);
+        /** @var Order $order */
+        $order = $objectManager->create(Order::class);
         $order->loadByIncrementId('100000001');
 
         $this->assertEquals($result, $order->getStatusLabel());

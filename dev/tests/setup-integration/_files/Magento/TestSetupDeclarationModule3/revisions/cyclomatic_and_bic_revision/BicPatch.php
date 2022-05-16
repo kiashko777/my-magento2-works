@@ -3,8 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestSetupDeclarationModule3\Setup\Patch\Data;
 
+use Exception;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
 use Magento\Framework\Setup\Patch\PatchRevertableInterface;
@@ -33,6 +35,16 @@ class BicPatch implements
     }
 
     /**
+     * @return array
+     */
+    public static function getDependencies()
+    {
+        return [
+            RefBicPatch::class
+        ];
+    }
+
+    /**
      * @return string
      */
     public function getVersion()
@@ -53,20 +65,10 @@ class BicPatch implements
      */
     public function apply()
     {
-        throw new \Exception("This patch can`t be applied, as it was created to test BIC");
+        throw new Exception("This patch can`t be applied, as it was created to test BIC");
     }
 
     public function revert()
     {
-    }
-
-    /**
-     * @return array
-     */
-    public static function getDependencies()
-    {
-        return [
-            RefBicPatch::class
-        ];
     }
 }

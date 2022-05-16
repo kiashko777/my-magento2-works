@@ -3,9 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-/** @var \Magento\Paypal\Model\Billing\Agreement $billingAgreement */
-$billingAgreement = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Paypal\Model\Billing\Agreement::class
+/** @var Agreement $billingAgreement */
+
+use Magento\Paypal\Model\Billing\Agreement;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$billingAgreement = Bootstrap::getObjectManager()->create(
+    Agreement::class
 )->setAgreementLabel(
     'TEST'
 )->setCustomerId(

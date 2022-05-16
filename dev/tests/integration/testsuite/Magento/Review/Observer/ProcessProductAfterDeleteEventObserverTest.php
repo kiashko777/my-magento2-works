@@ -10,6 +10,7 @@ namespace Magento\Review\Observer;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Review\Model\ResourceModel\Review\Collection as ReviewCollection;
 use Magento\Review\Model\ResourceModel\Review\CollectionFactory as ReviewCollectionFactory;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\AbstractController;
 
 /**
@@ -22,7 +23,7 @@ class ProcessProductAfterDeleteEventObserverTest extends AbstractController
      */
     public function testReviewIsRemovedWhenProductDeleted()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
 
         /** @var ProductRepositoryInterface $productRepository */
         $productRepository = $objectManager->get(ProductRepositoryInterface::class);

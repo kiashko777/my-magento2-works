@@ -3,18 +3,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestModule1\Controller\CookieTester;
 
-use \Magento\Framework\App\RequestInterface;
+use Magento\Framework\App\ResponseInterface;
+use Magento\TestModule1\Controller\CookieTester;
 
 /**
  */
-class SetSensitiveCookie extends \Magento\TestModule1\Controller\CookieTester
+class SetSensitiveCookie extends CookieTester
 {
     /**
      * Sets a sensitive cookie with data from url parameters
      *
-     * @return \Magento\Framework\App\ResponseInterface
+     * @return ResponseInterface
      */
     public function execute()
     {

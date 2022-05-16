@@ -34,17 +34,6 @@ class DiscountTest extends TestCase
     private $quoteRepository;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->criteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
-        $this->quoteRepository = $this->objectManager->get(CartRepositoryInterface::class);
-    }
-
-    /**
      * @magentoAppIsolation enabled
      * @magentoDataFixture Magento/SalesRule/_files/cart_rule_product_sku.php
      * @magentoDataFixture Magento/Checkout/_files/quote_with_bundle_product_with_dynamic_price.php
@@ -56,9 +45,10 @@ class DiscountTest extends TestCase
      */
     public function testBundleProductWithDynamicPriceAndCartPriceRule(
         string $coupon,
-        array $discounts,
-        float $totalDiscount
-    ): void {
+        array  $discounts,
+        float  $totalDiscount
+    ): void
+    {
         $quote = $this->getQuote('quote_with_bundle_product_with_dynamic_price');
         $quote->setCouponCode($coupon);
         $quote->collectTotals();
@@ -67,7 +57,7 @@ class DiscountTest extends TestCase
         $this->assertEquals($totalDiscount, $quote->getShippingAddress()->getDiscountAmount());
         $items = $quote->getAllItems();
         $this->assertCount(3, $items);
-        /** @var Item $item*/
+        /** @var Item $item */
         $item = array_shift($items);
         $this->assertEquals('bundle_product_with_dynamic_price-simple1-simple2', $item->getSku());
         $this->assertEquals($discounts[$item->getSku()], $item->getDiscountAmount());
@@ -79,6 +69,19 @@ class DiscountTest extends TestCase
         $this->assertEquals('simple2', $item->getSku());
         $this->assertEquals(15.99, $item->getPrice());
         $this->assertEquals($discounts[$item->getSku()], $item->getDiscountAmount());
+    }
+
+    /**
+     * @param string $reservedOrderId
+     * @return Quote
+     */
+    private function getQuote(string $reservedOrderId): Quote
+    {
+        $searchCriteria = $this->criteriaBuilder->addFilter('reserved_order_id', $reservedOrderId)
+            ->create();
+        $carts = $this->quoteRepository->getList($searchCriteria)
+            ->getItems();
+        return array_shift($carts);
     }
 
     /**
@@ -118,15 +121,13 @@ class DiscountTest extends TestCase
     }
 
     /**
-     * @param string $reservedOrderId
-     * @return Quote
+     * @inheritDoc
      */
-    private function getQuote(string $reservedOrderId): Quote
+    protected function setUp(): void
     {
-        $searchCriteria = $this->criteriaBuilder->addFilter('reserved_order_id', $reservedOrderId)
-            ->create();
-        $carts = $this->quoteRepository->getList($searchCriteria)
-            ->getItems();
-        return array_shift($carts);
+        parent::setUp();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->criteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
+        $this->quoteRepository = $this->objectManager->get(CartRepositoryInterface::class);
     }
 }

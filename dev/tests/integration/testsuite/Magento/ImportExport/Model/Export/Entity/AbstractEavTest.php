@@ -7,9 +7,23 @@
 /**
  * Test for eav abstract export model
  */
+
 namespace Magento\ImportExport\Model\Export\Entity;
 
-class AbstractEavTest extends \PHPUnit\Framework\TestCase
+use Magento\Customer\Model\Attribute;
+use Magento\Customer\Model\ResourceModel\Attribute\Collection;
+use Magento\Eav\Model\Config;
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
+use Magento\ImportExport\Model\Export;
+use Magento\ImportExport\Model\ResourceModel\CollectionByPagesIteratorFactory;
+use Magento\Store\Model\StoreManager;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
+
+class AbstractEavTest extends TestCase
 {
     /**
      * Skipped attribute codes
@@ -19,7 +33,7 @@ class AbstractEavTest extends \PHPUnit\Framework\TestCase
     protected static $_skippedAttributes = ['confirmation', 'lastname'];
 
     /**
-     * @var \Magento\ImportExport\Model\Export\Entity\AbstractEav
+     * @var AbstractEav
      */
     protected $_model;
 
@@ -30,16 +44,90 @@ class AbstractEavTest extends \PHPUnit\Framework\TestCase
      */
     protected $_entityCode = 'customer';
 
+    /**
+     * Test for method getEntityTypeId()
+     */
+    public function testGetEntityTypeId()
+    {
+        $entityCode = 'customer';
+        $entityId = Bootstrap::getObjectManager()->get(
+            Config::class
+        )->getEntityType(
+            $entityCode
+        )->getEntityTypeId();
+
+        $this->assertEquals($entityId, $this->_model->getEntityTypeId());
+    }
+
+    /**
+     * Test for method _getExportAttrCodes()
+     *
+     * @covers \Magento\ImportExport\Model\Export\Entity\AbstractEav::_getExportAttributeCodes
+     */
+    public function testGetExportAttrCodes()
+    {
+        $this->_model->setParameters($this->_getSkippedAttributes());
+        $method = new ReflectionMethod($this->_model, '_getExportAttributeCodes');
+        $method->setAccessible(true);
+        $attributes = $method->invoke($this->_model);
+        foreach (self::$_skippedAttributes as $code) {
+            $this->assertNotContains($code, $attributes);
+        }
+    }
+
+    /**
+     * Retrieve list of skipped attributes
+     *
+     * @return array
+     */
+    protected function _getSkippedAttributes()
+    {
+        /** @var $attributeCollection Collection */
+        $attributeCollection = Bootstrap::getObjectManager()->create(
+            Collection::class
+        );
+        $attributeCollection->addFieldToFilter('attribute_code', ['in' => self::$_skippedAttributes]);
+        $skippedAttributes = [];
+        /** @var $attribute  Attribute */
+        foreach ($attributeCollection as $attribute) {
+            $skippedAttributes[$attribute->getAttributeCode()] = $attribute->getId();
+        }
+
+        return [Export::FILTER_ELEMENT_SKIP => $skippedAttributes];
+    }
+
+    /**
+     * Test for method getAttributeOptions()
+     */
+    public function testGetAttributeOptions()
+    {
+        /** @var $attributeCollection Collection */
+        $attributeCollection = Bootstrap::getObjectManager()->create(
+            Collection::class
+        );
+        $attributeCollection->addFieldToFilter('attribute_code', 'gender');
+        /** @var $attribute Attribute */
+        $attribute = $attributeCollection->getFirstItem();
+
+        $expectedOptions = [];
+        foreach ($attribute->getSource()->getAllOptions(false) as $option) {
+            $expectedOptions[$option['value']] = $option['label'];
+        }
+
+        $actualOptions = $this->_model->getAttributeOptions($attribute);
+        $this->assertEquals($expectedOptions, $actualOptions);
+    }
+
     protected function setUp(): void
     {
-        /** @var \Magento\TestFramework\ObjectManager  $objectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        /** @var ObjectManager $objectManager */
+        $objectManager = Bootstrap::getObjectManager();
 
-        $customerAttributes = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Model\ResourceModel\Attribute\Collection::class
+        $customerAttributes = Bootstrap::getObjectManager()->create(
+            Collection::class
         );
 
-        $this->_model = $this->getMockBuilder(\Magento\ImportExport\Model\Export\Entity\AbstractEav::class)
+        $this->_model = $this->getMockBuilder(AbstractEav::class)
             ->setMethods(['getEntityTypeCode', 'getAttributeCollection'])
             ->disableOriginalConstructor()
             ->getMockForAbstractClass();
@@ -59,86 +147,12 @@ class AbstractEavTest extends \PHPUnit\Framework\TestCase
             $customerAttributes
         );
         $this->_model->__construct(
-            $objectManager->get(\Magento\Framework\App\Config\ScopeConfigInterface::class),
-            $objectManager->get(\Magento\Store\Model\StoreManager::class),
+            $objectManager->get(ScopeConfigInterface::class),
+            $objectManager->get(StoreManager::class),
             $objectManager->get(\Magento\ImportExport\Model\Export\Factory::class),
-            $objectManager->get(\Magento\ImportExport\Model\ResourceModel\CollectionByPagesIteratorFactory::class),
-            $objectManager->get(\Magento\Framework\Stdlib\DateTime\TimezoneInterface::class),
-            $objectManager->get(\Magento\Eav\Model\Config::class)
+            $objectManager->get(CollectionByPagesIteratorFactory::class),
+            $objectManager->get(TimezoneInterface::class),
+            $objectManager->get(Config::class)
         );
-    }
-
-    /**
-     * Test for method getEntityTypeId()
-     */
-    public function testGetEntityTypeId()
-    {
-        $entityCode = 'customer';
-        $entityId = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Eav\Model\Config::class
-        )->getEntityType(
-            $entityCode
-        )->getEntityTypeId();
-
-        $this->assertEquals($entityId, $this->_model->getEntityTypeId());
-    }
-
-    /**
-     * Test for method _getExportAttrCodes()
-     *
-     * @covers \Magento\ImportExport\Model\Export\Entity\AbstractEav::_getExportAttributeCodes
-     */
-    public function testGetExportAttrCodes()
-    {
-        $this->_model->setParameters($this->_getSkippedAttributes());
-        $method = new \ReflectionMethod($this->_model, '_getExportAttributeCodes');
-        $method->setAccessible(true);
-        $attributes = $method->invoke($this->_model);
-        foreach (self::$_skippedAttributes as $code) {
-            $this->assertNotContains($code, $attributes);
-        }
-    }
-
-    /**
-     * Test for method getAttributeOptions()
-     */
-    public function testGetAttributeOptions()
-    {
-        /** @var $attributeCollection \Magento\Customer\Model\ResourceModel\Attribute\Collection */
-        $attributeCollection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Model\ResourceModel\Attribute\Collection::class
-        );
-        $attributeCollection->addFieldToFilter('attribute_code', 'gender');
-        /** @var $attribute \Magento\Customer\Model\Attribute */
-        $attribute = $attributeCollection->getFirstItem();
-
-        $expectedOptions = [];
-        foreach ($attribute->getSource()->getAllOptions(false) as $option) {
-            $expectedOptions[$option['value']] = $option['label'];
-        }
-
-        $actualOptions = $this->_model->getAttributeOptions($attribute);
-        $this->assertEquals($expectedOptions, $actualOptions);
-    }
-
-    /**
-     * Retrieve list of skipped attributes
-     *
-     * @return array
-     */
-    protected function _getSkippedAttributes()
-    {
-        /** @var $attributeCollection \Magento\Customer\Model\ResourceModel\Attribute\Collection */
-        $attributeCollection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Model\ResourceModel\Attribute\Collection::class
-        );
-        $attributeCollection->addFieldToFilter('attribute_code', ['in' => self::$_skippedAttributes]);
-        $skippedAttributes = [];
-        /** @var $attribute  \Magento\Customer\Model\Attribute */
-        foreach ($attributeCollection as $attribute) {
-            $skippedAttributes[$attribute->getAttributeCode()] = $attribute->getId();
-        }
-
-        return [\Magento\ImportExport\Model\Export::FILTER_ELEMENT_SKIP => $skippedAttributes];
     }
 }

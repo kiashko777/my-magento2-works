@@ -3,12 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-use Magento\Customer\Model\CustomerRegistry;
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-/** @var $repository \Magento\Customer\Api\CustomerRepositoryInterface */
-$repository = $objectManager->create(\Magento\Customer\Api\CustomerRepositoryInterface::class);
-$customer = $objectManager->create(\Magento\Customer\Model\Customer::class);
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Model\Customer;
+use Magento\Customer\Model\CustomerRegistry;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
+/** @var $repository CustomerRepositoryInterface */
+$repository = $objectManager->create(CustomerRepositoryInterface::class);
+$customer = $objectManager->create(Customer::class);
 /** @var CustomerRegistry $customerRegistry */
 $customerRegistry = $objectManager->get(CustomerRegistry::class);
 /** @var Magento\Customer\Model\Customer $customer */

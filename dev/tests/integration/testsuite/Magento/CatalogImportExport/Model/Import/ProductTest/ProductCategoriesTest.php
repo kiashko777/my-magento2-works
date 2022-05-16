@@ -9,9 +9,16 @@ namespace Magento\CatalogImportExport\Model\Import\ProductTest;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\ResourceModel\Category\Collection;
 use Magento\CatalogImportExport\Model\Import\ProductTestBase;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\Filesystem;
 use Magento\ImportExport\Model\Import;
+use Magento\ImportExport\Model\Import\ErrorProcessing\ProcessingErrorAggregator;
+use Magento\ImportExport\Model\Import\Source\Csv;
+use Magento\TestFramework\Helper\Bootstrap;
 
 /**
  * Integration test for \Magento\CatalogImportExport\Model\Import\Products class.
@@ -30,13 +37,13 @@ class ProductCategoriesTest extends ProductTestBase
     {
         // import data from CSV file
         $pathToFile = __DIR__ . '/../_files/' . $fixture;
-        $filesystem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\Filesystem::class
+        $filesystem = Bootstrap::getObjectManager()->create(
+            Filesystem::class
         );
 
         $directory = $filesystem->getDirectoryWrite(DirectoryList::ROOT);
         $source = $this->objectManager->create(
-            \Magento\ImportExport\Model\Import\Source\Csv::class,
+            Csv::class,
             [
                 'file' => $pathToFile,
                 'directory' => $directory
@@ -46,7 +53,7 @@ class ProductCategoriesTest extends ProductTestBase
             $source
         )->setParameters(
             [
-                'behavior' => \Magento\ImportExport\Model\Import::BEHAVIOR_APPEND,
+                'behavior' => Import::BEHAVIOR_APPEND,
                 'entity' => 'catalog_product',
                 Import::FIELD_FIELD_MULTIPLE_VALUE_SEPARATOR => $separator
             ]
@@ -55,13 +62,13 @@ class ProductCategoriesTest extends ProductTestBase
         $this->assertTrue($errors->getErrorsCount() == 0);
         $this->_model->importData();
 
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
         $resource = $objectManager->get(\Magento\Catalog\Model\ResourceModel\Product::class);
         $productId = $resource->getIdBySku('simple1');
         $this->assertIsNumeric($productId);
-        /** @var \Magento\Catalog\Model\Product $product */
-        $product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\Product::class
+        /** @var Product $product */
+        $product = Bootstrap::getObjectManager()->create(
+            Product::class
         );
         $product->load($productId);
         $this->assertFalse($product->isObjectNew());
@@ -75,8 +82,8 @@ class ProductCategoriesTest extends ProductTestBase
      */
     public function testProductPositionInCategory()
     {
-        /* @var \Magento\Catalog\Model\ResourceModel\Category\Collection $collection */
-        $collection = $this->objectManager->create(\Magento\Catalog\Model\ResourceModel\Category\Collection::class);
+        /* @var Collection $collection */
+        $collection = $this->objectManager->create(Collection::class);
         $collection->addNameToResult()->load();
         /** @var Category $category */
         $category = $collection->getItemByColumnValue('name', 'Category 1');
@@ -92,13 +99,13 @@ class ProductCategoriesTest extends ProductTestBase
         $category->setPostedProducts($categoryProducts);
         $category->save();
 
-        $filesystem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\Filesystem::class
+        $filesystem = Bootstrap::getObjectManager()->create(
+            Filesystem::class
         );
 
         $directory = $filesystem->getDirectoryWrite(DirectoryList::ROOT);
         $source = $this->objectManager->create(
-            \Magento\ImportExport\Model\Import\Source\Csv::class,
+            Csv::class,
             [
                 'file' => __DIR__ . '/../_files/products_to_import.csv',
                 'directory' => $directory
@@ -108,7 +115,7 @@ class ProductCategoriesTest extends ProductTestBase
             $source
         )->setParameters(
             [
-                'behavior' => \Magento\ImportExport\Model\Import::BEHAVIOR_APPEND,
+                'behavior' => Import::BEHAVIOR_APPEND,
                 'entity' => 'catalog_product'
             ]
         )->validateData();
@@ -116,9 +123,9 @@ class ProductCategoriesTest extends ProductTestBase
         $this->assertTrue($errors->getErrorsCount() == 0);
         $this->_model->importData();
 
-        /** @var \Magento\Framework\App\ResourceConnection $resourceConnection */
-        $resourceConnection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\App\ResourceConnection::class
+        /** @var ResourceConnection $resourceConnection */
+        $resourceConnection = Bootstrap::getObjectManager()->get(
+            ResourceConnection::class
         );
         $tableName = $resourceConnection->getTableName('catalog_category_product');
         $select = $resourceConnection->getConnection()->select()->from($tableName)
@@ -150,13 +157,13 @@ class ProductCategoriesTest extends ProductTestBase
         $csvFixture = 'products_duplicate_category.csv';
         // import data from CSV file
         $pathToFile = __DIR__ . '/../_files/' . $csvFixture;
-        $filesystem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\Filesystem::class
+        $filesystem = Bootstrap::getObjectManager()->create(
+            Filesystem::class
         );
 
         $directory = $filesystem->getDirectoryWrite(DirectoryList::ROOT);
         $source = $this->objectManager->create(
-            \Magento\ImportExport\Model\Import\Source\Csv::class,
+            Csv::class,
             [
                 'file' => $pathToFile,
                 'directory' => $directory
@@ -164,7 +171,7 @@ class ProductCategoriesTest extends ProductTestBase
         );
         $errors = $this->_model->setSource($source)->setParameters(
             [
-                'behavior' => \Magento\ImportExport\Model\Import::BEHAVIOR_APPEND,
+                'behavior' => Import::BEHAVIOR_APPEND,
                 'entity' => 'catalog_product'
             ]
         )->validateData();
@@ -173,8 +180,8 @@ class ProductCategoriesTest extends ProductTestBase
 
         $this->_model->importData();
 
-        $errorProcessor = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\ImportExport\Model\Import\ErrorProcessing\ProcessingErrorAggregator::class
+        $errorProcessor = Bootstrap::getObjectManager()->get(
+            ProcessingErrorAggregator::class
         );
         $errorCount = count($errorProcessor->getAllErrors());
         $this->assertTrue($errorCount === 1, 'Error expected');
@@ -186,9 +193,9 @@ class ProductCategoriesTest extends ProductTestBase
         $categoryAfter = $this->loadCategoryByName('Category 2');
         $this->assertTrue($categoryAfter === null);
 
-        /** @var \Magento\Catalog\Model\Product $product */
-        $product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\Product::class
+        /** @var Product $product */
+        $product = Bootstrap::getObjectManager()->create(
+            Product::class
         );
         $product->load(1);
         $categories = $product->getCategoryIds();
@@ -197,8 +204,8 @@ class ProductCategoriesTest extends ProductTestBase
 
     protected function loadCategoryByName($categoryName)
     {
-        /* @var \Magento\Catalog\Model\ResourceModel\Category\Collection $collection */
-        $collection = $this->objectManager->create(\Magento\Catalog\Model\ResourceModel\Category\Collection::class);
+        /* @var Collection $collection */
+        $collection = $this->objectManager->create(Collection::class);
         $collection->addNameToResult()->load();
         return $collection->getItemByColumnValue('name', $categoryName);
     }

@@ -3,9 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Module\Plugin;
 
-class DbStatusValidatorTest extends \Magento\TestFramework\TestCase\AbstractController
+use Magento\Framework\App\Cache\Type\Config;
+use Magento\Framework\Cache\FrontendInterface;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Module\ModuleListInterface;
+use Magento\Framework\Module\ResourceInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractController;
+
+class DbStatusValidatorTest extends AbstractController
 {
     public function testValidationUpToDateDb()
     {
@@ -17,14 +26,14 @@ class DbStatusValidatorTest extends \Magento\TestFramework\TestCase\AbstractCont
      */
     public function testValidationOutdatedDb()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage('Please upgrade your database');
 
         $this->markTestSkipped();
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
 
-        /** @var \Magento\Framework\Module\ModuleListInterface $moduleList */
-        $moduleList = $objectManager->get(\Magento\Framework\Module\ModuleListInterface::class);
+        /** @var ModuleListInterface $moduleList */
+        $moduleList = $objectManager->get(ModuleListInterface::class);
 
         $moduleNameToTest = '';
 
@@ -36,13 +45,13 @@ class DbStatusValidatorTest extends \Magento\TestFramework\TestCase\AbstractCont
         $moduleList->getOne($moduleName);
 
         // Prepend '0.' to DB Version, to cause it to be an older version
-        /** @var \Magento\Framework\Module\ResourceInterface $resource */
-        $resource = $objectManager->create(\Magento\Framework\Module\ResourceInterface::class);
+        /** @var ResourceInterface $resource */
+        $resource = $objectManager->create(ResourceInterface::class);
         $currentDbVersion = $resource->getDbVersion($moduleNameToTest);
         $resource->setDataVersion($moduleNameToTest, '0.' . $currentDbVersion);
 
-        /** @var \Magento\Framework\Cache\FrontendInterface $cache */
-        $cache = $this->_objectManager->get(\Magento\Framework\App\Cache\Type\Config::class);
+        /** @var FrontendInterface $cache */
+        $cache = $this->_objectManager->get(Config::class);
         $cache->clean();
 
         /* This triggers plugin to be executed */

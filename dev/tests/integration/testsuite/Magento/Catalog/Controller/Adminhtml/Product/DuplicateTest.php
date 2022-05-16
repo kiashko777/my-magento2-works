@@ -38,31 +38,6 @@ class DuplicateTest extends AbstractBackendController
     private $dataKeys = ['name', 'description', 'short_description', 'price', 'weight', 'attribute_set_id'];
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        try {
-            $this->productRepository->deleteById($this->duplicatedProductSku);
-        } catch (NoSuchEntityException $e) {
-            // product already deleted
-        }
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
      *
      * @return void
@@ -118,5 +93,30 @@ class DuplicateTest extends AbstractBackendController
         foreach ($this->dataKeys as $key) {
             $this->assertEquals($product->getData($key), $duplicatedProduct->getData($key));
         }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        try {
+            $this->productRepository->deleteById($this->duplicatedProductSku);
+        } catch (NoSuchEntityException $e) {
+            // product already deleted
+        }
+
+        parent::tearDown();
     }
 }

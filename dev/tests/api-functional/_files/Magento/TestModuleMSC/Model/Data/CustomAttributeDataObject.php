@@ -6,13 +6,14 @@
 
 namespace Magento\TestModuleMSC\Model\Data;
 
-use Magento\TestModuleMSC\Api\Data\CustomAttributeDataObjectInterface;
 use Magento\Framework\Api\AbstractExtensibleObject;
+use Magento\TestModuleMSC\Api\Data\CustomAttributeDataObjectExtensionInterface;
+use Magento\TestModuleMSC\Api\Data\CustomAttributeDataObjectInterface;
 
 /**
  * Class CustomAttributeDataObject
  *
- * @method \Magento\TestModuleMSC\Api\Data\CustomAttributeDataObjectExtensionInterface getExtensionAttributes()
+ * @method CustomAttributeDataObjectExtensionInterface getExtensionAttributes()
  */
 class CustomAttributeDataObject extends AbstractExtensibleObject implements CustomAttributeDataObjectInterface
 {

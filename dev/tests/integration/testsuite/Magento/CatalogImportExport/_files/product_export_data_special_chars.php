@@ -3,6 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 /** Create category */
@@ -16,10 +21,10 @@ Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/products_wit
 /** Create dummy text attribute */
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/product_text_attribute.php');
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 
-/** @var \Magento\Catalog\Model\Product $productModel */
-$productModel = $objectManager->create(\Magento\Catalog\Model\Product::class);
+/** @var Product $productModel */
+$productModel = $objectManager->create(Product::class);
 
 $productModel->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setId(1)
@@ -29,8 +34,8 @@ $productModel->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setPrice(10)
     ->addData(['text_attribute' => '!@#$%^&*()_+1234567890-=|\\:;"\'<,>.?/›ƒª'])
     ->setTierPrice([0 => ['website_id' => 0, 'cust_group' => 0, 'price_qty' => 3, 'price' => 8]])
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setWebsiteIds([1])
     ->setStockData(['qty' => 100, 'is_in_stock' => 1, 'manage_stock' => 1])
     ->setCanSaveCustomOptions(true)

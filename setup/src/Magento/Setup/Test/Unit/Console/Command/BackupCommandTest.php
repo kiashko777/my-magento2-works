@@ -48,50 +48,6 @@ class BackupCommandTest extends TestCase
      */
     private $deploymentConfig;
 
-    protected function setUp(): void
-    {
-        $maintenanceMode = $this->createMock(MaintenanceMode::class);
-        $objectManagerProvider = $this->createMock(ObjectManagerProvider::class);
-        $this->objectManager = $this->getMockForAbstractClass(
-            ObjectManagerInterface::class,
-            [],
-            '',
-            false
-        );
-        $objectManagerProvider->expects($this->any())->method('get')->willReturn($this->objectManager);
-        $this->backupRollback = $this->createMock(BackupRollback::class);
-        $this->backupRollbackFactory = $this->createMock(BackupRollbackFactory::class);
-        $this->backupRollbackFactory->expects($this->any())
-            ->method('create')
-            ->willReturn($this->backupRollback);
-        $this->deploymentConfig = $this->createMock(DeploymentConfig::class);
-        $appState = $this->createMock(State::class);
-        $configLoader = $this->getMockForAbstractClass(
-            ConfigLoaderInterface::class,
-            [],
-            '',
-            false
-        );
-        $configLoader->expects($this->any())->method('load')->willReturn([]);
-
-        $this->objectManager->expects($this->any())
-            ->method('get')
-            ->willReturnMap(
-                [
-                    [BackupRollbackFactory::class, $this->backupRollbackFactory],
-                    [State::class, $appState],
-                    [ConfigLoaderInterface::class, $configLoader],
-                ]
-            );
-        $command = new BackupCommand(
-            $objectManagerProvider,
-            $maintenanceMode,
-            $this->deploymentConfig,
-            new MaintenanceModeEnabler($maintenanceMode)
-        );
-        $this->tester = new CommandTester($command);
-    }
-
     public function testExecuteCodeBackup()
     {
         $this->deploymentConfig->expects($this->once())
@@ -147,5 +103,49 @@ class BackupCommandTest extends TestCase
             . 'Not enough information provided to take backup.' . PHP_EOL
             . 'Disabling maintenance mode' . PHP_EOL;
         $this->assertSame($expected, $this->tester->getDisplay());
+    }
+
+    protected function setUp(): void
+    {
+        $maintenanceMode = $this->createMock(MaintenanceMode::class);
+        $objectManagerProvider = $this->createMock(ObjectManagerProvider::class);
+        $this->objectManager = $this->getMockForAbstractClass(
+            ObjectManagerInterface::class,
+            [],
+            '',
+            false
+        );
+        $objectManagerProvider->expects($this->any())->method('get')->willReturn($this->objectManager);
+        $this->backupRollback = $this->createMock(BackupRollback::class);
+        $this->backupRollbackFactory = $this->createMock(BackupRollbackFactory::class);
+        $this->backupRollbackFactory->expects($this->any())
+            ->method('create')
+            ->willReturn($this->backupRollback);
+        $this->deploymentConfig = $this->createMock(DeploymentConfig::class);
+        $appState = $this->createMock(State::class);
+        $configLoader = $this->getMockForAbstractClass(
+            ConfigLoaderInterface::class,
+            [],
+            '',
+            false
+        );
+        $configLoader->expects($this->any())->method('load')->willReturn([]);
+
+        $this->objectManager->expects($this->any())
+            ->method('get')
+            ->willReturnMap(
+                [
+                    [BackupRollbackFactory::class, $this->backupRollbackFactory],
+                    [State::class, $appState],
+                    [ConfigLoaderInterface::class, $configLoader],
+                ]
+            );
+        $command = new BackupCommand(
+            $objectManagerProvider,
+            $maintenanceMode,
+            $this->deploymentConfig,
+            new MaintenanceModeEnabler($maintenanceMode)
+        );
+        $this->tester = new CommandTester($command);
     }
 }

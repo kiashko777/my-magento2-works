@@ -7,30 +7,33 @@ declare(strict_types=1);
 
 namespace Magento\TestModuleQuoteTotalsObserver\Observer;
 
+use Magento\Checkout\Model\Session;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
+use Magento\TestModuleQuoteTotalsObserver\Model\Config;
 
 class AfterCollectTotals implements ObserverInterface
 {
     /**
-     * @var \Magento\Checkout\Model\Session
+     * @var Session
      */
     private $session;
 
     /**
-     * @var \Magento\TestModuleQuoteTotalsObserver\Model\Config
+     * @var Config
      */
     private $config;
 
     /**
      * AfterCollectTotals constructor.
-     * @param \Magento\Checkout\Model\Session $messageManager
-     * @param \Magento\TestModuleQuoteTotalsObserver\Model\Config $config
+     * @param Session $messageManager
+     * @param Config $config
      */
     public function __construct(
-        \Magento\Checkout\Model\Session $messageManager,
-        \Magento\TestModuleQuoteTotalsObserver\Model\Config $config
-    ) {
+        Session                     $messageManager,
+        Config $config
+    )
+    {
         $this->config = $config;
         $this->session = $messageManager;
     }
@@ -39,7 +42,7 @@ class AfterCollectTotals implements ObserverInterface
      * @param Observer $observer
      * @return void
      */
-    public function execute(\Magento\Framework\Event\Observer $observer)
+    public function execute(Observer $observer)
     {
         $observer->getEvent();
         if ($this->config->isActive()) {

@@ -3,9 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogSearch\Controller;
 
-class AjaxTest extends \Magento\TestFramework\TestCase\AbstractController
+use Magento\TestFramework\TestCase\AbstractController;
+
+class AjaxTest extends AbstractController
 {
     /**
      * @magentoDataFixture Magento/CatalogSearch/_files/query.php

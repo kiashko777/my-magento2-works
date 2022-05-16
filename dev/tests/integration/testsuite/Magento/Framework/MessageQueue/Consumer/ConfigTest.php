@@ -3,31 +3,33 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\MessageQueue\Consumer;
 
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\MessageQueue\BatchConsumer;
 use Magento\Framework\MessageQueue\Consumer\Config\ConsumerConfigItem\Handler\Iterator as HandlerIterator;
+use Magento\Framework\MessageQueue\ConsumerInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test of queue consumer configuration reading and parsing.
  *
  * @magentoCache config disabled
  */
-class ConfigTest extends \PHPUnit\Framework\TestCase
+class ConfigTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
-
     public function testGetConsumers()
     {
-        /** @var \Magento\Framework\MessageQueue\Consumer\ConfigInterface $config */
-        $config = $this->objectManager->create(\Magento\Framework\MessageQueue\Consumer\ConfigInterface::class);
+        /** @var ConfigInterface $config */
+        $config = $this->objectManager->create(ConfigInterface::class);
 
         $consumers = $config->getConsumers();
         $consumer = $config->getConsumer('consumer1');
@@ -41,7 +43,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('consumer1', $consumer->getName());
         $this->assertEquals('queue1', $consumer->getQueue());
         $this->assertEquals('amqp', $consumer->getConnection());
-        $this->assertEquals(\Magento\Framework\MessageQueue\BatchConsumer::class, $consumer->getConsumerInstance());
+        $this->assertEquals(BatchConsumer::class, $consumer->getConsumerInstance());
         $this->assertEquals('100', $consumer->getMaxMessages());
         $handlers = $consumer->getHandlers();
         $this->assertInstanceOf(HandlerIterator::class, $handlers);
@@ -52,15 +54,15 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
 
     public function testGetConsumerWithDefaultValues()
     {
-        /** @var \Magento\Framework\MessageQueue\Consumer\ConfigInterface $config */
-        $config = $this->objectManager->create(\Magento\Framework\MessageQueue\Consumer\ConfigInterface::class);
+        /** @var ConfigInterface $config */
+        $config = $this->objectManager->create(ConfigInterface::class);
 
         $consumer = $config->getConsumer('consumer5');
 
         $this->assertEquals('consumer5', $consumer->getName());
         $this->assertEquals('queue5', $consumer->getQueue());
         $this->assertEquals('amqp', $consumer->getConnection());
-        $this->assertEquals(\Magento\Framework\MessageQueue\ConsumerInterface::class, $consumer->getConsumerInstance());
+        $this->assertEquals(ConsumerInterface::class, $consumer->getConsumerInstance());
         $this->assertNull($consumer->getMaxMessages());
         $handlers = $consumer->getHandlers();
         $this->assertInstanceOf(HandlerIterator::class, $handlers);
@@ -71,11 +73,16 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetUndeclaredConsumer()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage('Consumer \'undeclaredConsumer\' is not declared.');
 
-        /** @var \Magento\Framework\MessageQueue\Consumer\ConfigInterface $config */
-        $config = $this->objectManager->create(\Magento\Framework\MessageQueue\Consumer\ConfigInterface::class);
+        /** @var ConfigInterface $config */
+        $config = $this->objectManager->create(ConfigInterface::class);
         $config->getConsumer('undeclaredConsumer');
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

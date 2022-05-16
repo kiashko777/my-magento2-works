@@ -4,34 +4,25 @@
  * See COPYING.txt for license details.
  *
  */
+
 namespace Magento\Integration\Block\Adminhtml\Widget\Grid\Column\Renderer\Button;
 
+use Magento\Backend\Block\Widget\Grid\Column;
+use Magento\Framework\App\Request\Http;
 use Magento\Integration\Model\Integration;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  * @magentoDataFixture Magento/Integration/_files/integration_all_permissions.php
  */
-class DeleteTest extends \PHPUnit\Framework\TestCase
+class DeleteTest extends TestCase
 {
     /**
-     * @var \Magento\Integration\Block\Adminhtml\Widget\Grid\Column\Renderer\Button\Delete
+     * @var Delete
      */
     protected $deleteButtonBlock;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var \Magento\Framework\App\Request\Http $request */
-        $request = $objectManager->get(\Magento\Framework\App\Request\Http::class);
-        $request->setRouteName('Adminhtml')->setControllerName('integration');
-        $this->deleteButtonBlock = $objectManager->create(
-            \Magento\Integration\Block\Adminhtml\Widget\Grid\Column\Renderer\Button\Delete::class
-        );
-        $column = $objectManager->create(\Magento\Backend\Block\Widget\Grid\Column::class);
-        $this->deleteButtonBlock->setColumn($column);
-    }
 
     public function testRender()
     {
@@ -47,14 +38,25 @@ class DeleteTest extends \PHPUnit\Framework\TestCase
         $this->assertStringNotContainsString('disabled', $buttonHtml);
     }
 
+    /**
+     * @return Integration
+     */
+    protected function getFixtureIntegration()
+    {
+        /** @var $integration Integration */
+        $objectManager = Bootstrap::getObjectManager();
+        $integration = $objectManager->create(Integration::class);
+        return $integration->load('Fixture Integration', 'name');
+    }
+
     public function testRenderDisabled()
     {
         $integration = $this->getFixtureIntegration();
         $integration->setSetupType(Integration::TYPE_CONFIG);
         $buttonHtml = $this->deleteButtonBlock->render($integration);
         self::assertStringContainsString(
-            'title="' .$this->deleteButtonBlock->escapeHtmlAttr('Uninstall the extension to remove this integration')
-            .'"',
+            'title="' . $this->deleteButtonBlock->escapeHtmlAttr('Uninstall the extension to remove this integration')
+            . '"',
             $buttonHtml
         );
         self::assertStringContainsString(
@@ -66,14 +68,17 @@ class DeleteTest extends \PHPUnit\Framework\TestCase
         self::assertStringContainsString('disabled="disabled"', $buttonHtml);
     }
 
-    /**
-     * @return Integration
-     */
-    protected function getFixtureIntegration()
+    protected function setUp(): void
     {
-        /** @var $integration Integration */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $integration = $objectManager->create(\Magento\Integration\Model\Integration::class);
-        return $integration->load('Fixture Integration', 'name');
+        parent::setUp();
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var Http $request */
+        $request = $objectManager->get(Http::class);
+        $request->setRouteName('Adminhtml')->setControllerName('integration');
+        $this->deleteButtonBlock = $objectManager->create(
+            Delete::class
+        );
+        $column = $objectManager->create(Column::class);
+        $this->deleteButtonBlock->setColumn($column);
     }
 }

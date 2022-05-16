@@ -6,10 +6,14 @@
 
 namespace Magento\Review\Block\Product;
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
 /**
  * Test for \Magento\Review\Block\Products\ReviewRenderer
  */
-class ReviewRendererTest extends \PHPUnit\Framework\TestCase
+class ReviewRendererTest extends TestCase
 {
     /**
      * Test verifies ReviewRenderer::getReviewsSummaryHtml call with $displayIfNoReviews = false
@@ -21,9 +25,9 @@ class ReviewRendererTest extends \PHPUnit\Framework\TestCase
     public function testGetReviewSummaryHtml()
     {
         $productSku = 'simple';
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-        $productRepository = $objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = $objectManager->create(ProductRepositoryInterface::class);
         $product = $productRepository->get($productSku);
         /** @var  ReviewRenderer $reviewRenderer */
         $reviewRenderer = $objectManager->create(ReviewRenderer::class);

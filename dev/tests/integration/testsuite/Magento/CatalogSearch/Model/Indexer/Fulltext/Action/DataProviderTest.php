@@ -47,22 +47,6 @@ class DataProviderTest extends TestCase
     private $productRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->searchRequestConfig = $this->objectManager->create(SearchRequestConfig::class);
-        $this->requestBuilder = $this->objectManager->create(
-            SearchRequestBuilder::class,
-            ['config' => $this->searchRequestConfig]
-        );
-        $this->adapterFactory = $this->objectManager->get(AdapterFactory::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        parent::setUp();
-    }
-
-    /**
      * Search product by custom attribute value.
      *
      * @magentoDataFixture Magento/CatalogSearch/_files/product_for_search.php
@@ -85,5 +69,21 @@ class DataProviderTest extends TestCase
         }
         $product = $this->productRepository->get('simple_for_search');
         $this->assertContains($product->getId(), $actualIds, 'Products not found by searchable attribute.');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->searchRequestConfig = $this->objectManager->create(SearchRequestConfig::class);
+        $this->requestBuilder = $this->objectManager->create(
+            SearchRequestBuilder::class,
+            ['config' => $this->searchRequestConfig]
+        );
+        $this->adapterFactory = $this->objectManager->get(AdapterFactory::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        parent::setUp();
     }
 }

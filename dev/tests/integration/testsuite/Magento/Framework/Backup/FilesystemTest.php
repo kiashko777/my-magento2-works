@@ -3,28 +3,24 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Backup;
 
-use \Magento\TestFramework\Helper\Bootstrap;
-use \Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class FilesystemTest extends \PHPUnit\Framework\TestCase
+class FilesystemTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
     /**
-     * @var \Magento\Framework\Backup\Filesystem
+     * @var Filesystem
      */
     private $filesystem;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->filesystem = $this->objectManager->create(\Magento\Framework\Backup\Filesystem::class);
-    }
 
     /**
      * @magentoAppIsolation enabled
@@ -46,5 +42,11 @@ class FilesystemTest extends \PHPUnit\Framework\TestCase
 
         $this->assertTrue($this->filesystem->rollback());
         $this->assertFileExists($rootDir . '/' . $fileName);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->filesystem = $this->objectManager->create(Filesystem::class);
     }
 }

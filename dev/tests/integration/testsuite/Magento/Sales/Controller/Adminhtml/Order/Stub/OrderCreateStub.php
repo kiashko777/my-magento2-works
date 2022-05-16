@@ -6,7 +6,9 @@
 
 namespace Magento\Sales\Controller\Adminhtml\Order\Stub;
 
-class OrderCreateStub extends \Magento\Sales\Controller\Adminhtml\Order\Create
+use Magento\Sales\Controller\Adminhtml\Order\Create;
+
+class OrderCreateStub extends Create
 {
     public function execute()
     {

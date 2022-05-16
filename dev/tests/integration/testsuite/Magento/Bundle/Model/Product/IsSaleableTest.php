@@ -6,28 +6,31 @@
 
 namespace Magento\Bundle\Model\Product;
 
+use Magento\Bundle\Api\ProductOptionRepositoryInterface;
+use Magento\Bundle\Model\LinkManagement;
+use Magento\Bundle\Model\Selection;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
 /**
  * Test class for \Magento\Bundle\Model\Products\Type (bundle product type)
  *
  * @magentoDataFixture Magento/Bundle/_files/issaleable_product.php
  */
-class IsSaleableTest extends \PHPUnit\Framework\TestCase
+class IsSaleableTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
 
     /**
-     * @var \Magento\Catalog\Api\ProductRepositoryInterface
+     * @var ProductRepositoryInterface
      */
     protected $productRepository;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
-    }
 
     /**
      * Check bundle product is saleable if his status is enabled
@@ -38,7 +41,7 @@ class IsSaleableTest extends \PHPUnit\Framework\TestCase
     public function testIsSaleableOnEnabledStatus()
     {
         $bundleProduct = $this->productRepository->get('bundle-product');
-        $bundleProduct->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED);
+        $bundleProduct->setStatus(Status::STATUS_ENABLED);
 
         $this->assertTrue(
             $bundleProduct->isSalable(),
@@ -56,7 +59,7 @@ class IsSaleableTest extends \PHPUnit\Framework\TestCase
     public function testIsSaleableOnDisabledStatus()
     {
         $bundleProduct = $this->productRepository->get('bundle-product');
-        $bundleProduct->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_DISABLED);
+        $bundleProduct->setStatus(Status::STATUS_DISABLED);
 
         $this->assertFalse(
             $bundleProduct->isSalable(),
@@ -75,7 +78,7 @@ class IsSaleableTest extends \PHPUnit\Framework\TestCase
     public function testIsSaleableOnEnabledStatusAndIsSalableIsTrue()
     {
         $bundleProduct = $this->productRepository->get('bundle-product');
-        $bundleProduct->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED);
+        $bundleProduct->setStatus(Status::STATUS_ENABLED);
         $bundleProduct->setData('is_salable', true);
 
         $this->assertTrue(
@@ -95,7 +98,7 @@ class IsSaleableTest extends \PHPUnit\Framework\TestCase
     public function testIsSaleableOnEnabledStatusAndIsSalableIsFalse()
     {
         $bundleProduct = $this->productRepository->get('bundle-product');
-        $bundleProduct->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED);
+        $bundleProduct->setStatus(Status::STATUS_ENABLED);
         $bundleProduct->setData('is_salable', false);
 
         $this->assertFalse(
@@ -149,7 +152,7 @@ class IsSaleableTest extends \PHPUnit\Framework\TestCase
      */
     public function testIsSaleableOnBundleWithoutOptions()
     {
-        $optionRepository = $this->objectManager->create(\Magento\Bundle\Api\ProductOptionRepositoryInterface::class);
+        $optionRepository = $this->objectManager->create(ProductOptionRepositoryInterface::class);
         $bundleProduct = $this->productRepository->get('bundle-product');
 
         // TODO: make cleaner option deletion after fix MAGETWO-59465
@@ -179,15 +182,15 @@ class IsSaleableTest extends \PHPUnit\Framework\TestCase
     {
         $bundleProduct = $this->productRepository->get('bundle-product', true, null, true);
         $bundleType = $bundleProduct->getTypeInstance();
-        /** @var  \Magento\Bundle\Model\LinkManagement $linkManager */
-        $linkManager = $this->objectManager->create(\Magento\Bundle\Model\LinkManagement::class);
+        /** @var  LinkManagement $linkManager */
+        $linkManager = $this->objectManager->create(LinkManagement::class);
 
-        /** @var \Magento\Bundle\Model\Product\Type $bundleType */
+        /** @var Type $bundleType */
         $options = $bundleType->getOptionsCollection($bundleProduct);
         $selections = $bundleType->getSelectionsCollection($options->getAllIds(), $bundleProduct);
 
         foreach ($selections as $link) {
-            /** @var \Magento\Bundle\Model\Selection $link */
+            /** @var Selection $link */
             $linkManager->removeChild('bundle-product', $link->getOptionId(), $link->getSku());
         }
 
@@ -211,7 +214,7 @@ class IsSaleableTest extends \PHPUnit\Framework\TestCase
         $productsSku = ['simple1', 'simple2', 'simple3', 'simple4', 'simple5'];
         foreach ($productsSku as $productSku) {
             $product = $this->productRepository->get($productSku);
-            $product->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_DISABLED);
+            $product->setStatus(Status::STATUS_DISABLED);
             $this->productRepository->save($product);
         }
 
@@ -236,7 +239,7 @@ class IsSaleableTest extends \PHPUnit\Framework\TestCase
         $productsSku = ['simple1', 'simple2', 'simple3'];
         foreach ($productsSku as $productSku) {
             $product = $this->productRepository->get($productSku);
-            $product->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_DISABLED);
+            $product->setStatus(Status::STATUS_DISABLED);
             $this->productRepository->save($product);
         }
 
@@ -267,6 +270,16 @@ class IsSaleableTest extends \PHPUnit\Framework\TestCase
             'Bundle product supposed to be non saleable
             if there are not enough qty of selections on required options'
         );
+    }
+
+    private function setQtyForSelections($productsSku, $qty)
+    {
+        foreach ($productsSku as $productSku) {
+            $product = $this->productRepository->get($productSku);
+            $ea = $product->getExtensionAttributes();
+            $ea->getStockItem()->setQty($qty);
+            $this->productRepository->save($product);
+        }
     }
 
     /**
@@ -317,7 +330,7 @@ class IsSaleableTest extends \PHPUnit\Framework\TestCase
         $productsSku = ['simple1', 'simple2', 'simple3', 'simple4', 'simple5'];
         foreach ($productsSku as $productSku) {
             $product = $this->productRepository->get($productSku);
-            $product->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_DISABLED);
+            $product->setStatus(Status::STATUS_DISABLED);
             $this->productRepository->save($product);
         }
 
@@ -355,7 +368,7 @@ class IsSaleableTest extends \PHPUnit\Framework\TestCase
 
         foreach ($productsSku as $productSku) {
             $product = $this->productRepository->get($productSku);
-            $product->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_DISABLED);
+            $product->setStatus(Status::STATUS_DISABLED);
             $this->productRepository->save($product);
         }
 
@@ -380,13 +393,9 @@ class IsSaleableTest extends \PHPUnit\Framework\TestCase
         );
     }
 
-    private function setQtyForSelections($productsSku, $qty)
+    protected function setUp(): void
     {
-        foreach ($productsSku as $productSku) {
-            $product = $this->productRepository->get($productSku);
-            $ea = $product->getExtensionAttributes();
-            $ea->getStockItem()->setQty($qty);
-            $this->productRepository->save($product);
-        }
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
     }
 }

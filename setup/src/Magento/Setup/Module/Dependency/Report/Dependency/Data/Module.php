@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Dependency\Report\Dependency\Data;
 
 /**
@@ -20,7 +21,7 @@ class Module
     /**
      * Module dependencies
      *
-     * @var \Magento\Setup\Module\Dependency\Report\Dependency\Data\Dependency[]
+     * @var Dependency[]
      */
     protected $dependencies;
 
@@ -28,7 +29,7 @@ class Module
      * Module construct
      *
      * @param array $name
-     * @param \Magento\Setup\Module\Dependency\Report\Dependency\Data\Dependency[] $dependencies
+     * @param Dependency[] $dependencies
      */
     public function __construct($name, array $dependencies = [])
     {
@@ -44,16 +45,6 @@ class Module
     public function getName()
     {
         return $this->name;
-    }
-
-    /**
-     * Get dependencies
-     *
-     * @return \Magento\Setup\Module\Dependency\Report\Dependency\Data\Dependency[]
-     */
-    public function getDependencies()
-    {
-        return $this->dependencies;
     }
 
     /**
@@ -80,6 +71,16 @@ class Module
             }
         }
         return $dependenciesCount;
+    }
+
+    /**
+     * Get dependencies
+     *
+     * @return Dependency[]
+     */
+    public function getDependencies()
+    {
+        return $this->dependencies;
     }
 
     /**

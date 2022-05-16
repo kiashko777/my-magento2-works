@@ -7,12 +7,12 @@ declare(strict_types=1);
 
 namespace Magento\Sales\Model\ResourceModel\Order\Address;
 
-use Magento\Store\Model\StoreManagerInterface;
-use Magento\Sales\Model\Order\Payment;
-use Magento\Sales\Model\Order;
-use Magento\Sales\Api\Data\OrderAddressInterface as OrderAddress;
 use Magento\Backend\Model\Locale\Resolver;
 use Magento\Framework\Locale\ResolverInterface;
+use Magento\Sales\Api\Data\OrderAddressInterface as OrderAddress;
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Payment;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -28,6 +28,23 @@ class CollectionTest extends TestCase
      * @var ResolverInterface|MockObject
      */
     private $localeResolverMock;
+
+    /**
+     * @magentoDataFixture Magento/Directory/_files/region_name_jp.php
+     */
+    public function testCollectionWithJpLocale(): void
+    {
+        $locale = 'JA_jp';
+        $this->localeResolverMock->method('getLocale')->willReturn($locale);
+
+        $order = Bootstrap::getObjectManager()->create(Order::class)
+            ->loadByIncrementId('100000001');
+
+        $collection = $order->getAddressesCollection();
+        foreach ($collection as $address) {
+            $this->assertEquals('アラバマ', $address->getData(OrderAddress::REGION));
+        }
+    }
 
     /**
      * @inheritdoc
@@ -73,22 +90,5 @@ class CollectionTest extends TestCase
             ->setStoreId(Bootstrap::getObjectManager()->get(StoreManagerInterface::class)->getStore()->getId())
             ->setPayment($payment);
         $order->save();
-    }
-
-    /**
-     * @magentoDataFixture Magento/Directory/_files/region_name_jp.php
-     */
-    public function testCollectionWithJpLocale(): void
-    {
-        $locale = 'JA_jp';
-        $this->localeResolverMock->method('getLocale')->willReturn($locale);
-
-        $order = Bootstrap::getObjectManager()->create(Order::class)
-            ->loadByIncrementId('100000001');
-
-        $collection = $order->getAddressesCollection();
-        foreach ($collection as $address) {
-            $this->assertEquals('アラバマ', $address->getData(OrderAddress::REGION));
-        }
     }
 }

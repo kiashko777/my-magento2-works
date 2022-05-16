@@ -13,12 +13,12 @@
 
         <li class="customer-welcome active">
             <span class="customer-name active" role="button">
-                <button type="button" class="action switch" data-action="customer-menu-toggle">
+                <button class="action switch" data-action="customer-menu-toggle" type="button">
                     <span>Change</span>
                 </button>
             </span>
             <!-- Markup portion for Logged in customer -->
-            <div class="customer-menu" data-target="dropdown" aria-hidden="false">
+            <div aria-hidden="false" class="customer-menu" data-target="dropdown">
                 <ul class="header links">
                     <li>
                         <a href="http://magento.store/account/" id="my-account">My Account</a>
@@ -37,9 +37,9 @@
                     </li>
                 </ul>
             </div>
-            <li class="link authorization-link" data-label="or">
-                <a href="http://magento.store/customer/account/logout/">Sign Out</a>
-            </li>
+        <li class="link authorization-link" data-label="or">
+            <a href="http://magento.store/customer/account/logout/">Sign Out</a>
+        </li>
         </li>
         <!-- Markup portion for Logged out customer -->
         <li class="link authorization-link" data-label="or">

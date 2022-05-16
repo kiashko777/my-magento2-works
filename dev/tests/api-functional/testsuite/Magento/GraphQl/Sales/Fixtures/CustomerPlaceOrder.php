@@ -7,8 +7,11 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Sales\Fixtures;
 
+use Magento\Bundle\Model\Product\Type;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product;
+use Magento\Framework\Exception\AuthenticationException;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Integration\Api\CustomerTokenServiceInterface;
 use Magento\TestFramework\TestCase\GraphQl\Client;
 
@@ -50,10 +53,11 @@ class CustomerPlaceOrder
      * @param ProductRepositoryInterface $productRepository
      */
     public function __construct(
-        Client $gqlClient,
+        Client                        $gqlClient,
         CustomerTokenServiceInterface $tokenService,
-        ProductRepositoryInterface $productRepository
-    ) {
+        ProductRepositoryInterface    $productRepository
+    )
+    {
         $this->gqlClient = $gqlClient;
         $this->tokenService = $tokenService;
         $this->productRepository = $productRepository;
@@ -79,48 +83,6 @@ class CustomerPlaceOrder
     }
 
     /**
-     * Make GraphQl POST request
-     *
-     * @param string $query
-     * @param array $additionalHeaders
-     * @return array
-     */
-    private function makeRequest(string $query, array $additionalHeaders = []): array
-    {
-        $headers = array_merge([$this->getAuthHeader()], $additionalHeaders);
-        return $this->gqlClient->post($query, [], '', $headers);
-    }
-
-    /**
-     * Get header for authenticated requests
-     *
-     * @return string
-     * @throws \Magento\Framework\Exception\AuthenticationException
-     */
-    private function getAuthHeader(): string
-    {
-        if (empty($this->authHeader)) {
-            $customerToken = $this->tokenService
-                ->createCustomerAccessToken($this->customerLogin['email'], $this->customerLogin['password']);
-            $this->authHeader = "Authorization: Bearer {$customerToken}";
-        }
-        return $this->authHeader;
-    }
-
-    /**
-     * Get cart id
-     *
-     * @return string
-     */
-    private function getCartId(): string
-    {
-        if (empty($this->cartId)) {
-            $this->cartId = $this->createCustomerCart();
-        }
-        return $this->cartId;
-    }
-
-    /**
      * Create empty cart for the customer
      *
      * @return array
@@ -138,11 +100,40 @@ QUERY;
     }
 
     /**
+     * Make GraphQl POST request
+     *
+     * @param string $query
+     * @param array $additionalHeaders
+     * @return array
+     */
+    private function makeRequest(string $query, array $additionalHeaders = []): array
+    {
+        $headers = array_merge([$this->getAuthHeader()], $additionalHeaders);
+        return $this->gqlClient->post($query, [], '', $headers);
+    }
+
+    /**
+     * Get header for authenticated requests
+     *
+     * @return string
+     * @throws AuthenticationException
+     */
+    private function getAuthHeader(): string
+    {
+        if (empty($this->authHeader)) {
+            $customerToken = $this->tokenService
+                ->createCustomerAccessToken($this->customerLogin['email'], $this->customerLogin['password']);
+            $this->authHeader = "Authorization: Bearer {$customerToken}";
+        }
+        return $this->authHeader;
+    }
+
+    /**
      * Add a bundle product to the cart
      *
      * @param array $productData
      * @return array
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @throws NoSuchEntityException
      */
     private function addBundleProduct(array $productData)
     {
@@ -150,7 +141,7 @@ QUERY;
         $qty = $productData['quantity'] ?? 1;
         /** @var Product $bundleProduct */
         $bundleProduct = $this->productRepository->get($productSku);
-        /** @var \Magento\Bundle\Model\Product\Type $typeInstance */
+        /** @var Type $typeInstance */
         $typeInstance = $bundleProduct->getTypeInstance();
         $optionId1 = (int)$typeInstance->getOptionsCollection($bundleProduct)->getFirstItem()->getId();
         $optionId2 = (int)$typeInstance->getOptionsCollection($bundleProduct)->getLastItem()->getId();
@@ -193,6 +184,19 @@ mutation {
 }
 QUERY;
         return $this->makeRequest($addProduct);
+    }
+
+    /**
+     * Get cart id
+     *
+     * @return string
+     */
+    private function getCartId(): string
+    {
+        if (empty($this->cartId)) {
+            $this->cartId = $this->createCustomerCart();
+        }
+        return $this->cartId;
     }
 
     /**

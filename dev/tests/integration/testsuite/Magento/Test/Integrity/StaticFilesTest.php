@@ -6,72 +6,70 @@
 
 namespace Magento\Test\Integrity;
 
+use LogicException;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\App\Utility\Files;
+use Magento\Framework\Filesystem;
+use Magento\Framework\View\Asset\Repository;
+use Magento\Framework\View\Design\Fallback\Rule\SimpleFactory;
+use Magento\Framework\View\Design\Fallback\RulePool;
+use Magento\Framework\View\Design\FileResolution\Fallback\Resolver\Alternative;
+use Magento\Framework\View\Design\FileResolution\Fallback\Resolver\Simple;
+use Magento\Framework\View\Design\FileResolution\Fallback\StaticFile;
+use Magento\Framework\View\Design\Theme\FlyweightFactory;
+use Magento\Framework\View\Design\ThemeInterface;
+use Magento\Framework\View\DesignInterface;
+use Magento\Framework\View\Url\CssResolver;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * An integrity test that searches for references to static files and asserts that they are resolved via fallback
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class StaticFilesTest extends \PHPUnit\Framework\TestCase
+class StaticFilesTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\View\Design\FileResolution\Fallback\StaticFile
+     * @var StaticFile
      */
     private $fallback;
 
     /**
-     * @var \Magento\Framework\View\Design\FileResolution\Fallback\Resolver\Simple
+     * @var Simple
      */
     private $explicitFallback;
 
     /**
-     * @var \Magento\Framework\View\Design\Theme\FlyweightFactory
+     * @var FlyweightFactory
      */
     private $themeRepo;
 
     /**
-     * @var \Magento\Framework\View\DesignInterface
+     * @var DesignInterface
      */
     private $design;
 
     /**
-     * @var \Magento\Framework\View\Design\ThemeInterface
+     * @var ThemeInterface
      */
     private $baseTheme;
 
     /**
-     * @var \Magento\Framework\View\Design\FileResolution\Fallback\Resolver\Alternative
+     * @var Alternative
      */
     private $alternativeResolver;
 
     /**
      * Factory for simple rule
      *
-     * @var \Magento\Framework\View\Design\Fallback\Rule\SimpleFactory
+     * @var SimpleFactory
      */
     private $simpleFactory;
 
     /**
-     * @var \Magento\Framework\Filesystem
+     * @var Filesystem
      */
     private $filesystem;
-
-    protected function setUp(): void
-    {
-        $om = \Magento\TestFramework\Helper\Bootstrap::getObjectmanager();
-        $this->fallback = $om->get(\Magento\Framework\View\Design\FileResolution\Fallback\StaticFile::class);
-        $this->explicitFallback = $om->get(
-            \Magento\Framework\View\Design\FileResolution\Fallback\Resolver\Simple::class
-        );
-        $this->themeRepo = $om->get(\Magento\Framework\View\Design\Theme\FlyweightFactory::class);
-        $this->design = $om->get(\Magento\Framework\View\DesignInterface::class);
-        $this->baseTheme = $om->get(\Magento\Framework\View\Design\ThemeInterface::class);
-        $this->alternativeResolver = $om->get(
-            \Magento\Framework\View\Design\FileResolution\Fallback\Resolver\Alternative::class
-        );
-        $this->simpleFactory = $om->get(\Magento\Framework\View\Design\Fallback\Rule\SimpleFactory::class);
-        $this->filesystem = $om->get(\Magento\Framework\Filesystem::class);
-    }
 
     /**
      * Scan references to files from other static files and assert they are correct
@@ -92,7 +90,7 @@ class StaticFilesTest extends \PHPUnit\Framework\TestCase
     {
         $contents = file_get_contents($absolutePath);
         preg_match_all(
-            \Magento\Framework\View\Url\CssResolver::REGEX_CSS_RELATIVE_URLS,
+            CssResolver::REGEX_CSS_RELATIVE_URLS,
             $contents,
             $matches
         );
@@ -101,7 +99,7 @@ class StaticFilesTest extends \PHPUnit\Framework\TestCase
                 continue;
             }
             list($relatedModule, $relatedPath) =
-                \Magento\Framework\View\Asset\Repository::extractModule($relatedResource);
+                Repository::extractModule($relatedResource);
             if ($relatedModule) {
                 $fallbackModule = $relatedModule;
             } else {
@@ -135,31 +133,10 @@ class StaticFilesTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Get a default theme path for specified area
-     *
-     * @param string $area
-     * @return string
-     * @throws \LogicException
-     */
-    private function getDefaultThemePath($area)
-    {
-        switch ($area) {
-            case 'frontend':
-                return $this->design->getConfigurationDesignTheme($area);
-            case 'Adminhtml':
-                return 'Magento/backend';
-            case 'doc':
-                return 'Magento/blank';
-            default:
-                throw new \LogicException('Unable to determine theme path');
-        }
-    }
-
-    /**
      * Get static file through fallback system using specified params
      *
      * @param string $area
-     * @param string|\Magento\Framework\View\Design\ThemeInterface $theme - either theme path (string) or theme object
+     * @param string|ThemeInterface $theme - either theme path (string) or theme object
      * @param string $locale
      * @param string $filePath
      * @param string $module
@@ -176,10 +153,31 @@ class StaticFilesTest extends \PHPUnit\Framework\TestCase
             $theme = $this->themeRepo->create($themePath, $area);
         }
         if ($isExplicit) {
-            $type = \Magento\Framework\View\Design\Fallback\RulePool::TYPE_STATIC_FILE;
+            $type = RulePool::TYPE_STATIC_FILE;
             return $this->explicitFallback->resolve($type, $filePath, $area, $theme, $locale, $module);
         }
         return $this->fallback->getFile($area, $theme, $locale, $filePath, $module);
+    }
+
+    /**
+     * Get a default theme path for specified area
+     *
+     * @param string $area
+     * @return string
+     * @throws LogicException
+     */
+    private function getDefaultThemePath($area)
+    {
+        switch ($area) {
+            case 'frontend':
+                return $this->design->getConfigurationDesignTheme($area);
+            case 'Adminhtml':
+                return 'Magento/backend';
+            case 'doc':
+                return 'Magento/blank';
+            default:
+                throw new LogicException('Unable to determine theme path');
+        }
     }
 
     /**
@@ -187,7 +185,7 @@ class StaticFilesTest extends \PHPUnit\Framework\TestCase
      */
     public function referencesFromStaticFilesDataProvider()
     {
-        return \Magento\Framework\App\Utility\Files::init()->getStaticPreProcessingFiles('*.{less,css}');
+        return Files::init()->getStaticPreProcessingFiles('*.{less,css}');
     }
 
     /**
@@ -227,7 +225,7 @@ class StaticFilesTest extends \PHPUnit\Framework\TestCase
      */
     public function lessNotConfusedWithCssDataProvider()
     {
-        return \Magento\Framework\App\Utility\Files::init()->getStaticPreProcessingFiles('*.{less,css}');
+        return Files::init()->getStaticPreProcessingFiles('*.{less,css}');
     }
 
     /**
@@ -241,7 +239,7 @@ class StaticFilesTest extends \PHPUnit\Framework\TestCase
      */
     public function testReferencesFromPhtmlFiles($phtmlFile, $area, $themePath, $fileId)
     {
-        list($module, $filePath) = \Magento\Framework\View\Asset\Repository::extractModule($fileId);
+        list($module, $filePath) = Repository::extractModule($fileId);
         $this->assertNotEmpty(
             $this->getStaticFile($area, $themePath, 'en_US', $filePath, $module),
             "Unable to locate '{$fileId}' reference from {$phtmlFile}"
@@ -254,7 +252,7 @@ class StaticFilesTest extends \PHPUnit\Framework\TestCase
     public function referencesFromPhtmlFilesDataProvider()
     {
         $result = [];
-        foreach (\Magento\Framework\App\Utility\Files::init()->getPhtmlFiles(true, false) as $info) {
+        foreach (Files::init()->getPhtmlFiles(true, false) as $info) {
             list($area, $themePath, , , $file) = $info;
             foreach ($this->collectGetViewFileUrl($file) as $fileId) {
                 $result[] = [$file, $area, $themePath, $fileId];
@@ -289,7 +287,7 @@ class StaticFilesTest extends \PHPUnit\Framework\TestCase
      */
     public function testReferencesFromLayoutFiles($layoutFile, $area, $themePath, $fileId)
     {
-        list($module, $filePath) = \Magento\Framework\View\Asset\Repository::extractModule($fileId);
+        list($module, $filePath) = Repository::extractModule($fileId);
         $this->assertNotEmpty(
             $this->getStaticFile($area, $themePath, 'en_US', $filePath, $module),
             "Unable to locate '{$fileId}' reference from layout XML in {$layoutFile}"
@@ -302,7 +300,7 @@ class StaticFilesTest extends \PHPUnit\Framework\TestCase
     public function referencesFromLayoutFilesDataProvider()
     {
         $result = [];
-        $files = \Magento\Framework\App\Utility\Files::init()->getLayoutFiles(['with_metainfo' => true], false);
+        $files = Files::init()->getLayoutFiles(['with_metainfo' => true], false);
         foreach ($files as $metaInfo) {
             list($area, $themePath, , , $file) = $metaInfo;
             foreach ($this->collectFileIdsFromLayout($file) as $fileId) {
@@ -329,5 +327,22 @@ class StaticFilesTest extends \PHPUnit\Framework\TestCase
             }
         }
         return $result;
+    }
+
+    protected function setUp(): void
+    {
+        $om = Bootstrap::getObjectmanager();
+        $this->fallback = $om->get(StaticFile::class);
+        $this->explicitFallback = $om->get(
+            Simple::class
+        );
+        $this->themeRepo = $om->get(FlyweightFactory::class);
+        $this->design = $om->get(DesignInterface::class);
+        $this->baseTheme = $om->get(ThemeInterface::class);
+        $this->alternativeResolver = $om->get(
+            Alternative::class
+        );
+        $this->simpleFactory = $om->get(SimpleFactory::class);
+        $this->filesystem = $om->get(Filesystem::class);
     }
 }

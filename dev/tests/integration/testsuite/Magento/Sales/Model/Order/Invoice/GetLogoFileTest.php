@@ -7,15 +7,16 @@ declare(strict_types=1);
 
 namespace Magento\Sales\Model\Order\Invoice;
 
+use Magento\Framework\App\Config\MutableScopeConfigInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
-use Magento\Framework\App\Config\MutableScopeConfigInterface;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\Sales\Model\Order\Invoice\GetLogoFile
  */
-class GetLogoFileTest extends \PHPUnit\Framework\TestCase
+class GetLogoFileTest extends TestCase
 {
     private const XML_PATH_SALES_IDENTITY_LOGO_HTML = 'sales/identity/logo_html';
     private const DUMP_IMAGE = 'my_dump_logo.png';
@@ -34,16 +35,6 @@ class GetLogoFileTest extends \PHPUnit\Framework\TestCase
      * @var GetLogoFile
      */
     private $getLogoFile;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->scopeConfig = $this->objectManager->get(MutableScopeConfigInterface::class);
-        $this->getLogoFile = $this->objectManager->get(GetLogoFile::class);
-    }
 
     /**
      * Check that GetLogoFile return image after Admin configuration is changed
@@ -72,5 +63,15 @@ class GetLogoFileTest extends \PHPUnit\Framework\TestCase
             self::DUMP_IMAGE,
             ScopeInterface::SCOPE_STORE
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->scopeConfig = $this->objectManager->get(MutableScopeConfigInterface::class);
+        $this->getLogoFile = $this->objectManager->get(GetLogoFile::class);
     }
 }

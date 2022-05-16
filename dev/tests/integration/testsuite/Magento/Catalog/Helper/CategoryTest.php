@@ -3,7 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Helper;
+
+use Magento\Framework\Data\Tree\Node;
+use Magento\Framework\Data\Tree\Node\Collection;
+use Magento\Framework\DataObject;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class CategoryTest
@@ -12,30 +21,12 @@ namespace Magento\Catalog\Helper;
  * @magentoDbIsolation enabled
  * @magentoAppIsolation enabled
  */
-class CategoryTest extends \PHPUnit\Framework\TestCase
+class CategoryTest extends TestCase
 {
     /**
-     * @var \Magento\Catalog\Helper\Category
+     * @var Category
      */
     protected $_helper;
-
-    protected function setUp(): void
-    {
-        $this->_helper = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Catalog\Helper\Category::class
-        );
-    }
-
-    protected function tearDown(): void
-    {
-        if ($this->_helper) {
-            $helperClass = get_class($this->_helper);
-            /** @var $objectManager \Magento\TestFramework\ObjectManager */
-            $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-            $objectManager->get(\Magento\Framework\Registry::class)->unregister('_helper/' . $helperClass);
-        }
-        $this->_helper = null;
-    }
 
     /**
      * @magentoDataFixture Magento/Catalog/_files/categories.php
@@ -43,7 +34,7 @@ class CategoryTest extends \PHPUnit\Framework\TestCase
     public function testGetStoreCategories()
     {
         $categories = $this->_helper->getStoreCategories();
-        $this->assertInstanceOf(\Magento\Framework\Data\Tree\Node\Collection::class, $categories);
+        $this->assertInstanceOf(Collection::class, $categories);
         $index = 0;
         $expectedPaths = [
             [3, '1/2/3'],
@@ -55,7 +46,7 @@ class CategoryTest extends \PHPUnit\Framework\TestCase
             [12, '1/2/12'],
         ];
         foreach ($categories as $category) {
-            $this->assertInstanceOf(\Magento\Framework\Data\Tree\Node::class, $category);
+            $this->assertInstanceOf(Node::class, $category);
             $this->assertEquals($expectedPaths[$index][0], $category->getId());
             $this->assertEquals($expectedPaths[$index][1], $category->getData('path'));
             $index++;
@@ -65,13 +56,13 @@ class CategoryTest extends \PHPUnit\Framework\TestCase
     public function testGetCategoryUrl()
     {
         $url = 'http://example.com/';
-        $category = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+        $category = Bootstrap::getObjectManager()->create(
             \Magento\Catalog\Model\Category::class,
             ['data' => ['url' => $url]]
         );
         $this->assertEquals($url, $this->_helper->getCategoryUrl($category));
 
-        $category = new \Magento\Framework\DataObject(['url' => $url]);
+        $category = new DataObject(['url' => $url]);
         $this->assertEquals($url, $this->_helper->getCategoryUrl($category));
     }
 
@@ -87,7 +78,7 @@ class CategoryTest extends \PHPUnit\Framework\TestCase
     public function testCanShowFalse()
     {
         /** @var $category \Magento\Catalog\Model\Category */
-        $category = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+        $category = Bootstrap::getObjectManager()->create(
             \Magento\Catalog\Model\Category::class
         );
         $this->assertFalse($this->_helper->canShow($category));
@@ -108,5 +99,23 @@ class CategoryTest extends \PHPUnit\Framework\TestCase
     public function testCanUseCanonicalTag()
     {
         $this->assertEquals(1, $this->_helper->canUseCanonicalTag());
+    }
+
+    protected function setUp(): void
+    {
+        $this->_helper = Bootstrap::getObjectManager()->get(
+            Category::class
+        );
+    }
+
+    protected function tearDown(): void
+    {
+        if ($this->_helper) {
+            $helperClass = get_class($this->_helper);
+            /** @var $objectManager ObjectManager */
+            $objectManager = Bootstrap::getObjectManager();
+            $objectManager->get(Registry::class)->unregister('_helper/' . $helperClass);
+        }
+        $this->_helper = null;
     }
 }

@@ -3,7 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogImportExport\Model;
+
+use Magento\Catalog\Model\Product;
 
 /**
  * @magentoDataFixtureBeforeTransaction Magento/Catalog/_files/enable_reindex_schedule.php
@@ -142,13 +145,14 @@ class ProductTest extends AbstractProductExportImportTestCase
      * the right beginning part of the name. When an image is named "magento_image.jpeg" but there is already an image
      * with that name it will now become "magento_image_1.jpeg"
      *
-     * @param \Magento\Catalog\Model\Product $expectedProduct
-     * @param \Magento\Catalog\Model\Product $actualProduct
+     * @param Product $expectedProduct
+     * @param Product $actualProduct
      */
     protected function assertEqualsSpecificAttributes(
-        \Magento\Catalog\Model\Product $expectedProduct,
-        \Magento\Catalog\Model\Product $actualProduct
-    ): void {
+        Product $expectedProduct,
+        Product $actualProduct
+    ): void
+    {
         if (!empty($actualProduct->getImage())
             && !empty($expectedProduct->getImage())
         ) {

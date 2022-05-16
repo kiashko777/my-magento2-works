@@ -68,28 +68,26 @@ class UpdateConfigurableCartItemsTest extends GraphQlAbstract
     }
 
     /**
-     * Data provider for testUpdateConfigurableCartItemQuantity
+     * Returns quote item by product SKU
      *
-     * @return array
+     * @param string $sku
+     * @return Item|bool
+     * @throws NoSuchEntityException
      */
-    public function updateConfigurableCartItemQuantityDataProvider(): array
+    private function getQuoteItemBySku(string $sku, string $reservedOrderId)
     {
-        return [
-            ['cart_item_id', 'test_cart_with_configurable'],
-            ['cart_item_uid', 'test_cart_with_configurable'],
-        ];
-    }
+        $quote = $this->quoteFactory->create();
+        $this->quoteResource->load($quote, $reservedOrderId, 'reserved_order_id');
+        $item = false;
+        foreach ($quote->getAllItems() as $quoteItem) {
+            if ($quoteItem->getSku() == $sku && $quoteItem->getProductType() == Configurable::TYPE_CODE &&
+                !$quoteItem->getParentItemId()) {
+                $item = $quoteItem;
+                break;
+            }
+        }
 
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->quoteFactory = $objectManager->get(QuoteFactory::class);
-        $this->quoteResource = $objectManager->get(QuoteResource::class);
-        $this->quoteIdMaskFactory = Bootstrap::getObjectManager()->get(QuoteIdMaskFactory::class);
+        return $item;
     }
 
     /**
@@ -102,7 +100,7 @@ class UpdateConfigurableCartItemsTest extends GraphQlAbstract
     private function getQuery(string $itemArgName, string $maskedQuoteId, string $quoteItemId, int $newQuantity): string
     {
         if (is_numeric($quoteItemId)) {
-            $quoteItemId = (int) $quoteItemId;
+            $quoteItemId = (int)$quoteItemId;
         } else {
             $quoteItemId = '"' . $quoteItemId . '"';
         }
@@ -128,25 +126,27 @@ QUERY;
     }
 
     /**
-     * Returns quote item by product SKU
+     * Data provider for testUpdateConfigurableCartItemQuantity
      *
-     * @param string $sku
-     * @return Item|bool
-     * @throws NoSuchEntityException
+     * @return array
      */
-    private function getQuoteItemBySku(string $sku, string $reservedOrderId)
+    public function updateConfigurableCartItemQuantityDataProvider(): array
     {
-        $quote = $this->quoteFactory->create();
-        $this->quoteResource->load($quote, $reservedOrderId, 'reserved_order_id');
-        $item = false;
-        foreach ($quote->getAllItems() as $quoteItem) {
-            if ($quoteItem->getSku() == $sku && $quoteItem->getProductType() == Configurable::TYPE_CODE &&
-                !$quoteItem->getParentItemId()) {
-                $item = $quoteItem;
-                break;
-            }
-        }
+        return [
+            ['cart_item_id', 'test_cart_with_configurable'],
+            ['cart_item_uid', 'test_cart_with_configurable'],
+        ];
+    }
 
-        return $item;
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->quoteFactory = $objectManager->get(QuoteFactory::class);
+        $this->quoteResource = $objectManager->get(QuoteResource::class);
+        $this->quoteIdMaskFactory = Bootstrap::getObjectManager()->get(QuoteIdMaskFactory::class);
     }
 }

@@ -3,10 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Dependency\Report\Builder;
 
+use InvalidArgumentException;
 use Magento\Setup\Module\Dependency\ParserInterface;
 use Magento\Setup\Module\Dependency\Report\BuilderInterface;
+use Magento\Setup\Module\Dependency\Report\Data\ConfigInterface;
 use Magento\Setup\Module\Dependency\Report\WriterInterface;
 
 /**
@@ -17,14 +20,14 @@ abstract class AbstractBuilder implements BuilderInterface
     /**
      * Dependencies parser
      *
-     * @var \Magento\Setup\Module\Dependency\ParserInterface
+     * @var ParserInterface
      */
     protected $dependenciesParser;
 
     /**
      * Report writer
      *
-     * @var \Magento\Setup\Module\Dependency\Report\WriterInterface
+     * @var WriterInterface
      */
     protected $reportWriter;
 
@@ -64,16 +67,16 @@ abstract class AbstractBuilder implements BuilderInterface
      *
      * @param array $options
      * @return void
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     protected function checkOptions($options)
     {
         if (!isset($options['parse']) || empty($options['parse'])) {
-            throw new \InvalidArgumentException('Passed option section "parse" is wrong.');
+            throw new InvalidArgumentException('Passed option section "parse" is wrong.');
         }
 
         if (!isset($options['write']) || empty($options['write'])) {
-            throw new \InvalidArgumentException('Passed option section "write" is wrong.');
+            throw new InvalidArgumentException('Passed option section "write" is wrong.');
         }
     }
 
@@ -81,7 +84,7 @@ abstract class AbstractBuilder implements BuilderInterface
      * Template method. Prepare data for writer step
      *
      * @param array $modulesData
-     * @return \Magento\Setup\Module\Dependency\Report\Data\ConfigInterface
+     * @return ConfigInterface
      */
     abstract protected function buildData($modulesData);
 }

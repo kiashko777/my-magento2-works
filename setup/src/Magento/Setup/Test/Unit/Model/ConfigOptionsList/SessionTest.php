@@ -17,7 +17,7 @@ use PHPUnit\Framework\TestCase;
 class SessionTest extends TestCase
 {
     /**
-     * @var \Magento\Setup\Model\ConfigOptionsList\Session
+     * @var SessionConfigOptionsList
      */
     private $configList;
 
@@ -25,13 +25,6 @@ class SessionTest extends TestCase
      * @var DeploymentConfig
      */
     private $deploymentConfigMock;
-
-    protected function setUp(): void
-    {
-        $this->configList = new SessionConfigOptionsList();
-
-        $this->deploymentConfigMock = $this->createMock(DeploymentConfig::class);
-    }
 
     public function testGetOptions()
     {
@@ -311,5 +304,12 @@ class SessionTest extends TestCase
             ['session-save-redis-log-level', '10', 'Invalid Redis log level \'10\'. Valid range is 0-7, inclusive.'],
             ['session-save-redis-compression-lib', 'foobar', 'Invalid Redis compression library \'foobar\''],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->configList = new SessionConfigOptionsList();
+
+        $this->deploymentConfigMock = $this->createMock(DeploymentConfig::class);
     }
 }

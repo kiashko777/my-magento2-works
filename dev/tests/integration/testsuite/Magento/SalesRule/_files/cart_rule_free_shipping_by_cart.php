@@ -4,12 +4,14 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Customer\Model\GroupManagement;
+use Magento\SalesRule\Model\ResourceModel\Rule\CollectionFactory;
 use Magento\SalesRule\Model\Rule;
+use Magento\SalesRule\Model\Rule\Condition\Combine;
 use Magento\SalesRule\Model\RuleFactory;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
-use Magento\SalesRule\Model\ResourceModel\Rule\CollectionFactory;
 
 Resolver::getInstance()->requireDataFixture('Magento/SalesRule/_files/cart_rule_free_shipping.php');
 
@@ -21,17 +23,17 @@ $row =
     [
         'name' => 'Free shipping for cart if item price >10',
         'is_active' => 1,
-        'customer_group_ids' => [\Magento\Customer\Model\GroupManagement::NOT_LOGGED_IN_ID],
+        'customer_group_ids' => [GroupManagement::NOT_LOGGED_IN_ID],
         'coupon_type' => Rule::COUPON_TYPE_NO_COUPON,
         'conditions' => [
             1 => [
-                    'type' => \Magento\SalesRule\Model\Rule\Condition\Combine::class,
-                    'attribute' => null,
-                    'operator' => null,
-                    'value' => '1',
-                    'is_value_processed' => null,
-                    'aggregator' => 'all',
-                ]
+                'type' => Combine::class,
+                'attribute' => null,
+                'operator' => null,
+                'value' => '1',
+                'is_value_processed' => null,
+                'aggregator' => 'all',
+            ]
 
         ],
         'actions' => [

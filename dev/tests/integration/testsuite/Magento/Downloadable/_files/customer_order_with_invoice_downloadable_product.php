@@ -8,13 +8,14 @@ declare(strict_types=1);
 use Magento\Framework\DB\Transaction;
 use Magento\Sales\Api\Data\OrderInterfaceFactory;
 use Magento\Sales\Api\InvoiceManagementInterface;
+use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Payment;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 
 /** @var ObjectManager $objectManager */
 $objectManager = Bootstrap::getObjectManager();
-/** @var \Magento\Sales\Model\Order $order */
+/** @var Order $order */
 $order = $objectManager->get(OrderInterfaceFactory::class)->create()->loadByIncrementId('100000001');
 
 $payment = $objectManager->create(Payment::class);

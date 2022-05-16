@@ -3,15 +3,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Legacy;
 
+use Magento\Framework\App\Utility\AggregateInvoker;
+use Magento\Framework\App\Utility\Files;
 use Magento\Framework\Component\ComponentRegistrar;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Temporary test that will be removed in scope of MAGETWO-28356.
  * Test verifies obsolete usages in modules that were refactored to work with ResultInterface.
  */
-class ObsoleteResponseTest extends \PHPUnit\Framework\TestCase
+class ObsoleteResponseTest extends TestCase
 {
     /**
      * @var array
@@ -28,18 +32,12 @@ class ObsoleteResponseTest extends \PHPUnit\Framework\TestCase
      */
     protected $appPath;
 
-    protected function setUp(): void
-    {
-        $this->obsoleteMethods = include __DIR__ . '/_files/response/obsolete_response_methods.php';
-        $this->filesBlackList = $this->getBlackList();
-    }
-
     /**
      * Test verify that obsolete methods do not appear in refactored folders
      */
     public function testObsoleteResponseMethods()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
             function ($file) {
                 $content = file_get_contents($file);
@@ -67,7 +65,7 @@ class ObsoleteResponseTest extends \PHPUnit\Framework\TestCase
         $componentRegistrar = new ComponentRegistrar();
         foreach ($this->getFilesData('whitelist/refactored_modules*') as $refactoredModule) {
             if ($componentRegistrar->getPath(ComponentRegistrar::MODULE, $refactoredModule)) {
-                $files = \Magento\Framework\App\Utility\Files::init()->getFiles(
+                $files = Files::init()->getFiles(
                     [$componentRegistrar->getPath(ComponentRegistrar::MODULE, $refactoredModule)],
                     '*.php'
                 );
@@ -77,7 +75,13 @@ class ObsoleteResponseTest extends \PHPUnit\Framework\TestCase
 
         $result = array_map('realpath', $filesList);
         $result = array_diff($result, $this->filesBlackList);
-        return \Magento\Framework\App\Utility\Files::composeDataSets($result);
+        return Files::composeDataSets($result);
+    }
+
+    protected function setUp(): void
+    {
+        $this->obsoleteMethods = include __DIR__ . '/_files/response/obsolete_response_methods.php';
+        $this->filesBlackList = $this->getBlackList();
     }
 
     /**

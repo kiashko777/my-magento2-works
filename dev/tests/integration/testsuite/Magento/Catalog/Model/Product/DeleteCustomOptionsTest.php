@@ -50,21 +50,6 @@ class DeleteCustomOptionsTest extends TestCase
     private $customOptionValueFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->optionRepository = $this->objectManager->get(ProductCustomOptionRepositoryInterface::class);
-        $this->customOptionFactory = $this->objectManager->get(ProductCustomOptionInterfaceFactory::class);
-        $this->customOptionValueFactory = $this->objectManager
-            ->get(ProductCustomOptionValuesInterfaceFactory::class);
-
-        parent::setUp();
-    }
-
-    /**
      * Test delete product custom options with type "area".
      *
      * @magentoDataFixture Magento/Catalog/_files/product_without_options.php
@@ -77,6 +62,25 @@ class DeleteCustomOptionsTest extends TestCase
     public function testDeleteAreaCustomOption(array $optionData): void
     {
         $this->deleteAndAssertNotSelectCustomOptions($optionData);
+    }
+
+    /**
+     * Delete product custom options which are not from "select" group and assert that option was deleted.
+     *
+     * @param array $optionData
+     * @return void
+     */
+    private function deleteAndAssertNotSelectCustomOptions(array $optionData): void
+    {
+        $product = $this->productRepository->get('simple');
+        $createdOption = $this->customOptionFactory->create(['data' => $optionData]);
+        $createdOption->setProductSku($product->getSku());
+        $product->setOptions([$createdOption]);
+        $this->productRepository->save($product);
+        $this->assertCount(1, $this->optionRepository->getProductOptions($product));
+        $product->setOptions([]);
+        $this->productRepository->save($product);
+        $this->assertCount(0, $this->optionRepository->getProductOptions($product));
     }
 
     /**
@@ -156,6 +160,20 @@ class DeleteCustomOptionsTest extends TestCase
     }
 
     /**
+     * Delete product custom options which from "select" group and assert that option was deleted.
+     *
+     * @param array $optionData
+     * @param array $optionValueData
+     * @return void
+     */
+    private function deleteAndAssertSelectCustomOptions(array $optionData, array $optionValueData): void
+    {
+        $optionValue = $this->customOptionValueFactory->create(['data' => $optionValueData]);
+        $optionData['values'] = [$optionValue];
+        $this->deleteAndAssertNotSelectCustomOptions($optionData);
+    }
+
+    /**
      * Test delete product custom options with type "Radio Buttons".
      *
      * @magentoDataFixture Magento/Catalog/_files/product_without_options.php
@@ -204,35 +222,17 @@ class DeleteCustomOptionsTest extends TestCase
     }
 
     /**
-     * Delete product custom options which are not from "select" group and assert that option was deleted.
-     *
-     * @param array $optionData
-     * @return void
+     * @inheritdoc
      */
-    private function deleteAndAssertNotSelectCustomOptions(array $optionData): void
+    protected function setUp(): void
     {
-        $product = $this->productRepository->get('simple');
-        $createdOption = $this->customOptionFactory->create(['data' => $optionData]);
-        $createdOption->setProductSku($product->getSku());
-        $product->setOptions([$createdOption]);
-        $this->productRepository->save($product);
-        $this->assertCount(1, $this->optionRepository->getProductOptions($product));
-        $product->setOptions([]);
-        $this->productRepository->save($product);
-        $this->assertCount(0, $this->optionRepository->getProductOptions($product));
-    }
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->optionRepository = $this->objectManager->get(ProductCustomOptionRepositoryInterface::class);
+        $this->customOptionFactory = $this->objectManager->get(ProductCustomOptionInterfaceFactory::class);
+        $this->customOptionValueFactory = $this->objectManager
+            ->get(ProductCustomOptionValuesInterfaceFactory::class);
 
-    /**
-     * Delete product custom options which from "select" group and assert that option was deleted.
-     *
-     * @param array $optionData
-     * @param array $optionValueData
-     * @return void
-     */
-    private function deleteAndAssertSelectCustomOptions(array $optionData, array $optionValueData): void
-    {
-        $optionValue = $this->customOptionValueFactory->create(['data' => $optionValueData]);
-        $optionData['values'] = [$optionValue];
-        $this->deleteAndAssertNotSelectCustomOptions($optionData);
+        parent::setUp();
     }
 }

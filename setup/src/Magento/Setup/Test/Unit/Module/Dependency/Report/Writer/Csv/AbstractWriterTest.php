@@ -25,16 +25,6 @@ class AbstractWriterTest extends TestCase
      */
     protected $csvMock;
 
-    protected function setUp(): void
-    {
-        $this->csvMock = $this->createMock(Csv::class);
-
-        $this->writer = $this->getMockForAbstractClass(
-            AbstractWriter::class,
-            ['writer' => $this->csvMock]
-        );
-    }
-
     public function testWrite()
     {
         $options = ['report_filename' => 'some_filename'];
@@ -77,5 +67,15 @@ class AbstractWriterTest extends TestCase
             [['report_filename' => '']],
             [['there_are_no_report_filename' => 'some_name']]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->csvMock = $this->createMock(Csv::class);
+
+        $this->writer = $this->getMockForAbstractClass(
+            AbstractWriter::class,
+            ['writer' => $this->csvMock]
+        );
     }
 }

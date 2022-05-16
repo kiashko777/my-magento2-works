@@ -23,7 +23,8 @@ define([
         mocks = {
             'Magento_Checkout/js/model/quote': {
                 shippingAddress: ko.observable(),
-                isVirtual: function () {},
+                isVirtual: function () {
+                },
                 billingAddress: ko.observable(),
                 shippingMethod: ko.observable()
 
@@ -35,13 +36,15 @@ define([
                 estimateTotals: jasmine.createSpy()
             },
             'Magento_Checkout/js/model/shipping-service': {
-                setShippingRates: function () {},
+                setShippingRates: function () {
+                },
                 getShippingRates: function () {
                     return ko.observable(rates);
                 }
             },
             'Magento_Checkout/js/model/cart/cache': {
-                isChanged: function () {},
+                isChanged: function () {
+                },
                 get: jasmine.createSpy().and.returnValue(rates),
                 set: jasmine.createSpy()
             },
@@ -69,7 +72,8 @@ define([
         try {
             injector.clean();
             injector.remove();
-        } catch (e) {}
+        } catch (e) {
+        }
     });
 
     describe('Magento_Checkout/js/model/cart/estimate-service', function () {

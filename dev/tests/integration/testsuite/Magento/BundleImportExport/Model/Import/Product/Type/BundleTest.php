@@ -3,23 +3,28 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\BundleImportExport\Model\Import\Product\Type;
 
+use LogicException;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\ResourceModel\Product as ProductResource;
+use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Filesystem;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Registry;
 use Magento\ImportExport\Model\Import;
 use Magento\ImportExport\Model\Import\Source\Csv;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\TestFramework\Indexer\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class BundleTest extends \Magento\TestFramework\Indexer\TestCase
+class BundleTest extends TestCase
 {
     /**
      * Bundle product test Name
@@ -37,21 +42,19 @@ class BundleTest extends \Magento\TestFramework\Indexer\TestCase
     protected $model;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
-
-    /**
-     * @var string[]
-     */
-    private $importedProductSkus;
-
     /**
      * List of Bundle options SKU
      *
      * @var array
      */
     protected $optionSkuList = ['Simple 1', 'Simple 2', 'Simple 3'];
+    /**
+     * @var string[]
+     */
+    private $importedProductSkus;
 
     public static function setUpBeforeClass(): void
     {
@@ -59,17 +62,11 @@ class BundleTest extends \Magento\TestFramework\Indexer\TestCase
             ->getApplication()
             ->getDbInstance();
         if (!$db->isDbDumpExists()) {
-            throw new \LogicException('DB dump does not exist.');
+            throw new LogicException('DB dump does not exist.');
         }
         $db->restoreFromDbDump();
 
         parent::setUpBeforeClass();
-    }
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->model = $this->objectManager->create(\Magento\CatalogImportExport\Model\Import\Product::class);
     }
 
     /**
@@ -132,13 +129,13 @@ class BundleTest extends \Magento\TestFramework\Indexer\TestCase
 
                 switch ($optionKey + 1 + $linkKey) {
                     case 1:
-                        $this->assertEquals(1, (int) $productLink->getCanChangeQuantity());
+                        $this->assertEquals(1, (int)$productLink->getCanChangeQuantity());
                         break;
                     case 2:
-                        $this->assertEquals(0, (int) $productLink->getCanChangeQuantity());
+                        $this->assertEquals(0, (int)$productLink->getCanChangeQuantity());
                         break;
                     case 3:
-                        $this->assertEquals(1, (int) $productLink->getCanChangeQuantity());
+                        $this->assertEquals(1, (int)$productLink->getCanChangeQuantity());
                         break;
                 }
             }
@@ -323,6 +320,12 @@ class BundleTest extends \Magento\TestFramework\Indexer\TestCase
         ];
     }
 
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->model = $this->objectManager->create(\Magento\CatalogImportExport\Model\Import\Product::class);
+    }
+
     /**
      * teardown
      */
@@ -332,7 +335,7 @@ class BundleTest extends \Magento\TestFramework\Indexer\TestCase
             $objectManager = Bootstrap::getObjectManager();
             /** @var ProductRepositoryInterface $productRepository */
             $productRepository = $objectManager->create(ProductRepositoryInterface::class);
-            $registry = $objectManager->get(\Magento\Framework\Registry::class);
+            $registry = $objectManager->get(Registry::class);
             /** @var ProductRepositoryInterface $productRepository */
             $registry->unregister('isSecureArea');
             $registry->register('isSecureArea', true);

@@ -7,27 +7,29 @@
 namespace Magento\TestModule4\Service\V1;
 
 use Magento\TestModule4\Service\V1\Entity\DataObjectRequest;
+use Magento\TestModule4\Service\V1\Entity\DataObjectResponse;
+use Magento\TestModule4\Service\V1\Entity\ExtensibleRequestInterface;
 use Magento\TestModule4\Service\V1\Entity\NestedDataObjectRequest;
 
 interface DataObjectServiceInterface
 {
     /**
      * @param int $id
-     * @return \Magento\TestModule4\Service\V1\Entity\DataObjectResponse
+     * @return DataObjectResponse
      */
     public function getData($id);
 
     /**
      * @param int $id
-     * @param \Magento\TestModule4\Service\V1\Entity\DataObjectRequest $request
-     * @return \Magento\TestModule4\Service\V1\Entity\DataObjectResponse
+     * @param DataObjectRequest $request
+     * @return DataObjectResponse
      */
     public function updateData($id, DataObjectRequest $request);
 
     /**
      * @param int $id
-     * @param \Magento\TestModule4\Service\V1\Entity\NestedDataObjectRequest $request
-     * @return \Magento\TestModule4\Service\V1\Entity\DataObjectResponse
+     * @param NestedDataObjectRequest $request
+     * @return DataObjectResponse
      */
     public function nestedData($id, NestedDataObjectRequest $request);
 
@@ -41,11 +43,11 @@ interface DataObjectServiceInterface
 
     /**
      * @param int $id
-     * @param \Magento\TestModule4\Service\V1\Entity\ExtensibleRequestInterface $request
-     * @return \Magento\TestModule4\Service\V1\Entity\DataObjectResponse
+     * @param ExtensibleRequestInterface $request
+     * @return DataObjectResponse
      */
     public function extensibleDataObject(
         $id,
-        \Magento\TestModule4\Service\V1\Entity\ExtensibleRequestInterface $request
+        ExtensibleRequestInterface $request
     );
 }

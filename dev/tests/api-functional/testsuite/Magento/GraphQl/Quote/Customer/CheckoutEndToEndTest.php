@@ -7,10 +7,11 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Quote\Customer;
 
-use Magento\Quote\Model\QuoteIdMaskFactory;
-use Magento\Quote\Model\ResourceModel\Quote as QuoteResource;
+use Exception;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Framework\Registry;
+use Magento\Quote\Model\QuoteIdMaskFactory;
+use Magento\Quote\Model\ResourceModel\Quote as QuoteResource;
 use Magento\Quote\Model\ResourceModel\Quote\CollectionFactory as QuoteCollectionFactory;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\OrderFactory;
@@ -67,23 +68,6 @@ class CheckoutEndToEndTest extends GraphQlAbstract
      * @var array
      */
     private $headers = [];
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-
-        $this->registry = $objectManager->get(Registry::class);
-        $this->quoteCollectionFactory = $objectManager->get(QuoteCollectionFactory::class);
-        $this->quoteResource = $objectManager->get(QuoteResource::class);
-        $this->quoteIdMaskFactory = $objectManager->get(QuoteIdMaskFactory::class);
-        $this->customerRepository = $objectManager->get(CustomerRepositoryInterface::class);
-        $this->orderCollectionFactory = $objectManager->get(CollectionFactory::class);
-        $this->orderRepository = $objectManager->get(OrderRepositoryInterface::class);
-        $this->orderFactory = $objectManager->get(OrderFactory::class);
-    }
 
     /**
      * @magentoApiDataFixture Magento/Catalog/_files/products_with_layered_navigation_attribute.php
@@ -480,6 +464,23 @@ QUERY;
         self::assertArrayHasKey('grand_total', $order);
     }
 
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+
+        $this->registry = $objectManager->get(Registry::class);
+        $this->quoteCollectionFactory = $objectManager->get(QuoteCollectionFactory::class);
+        $this->quoteResource = $objectManager->get(QuoteResource::class);
+        $this->quoteIdMaskFactory = $objectManager->get(QuoteIdMaskFactory::class);
+        $this->customerRepository = $objectManager->get(CustomerRepositoryInterface::class);
+        $this->orderCollectionFactory = $objectManager->get(CollectionFactory::class);
+        $this->orderRepository = $objectManager->get(OrderRepositoryInterface::class);
+        $this->orderFactory = $objectManager->get(OrderFactory::class);
+    }
+
     protected function tearDown(): void
     {
         $this->deleteCustomer();
@@ -496,7 +497,7 @@ QUERY;
         $email = 'customer@example.com';
         try {
             $customer = $this->customerRepository->get($email);
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             return;
         }
         $this->registry->unregister('isSecureArea');

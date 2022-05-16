@@ -5,12 +5,16 @@
  */
 declare(strict_types=1);
 
-use Magento\Framework\Registry;
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Store\Model\Website;
-use Magento\Store\Model\Store;
 use Magento\CatalogSearch\Model\Indexer\Fulltext as FulltextIndex;
+use Magento\Config\Model\ResourceModel\Config;
 use Magento\Framework\App\Config\ReinitableConfigInterface;
+use Magento\Framework\Indexer\IndexerRegistry;
+use Magento\Framework\Registry;
+use Magento\Store\Model\ScopeInterface;
+use Magento\Store\Model\Store;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\Store\Model\Website;
+use Magento\TestFramework\Helper\Bootstrap;
 
 $objectManager = Bootstrap::getObjectManager();
 /** @var Registry $registry */
@@ -26,11 +30,11 @@ if ($store->load('fixture_second_store', 'code')->getId()) {
 
 //Deleting the second website.
 
-$configResource = $objectManager->get(\Magento\Config\Model\ResourceModel\Config::class);
+$configResource = $objectManager->get(Config::class);
 //Restoring allowed countries.
 $configResource->deleteConfig(
     'general/country/allow',
-    \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITES,
+    ScopeInterface::SCOPE_WEBSITES,
     1
 );
 /** @var Website $website */
@@ -39,7 +43,7 @@ $website->load('test');
 if ($website->getId()) {
     $configResource->deleteConfig(
         'general/country/allow',
-        \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITES,
+        ScopeInterface::SCOPE_WEBSITES,
         $website->getId()
     );
     $website->delete();
@@ -48,12 +52,12 @@ $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', false);
 
 /* Refresh stores memory cache */
-/** @var \Magento\Store\Model\StoreManagerInterface $storeManager */
-$storeManager = $objectManager->get(\Magento\Store\Model\StoreManagerInterface::class);
+/** @var StoreManagerInterface $storeManager */
+$storeManager = $objectManager->get(StoreManagerInterface::class);
 $storeManager->reinitStores();
 /* Refresh CatalogSearch index */
-/** @var \Magento\Framework\Indexer\IndexerRegistry $indexerRegistry */
-$indexerRegistry = $objectManager->create(\Magento\Framework\Indexer\IndexerRegistry::class);
+/** @var IndexerRegistry $indexerRegistry */
+$indexerRegistry = $objectManager->create(IndexerRegistry::class);
 $indexerRegistry->get(FulltextIndex::INDEXER_ID)->reindexAll();
 //Clear config cache.
 $objectManager->get(ReinitableConfigInterface::class)->reinit();

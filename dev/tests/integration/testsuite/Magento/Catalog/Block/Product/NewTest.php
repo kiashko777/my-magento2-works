@@ -3,7 +3,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Block\Product;
+
+use Magento\Catalog\Block\Product\Widget\NewWidget;
+use Magento\Catalog\Model\ResourceModel\Product\Collection;
+use Magento\Customer\Api\GroupManagementInterface;
+use Magento\Customer\Model\Session;
+use Magento\Framework\App\Area;
+use Magento\Framework\View\DesignInterface;
+use Magento\Framework\View\LayoutInterface;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\Catalog\Block\Products\New.
@@ -11,36 +23,12 @@ namespace Magento\Catalog\Block\Product;
  * @magentoDataFixture Magento/Catalog/_files/products_new.php
  * @magentoDbIsolation disabled
  */
-class NewTest extends \PHPUnit\Framework\TestCase
+class NewTest extends TestCase
 {
     /**
-     * @var \Magento\Catalog\Block\Product\NewProduct
+     * @var NewProduct
      */
     protected $_block;
-
-    protected function setUp(): void
-    {
-        /**
-         * @var \Magento\Customer\Api\GroupManagementInterface $groupManagement
-         */
-        $groupManagement = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Customer\Api\GroupManagementInterface::class);
-        $notLoggedInId = $groupManagement->getNotLoggedInGroup()->getId();
-
-        \Magento\TestFramework\Helper\Bootstrap::getInstance()->loadArea(\Magento\Framework\App\Area::AREA_FRONTEND);
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\App\Http\Context::class
-        )->setValue(
-            \Magento\Customer\Model\Context::CONTEXT_GROUP,
-            $notLoggedInId,
-            $notLoggedInId
-        );
-        $this->_block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
-        )->createBlock(
-            \Magento\Catalog\Block\Product\NewProduct::class
-        );
-    }
 
     public function testGetCacheKeyInfo()
     {
@@ -54,24 +42,24 @@ class NewTest extends \PHPUnit\Framework\TestCase
 
         $this->assertSame(1, array_shift($keys));
         $this->assertEquals(
-            \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-                \Magento\Store\Model\StoreManagerInterface::class
+            Bootstrap::getObjectManager()->get(
+                StoreManagerInterface::class
             )->getStore()->getId(),
             $info[1]
         );
 
         $this->assertSame(2, array_shift($keys));
 
-        $themeModel = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\DesignInterface::class
+        $themeModel = Bootstrap::getObjectManager()->get(
+            DesignInterface::class
         )->getDesignTheme();
 
         $this->assertEquals($themeModel->getId() ?: null, $info[2]);
 
         $this->assertSame(3, array_shift($keys));
         $this->assertEquals(
-            \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-                \Magento\Customer\Model\Session::class
+            Bootstrap::getObjectManager()->get(
+                Session::class
             )->getCustomerGroupId(),
             $info[3]
         );
@@ -89,7 +77,7 @@ class NewTest extends \PHPUnit\Framework\TestCase
     public function testSetGetProductsCount()
     {
         $this->assertEquals(
-            \Magento\Catalog\Block\Product\NewProduct::DEFAULT_PRODUCTS_COUNT,
+            NewProduct::DEFAULT_PRODUCTS_COUNT,
             $this->_block->getProductsCount()
         );
         $this->_block->setProductsCount(100);
@@ -103,8 +91,8 @@ class NewTest extends \PHPUnit\Framework\TestCase
         $this->_block->setProductsCount(5);
         $this->_block->setTemplate('product/widget/new/content/new_list.phtml');
         $this->_block->setLayout(
-            \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-                \Magento\Framework\View\LayoutInterface::class
+            Bootstrap::getObjectManager()->get(
+                LayoutInterface::class
             )
         );
 
@@ -112,7 +100,7 @@ class NewTest extends \PHPUnit\Framework\TestCase
         $this->assertNotEmpty($html);
         $this->assertStringContainsString('New Products', $html);
         $this->assertInstanceOf(
-            \Magento\Catalog\Model\ResourceModel\Product\Collection::class,
+            Collection::class,
             $this->_block->getProductCollection()
         );
     }
@@ -122,10 +110,10 @@ class NewTest extends \PHPUnit\Framework\TestCase
      */
     public function testNewWidgetGetCacheKeyInfo()
     {
-        $block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
+        $block = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
         )->createBlock(
-            \Magento\Catalog\Block\Product\Widget\NewWidget::class
+            NewWidget::class
         );
 
         $requestParams = ['test' => 'data'];
@@ -136,5 +124,29 @@ class NewTest extends \PHPUnit\Framework\TestCase
 
         $this->assertEquals('CATALOG_PRODUCT_NEW', $info[0]);
         $this->assertEquals(json_encode($requestParams), $info[8]);
+    }
+
+    protected function setUp(): void
+    {
+        /**
+         * @var GroupManagementInterface $groupManagement
+         */
+        $groupManagement = Bootstrap::getObjectManager()
+            ->get(GroupManagementInterface::class);
+        $notLoggedInId = $groupManagement->getNotLoggedInGroup()->getId();
+
+        Bootstrap::getInstance()->loadArea(Area::AREA_FRONTEND);
+        Bootstrap::getObjectManager()->get(
+            \Magento\Framework\App\Http\Context::class
+        )->setValue(
+            \Magento\Customer\Model\Context::CONTEXT_GROUP,
+            $notLoggedInId,
+            $notLoggedInId
+        );
+        $this->_block = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
+        )->createBlock(
+            NewProduct::class
+        );
     }
 }

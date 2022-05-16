@@ -12,13 +12,15 @@ use Magento\Framework\Phrase;
 use Magento\Framework\Session\Config\ConfigInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Tests \Magento\Framework\Session\SaveHandler functionality.
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class SaveHandlerTest extends \PHPUnit\Framework\TestCase
+class SaveHandlerTest extends TestCase
 {
     /**
      * @var ObjectManager
@@ -26,35 +28,14 @@ class SaveHandlerTest extends \PHPUnit\Framework\TestCase
     private $objectManager;
 
     /**
-     * @var DeploymentConfig|\PHPUnit\Framework\MockObject\MockObject
+     * @var DeploymentConfig|MockObject
      */
     private $deploymentConfigMock;
 
     /**
-     * @var SaveHandlerFactory|\PHPUnit\Framework\MockObject\MockObject
+     * @var SaveHandlerFactory|MockObject
      */
     private $saveHandlerFactoryMock;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->deploymentConfigMock = $this->createMock(DeploymentConfig::class);
-        $this->objectManager->addSharedInstance($this->deploymentConfigMock, DeploymentConfig::class);
-        $this->saveHandlerFactoryMock = $this->createMock(SaveHandlerFactory::class);
-        $this->objectManager->addSharedInstance($this->saveHandlerFactoryMock, SaveHandlerFactory::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->objectManager->removeSharedInstance(DeploymentConfig::class);
-        $this->objectManager->removeSharedInstance(SaveHandlerFactory::class);
-    }
 
     /**
      * @return void
@@ -126,5 +107,26 @@ class SaveHandlerTest extends \PHPUnit\Framework\TestCase
         /** @var SaveHandler $saveHandler */
         $saveHandler = $this->objectManager->create(SaveHandler::class, ['sessionConfig' => $sessionConfig]);
         $saveHandler->open('explicit_save_path', 'test_session_id');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->deploymentConfigMock = $this->createMock(DeploymentConfig::class);
+        $this->objectManager->addSharedInstance($this->deploymentConfigMock, DeploymentConfig::class);
+        $this->saveHandlerFactoryMock = $this->createMock(SaveHandlerFactory::class);
+        $this->objectManager->addSharedInstance($this->saveHandlerFactoryMock, SaveHandlerFactory::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->objectManager->removeSharedInstance(DeploymentConfig::class);
+        $this->objectManager->removeSharedInstance(SaveHandlerFactory::class);
     }
 }

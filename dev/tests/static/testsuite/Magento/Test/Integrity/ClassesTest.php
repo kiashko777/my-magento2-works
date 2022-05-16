@@ -5,54 +5,48 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity;
 
+use Exception;
+use Magento\Framework\App\Utility\AggregateInvoker;
 use Magento\Framework\App\Utility\Classes;
-use Magento\Framework\Component\ComponentRegistrar;
 use Magento\Framework\App\Utility\Files;
+use Magento\Framework\Component\ComponentRegistrar;
+use PHPUnit\Framework\AssertionFailedError;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
-class ClassesTest extends \PHPUnit\Framework\TestCase
+class ClassesTest extends TestCase
 {
+    /**
+     * @var array
+     */
+    private static $excludeKeywords = ["String", "Array", "Boolean", "Element"];
     /**
      * @var ComponentRegistrar
      */
     private $componentRegistrar;
-
     /**
      * List of already found classes to avoid checking them over and over again
      *
      * @var array
      */
     private $existingClasses = [];
-
-    /**
-     * @var array
-     */
-    private static $excludeKeywords = ["String", "Array", "Boolean", "Element"];
-
     /**
      * @var array|null
      */
     private $excludeReference = null;
 
-    /**
-     * Set Up
-     */
-    protected function setUp(): void
-    {
-        $this->componentRegistrar = new ComponentRegistrar();
-    }
-
     public function testPhpFiles()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
-            /**
-             * @param string $file
-             */
+        /**
+         * @param string $file
+         */
             function ($file) {
                 $contents = file_get_contents($file);
                 $classes = Classes::getAllMatches(
@@ -120,58 +114,6 @@ class ClassesTest extends \PHPUnit\Framework\TestCase
         }
     }
 
-    public function testConfigFiles()
-    {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
-        $invoker(
-            /**
-             * @param string $path
-             */
-            function ($path) {
-                $classes = Classes::collectClassesInConfig(simplexml_load_file($path));
-                $this->assertClassesExist($classes, $path);
-            },
-            Files::init()->getMainConfigFiles()
-        );
-    }
-
-    public function testLayoutFiles()
-    {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
-        $invoker(
-            /**
-             * @param string $path
-             */
-            function ($path) {
-                $xml = simplexml_load_file($path);
-
-                $classes = Classes::getXmlNodeValues(
-                    $xml,
-                    '/layout//*[contains(text(), "\\\\Block\\\\") or contains(text(),
-                        "\\\\Model\\\\") or contains(text(), "\\\\Helper\\\\")]'
-                );
-                foreach (Classes::getXmlAttributeValues(
-                    $xml,
-                    '/layout//@helper',
-                    'helper'
-                ) as $class) {
-                    $classes[] = Classes::getCallbackClass($class);
-                }
-                foreach (Classes::getXmlAttributeValues(
-                    $xml,
-                    '/layout//@module',
-                    'module'
-                ) as $module) {
-                    $classes[] = str_replace('_', '\\', "{$module}_Helper_Data");
-                }
-                $classes = array_merge($classes, Classes::collectLayoutClasses($xml));
-
-                $this->assertClassesExist(array_unique($classes), $path);
-            },
-            Files::init()->getLayoutFiles()
-        );
-    }
-
     /**
      * Check whether specified classes correspond to a file according PSR-0 standard
      *
@@ -211,7 +153,7 @@ class ClassesTest extends \PHPUnit\Framework\TestCase
                     );
                 }
                 $this->existingClasses[$class] = 1;
-            } catch (\PHPUnit\Framework\AssertionFailedError $e) {
+            } catch (AssertionFailedError $e) {
                 $badClasses[] = '\\' . $class;
             }
         }
@@ -223,15 +165,67 @@ class ClassesTest extends \PHPUnit\Framework\TestCase
         }
     }
 
+    public function testConfigFiles()
+    {
+        $invoker = new AggregateInvoker($this);
+        $invoker(
+        /**
+         * @param string $path
+         */
+            function ($path) {
+                $classes = Classes::collectClassesInConfig(simplexml_load_file($path));
+                $this->assertClassesExist($classes, $path);
+            },
+            Files::init()->getMainConfigFiles()
+        );
+    }
+
+    public function testLayoutFiles()
+    {
+        $invoker = new AggregateInvoker($this);
+        $invoker(
+        /**
+         * @param string $path
+         */
+            function ($path) {
+                $xml = simplexml_load_file($path);
+
+                $classes = Classes::getXmlNodeValues(
+                    $xml,
+                    '/layout//*[contains(text(), "\\\\Block\\\\") or contains(text(),
+                        "\\\\Model\\\\") or contains(text(), "\\\\Helper\\\\")]'
+                );
+                foreach (Classes::getXmlAttributeValues(
+                    $xml,
+                    '/layout//@helper',
+                    'helper'
+                ) as $class) {
+                    $classes[] = Classes::getCallbackClass($class);
+                }
+                foreach (Classes::getXmlAttributeValues(
+                    $xml,
+                    '/layout//@module',
+                    'module'
+                ) as $module) {
+                    $classes[] = str_replace('_', '\\', "{$module}_Helper_Data");
+                }
+                $classes = array_merge($classes, Classes::collectLayoutClasses($xml));
+
+                $this->assertClassesExist(array_unique($classes), $path);
+            },
+            Files::init()->getLayoutFiles()
+        );
+    }
+
     public function testClassNamespaces()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
-            /**
-             * Assert PHP classes have valid formal namespaces according to file locations
-             *
-             * @param array $file
-             */
+        /**
+         * Assert PHP classes have valid formal namespaces according to file locations
+         *
+         * @param array $file
+         */
             function ($file) {
                 $relativePath = str_replace(BP . "/", "", $file);
                 // exceptions made for fixture files from tests
@@ -308,11 +302,11 @@ class ClassesTest extends \PHPUnit\Framework\TestCase
     {
         $this->markTestSkipped("To be fixed in MC-33329. The test is not working properly "
             . "after excluded logic was fixed. Previously it was ignoring all files.");
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
-            /**
-             * @param string $file
-             */
+        /**
+         * @param string $file
+         */
             function ($file) {
                 $relativePath = str_replace(BP, "", $file);
                 // Due to the examples given with the regex patterns, we skip this test file itself
@@ -401,26 +395,6 @@ class ClassesTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Remove alias class name references that have been identified as 'bad'.
-     *
-     * @param array $aliasClasses
-     * @param array $badClasses
-     * @return array
-     */
-    private function handleAliasClasses(array $aliasClasses, array $badClasses): array
-    {
-        foreach ($aliasClasses as $aliasClass) {
-            foreach ($badClasses as $badClass) {
-                if (strpos($badClass, $aliasClass) === 0) {
-                    unset($badClasses[array_search($badClass, $badClasses)]);
-                }
-            }
-        }
-
-        return $badClasses;
-    }
-
-    /**
      * This function is to remove legacy code usages according to _files/blacklist/reference.txt
      *
      * @param array $classes
@@ -454,6 +428,26 @@ class ClassesTest extends \PHPUnit\Framework\TestCase
         }
 
         return $this->excludeReference;
+    }
+
+    /**
+     * Remove alias class name references that have been identified as 'bad'.
+     *
+     * @param array $aliasClasses
+     * @param array $badClasses
+     * @return array
+     */
+    private function handleAliasClasses(array $aliasClasses, array $badClasses): array
+    {
+        foreach ($aliasClasses as $aliasClass) {
+            foreach ($badClasses as $badClass) {
+                if (strpos($badClass, $aliasClass) === 0) {
+                    unset($badClasses[array_search($badClass, $badClasses)]);
+                }
+            }
+        }
+
+        return $badClasses;
     }
 
     /**
@@ -521,7 +515,7 @@ class ClassesTest extends \PHPUnit\Framework\TestCase
      * @param array $badClasses
      * @param string $badClass
      * @return bool
-     * @throws \Exception
+     * @throws Exception
      */
     private function removeSpecialCasesNonFullyQualifiedClassNames($namespacePath, &$badClasses, $badClass)
     {
@@ -683,5 +677,13 @@ class ClassesTest extends \PHPUnit\Framework\TestCase
     {
         return !empty($matches[2]) && !class_exists($matches[2])
             || !empty($matches[4]) && !method_exists($matches[2], $matches[4]);
+    }
+
+    /**
+     * Set Up
+     */
+    protected function setUp(): void
+    {
+        $this->componentRegistrar = new ComponentRegistrar();
     }
 }

@@ -22,16 +22,6 @@ class UpdateQtyTest extends AbstractInvoiceControllerTest
     private $json;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->json = $this->_objectManager->get(SerializerInterface::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Sales/_files/order.php
      *
      * @return void
@@ -71,6 +61,23 @@ class UpdateQtyTest extends AbstractInvoiceControllerTest
     }
 
     /**
+     * Check error response
+     *
+     * @param string $expectedMessage
+     * @return void
+     */
+    private function assertErrorResponse(string $expectedMessage): void
+    {
+        $expectedResponse = [
+            'error' => true,
+            'message' => (string)__($expectedMessage),
+        ];
+        $response = $this->getResponse()->getContent();
+        $this->assertNotEmpty($response);
+        $this->assertEquals($expectedResponse, $this->json->unserialize($response));
+    }
+
+    /**
      * @magentoDataFixture Magento/Sales/_files/order.php
      *
      * @return void
@@ -105,19 +112,12 @@ class UpdateQtyTest extends AbstractInvoiceControllerTest
     }
 
     /**
-     * Check error response
-     *
-     * @param string $expectedMessage
-     * @return void
+     * @inheritdoc
      */
-    private function assertErrorResponse(string $expectedMessage): void
+    protected function setUp(): void
     {
-        $expectedResponse = [
-            'error' => true,
-            'message' => (string)__($expectedMessage),
-        ];
-        $response = $this->getResponse()->getContent();
-        $this->assertNotEmpty($response);
-        $this->assertEquals($expectedResponse, $this->json->unserialize($response));
+        parent::setUp();
+
+        $this->json = $this->_objectManager->get(SerializerInterface::class);
     }
 }

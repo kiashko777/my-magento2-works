@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\ConfigurableProduct;
 
+use Exception;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
 
 /**
@@ -18,7 +19,7 @@ class ConfigurableProductOptionsTest extends GraphQlAbstract
      * @magentoApiDataFixture Magento/ConfigurableProduct/_files/configurable_products_with_two_attributes.php
      * @dataProvider expectedResultDataProvider
      * @param $expectedOptions
-     * @throws \Exception
+     * @throws Exception
      */
     public function testQueryConfigurableProductLinks($expectedOptions)
     {
@@ -30,6 +31,42 @@ class ConfigurableProductOptionsTest extends GraphQlAbstract
         $this->assertArrayHasKey('products', $response);
         $this->assertArrayHasKey('items', $response['products']);
         $this->assertConfigurableProductOptions($response['products']['items'], $expectedOptions);
+    }
+
+    /**
+     * @param string $configurableProduct
+     * @return string
+     */
+    private function getQuery($configurableProduct)
+    {
+        return <<<QUERY
+{
+  products(filter: {name: {match: "$configurableProduct"}}) {
+    items {
+      id
+      sku
+      ... on ConfigurableProduct {
+        configurable_options {
+          id
+          attribute_id
+          label
+          position
+          use_default
+          attribute_code
+          values {
+            value_index
+            label
+            store_label
+            default_label
+            use_default_value
+          }
+          product_id
+        }
+      }
+    }
+  }
+}
+QUERY;
     }
 
     /**
@@ -91,42 +128,6 @@ class ConfigurableProductOptionsTest extends GraphQlAbstract
                 }
             }
         }
-    }
-
-    /**
-     * @param string $configurableProduct
-     * @return string
-     */
-    private function getQuery($configurableProduct)
-    {
-        return <<<QUERY
-{
-  products(filter: {name: {match: "$configurableProduct"}}) {
-    items {
-      id
-      sku
-      ... on ConfigurableProduct {
-        configurable_options {
-          id
-          attribute_id
-          label
-          position
-          use_default
-          attribute_code
-          values {
-            value_index
-            label
-            store_label
-            default_label
-            use_default_value
-          }
-          product_id
-        }
-      }
-    }
-  }
-}
-QUERY;
     }
 
     /**

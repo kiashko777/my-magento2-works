@@ -3,14 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Console\Command;
 
+use InvalidArgumentException;
+use Magento\Framework\Backup\Filesystem\Helper;
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
  * @magentoComponentsDir Magento/Setup/Console/Command/_files/root/app/code
  */
-class I18nPackCommandTest extends \PHPUnit\Framework\TestCase
+class I18nPackCommandTest extends TestCase
 {
     /**
      * @var I18nCollectPhrasesCommand
@@ -21,28 +25,6 @@ class I18nPackCommandTest extends \PHPUnit\Framework\TestCase
      * @var CommandTester
      */
     private $tester;
-
-    protected function setUp(): void
-    {
-        $this->command = new I18nPackCommand();
-        $this->tester = new CommandTester($this->command);
-    }
-
-    protected function tearDown(): void
-    {
-        $this->removeCsv('A');
-        $this->removeCsv('B');
-        $this->removeCsv('C');
-        $this->removeCsv('D');
-    }
-
-    private function removeCsv($module)
-    {
-        if (file_exists(__DIR__ . "/_files/root/app/code/Magento/{$module}/i18n")) {
-            $helper = new \Magento\Framework\Backup\Filesystem\Helper();
-            $helper->rm(__DIR__ . "/_files/root/app/code/Magento/{$module}/i18n", [], true);
-        }
-    }
 
     public function testExecute()
     {
@@ -66,7 +48,7 @@ class I18nPackCommandTest extends \PHPUnit\Framework\TestCase
      */
     public function testExecuteNonExistingPath()
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Cannot open dictionary file:');
 
         $nonExistPath = BP . '/dev/tests/integration/testsuite/Magento/Setup/Console/Command/_files/non_exist.csv';
@@ -83,7 +65,7 @@ class I18nPackCommandTest extends \PHPUnit\Framework\TestCase
      */
     public function testExecuteInvalidMode()
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Possible values for \'mode\' option are \'replace\' and \'merge\'');
 
         $this->tester->execute(
@@ -94,5 +76,27 @@ class I18nPackCommandTest extends \PHPUnit\Framework\TestCase
                 '--mode' => 'invalid'
             ]
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->command = new I18nPackCommand();
+        $this->tester = new CommandTester($this->command);
+    }
+
+    protected function tearDown(): void
+    {
+        $this->removeCsv('A');
+        $this->removeCsv('B');
+        $this->removeCsv('C');
+        $this->removeCsv('D');
+    }
+
+    private function removeCsv($module)
+    {
+        if (file_exists(__DIR__ . "/_files/root/app/code/Magento/{$module}/i18n")) {
+            $helper = new Helper();
+            $helper->rm(__DIR__ . "/_files/root/app/code/Magento/{$module}/i18n", [], true);
+        }
     }
 }

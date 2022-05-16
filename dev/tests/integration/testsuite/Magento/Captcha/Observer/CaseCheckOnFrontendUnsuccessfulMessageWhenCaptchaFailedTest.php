@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Captcha\Observer;
 
 use Magento\Framework\Data\Form\FormKey;
@@ -48,6 +49,16 @@ class CaseCheckOnFrontendUnsuccessfulMessageWhenCaptchaFailedTest extends Abstra
             $this->equalTo(['Incorrect CAPTCHA']),
             MessageInterface::TYPE_ERROR
         );
+    }
+
+    /**
+     * @param array $postData
+     * @return void
+     */
+    private function prepareRequestData($postData)
+    {
+        $this->getRequest()->setMethod(Request::METHOD_POST);
+        $this->getRequest()->setPostValue($postData);
     }
 
     /**
@@ -104,15 +115,5 @@ class CaseCheckOnFrontendUnsuccessfulMessageWhenCaptchaFailedTest extends Abstra
             $this->equalTo(['Incorrect CAPTCHA']),
             MessageInterface::TYPE_ERROR
         );
-    }
-
-    /**
-     * @param array $postData
-     * @return void
-     */
-    private function prepareRequestData($postData)
-    {
-        $this->getRequest()->setMethod(Request::METHOD_POST);
-        $this->getRequest()->setPostValue($postData);
     }
 }

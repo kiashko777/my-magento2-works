@@ -7,13 +7,17 @@ declare(strict_types=1);
 
 namespace Magento\Framework\File;
 
+use InvalidArgumentException;
 use Magento\Customer\Model\FileProcessor;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Filesystem;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for \Magento\Framework\File\Uploader
  */
-class UploaderTest extends \PHPUnit\Framework\TestCase
+class UploaderTest extends TestCase
 {
     /**
      * @var \Magento\MediaStorage\Model\File\UploaderFactory
@@ -21,21 +25,9 @@ class UploaderTest extends \PHPUnit\Framework\TestCase
     private $uploaderFactory;
 
     /**
-     * @var \Magento\Framework\Filesystem
+     * @var Filesystem
      */
     private $filesystem;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->uploaderFactory = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\MediaStorage\Model\File\UploaderFactory::class);
-
-        $this->filesystem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\Filesystem::class);
-    }
 
     /**
      * @return void
@@ -52,11 +44,34 @@ class UploaderTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Create uploader instance for testing purposes.
+     *
+     * @param string $fileName
+     *
+     * @return Uploader
+     */
+    private function createUploader(string $fileName): Uploader
+    {
+        $tmpDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::SYS_TMP);
+
+        $filePath = $tmpDirectory->getAbsolutePath($fileName);
+
+        $tmpDirectory->writeFile($fileName, 'just a text');
+
+        $type = [
+            'tmp_name' => $filePath,
+            'name' => $fileName,
+        ];
+
+        return $this->uploaderFactory->create(['fileId' => $type]);
+    }
+
+    /**
      * @return void
      */
     public function testUploadFileFromNotAllowedFolder(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid parameter given. A valid $fileId[tmp_name] is expected.');
 
         $fileName = 'text.txt';
@@ -79,7 +94,7 @@ class UploaderTest extends \PHPUnit\Framework\TestCase
      */
     public function testUploadFileWithExcessiveFolderName(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Destination folder path is too long; must be 255 characters or less');
 
         $uploader = $this->createUploader('text.txt');
@@ -137,6 +152,18 @@ class UploaderTest extends \PHPUnit\Framework\TestCase
     /**
      * @inheritdoc
      */
+    protected function setUp(): void
+    {
+        $this->uploaderFactory = Bootstrap::getObjectManager()
+            ->get(\Magento\MediaStorage\Model\File\UploaderFactory::class);
+
+        $this->filesystem = Bootstrap::getObjectManager()
+            ->get(Filesystem::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
     protected function tearDown(): void
     {
         parent::tearDown();
@@ -147,28 +174,5 @@ class UploaderTest extends \PHPUnit\Framework\TestCase
 
         $logDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::LOG);
         $logDirectory->delete($tmpDir);
-    }
-
-    /**
-     * Create uploader instance for testing purposes.
-     *
-     * @param string $fileName
-     *
-     * @return Uploader
-     */
-    private function createUploader(string $fileName): Uploader
-    {
-        $tmpDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::SYS_TMP);
-
-        $filePath = $tmpDirectory->getAbsolutePath($fileName);
-
-        $tmpDirectory->writeFile($fileName, 'just a text');
-
-        $type = [
-            'tmp_name' => $filePath,
-            'name' => $fileName,
-        ];
-
-        return $this->uploaderFactory->create(['fileId' => $type]);
     }
 }

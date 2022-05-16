@@ -5,11 +5,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Filesystem\File;
 
+use Magento\Framework\Exception\FileSystemException;
+use Magento\Framework\Filesystem\Driver\File;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class ReadTest extends \PHPUnit\Framework\TestCase
+class ReadTest extends TestCase
 {
     /**
      * Test instance of Read
@@ -21,6 +25,22 @@ class ReadTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Get readable file instance
+     * Get full path for files located in _files directory
+     *
+     * @param $path
+     * @return Read
+     */
+    private function getFileInstance($path)
+    {
+        $fullPath = __DIR__ . '/../_files/' . $path;
+        return Bootstrap::getObjectManager()->create(
+            Read::class,
+            ['path' => $fullPath, 'driver' => new File()]
+        );
+    }
+
+    /**
      * Test for assertValid method
      * Expected exception for file that does not exist and file without access
      *
@@ -29,7 +49,7 @@ class ReadTest extends \PHPUnit\Framework\TestCase
      */
     public function testAssertValid($path)
     {
-        $this->expectException(\Magento\Framework\Exception\FileSystemException::class);
+        $this->expectException(FileSystemException::class);
 
         $this->getFileInstance($path);
     }
@@ -293,21 +313,5 @@ class ReadTest extends \PHPUnit\Framework\TestCase
     {
         $file = $this->getFileInstance('popup.csv');
         $this->assertTrue($file->close());
-    }
-
-    /**
-     * Get readable file instance
-     * Get full path for files located in _files directory
-     *
-     * @param $path
-     * @return Read
-     */
-    private function getFileInstance($path)
-    {
-        $fullPath = __DIR__ . '/../_files/' . $path;
-        return Bootstrap::getObjectManager()->create(
-            \Magento\Framework\Filesystem\File\Read::class,
-            ['path' => $fullPath, 'driver' => new \Magento\Framework\Filesystem\Driver\File()]
-        );
     }
 }

@@ -3,14 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Tax\Controller\Adminhtml;
 
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Json\Helper\Data;
+use Magento\Tax\Api\Data\TaxClassInterfaceFactory;
+use Magento\Tax\Api\TaxClassRepositoryInterface;
+use Magento\Tax\Model\ClassModel;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class TaxTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class TaxTest extends AbstractBackendController
 {
     /**
      * @dataProvider ajaxActionDataProvider
@@ -26,8 +33,8 @@ class TaxTest extends \Magento\TestFramework\TestCase\AbstractBackendController
         $this->dispatch('backend/tax/tax/ajaxSave');
 
         $jsonBody = $this->getResponse()->getBody();
-        $result = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\Json\Helper\Data::class
+        $result = Bootstrap::getObjectManager()->get(
+            Data::class
         )->jsonDecode(
             $jsonBody
         );
@@ -35,9 +42,9 @@ class TaxTest extends \Magento\TestFramework\TestCase\AbstractBackendController
         $this->assertArrayHasKey('class_id', $result);
 
         $classId = $result['class_id'];
-        /** @var $class \Magento\Tax\Model\ClassModel */
-        $class = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Tax\Model\ClassModel::class
+        /** @var $class ClassModel */
+        $class = Bootstrap::getObjectManager()->create(
+            ClassModel::class
         )->load($classId, 'class_id');
         $this->assertEquals($expectedData['class_name'], $class->getClassName());
     }
@@ -50,13 +57,13 @@ class TaxTest extends \Magento\TestFramework\TestCase\AbstractBackendController
      */
     public function testAjaxDeleteAction($taxClassData)
     {
-        /** @var \Magento\Tax\Api\TaxClassRepositoryInterface $taxClassService */
-        $taxClassService = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Tax\Api\TaxClassRepositoryInterface::class
+        /** @var TaxClassRepositoryInterface $taxClassService */
+        $taxClassService = Bootstrap::getObjectManager()->get(
+            TaxClassRepositoryInterface::class
         );
 
-        $taxClassFactory = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Tax\Api\Data\TaxClassInterfaceFactory::class
+        $taxClassFactory = Bootstrap::getObjectManager()->get(
+            TaxClassInterfaceFactory::class
         );
         $taxClass = $taxClassFactory->create();
         $taxClass->setClassName($taxClassData['class_name'])
@@ -64,14 +71,14 @@ class TaxTest extends \Magento\TestFramework\TestCase\AbstractBackendController
 
         $taxClassId = $taxClassService->save($taxClass);
 
-        /** @var $class \Magento\Tax\Model\ClassModel */
-        $class = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Tax\Model\ClassModel::class
+        /** @var $class ClassModel */
+        $class = Bootstrap::getObjectManager()->create(
+            ClassModel::class
         )->load($taxClassId, 'class_id');
         $this->assertEquals($taxClassData['class_name'], $class->getClassName());
         $this->assertEquals($taxClassData['class_type'], $class->getClassType());
 
-        $postData = [ 'class_id' => $taxClassId ];
+        $postData = ['class_id' => $taxClassId];
         $this->getRequest()->setPostValue($postData);
         $this->dispatch('backend/tax/tax/ajaxDelete');
 

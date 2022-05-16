@@ -8,9 +8,9 @@ declare(strict_types=1);
 
 namespace Magento\AsynchronousOperations\Api;
 
+use Magento\Framework\Bulk\OperationInterface;
 use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\TestCase\WebapiAbstract;
-use Magento\Framework\Bulk\OperationInterface;
 
 class BulkStatusInterfaceTest extends WebapiAbstract
 {
@@ -28,9 +28,10 @@ class BulkStatusInterfaceTest extends WebapiAbstract
      */
     public function testGetOperationsCountByBulkIdAndStatus(
         string $bulkUuid,
-        int $expectedOperationCount,
-        int $status
-    ): void {
+        int    $expectedOperationCount,
+        int    $status
+    ): void
+    {
         $resourcePath = self::RESOURCE_PATH . $bulkUuid . '/operation-status/' . $status;
         $serviceInfo = [
             'rest' => [

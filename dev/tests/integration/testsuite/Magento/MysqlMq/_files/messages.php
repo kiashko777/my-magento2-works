@@ -4,10 +4,13 @@
  * See COPYING.txt for license details.
  */
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\MysqlMq\Model\MessageFactory;
+use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var \Magento\MysqlMq\Model\MessageFactory $messageFactory */
-$messageFactory = $objectManager->create(\Magento\MysqlMq\Model\MessageFactory::class);
+$objectManager = Bootstrap::getObjectManager();
+
+/** @var MessageFactory $messageFactory */
+$messageFactory = $objectManager->create(MessageFactory::class);
 $message = $messageFactory->create();
 
 $message->setTopicName('topic.updated.use.just.in.tests')

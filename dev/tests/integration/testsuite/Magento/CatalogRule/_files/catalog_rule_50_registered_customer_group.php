@@ -9,9 +9,9 @@ declare(strict_types=1);
  * Creates simple Catalog Rule with the following data:
  * active, applied to all products, without time limits, with 50% off for registered customer groups
  */
+
 use Magento\CatalogRule\Model\Indexer\IndexBuilder;
 use Magento\CatalogRule\Model\Rule;
-use Magento\Customer\Model\GroupManagement;
 use Magento\TestFramework\Helper\Bootstrap;
 
 /** @var $banner Rule */

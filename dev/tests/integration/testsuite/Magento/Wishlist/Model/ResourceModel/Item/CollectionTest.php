@@ -6,12 +6,13 @@
 
 namespace Magento\Wishlist\Model\ResourceModel\Item;
 
+use Magento\Catalog\Model\Attribute\Config;
 use Magento\Catalog\Model\Product;
 use Magento\Framework\App\ObjectManager;
 use Magento\Wishlist\Model\Wishlist;
-use Magento\Catalog\Model\Attribute\Config;
+use PHPUnit\Framework\TestCase;
 
-class CollectionTest extends \PHPUnit\Framework\TestCase
+class CollectionTest extends TestCase
 {
     /**
      * @var ObjectManager
@@ -32,14 +33,6 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
      * @var Config\Data
      */
     private $attributeConfig;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = ObjectManager::getInstance();
-        $this->wishlist = $this->objectManager->create(Wishlist::class);
-        $this->itemCollection = $this->objectManager->get(Collection::class);
-        $this->attributeConfig = $this->objectManager->get(Config\Data::class);
-    }
 
     /**
      * Verify that Wishlist Item Collection uses Catalog Attributes defined in the configuration.
@@ -63,6 +56,16 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * @param array $attributes
+     */
+    private function addAttributesToWishlistConfig($attributes)
+    {
+        $this->attributeConfig->merge([
+            'wishlist_item' => $attributes
+        ]);
+    }
+
+    /**
      * Tests collection load.
      * Tests collection load method when product salable filter flag is setted to true
      * and few products are present.
@@ -79,13 +82,11 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
         $this->assertCount(1, $this->itemCollection->getItems());
     }
 
-    /**
-     * @param array $attributes
-     */
-    private function addAttributesToWishlistConfig($attributes)
+    protected function setUp(): void
     {
-        $this->attributeConfig->merge([
-            'wishlist_item' => $attributes
-        ]);
+        $this->objectManager = ObjectManager::getInstance();
+        $this->wishlist = $this->objectManager->create(Wishlist::class);
+        $this->itemCollection = $this->objectManager->get(Collection::class);
+        $this->attributeConfig = $this->objectManager->get(Config\Data::class);
     }
 }

@@ -9,6 +9,7 @@ use Magento\Catalog\Api\CategoryLinkRepositoryInterface;
 use Magento\Catalog\Api\Data\CategoryInterfaceFactory;
 use Magento\Catalog\Api\Data\ProductInterfaceFactory;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Category;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use Magento\Catalog\Model\Product\Type;
@@ -41,7 +42,7 @@ $categoryLinkRepository = $objectManager->create(
 
 /** @var Magento\Catalog\Api\CategoryLinkManagementInterface $categoryLinkManagement */
 $categoryLinkManagement = $objectManager->get(CategoryLinkManagementInterface::class);
-$reflectionClass = new \ReflectionClass(get_class($categoryLinkManagement));
+$reflectionClass = new ReflectionClass(get_class($categoryLinkManagement));
 $properties = [
     'productRepository' => $productRepository,
     'categoryLinkRepository' => $categoryLinkRepository,
@@ -57,7 +58,7 @@ foreach ($properties as $key => $value) {
 /**
  * After installation system has two categories: root one with ID:1 and Default category with ID:2
  */
-/** @var $category \Magento\Catalog\Model\Category */
+/** @var $category Category */
 $category = $categoryFactory->create();
 $category->isObjectNew(true);
 $category->setId(3)

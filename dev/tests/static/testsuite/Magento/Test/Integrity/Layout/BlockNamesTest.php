@@ -8,21 +8,27 @@
 
 namespace Magento\Test\Integrity\Layout;
 
-class BlockNamesTest extends \PHPUnit\Framework\TestCase
+use DOMDocument;
+use DOMXpath;
+use Magento\Framework\App\Utility\AggregateInvoker;
+use Magento\Framework\App\Utility\Files;
+use PHPUnit\Framework\TestCase;
+
+class BlockNamesTest extends TestCase
 {
     public function testBlocksHasName()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
-            /**
-             * Test validate that blocks without name doesn't exist in layout file
-             *
-             * @param string $layoutFile
-             */
+        /**
+         * Test validate that blocks without name doesn't exist in layout file
+         *
+         * @param string $layoutFile
+         */
             function ($layoutFile) {
-                $dom = new \DOMDocument();
+                $dom = new DOMDocument();
                 $dom->load($layoutFile);
-                $xpath = new \DOMXpath($dom);
+                $xpath = new DOMXpath($dom);
                 $count = $xpath->query('//block[not(@name)]')->length;
 
                 if ($count) {
@@ -30,7 +36,7 @@ class BlockNamesTest extends \PHPUnit\Framework\TestCase
                         'File Path:' . "\n" . $layoutFile);
                 }
             },
-            \Magento\Framework\App\Utility\Files::init()->getLayoutFiles()
+            Files::init()->getLayoutFiles()
         );
     }
 }

@@ -28,14 +28,6 @@ class UpdateCustomerV2Test extends GraphQlAbstract
      */
     private $lockCustomer;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
-        $this->lockCustomer = Bootstrap::getObjectManager()->get(LockCustomer::class);
-    }
-
     /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      */
@@ -96,6 +88,18 @@ QUERY;
         $this->assertEquals($newDob, $response['updateCustomerV2']['customer']['date_of_birth']);
         $this->assertEquals($newTaxVat, $response['updateCustomerV2']['customer']['taxvat']);
         $this->assertEquals($newGender, $response['updateCustomerV2']['customer']['gender']);
+    }
+
+    /**
+     * @param string $email
+     * @param string $password
+     * @return array
+     * @throws AuthenticationException
+     */
+    private function getCustomerAuthHeaders(string $email, string $password): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($email, $password);
+        return ['Authorization' => 'Bearer ' . $customerToken];
     }
 
     /**
@@ -259,15 +263,11 @@ QUERY;
         $this->graphQlMutation($query, [], '', $this->getCustomerAuthHeaders('customer@example.com', 'password'));
     }
 
-    /**
-     * @param string $email
-     * @param string $password
-     * @return array
-     * @throws AuthenticationException
-     */
-    private function getCustomerAuthHeaders(string $email, string $password): array
+    protected function setUp(): void
     {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($email, $password);
-        return ['Authorization' => 'Bearer ' . $customerToken];
+        parent::setUp();
+
+        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
+        $this->lockCustomer = Bootstrap::getObjectManager()->get(LockCustomer::class);
     }
 }

@@ -7,12 +7,26 @@
 /**
  * Test class for \Magento\TestFramework\Bootstrap.
  */
+
 namespace Magento\Test;
 
-class BootstrapTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\Profiler\Driver\Standard;
+use Magento\Framework\Shell;
+use Magento\TestFramework\Application;
+use Magento\TestFramework\Bootstrap;
+use Magento\TestFramework\Bootstrap\DocBlock;
+use Magento\TestFramework\Bootstrap\Environment;
+use Magento\TestFramework\Bootstrap\Memory;
+use Magento\TestFramework\Bootstrap\MemoryFactory;
+use Magento\TestFramework\Bootstrap\Profiler;
+use Magento\TestFramework\Bootstrap\Settings;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+
+class BootstrapTest extends TestCase
 {
     /**
-     * @var \Magento\TestFramework\Bootstrap|\PHPUnit\Framework\MockObject\MockObject
+     * @var Bootstrap|MockObject
      */
     protected $_object;
 
@@ -26,87 +40,42 @@ class BootstrapTest extends \PHPUnit\Framework\TestCase
     ];
 
     /**
-     * @var \Magento\TestFramework\Bootstrap\Settings|\PHPUnit\Framework\MockObject\MockObject
+     * @var Settings|MockObject
      */
     protected $_settings;
 
     /**
-     * @var \Magento\TestFramework\Bootstrap\Environment|\PHPUnit\Framework\MockObject\MockObject
+     * @var Environment|MockObject
      */
     protected $_envBootstrap;
 
     /**
-     * @var \Magento\TestFramework\Bootstrap\DocBlock|\PHPUnit\Framework\MockObject\MockObject
+     * @var DocBlock|MockObject
      */
     protected $_docBlockBootstrap;
 
     /**
-     * @var \Magento\TestFramework\Bootstrap\Profiler|\PHPUnit\Framework\MockObject\MockObject
+     * @var Profiler|MockObject
      */
     protected $_profilerBootstrap;
 
     /**
-     * @var \Magento\TestFramework\Bootstrap\MemoryFactory|\PHPUnit\Framework\MockObject\MockObject
+     * @var MemoryFactory|MockObject
      */
     protected $memoryFactory;
 
     /**
-     * @var \Magento\Framework\Shell|\PHPUnit\Framework\MockObject\MockObject
+     * @var Shell|MockObject
      */
     protected $_shell;
-
-    /**
-     * @var \Magento\TestFramework\Application|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private $application;
-
     /**
      * @var string
      */
     protected $_integrationTestsDir;
-
-    protected function setUp(): void
-    {
-        $this->_integrationTestsDir = realpath(__DIR__ . '/../../../../../../');
-        $this->_settings = $this->createMock(\Magento\TestFramework\Bootstrap\Settings::class);
-        $this->_envBootstrap = $this->createPartialMock(
-            \Magento\TestFramework\Bootstrap\Environment::class,
-            ['emulateHttpRequest', 'emulateSession']
-        );
-        $this->_docBlockBootstrap = $this->getMockBuilder(\Magento\TestFramework\Bootstrap\DocBlock::class)
-            ->setMethods(['registerAnnotations'])
-            ->setConstructorArgs([__DIR__])
-            ->getMock();
-        $profilerDriver =
-            $this->createPartialMock(\Magento\Framework\Profiler\Driver\Standard::class, ['registerOutput']);
-        $this->_profilerBootstrap = $this->getMockBuilder(\Magento\TestFramework\Bootstrap\Profiler::class)
-            ->setMethods(['registerFileProfiler', 'registerBambooProfiler'])
-            ->setConstructorArgs([$profilerDriver])
-            ->getMock();
-
-        $this->_shell = $this->createPartialMock(\Magento\Framework\Shell::class, ['execute']);
-        $this->application = $this->createMock(\Magento\TestFramework\Application::class);
-        $this->memoryFactory = $this->createMock(\Magento\TestFramework\Bootstrap\MemoryFactory::class);
-        $this->_object = new \Magento\TestFramework\Bootstrap(
-            $this->_settings,
-            $this->_envBootstrap,
-            $this->_docBlockBootstrap,
-            $this->_profilerBootstrap,
-            $this->_shell,
-            $this->application,
-            $this->memoryFactory
-        );
-    }
-
-    protected function tearDown(): void
-    {
-        $this->_object = null;
-        $this->_settings = null;
-        $this->_envBootstrap = null;
-        $this->_docBlockBootstrap = null;
-        $this->_profilerBootstrap = null;
-        $this->_shell = null;
-    }
+    /**
+     * @var Application|MockObject
+     */
+    private $application;
 
     public function testGetApplication()
     {
@@ -132,7 +101,7 @@ class BootstrapTest extends \PHPUnit\Framework\TestCase
             ->method('get')
             ->willReturnMap($settingsMap);
         $memoryBootstrap = $this->createPartialMock(
-            \Magento\TestFramework\Bootstrap\Memory::class,
+            Memory::class,
             ['activateStatsDisplaying', 'activateLimitValidation']
         );
         $memoryBootstrap->expects($this->once())->method('activateStatsDisplaying');
@@ -144,7 +113,7 @@ class BootstrapTest extends \PHPUnit\Framework\TestCase
 
         $this->_docBlockBootstrap->expects($this->once())
             ->method('registerAnnotations')
-            ->with($this->isInstanceOf(\Magento\TestFramework\Application::class));
+            ->with($this->isInstanceOf(Application::class));
 
         $this->_profilerBootstrap->expects($this->never())->method($this->anything());
 
@@ -154,7 +123,7 @@ class BootstrapTest extends \PHPUnit\Framework\TestCase
     public function testRunBootstrapProfilerEnabled()
     {
         $memoryBootstrap = $this->createPartialMock(
-            \Magento\TestFramework\Bootstrap\Memory::class,
+            Memory::class,
             ['activateStatsDisplaying', 'activateLimitValidation']
         );
         $memoryBootstrap->expects($this->once())->method('activateStatsDisplaying');
@@ -181,5 +150,48 @@ class BootstrapTest extends \PHPUnit\Framework\TestCase
             ->method('registerBambooProfiler')
             ->with("profiler_bamboo.csv", "profiler_metrics.php");
         $this->_object->runBootstrap();
+    }
+
+    protected function setUp(): void
+    {
+        $this->_integrationTestsDir = realpath(__DIR__ . '/../../../../../../');
+        $this->_settings = $this->createMock(Settings::class);
+        $this->_envBootstrap = $this->createPartialMock(
+            Environment::class,
+            ['emulateHttpRequest', 'emulateSession']
+        );
+        $this->_docBlockBootstrap = $this->getMockBuilder(DocBlock::class)
+            ->setMethods(['registerAnnotations'])
+            ->setConstructorArgs([__DIR__])
+            ->getMock();
+        $profilerDriver =
+            $this->createPartialMock(Standard::class, ['registerOutput']);
+        $this->_profilerBootstrap = $this->getMockBuilder(Profiler::class)
+            ->setMethods(['registerFileProfiler', 'registerBambooProfiler'])
+            ->setConstructorArgs([$profilerDriver])
+            ->getMock();
+
+        $this->_shell = $this->createPartialMock(Shell::class, ['execute']);
+        $this->application = $this->createMock(Application::class);
+        $this->memoryFactory = $this->createMock(MemoryFactory::class);
+        $this->_object = new Bootstrap(
+            $this->_settings,
+            $this->_envBootstrap,
+            $this->_docBlockBootstrap,
+            $this->_profilerBootstrap,
+            $this->_shell,
+            $this->application,
+            $this->memoryFactory
+        );
+    }
+
+    protected function tearDown(): void
+    {
+        $this->_object = null;
+        $this->_settings = null;
+        $this->_envBootstrap = null;
+        $this->_docBlockBootstrap = null;
+        $this->_profilerBootstrap = null;
+        $this->_shell = null;
     }
 }

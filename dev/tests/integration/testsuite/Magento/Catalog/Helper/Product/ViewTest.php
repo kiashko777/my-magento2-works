@@ -3,18 +3,37 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Helper\Product;
 
+use Magento\Catalog\Helper\Product\Stub\ProductControllerStub;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Type;
+use Magento\Catalog\Model\Session;
 use Magento\Customer\Model\Context;
+use Magento\Framework\App\RequestInterface;
+use Magento\Framework\App\State;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Registry;
+use Magento\Framework\View\DesignInterface;
+use Magento\Framework\View\Page\Config;
+use Magento\Framework\View\Result\Page;
+use Magento\Framework\View\Result\PageFactory;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use Magento\TestFramework\Request;
+use Magento\TestFramework\Response;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea frontend
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class ViewTest extends \PHPUnit\Framework\TestCase
+class ViewTest extends TestCase
 {
     /**
-     * @var \Magento\Catalog\Helper\Product\View
+     * @var View
      */
     protected $_helper;
 
@@ -24,49 +43,14 @@ class ViewTest extends \PHPUnit\Framework\TestCase
     protected $_controller;
 
     /**
-     * @var \Magento\Framework\View\Result\Page
+     * @var Page
      */
     protected $page;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-
-        $this->objectManager->get(\Magento\Framework\App\State::class)->setAreaCode('frontend');
-        $this->objectManager->get(\Magento\Framework\App\Http\Context::class)
-            ->setValue(Context::CONTEXT_AUTH, false, false);
-        $this->objectManager->get(\Magento\Framework\View\DesignInterface::class)
-            ->setDefaultDesignTheme();
-        $this->_helper = $this->objectManager->get(\Magento\Catalog\Helper\Product\View::class);
-        $request = $this->objectManager->get(\Magento\TestFramework\Request::class);
-        $request->setRouteName('catalog')->setControllerName('product')->setActionName('view');
-        $arguments = [
-            'request' => $request,
-            'response' => $this->objectManager->get(\Magento\TestFramework\Response::class),
-        ];
-        $context = $this->objectManager->create(\Magento\Framework\App\Action\Context::class, $arguments);
-        $this->_controller = $this->objectManager->create(
-            \Magento\Catalog\Helper\Product\Stub\ProductControllerStub::class,
-            ['context' => $context]
-        );
-        $resultPageFactory = $this->objectManager->get(\Magento\Framework\View\Result\PageFactory::class);
-        $this->page = $resultPageFactory->create();
-    }
-
-    /**
-     * Cleanup session, contaminated by product initialization methods
-     */
-    protected function tearDown(): void
-    {
-        $this->objectManager->get(\Magento\Catalog\Model\Session::class)->unsLastViewedProductId();
-        $this->_controller = null;
-        $this->_helper = null;
-    }
 
     /**
      * @magentoAppIsolation enabled
@@ -75,20 +59,20 @@ class ViewTest extends \PHPUnit\Framework\TestCase
     public function testInitProductLayout()
     {
         $uniqid = uniqid();
-        /** @var $product \Magento\Catalog\Model\Product */
-        $product = $this->objectManager->create(\Magento\Catalog\Model\Product::class);
-        $product->setTypeId(\Magento\Catalog\Model\Product\Type::DEFAULT_TYPE)->setId(99)->setUrlKey($uniqid);
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
+        /** @var $product Product */
+        $product = $this->objectManager->create(Product::class);
+        $product->setTypeId(Type::DEFAULT_TYPE)->setId(99)->setUrlKey($uniqid);
+        /** @var $objectManager ObjectManager */
         $objectManager = $this->objectManager;
-        $objectManager->get(\Magento\Framework\Registry::class)->register('product', $product);
+        $objectManager->get(Registry::class)->register('product', $product);
 
         $this->_helper->initProductLayout($this->page, $product);
 
-        /** @var \Magento\Framework\View\Page\Config $pageConfig */
-        $pageConfig = $this->objectManager->get(\Magento\Framework\View\Page\Config::class);
+        /** @var Config $pageConfig */
+        $pageConfig = $this->objectManager->get(Config::class);
         $bodyClass = $pageConfig->getElementAttribute(
-            \Magento\Framework\View\Page\Config::ELEMENT_TYPE_BODY,
-            \Magento\Framework\View\Page\Config::BODY_ATTRIBUTE_CLASS
+            Config::ELEMENT_TYPE_BODY,
+            Config::BODY_ATTRIBUTE_CLASS
         );
         $this->assertStringContainsString("product-{$uniqid}", $bodyClass);
         $handles = $this->page->getLayout()->getUpdate()->getHandles();
@@ -103,17 +87,17 @@ class ViewTest extends \PHPUnit\Framework\TestCase
     public function testPrepareAndRender()
     {
         // need for \Magento\Review\Block\Form::getProductInfo()
-        $this->objectManager->get(\Magento\Framework\App\RequestInterface::class)->setParam('id', 10);
+        $this->objectManager->get(RequestInterface::class)->setParam('id', 10);
 
         $this->_helper->prepareAndRender($this->page, 10, $this->_controller);
-        /** @var \Magento\TestFramework\Response $response */
-        $response = $this->objectManager->get(\Magento\TestFramework\Response::class);
+        /** @var Response $response */
+        $response = $this->objectManager->get(Response::class);
         $this->page->renderResult($response);
         $this->assertNotEmpty($response->getBody());
         $this->assertEquals(
             10,
             $this->objectManager->get(
-                \Magento\Catalog\Model\Session::class
+                Session::class
             )->getLastViewedProductId()
         );
     }
@@ -123,10 +107,10 @@ class ViewTest extends \PHPUnit\Framework\TestCase
      */
     public function testPrepareAndRenderWrongController()
     {
-        $this->expectException(\Magento\Framework\Exception\NoSuchEntityException::class);
+        $this->expectException(NoSuchEntityException::class);
 
         $objectManager = $this->objectManager;
-        $controller = $objectManager->create(\Magento\Catalog\Helper\Product\Stub\ProductControllerStub::class);
+        $controller = $objectManager->create(ProductControllerStub::class);
         $this->_helper->prepareAndRender($this->page, 10, $controller);
     }
 
@@ -135,8 +119,43 @@ class ViewTest extends \PHPUnit\Framework\TestCase
      */
     public function testPrepareAndRenderWrongProduct()
     {
-        $this->expectException(\Magento\Framework\Exception\NoSuchEntityException::class);
+        $this->expectException(NoSuchEntityException::class);
 
         $this->_helper->prepareAndRender($this->page, 999, $this->_controller);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->objectManager->get(State::class)->setAreaCode('frontend');
+        $this->objectManager->get(\Magento\Framework\App\Http\Context::class)
+            ->setValue(Context::CONTEXT_AUTH, false, false);
+        $this->objectManager->get(DesignInterface::class)
+            ->setDefaultDesignTheme();
+        $this->_helper = $this->objectManager->get(View::class);
+        $request = $this->objectManager->get(Request::class);
+        $request->setRouteName('catalog')->setControllerName('product')->setActionName('view');
+        $arguments = [
+            'request' => $request,
+            'response' => $this->objectManager->get(Response::class),
+        ];
+        $context = $this->objectManager->create(\Magento\Framework\App\Action\Context::class, $arguments);
+        $this->_controller = $this->objectManager->create(
+            ProductControllerStub::class,
+            ['context' => $context]
+        );
+        $resultPageFactory = $this->objectManager->get(PageFactory::class);
+        $this->page = $resultPageFactory->create();
+    }
+
+    /**
+     * Cleanup session, contaminated by product initialization methods
+     */
+    protected function tearDown(): void
+    {
+        $this->objectManager->get(Session::class)->unsLastViewedProductId();
+        $this->_controller = null;
+        $this->_helper = null;
     }
 }

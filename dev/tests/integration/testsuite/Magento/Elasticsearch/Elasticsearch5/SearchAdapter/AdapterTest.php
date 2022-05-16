@@ -7,75 +7,42 @@ declare(strict_types=1);
 
 namespace Magento\Elasticsearch\Elasticsearch5\SearchAdapter;
 
+use DOMDocument;
+use Exception;
+use Magento\AdvancedSearch\Model\Client\ClientInterface;
+use Magento\Elasticsearch\SearchAdapter\ConnectionManager;
+use Magento\Framework\Search\Request\Builder;
+use Magento\Framework\Search\Request\Config;
+use Magento\Framework\Search\Request\Config\Converter;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 
 /**
  * Class AdapterTest to test Elasticsearch search adapter
  */
-class AdapterTest extends \PHPUnit\Framework\TestCase
+class AdapterTest extends TestCase
 {
     /**
-     * @var \Magento\Elasticsearch\Elasticsearch5\SearchAdapter\Adapter
+     * @var Adapter
      */
     private $adapter;
 
     /**
-     * @var \Magento\AdvancedSearch\Model\Client\ClientInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @var ClientInterface|MockObject
      */
     private $clientMock;
 
     /**
-     * @var \Magento\Framework\Search\Request\Builder
+     * @var Builder
      */
     private $requestBuilder;
 
     /**
-     * @var \Psr\Log\LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @var LoggerInterface|MockObject
      */
     private $loggerMock;
-
-    /**
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $contentManager = $this->getMockBuilder(\Magento\Elasticsearch\SearchAdapter\ConnectionManager::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $this->clientMock = $this->getMockBuilder(\Magento\AdvancedSearch\Model\Client\ClientInterface::class)
-            ->setMethods(['query', 'testConnection'])
-            ->disableOriginalConstructor()
-            ->getMock();
-        $contentManager
-            ->expects($this->any())
-            ->method('getConnection')
-            ->willReturn($this->clientMock);
-        /** @var \Magento\Framework\Search\Request\Config\Converter $converter */
-        $converter = $objectManager->create(\Magento\Framework\Search\Request\Config\Converter::class);
-
-        $document = new \DOMDocument();
-        $document->load($this->getRequestConfigPath());
-        $requestConfig = $converter->convert($document);
-
-        /** @var \Magento\Framework\Search\Request\Config $config */
-        $config = $objectManager->create(\Magento\Framework\Search\Request\Config::class);
-        $config->merge($requestConfig);
-
-        $this->requestBuilder = $objectManager->create(
-            \Magento\Framework\Search\Request\Builder::class,
-            ['config' => $config]
-        );
-        $this->loggerMock = $this->getMockForAbstractClass(\Psr\Log\LoggerInterface::class);
-
-        $this->adapter = $objectManager->create(
-            \Magento\Elasticsearch\Elasticsearch5\SearchAdapter\Adapter::class,
-            [
-                'connectionManager' => $contentManager,
-                'logger' => $this->loggerMock
-            ]
-        );
-    }
 
     /**
      * @magentoAppIsolation enabled
@@ -87,12 +54,55 @@ class AdapterTest extends \PHPUnit\Framework\TestCase
         $this->requestBuilder->bind('fulltext_search_query', 'socks');
         $this->requestBuilder->setRequestName('one_match');
         $queryRequest = $this->requestBuilder->create();
-        $exception = new \Exception('Test Message');
+        $exception = new Exception('Test Message');
         $this->loggerMock->expects($this->once())->method('critical')->with($exception);
         $this->clientMock->expects($this->once())->method('query')->willThrowException($exception);
         $actualResponse = $this->adapter->query($queryRequest);
         $this->assertEmpty($actualResponse->getAggregations()->getBuckets());
         $this->assertEquals(0, $actualResponse->count());
+    }
+
+    /**
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $contentManager = $this->getMockBuilder(ConnectionManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->clientMock = $this->getMockBuilder(ClientInterface::class)
+            ->setMethods(['query', 'testConnection'])
+            ->disableOriginalConstructor()
+            ->getMock();
+        $contentManager
+            ->expects($this->any())
+            ->method('getConnection')
+            ->willReturn($this->clientMock);
+        /** @var Converter $converter */
+        $converter = $objectManager->create(Converter::class);
+
+        $document = new DOMDocument();
+        $document->load($this->getRequestConfigPath());
+        $requestConfig = $converter->convert($document);
+
+        /** @var Config $config */
+        $config = $objectManager->create(Config::class);
+        $config->merge($requestConfig);
+
+        $this->requestBuilder = $objectManager->create(
+            Builder::class,
+            ['config' => $config]
+        );
+        $this->loggerMock = $this->getMockForAbstractClass(LoggerInterface::class);
+
+        $this->adapter = $objectManager->create(
+            Adapter::class,
+            [
+                'connectionManager' => $contentManager,
+                'logger' => $this->loggerMock
+            ]
+        );
     }
 
     /**

@@ -3,16 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Paypal\Controller\Adminhtml\Billing;
 
-use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Helper\Xpath;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * Test class for \Magento\Paypal\Controller\Adminhtml\Billing\Agreement
  *
  * @magentoAppArea Adminhtml
  */
-class AgreementTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class AgreementTest extends AbstractBackendController
 {
     /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
@@ -23,7 +25,7 @@ class AgreementTest extends \Magento\TestFramework\TestCase\AbstractBackendContr
         $this->dispatch('backend/paypal/billing_agreement/customergrid/id/1');
         $this->assertEquals(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//th[contains(@class,"col-reference_id")]',
                 $this->getResponse()->getBody()
             ),
@@ -31,7 +33,7 @@ class AgreementTest extends \Magento\TestFramework\TestCase\AbstractBackendContr
         );
         $this->assertEquals(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//td[contains(text(), "REF-ID-TEST-678")]',
                 $this->getResponse()->getBody()
             ),

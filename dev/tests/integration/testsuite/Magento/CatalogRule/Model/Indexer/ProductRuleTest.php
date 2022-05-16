@@ -3,29 +3,26 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogRule\Model\Indexer;
 
+use DateTime;
 use Magento\Catalog\Model\ProductRepository;
+use Magento\CatalogRule\Model\Indexer\Product\ProductRuleProcessor;
+use Magento\CatalogRule\Model\ResourceModel\Rule;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoDbIsolation enabled
  * @magentoAppIsolation enabled
  */
-class ProductRuleTest extends \PHPUnit\Framework\TestCase
+class ProductRuleTest extends TestCase
 {
     /**
-     * @var \Magento\CatalogRule\Model\ResourceModel\Rule
+     * @var Rule
      */
     protected $resourceRule;
-
-    protected function setUp(): void
-    {
-        $this->resourceRule = Bootstrap::getObjectManager()->get(\Magento\CatalogRule\Model\ResourceModel\Rule::class);
-
-        Bootstrap::getObjectManager()->get(\Magento\CatalogRule\Model\Indexer\Product\ProductRuleProcessor::class)
-            ->getIndexer()->isScheduled(false);
-    }
 
     /**
      * @magentoDataFixture Magento/CatalogRule/_files/attribute.php
@@ -36,13 +33,13 @@ class ProductRuleTest extends \PHPUnit\Framework\TestCase
     public function testReindexAfterSuitableProductSaving()
     {
         /** @var ProductRepository $productRepository */
-        $productRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+        $productRepository = Bootstrap::getObjectManager()->create(
             ProductRepository::class
         );
         $product = $productRepository->get('simple');
         $product->setData('test_attribute', 'test_attribute_value')->save();
 
-        $this->assertEquals(9.8, $this->resourceRule->getRulePrice(new \DateTime(), 1, 1, $product->getId()));
+        $this->assertEquals(9.8, $this->resourceRule->getRulePrice(new DateTime(), 1, 1, $product->getId()));
     }
 
     /**
@@ -66,8 +63,16 @@ class ProductRuleTest extends \PHPUnit\Framework\TestCase
 
         $this->assertEquals(
             7.5,
-            $this->resourceRule->getRulePrice(new \DateTime(), 1, 1, $product->getId()),
+            $this->resourceRule->getRulePrice(new DateTime(), 1, 1, $product->getId()),
             "Catalog price rule doesn't apply to product with visibility value \"Not Visibility Individually\""
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->resourceRule = Bootstrap::getObjectManager()->get(Rule::class);
+
+        Bootstrap::getObjectManager()->get(ProductRuleProcessor::class)
+            ->getIndexer()->isScheduled(false);
     }
 }

@@ -8,6 +8,8 @@ declare(strict_types=1);
 
 namespace Magento\GoogleAnalytics\Block;
 
+use Magento\Framework\View\Element\AbstractBlock;
+use Magento\Framework\View\LayoutInterface;
 use Magento\TestFramework\TestCase\AbstractController;
 
 class GaTest extends AbstractController
@@ -15,19 +17,9 @@ class GaTest extends AbstractController
     /**
      * Layout instance
      *
-     * @var \Magento\Framework\View\LayoutInterface
+     * @var LayoutInterface
      */
     private $layout;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->dispatch('/');
-        $this->layout = $this->_objectManager->get(\Magento\Framework\View\LayoutInterface::class);
-    }
 
     /**
      * Check for correct position of GA block
@@ -37,6 +29,23 @@ class GaTest extends AbstractController
         $this->assertNotNull(
             $this->getGaBlockFromNode('head.additional')
         );
+    }
+
+    /**
+     * Get GA block
+     *
+     * @param string $nodeName
+     * @return AbstractBlock|false
+     */
+    private function getGaBlockFromNode($nodeName = 'head.additional')
+    {
+        $childBlocks = $this->layout->getChildBlocks($nodeName);
+        foreach ($childBlocks as $block) {
+            if (strpos($block->getNameInLayout(), 'google_analytics') !== false) {
+                return $block;
+            }
+        }
+        return false;
     }
 
     /**
@@ -82,19 +91,12 @@ class GaTest extends AbstractController
     }
 
     /**
-     * Get GA block
-     *
-     * @param string $nodeName
-     * @return \Magento\Framework\View\Element\AbstractBlock|false
+     * @inheritdoc
      */
-    private function getGaBlockFromNode($nodeName = 'head.additional')
+    protected function setUp(): void
     {
-        $childBlocks = $this->layout->getChildBlocks($nodeName);
-        foreach ($childBlocks as $block) {
-            if (strpos($block->getNameInLayout(), 'google_analytics') !== false) {
-                return $block;
-            }
-        }
-        return false;
+        parent::setUp();
+        $this->dispatch('/');
+        $this->layout = $this->_objectManager->get(LayoutInterface::class);
     }
 }

@@ -10,7 +10,6 @@ namespace Magento\ConfigurableProduct\Model\Product;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\CatalogInventory\Api\StockRegistryInterface;
-use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
@@ -47,19 +46,6 @@ class VariationHandlerTest extends TestCase
      * @var StockRegistryInterface
      */
     private $stockRegistry;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->variationHandler = $this->objectManager->create(VariationHandler::class);
-        $this->product = $this->productRepository->get('configurable');
-        $this->stockRegistry = $this->objectManager->get(StockRegistryInterface::class);
-    }
 
     /**
      * @magentoDataFixture Magento/ConfigurableProduct/_files/product_configurable.php
@@ -165,5 +151,18 @@ class VariationHandlerTest extends TestCase
                 ],
             ]
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->variationHandler = $this->objectManager->create(VariationHandler::class);
+        $this->product = $this->productRepository->get('configurable');
+        $this->stockRegistry = $this->objectManager->get(StockRegistryInterface::class);
     }
 }

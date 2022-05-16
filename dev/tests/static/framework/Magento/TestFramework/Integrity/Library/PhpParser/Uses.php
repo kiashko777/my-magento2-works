@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Integrity\Library\PhpParser;
 
 /**
@@ -36,14 +37,6 @@ class Uses implements ParserInterface
     }
 
     /**
-     * Create empty uses in collection
-     */
-    protected function createEmptyItem()
-    {
-        $this->uses[] = '';
-    }
-
-    /**
      * Return class name with namespace
      *
      * @param string $class
@@ -72,43 +65,6 @@ class Uses implements ParserInterface
     }
 
     /**
-     * Append part of uses into last item
-     *
-     * @param string $value
-     */
-    protected function appendToLast($value)
-    {
-        end($this->uses);
-        $this->uses[key($this->uses)] = ltrim($this->uses[key($this->uses)] . $value);
-    }
-
-    /**
-     * Check flag parse
-     *
-     * @return bool
-     */
-    protected function isParseInProgress()
-    {
-        return $this->parseUse;
-    }
-
-    /**
-     * Start parse
-     */
-    protected function stopParse()
-    {
-        $this->parseUse = false;
-    }
-
-    /**
-     * Stop parse
-     */
-    protected function startParse()
-    {
-        $this->parseUse = true;
-    }
-
-    /**
      * @inheritdoc
      */
     public function parse($token, $key)
@@ -131,5 +87,50 @@ class Uses implements ParserInterface
                 }
             }
         }
+    }
+
+    /**
+     * Check flag parse
+     *
+     * @return bool
+     */
+    protected function isParseInProgress()
+    {
+        return $this->parseUse;
+    }
+
+    /**
+     * Append part of uses into last item
+     *
+     * @param string $value
+     */
+    protected function appendToLast($value)
+    {
+        end($this->uses);
+        $this->uses[key($this->uses)] = ltrim($this->uses[key($this->uses)] . $value);
+    }
+
+    /**
+     * Stop parse
+     */
+    protected function startParse()
+    {
+        $this->parseUse = true;
+    }
+
+    /**
+     * Create empty uses in collection
+     */
+    protected function createEmptyItem()
+    {
+        $this->uses[] = '';
+    }
+
+    /**
+     * Start parse
+     */
+    protected function stopParse()
+    {
+        $this->parseUse = false;
     }
 }

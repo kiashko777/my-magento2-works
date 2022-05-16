@@ -5,8 +5,8 @@
 module.exports = function (grunt) {
     'use strict';
 
-    var compressor  = require('node-minify'),
-        _           = require('underscore');
+    var compressor = require('node-minify'),
+        _ = require('underscore');
 
     /**
      * Helper function used to create config object for compressor.

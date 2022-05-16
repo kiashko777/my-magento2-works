@@ -3,11 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestSetupDeclarationModule7\Setup\Patch\Data;
 
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
-use Magento\Framework\Setup\Patch\PatchRevertableInterface;
 use Magento\Framework\Setup\Patch\PatchVersionInterface;
 
 /**
@@ -43,6 +43,14 @@ class SomePatch implements
     /**
      * @return array
      */
+    public static function getDependencies()
+    {
+        return [];
+    }
+
+    /**
+     * @return array
+     */
     public function getAliases()
     {
         return [];
@@ -55,13 +63,5 @@ class SomePatch implements
     {
         $adapter = $this->resourceConnection->getConnection();
         $adapter->insert('test_table', ['varchar' => "_ref"]);
-    }
-
-    /**
-     * @return array
-     */
-    public static function getDependencies()
-    {
-        return [];
     }
 }

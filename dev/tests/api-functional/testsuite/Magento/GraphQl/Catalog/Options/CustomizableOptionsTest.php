@@ -23,15 +23,6 @@ class CustomizableOptionsTest extends GraphQlAbstract
     private $compareArraysRecursively;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->compareArraysRecursively = $objectManager->create(CompareArraysRecursively::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Catalog/_files/product_with_options.php
      *
      * @param array $optionDataProvider
@@ -130,5 +121,14 @@ QUERY;
                 ]
             ]
         ];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->compareArraysRecursively = $objectManager->create(CompareArraysRecursively::class);
     }
 }

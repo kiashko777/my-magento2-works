@@ -3,10 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-use Magento\Eav\Api\Data\AttributeOptionInterface;
 
-/** @var \Magento\Framework\ObjectManagerInterface $objectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\Catalog\Api\Data\ProductAttributeInterface;
+use Magento\Eav\Api\Data\AttributeOptionInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+
+/** @var ObjectManagerInterface $objectManager */
+$objectManager = Bootstrap::getObjectManager();
 
 $data = [
     'is_required' => 1,
@@ -66,7 +70,7 @@ foreach ($data['options']['option'] as $optionData) {
 }
 
 $attribute = $objectManager->create(
-    \Magento\Catalog\Api\Data\ProductAttributeInterface::class,
+    ProductAttributeInterface::class,
     ['data' => $data]
 );
 $attribute->setOptions($options);

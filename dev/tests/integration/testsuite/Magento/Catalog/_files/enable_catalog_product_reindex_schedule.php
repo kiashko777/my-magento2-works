@@ -5,13 +5,18 @@
  */
 declare(strict_types=1);
 
-/* @var \Magento\Framework\Indexer\IndexerInterface $model */
-$model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-    \Magento\Framework\Indexer\IndexerRegistry::class
+/* @var IndexerInterface $model */
+
+use Magento\Framework\Indexer\IndexerInterface;
+use Magento\Framework\Indexer\IndexerRegistry;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$model = Bootstrap::getObjectManager()->get(
+    IndexerRegistry::class
 )->get('catalog_category_product');
 $model->setScheduled(true);
 
-$model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-    \Magento\Framework\Indexer\IndexerRegistry::class
+$model = Bootstrap::getObjectManager()->get(
+    IndexerRegistry::class
 )->get('catalog_product_category');
 $model->setScheduled(true);

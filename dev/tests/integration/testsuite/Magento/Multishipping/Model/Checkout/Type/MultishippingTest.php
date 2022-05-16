@@ -3,8 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Multishipping\Model\Checkout\Type;
 
+use Exception;
 use Magento\Checkout\Model\Session as CheckoutSession;
 use Magento\Customer\Api\AddressRepositoryInterface;
 use Magento\Customer\Api\CustomerRepositoryInterface;
@@ -21,13 +23,14 @@ use Magento\Sales\Model\Order\Email\Sender\OrderSender;
 use Magento\Sales\Model\Service\OrderService;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
-use \PHPUnit\Framework\MockObject\MockObject as MockObject;
+use PHPUnit\Framework\MockObject\MockObject as MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea frontend
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class MultishippingTest extends \PHPUnit\Framework\TestCase
+class MultishippingTest extends TestCase
 {
     const ADDRESS_TYPE_SHIPPING = 'shipping';
 
@@ -52,22 +55,6 @@ class MultishippingTest extends \PHPUnit\Framework\TestCase
      * @var CustomerRepositoryInterface
      */
     private $customerRepository;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-
-        $this->addressRepository = $this->objectManager->get(AddressRepositoryInterface::class);
-        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
-        $orderSender = $this->getMockBuilder(OrderSender::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $this->model = $this->objectManager->create(
-            Multishipping::class,
-            ['orderSender' => $orderSender]
-        );
-    }
 
     /**
      * Test case when default billing and shipping addresses are set and they are different.
@@ -291,6 +278,71 @@ class MultishippingTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Retrieves quote by reserved order id.
+     *
+     * @param string $reservedOrderId
+     * @return Quote
+     */
+    private function getQuote(string $reservedOrderId): Quote
+    {
+        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
+        $searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
+        $searchCriteria = $searchCriteriaBuilder->addFilter('reserved_order_id', $reservedOrderId)
+            ->create();
+
+        /** @var CartRepositoryInterface $quoteRepository */
+        $quoteRepository = $this->objectManager->get(CartRepositoryInterface::class);
+        $items = $quoteRepository->getList($searchCriteria)->getItems();
+
+        return array_pop($items);
+    }
+
+    /**
+     * Get list of orders by quote id.
+     *
+     * @param int $quoteId
+     * @return array
+     */
+    private function getOrderList(int $quoteId): array
+    {
+        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
+        $searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
+        $searchCriteria = $searchCriteriaBuilder->addFilter('quote_id', $quoteId)
+            ->create();
+
+        /** @var OrderRepositoryInterface $orderRepository */
+        $orderRepository = $this->objectManager->get(OrderRepositoryInterface::class);
+        return $orderRepository->getList($searchCriteria)->getItems();
+    }
+
+    /**
+     * Performs assertions for order address.
+     *
+     * @param OrderAddressInterface $address
+     * @param array $expected
+     * @return void
+     */
+    private function performOrderAddressAssertions(OrderAddressInterface $address, array $expected)
+    {
+        foreach ($expected as $key => $item) {
+            $methodName = 'get' . ucfirst($key);
+            self::assertEquals($item, $address->$methodName(), 'The "' . $key . '" does not match.');
+        }
+    }
+
+    /**
+     * Perform assertions for order total amount.
+     *
+     * @param float $total
+     * @param float $expected
+     * @return void
+     */
+    private function performOrderTotalAssertions(float $total, float $expected)
+    {
+        self::assertEquals($expected, $total, 'Order total amount does not match.');
+    }
+
+    /**
      * Checks a case when some of multiple orders are failed to place.
      *
      * @magentoAppIsolation enabled
@@ -362,6 +414,57 @@ class MultishippingTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Returns order service mock with successful place on first call and exceptions on other calls.
+     *
+     * @return MockObject
+     */
+    private function getOrderServiceMock(): MockObject
+    {
+        $orderService = $this->getMockBuilder(OrderService::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $exception = new Exception('Place order error');
+        $orderService->expects($this->exactly(3))
+            ->method('place')
+            ->willReturnOnConsecutiveCalls(
+                $this->returnArgument(0),
+                $this->throwException($exception),
+                $this->throwException($exception)
+            );
+
+        return $orderService;
+    }
+
+    /**
+     * Search address in quote address array.
+     *
+     * @param array $searchAddress
+     * @param Quote $quote
+     * @return bool
+     */
+    private function findAddressInQuote(array $searchAddress, Quote $quote)
+    {
+        $quoteAddresses = $quote->getAllShippingAddresses();
+        if ($quote->hasVirtualItems()) {
+            $quoteAddresses[] = $quote->getBillingAddress();
+        }
+
+        foreach ($quoteAddresses as $quoteAddress) {
+            $isFound = true;
+            foreach ($searchAddress as $key => $item) {
+                $methodName = 'get' . ucfirst($key);
+                $isFound = $isFound ? $item === $quoteAddress->$methodName() : false;
+            }
+            if ($isFound) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Check product parent item id in order item
      *
      * @magentoDataFixture Magento/Multishipping/Fixtures/quote_with_configurable_product.php
@@ -397,119 +500,19 @@ class MultishippingTest extends \PHPUnit\Framework\TestCase
         $this->assertNotNull($secondOrderItemParentsIds[1]);
     }
 
-    /**
-     * Returns order service mock with successful place on first call and exceptions on other calls.
-     *
-     * @return MockObject
-     */
-    private function getOrderServiceMock(): MockObject
+    protected function setUp(): void
     {
-        $orderService = $this->getMockBuilder(OrderService::class)
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->addressRepository = $this->objectManager->get(AddressRepositoryInterface::class);
+        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
+        $orderSender = $this->getMockBuilder(OrderSender::class)
             ->disableOriginalConstructor()
             ->getMock();
 
-        $exception = new \Exception('Place order error');
-        $orderService->expects($this->exactly(3))
-            ->method('place')
-            ->willReturnOnConsecutiveCalls(
-                $this->returnArgument(0),
-                $this->throwException($exception),
-                $this->throwException($exception)
-            );
-
-        return $orderService;
-    }
-
-    /**
-     * Retrieves quote by reserved order id.
-     *
-     * @param string $reservedOrderId
-     * @return Quote
-     */
-    private function getQuote(string $reservedOrderId): Quote
-    {
-        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
-        $searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
-        $searchCriteria = $searchCriteriaBuilder->addFilter('reserved_order_id', $reservedOrderId)
-            ->create();
-
-        /** @var CartRepositoryInterface $quoteRepository */
-        $quoteRepository = $this->objectManager->get(CartRepositoryInterface::class);
-        $items = $quoteRepository->getList($searchCriteria)->getItems();
-
-        return array_pop($items);
-    }
-
-    /**
-     * Get list of orders by quote id.
-     *
-     * @param int $quoteId
-     * @return array
-     */
-    private function getOrderList(int $quoteId): array
-    {
-        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
-        $searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
-        $searchCriteria = $searchCriteriaBuilder->addFilter('quote_id', $quoteId)
-            ->create();
-
-        /** @var OrderRepositoryInterface $orderRepository */
-        $orderRepository = $this->objectManager->get(OrderRepositoryInterface::class);
-        return $orderRepository->getList($searchCriteria)->getItems();
-    }
-
-    /**
-     * Performs assertions for order address.
-     *
-     * @param OrderAddressInterface $address
-     * @param array $expected
-     * @return void
-     */
-    private function performOrderAddressAssertions(OrderAddressInterface $address, array $expected)
-    {
-        foreach ($expected as $key => $item) {
-            $methodName = 'get' . ucfirst($key);
-            self::assertEquals($item, $address->$methodName(), 'The "'. $key . '" does not match.');
-        }
-    }
-
-    /**
-     * Search address in quote address array.
-     *
-     * @param array $searchAddress
-     * @param Quote $quote
-     * @return bool
-     */
-    private function findAddressInQuote(array $searchAddress, Quote $quote)
-    {
-        $quoteAddresses = $quote->getAllShippingAddresses();
-        if ($quote->hasVirtualItems()) {
-            $quoteAddresses[] = $quote->getBillingAddress();
-        }
-
-        foreach ($quoteAddresses as $quoteAddress) {
-            $isFound = true;
-            foreach ($searchAddress as $key => $item) {
-                $methodName = 'get' . ucfirst($key);
-                $isFound = $isFound ? $item === $quoteAddress->$methodName() : false;
-            }
-            if ($isFound) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Perform assertions for order total amount.
-     *
-     * @param float $total
-     * @param float $expected
-     * @return void
-     */
-    private function performOrderTotalAssertions(float $total, float $expected)
-    {
-        self::assertEquals($expected, $total, 'Order total amount does not match.');
+        $this->model = $this->objectManager->create(
+            Multishipping::class,
+            ['orderSender' => $orderSender]
+        );
     }
 }

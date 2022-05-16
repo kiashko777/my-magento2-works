@@ -13,16 +13,16 @@ use Magento\Framework\App\DeploymentConfig\Writer;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Config\File\ConfigFilePool;
 use Magento\Framework\Filesystem;
-use Magento\Framework\MessageQueue\Config;
 use Magento\Framework\MessageQueue\Config\Data;
 use Magento\Framework\MessageQueue\Config\Reader\Xml;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
 
 class ConfigGetConsumersTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
     /**
@@ -48,6 +48,16 @@ class ConfigGetConsumersTest extends TestCase
      * @var Xml
      */
     private $xmlReader;
+
+    public function testGetConsumers(): void
+    {
+        $consumers = $this->configSubject->getConsumers();
+
+        foreach ($consumers as $consumer) {
+            $this->assertIsString($consumer['name']);
+            $this->assertIsArray($consumer['handlers']);
+        }
+    }
 
     /**
      * @inheritdoc
@@ -79,30 +89,6 @@ class ConfigGetConsumersTest extends TestCase
         );
     }
 
-    public function testGetConsumers(): void
-    {
-        $consumers = $this->configSubject->getConsumers();
-
-        foreach ($consumers as $consumer) {
-            $this->assertIsString($consumer['name']);
-            $this->assertIsArray($consumer['handlers']);
-        }
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $filesystem = $this->objectManager->get(Filesystem::class);
-        $configFilePool = $this->objectManager->get(ConfigFilePool::class);
-        $filesystem->getDirectoryWrite(DirectoryList::CONFIG)->writeFile(
-            $configFilePool->getPath(ConfigFilePool::APP_ENV),
-            "<?php\n return array();\n"
-        );
-        $this->fileWriter->saveConfig([ConfigFilePool::APP_ENV => $this->envConfigBackup]);
-    }
-
     private function buildCustomEnvConfigWithConsumers(): array
     {
         $data = $this->xmlReader->read();
@@ -125,5 +111,19 @@ class ConfigGetConsumersTest extends TestCase
                 'consumers' => $consumers
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $filesystem = $this->objectManager->get(Filesystem::class);
+        $configFilePool = $this->objectManager->get(ConfigFilePool::class);
+        $filesystem->getDirectoryWrite(DirectoryList::CONFIG)->writeFile(
+            $configFilePool->getPath(ConfigFilePool::APP_ENV),
+            "<?php\n return array();\n"
+        );
+        $this->fileWriter->saveConfig([ConfigFilePool::APP_ENV => $this->envConfigBackup]);
     }
 }

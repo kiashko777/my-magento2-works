@@ -23,14 +23,6 @@ class PageTest extends TestCase
     private $page;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->page = Bootstrap::getObjectManager()->get(Page::class);
-    }
-
-    /**
      * Test Page::getCollection() will exclude home and no-route cms pages for site map.
      *
      * @magentoAppArea Adminhtml
@@ -46,5 +38,13 @@ class PageTest extends TestCase
         foreach ($result as $item) {
             $this->assertFalse(in_array($item->getUrl(), $excludedUrls));
         }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->page = Bootstrap::getObjectManager()->get(Page::class);
     }
 }

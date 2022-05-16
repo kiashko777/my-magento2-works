@@ -6,26 +6,34 @@
 
 declare(strict_types=1);
 
-/** @var \Magento\Catalog\Model\CategoryFactory $factory */
-$factory = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Catalog\Model\CategoryFactory::class
+/** @var CategoryFactory $factory */
+
+use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\CategoryFactory;
+use Magento\Catalog\Model\CategoryRepository;
+use Magento\Store\Model\Store;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$factory = Bootstrap::getObjectManager()->create(
+    CategoryFactory::class
 );
-/** @var \Magento\Catalog\Model\CategoryRepository $repository */
-$repository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Catalog\Model\CategoryRepository::class
+/** @var CategoryRepository $repository */
+$repository = Bootstrap::getObjectManager()->create(
+    CategoryRepository::class
 );
-/** @var \Magento\Store\Model\StoreManagerInterface $storeManager */
-$storeManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Store\Model\StoreManagerInterface::class
+/** @var StoreManagerInterface $storeManager */
+$storeManager = Bootstrap::getObjectManager()->create(
+    StoreManagerInterface::class
 );
-/** @var \Magento\Store\Model\Store $store */
-$store = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Store\Model\Store::class);
+/** @var Store $store */
+$store = Bootstrap::getObjectManager()->create(Store::class);
 if (!$store->load('second_category_store', 'code')->getId()) {
-    $websiteId = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-        \Magento\Store\Model\StoreManagerInterface::class
+    $websiteId = Bootstrap::getObjectManager()->get(
+        StoreManagerInterface::class
     )->getWebsite()->getId();
-    $groupId = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-        \Magento\Store\Model\StoreManagerInterface::class
+    $groupId = Bootstrap::getObjectManager()->get(
+        StoreManagerInterface::class
     )->getWebsite()->getDefaultGroupId();
 
     $store->setCode(
@@ -44,7 +52,7 @@ if (!$store->load('second_category_store', 'code')->getId()) {
     $store->save();
 }
 
-/** @var \Magento\Catalog\Model\Category $newCategory */
+/** @var Category $newCategory */
 $newCategory = $factory->create();
 $newCategory
     ->setName('Category')

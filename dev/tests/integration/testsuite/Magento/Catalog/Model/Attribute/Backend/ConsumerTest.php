@@ -8,23 +8,24 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Model\Attribute\Backend;
 
+use Exception;
 use Magento\AsynchronousOperations\Api\Data\OperationInterface;
 use Magento\AsynchronousOperations\Api\Data\OperationInterfaceFactory;
 use Magento\AsynchronousOperations\Model\BulkManagement;
 use Magento\AsynchronousOperations\Model\BulkStatus;
-use Magento\Framework\MessageQueue\BulkPublisherInterface;
-use Magento\Framework\ObjectManagerInterface;
-use Magento\TestFramework\Helper\Bootstrap;
-use PHPUnit\Framework\TestCase;
 use Magento\Catalog\Helper\Product;
 use Magento\Catalog\Model\Indexer\Product\Flat\Processor as FlatProcessor;
 use Magento\Catalog\Model\Indexer\Product\Price\Processor as PriceProcessor;
-use Magento\Framework\Bulk\OperationManagementInterface;
 use Magento\Catalog\Model\Product\Action;
-use Psr\Log\LoggerInterface;
-use Magento\Framework\Serialize\SerializerInterface;
+use Magento\Framework\Bulk\OperationManagementInterface;
 use Magento\Framework\EntityManager\EntityManager;
-use Magento\Catalog\Model\Attribute\Backend\Consumer;
+use Magento\Framework\MessageQueue\BulkPublisherInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Serialize\SerializerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 
 /**
  * Test for Mysql Consumer execution
@@ -41,7 +42,7 @@ class ConsumerTest extends TestCase
     private $model;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     private $publisherMock;
 
@@ -64,6 +65,47 @@ class ConsumerTest extends TestCase
      * @var SerializerInterface
      */
     private $serializer;
+
+    /**
+     * Testing saving bulk operation during processing operation by attribute backend consumer
+     */
+    public function testSaveOperationDuringProcess()
+    {
+        $operation = $this->prepareUpdateAttributesBulkAndOperation();
+        try {
+            $this->model->process($operation);
+        } catch (Exception $e) {
+            $this->fail(sprintf('Operation save process failed.: %s', $e->getMessage()));
+        }
+        $operationStatus = $operation->getStatus();
+        $this->assertEquals(
+            1,
+            $this->bulkStatus->getOperationsCountByBulkIdAndStatus(self::BULK_UUID, $operationStatus)
+        );
+    }
+
+    /**
+     * Schedules test bulk and returns operation
+     * @return OperationInterface
+     */
+    private function prepareUpdateAttributesBulkAndOperation(): OperationInterface
+    {
+        // general bulk information
+        $bulkUuid = self::BULK_UUID;
+        $bulkDescription = 'Update attributes for 2 selected products';
+        $topicName = 'product_action_attribute.update';
+        $userId = 1;
+        /** @var OperationInterfaceFactory $operationFactory */
+        $operationFactory = $this->objectManager->get(OperationInterfaceFactory::class);
+        $operation = $operationFactory->create();
+        $operation->setBulkUuid($bulkUuid)
+            ->setTopicName($topicName)
+            ->setSerializedData($this->serializer->serialize(
+                ['product_ids' => [1, 3], 'attributes' => [], 'store_id' => '0']
+            ));
+        $this->bulkManagement->scheduleBulk($bulkUuid, [$operation], $bulkDescription, $userId);
+        return $operation;
+    }
 
     /**
      * @inheritdoc
@@ -109,47 +151,6 @@ class ConsumerTest extends TestCase
         );
 
         parent::setUp();
-    }
-
-    /**
-     * Testing saving bulk operation during processing operation by attribute backend consumer
-     */
-    public function testSaveOperationDuringProcess()
-    {
-        $operation = $this->prepareUpdateAttributesBulkAndOperation();
-        try {
-            $this->model->process($operation);
-        } catch (\Exception $e) {
-            $this->fail(sprintf('Operation save process failed.: %s', $e->getMessage()));
-        }
-        $operationStatus = $operation->getStatus();
-        $this->assertEquals(
-            1,
-            $this->bulkStatus->getOperationsCountByBulkIdAndStatus(self::BULK_UUID, $operationStatus)
-        );
-    }
-
-    /**
-     * Schedules test bulk and returns operation
-     * @return OperationInterface
-     */
-    private function prepareUpdateAttributesBulkAndOperation(): OperationInterface
-    {
-        // general bulk information
-        $bulkUuid = self::BULK_UUID;
-        $bulkDescription = 'Update attributes for 2 selected products';
-        $topicName = 'product_action_attribute.update';
-        $userId = 1;
-        /** @var OperationInterfaceFactory $operationFactory */
-        $operationFactory = $this->objectManager->get(OperationInterfaceFactory::class);
-        $operation = $operationFactory->create();
-        $operation->setBulkUuid($bulkUuid)
-            ->setTopicName($topicName)
-            ->setSerializedData($this->serializer->serialize(
-                ['product_ids' => [1,3], 'attributes' => [], 'store_id' => '0']
-            ));
-        $this->bulkManagement->scheduleBulk($bulkUuid, [$operation], $bulkDescription, $userId);
-        return $operation;
     }
 
     /**

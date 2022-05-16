@@ -3,15 +3,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Webapi\Routing;
 
-use Magento\Framework\Exception\AuthorizationException;
+use Exception;
 use Magento\Framework\Webapi\Exception as WebapiException;
+use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
  * Base class for all Service based routing tests
  */
-abstract class BaseService extends \Magento\TestFramework\TestCase\WebapiAbstract
+abstract class BaseService extends WebapiAbstract
 {
     /**
      * Check a particular adapter and assert unauthorized access
@@ -33,6 +35,34 @@ abstract class BaseService extends \Magento\TestFramework\TestCase\WebapiAbstrac
     }
 
     /**
+     * Invoke the SOAP api and assert for the NoWebApiXmlTestTest test cases that no such SOAP route exists
+     *
+     * @param array $serviceInfo
+     * @param array|null $requestData
+     * @param string $expectedMessage
+     */
+    protected function _assertSoapException($serviceInfo, $requestData = null, $expectedMessage = '')
+    {
+        try {
+            $this->_webApiCall($serviceInfo, $requestData);
+        } catch (Exception $e) {
+            if (get_class($e) !== 'SoapFault') {
+                $this->fail(
+                    sprintf(
+                        'Expected SoapFault exception not generated for Service - "%s" and Operation - "%s"',
+                        $serviceInfo['soap']['service'],
+                        $serviceInfo['soap']['operation']
+                    )
+                );
+            }
+
+            if ($expectedMessage) {
+                $this->assertStringContainsString($expectedMessage, $e->getMessage());
+            }
+        }
+    }
+
+    /**
      * Invoke the REST api and assert access is unauthorized
      *
      * @param array $serviceInfo
@@ -42,7 +72,7 @@ abstract class BaseService extends \Magento\TestFramework\TestCase\WebapiAbstrac
     {
         try {
             $this->_webApiCall($serviceInfo, $requestData);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->assertStringContainsString(
                 '{"message":"The consumer isn\'t authorized to access %resources.',
                 $e->getMessage(),
@@ -81,38 +111,10 @@ abstract class BaseService extends \Magento\TestFramework\TestCase\WebapiAbstrac
     {
         try {
             $this->_webApiCall($serviceInfo, $requestData);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $error = json_decode($e->getMessage(), true);
             $this->assertEquals('Request does not match any route.', $error['message']);
             $this->assertEquals(WebapiException::HTTP_NOT_FOUND, $e->getCode());
-        }
-    }
-
-    /**
-     * Invoke the SOAP api and assert for the NoWebApiXmlTestTest test cases that no such SOAP route exists
-     *
-     * @param array $serviceInfo
-     * @param array|null $requestData
-     * @param string $expectedMessage
-     */
-    protected function _assertSoapException($serviceInfo, $requestData = null, $expectedMessage = '')
-    {
-        try {
-            $this->_webApiCall($serviceInfo, $requestData);
-        } catch (\Exception $e) {
-            if (get_class($e) !== 'SoapFault') {
-                $this->fail(
-                    sprintf(
-                        'Expected SoapFault exception not generated for Service - "%s" and Operation - "%s"',
-                        $serviceInfo['soap']['service'],
-                        $serviceInfo['soap']['operation']
-                    )
-                );
-            }
-
-            if ($expectedMessage) {
-                $this->assertStringContainsString($expectedMessage, $e->getMessage());
-            }
         }
     }
 }

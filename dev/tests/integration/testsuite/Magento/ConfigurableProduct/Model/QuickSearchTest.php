@@ -42,17 +42,6 @@ class QuickSearchTest extends TestCase
     private $productRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->quickSearchByQuery = $this->objectManager->get(QuickSearchByQuery::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        parent::setUp();
-    }
-
-    /**
      * Assert that configurable child products has not found by query using mysql search engine.
      *
      * @return void
@@ -60,6 +49,22 @@ class QuickSearchTest extends TestCase
     public function testChildProductsHasNotFoundedByQuery(): void
     {
         $this->checkThatOnlyConfigurableProductIsAvailableBySearch('Configurable Option');
+    }
+
+    /**
+     * Assert that anyone child product is not available by quick search.
+     *
+     * @param string $searchQuery
+     *
+     * @return void
+     */
+    private function checkThatOnlyConfigurableProductIsAvailableBySearch(string $searchQuery): void
+    {
+        $searchResult = $this->quickSearchByQuery->execute($searchQuery);
+        $this->assertCount(1, $searchResult->getItems());
+        /** @var Product $configurableProduct */
+        $configurableProduct = $searchResult->getFirstItem();
+        $this->assertEquals('Configurable product', $configurableProduct->getSku());
     }
 
     /**
@@ -78,6 +83,36 @@ class QuickSearchTest extends TestCase
         $this->updateProductVisibility($visibility);
         $this->checkProductAvailabilityInSearch($expectedResult);
         $this->checkThatOnlyConfigurableProductIsAvailableBySearch('White');
+    }
+
+    /**
+     * Update product visibility.
+     *
+     * @param int $visibility
+     * @return void
+     */
+    private function updateProductVisibility(int $visibility): void
+    {
+        $childProduct = $this->productRepository->get('Simple option 1');
+        $childProduct->setVisibility($visibility);
+        $this->productRepository->save($childProduct);
+    }
+
+    /**
+     * Assert that configurable and one of child product is available by search.
+     *
+     * @param bool $firstChildIsVisible
+     * @return void
+     */
+    private function checkProductAvailabilityInSearch(bool $firstChildIsVisible): void
+    {
+        $searchResult = $this->quickSearchByQuery->execute('Black');
+        $this->assertNotNull($searchResult->getItemByColumnValue(Product::SKU, 'Configurable product'));
+        $this->assertEquals(
+            $firstChildIsVisible,
+            (bool)$searchResult->getItemByColumnValue(Product::SKU, 'Simple option 1')
+        );
+        $this->assertNull($searchResult->getItemByColumnValue(Product::SKU, 'Simple option 2'));
     }
 
     /**
@@ -119,48 +154,13 @@ class QuickSearchTest extends TestCase
     }
 
     /**
-     * Assert that anyone child product is not available by quick search.
-     *
-     * @param string $searchQuery
-     *
-     * @return void
+     * @inheritdoc
      */
-    private function checkThatOnlyConfigurableProductIsAvailableBySearch(string $searchQuery): void
+    protected function setUp(): void
     {
-        $searchResult = $this->quickSearchByQuery->execute($searchQuery);
-        $this->assertCount(1, $searchResult->getItems());
-        /** @var Product $configurableProduct */
-        $configurableProduct = $searchResult->getFirstItem();
-        $this->assertEquals('Configurable product', $configurableProduct->getSku());
-    }
-
-    /**
-     * Update product visibility.
-     *
-     * @param int $visibility
-     * @return void
-     */
-    private function updateProductVisibility(int $visibility): void
-    {
-        $childProduct = $this->productRepository->get('Simple option 1');
-        $childProduct->setVisibility($visibility);
-        $this->productRepository->save($childProduct);
-    }
-
-    /**
-     * Assert that configurable and one of child product is available by search.
-     *
-     * @param bool $firstChildIsVisible
-     * @return void
-     */
-    private function checkProductAvailabilityInSearch(bool $firstChildIsVisible): void
-    {
-        $searchResult = $this->quickSearchByQuery->execute('Black');
-        $this->assertNotNull($searchResult->getItemByColumnValue(Product::SKU, 'Configurable product'));
-        $this->assertEquals(
-            $firstChildIsVisible,
-            (bool)$searchResult->getItemByColumnValue(Product::SKU, 'Simple option 1')
-        );
-        $this->assertNull($searchResult->getItemByColumnValue(Product::SKU, 'Simple option 2'));
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->quickSearchByQuery = $this->objectManager->get(QuickSearchByQuery::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        parent::setUp();
     }
 }

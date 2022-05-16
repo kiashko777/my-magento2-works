@@ -6,9 +6,17 @@
 
 namespace Magento\Setup\Fixtures;
 
+use AssertionError;
+use LogicException;
+use Magento\Eav\Model\Cache\Type;
+use Magento\Eav\Model\Entity\Attribute;
+use Magento\Framework\App\Cache;
 use Magento\Framework\Indexer\IndexerRegistry;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Indexer\Console\Command\IndexerReindexCommand;
 use Magento\Indexer\Model\Config;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Indexer\TestCase;
 
 /**
  * Class Application test
@@ -17,7 +25,7 @@ use Magento\TestFramework\Helper\Bootstrap;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class FixtureModelTest extends \Magento\TestFramework\Indexer\TestCase
+class FixtureModelTest extends TestCase
 {
     /**
      * Profile generator working directory
@@ -27,7 +35,7 @@ class FixtureModelTest extends \Magento\TestFramework\Indexer\TestCase
     protected static $_generatorWorkingDir;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
@@ -45,6 +53,75 @@ class FixtureModelTest extends \Magento\TestFramework\Indexer\TestCase
      * @var array
      */
     private $entityAsserts = [];
+
+    public static function setUpBeforeClass(): void
+    {
+        $db = Bootstrap::getInstance()->getBootstrap()
+            ->getApplication()
+            ->getDbInstance();
+        if (!$db->isDbDumpExists()) {
+            throw new LogicException('DB dump does not exist.');
+        }
+        $db->restoreFromDbDump();
+
+        self::$_generatorWorkingDir = realpath(
+            __DIR__ . '/../../../../../../../setup/src/Magento/Setup/Fixtures/_files'
+        );
+        copy(
+            self::$_generatorWorkingDir . '/tax_rates.csv',
+            self::$_generatorWorkingDir . '/tax_rates.csv.bak'
+        );
+        copy(
+            __DIR__ . '/_files/tax_rates.csv',
+            self::$_generatorWorkingDir . '/tax_rates.csv'
+        );
+        parent::setUpBeforeClass();
+    }
+
+    public static function tearDownAfterClass(): void
+    {
+        parent::tearDownAfterClass();
+
+        unlink(self::$_generatorWorkingDir . '/tax_rates.csv');
+        rename(
+            self::$_generatorWorkingDir . '/tax_rates.csv.bak',
+            self::$_generatorWorkingDir . '/tax_rates.csv'
+        );
+        /** @var $appCache Cache */
+        $appCache = Bootstrap::getObjectManager()->get(Cache::class);
+        $appCache->clean(
+            [
+                Type::CACHE_TAG,
+                Attribute::CACHE_TAG,
+            ]
+        );
+    }
+
+    /**
+     * Generate test profile and performs assertions that generated entities are valid
+     */
+    public function testFixtureGeneration()
+    {
+        $reindexCommand = Bootstrap::getObjectManager()->get(
+            IndexerReindexCommand::class
+        );
+        $itfApplication = Bootstrap::getInstance()->getBootstrap()->getApplication();
+        $model = new FixtureModel($reindexCommand, $itfApplication->getInitParams());
+        $model->loadConfig(__DIR__ . '/_files/small.xml');
+        $model->initObjectManager();
+
+        foreach ($model->loadFixtures()->getFixtures() as $fixture) {
+            $fixture->execute();
+        }
+
+        foreach ($this->entityAsserts as $entityAssert) {
+            try {
+                $this->assertTrue($entityAssert->assert());
+            } catch (AssertionError $assertionError) {
+                $this->assertTrue(false, $assertionError->getMessage());
+            }
+        }
+    }
 
     /**
      * Set indexer mode to "scheduled" for do not perform reindex after creation entity
@@ -77,74 +154,5 @@ class FixtureModelTest extends \Magento\TestFramework\Indexer\TestCase
         }
         self::restoreFromDb();
         self::$dbRestored = true;
-    }
-
-    public static function setUpBeforeClass(): void
-    {
-        $db = Bootstrap::getInstance()->getBootstrap()
-            ->getApplication()
-            ->getDbInstance();
-        if (!$db->isDbDumpExists()) {
-            throw new \LogicException('DB dump does not exist.');
-        }
-        $db->restoreFromDbDump();
-
-        self::$_generatorWorkingDir = realpath(
-            __DIR__ . '/../../../../../../../setup/src/Magento/Setup/Fixtures/_files'
-        );
-        copy(
-            self::$_generatorWorkingDir . '/tax_rates.csv',
-            self::$_generatorWorkingDir . '/tax_rates.csv.bak'
-        );
-        copy(
-            __DIR__ . '/_files/tax_rates.csv',
-            self::$_generatorWorkingDir . '/tax_rates.csv'
-        );
-        parent::setUpBeforeClass();
-    }
-
-    /**
-     * Generate test profile and performs assertions that generated entities are valid
-     */
-    public function testFixtureGeneration()
-    {
-        $reindexCommand = Bootstrap::getObjectManager()->get(
-            \Magento\Indexer\Console\Command\IndexerReindexCommand::class
-        );
-        $itfApplication = Bootstrap::getInstance()->getBootstrap()->getApplication();
-        $model = new FixtureModel($reindexCommand, $itfApplication->getInitParams());
-        $model->loadConfig(__DIR__ . '/_files/small.xml');
-        $model->initObjectManager();
-
-        foreach ($model->loadFixtures()->getFixtures() as $fixture) {
-            $fixture->execute();
-        }
-
-        foreach ($this->entityAsserts as $entityAssert) {
-            try {
-                $this->assertTrue($entityAssert->assert());
-            } catch (\AssertionError $assertionError) {
-                $this->assertTrue(false, $assertionError->getMessage());
-            }
-        }
-    }
-
-    public static function tearDownAfterClass(): void
-    {
-        parent::tearDownAfterClass();
-
-        unlink(self::$_generatorWorkingDir . '/tax_rates.csv');
-        rename(
-            self::$_generatorWorkingDir . '/tax_rates.csv.bak',
-            self::$_generatorWorkingDir . '/tax_rates.csv'
-        );
-        /** @var $appCache \Magento\Framework\App\Cache */
-        $appCache = Bootstrap::getObjectManager()->get(\Magento\Framework\App\Cache::class);
-        $appCache->clean(
-            [
-                \Magento\Eav\Model\Cache\Type::CACHE_TAG,
-                \Magento\Eav\Model\Entity\Attribute::CACHE_TAG,
-            ]
-        );
     }
 }

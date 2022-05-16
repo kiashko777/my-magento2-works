@@ -3,17 +3,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Model;
 
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Framework\EntityManager\HydratorInterface;
 use Magento\Framework\EntityManager\HydratorPool;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test Products Hydrator
  */
-class ProductHydratorTest extends \PHPUnit\Framework\TestCase
+class ProductHydratorTest extends TestCase
 {
     /**
      * @var Bootstrap
@@ -24,15 +26,6 @@ class ProductHydratorTest extends \PHPUnit\Framework\TestCase
      * @var HydratorPool
      */
     private $hydratorPool;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->hydratorPool = $this->objectManager->create(HydratorPool::class);
-    }
 
     /**
      * Test that Hydrator correctly populates entity with data
@@ -71,5 +64,14 @@ class ProductHydratorTest extends \PHPUnit\Framework\TestCase
             'qty' => 123,
         ];
         $this->assertEquals($expected, $product->getData());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->hydratorPool = $this->objectManager->create(HydratorPool::class);
     }
 }

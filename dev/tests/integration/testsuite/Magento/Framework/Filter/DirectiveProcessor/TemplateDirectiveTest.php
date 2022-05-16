@@ -24,18 +24,18 @@ class TemplateDirectiveTest extends TestCase
      */
     private $filter;
 
-    protected function setUp(): void
-    {
-        $objectManager = ObjectManager::getInstance();
-        $this->filter = $objectManager->create(Template::class);
-        $this->processor = $objectManager->create(TemplateDirective::class);
-    }
-
     public function testNoTemplateProcessor()
     {
         $template = 'blah {{template config_path="foo"}} blah';
         $result = $this->processor->process($this->createConstruction($this->processor, $template), $this->filter, []);
         self::assertEquals('{Error in template processing}', $result);
+    }
+
+    private function createConstruction(TemplateDirective $directive, string $value): array
+    {
+        preg_match($directive->getRegularExpression(), $value, $construction);
+
+        return $construction;
     }
 
     public function testNoConfigPath()
@@ -66,11 +66,11 @@ class TemplateDirectiveTest extends TestCase
         $expect = 'path=varpath/myparamabc/varpath';
 
         return [
-            [$prefix . 'varparam=$foo}}',['foo' => 'abc','path'=>'varpath'], $expect],
-            [$prefix . 'varparam=$foo.bar}}',['foo' => ['bar' => 'abc'],'path'=>'varpath'], $expect],
+            [$prefix . 'varparam=$foo}}', ['foo' => 'abc', 'path' => 'varpath'], $expect],
+            [$prefix . 'varparam=$foo.bar}}', ['foo' => ['bar' => 'abc'], 'path' => 'varpath'], $expect],
             [
                 $prefix . 'varparam=$foo.getBar().baz}}',
-                ['foo' => new DataObject(['bar' => ['baz' => 'abc']]),'path'=>'varpath'],
+                ['foo' => new DataObject(['bar' => ['baz' => 'abc']]), 'path' => 'varpath'],
                 $expect
             ],
         ];
@@ -86,10 +86,10 @@ class TemplateDirectiveTest extends TestCase
             . '/' . $parameters['path'];
     }
 
-    private function createConstruction(TemplateDirective $directive, string $value): array
+    protected function setUp(): void
     {
-        preg_match($directive->getRegularExpression(), $value, $construction);
-
-        return $construction;
+        $objectManager = ObjectManager::getInstance();
+        $this->filter = $objectManager->create(Template::class);
+        $this->processor = $objectManager->create(TemplateDirective::class);
     }
 }

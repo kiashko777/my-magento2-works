@@ -3,56 +3,28 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Customer\Block\Account;
 
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Api\Data\AddressInterface;
+use Magento\Customer\Api\Data\CustomerInterface;
+use Magento\Customer\Model\CustomerRegistry;
+use Magento\Customer\Model\Session;
+use Magento\Framework\View\LayoutInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class DashboardTest extends \PHPUnit\Framework\TestCase
+class DashboardTest extends TestCase
 {
     /** @var Dashboard */
     private $block;
 
-    /** @var \Magento\Customer\Model\Session */
+    /** @var Session */
     private $customerSession;
 
-    /** @var \Magento\Customer\Api\CustomerRepositoryInterface */
+    /** @var CustomerRepositoryInterface */
     private $customerRepository;
-
-    /**
-     * Execute per test initialization.
-     */
-    protected function setUp(): void
-    {
-        $this->customerSession = Bootstrap::getObjectManager()->get(\Magento\Customer\Model\Session::class);
-        $this->customerRepository = Bootstrap::getObjectManager()->get(
-            \Magento\Customer\Api\CustomerRepositoryInterface::class
-        );
-
-        $this->block = Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
-        )->createBlock(
-            \Magento\Customer\Block\Account\Dashboard::class,
-            '',
-            [
-                'customerSession' => $this->customerSession,
-                'customerRepository' => $this->customerRepository
-            ]
-        );
-    }
-
-    /**
-     * Execute per test cleanup.
-     */
-    protected function tearDown(): void
-    {
-        $this->customerSession->setCustomerId(null);
-
-        /** @var \Magento\Customer\Model\CustomerRegistry $customerRegistry */
-        $customerRegistry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Customer\Model\CustomerRegistry::class);
-        //Cleanup customer from registry
-        $customerRegistry->remove(1);
-    }
 
     /**
      * Verify that the Dashboard::getCustomer() method returns a valid Customer Data.
@@ -65,7 +37,7 @@ class DashboardTest extends \PHPUnit\Framework\TestCase
         $this->customerSession->setCustomerId(1);
         $object = $this->block->getCustomer();
         $this->assertEquals($customer, $object);
-        $this->assertInstanceOf(\Magento\Customer\Api\Data\CustomerInterface::class, $object);
+        $this->assertInstanceOf(CustomerInterface::class, $object);
     }
 
     /**
@@ -92,7 +64,7 @@ class DashboardTest extends \PHPUnit\Framework\TestCase
         $addresses = $this->block->getPrimaryAddresses();
         $this->assertCount(1, $addresses);
         $address = $addresses[0];
-        $this->assertInstanceOf(\Magento\Customer\Api\Data\AddressInterface::class, $address);
+        $this->assertInstanceOf(AddressInterface::class, $address);
         $this->assertEquals((int)$customer->getDefaultBilling(), $address->getId());
         $this->assertEquals((int)$customer->getDefaultShipping(), $address->getId());
     }
@@ -111,5 +83,41 @@ class DashboardTest extends \PHPUnit\Framework\TestCase
         $this->assertNotEquals($addresses[0], $addresses[1]);
         $this->assertTrue($addresses[0]->isDefaultBilling());
         $this->assertTrue($addresses[1]->isDefaultShipping());
+    }
+
+    /**
+     * Execute per test initialization.
+     */
+    protected function setUp(): void
+    {
+        $this->customerSession = Bootstrap::getObjectManager()->get(Session::class);
+        $this->customerRepository = Bootstrap::getObjectManager()->get(
+            CustomerRepositoryInterface::class
+        );
+
+        $this->block = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
+        )->createBlock(
+            Dashboard::class,
+            '',
+            [
+                'customerSession' => $this->customerSession,
+                'customerRepository' => $this->customerRepository
+            ]
+        );
+    }
+
+    /**
+     * Execute per test cleanup.
+     */
+    protected function tearDown(): void
+    {
+        $this->customerSession->setCustomerId(null);
+
+        /** @var CustomerRegistry $customerRegistry */
+        $customerRegistry = Bootstrap::getObjectManager()
+            ->get(CustomerRegistry::class);
+        //Cleanup customer from registry
+        $customerRegistry->remove(1);
     }
 }

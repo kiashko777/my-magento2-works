@@ -5,26 +5,31 @@
  */
 declare(strict_types=1);
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\ResourceModel\Category\Collection;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var \Magento\Framework\ObjectManagerInterface $objectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+/** @var ObjectManagerInterface $objectManager */
+$objectManager = Bootstrap::getObjectManager();
 
-/** @var \Magento\Framework\Registry $registry */
-$registry = $objectManager->get(\Magento\Framework\Registry::class);
+/** @var Registry $registry */
+$registry = $objectManager->get(Registry::class);
 
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
-/** @var \Magento\Catalog\Model\ResourceModel\Category\Collection $collection */
-$categoryCollection = $objectManager->create(\Magento\Catalog\Model\ResourceModel\Category\Collection::class);
+/** @var Collection $collection */
+$categoryCollection = $objectManager->create(Collection::class);
 $categoryCollection
     ->addAttributeToFilter('level', 2)
     ->load()
     ->delete();
 
-/** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-$productRepository = $objectManager->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+/** @var ProductRepositoryInterface $productRepository */
+$productRepository = $objectManager->get(ProductRepositoryInterface::class);
 try {
     $product = $productRepository->get('simple3', false, null, true);
     $productRepository->delete($product);

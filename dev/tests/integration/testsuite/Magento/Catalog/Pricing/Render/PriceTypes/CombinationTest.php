@@ -33,7 +33,8 @@ class CombinationTest extends CombinationAbstract
         float $specialPrice,
         float $regularPrice,
         array $tierData
-    ): void {
+    ): void
+    {
         $this->assertRenderedPrices('simple', $specialPrice, $regularPrice, $tierData);
     }
 
@@ -57,7 +58,8 @@ class CombinationTest extends CombinationAbstract
         float $specialPrice,
         float $regularPrice,
         array $tierData
-    ): void {
+    ): void
+    {
         try {
             $this->customerSession->setCustomerId(1);
             $this->assertRenderedPrices('simple', $specialPrice, $regularPrice, $tierData);
@@ -86,7 +88,8 @@ class CombinationTest extends CombinationAbstract
         float $regularPrice,
         array $catalogRules,
         array $tierData
-    ): void {
+    ): void
+    {
         $this->createCatalogRulesForProduct($catalogRules, 'base');
         $this->indexBuilder->reindexFull();
         $this->assertRenderedPrices('simple', $specialPrice, $regularPrice, $tierData);
@@ -106,7 +109,8 @@ class CombinationTest extends CombinationAbstract
     public function testRenderSpecialPriceInCombinationWithCustomOptionPrice(
         float $optionPrice,
         array $productPrices
-    ): void {
+    ): void
+    {
         $this->assertRenderedCustomOptionPrices('simple', $optionPrice, $productPrices);
     }
 }

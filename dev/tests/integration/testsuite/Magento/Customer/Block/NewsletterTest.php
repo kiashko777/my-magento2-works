@@ -46,19 +46,6 @@ class NewsletterTest extends TestCase
     private $customerSession;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->block = $this->layout->createBlock(Newsletter::class);
-        $this->customerSession = $this->objectManager->get(Session::class);
-    }
-
-    /**
      * @return void
      */
     public function testSubscriptionCheckbox(): void
@@ -85,5 +72,18 @@ class NewsletterTest extends TestCase
             Xpath::getElementsCountForXpath(self::SAVE_BUTTON_XPATH, $html),
             'Subscription save button is not present on the page'
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->block = $this->layout->createBlock(Newsletter::class);
+        $this->customerSession = $this->objectManager->get(Session::class);
     }
 }

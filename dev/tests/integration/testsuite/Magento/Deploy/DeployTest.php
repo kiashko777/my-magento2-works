@@ -3,25 +3,32 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Deploy;
 
+use FilesystemIterator;
+use Magento\Deploy\Config\BundleConfig;
+use Magento\Deploy\Console\DeployStaticOptions as Options;
 use Magento\Deploy\Package\Processor\PreProcessor\Less;
 use Magento\Deploy\Service\DeployStaticContent;
 use Magento\Deploy\Strategy\DeployStrategyFactory;
-use Magento\Framework\App\State;
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\App\State;
+use Magento\Framework\Config\View;
 use Magento\Framework\Filesystem;
 use Magento\Framework\Filesystem\Directory\ReadInterface;
-use Magento\Deploy\Console\DeployStaticOptions as Options;
-use Magento\Framework\Config\View;
-use Magento\Deploy\Config\BundleConfig;
 use Magento\Framework\Filesystem\Directory\WriteInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class DeployTest extends \PHPUnit\Framework\TestCase
+class DeployTest extends TestCase
 {
     /**
      * @var Filesystem
@@ -88,43 +95,6 @@ class DeployTest extends \PHPUnit\Framework\TestCase
         Options::STRATEGY => DeployStrategyFactory::DEPLOY_STRATEGY_COMPACT,
     ];
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->prevMode = $objectManager->get(State::class)->getMode();
-        $objectManager->get(State::class)->setMode(State::MODE_PRODUCTION);
-
-        $this->filesystem = $objectManager->get(Filesystem::class);
-        $this->staticDir = $this->filesystem->getDirectoryWrite(DirectoryList::STATIC_VIEW);
-        $this->rootDir = $this->filesystem->getDirectoryRead(DirectoryList::ROOT);
-
-        $logger = $objectManager->get(\Psr\Log\LoggerInterface::class);
-        $this->deployService = $objectManager->create(
-            DeployStaticContent::class,
-            ['logger' => $logger]
-        );
-
-        $this->bundleConfig = $objectManager->create(BundleConfig::class);
-        $this->config = $objectManager->create(View::class);
-
-        $this->staticContentService = $objectManager->create(DeployStaticContent::class);
-
-        $this->filesystem->getDirectoryWrite(DirectoryList::PUB)->delete(DirectoryList::STATIC_VIEW);
-        $this->filesystem->getDirectoryWrite(DirectoryList::VAR_DIR)->delete(DirectoryList::TMP_MATERIALIZATION_DIR);
-    }
-
-    protected function tearDown(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $objectManager->get(State::class)->setMode($this->prevMode);
-        $this->filesystem = $objectManager->get(Filesystem::class);
-        $this->filesystem->getDirectoryWrite(DirectoryList::PUB)->delete(DirectoryList::STATIC_VIEW);
-        $this->staticDir = $this->filesystem->getDirectoryWrite(DirectoryList::STATIC_VIEW);
-        $this->staticDir->getDriver()->createDirectory($this->staticDir->getAbsolutePath());
-
-        parent::tearDown();
-    }
-
     /**
      * @magentoDataFixture Magento/Deploy/_files/theme.php
      */
@@ -176,9 +146,9 @@ class DeployTest extends \PHPUnit\Framework\TestCase
     /**
      * Assert Less pre-processor
      *
-     * @see Less
      * @param $actualRootCssContent
      * @return void
+     * @see Less
      */
     private function assertLessPreProcessor($actualRootCssContent)
     {
@@ -225,13 +195,26 @@ class DeployTest extends \PHPUnit\Framework\TestCase
         $expectedSize *= 1.15;
 
         $iterator = $this->getDirectoryIterator("frontend/{$theme}/en_US/js/bundle");
-        /** @var \SplFileInfo $file */
+        /** @var SplFileInfo $file */
         foreach ($iterator as $file) {
             if ($file->isFile()) {
                 $size = (int)$file->getSize() / 1024;
                 $this->assertLessThan($expectedSize, $size);
             }
         }
+    }
+
+    /**
+     * @param string $path
+     * @return RecursiveIteratorIterator
+     */
+    private function getDirectoryIterator($path)
+    {
+        $dirIterator = new RecursiveDirectoryIterator(
+            $this->staticDir->getAbsolutePath($path),
+            FilesystemIterator::SKIP_DOTS
+        );
+        return new RecursiveIteratorIterator($dirIterator, RecursiveIteratorIterator::SELF_FIRST);
     }
 
     /**
@@ -251,7 +234,7 @@ class DeployTest extends \PHPUnit\Framework\TestCase
             } else {
                 $path = $path['path'];
             }
-            /** @var \SplFileInfo $file */
+            /** @var SplFileInfo $file */
             foreach ($iterator as $file) {
                 if ($file->isFile()) {
                     $bundleContent = $this->staticDir->readFile(
@@ -261,19 +244,6 @@ class DeployTest extends \PHPUnit\Framework\TestCase
                 }
             }
         }
-    }
-
-    /**
-     * @param string $path
-     * @return \RecursiveIteratorIterator
-     */
-    private function getDirectoryIterator($path)
-    {
-        $dirIterator = new \RecursiveDirectoryIterator(
-            $this->staticDir->getAbsolutePath($path),
-            \FilesystemIterator::SKIP_DOTS
-        );
-        return new \RecursiveIteratorIterator($dirIterator, \RecursiveIteratorIterator::SELF_FIRST);
     }
 
     /**
@@ -296,5 +266,42 @@ class DeployTest extends \PHPUnit\Framework\TestCase
                 'path' => $path,
             ];
         }
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->prevMode = $objectManager->get(State::class)->getMode();
+        $objectManager->get(State::class)->setMode(State::MODE_PRODUCTION);
+
+        $this->filesystem = $objectManager->get(Filesystem::class);
+        $this->staticDir = $this->filesystem->getDirectoryWrite(DirectoryList::STATIC_VIEW);
+        $this->rootDir = $this->filesystem->getDirectoryRead(DirectoryList::ROOT);
+
+        $logger = $objectManager->get(LoggerInterface::class);
+        $this->deployService = $objectManager->create(
+            DeployStaticContent::class,
+            ['logger' => $logger]
+        );
+
+        $this->bundleConfig = $objectManager->create(BundleConfig::class);
+        $this->config = $objectManager->create(View::class);
+
+        $this->staticContentService = $objectManager->create(DeployStaticContent::class);
+
+        $this->filesystem->getDirectoryWrite(DirectoryList::PUB)->delete(DirectoryList::STATIC_VIEW);
+        $this->filesystem->getDirectoryWrite(DirectoryList::VAR_DIR)->delete(DirectoryList::TMP_MATERIALIZATION_DIR);
+    }
+
+    protected function tearDown(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->get(State::class)->setMode($this->prevMode);
+        $this->filesystem = $objectManager->get(Filesystem::class);
+        $this->filesystem->getDirectoryWrite(DirectoryList::PUB)->delete(DirectoryList::STATIC_VIEW);
+        $this->staticDir = $this->filesystem->getDirectoryWrite(DirectoryList::STATIC_VIEW);
+        $this->staticDir->getDriver()->createDirectory($this->staticDir->getAbsolutePath());
+
+        parent::tearDown();
     }
 }

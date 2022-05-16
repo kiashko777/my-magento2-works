@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Model;
 
 use Magento\Framework\Setup\Declaration\Schema\Diff\SchemaDiff;
@@ -38,9 +39,10 @@ class DeclarationInstaller
      */
     public function __construct(
         SchemaConfigInterface $schemaConfig,
-        SchemaDiff $schemaDiff,
-        OperationsExecutor $operationsExecutor
-    ) {
+        SchemaDiff            $schemaDiff,
+        OperationsExecutor    $operationsExecutor
+    )
+    {
         $this->operationsExecutor = $operationsExecutor;
         $this->schemaConfig = $schemaConfig;
         $this->schemaDiff = $schemaDiff;

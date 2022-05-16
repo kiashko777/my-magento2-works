@@ -5,8 +5,8 @@
  */
 declare(strict_types=1);
 
-use Magento\TestFramework\MysqlMq\DeleteTopicRelatedMessages;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\MysqlMq\DeleteTopicRelatedMessages;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 $objectManager = Bootstrap::getObjectManager();

@@ -7,12 +7,12 @@ declare(strict_types=1);
 
 namespace Magento\LayeredNavigation\Block\Navigation\Category\Configurable;
 
+use Magento\Catalog\Model\Layer\Filter\AbstractFilter;
+use Magento\Catalog\Model\Layer\Filter\Item;
 use Magento\Catalog\Model\Layer\Resolver;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use Magento\Framework\Module\Manager;
 use Magento\LayeredNavigation\Block\Navigation\AbstractFiltersTest;
-use Magento\Catalog\Model\Layer\Filter\AbstractFilter;
-use Magento\Catalog\Model\Layer\Filter\Item;
 use Magento\Store\Model\Store;
 
 /**
@@ -30,19 +30,6 @@ class PriceFilterTest extends AbstractFiltersTest
     private $moduleManager;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->moduleManager = $this->objectManager->get(Manager::class);
-        //This check is needed because LayeredNavigation independent of Magento_ConfigurableProduct
-        if (!$this->moduleManager->isEnabled('Magento_ConfigurableProduct')) {
-            $this->markTestSkipped('Magento_ConfigurableProduct module disabled.');
-        }
-    }
-
-    /**
      * @magentoDataFixture Magento/ConfigurableProduct/_files/configurable_product_with_category.php
      * @magentoDataFixture Magento/Catalog/_files/category_product.php
      * @magentoConfigFixture current_store catalog/layered_navigation/price_range_calculation manual
@@ -56,6 +43,25 @@ class PriceFilterTest extends AbstractFiltersTest
     {
         $this->updateProductData($products);
         $this->getCategoryFiltersAndAssert([], ['is_filterable' => '1'], $expectation, 'Category 1');
+    }
+
+    /**
+     * Updates products data.
+     *
+     * @param array $products
+     * @param int $storeId
+     * @return void
+     */
+    private function updateProductData(
+        array $products,
+        int   $storeId = Store::DEFAULT_STORE_ID
+    ): void
+    {
+        foreach ($products as $productSku => $data) {
+            $product = $this->productRepository->get($productSku, false, $storeId, true);
+            $product->addData($data);
+            $this->productRepository->save($product);
+        }
     }
 
     /**
@@ -105,6 +111,19 @@ class PriceFilterTest extends AbstractFiltersTest
     /**
      * @inheritdoc
      */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->moduleManager = $this->objectManager->get(Manager::class);
+        //This check is needed because LayeredNavigation independent of Magento_ConfigurableProduct
+        if (!$this->moduleManager->isEnabled('Magento_ConfigurableProduct')) {
+            $this->markTestSkipped('Magento_ConfigurableProduct module disabled.');
+        }
+    }
+
+    /**
+     * @inheritdoc
+     */
     protected function getLayerType(): string
     {
         return Resolver::CATALOG_LAYER_CATEGORY;
@@ -135,23 +154,5 @@ class PriceFilterTest extends AbstractFiltersTest
         }
 
         return $items;
-    }
-
-    /**
-     * Updates products data.
-     *
-     * @param array $products
-     * @param int $storeId
-     * @return void
-     */
-    private function updateProductData(
-        array $products,
-        int $storeId = Store::DEFAULT_STORE_ID
-    ): void {
-        foreach ($products as $productSku => $data) {
-            $product = $this->productRepository->get($productSku, false, $storeId, true);
-            $product->addData($data);
-            $this->productRepository->save($product);
-        }
     }
 }

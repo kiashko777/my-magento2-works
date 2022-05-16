@@ -4,11 +4,17 @@
  * See COPYING.txt for license details.
  */
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Registry;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var \Magento\Framework\Registry $registry */
+$objectManager = Bootstrap::getObjectManager();
+
+/** @var Registry $registry */
 $registry = $objectManager
-    ->get(\Magento\Framework\Registry::class);
+    ->get(Registry::class);
 $registry->unregister("isSecureArea");
 $registry->register("isSecureArea", true);
 
@@ -19,17 +25,17 @@ if ($website->getId()) {
     $website->delete();
 }
 
-/** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-$productRepository = $objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+/** @var ProductRepositoryInterface $productRepository */
+$productRepository = $objectManager->create(ProductRepositoryInterface::class);
 
 try {
     $firstProduct = $productRepository->get('unique-simple-azaza');
     $productRepository->delete($firstProduct);
-} catch (\Magento\Framework\Exception\NoSuchEntityException $exception) {
+} catch (NoSuchEntityException $exception) {
     //Products already removed
 }
 
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', false);
 
-$objectManager->get(\Magento\Store\Model\StoreManagerInterface::class)->reinitStores();
+$objectManager->get(StoreManagerInterface::class)->reinitStores();

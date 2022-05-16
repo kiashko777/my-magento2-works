@@ -3,23 +3,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Config\Model\Config\Backend\Image;
 
-class AdapterTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Image\Adapter\AdapterInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class AdapterTest extends TestCase
 {
     /**
-     * @var \Magento\Config\Model\Config\Backend\Image\Adapter
+     * @var Adapter
      */
     protected $_model = null;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Config\Model\Config\Backend\Image\Adapter::class
-        );
-        $this->_model->setPath('path');
-    }
 
     /**
      * @magentoDbIsolation enabled
@@ -27,7 +24,7 @@ class AdapterTest extends \PHPUnit\Framework\TestCase
      */
     public function testExceptionSave()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage(
             'The specified image adapter cannot be used because of: Image adapter for \'wrong\' is not setup.'
         );
@@ -41,6 +38,15 @@ class AdapterTest extends \PHPUnit\Framework\TestCase
      */
     public function testCorrectSave()
     {
-        $this->_model->setValue(\Magento\Framework\Image\Adapter\AdapterInterface::ADAPTER_GD2)->save();
+        $this->_model->setValue(AdapterInterface::ADAPTER_GD2)->save();
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Adapter::class
+        );
+        $this->_model->setPath('path');
     }
 }

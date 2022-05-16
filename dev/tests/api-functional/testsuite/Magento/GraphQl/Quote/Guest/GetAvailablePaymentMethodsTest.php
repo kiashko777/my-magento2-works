@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Quote\Guest;
 
+use Exception;
 use Magento\GraphQl\Quote\GetMaskedQuoteIdByReservedOrderId;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
@@ -20,15 +21,6 @@ class GetAvailablePaymentMethodsTest extends GraphQlAbstract
      * @var GetMaskedQuoteIdByReservedOrderId
      */
     private $getMaskedQuoteIdByReservedOrderId;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-    }
 
     /**
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
@@ -47,6 +39,24 @@ class GetAvailablePaymentMethodsTest extends GraphQlAbstract
 
         self::assertEquals('checkmo', $response['cart']['available_payment_methods'][0]['code']);
         self::assertEquals('Check / Money order', $response['cart']['available_payment_methods'][0]['title']);
+    }
+
+    /**
+     * @param string $maskedQuoteId
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId): string
+    {
+        return <<<QUERY
+{
+  cart(cart_id: "$maskedQuoteId") {
+    available_payment_methods {
+      code
+      title
+    }
+  }
+}
+QUERY;
     }
 
     /**
@@ -92,7 +102,7 @@ class GetAvailablePaymentMethodsTest extends GraphQlAbstract
      */
     public function testGetAvailablePaymentMethodsOfNonExistentCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Could not find a cart with ID "non_existent_masked_id"');
 
         $maskedQuoteId = 'non_existent_masked_id';
@@ -101,20 +111,11 @@ class GetAvailablePaymentMethodsTest extends GraphQlAbstract
     }
 
     /**
-     * @param string $maskedQuoteId
-     * @return string
+     * @inheritdoc
      */
-    private function getQuery(string $maskedQuoteId): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-{
-  cart(cart_id: "$maskedQuoteId") {
-    available_payment_methods {
-      code
-      title
-    }
-  }
-}
-QUERY;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
     }
 }

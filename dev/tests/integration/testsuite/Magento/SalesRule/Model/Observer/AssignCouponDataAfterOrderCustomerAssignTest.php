@@ -6,43 +6,53 @@
 
 namespace Magento\SalesRule\Model\Observer;
 
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Api\Data\CustomerInterface;
 use Magento\Customer\Model\Data\Customer;
 use Magento\Customer\Model\GroupManagement;
+use Magento\Framework\Event\ManagerInterface;
+use Magento\Framework\Exception\InputException;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\State\InputMismatchException;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Quote\Api\GuestCartManagementInterface;
+use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Model\Order;
+use Magento\Sales\Model\OrderRepository;
 use Magento\Sales\Model\Service\OrderService;
 use Magento\SalesRule\Api\CouponRepositoryInterface;
 use Magento\SalesRule\Model\Coupon;
 use Magento\SalesRule\Model\Rule;
+use Magento\SalesRule\Model\Rule\Condition\Address;
+use Magento\SalesRule\Model\Rule\CustomerFactory;
+use Magento\SalesRule\Observer\AssignCouponDataAfterOrderCustomerAssignObserver;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppIsolation enabled
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class AssignCouponDataAfterOrderCustomerAssignTest extends \PHPUnit\Framework\TestCase
+class AssignCouponDataAfterOrderCustomerAssignTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ManagerInterface
+     */
+    protected $eventManager;
+    /**
+     * @var ObjectManagerInterface
      */
     private $objectManager;
-
     /**
-     * @var \Magento\Quote\Api\GuestCartManagementInterface
+     * @var GuestCartManagementInterface
      */
     private $assignCouponToCustomerObserver;
-
     /**
      * @var Magento\Sales\Model\OrderRepository
      */
     private $orderRepository;
-
-    /**
-     * @var \Magento\Framework\Event\ManagerInterface
-     */
-    protected $eventManager;
-
     /**
      * @var Magento\Customer\Api\CustomerRepositoryInterface
      */
@@ -84,41 +94,6 @@ class AssignCouponDataAfterOrderCustomerAssignTest extends \PHPUnit\Framework\Te
     private $orderService;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->eventManager = $this->createMock(\Magento\Framework\Event\ManagerInterface::class);
-        $this->orderRepository = $this->objectManager->get(\Magento\Sales\Model\OrderRepository::class);
-        $this->delegateCustomerService = $this->objectManager->get(Order\OrderCustomerDelegate::class);
-        $this->customerRepository = $this->objectManager->get(\Magento\Customer\Api\CustomerRepositoryInterface::class);
-        $this->ruleCustomerFactory =  $this->objectManager->get(\Magento\SalesRule\Model\Rule\CustomerFactory::class);
-        $this->assignCouponToCustomerObserver = $this->objectManager->get(
-            \Magento\SalesRule\Observer\AssignCouponDataAfterOrderCustomerAssignObserver::class
-        );
-        $this->orderService = $this->objectManager->get(OrderService::class);
-
-        $this->salesRule = $this->prepareSalesRule();
-        $this->coupon = $this->attachSalesruleCoupon($this->salesRule);
-        $this->order  = $this->makeOrderWithCouponAsGuest($this->coupon);
-        $this->delegateOrderToBeAssigned($this->order);
-        $this->customer = $this->registerNewCustomer();
-        $this->order->setCustomerId($this->customer->getId());
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->salesRule = null;
-        $this->customer = null;
-        $this->coupon = null;
-        $this->order = null;
-    }
-
-    /**
      * @magentoDataFixture Magento/Sales/_files/order.php
      */
     public function testCouponDataHasBeenAssignedTest()
@@ -136,6 +111,17 @@ class AssignCouponDataAfterOrderCustomerAssignTest extends \PHPUnit\Framework\Te
             1,
             $ruleCustomer->getTimesUsed()
         );
+    }
+
+    /**
+     * @param Customer $customer
+     * @param Rule $rule
+     * @return Rule\Customer
+     */
+    private function getSalesruleCustomerUsage(Customer $customer, Rule $rule): Rule\Customer
+    {
+        $ruleCustomer = $this->ruleCustomerFactory->create();
+        return $ruleCustomer->loadByCustomerRule($customer->getId(), $rule->getRuleId());
     }
 
     /**
@@ -164,7 +150,7 @@ class AssignCouponDataAfterOrderCustomerAssignTest extends \PHPUnit\Framework\Te
 
     /**
      * @param Order $order
-     * @return \Magento\Sales\Api\Data\OrderInterface
+     * @return OrderInterface
      */
     private function processOrder(Order $order)
     {
@@ -174,20 +160,33 @@ class AssignCouponDataAfterOrderCustomerAssignTest extends \PHPUnit\Framework\Te
     }
 
     /**
-     * @param Customer $customer
-     * @param Rule $rule
-     * @return Rule\Customer
+     * @inheritdoc
      */
-    private function getSalesruleCustomerUsage(Customer $customer, Rule $rule) : \Magento\SalesRule\Model\Rule\Customer
+    protected function setUp(): void
     {
-        $ruleCustomer = $this->ruleCustomerFactory->create();
-        return $ruleCustomer->loadByCustomerRule($customer->getId(), $rule->getRuleId());
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->eventManager = $this->createMock(ManagerInterface::class);
+        $this->orderRepository = $this->objectManager->get(OrderRepository::class);
+        $this->delegateCustomerService = $this->objectManager->get(Order\OrderCustomerDelegate::class);
+        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
+        $this->ruleCustomerFactory = $this->objectManager->get(CustomerFactory::class);
+        $this->assignCouponToCustomerObserver = $this->objectManager->get(
+            AssignCouponDataAfterOrderCustomerAssignObserver::class
+        );
+        $this->orderService = $this->objectManager->get(OrderService::class);
+
+        $this->salesRule = $this->prepareSalesRule();
+        $this->coupon = $this->attachSalesruleCoupon($this->salesRule);
+        $this->order = $this->makeOrderWithCouponAsGuest($this->coupon);
+        $this->delegateOrderToBeAssigned($this->order);
+        $this->customer = $this->registerNewCustomer();
+        $this->order->setCustomerId($this->customer->getId());
     }
 
     /**
      * @return Rule
      */
-    private function prepareSalesRule() : Rule
+    private function prepareSalesRule(): Rule
     {
         /** @var Rule $salesRule */
         $salesRule = $this->objectManager->create(Rule::class);
@@ -199,7 +198,7 @@ class AssignCouponDataAfterOrderCustomerAssignTest extends \PHPUnit\Framework\Te
                 'coupon_type' => Rule::COUPON_TYPE_SPECIFIC,
                 'conditions' => [
                     [
-                        'type' => \Magento\SalesRule\Model\Rule\Condition\Address::class,
+                        'type' => Address::class,
                         'attribute' => 'base_subtotal',
                         'operator' => '>',
                         'value' => 45,
@@ -225,7 +224,7 @@ class AssignCouponDataAfterOrderCustomerAssignTest extends \PHPUnit\Framework\Te
      * @param Rule $salesRule
      * @return Coupon
      */
-    private function attachSalesruleCoupon(Rule $salesRule) : Coupon
+    private function attachSalesruleCoupon(Rule $salesRule): Coupon
     {
         $coupon = $this->objectManager->create(Coupon::class);
         $coupon->setRuleId($salesRule->getId())
@@ -241,9 +240,9 @@ class AssignCouponDataAfterOrderCustomerAssignTest extends \PHPUnit\Framework\Te
      * @param Coupon $coupon
      * @return Order
      */
-    private function makeOrderWithCouponAsGuest(Coupon $coupon) : Order
+    private function makeOrderWithCouponAsGuest(Coupon $coupon): Order
     {
-        $order = Bootstrap::getObjectManager()->create(\Magento\Sales\Model\Order::class);
+        $order = Bootstrap::getObjectManager()->create(Order::class);
         $order->loadByIncrementId('100000001')
             ->setCustomerIsGuest(true)
             ->setCouponCode($coupon->getCode())
@@ -264,14 +263,14 @@ class AssignCouponDataAfterOrderCustomerAssignTest extends \PHPUnit\Framework\Te
 
     /**
      * @return Customer
-     * @throws \Magento\Framework\Exception\InputException
-     * @throws \Magento\Framework\Exception\LocalizedException
-     * @throws \Magento\Framework\Exception\State\InputMismatchException
+     * @throws InputException
+     * @throws LocalizedException
+     * @throws InputMismatchException
      */
-    private function registerNewCustomer() : Customer
+    private function registerNewCustomer(): Customer
     {
         $customer = Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Api\Data\CustomerInterface::class
+            CustomerInterface::class
         );
 
         /** @var Magento\Customer\Api\Data\CustomerInterface $customer */
@@ -292,5 +291,16 @@ class AssignCouponDataAfterOrderCustomerAssignTest extends \PHPUnit\Framework\Te
         $customer = $this->customerRepository->save($customer, 'password');
 
         return $customer;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->salesRule = null;
+        $this->customer = null;
+        $this->coupon = null;
+        $this->order = null;
     }
 }

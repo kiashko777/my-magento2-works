@@ -3,15 +3,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework;
 
-use \Laminas\Stdlib\ParametersInterface;
+use Laminas\Stdlib\ParametersInterface;
+use Magento\Framework\App\Request\Http;
 
 /**
  * HTTP request implementation that is used instead core one for testing
  * @SuppressWarnings(PHPMD.CookieAndSessionMisuse)
  */
-class Request extends \Magento\Framework\App\Request\Http
+class Request extends Http
 {
     /**
      * Server super-global mock
@@ -36,18 +38,6 @@ class Request extends \Magento\Framework\App\Request\Http
     }
 
     /**
-     * Set "server" super-global mock
-     *
-     * @param ParametersInterface $server
-     * @return \Magento\TestFramework\Request
-     */
-    public function setServer(ParametersInterface $server)
-    {
-        $this->_server = $server;
-        return $this;
-    }
-
-    /**
      * Overridden getter to avoid using of $_SERVER
      *
      * @param string|null $name
@@ -60,5 +50,17 @@ class Request extends \Magento\Framework\App\Request\Http
             return $this->_server;
         }
         return $this->_server->get($name, $default);
+    }
+
+    /**
+     * Set "server" super-global mock
+     *
+     * @param ParametersInterface $server
+     * @return Request
+     */
+    public function setServer(ParametersInterface $server)
+    {
+        $this->_server = $server;
+        return $this;
     }
 }

@@ -8,52 +8,52 @@
 - [Description](#description)
 - [Setup](#setup)
 - [Usage](#usage)
-  - [Image loading](#image-loading)
-  - [Image scaling](#image-scaling)
+    - [Image loading](#image-loading)
+    - [Image scaling](#image-scaling)
 - [Requirements](#requirements)
 - [Browser support](#browser-support)
 - [API](#api)
-  - [Callback](#callback)
-    - [Function signature](#function-signature)
-    - [Cancel image loading](#cancel-image-loading)
-    - [Callback arguments](#callback-arguments)
-    - [Error handling](#error-handling)
-  - [Promise](#promise)
+    - [Callback](#callback)
+        - [Function signature](#function-signature)
+        - [Cancel image loading](#cancel-image-loading)
+        - [Callback arguments](#callback-arguments)
+        - [Error handling](#error-handling)
+    - [Promise](#promise)
 - [Options](#options)
-  - [maxWidth](#maxwidth)
-  - [maxHeight](#maxheight)
-  - [minWidth](#minwidth)
-  - [minHeight](#minheight)
-  - [sourceWidth](#sourcewidth)
-  - [sourceHeight](#sourceheight)
-  - [top](#top)
-  - [right](#right)
-  - [bottom](#bottom)
-  - [left](#left)
-  - [contain](#contain)
-  - [cover](#cover)
-  - [aspectRatio](#aspectratio)
-  - [pixelRatio](#pixelratio)
-  - [downsamplingRatio](#downsamplingratio)
-  - [imageSmoothingEnabled](#imagesmoothingenabled)
-  - [imageSmoothingQuality](#imagesmoothingquality)
-  - [crop](#crop)
-  - [orientation](#orientation)
-  - [meta](#meta)
-  - [canvas](#canvas)
-  - [crossOrigin](#crossorigin)
-  - [noRevoke](#norevoke)
+    - [maxWidth](#maxwidth)
+    - [maxHeight](#maxheight)
+    - [minWidth](#minwidth)
+    - [minHeight](#minheight)
+    - [sourceWidth](#sourcewidth)
+    - [sourceHeight](#sourceheight)
+    - [top](#top)
+    - [right](#right)
+    - [bottom](#bottom)
+    - [left](#left)
+    - [contain](#contain)
+    - [cover](#cover)
+    - [aspectRatio](#aspectratio)
+    - [pixelRatio](#pixelratio)
+    - [downsamplingRatio](#downsamplingratio)
+    - [imageSmoothingEnabled](#imagesmoothingenabled)
+    - [imageSmoothingQuality](#imagesmoothingquality)
+    - [crop](#crop)
+    - [orientation](#orientation)
+    - [meta](#meta)
+    - [canvas](#canvas)
+    - [crossOrigin](#crossorigin)
+    - [noRevoke](#norevoke)
 - [Metadata parsing](#metadata-parsing)
-  - [Image head](#image-head)
-  - [Exif parser](#exif-parser)
-    - [Exif Thumbnail](#exif-thumbnail)
-    - [Exif IFD](#exif-ifd)
-    - [GPSInfo IFD](#gpsinfo-ifd)
-    - [Interoperability IFD](#interoperability-ifd)
-    - [Exif parser options](#exif-parser-options)
-  - [Exif writer](#exif-writer)
-  - [IPTC parser](#iptc-parser)
-    - [IPTC parser options](#iptc-parser-options)
+    - [Image head](#image-head)
+    - [Exif parser](#exif-parser)
+        - [Exif Thumbnail](#exif-thumbnail)
+        - [Exif IFD](#exif-ifd)
+        - [GPSInfo IFD](#gpsinfo-ifd)
+        - [Interoperability IFD](#interoperability-ifd)
+        - [Exif parser options](#exif-parser-options)
+    - [Exif writer](#exif-writer)
+    - [IPTC parser](#iptc-parser)
+        - [IPTC parser options](#iptc-parser-options)
 - [License](#license)
 - [Credits](#credits)
 
@@ -65,9 +65,8 @@ objects or via `URL`. It returns an optionally **scaled**, **cropped** or
 
 It also provides methods to parse image metadata to extract
 [IPTC](https://iptc.org/standards/photo-metadata/) and
-[Exif](https://en.wikipedia.org/wiki/Exif) tags as well as embedded thumbnail
-images, to overwrite the Exif Orientation value and to restore the complete
-image header after resizing.
+[Exif](https://en.wikipedia.org/wiki/Exif) tags as well as embedded thumbnail images, to overwrite the Exif Orientation
+value and to restore the complete image header after resizing.
 
 ## Setup
 
@@ -78,11 +77,10 @@ npm install blueimp-load-image
 ```
 
 This will install the JavaScript files inside
-`./node_modules/blueimp-load-image/js/` relative to your current directory, from
-where you can copy them into a folder that is served by your web server.
+`./node_modules/blueimp-load-image/js/` relative to your current directory, from where you can copy them into a folder
+that is served by your web server.
 
-Next include the combined and minified JavaScript Load Image script in your HTML
-markup:
+Next include the combined and minified JavaScript Load Image script in your HTML markup:
 
 ```html
 <script src="js/load-image.all.min.js"></script>
@@ -138,8 +136,7 @@ document.getElementById('file-input').onchange = function () {
 }
 ```
 
-Or use the [Promise](#promise) based API like this ([requires](#requirements) a
-polyfill for older browsers):
+Or use the [Promise](#promise) based API like this ([requires](#requirements) a polyfill for older browsers):
 
 ```js
 document.getElementById('file-input').onchange = function () {
@@ -163,8 +160,7 @@ document.getElementById('file-input').onchange = async function () {
 
 ### Image scaling
 
-It is also possible to use the image scaling functionality directly with an
-existing image:
+It is also possible to use the image scaling functionality directly with an existing image:
 
 ```js
 var scaledImage = loadImage.scale(
@@ -175,16 +171,14 @@ var scaledImage = loadImage.scale(
 
 ## Requirements
 
-The JavaScript Load Image library has zero dependencies, but benefits from the
-following two
+The JavaScript Load Image library has zero dependencies, but benefits from the following two
 [polyfills](https://developer.mozilla.org/en-US/docs/Glossary/Polyfill):
 
 - [blueimp-canvas-to-blob](https://github.com/blueimp/JavaScript-Canvas-to-Blob)
   for browsers without native
   [HTMLCanvasElement.toBlob](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toBlob)
   support, to create `Blob` objects out of `canvas` elements.
-- [promise-polyfill](https://github.com/taylorhakes/promise-polyfill) to be able
-  to use the
+- [promise-polyfill](https://github.com/taylorhakes/promise-polyfill) to be able to use the
   [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)
   based `loadImage` API in Browsers without native `Promise` support.
 
@@ -193,21 +187,21 @@ following two
 Browsers which implement the following APIs support all options:
 
 - Loading images from File and Blob objects:
-  - [URL.createObjectURL](https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL)
-    or
-    [FileReader.readAsDataURL](https://developer.mozilla.org/en-US/docs/Web/API/FileReader/readAsDataURL)
+    - [URL.createObjectURL](https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL)
+      or
+      [FileReader.readAsDataURL](https://developer.mozilla.org/en-US/docs/Web/API/FileReader/readAsDataURL)
 - Parsing meta data:
-  - [FileReader.readAsArrayBuffer](https://developer.mozilla.org/en-US/docs/Web/API/FileReader/readAsArrayBuffer)
-  - [Blob.slice](https://developer.mozilla.org/en-US/docs/Web/API/Blob/slice)
-  - [DataView](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView)
-    (no [BigInt](https://developer.mozilla.org/en-US/docs/Glossary/BigInt)
-    support required)
+    - [FileReader.readAsArrayBuffer](https://developer.mozilla.org/en-US/docs/Web/API/FileReader/readAsArrayBuffer)
+    - [Blob.slice](https://developer.mozilla.org/en-US/docs/Web/API/Blob/slice)
+    - [DataView](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView)
+      (no [BigInt](https://developer.mozilla.org/en-US/docs/Glossary/BigInt)
+      support required)
 - Parsing meta data from images loaded via URL:
-  - [fetch Response.blob](https://developer.mozilla.org/en-US/docs/Web/API/Body/blob)
-    or
-    [XMLHttpRequest.responseType blob](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/responseType#blob)
+    - [fetch Response.blob](https://developer.mozilla.org/en-US/docs/Web/API/Body/blob)
+      or
+      [XMLHttpRequest.responseType blob](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/responseType#blob)
 - Promise based API:
-  - [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)
+    - [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)
 
 This includes (but is not limited to) the following browsers:
 
@@ -224,18 +218,17 @@ This includes (but is not limited to) the following browsers:
 `*` Internet Explorer [requires](#requirements) a polyfill for the `Promise`
 based API.
 
-Loading an image from a URL and applying transformations (scaling, cropping and
-rotating - except `orientation:true`, which requires reading meta data) is
-supported by all browsers which implement the
+Loading an image from a URL and applying transformations (scaling, cropping and rotating - except `orientation:true`,
+which requires reading meta data) is supported by all browsers which implement the
 [HTMLCanvasElement](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement)
 interface.
 
-Loading an image from a URL and scaling it in size is supported by all browsers
-which implement the
-[img](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img) element and
-has been tested successfully with browser engines as old as Internet Explorer 5
+Loading an image from a URL and scaling it in size is supported by all browsers which implement the
+[img](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img) element and has been tested successfully with
+browser engines as old as Internet Explorer 5
 (via
-[IE11's emulation mode](<https://docs.microsoft.com/en-us/previous-versions/windows/internet-explorer/ie-developer/samples/dn255001(v=vs.85)>)).
+[IE11's emulation mode](<https://docs.microsoft.com/en-us/previous-versions/windows/internet-explorer/ie-developer/samples/dn255001(v=vs.85)>))
+.
 
 The `loadImage()` function applies options using
 [progressive enhancement](https://en.wikipedia.org/wiki/Progressive_enhancement)
@@ -250,19 +243,17 @@ and falls back to a configuration that is supported by the browser, e.g. if the
 
 The `loadImage()` function accepts a
 [File](https://developer.mozilla.org/en-US/docs/Web/API/File) or
-[Blob](https://developer.mozilla.org/en-US/docs/Web/API/Blob) object or an image
-URL as first argument.
+[Blob](https://developer.mozilla.org/en-US/docs/Web/API/Blob) object or an image URL as first argument.
 
 If a [File](https://developer.mozilla.org/en-US/docs/Web/API/File) or
-[Blob](https://developer.mozilla.org/en-US/docs/Web/API/Blob) is passed as
-parameter, it returns an HTML `img` element if the browser supports the
+[Blob](https://developer.mozilla.org/en-US/docs/Web/API/Blob) is passed as parameter, it returns an HTML `img` element
+if the browser supports the
 [URL](https://developer.mozilla.org/en-US/docs/Web/API/URL) API, alternatively a
-[FileReader](https://developer.mozilla.org/en-US/docs/Web/API/FileReader) object
-if the `FileReader` API is supported, or `false`.
+[FileReader](https://developer.mozilla.org/en-US/docs/Web/API/FileReader) object if the `FileReader` API is supported,
+or `false`.
 
 It always returns an HTML
-[img](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/Img) element
-when passing an image URL:
+[img](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/Img) element when passing an image URL:
 
 ```js
 var loadingImage = loadImage(
@@ -280,12 +271,10 @@ Some browsers (e.g. Chrome) will cancel the image loading process if the `src`
 property of an `img` element is changed.  
 To avoid unnecessary requests, we can use the
 [data URL](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/Data_URIs)
-of a 1x1 pixel transparent GIF image as `src` target to cancel the original
-image download.
+of a 1x1 pixel transparent GIF image as `src` target to cancel the original image download.
 
-To disable callback handling, we can also unset the image event handlers and for
-maximum browser compatibility, cancel the file reading process if the returned
-object is a
+To disable callback handling, we can also unset the image event handlers and for maximum browser compatibility, cancel
+the file reading process if the returned object is a
 [FileReader](https://developer.mozilla.org/en-US/docs/Web/API/FileReader)
 instance:
 
@@ -317,15 +306,14 @@ if (loadingImage) {
 ```
 
 **Please note:**  
-The `img` element (or `FileReader` instance) for the loading image is only
-returned when using the callback style API and not available with the
+The `img` element (or `FileReader` instance) for the loading image is only returned when using the callback style API
+and not available with the
 [Promise](#promise) based API.
 
 #### Callback arguments
 
 For the callback style API, the second argument to `loadImage()` must be a
-`callback` function, which is called when the image has been loaded or an error
-occurred while loading the image.
+`callback` function, which is called when the image has been loaded or an error occurred while loading the image.
 
 The callback function is passed two arguments:
 
@@ -333,10 +321,8 @@ The callback function is passed two arguments:
    element or
    [canvas](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API)
    element, or an
-   [Event](https://developer.mozilla.org/en-US/docs/Web/API/Event) object of
-   type `error`.
-2. An object with the original image dimensions as properties and potentially
-   additional [metadata](#metadata-parsing).
+   [Event](https://developer.mozilla.org/en-US/docs/Web/API/Event) object of type `error`.
+2. An object with the original image dimensions as properties and potentially additional [metadata](#metadata-parsing).
 
 ```js
 loadImage(
@@ -351,11 +337,10 @@ loadImage(
 ```
 
 **Please note:**  
-The original image dimensions reflect the natural width and height of the loaded
-image before applying any transformation.  
-For consistent values across browsers, [metadata](#metadata-parsing) parsing has
-to be enabled via `meta:true`, so `loadImage` can detect automatic image
-orientation and normalize the dimensions.
+The original image dimensions reflect the natural width and height of the loaded image before applying any
+transformation.  
+For consistent values across browsers, [metadata](#metadata-parsing) parsing has to be enabled via `meta:true`,
+so `loadImage` can detect automatic image orientation and normalize the dimensions.
 
 #### Error handling
 
@@ -377,8 +362,7 @@ loadImage(
 
 ### Promise
 
-If the `loadImage()` function is called without a `callback` function as second
-argument and the
+If the `loadImage()` function is called without a `callback` function as second argument and the
 [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)
 API is available, it returns a `Promise` object:
 
@@ -406,8 +390,7 @@ The `Promise` resolves with an object with the following properties:
 Please also read the note about original image dimensions normalization in the
 [callback arguments](#callback-arguments) section.
 
-If [metadata](#metadata-parsing) has been parsed, additional properties might be
-present on the object.
+If [metadata](#metadata-parsing) has been parsed, additional properties might be present on the object.
 
 If image loading fails, the `Promise` rejects with an
 [Event](https://developer.mozilla.org/en-US/docs/Web/API/Event) object of type
@@ -415,8 +398,7 @@ If image loading fails, the `Promise` rejects with an
 
 ## Options
 
-The optional options argument to `loadImage()` allows to configure the image
-loading.
+The optional options argument to `loadImage()` allows to configure the image loading.
 
 It can be used the following way with the callback style:
 
@@ -471,14 +453,12 @@ Defines the minimum height of the `img`/`canvas` element.
 
 ### sourceWidth
 
-The width of the sub-rectangle of the source image to draw into the destination
-canvas.  
+The width of the sub-rectangle of the source image to draw into the destination canvas.  
 Defaults to the source image width and requires `canvas: true`.
 
 ### sourceHeight
 
-The height of the sub-rectangle of the source image to draw into the destination
-canvas.  
+The height of the sub-rectangle of the source image to draw into the destination canvas.  
 Defaults to the source image height and requires `canvas: true`.
 
 ### top
@@ -505,14 +485,15 @@ Defaults to `0` and requires `canvas: true`.
 
 Scales the image up/down to contain it in the max dimensions if set to `true`.  
 This emulates the CSS feature
-[background-image: contain](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Backgrounds_and_Borders/Resizing_background_images#contain).
+[background-image: contain](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Backgrounds_and_Borders/Resizing_background_images#contain)
+.
 
 ### cover
 
-Scales the image up/down to cover the max dimensions with the image dimensions
-if set to `true`.  
+Scales the image up/down to cover the max dimensions with the image dimensions if set to `true`.  
 This emulates the CSS feature
-[background-image: cover](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Backgrounds_and_Borders/Resizing_background_images#cover).
+[background-image: cover](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Backgrounds_and_Borders/Resizing_background_images#cover)
+.
 
 ### aspectRatio
 
@@ -521,8 +502,7 @@ Setting the `aspectRatio` also enables the `crop` option.
 
 ### pixelRatio
 
-Defines the ratio of the canvas pixels to the physical image pixels on the
-screen.  
+Defines the ratio of the canvas pixels to the physical image pixels on the screen.  
 Should be set to
 [window.devicePixelRatio](https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio)
 unless the scaled image is not rendered on screen.  
@@ -532,20 +512,21 @@ Defaults to `1` and requires `canvas: true`.
 
 Defines the ratio in which the image is downsampled (scaled down in steps).  
 By default, images are downsampled in one step.  
-With a ratio of `0.5`, each step scales the image to half the size, before
-reaching the target dimensions.  
+With a ratio of `0.5`, each step scales the image to half the size, before reaching the target dimensions.  
 Requires `canvas: true`.
 
 ### imageSmoothingEnabled
 
 If set to `false`,
-[disables image smoothing](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/imageSmoothingEnabled).  
+[disables image smoothing](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/imageSmoothingEnabled)
+.  
 Defaults to `true` and requires `canvas: true`.
 
 ### imageSmoothingQuality
 
 Sets the
-[quality of image smoothing](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/imageSmoothingQuality).  
+[quality of image smoothing](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/imageSmoothingQuality)
+.  
 Possible values: `'low'`, `'medium'`, `'high'`  
 Defaults to `'low'` and requires `canvas: true`.
 
@@ -556,12 +537,11 @@ Enabling the `crop` option also enables the `canvas` option.
 
 ### orientation
 
-Transform the canvas according to the specified Exif orientation, which can be
-an `integer` in the range of `1` to `8` or the boolean value `true`.
+Transform the canvas according to the specified Exif orientation, which can be an `integer` in the range of `1` to `8`
+or the boolean value `true`.
 
-When set to `true`, it will set the orientation value based on the Exif data of
-the image, which will be parsed automatically if the Exif extension is
-available.
+When set to `true`, it will set the orientation value based on the Exif data of the image, which will be parsed
+automatically if the Exif extension is available.
 
 Exif orientation values to correctly display the letter F:
 
@@ -591,37 +571,33 @@ Exif orientation values to correctly display the letter F:
 ██████████            ██
 ```
 
-Setting `orientation` to `true` enables the `canvas` and `meta` options, unless
-the browser supports automatic image orientation (see
+Setting `orientation` to `true` enables the `canvas` and `meta` options, unless the browser supports automatic image
+orientation (see
 [browser support for image-orientation](https://caniuse.com/#feat=css-image-orientation)).
 
-Setting `orientation` to `1` enables the `canvas` and `meta` options if the
-browser does support automatic image orientation (to allow reset of the
-orientation).
+Setting `orientation` to `1` enables the `canvas` and `meta` options if the browser does support automatic image
+orientation (to allow reset of the orientation).
 
-Setting `orientation` to an integer in the range of `2` to `8` always enables
-the `canvas` option and also enables the `meta` option if the browser supports
-automatic image orientation (again to allow reset).
+Setting `orientation` to an integer in the range of `2` to `8` always enables the `canvas` option and also enables
+the `meta` option if the browser supports automatic image orientation (again to allow reset).
 
 ### meta
 
 Automatically parses the image metadata if set to `true`.
 
-If metadata has been found, the data object passed as second argument to the
-callback function has additional properties (see
+If metadata has been found, the data object passed as second argument to the callback function has additional
+properties (see
 [metadata parsing](#metadata-parsing)).
 
 If the file is given as URL and the browser supports the
-[fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) or the
-XHR
+[fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) or the XHR
 [responseType](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/responseType)
 `blob`, fetches the file as `Blob` to be able to parse the metadata.
 
 ### canvas
 
 Returns the image as
-[canvas](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API) element if
-set to `true`.
+[canvas](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API) element if set to `true`.
 
 ### crossOrigin
 
@@ -637,8 +613,8 @@ is revoked after the image has been loaded, except when this option is set to
 
 ## Metadata parsing
 
-If the Load Image Meta extension is included, it is possible to parse image meta
-data automatically with the `meta` option:
+If the Load Image Meta extension is included, it is possible to parse image meta data automatically with the `meta`
+option:
 
 ```js
 loadImage(
@@ -652,8 +628,8 @@ loadImage(
 )
 ```
 
-Or alternatively via `loadImage.parseMetaData`, which can be used with an
-available `File` or `Blob` object as first argument:
+Or alternatively via `loadImage.parseMetaData`, which can be used with an available `File` or `Blob` object as first
+argument:
 
 ```js
 loadImage.parseMetaData(
@@ -695,11 +671,10 @@ method:
 ### Image head
 
 Resized JPEG images can be combined with their original image head via
-`loadImage.replaceHead`, which requires the resized image as `Blob` object as
-first argument and an `ArrayBuffer` image head as second argument.
+`loadImage.replaceHead`, which requires the resized image as `Blob` object as first argument and an `ArrayBuffer` image
+head as second argument.
 
-With callback style, the third argument must be a `callback` function, which is
-called with the new `Blob` object:
+With callback style, the third argument must be a `callback` function, which is called with the new `Blob` object:
 
 ```js
 loadImage(
@@ -751,9 +726,8 @@ provides a polyfill for browsers without native `canvas.toBlob()` support.
 
 ### Exif parser
 
-If you include the Load Image Exif Parser extension, the argument passed to the
-callback for `parseMetaData` will contain the following additional properties if
-Exif data could be found in the given image:
+If you include the Load Image Exif Parser extension, the argument passed to the callback for `parseMetaData` will
+contain the following additional properties if Exif data could be found in the given image:
 
 - `exif`: The parsed Exif tags
 - `exifOffsets`: The parsed Exif tag offsets
@@ -766,8 +740,8 @@ The `exif` object stores the parsed Exif tags:
 var orientation = data.exif[0x0112] // Orientation
 ```
 
-The `exif` and `exifOffsets` objects also provide a `get()` method to retrieve
-the tag value/offset via the tag's mapped name:
+The `exif` and `exifOffsets` objects also provide a `get()` method to retrieve the tag value/offset via the tag's mapped
+name:
 
 ```js
 var orientation = data.exif.get('Orientation')
@@ -782,8 +756,8 @@ By default, only the following names are mapped:
 - `GPSInfo` (see [GPSInfo IFD](#gpsinfo-ifd))
 - `Interoperability` (see [Interoperability IFD](#interoperability-ifd))
 
-If you also include the Load Image Exif Map library, additional tag mappings
-become available, as well as three additional methods:
+If you also include the Load Image Exif Map library, additional tag mappings become available, as well as three
+additional methods:
 
 - `exif.getText()`
 - `exif.getName()`
@@ -825,8 +799,7 @@ loadImage(
 
 #### Exif IFD
 
-Example code displaying data from the Exif IFD (Image File Directory) that
-contains Exif specified TIFF tags:
+Example code displaying data from the Exif IFD (Image File Directory) that contains Exif specified TIFF tags:
 
 ```js
 loadImage(
@@ -867,8 +840,7 @@ loadImage(
 
 #### Interoperability IFD
 
-Example code displaying data from the Exif IFD (Image File Directory) that
-contains Interoperability data:
+Example code displaying data from the Exif IFD (Image File Directory) that contains Interoperability data:
 
 ```js
 loadImage(
@@ -890,10 +862,8 @@ The Exif parser adds additional options:
 
 - `disableExif`: Disables Exif parsing when `true`.
 - `disableExifOffsets`: Disables storing Exif tag offsets when `true`.
-- `includeExifTags`: A map of Exif tags to include for parsing (includes all but
-  the excluded tags by default).
-- `excludeExifTags`: A map of Exif tags to exclude from parsing (defaults to
-  exclude `Exif` `MakerNote`).
+- `includeExifTags`: A map of Exif tags to include for parsing (includes all but the excluded tags by default).
+- `excludeExifTags`: A map of Exif tags to exclude from parsing (defaults to exclude `Exif` `MakerNote`).
 
 An example parsing only Orientation, Thumbnail and ExifVersion tags:
 
@@ -941,8 +911,8 @@ loadImage.parseMetaData(
 
 ### Exif writer
 
-The Exif parser extension also includes a minimal writer that allows to override
-the Exif `Orientation` value in the parsed `imageHead` `ArrayBuffer`:
+The Exif parser extension also includes a minimal writer that allows to override the Exif `Orientation` value in the
+parsed `imageHead` `ArrayBuffer`:
 
 ```js
 loadImage(
@@ -964,16 +934,14 @@ loadImage(
 
 **Please note:**  
 The Exif writer relies on the Exif tag offsets being available as
-`data.exifOffsets` property, which requires that Exif data has been parsed from
-the image.  
-The Exif writer can only change existing values, not add new tags, e.g. it
-cannot add an Exif `Orientation` tag for an image that does not have one.
+`data.exifOffsets` property, which requires that Exif data has been parsed from the image.  
+The Exif writer can only change existing values, not add new tags, e.g. it cannot add an Exif `Orientation` tag for an
+image that does not have one.
 
 ### IPTC parser
 
-If you include the Load Image IPTC Parser extension, the argument passed to the
-callback for `parseMetaData` will contain the following additional properties if
-IPTC data could be found in the given image:
+If you include the Load Image IPTC Parser extension, the argument passed to the callback for `parseMetaData` will
+contain the following additional properties if IPTC data could be found in the given image:
 
 - `iptc`: The parsed IPTC tags
 - `iptcOffsets`: The parsed IPTC tag offsets
@@ -984,8 +952,8 @@ The `iptc` object stores the parsed IPTC tags:
 var objectname = data.iptc[5]
 ```
 
-The `iptc` and `iptcOffsets` objects also provide a `get()` method to retrieve
-the tag value/offset via the tag's mapped name:
+The `iptc` and `iptcOffsets` objects also provide a `get()` method to retrieve the tag value/offset via the tag's mapped
+name:
 
 ```js
 var objectname = data.iptc.get('ObjectName')
@@ -995,8 +963,8 @@ By default, only the following names are mapped:
 
 - `ObjectName`
 
-If you also include the Load Image IPTC Map library, additional tag mappings
-become available, as well as three additional methods:
+If you also include the Load Image IPTC Map library, additional tag mappings become available, as well as three
+additional methods:
 
 - `iptc.getText()`
 - `iptc.getName()`
@@ -1017,10 +985,8 @@ The IPTC parser adds additional options:
 
 - `disableIptc`: Disables IPTC parsing when true.
 - `disableIptcOffsets`: Disables storing IPTC tag offsets when `true`.
-- `includeIptcTags`: A map of IPTC tags to include for parsing (includes all but
-  the excluded tags by default).
-- `excludeIptcTags`: A map of IPTC tags to exclude from parsing (defaults to
-  exclude `ObjectPreviewData`).
+- `includeIptcTags`: A map of IPTC tags to include for parsing (includes all but the excluded tags by default).
+- `excludeIptcTags`: A map of IPTC tags to exclude from parsing (defaults to exclude `ObjectPreviewData`).
 
 An example parsing only the `ObjectName` tag:
 
@@ -1062,8 +1028,7 @@ The JavaScript Load Image library is released under the
 
 ## Credits
 
-- Original image metadata handling implemented with the help and contribution of
-  Achim Stöhr.
+- Original image metadata handling implemented with the help and contribution of Achim Stöhr.
 - Original Exif tags mapping based on Jacob Seidelin's
   [exif-js](https://github.com/exif-js/exif-js) library.
 - Original IPTC parser implementation by

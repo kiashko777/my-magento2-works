@@ -19,16 +19,6 @@ class AbstractParserTest extends TestCase
      */
     protected $_parserMock;
 
-    protected function setUp(): void
-    {
-        $this->_parserMock = $this->getMockForAbstractClass(
-            AbstractParser::class,
-            [],
-            '',
-            false
-        );
-    }
-
     /**
      * @param array $options
      * @param string $message
@@ -66,5 +56,15 @@ class AbstractParserTest extends TestCase
     public function getPhrases()
     {
         $this->assertIsArray($this->_parserMock->getPhrases());
+    }
+
+    protected function setUp(): void
+    {
+        $this->_parserMock = $this->getMockForAbstractClass(
+            AbstractParser::class,
+            [],
+            '',
+            false
+        );
     }
 }

@@ -5,11 +5,12 @@
  */
 declare(strict_types=1);
 
-use Magento\Framework\View\Design\ThemeInterfaceFactory;
+use Magento\Cms\Block\Widget\Page\Link;
 use Magento\Framework\View\Design\ThemeInterface;
+use Magento\Framework\View\Design\ThemeInterfaceFactory;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Widget\Model\Widget\InstanceFactory;
 use Magento\Widget\Model\Widget\Instance;
+use Magento\Widget\Model\Widget\InstanceFactory;
 
 $objectManager = Bootstrap::getObjectManager();
 /** @var InstanceFactory $widgetModelFactory */
@@ -25,7 +26,7 @@ $theme->load('Magento/luma', 'theme_path');
 
 $widgetModel->setData(
     [
-        'instance_type' => \Magento\Cms\Block\Widget\Page\Link::class,
+        'instance_type' => Link::class,
         'theme_id' => $theme->getId(),
         'title' => 'Test Widget',
         'store_ids' => [

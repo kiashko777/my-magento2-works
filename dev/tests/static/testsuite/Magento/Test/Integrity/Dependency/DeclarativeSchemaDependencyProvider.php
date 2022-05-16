@@ -8,10 +8,12 @@ declare(strict_types=1);
 
 namespace Magento\Test\Integrity\Dependency;
 
+use DOMDocument;
+use Exception;
 use Magento\Framework\App\Utility\Files;
 use Magento\Framework\Component\ComponentRegistrar;
-use Magento\Framework\Setup\Declaration\Schema\Config\Converter;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Setup\Declaration\Schema\Config\Converter;
 use Magento\TestFramework\Inspection\Exception as InspectionException;
 
 /**
@@ -69,7 +71,7 @@ class DeclarativeSchemaDependencyProvider
      *
      * @param string $moduleName
      * @return array
-     * @throws \Exception
+     * @throws Exception
      */
     public function getDeclaredExistingModuleDependencies(string $moduleName): array
     {
@@ -93,98 +95,121 @@ class DeclarativeSchemaDependencyProvider
     }
 
     /**
-     * Provide undeclared dependencies between modules based on the declarative schema configuration.
+     * Retrieve dependencies from files.
      *
-     * [
-     *     $dependencyId => [$module1, $module2, $module3 ...],
-     *     ...
-     * ]
-     *
-     * @param string $moduleName
-     * @return array
-     * @throws \Exception
+     * @param string $file
+     * @return string[]
+     * @throws Exception
      */
-    public function getUndeclaredModuleDependencies(string $moduleName): array
+    private function getDependenciesFromFiles($file)
     {
-        $dependencies = $this->getDependenciesFromFiles($this->getSchemaFileNameByModuleName($moduleName));
-        $dependencies = $this->filterSelfDependency($moduleName, $dependencies);
-        return $this->collectDependencies($moduleName, $dependencies);
+        if (!$file) {
+            return [];
+        }
+
+        $moduleDbSchema = $this->getDbSchemaDeclaration($file);
+        $dependencies = array_merge_recursive(
+            $this->getDisabledDependencies($moduleDbSchema),
+            $this->getConstraintDependencies($moduleDbSchema),
+            $this->getIndexDependencies($moduleDbSchema)
+        );
+        return $dependencies;
     }
 
     /**
-     * Provide schema file name by module name.
+     * @param string $filePath
+     * @return array
+     */
+    private function getDbSchemaDeclaration(string $filePath): array
+    {
+        $dom = new DOMDocument();
+        $dom->loadXML(file_get_contents($filePath));
+        return (new Converter())->convert($dom);
+    }
+
+    /**
+     * Retrieve dependencies for disabled entities.
      *
-     * @param string $module
-     * @return string
+     * @param array $moduleDeclaration
+     * @return array
      * @throws LocalizedException
      */
-    private function getSchemaFileNameByModuleName(string $module): string
+    private function getDisabledDependencies(array $moduleDeclaration): array
     {
-        if (empty($this->moduleSchemaFileMapping)) {
-            $componentRegistrar = new ComponentRegistrar();
-            foreach (array_values(Files::init()->getDbSchemaFiles()) as $filePath) {
-                $filePath = reset($filePath);
-                foreach ($componentRegistrar->getPaths(ComponentRegistrar::MODULE) as $moduleName => $moduleDir) {
-                    if (strpos($filePath, $moduleDir . '/') !== false) {
-                        $foundModuleName = str_replace('_', '\\', $moduleName);
-                        $this->moduleSchemaFileMapping[$foundModuleName] = $filePath;
-                        break;
+        $disabledDependencies = [];
+        $entityTypes = [self::SCHEMA_ENTITY_COLUMN, self::SCHEMA_ENTITY_CONSTRAINT, self::SCHEMA_ENTITY_INDEX];
+        foreach ($moduleDeclaration[self::SCHEMA_ENTITY_TABLE] as $tableName => $tableDeclaration) {
+            foreach ($entityTypes as $entityType) {
+                if (!isset($tableDeclaration[$entityType])) {
+                    continue;
+                }
+                foreach ($tableDeclaration[$entityType] as $entityName => $entityDeclaration) {
+                    if ($this->isEntityDisabled($entityDeclaration)) {
+                        $dependencyIdentifier = $this->getDependencyId($tableName, $entityType, $entityName);
+                        $disabledDependencies[$dependencyIdentifier] =
+                            $this->resolveEntityDependencies($tableName, $entityType, $entityName);
                     }
                 }
             }
+            if ($this->isEntityDisabled($tableDeclaration)) {
+                $disabledDependencies[$this->getDependencyId($tableName)] =
+                    $this->resolveEntityDependencies($tableName, self::SCHEMA_ENTITY_TABLE);
+            }
         }
 
-        return $this->moduleSchemaFileMapping[$module] ?? '';
+        return $disabledDependencies;
     }
 
     /**
-     * Remove self dependencies.
+     * Check status of the entity declaration.
      *
-     * @param string $moduleName
-     * @param array $dependencies
-     * @return array
+     * @param array $entityDeclaration
+     * @return bool
      */
-    private function filterSelfDependency(string $moduleName, array $dependencies): array
+    private function isEntityDisabled(array $entityDeclaration): bool
     {
-        foreach ($dependencies as $id => $modules) {
-            $decodedId = self::decodeDependencyId($id);
-            $entityType = $decodedId['entityType'];
-            if ($entityType === self::SCHEMA_ENTITY_TABLE || $entityType === "column") {
-                if (array_search($moduleName, $modules) !== false) {
-                    unset($dependencies[$id]);
-                }
-            } else {
-                $dependencies[$id] = $this->filterComplexDependency($moduleName, $modules);
-            }
-        }
-
-        return array_filter($dependencies);
+        return isset($entityDeclaration['disabled']) && $entityDeclaration['disabled'] == true;
     }
 
     /**
-     * Remove already declared dependencies.
+     * Retrieve dependency id.
      *
-     * @param string $moduleName
-     * @param array $modules
-     * @return array
+     * @param string $tableName
+     * @param string $entityType
+     * @param null|string $entityName
+     * @return string
      */
-    private function filterComplexDependency(string $moduleName, array $modules): array
+    private function getDependencyId(
+        string  $tableName,
+        string  $entityType = self::SCHEMA_ENTITY_TABLE,
+        ?string $entityName = null
+    )
     {
-        $resultDependencies = [];
-        if (!is_array(reset($modules))) {
-            if (array_search($moduleName, $modules) === false) {
-                $resultDependencies = $modules;
-            }
-        } else {
-            foreach ($modules as $dependencySet) {
-                if (array_search($moduleName, $dependencySet) === false) {
-                    $resultDependencies[] = $dependencySet;
-                }
-            }
-            $resultDependencies = array_merge([], ...$resultDependencies);
-        }
+        return implode('___', [$tableName, $entityType, $entityName ?: $tableName]);
+    }
 
-        return array_values(array_unique($resultDependencies));
+    /**
+     * Get declared dependencies.
+     *
+     * @param string $tableName
+     * @param string $entityType
+     * @param null|string $entityName
+     * @return array
+     * @throws LocalizedException
+     */
+    private function resolveEntityDependencies(string $tableName, string $entityType, ?string $entityName = null): array
+    {
+        switch ($entityType) {
+            case self::SCHEMA_ENTITY_COLUMN:
+            case self::SCHEMA_ENTITY_CONSTRAINT:
+            case self::SCHEMA_ENTITY_INDEX:
+                return $this->getDeclarativeSchema()
+                [self::SCHEMA_ENTITY_TABLE][$tableName][$entityType][$entityName]['modules'];
+            case self::SCHEMA_ENTITY_TABLE:
+                return $this->getDeclarativeSchema()[self::SCHEMA_ENTITY_TABLE][$tableName]['modules'];
+            default:
+                return [];
+        }
     }
 
     /**
@@ -240,41 +265,6 @@ class DeclarativeSchemaDependencyProvider
     }
 
     /**
-     * Get declared dependencies.
-     *
-     * @param string $tableName
-     * @param string $entityType
-     * @param null|string $entityName
-     * @return array
-     * @throws LocalizedException
-     */
-    private function resolveEntityDependencies(string $tableName, string $entityType, ?string $entityName = null): array
-    {
-        switch ($entityType) {
-            case self::SCHEMA_ENTITY_COLUMN:
-            case self::SCHEMA_ENTITY_CONSTRAINT:
-            case self::SCHEMA_ENTITY_INDEX:
-                return $this->getDeclarativeSchema()
-                [self::SCHEMA_ENTITY_TABLE][$tableName][$entityType][$entityName]['modules'];
-            case self::SCHEMA_ENTITY_TABLE:
-                return $this->getDeclarativeSchema()[self::SCHEMA_ENTITY_TABLE][$tableName]['modules'];
-            default:
-                return [];
-        }
-    }
-
-    /**
-     * @param string $filePath
-     * @return array
-     */
-    private function getDbSchemaDeclaration(string $filePath): array
-    {
-        $dom = new \DOMDocument();
-        $dom->loadXML(file_get_contents($filePath));
-        return (new Converter())->convert($dom);
-    }
-
-    /**
      * Add dependency on the current module.
      *
      * @param array $tableDeclaration
@@ -283,10 +273,11 @@ class DeclarativeSchemaDependencyProvider
      * @return array
      */
     private function addModuleAssigment(
-        array $tableDeclaration,
+        array  $tableDeclaration,
         string $entityType,
         string $moduleName
-    ): array {
+    ): array
+    {
         $declarationWithAssigment = [];
         foreach ($tableDeclaration[$entityType] as $entityName => $entityDeclaration) {
             if (!isset($entityDeclaration['modules'])) {
@@ -303,105 +294,11 @@ class DeclarativeSchemaDependencyProvider
     }
 
     /**
-     * Retrieve dependencies from files.
-     *
-     * @param string $file
-     * @return string[]
-     * @throws \Exception
-     */
-    private function getDependenciesFromFiles($file)
-    {
-        if (!$file) {
-            return [];
-        }
-
-        $moduleDbSchema = $this->getDbSchemaDeclaration($file);
-        $dependencies = array_merge_recursive(
-            $this->getDisabledDependencies($moduleDbSchema),
-            $this->getConstraintDependencies($moduleDbSchema),
-            $this->getIndexDependencies($moduleDbSchema)
-        );
-        return $dependencies;
-    }
-
-    /**
-     * Retrieve dependencies for disabled entities.
-     *
-     * @param array $moduleDeclaration
-     * @return array
-     * @throws LocalizedException
-     */
-    private function getDisabledDependencies(array $moduleDeclaration): array
-    {
-        $disabledDependencies = [];
-        $entityTypes = [self::SCHEMA_ENTITY_COLUMN, self::SCHEMA_ENTITY_CONSTRAINT, self::SCHEMA_ENTITY_INDEX];
-        foreach ($moduleDeclaration[self::SCHEMA_ENTITY_TABLE] as $tableName => $tableDeclaration) {
-            foreach ($entityTypes as $entityType) {
-                if (!isset($tableDeclaration[$entityType])) {
-                    continue;
-                }
-                foreach ($tableDeclaration[$entityType] as $entityName => $entityDeclaration) {
-                    if ($this->isEntityDisabled($entityDeclaration)) {
-                        $dependencyIdentifier = $this->getDependencyId($tableName, $entityType, $entityName);
-                        $disabledDependencies[$dependencyIdentifier] =
-                            $this->resolveEntityDependencies($tableName, $entityType, $entityName);
-                    }
-                }
-            }
-            if ($this->isEntityDisabled($tableDeclaration)) {
-                $disabledDependencies[$this->getDependencyId($tableName)] =
-                    $this->resolveEntityDependencies($tableName, self::SCHEMA_ENTITY_TABLE);
-            }
-        }
-
-        return $disabledDependencies;
-    }
-
-    /**
-     * Retrieve dependencies for foreign entities.
-     *
-     * @param array $constraintDeclaration
-     * @return array
-     * @throws \Exception
-     */
-    private function getFKDependencies(array $constraintDeclaration): array
-    {
-        $referenceDependencyIdentifier =
-            $this->getDependencyId(
-                $constraintDeclaration['referenceTable'],
-                self::SCHEMA_ENTITY_CONSTRAINT,
-                $constraintDeclaration['referenceId']
-            );
-        $dependencyIdentifier =
-            $this->getDependencyId(
-                $constraintDeclaration[self::SCHEMA_ENTITY_TABLE],
-                self::SCHEMA_ENTITY_CONSTRAINT,
-                $constraintDeclaration['referenceId']
-            );
-
-        $constraintDependencies = [];
-        $constraintDependencies[$referenceDependencyIdentifier] =
-            $this->resolveEntityDependencies(
-                $constraintDeclaration['referenceTable'],
-                self::SCHEMA_ENTITY_COLUMN,
-                $constraintDeclaration['referenceColumn']
-            );
-        $constraintDependencies[$dependencyIdentifier] =
-            $this->resolveEntityDependencies(
-                $constraintDeclaration[self::SCHEMA_ENTITY_TABLE],
-                self::SCHEMA_ENTITY_COLUMN,
-                $constraintDeclaration[self::SCHEMA_ENTITY_COLUMN]
-            );
-
-        return $constraintDependencies;
-    }
-
-    /**
      * Retrieve dependencies for constraint entities.
      *
      * @param array $moduleDeclaration
      * @return array
-     * @throws \Exception
+     * @throws Exception
      */
     private function getConstraintDependencies(array $moduleDeclaration): array
     {
@@ -433,6 +330,45 @@ class DeclarativeSchemaDependencyProvider
                 }
             }
         }
+        return $constraintDependencies;
+    }
+
+    /**
+     * Retrieve dependencies for foreign entities.
+     *
+     * @param array $constraintDeclaration
+     * @return array
+     * @throws Exception
+     */
+    private function getFKDependencies(array $constraintDeclaration): array
+    {
+        $referenceDependencyIdentifier =
+            $this->getDependencyId(
+                $constraintDeclaration['referenceTable'],
+                self::SCHEMA_ENTITY_CONSTRAINT,
+                $constraintDeclaration['referenceId']
+            );
+        $dependencyIdentifier =
+            $this->getDependencyId(
+                $constraintDeclaration[self::SCHEMA_ENTITY_TABLE],
+                self::SCHEMA_ENTITY_CONSTRAINT,
+                $constraintDeclaration['referenceId']
+            );
+
+        $constraintDependencies = [];
+        $constraintDependencies[$referenceDependencyIdentifier] =
+            $this->resolveEntityDependencies(
+                $constraintDeclaration['referenceTable'],
+                self::SCHEMA_ENTITY_COLUMN,
+                $constraintDeclaration['referenceColumn']
+            );
+        $constraintDependencies[$dependencyIdentifier] =
+            $this->resolveEntityDependencies(
+                $constraintDeclaration[self::SCHEMA_ENTITY_TABLE],
+                self::SCHEMA_ENTITY_COLUMN,
+                $constraintDeclaration[self::SCHEMA_ENTITY_COLUMN]
+            );
+
         return $constraintDependencies;
     }
 
@@ -492,30 +428,53 @@ class DeclarativeSchemaDependencyProvider
     }
 
     /**
-     * Check status of the entity declaration.
+     * Provide schema file name by module name.
      *
-     * @param array $entityDeclaration
-     * @return bool
+     * @param string $module
+     * @return string
+     * @throws LocalizedException
      */
-    private function isEntityDisabled(array $entityDeclaration): bool
+    private function getSchemaFileNameByModuleName(string $module): string
     {
-        return isset($entityDeclaration['disabled']) && $entityDeclaration['disabled'] == true;
+        if (empty($this->moduleSchemaFileMapping)) {
+            $componentRegistrar = new ComponentRegistrar();
+            foreach (array_values(Files::init()->getDbSchemaFiles()) as $filePath) {
+                $filePath = reset($filePath);
+                foreach ($componentRegistrar->getPaths(ComponentRegistrar::MODULE) as $moduleName => $moduleDir) {
+                    if (strpos($filePath, $moduleDir . '/') !== false) {
+                        $foundModuleName = str_replace('_', '\\', $moduleName);
+                        $this->moduleSchemaFileMapping[$foundModuleName] = $filePath;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return $this->moduleSchemaFileMapping[$module] ?? '';
     }
 
     /**
-     * Retrieve dependency id.
+     * Remove self dependencies.
      *
-     * @param string $tableName
-     * @param string $entityType
-     * @param null|string $entityName
-     * @return string
+     * @param string $moduleName
+     * @param array $dependencies
+     * @return array
      */
-    private function getDependencyId(
-        string $tableName,
-        string $entityType = self::SCHEMA_ENTITY_TABLE,
-        ?string $entityName = null
-    ) {
-        return implode('___', [$tableName, $entityType, $entityName ?: $tableName]);
+    private function filterSelfDependency(string $moduleName, array $dependencies): array
+    {
+        foreach ($dependencies as $id => $modules) {
+            $decodedId = self::decodeDependencyId($id);
+            $entityType = $decodedId['entityType'];
+            if ($entityType === self::SCHEMA_ENTITY_TABLE || $entityType === "column") {
+                if (array_search($moduleName, $modules) !== false) {
+                    unset($dependencies[$id]);
+                }
+            } else {
+                $dependencies[$id] = $this->filterComplexDependency($moduleName, $modules);
+            }
+        }
+
+        return array_filter($dependencies);
     }
 
     /**
@@ -533,6 +492,51 @@ class DeclarativeSchemaDependencyProvider
             'entityName' => $decodedValues[2],
         ];
         return $result;
+    }
+
+    /**
+     * Remove already declared dependencies.
+     *
+     * @param string $moduleName
+     * @param array $modules
+     * @return array
+     */
+    private function filterComplexDependency(string $moduleName, array $modules): array
+    {
+        $resultDependencies = [];
+        if (!is_array(reset($modules))) {
+            if (array_search($moduleName, $modules) === false) {
+                $resultDependencies = $modules;
+            }
+        } else {
+            foreach ($modules as $dependencySet) {
+                if (array_search($moduleName, $dependencySet) === false) {
+                    $resultDependencies[] = $dependencySet;
+                }
+            }
+            $resultDependencies = array_merge([], ...$resultDependencies);
+        }
+
+        return array_values(array_unique($resultDependencies));
+    }
+
+    /**
+     * Provide undeclared dependencies between modules based on the declarative schema configuration.
+     *
+     * [
+     *     $dependencyId => [$module1, $module2, $module3 ...],
+     *     ...
+     * ]
+     *
+     * @param string $moduleName
+     * @return array
+     * @throws Exception
+     */
+    public function getUndeclaredModuleDependencies(string $moduleName): array
+    {
+        $dependencies = $this->getDependenciesFromFiles($this->getSchemaFileNameByModuleName($moduleName));
+        $dependencies = $this->filterSelfDependency($moduleName, $dependencies);
+        return $this->collectDependencies($moduleName, $dependencies);
     }
 
     /**
@@ -571,9 +575,10 @@ class DeclarativeSchemaDependencyProvider
      */
     private function collectDependency(
         string $dependencyName,
-        array $dependency,
+        array  $dependency,
         string $currentModule
-    ) {
+    )
+    {
         $declared = $this->dependencyProvider->getDeclaredDependencies(
             $currentModule,
             DependencyProvider::TYPE_HARD,

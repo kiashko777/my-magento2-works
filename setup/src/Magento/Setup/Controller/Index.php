@@ -36,8 +36,9 @@ class Index extends AbstractActionController
      */
     public function __construct(
         ProductMetadata $productMetadata,
-        License $license
-    ) {
+        License         $license
+    )
+    {
         $this->productMetadata = $productMetadata;
         $this->license = $license;
     }

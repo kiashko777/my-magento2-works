@@ -3,21 +3,24 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\UrlRewrite\Controller\Adminhtml;
 
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\Message\MessageInterface;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class SaveRewriteTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class SaveRewriteTest extends AbstractBackendController
 {
     /**
      * Test create url rewrite with invalid target path
      *
      * @return void
      */
-    public function testSaveRewriteWithInvalidRequestPath() : void
+    public function testSaveRewriteWithInvalidRequestPath(): void
     {
         $requestPath = 'admin';
         $reservedWords = 'admin, soap, rest, graphql, standard';
@@ -39,7 +42,7 @@ class SaveRewriteTest extends \Magento\TestFramework\TestCase\AbstractBackendCon
                 $requestPath,
                 $reservedWords
             ))),
-            \Magento\Framework\Message\MessageInterface::TYPE_ERROR
+            MessageInterface::TYPE_ERROR
         );
     }
 }

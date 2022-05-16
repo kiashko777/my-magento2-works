@@ -32,7 +32,8 @@ define([
         try {
             injector.clean();
             injector.remove();
-        } catch (e) {}
+        } catch (e) {
+        }
     });
 
     describe('Magento_Catalog/js/product/storage/ids-storage-compare', function () {
@@ -53,11 +54,11 @@ define([
         describe('"prepareData" method', function () {
             it('check returned value', function () {
                 var data = {
-                    '1': {
-                        id: '1'
-                    }
-                },
-                result = obj.prepareData(data);
+                        '1': {
+                            id: '1'
+                        }
+                    },
+                    result = obj.prepareData(data);
 
                 expect(typeof result[data['1'].id]).toBe('object');
                 expect(typeof result[data['1'].id]['added_at']).toBe('number');

@@ -3,21 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Utility\File;
 
 use Magento\TestFramework\Utility\CodeCheck;
+use PHPUnit\Framework\TestCase;
 
-class CodeCheckTest extends \PHPUnit\Framework\TestCase
+class CodeCheckTest extends TestCase
 {
     /**
      * @var CodeCheck
      */
     private $codeCheck;
-
-    protected function setUp(): void
-    {
-        $this->codeCheck = new CodeCheck();
-    }
 
     /**
      * @param string $fileContent
@@ -73,5 +70,10 @@ class CodeCheckTest extends \PHPUnit\Framework\TestCase
             [file_get_contents(__DIR__ . '/_files/implements.txt'), true],
             [file_get_contents(__DIR__ . '/_files/implements2.txt'), true]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->codeCheck = new CodeCheck();
     }
 }

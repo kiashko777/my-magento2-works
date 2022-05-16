@@ -23,14 +23,6 @@ class ChartTest extends TestCase
     private $model;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->model = Bootstrap::getObjectManager()->create(Chart::class);
-    }
-
-    /**
      * Verify getByPeriod with all types of period
      *
      * @magentoDataFixture Magento/Sales/_files/order_list_with_invoice.php
@@ -80,5 +72,13 @@ class ChartTest extends TestCase
                 'quantity'
             ]
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->model = Bootstrap::getObjectManager()->create(Chart::class);
     }
 }

@@ -3,12 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Widget\Controller\Adminhtml;
+
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class WidgetTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class WidgetTest extends AbstractBackendController
 {
     /**
      * Partially covers \Magento\Widget\Block\Adminhtml\Widget\Options::_addField()

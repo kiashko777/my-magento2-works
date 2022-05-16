@@ -3,29 +3,39 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Modular;
+
+use DOMDocument;
+use DOMNode;
+use DOMXPath;
+use Exception;
+use Magento\CustomerSegment\Model\ResourceModel\Segment\Report\Detail\Collection;
+use Magento\Framework\App\Utility\Files;
+use Magento\Framework\Data\Argument\InterpreterInterface;
+use Magento\Framework\View\Layout\Argument\Parser;
+use Magento\Framework\View\Model\Layout\Merge;
+use Magento\GroupedProduct\Model\ResourceModel\Product\Type\Grouped\AssociatedProductsCollection;
+use Magento\Logging\Model\ResourceModel\Grid\Actions;
+use Magento\Logging\Model\ResourceModel\Grid\ActionsGroup;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Wishlist\Model\ResourceModel\Item\Collection\Grid;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class LayoutFilesTest extends \PHPUnit\Framework\TestCase
+class LayoutFilesTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\View\Layout\Argument\Parser
+     * @var Parser
      */
     protected $_argParser;
 
     /**
-     * @var \Magento\Framework\Data\Argument\InterpreterInterface
+     * @var InterpreterInterface
      */
     protected $_argInterpreter;
-
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->_argParser = $objectManager->get(\Magento\Framework\View\Layout\Argument\Parser::class);
-        $this->_argInterpreter = $objectManager->get('layoutArgumentGeneratorInterpreter');
-    }
 
     /**
      * @param string $area
@@ -34,12 +44,12 @@ class LayoutFilesTest extends \PHPUnit\Framework\TestCase
      */
     public function testLayoutArguments($area, $layoutFile)
     {
-        \Magento\TestFramework\Helper\Bootstrap::getInstance()->loadArea($area);
-        $dom = new \DOMDocument();
+        Bootstrap::getInstance()->loadArea($area);
+        $dom = new DOMDocument();
         $dom->load($layoutFile);
-        $xpath = new \DOMXPath($dom);
+        $xpath = new DOMXPath($dom);
         $argumentNodes = $xpath->query('/layout//arguments/argument | /layout//action/argument');
-        /** @var \DOMNode $argumentNode */
+        /** @var DOMNode $argumentNode */
         foreach ($argumentNodes as $argumentNode) {
             try {
                 $argumentData = $this->_argParser->parse($argumentNode);
@@ -47,26 +57,10 @@ class LayoutFilesTest extends \PHPUnit\Framework\TestCase
                     continue;
                 }
                 $this->_argInterpreter->evaluate($argumentData);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->fail($e->getMessage());
             }
         }
-    }
-
-    /**
-     * @return array
-     */
-    public function layoutArgumentsDataProvider()
-    {
-        $areas = ['Adminhtml', 'frontend', 'email'];
-        $data = [];
-        foreach ($areas as $area) {
-            $layoutFiles = \Magento\Framework\App\Utility\Files::init()->getLayoutFiles(['area' => $area], false);
-            foreach ($layoutFiles as $layoutFile) {
-                $data[substr($layoutFile, strlen(BP))] = [$area, $layoutFile];
-            }
-        }
-        return $data;
     }
 
     /**
@@ -84,21 +78,21 @@ class LayoutFilesTest extends \PHPUnit\Framework\TestCase
         unset($argumentData['updater']);
 
         // Arguments, evaluation of which causes a run-time error, because of unsafe assumptions to the environment
-        $typeAttr = \Magento\Framework\View\Model\Layout\Merge::TYPE_ATTRIBUTE;
+        $typeAttr = Merge::TYPE_ATTRIBUTE;
         $prCollection =
-            \Magento\GroupedProduct\Model\ResourceModel\Product\Type\Grouped\AssociatedProductsCollection::class;
+            AssociatedProductsCollection::class;
         $ignoredArguments = [
             [
                 $typeAttr => 'object',
                 'value' => $prCollection,
             ],
-            [$typeAttr => 'object', 'value' => \Magento\Wishlist\Model\ResourceModel\Item\Collection\Grid::class],
+            [$typeAttr => 'object', 'value' => Grid::class],
             [
                 $typeAttr => 'object',
-                'value' => \Magento\CustomerSegment\Model\ResourceModel\Segment\Report\Detail\Collection::class
+                'value' => Collection::class
             ],
-            [$typeAttr => 'options', 'model' => \Magento\Logging\Model\ResourceModel\Grid\ActionsGroup::class],
-            [$typeAttr => 'options', 'model' => \Magento\Logging\Model\ResourceModel\Grid\Actions::class],
+            [$typeAttr => 'options', 'model' => ActionsGroup::class],
+            [$typeAttr => 'options', 'model' => Actions::class],
         ];
         $isIgnoredArgument = in_array($argumentData, $ignoredArguments, true);
 
@@ -106,5 +100,28 @@ class LayoutFilesTest extends \PHPUnit\Framework\TestCase
         $hasValue = !empty($argumentData);
 
         return $isIgnoredArgument || $isUpdater && !$hasValue;
+    }
+
+    /**
+     * @return array
+     */
+    public function layoutArgumentsDataProvider()
+    {
+        $areas = ['Adminhtml', 'frontend', 'email'];
+        $data = [];
+        foreach ($areas as $area) {
+            $layoutFiles = Files::init()->getLayoutFiles(['area' => $area], false);
+            foreach ($layoutFiles as $layoutFile) {
+                $data[substr($layoutFile, strlen(BP))] = [$area, $layoutFile];
+            }
+        }
+        return $data;
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->_argParser = $objectManager->get(Parser::class);
+        $this->_argInterpreter = $objectManager->get('layoutArgumentGeneratorInterpreter');
     }
 }

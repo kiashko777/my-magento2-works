@@ -8,11 +8,13 @@ namespace Magento\Setup\Fixtures;
 
 use Magento\Catalog\Model\Category;
 use Magento\Catalog\Model\CategoryFactory;
+use Magento\Directory\Helper\Data;
 use Magento\Framework\App\Config\Storage\Writer;
 use Magento\Framework\Event\ManagerInterface;
 use Magento\Framework\Locale\Config;
 use Magento\Store\Api\Data\StoreInterface;
 use Magento\Store\Model\Group;
+use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManager;
 use Magento\Store\Model\Website;
 
@@ -157,13 +159,14 @@ class StoresFixture extends Fixture
      * @param Writer $scopeConfig
      */
     public function __construct(
-        FixtureModel $fixtureModel,
-        StoreManager $storeManager,
+        FixtureModel     $fixtureModel,
+        StoreManager     $storeManager,
         ManagerInterface $eventManager,
-        CategoryFactory $categoryFactory,
-        Config $localeConfig,
-        Writer $scopeConfig
-    ) {
+        CategoryFactory  $categoryFactory,
+        Config           $localeConfig,
+        Writer           $scopeConfig
+    )
+    {
         parent::__construct($fixtureModel);
         $this->storeManager = $storeManager;
         $this->eventManager = $eventManager;
@@ -193,7 +196,7 @@ class StoresFixture extends Fixture
 
         //Get existing entities counts
         $storeGroups = $this->storeManager->getGroups();
-        $this->storeGroupsIds= array_keys($storeGroups);
+        $this->storeGroupsIds = array_keys($storeGroups);
 
         foreach ($storeGroups as $storeGroupId => $storeGroup) {
             $this->storeGroupsToWebsites[$storeGroupId] = $storeGroup->getWebsiteId();
@@ -270,6 +273,45 @@ class StoresFixture extends Fixture
     }
 
     /**
+     * Getting category id for store
+     *
+     * @param string $storeGroupName
+     * @return int
+     */
+    private function getStoreCategoryId($storeGroupName)
+    {
+        if ($this->singleRootCategory) {
+            return $this->getDefaultCategoryId();
+        } else {
+            //Generating category for store
+            $category = $this->categoryFactory->create();
+            $categoryPath = Category::TREE_ROOT_ID;
+            $category->setName("Category " . $storeGroupName)
+                ->setPath($categoryPath)
+                ->setLevel(1)
+                ->setAvailableSortBy('name')
+                ->setDefaultSortBy('name')
+                ->setIsActive(true)
+                ->save();
+
+            return $category->getId();
+        }
+    }
+
+    /**
+     * Get default category id
+     *
+     * @return int
+     */
+    private function getDefaultCategoryId()
+    {
+        if (null === $this->defaultParentCategoryId) {
+            $this->defaultParentCategoryId = $this->storeManager->getStore()->getRootCategoryId();
+        }
+        return $this->defaultParentCategoryId;
+    }
+
+    /**
      * Generating store views
      * @return void
      */
@@ -315,37 +357,11 @@ class StoresFixture extends Fixture
     private function saveStoreLocale($storeId, $localeCode)
     {
         $this->scopeConfig->save(
-            \Magento\Directory\Helper\Data::XML_PATH_DEFAULT_LOCALE,
+            Data::XML_PATH_DEFAULT_LOCALE,
             $localeCode,
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORES,
+            ScopeInterface::SCOPE_STORES,
             $storeId
         );
-    }
-
-    /**
-     * Getting category id for store
-     *
-     * @param string $storeGroupName
-     * @return int
-     */
-    private function getStoreCategoryId($storeGroupName)
-    {
-        if ($this->singleRootCategory) {
-            return $this->getDefaultCategoryId();
-        } else {
-            //Generating category for store
-            $category = $this->categoryFactory->create();
-            $categoryPath = Category::TREE_ROOT_ID;
-            $category->setName("Category " . $storeGroupName)
-                ->setPath($categoryPath)
-                ->setLevel(1)
-                ->setAvailableSortBy('name')
-                ->setDefaultSortBy('name')
-                ->setIsActive(true)
-                ->save();
-
-            return $category->getId();
-        }
     }
 
     /**
@@ -366,18 +382,5 @@ class StoresFixture extends Fixture
             'store_groups' => 'Store Groups Count',
             'store_views' => 'Store Views Count'
         ];
-    }
-
-    /**
-     * Get default category id
-     *
-     * @return int
-     */
-    private function getDefaultCategoryId()
-    {
-        if (null === $this->defaultParentCategoryId) {
-            $this->defaultParentCategoryId = $this->storeManager->getStore()->getRootCategoryId();
-        }
-        return $this->defaultParentCategoryId;
     }
 }

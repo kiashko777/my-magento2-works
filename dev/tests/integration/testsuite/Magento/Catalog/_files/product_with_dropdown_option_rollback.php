@@ -4,16 +4,19 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var \Magento\Framework\Registry $registry */
-$registry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
+/** @var Registry $registry */
+$registry = Bootstrap::getObjectManager()->get(Registry::class);
 
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
-$productRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+$productRepository = Bootstrap::getObjectManager()
+    ->create(ProductRepositoryInterface::class);
 try {
     $product = $productRepository->get('simple_dropdown_option', false, null, true);
     $product->delete();

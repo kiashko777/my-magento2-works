@@ -8,26 +8,28 @@ declare(strict_types=1);
 
 namespace Magento\Framework\App\Filesystem;
 
+use Exception;
+use Laminas\Http\Header\ContentType;
 use Magento\Framework\App\Response\Http\FileFactory;
 use Magento\Framework\Filesystem;
 use Magento\TestFramework\Helper\Bootstrap;
-use Laminas\Http\Header\ContentType;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class CreatePdfFileTest
  *
  * Integration test for testing a file creation from string
  */
-class CreatePdfFileTest extends \PHPUnit\Framework\TestCase
+class CreatePdfFileTest extends TestCase
 {
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testGenerateFileFromString()
     {
         $objectManager = Bootstrap::getObjectManager();
         /** @var FileFactory $fileFactory */
-        $fileFactory =  $objectManager->get(FileFactory::class);
+        $fileFactory = $objectManager->get(FileFactory::class);
         /** @var Filesystem $filesystem */
         $filesystem = $objectManager->get(Filesystem::class);
         $filename = 'test.pdf';

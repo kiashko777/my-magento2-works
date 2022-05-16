@@ -3,8 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Service\V1;
 
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Sales\Model\Order\Invoice\Comment;
+use Magento\Sales\Model\ResourceModel\Order\Invoice\Collection;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
@@ -22,12 +27,12 @@ class InvoiceCommentsListTest extends WebapiAbstract
     public function testInvoiceCommentsList()
     {
         $comment = 'Test comment';
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
 
-        /** @var \Magento\Sales\Model\ResourceModel\Order\Invoice\Collection $invoiceCollection */
-        $invoiceCollection = $objectManager->get(\Magento\Sales\Model\ResourceModel\Order\Invoice\Collection::class);
+        /** @var Collection $invoiceCollection */
+        $invoiceCollection = $objectManager->get(Collection::class);
         $invoice = $invoiceCollection->getFirstItem();
-        $invoiceComment = $objectManager->get(\Magento\Sales\Model\Order\Invoice\Comment::class);
+        $invoiceComment = $objectManager->get(Comment::class);
         $invoiceComment->setComment($comment);
         $invoiceComment->setParentId($invoice->getId());
         $invoiceComment->save();
@@ -35,7 +40,7 @@ class InvoiceCommentsListTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/invoices/' . $invoice->getId() . '/comments',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -47,8 +52,8 @@ class InvoiceCommentsListTest extends WebapiAbstract
         // TODO Test fails, due to the inability of the framework API to handle data collection
         $result = $this->_webApiCall($serviceInfo, $requestData);
         foreach ($result['items'] as $item) {
-            /** @var \Magento\Sales\Model\Order\Invoice\Comment $invoiceHistoryStatus */
-            $invoiceHistoryStatus = $objectManager->get(\Magento\Sales\Model\Order\Invoice\Comment::class)
+            /** @var Comment $invoiceHistoryStatus */
+            $invoiceHistoryStatus = $objectManager->get(Comment::class)
                 ->load($item['entity_id']);
             $this->assertEquals($invoiceHistoryStatus->getComment(), $item['comment']);
         }

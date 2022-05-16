@@ -35,16 +35,6 @@ class DisableMultishippingObserverTest extends TestCase
     private $cart;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->cart = $this->objectManager->get(Cart::class);
-        $this->prepareQuote();
-    }
-
-    /**
      * Test that Quote totals are calculated correctly when Cart is saved with 'Multishipping' mode enabled.
      *
      * @return void
@@ -65,6 +55,16 @@ class DisableMultishippingObserverTest extends TestCase
         $this->assertEquals(2, (int)$quote->getItemsQty());
         $this->assertEquals(0, $quote->getIsMultiShipping());
         $this->assertCount(0, $extensionAttributes->getShippingAssignments());
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->cart = $this->objectManager->get(Cart::class);
+        $this->prepareQuote();
     }
 
     /**

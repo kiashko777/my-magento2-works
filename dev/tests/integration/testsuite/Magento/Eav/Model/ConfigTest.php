@@ -3,29 +3,30 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Eav\Model;
 
+use Magento\Catalog\Model\Product;
+use Magento\Eav\Model\Entity\Type;
+use Magento\Eav\Setup\EavSetup;
+use Magento\Eav\Setup\EavSetupFactory;
 use Magento\Framework\App\Config\MutableScopeConfigInterface;
 use Magento\Framework\DataObject;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Helper\CacheCleaner;
+use PHPUnit\Framework\TestCase;
+use ReflectionObject;
 
 /**
  * @magentoAppIsolation enabled
  * @magentoDbIsolation enabled
  */
-class ConfigTest extends \PHPUnit\Framework\TestCase
+class ConfigTest extends TestCase
 {
     /**
      * @var Config
      */
     private $config;
-
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->config = $objectManager->get(Config::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Eav/_files/attribute_for_search.php
@@ -55,8 +56,8 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
     public function testGetEntityAttributeCodesWithObject()
     {
         $entityType = 'test';
-        /** @var \Magento\Eav\Model\Entity\Type $testEntityType */
-        $testEntityType = Bootstrap::getObjectManager()->create(\Magento\Eav\Model\Entity\Type::class)
+        /** @var Type $testEntityType */
+        $testEntityType = Bootstrap::getObjectManager()->create(Type::class)
             ->loadByCode('test');
         $attributeSetId = $testEntityType->getDefaultAttributeSetId();
         $object = new DataObject(
@@ -135,22 +136,22 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(1, $attribute->getIsUserDefined());
         $this->assertEquals(0, $attribute->getIsUnique());
         // Update attribute
-        $eavSetupFactory = Bootstrap::getObjectManager()->create(\Magento\Eav\Setup\EavSetupFactory::class);
-        /** @var \Magento\Eav\Setup\EavSetup $eavSetup */
+        $eavSetupFactory = Bootstrap::getObjectManager()->create(EavSetupFactory::class);
+        /** @var EavSetup $eavSetup */
         $eavSetup = $eavSetupFactory->create();
         $eavSetup->updateAttribute(
-            \Magento\Catalog\Model\Product::ENTITY,
+            Product::ENTITY,
             'foo',
             [
                 'frontend_label' => 'bar',
             ]
         );
         // Check that attribute data has not changed
-        $config = Bootstrap::getObjectManager()->create(\Magento\Eav\Model\Config::class);
+        $config = Bootstrap::getObjectManager()->create(Config::class);
         $updatedAttribute = $config->getAttribute($entityType, 'foo');
         $this->assertEquals('foo', $updatedAttribute->getFrontendLabel());
         CacheCleaner::clean(['eav']);
-        $config = Bootstrap::getObjectManager()->create(\Magento\Eav\Model\Config::class);
+        $config = Bootstrap::getObjectManager()->create(Config::class);
         // Check that attribute data has changed
         $updatedAttributeAfterCacheClean = $config->getAttribute($entityType, 'foo');
         $this->assertEquals('bar', $updatedAttributeAfterCacheClean->getFrontendLabel());
@@ -174,20 +175,26 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(1, $attribute->getIsUserDefined());
         $this->assertEquals(0, $attribute->getIsUnique());
         // Update attribute
-        $eavSetupFactory = Bootstrap::getObjectManager()->create(\Magento\Eav\Setup\EavSetupFactory::class);
-        /** @var \Magento\Eav\Setup\EavSetup $eavSetup */
+        $eavSetupFactory = Bootstrap::getObjectManager()->create(EavSetupFactory::class);
+        /** @var EavSetup $eavSetup */
         $eavSetup = $eavSetupFactory->create();
         $eavSetup->updateAttribute(
-            \Magento\Catalog\Model\Product::ENTITY,
+            Product::ENTITY,
             'foo',
             [
                 'frontend_label' => 'bar',
             ]
         );
         // Check that attribute data has changed
-        $config = Bootstrap::getObjectManager()->create(\Magento\Eav\Model\Config::class);
+        $config = Bootstrap::getObjectManager()->create(Config::class);
         $updatedAttributeAfterCacheClean = $config->getAttribute($entityType, 'foo');
         $this->assertEquals('bar', $updatedAttributeAfterCacheClean->getFrontendLabel());
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->config = $objectManager->get(Config::class);
     }
 
     /**
@@ -196,7 +203,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
     protected function tearDown(): void
     {
         parent::tearDown();
-        $reflection = new \ReflectionObject($this);
+        $reflection = new ReflectionObject($this);
         foreach ($reflection->getProperties() as $property) {
             if (!$property->isStatic() && 0 !== strpos($property->getDeclaringClass()->getName(), 'PHPUnit')) {
                 $property->setAccessible(true);

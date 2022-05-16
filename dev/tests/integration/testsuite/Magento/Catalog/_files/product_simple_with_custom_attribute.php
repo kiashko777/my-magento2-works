@@ -3,24 +3,31 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Setup\CategorySetup;
+use Magento\Eav\Model\Entity;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/product_simple_with_full_option_set.php');
 
-/** @var \Magento\TestFramework\ObjectManager $objectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+/** @var ObjectManager $objectManager */
+$objectManager = Bootstrap::getObjectManager();
 
-/** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-$productRepository = $objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+/** @var ProductRepositoryInterface $productRepository */
+$productRepository = $objectManager->create(ProductRepositoryInterface::class);
 
-/** @var $installer \Magento\Catalog\Setup\CategorySetup */
-$installer = $objectManager->create(\Magento\Catalog\Setup\CategorySetup::class);
-$entityModel = $objectManager->create(\Magento\Eav\Model\Entity::class);
+/** @var $installer CategorySetup */
+$installer = $objectManager->create(CategorySetup::class);
+$entityModel = $objectManager->create(Entity::class);
 $attributeSetId = $installer->getAttributeSetId('catalog_product', 'Default');
-$entityTypeId = $entityModel->setType(\Magento\Catalog\Model\Product::ENTITY)->getTypeId();
+$entityTypeId = $entityModel->setType(Product::ENTITY)->getTypeId();
 $groupId = $installer->getDefaultAttributeGroupId($entityTypeId, $attributeSetId);
 
-/** @var \Magento\Catalog\Model\Product $product */
+/** @var Product $product */
 $product = $productRepository->get('simple', true);
 
 /** @var $attribute \Magento\Catalog\Model\ResourceModel\Eav\Attribute */

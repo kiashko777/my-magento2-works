@@ -5,32 +5,35 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Magento\Core\Model\Fieldset;
 
-class FieldsetConfigTest extends \PHPUnit\Framework\TestCase
-{
-    /** @var \Magento\Framework\Config\Dom\UrnResolver */
-    protected $urnResolver;
+use DOMDocument;
+use Magento\Framework\App\Utility\AggregateInvoker;
+use Magento\Framework\App\Utility\Files;
+use Magento\Framework\Config\Dom;
+use Magento\Framework\Config\Dom\UrnResolver;
+use PHPUnit\Framework\TestCase;
 
-    protected function setUp(): void
-    {
-        $this->urnResolver = new \Magento\Framework\Config\Dom\UrnResolver();
-    }
+class FieldsetConfigTest extends TestCase
+{
+    /** @var UrnResolver */
+    protected $urnResolver;
 
     public function testXmlFiles()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
-            /**
-             * @param string $configFile
-             */
+        /**
+         * @param string $configFile
+         */
             function ($configFile) {
-                $dom = new \DOMDocument();
+                $dom = new DOMDocument();
                 $dom->loadXML(file_get_contents($configFile));
                 $schema = $this->urnResolver->getRealPath(
                     'urn:magento:framework:DataObject/etc/fieldset_file.xsd'
                 );
-                $errors = \Magento\Framework\Config\Dom::validateDomDocument($dom, $schema);
+                $errors = Dom::validateDomDocument($dom, $schema);
                 if ($errors) {
                     $this->fail(
                         'XML-file ' . $configFile . ' has validation errors:' . PHP_EOL . implode(
@@ -40,17 +43,17 @@ class FieldsetConfigTest extends \PHPUnit\Framework\TestCase
                     );
                 }
             },
-            \Magento\Framework\App\Utility\Files::init()->getConfigFiles('fieldset.xml', [], true)
+            Files::init()->getConfigFiles('fieldset.xml', [], true)
         );
     }
 
     public function testSchemaUsingValidXml()
     {
         $xmlFile = __DIR__ . '/_files/fieldset.xml';
-        $dom = new \DOMDocument();
+        $dom = new DOMDocument();
         $dom->loadXML(file_get_contents($xmlFile));
         $schema = $this->urnResolver->getRealPath('urn:magento:framework:DataObject/etc/fieldset.xsd');
-        $errors = \Magento\Framework\Config\Dom::validateDomDocument($dom, $schema);
+        $errors = Dom::validateDomDocument($dom, $schema);
         if ($errors) {
             $this->fail(
                 'There is a problem with the schema.  A known good XML file failed validation: ' . PHP_EOL . implode(
@@ -67,10 +70,10 @@ class FieldsetConfigTest extends \PHPUnit\Framework\TestCase
             $this->markTestSkipped('Skipped due to MAGETWO-45033');
         }
         $xmlFile = __DIR__ . '/_files/invalid_fieldset.xml';
-        $dom = new \DOMDocument();
+        $dom = new DOMDocument();
         $dom->loadXML(file_get_contents($xmlFile));
         $schema = $this->urnResolver->getRealPath('urn:magento:framework:DataObject/etc/fieldset.xsd');
-        $errors = \Magento\Framework\Config\Dom::validateDomDocument($dom, $schema);
+        $errors = Dom::validateDomDocument($dom, $schema);
         if (!$errors) {
             $this->fail('There is a problem with the schema.  A known bad XML file passed validation');
         }
@@ -79,10 +82,10 @@ class FieldsetConfigTest extends \PHPUnit\Framework\TestCase
     public function testFileSchemaUsingValidXml()
     {
         $xmlFile = __DIR__ . '/_files/fieldset_file.xml';
-        $dom = new \DOMDocument();
+        $dom = new DOMDocument();
         $dom->loadXML(file_get_contents($xmlFile));
         $schema = $this->urnResolver->getRealPath('urn:magento:framework:DataObject/etc/fieldset_file.xsd');
-        $errors = \Magento\Framework\Config\Dom::validateDomDocument($dom, $schema);
+        $errors = Dom::validateDomDocument($dom, $schema);
         if ($errors) {
             $this->fail(
                 'There is a problem with the schema.  A known good XML file failed validation: ' . PHP_EOL . implode(
@@ -99,12 +102,17 @@ class FieldsetConfigTest extends \PHPUnit\Framework\TestCase
             $this->markTestSkipped('Skipped due to MAGETWO-45033');
         }
         $xmlFile = __DIR__ . '/_files/invalid_fieldset.xml';
-        $dom = new \DOMDocument();
+        $dom = new DOMDocument();
         $dom->loadXML(file_get_contents($xmlFile));
         $schema = $this->urnResolver->getRealPath('urn:magento:framework:DataObject/etc/fieldset_file.xsd');
-        $errors = \Magento\Framework\Config\Dom::validateDomDocument($dom, $schema);
+        $errors = Dom::validateDomDocument($dom, $schema);
         if (!$errors) {
             $this->fail('There is a problem with the schema.  A known bad XML file passed validation');
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->urnResolver = new UrnResolver();
     }
 }

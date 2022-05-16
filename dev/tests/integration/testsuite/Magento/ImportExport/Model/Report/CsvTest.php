@@ -13,13 +13,14 @@ use Magento\ImportExport\Model\Import;
 use Magento\ImportExport\Model\Import\ErrorProcessing\ProcessingError;
 use Magento\ImportExport\Model\Import\ErrorProcessing\ProcessingErrorAggregatorInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppIsolation enabled
  * @magentoDbIsolation enabled
  * @magentoAppArea Adminhtml
  */
-class CsvTest extends \PHPUnit\Framework\TestCase
+class CsvTest extends TestCase
 {
     /**
      * @var Filesystem\Directory\WriteInterface
@@ -40,28 +41,6 @@ class CsvTest extends \PHPUnit\Framework\TestCase
      * @var string|null
      */
     private $reportPath;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $filesystem = Bootstrap::getObjectManager()->create(Filesystem::class);
-        $this->directory = $filesystem->getDirectoryWrite(DirectoryList::VAR_DIR);
-
-        $this->csvReport = Bootstrap::getObjectManager()->create(Csv::class);
-    }
-    /**
-     * @inheritDoc
-     */
-    protected function tearDown(): void
-    {
-        foreach ([$this->importFilePath, $this->reportPath] as $path) {
-            if ($path && $this->directory->isExist($path)) {
-                $this->directory->delete($path);
-            }
-        }
-    }
 
     /**
      * @return void
@@ -86,5 +65,28 @@ fileContent;
 
         $this->reportPath = Import::IMPORT_HISTORY_DIR . $outputFileName;
         $this->assertTrue($this->directory->isExist($this->reportPath), 'Report was not generated');
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $filesystem = Bootstrap::getObjectManager()->create(Filesystem::class);
+        $this->directory = $filesystem->getDirectoryWrite(DirectoryList::VAR_DIR);
+
+        $this->csvReport = Bootstrap::getObjectManager()->create(Csv::class);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function tearDown(): void
+    {
+        foreach ([$this->importFilePath, $this->reportPath] as $path) {
+            if ($path && $this->directory->isExist($path)) {
+                $this->directory->delete($path);
+            }
+        }
     }
 }

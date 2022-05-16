@@ -8,9 +8,10 @@ declare(strict_types=1);
 namespace Magento\PhpStan\Formatters;
 
 use PHPStan\Command\AnalysisResult;
-use PHPStan\Command\ErrorFormatter\TableErrorFormatter;
 use PHPStan\Command\ErrorFormatter\ErrorFormatter;
+use PHPStan\Command\ErrorFormatter\TableErrorFormatter;
 use PHPStan\Command\Output;
+use SplFileObject;
 
 /**
  * To mute the PHPStan error message add a comment above the reported error line.
@@ -120,7 +121,7 @@ class FilteredErrorFormatter implements ErrorFormatter
      */
     private function getLineWithMuteErrorAnnotation(int $errorLine, string $fileName): ?string
     {
-        $file = new \SplFileObject($fileName);
+        $file = new SplFileObject($fileName);
         $lineNumbersToCheck = [
             $errorLine - 2, // the line above to the line that caused the error
             $errorLine - 1, // the line that caused the error

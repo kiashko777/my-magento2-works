@@ -7,9 +7,9 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\ConfigurableProduct;
 
-use Magento\TestFramework\TestCase\GraphQlAbstract;
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\CatalogInventory\Api\StockRegistryInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\GraphQlAbstract;
 
 /**
  * Checks if stock status correctly displays for configurable variants.
@@ -20,14 +20,6 @@ class ConfigurableProductStockStatusTest extends GraphQlAbstract
      * @var StockRegistryInterface
      */
     private $stockRegistry;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->stockRegistry = Bootstrap::getObjectManager()->create(StockRegistryInterface::class);
-    }
 
     /**
      * @magentoApiDataFixture Magento/Framework/Search/_files/product_configurable.php
@@ -44,25 +36,6 @@ class ConfigurableProductStockStatusTest extends GraphQlAbstract
         $response = $this->graphQlQuery($query);
         $this->assertContainsEquals(
             ['product' => ['sku' => $childSkuOutOfStock, 'stock_status' => 'OUT_OF_STOCK']],
-            $response['products']['items'][0]['variants']
-        );
-    }
-
-    /**
-     * @magentoApiDataFixture Magento/Framework/Search/_files/product_configurable.php
-     * @magentoConfigFixture default_store cataloginventory/options/show_out_of_stock 0
-     */
-    public function testConfigurableProductDoNotShowOutOfStock()
-    {
-        $parentSku = 'configurable';
-        $childSkuOutOfStock = 'simple_1010';
-        $stockItem = $this->stockRegistry->getStockItemBySku($childSkuOutOfStock);
-        $stockItem->setQty(0);
-        $this->stockRegistry->updateStockItemBySku($childSkuOutOfStock, $stockItem);
-        $query = $this->getQuery($parentSku);
-        $response = $this->graphQlQuery($query);
-        $this->assertEquals(
-            [['product' => ['sku' => 'simple_1020', 'stock_status' => 'IN_STOCK']]],
             $response['products']['items'][0]['variants']
         );
     }
@@ -91,5 +64,32 @@ class ConfigurableProductStockStatusTest extends GraphQlAbstract
             }
         }
 QUERY;
+    }
+
+    /**
+     * @magentoApiDataFixture Magento/Framework/Search/_files/product_configurable.php
+     * @magentoConfigFixture default_store cataloginventory/options/show_out_of_stock 0
+     */
+    public function testConfigurableProductDoNotShowOutOfStock()
+    {
+        $parentSku = 'configurable';
+        $childSkuOutOfStock = 'simple_1010';
+        $stockItem = $this->stockRegistry->getStockItemBySku($childSkuOutOfStock);
+        $stockItem->setQty(0);
+        $this->stockRegistry->updateStockItemBySku($childSkuOutOfStock, $stockItem);
+        $query = $this->getQuery($parentSku);
+        $response = $this->graphQlQuery($query);
+        $this->assertEquals(
+            [['product' => ['sku' => 'simple_1020', 'stock_status' => 'IN_STOCK']]],
+            $response['products']['items'][0]['variants']
+        );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->stockRegistry = Bootstrap::getObjectManager()->create(StockRegistryInterface::class);
     }
 }

@@ -16,8 +16,8 @@ define([
      */
     return function ($form) {
         var product = _.findWhere($form.serializeArray(), {
-                name: 'product'
-            });
+            name: 'product'
+        });
 
         if (!_.isUndefined(product)) {
             productInfo().push(

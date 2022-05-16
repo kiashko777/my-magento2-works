@@ -40,31 +40,6 @@ class ButtonsTest extends TestCase
     private $block;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->customerSession = $this->objectManager->get(Session::class);
-        $this->order = $this->objectManager->get(OrderInterface::class);
-        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Buttons::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->registry->unregister('current_order');
-        $this->customerSession->logout();
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Sales/_files/order_with_customer.php
      *
      * @return void
@@ -111,5 +86,30 @@ class ButtonsTest extends TestCase
     {
         $this->registry->unregister('current_order');
         $this->registry->register('current_order', $order);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->customerSession = $this->objectManager->get(Session::class);
+        $this->order = $this->objectManager->get(OrderInterface::class);
+        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Buttons::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->registry->unregister('current_order');
+        $this->customerSession->logout();
+
+        parent::tearDown();
     }
 }

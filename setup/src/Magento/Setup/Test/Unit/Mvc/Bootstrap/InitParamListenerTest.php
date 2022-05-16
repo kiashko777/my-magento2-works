@@ -13,7 +13,6 @@ use Laminas\Mvc\Application;
 use Laminas\Mvc\MvcEvent;
 use Laminas\ServiceManager\ServiceLocatorInterface;
 use Laminas\ServiceManager\ServiceManager;
-use Laminas\Stdlib\RequestInterface;
 use Magento\Framework\App\Bootstrap as AppBootstrap;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Filesystem;
@@ -36,15 +35,35 @@ class InitParamListenerTest extends TestCase
     /** callable[][] */
     private $callbacks = [];
 
-    protected function setUp(): void
-    {
-        $this->listener = new InitParamListener();
-    }
-
     public function testAttach()
     {
         $events = $this->prepareEventManager();
         $this->listener->attach($events);
+    }
+
+    /**
+     * Prepare the event manager with a SharedEventManager, it will expect attach() to be called once.
+     *
+     * @return MockObject
+     */
+    private function prepareEventManager()
+    {
+        $this->callbacks[] = [$this->listener, 'onBootstrap'];
+
+        /** @var EventManagerInterface|MockObject $events */
+        $eventManager = $this->getMockForAbstractClass(EventManagerInterface::class);
+
+        $sharedManager = $this->createMock(SharedEventManager::class);
+        $sharedManager->expects($this->once())->method('attach')->with(
+            Application::class,
+            MvcEvent::EVENT_BOOTSTRAP,
+            [$this->listener, 'onBootstrap']
+        );
+
+        $sharedManager->expects($this->once())->method('getListeners')->willReturn($this->callbacks);
+        $eventManager->expects($this->once())->method('getSharedManager')->willReturn($sharedManager);
+
+        return $eventManager;
     }
 
     public function testDetach()
@@ -245,28 +264,8 @@ class InitParamListenerTest extends TestCase
         $this->assertEquals($testPath, $filesystem->getDirectoryRead('app')->getAbsolutePath());
     }
 
-    /**
-     * Prepare the event manager with a SharedEventManager, it will expect attach() to be called once.
-     *
-     * @return MockObject
-     */
-    private function prepareEventManager()
+    protected function setUp(): void
     {
-        $this->callbacks[] = [$this->listener, 'onBootstrap'];
-
-        /** @var EventManagerInterface|MockObject $events */
-        $eventManager = $this->getMockForAbstractClass(EventManagerInterface::class);
-
-        $sharedManager = $this->createMock(SharedEventManager::class);
-        $sharedManager->expects($this->once())->method('attach')->with(
-            Application::class,
-            MvcEvent::EVENT_BOOTSTRAP,
-            [$this->listener, 'onBootstrap']
-        );
-
-        $sharedManager->expects($this->once())->method('getListeners')->willReturn($this->callbacks);
-        $eventManager->expects($this->once())->method('getSharedManager')->willReturn($sharedManager);
-
-        return $eventManager;
+        $this->listener = new InitParamListener();
     }
 }

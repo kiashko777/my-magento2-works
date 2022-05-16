@@ -38,6 +38,7 @@ use Magento\SalesRule\Model\RuleFactory;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 /**
  * Tests for Magento\SalesRule\Model\Rule\Action\Discount\CartFixed.
@@ -78,20 +79,6 @@ class CartFixedTest extends TestCase
     private $quoteRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->cartManagement = $objectManager->create(GuestCartManagementInterface::class);
-        $this->couponManagement = $objectManager->create(GuestCouponManagementInterface::class);
-        $this->cartItemRepository = $objectManager->create(GuestCartItemRepositoryInterface::class);
-        $this->criteriaBuilder = $objectManager->get(SearchCriteriaBuilder::class);
-        $this->quoteRepository = $objectManager->get(CartRepositoryInterface::class);
-        $this->objectManager = $objectManager;
-    }
-
-    /**
      * Applies fixed discount amount on whole cart.
      *
      * @param array $productPrices
@@ -107,7 +94,7 @@ class CartFixedTest extends TestCase
     public function testApplyFixedDiscount(array $productPrices): void
     {
         $expectedDiscount = '-15.0000';
-        $couponCode =  'CART_FIXED_DISCOUNT_15';
+        $couponCode = 'CART_FIXED_DISCOUNT_15';
         $cartId = $this->cartManagement->createEmptyCart();
 
         foreach ($productPrices as $price) {
@@ -128,6 +115,34 @@ class CartFixedTest extends TestCase
         $total = $cartTotalRepository->get($cartId);
 
         $this->assertEquals($expectedDiscount, $total->getBaseDiscountAmount());
+    }
+
+    /**
+     * Returns simple product with given price.
+     *
+     * @param float $price
+     * @return ProductInterface
+     */
+    private function createProduct(float $price): ProductInterface
+    {
+        $name = 'simple-' . $price;
+        $productRepository = Bootstrap::getObjectManager()->get(ProductRepository::class);
+        $product = Bootstrap::getObjectManager()->create(Product::class);
+        $product->setTypeId('simple')
+            ->setAttributeSetId($product->getDefaultAttributeSetId())
+            ->setWebsiteIds([1])
+            ->setName($name)
+            ->setSku(uniqid($name))
+            ->setPrice($price)
+            ->setMetaTitle('meta title')
+            ->setMetaKeyword('meta keyword')
+            ->setMetaDescription('meta description')
+            ->setVisibility(Visibility::VISIBILITY_BOTH)
+            ->setStatus(Status::STATUS_ENABLED)
+            ->setStockData(['qty' => 1, 'is_in_stock' => 1])
+            ->setWeight(1);
+
+        return $productRepository->save($product);
     }
 
     /**
@@ -160,6 +175,45 @@ class CartFixedTest extends TestCase
         $cartManagement->placeOrder($quoteIdMask->getMaskedId());
         $order = $this->getOrder('test01');
         $this->assertEquals($expectedGrandTotal, $order->getGrandTotal());
+    }
+
+    /**
+     * Load cart from fixture.
+     *
+     * @param string $reservedOrderId
+     * @return Quote
+     */
+    private function getQuote(string $reservedOrderId = 'test01'): Quote
+    {
+        $searchCriteria = $this->criteriaBuilder->addFilter('reserved_order_id', $reservedOrderId)->create();
+        $carts = $this->quoteRepository->getList($searchCriteria)
+            ->getItems();
+        if (!$carts) {
+            throw new RuntimeException('Cart from fixture not found');
+        }
+
+        return array_shift($carts);
+    }
+
+    /**
+     * Gets order entity by increment id.
+     *
+     * @param string $incrementId
+     * @return OrderInterface
+     */
+    private function getOrder(string $incrementId): OrderInterface
+    {
+        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
+        $searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
+        $searchCriteria = $searchCriteriaBuilder->addFilter('increment_id', $incrementId)
+            ->create();
+
+        /** @var OrderRepositoryInterface $repository */
+        $repository = $this->objectManager->get(OrderRepositoryInterface::class);
+        $items = $repository->getList($searchCriteria)
+            ->getItems();
+
+        return array_pop($items);
     }
 
     /**
@@ -204,24 +258,6 @@ class CartFixedTest extends TestCase
     }
 
     /**
-     * Load cart from fixture.
-     *
-     * @param string $reservedOrderId
-     * @return Quote
-     */
-    private function getQuote(string $reservedOrderId = 'test01'): Quote
-    {
-        $searchCriteria = $this->criteriaBuilder->addFilter('reserved_order_id', $reservedOrderId)->create();
-        $carts = $this->quoteRepository->getList($searchCriteria)
-            ->getItems();
-        if (!$carts) {
-            throw new \RuntimeException('Cart from fixture not found');
-        }
-
-        return array_shift($carts);
-    }
-
-    /**
      * @return array
      */
     public function applyFixedDiscountDataProvider(): array
@@ -240,7 +276,7 @@ class CartFixedTest extends TestCase
     public function testCouponCodeWithWildcard()
     {
         $expectedDiscount = '-5.0000';
-        $couponCode =  '2?ds5!2d';
+        $couponCode = '2?ds5!2d';
         $cartId = $this->cartManagement->createEmptyCart();
         $productPrice = 10;
 
@@ -263,55 +299,6 @@ class CartFixedTest extends TestCase
     }
 
     /**
-     * Returns simple product with given price.
-     *
-     * @param float $price
-     * @return ProductInterface
-     */
-    private function createProduct(float $price): ProductInterface
-    {
-        $name = 'simple-' . $price;
-        $productRepository = Bootstrap::getObjectManager()->get(ProductRepository::class);
-        $product = Bootstrap::getObjectManager()->create(Product::class);
-        $product->setTypeId('simple')
-            ->setAttributeSetId($product->getDefaultAttributeSetId())
-            ->setWebsiteIds([1])
-            ->setName($name)
-            ->setSku(uniqid($name))
-            ->setPrice($price)
-            ->setMetaTitle('meta title')
-            ->setMetaKeyword('meta keyword')
-            ->setMetaDescription('meta description')
-            ->setVisibility(Visibility::VISIBILITY_BOTH)
-            ->setStatus(Status::STATUS_ENABLED)
-            ->setStockData(['qty' => 1, 'is_in_stock' => 1])
-            ->setWeight(1);
-
-        return $productRepository->save($product);
-    }
-
-    /**
-     * Gets order entity by increment id.
-     *
-     * @param string $incrementId
-     * @return OrderInterface
-     */
-    private function getOrder(string $incrementId): OrderInterface
-    {
-        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
-        $searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
-        $searchCriteria = $searchCriteriaBuilder->addFilter('increment_id', $incrementId)
-            ->create();
-
-        /** @var OrderRepositoryInterface $repository */
-        $repository = $this->objectManager->get(OrderRepositoryInterface::class);
-        $items = $repository->getList($searchCriteria)
-            ->getItems();
-
-        return array_pop($items);
-    }
-
-    /**
      * Checks "fixed amount discount for whole cart" with multiple orders with different shipping addresses
      *
      * @magentoAppIsolation enabled
@@ -330,7 +317,8 @@ class CartFixedTest extends TestCase
         array $firstOrderTotals,
         array $secondOrderTotals,
         array $thirdOrderTotals
-    ): void {
+    ): void
+    {
         $store = $this->objectManager->get(StoreManagerInterface::class)->getStore();
         $salesRule = $this->getRule('15$ fixed discount on whole cart');
         $salesRule->setDiscountAmount($discount);
@@ -418,6 +406,62 @@ class CartFixedTest extends TestCase
             $thirdOrderTotals['grand_total'],
             $thirdOrder->getGrandTotal()
         );
+    }
+
+    /**
+     * Get rule by name
+     *
+     * @param string $name
+     * @return Rule
+     * @throws LocalizedException
+     */
+    private function getRule(string $name): Rule
+    {
+        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
+        $searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
+        $searchCriteria = $searchCriteriaBuilder->addFilter('name', $name)
+            ->create();
+        /** @var RuleRepositoryInterface $ruleRepository */
+        $ruleRepository = $this->objectManager->get(RuleRepositoryInterface::class);
+        $items = $ruleRepository->getList($searchCriteria)
+            ->getItems();
+        /** @var Rule $salesRule */
+        $dataModel = array_pop($items);
+        /** @var Rule $ruleModel */
+        $ruleModel = $this->objectManager->get(RuleFactory::class)->create();
+        $ruleModel->load($dataModel->getRuleId());
+        return $ruleModel;
+    }
+
+    /**
+     * Save rule into database
+     *
+     * @param Rule $rule
+     * @return void
+     */
+    private function saveRule(Rule $rule): void
+    {
+        /** @var \Magento\SalesRule\Model\ResourceModel\Rule $resourceModel */
+        $resourceModel = $this->objectManager->get(\Magento\SalesRule\Model\ResourceModel\Rule::class);
+        $resourceModel->save($rule);
+    }
+
+    /**
+     * Get list of orders by quote id.
+     *
+     * @param int $quoteId
+     * @return array
+     */
+    private function getOrderList(int $quoteId): array
+    {
+        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
+        $searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
+        $searchCriteria = $searchCriteriaBuilder->addFilter('quote_id', $quoteId)
+            ->create();
+
+        /** @var OrderRepositoryInterface $orderRepository */
+        $orderRepository = $this->objectManager->get(OrderRepositoryInterface::class);
+        return $orderRepository->getList($searchCriteria)->getItems();
     }
 
     /**
@@ -537,58 +581,16 @@ class CartFixedTest extends TestCase
     }
 
     /**
-     * Get list of orders by quote id.
-     *
-     * @param int $quoteId
-     * @return array
+     * @inheritdoc
      */
-    private function getOrderList(int $quoteId): array
+    protected function setUp(): void
     {
-        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
-        $searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
-        $searchCriteria = $searchCriteriaBuilder->addFilter('quote_id', $quoteId)
-            ->create();
-
-        /** @var OrderRepositoryInterface $orderRepository */
-        $orderRepository = $this->objectManager->get(OrderRepositoryInterface::class);
-        return $orderRepository->getList($searchCriteria)->getItems();
-    }
-
-    /**
-     * Get rule by name
-     *
-     * @param string $name
-     * @return Rule
-     * @throws LocalizedException
-     */
-    private function getRule(string $name): Rule
-    {
-        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
-        $searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
-        $searchCriteria = $searchCriteriaBuilder->addFilter('name', $name)
-            ->create();
-        /** @var RuleRepositoryInterface $ruleRepository */
-        $ruleRepository = $this->objectManager->get(RuleRepositoryInterface::class);
-        $items = $ruleRepository->getList($searchCriteria)
-            ->getItems();
-        /** @var Rule $salesRule */
-        $dataModel = array_pop($items);
-        /** @var Rule $ruleModel */
-        $ruleModel = $this->objectManager->get(RuleFactory::class)->create();
-        $ruleModel->load($dataModel->getRuleId());
-        return $ruleModel;
-    }
-
-    /**
-     * Save rule into database
-     *
-     * @param Rule $rule
-     * @return void
-     */
-    private function saveRule(Rule $rule): void
-    {
-        /** @var \Magento\SalesRule\Model\ResourceModel\Rule $resourceModel */
-        $resourceModel = $this->objectManager->get(\Magento\SalesRule\Model\ResourceModel\Rule::class);
-        $resourceModel->save($rule);
+        $objectManager = Bootstrap::getObjectManager();
+        $this->cartManagement = $objectManager->create(GuestCartManagementInterface::class);
+        $this->couponManagement = $objectManager->create(GuestCouponManagementInterface::class);
+        $this->cartItemRepository = $objectManager->create(GuestCartItemRepositoryInterface::class);
+        $this->criteriaBuilder = $objectManager->get(SearchCriteriaBuilder::class);
+        $this->quoteRepository = $objectManager->get(CartRepositoryInterface::class);
+        $this->objectManager = $objectManager;
     }
 }

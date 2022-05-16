@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Setup\Test\Unit\Module\I18n\Pack\Writer\File;
 
+use InvalidArgumentException;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager as ObjectManagerHelper;
 use Magento\Setup\Module\I18n\Context;
 use Magento\Setup\Module\I18n\Dictionary;
@@ -56,30 +57,6 @@ class CsvTest extends TestCase
     private $object;
 
     /**
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        /** @var ObjectManagerHelper $objectManagerHelper */
-        $objectManagerHelper = new ObjectManagerHelper($this);
-
-        $this->contextMock = $this->createMock(Context::class);
-        $this->localeMock = $this->createMock(Locale::class);
-        $this->dictionaryMock = $this->createMock(Dictionary::class);
-        $this->phraseMock = $this->createMock(Phrase::class);
-        $this->factoryMock = $this->createMock(Factory::class);
-
-        $constructorArguments = $objectManagerHelper->getConstructArguments(
-            Csv::class,
-            [
-                'context' => $this->contextMock,
-                'factory' => $this->factoryMock
-            ]
-        );
-        $this->object = $objectManagerHelper->getObject(Csv::class, $constructorArguments);
-    }
-
-    /**
      * @param string $contextType
      * @param array $contextValue
      * @dataProvider writeDictionaryWithRuntimeExceptionDataProvider
@@ -91,6 +68,25 @@ class CsvTest extends TestCase
         $this->configureGeneralPhrasesMock($contextType, $contextValue);
 
         $this->object->writeDictionary($this->dictionaryMock, $this->localeMock);
+    }
+
+    /**
+     * @param string $contextType
+     * @param array $contextValue
+     * @return void
+     */
+    private function configureGeneralPhrasesMock($contextType, $contextValue)
+    {
+        $this->phraseMock->expects($this->any())
+            ->method('getContextType')
+            ->willReturn($contextType);
+        $this->phraseMock->expects($this->any())
+            ->method('getContextValue')
+            ->willReturn($contextValue);
+
+        $this->dictionaryMock->expects($this->once())
+            ->method('getPhrases')
+            ->willReturn([$this->phraseMock]);
     }
 
     /**
@@ -120,7 +116,7 @@ class CsvTest extends TestCase
         $this->contextMock->expects($this->once())
             ->method('buildPathToLocaleDirectoryByContext')
             ->with($contextType, $contextValue)
-            ->willThrowException(new \InvalidArgumentException('Some error.'));
+            ->willThrowException(new InvalidArgumentException('Some error.'));
 
         $this->object->writeDictionary($this->dictionaryMock, $this->localeMock);
     }
@@ -193,21 +189,26 @@ class CsvTest extends TestCase
     }
 
     /**
-     * @param string $contextType
-     * @param array $contextValue
      * @return void
      */
-    private function configureGeneralPhrasesMock($contextType, $contextValue)
+    protected function setUp(): void
     {
-        $this->phraseMock->expects($this->any())
-            ->method('getContextType')
-            ->willReturn($contextType);
-        $this->phraseMock->expects($this->any())
-            ->method('getContextValue')
-            ->willReturn($contextValue);
+        /** @var ObjectManagerHelper $objectManagerHelper */
+        $objectManagerHelper = new ObjectManagerHelper($this);
 
-        $this->dictionaryMock->expects($this->once())
-            ->method('getPhrases')
-            ->willReturn([$this->phraseMock]);
+        $this->contextMock = $this->createMock(Context::class);
+        $this->localeMock = $this->createMock(Locale::class);
+        $this->dictionaryMock = $this->createMock(Dictionary::class);
+        $this->phraseMock = $this->createMock(Phrase::class);
+        $this->factoryMock = $this->createMock(Factory::class);
+
+        $constructorArguments = $objectManagerHelper->getConstructArguments(
+            Csv::class,
+            [
+                'context' => $this->contextMock,
+                'factory' => $this->factoryMock
+            ]
+        );
+        $this->object = $objectManagerHelper->getObject(Csv::class, $constructorArguments);
     }
 }

@@ -3,28 +3,32 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Model\Entity;
 
 use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Api\Data\CustomerExtension;
+use Magento\Customer\Api\Data\CustomerExtensionInterface;
+use Magento\Customer\Api\Data\CustomerInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Reflection\DataObjectProcessor;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Helper\Customer as CustomerHelper;
+use Magento\TestFramework\TestCase\WebapiAbstract;
+use Magento\TestModuleDefaultHydrator\Api\Data\ExtensionAttributeInterface;
 
-class HydratorTest extends \Magento\TestFramework\TestCase\WebapiAbstract
+class HydratorTest extends WebapiAbstract
 {
-    /**
-     * @var ObjectManagerInterface
-     */
-    private $objectManager;
-
+    const PASSWORD = 'test@123';
     /**
      * @var CustomerHelper
      */
     protected $customerHelper;
 
     /**
-     * @var \Magento\Customer\Api\Data\CustomerInterface
+     * @var CustomerInterface
      */
     protected $customerData;
 
@@ -32,16 +36,10 @@ class HydratorTest extends \Magento\TestFramework\TestCase\WebapiAbstract
      * @var DataObjectProcessor
      */
     protected $dataObjectProcessor;
-
-    const PASSWORD = 'test@123';
-
-    protected function setUp(): void
-    {
-        $this->_markTestAsRestOnly('Hydrator can be tested using REST adapter only');
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->customerHelper = $this->objectManager->get(CustomerHelper::class);
-        $this->dataObjectProcessor = $this->objectManager->create(DataObjectProcessor::class);
-    }
+    /**
+     * @var ObjectManagerInterface
+     */
+    private $objectManager;
 
     /**
      * @magentoApiDataFixture Magento/Customer/_files/attribute_user_defined_custom_attribute.php
@@ -51,7 +49,7 @@ class HydratorTest extends \Magento\TestFramework\TestCase\WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/TestModuleDefaultHydrator',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ]
         ];
         $requestData = ['customer' => $this->generateCustomerData(), 'password' => self::PASSWORD];
@@ -63,46 +61,47 @@ class HydratorTest extends \Magento\TestFramework\TestCase\WebapiAbstract
     }
 
     /**
-     * @magentoApiDataFixture Magento/Customer/_files/attribute_user_defined_custom_attribute.php
-     * @magentoApiDataFixture Magento/Customer/_files/customer.php
+     * @return array
      */
-    public function testUpdate()
+    private function generateCustomerData()
     {
-        $fixtureCustomerId = 1;
+        $customer = $this->customerHelper->createSampleCustomerDataObject();
 
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => "/V1/TestModuleDefaultHydrator/{$fixtureCustomerId}",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
-            ]
-        ];
+        /** @var ExtensionAttributeInterface $extensionAttribute */
+        $extensionAttribute = $this->objectManager->create(
+            ExtensionAttributeInterface::class
+        );
+        $extensionAttribute->setValue('extension attribute value');
 
-        $expectedData = $this->_webApiCall($serviceInfo, ['customer' => $this->generateCustomerData()]);
-        $actualData = $this->loadCustomerViaWebApi($fixtureCustomerId);
-        $this->validateCustomerData($expectedData, $actualData);
+        /** @var CustomerExtensionInterface $customerExtension */
+        $customerExtension = $this->objectManager->create(
+            CustomerExtension::class
+        );
+        $customerExtension->setExtensionAttribute($extensionAttribute);
+        $customer->setExtensionAttributes($customerExtension);
+        $customer->setCustomAttribute('custom_attribute1', 'custom attribute value');
+
+        $customerData = $this->dataObjectProcessor->buildOutputDataArray(
+            $customer,
+            CustomerInterface::class
+        );
+        return $customerData;
     }
 
     /**
-     * @magentoApiDataFixture Magento/Customer/_files/customer.php
+     * @param int $customerId
+     * @return array
      */
-    public function testDelete()
+    private function loadCustomerViaWebApi($customerId)
     {
-        $fixtureCustomerId = 1;
         $serviceInfo = [
             'rest' => [
-                'resourcePath' => '/V1/TestModuleDefaultHydrator/' . $fixtureCustomerId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
+                'resourcePath' => '/V1/TestModuleDefaultHydrator/' . $customerId,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ]
         ];
-
-        $isDeleted = $this->_webApiCall($serviceInfo);
-        $this->assertTrue($isDeleted);
-
-        /** @var \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository */
-        $customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
-        $this->expectException(NoSuchEntityException::class);
-        $this->expectExceptionMessage("No such entity with customerId = {$fixtureCustomerId}");
-        $customerRepository->getById($fixtureCustomerId);
+        $customerData = $this->_webApiCall($serviceInfo);
+        return $customerData;
     }
 
     /**
@@ -133,46 +132,53 @@ class HydratorTest extends \Magento\TestFramework\TestCase\WebapiAbstract
     }
 
     /**
-     * @return array
+     * @magentoApiDataFixture Magento/Customer/_files/attribute_user_defined_custom_attribute.php
+     * @magentoApiDataFixture Magento/Customer/_files/customer.php
      */
-    private function generateCustomerData()
+    public function testUpdate()
     {
-        $customer = $this->customerHelper->createSampleCustomerDataObject();
+        $fixtureCustomerId = 1;
 
-        /** @var \Magento\TestModuleDefaultHydrator\Api\Data\ExtensionAttributeInterface $extensionAttribute */
-        $extensionAttribute = $this->objectManager->create(
-            \Magento\TestModuleDefaultHydrator\Api\Data\ExtensionAttributeInterface::class
-        );
-        $extensionAttribute->setValue('extension attribute value');
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => "/V1/TestModuleDefaultHydrator/{$fixtureCustomerId}",
+                'httpMethod' => Request::HTTP_METHOD_PUT,
+            ]
+        ];
 
-        /** @var \Magento\Customer\Api\Data\CustomerExtensionInterface $customerExtension */
-        $customerExtension = $this->objectManager->create(
-            \Magento\Customer\Api\Data\CustomerExtension::class
-        );
-        $customerExtension->setExtensionAttribute($extensionAttribute);
-        $customer->setExtensionAttributes($customerExtension);
-        $customer->setCustomAttribute('custom_attribute1', 'custom attribute value');
-
-        $customerData = $this->dataObjectProcessor->buildOutputDataArray(
-            $customer,
-            \Magento\Customer\Api\Data\CustomerInterface::class
-        );
-        return $customerData;
+        $expectedData = $this->_webApiCall($serviceInfo, ['customer' => $this->generateCustomerData()]);
+        $actualData = $this->loadCustomerViaWebApi($fixtureCustomerId);
+        $this->validateCustomerData($expectedData, $actualData);
     }
 
     /**
-     * @param int $customerId
-     * @return array
+     * @magentoApiDataFixture Magento/Customer/_files/customer.php
      */
-    private function loadCustomerViaWebApi($customerId)
+    public function testDelete()
     {
+        $fixtureCustomerId = 1;
         $serviceInfo = [
             'rest' => [
-                'resourcePath' => '/V1/TestModuleDefaultHydrator/' . $customerId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'resourcePath' => '/V1/TestModuleDefaultHydrator/' . $fixtureCustomerId,
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
             ]
         ];
-        $customerData = $this->_webApiCall($serviceInfo);
-        return $customerData;
+
+        $isDeleted = $this->_webApiCall($serviceInfo);
+        $this->assertTrue($isDeleted);
+
+        /** @var CustomerRepositoryInterface $customerRepository */
+        $customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
+        $this->expectException(NoSuchEntityException::class);
+        $this->expectExceptionMessage("No such entity with customerId = {$fixtureCustomerId}");
+        $customerRepository->getById($fixtureCustomerId);
+    }
+
+    protected function setUp(): void
+    {
+        $this->_markTestAsRestOnly('Hydrator can be tested using REST adapter only');
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->customerHelper = $this->objectManager->get(CustomerHelper::class);
+        $this->dataObjectProcessor = $this->objectManager->create(DataObjectProcessor::class);
     }
 }

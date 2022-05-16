@@ -17,13 +17,14 @@ use Magento\Store\Api\StoreRepositoryInterface;
 use Magento\Store\Model\Store;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Provide tests for loading gallery images on product load.
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class ReadHandlerTest extends \PHPUnit\Framework\TestCase
+class ReadHandlerTest extends TestCase
 {
     /**
      * @var ObjectManager
@@ -66,23 +67,6 @@ class ReadHandlerTest extends \PHPUnit\Framework\TestCase
     private $productLinkField;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->readHandler = $this->objectManager->create(ReadHandler::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productFactory = $this->objectManager->get(ProductInterfaceFactory::class);
-        $this->productResource = $this->objectManager->get(ProductResource::class);
-        $this->galleryResource = $this->objectManager->create(Gallery::class);
-        $this->storeRepository = $this->objectManager->create(StoreRepositoryInterface::class);
-        $this->productLinkField =  $this->objectManager->get(MetadataPool::class)
-            ->getMetadata(ProductInterface::class)
-            ->getLinkField();
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
      * @magentoDbIsolation enabled
      * @return void
@@ -95,6 +79,38 @@ class ReadHandlerTest extends \PHPUnit\Framework\TestCase
         $this->assertArrayHasKey('media_gallery', $data);
         $this->assertArrayHasKey('images', $data['media_gallery']);
         $this->assertCount(0, $data['media_gallery']['images']);
+    }
+
+    /**
+     * Returns empty product instance.
+     *
+     * @param int|null $storeId
+     * @return ProductInterface
+     */
+    private function getProductInstance(?int $storeId = null): ProductInterface
+    {
+        /** @var ProductInterface $product */
+        $product = $this->productFactory->create();
+        $product->setData(
+            $this->productLinkField,
+            $this->getProduct()->getData($this->productLinkField)
+        );
+
+        if ($storeId) {
+            $product->setStoreId($storeId);
+        }
+
+        return $product;
+    }
+
+    /**
+     * Returns product for testing.
+     *
+     * @return ProductInterface
+     */
+    private function getProduct(): ProductInterface
+    {
+        return $this->productRepository->get('simple', false, Store::DEFAULT_STORE_ID);
     }
 
     /**
@@ -148,6 +164,40 @@ class ReadHandlerTest extends \PHPUnit\Framework\TestCase
             );
         }
         $this->assertEquals($expectation, $imagesToAssert);
+    }
+
+    /**
+     * Updates product gallery images and saves product.
+     *
+     * @param ProductInterface $product
+     * @param array $images
+     * @param int|null $storeId
+     * @return void
+     */
+    private function setGalleryImages(ProductInterface $product, array $images, ?int $storeId = null): void
+    {
+        $product->setImage(null);
+        foreach ($images as $file => $data) {
+            $mediaGalleryData = $product->getData('media_gallery');
+            foreach ($mediaGalleryData['images'] as &$image) {
+                if ($image['file'] == $file) {
+                    foreach ($data as $key => $value) {
+                        $image[$key] = $value;
+                    }
+                }
+            }
+
+            $product->setData('media_gallery', $mediaGalleryData);
+            if (!empty($data['main'])) {
+                $product->setImage($file);
+            }
+        }
+
+        if ($storeId) {
+            $product->setStoreId($storeId);
+        }
+
+        $this->productResource->save($product);
     }
 
     /**
@@ -273,6 +323,23 @@ class ReadHandlerTest extends \PHPUnit\Framework\TestCase
     /**
      * @inheritdoc
      */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->readHandler = $this->objectManager->create(ReadHandler::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productFactory = $this->objectManager->get(ProductInterfaceFactory::class);
+        $this->productResource = $this->objectManager->get(ProductResource::class);
+        $this->galleryResource = $this->objectManager->create(Gallery::class);
+        $this->storeRepository = $this->objectManager->create(StoreRepositoryInterface::class);
+        $this->productLinkField = $this->objectManager->get(MetadataPool::class)
+            ->getMetadata(ProductInterface::class)
+            ->getLinkField();
+    }
+
+    /**
+     * @inheritdoc
+     */
     protected function tearDown(): void
     {
         parent::tearDown();
@@ -282,71 +349,5 @@ class ReadHandlerTest extends \PHPUnit\Framework\TestCase
             ->delete($this->galleryResource->getTable(Gallery::GALLERY_VALUE_TABLE));
         $this->galleryResource->getConnection()
             ->delete($this->galleryResource->getTable(Gallery::GALLERY_VALUE_TO_ENTITY_TABLE));
-    }
-
-    /**
-     * Returns product for testing.
-     *
-     * @return ProductInterface
-     */
-    private function getProduct(): ProductInterface
-    {
-        return $this->productRepository->get('simple', false, Store::DEFAULT_STORE_ID);
-    }
-
-    /**
-     * Updates product gallery images and saves product.
-     *
-     * @param ProductInterface $product
-     * @param array $images
-     * @param int|null $storeId
-     * @return void
-     */
-    private function setGalleryImages(ProductInterface $product, array $images, ?int $storeId = null): void
-    {
-        $product->setImage(null);
-        foreach ($images as $file => $data) {
-            $mediaGalleryData = $product->getData('media_gallery');
-            foreach ($mediaGalleryData['images'] as &$image) {
-                if ($image['file'] == $file) {
-                    foreach ($data as $key => $value) {
-                        $image[$key] = $value;
-                    }
-                }
-            }
-
-            $product->setData('media_gallery', $mediaGalleryData);
-            if (!empty($data['main'])) {
-                $product->setImage($file);
-            }
-        }
-
-        if ($storeId) {
-            $product->setStoreId($storeId);
-        }
-
-        $this->productResource->save($product);
-    }
-
-    /**
-     * Returns empty product instance.
-     *
-     * @param int|null $storeId
-     * @return ProductInterface
-     */
-    private function getProductInstance(?int $storeId = null): ProductInterface
-    {
-        /** @var ProductInterface $product */
-        $product = $this->productFactory->create();
-        $product->setData(
-            $this->productLinkField,
-            $this->getProduct()->getData($this->productLinkField)
-        );
-
-        if ($storeId) {
-            $product->setStoreId($storeId);
-        }
-
-        return $product;
     }
 }

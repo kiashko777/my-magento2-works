@@ -15,8 +15,8 @@
                 <span class="label">
                     <span translate="'Rating'"/>
                 </span>
-                <div class="rating-result"
-                     atrr="title: ratingAmount">
+                <div atrr="title: ratingAmount"
+                     class="rating-result">
                     <span style="width: 0">
                         <span>
                             <span itemprop="ratingValue" text="ratingAmount"/>% of
@@ -28,15 +28,15 @@
         </if>
         <if args="showReviewsActions()">
             <div class="reviews-actions">
-                <a if="showViewReviewAction()"
-                   class="action view"
-                   href="">
+                <a class="action view"
+                   href=""
+                   if="showViewReviewAction()">
                     <span itemprop="reviewCount" text="reviewsCount()"/>
                     <span text="reviewsCountText()"/>
                 </a>
-                <a if="showAddReviewAction()"
-                   class="action add"
+                <a class="action add"
                    href=""
+                   if="showAddReviewAction()"
                    translate="'Add Your Review'"/>
             </div>
         </if>

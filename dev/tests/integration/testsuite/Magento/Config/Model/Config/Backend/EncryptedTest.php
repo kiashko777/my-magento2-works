@@ -7,11 +7,12 @@
 namespace Magento\Config\Model\Config\Backend;
 
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class EncryptedTest extends \PHPUnit\Framework\TestCase
+class EncryptedTest extends TestCase
 {
     /**
      * @magentoDbIsolation enabled
@@ -20,8 +21,8 @@ class EncryptedTest extends \PHPUnit\Framework\TestCase
     {
         $originalValue = '1Password';
 
-        /** @var $model \Magento\Config\Model\Config\Backend\Encrypted */
-        $model = Bootstrap::getObjectManager()->create(\Magento\Config\Model\Config\Backend\Encrypted::class);
+        /** @var $model Encrypted */
+        $model = Bootstrap::getObjectManager()->create(Encrypted::class);
         $model->setPath('carriers/usps/password');
         $model->setScopeId(0);
         $model->setScope('default');

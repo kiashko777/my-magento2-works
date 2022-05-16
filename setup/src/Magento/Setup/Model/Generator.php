@@ -7,6 +7,7 @@
 /**
  * A custom "Import" adapter for Magento_ImportExport module that allows generating arbitrary data rows
  */
+
 namespace Magento\Setup\Model;
 
 use Magento\ImportExport\Model\Import\AbstractSource;

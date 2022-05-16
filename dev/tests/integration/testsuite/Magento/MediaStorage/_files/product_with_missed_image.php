@@ -3,17 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-declare(strict_types = 1);
+declare(strict_types=1);
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product\Media\Config;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Filesystem;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/product_image.php');
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/product_simple.php');
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-/** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-$productRepository = $objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+$objectManager = Bootstrap::getObjectManager();
+/** @var ProductRepositoryInterface $productRepository */
+$productRepository = $objectManager->create(ProductRepositoryInterface::class);
 $product = $productRepository->get('simple');
 $product->setStoreId(0)
     ->setImage('/m/a/magento_image.jpg')
@@ -50,11 +54,11 @@ $product->setData(
 );
 $productRepository->save($product);
 
-$mediaDirectory = $objectManager->get(\Magento\Framework\Filesystem::class)
+$mediaDirectory = $objectManager->get(Filesystem::class)
     ->getDirectoryWrite(DirectoryList::MEDIA);
 
-$config = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-    \Magento\Catalog\Model\Product\Media\Config::class
+$config = Bootstrap::getObjectManager()->get(
+    Config::class
 );
 
 $mediaDirectory->delete($config->getBaseMediaPath() . '/m/a/magento_image.jpg');

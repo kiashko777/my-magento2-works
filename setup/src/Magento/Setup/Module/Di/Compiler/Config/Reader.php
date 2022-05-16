@@ -12,6 +12,7 @@ use Magento\Setup\Module\Di\Code\Reader\ClassReaderDecorator;
 use Magento\Setup\Module\Di\Code\Reader\Type;
 use Magento\Setup\Module\Di\Compiler\ArgumentsResolverFactory;
 use Magento\Setup\Module\Di\Definition\Collection as DefinitionsCollection;
+use ReflectionException;
 
 /**
  * Class Reader
@@ -54,12 +55,13 @@ class Reader
      * @param Type $typeReader
      */
     public function __construct(
-        ConfigInterface $diContainerConfig,
+        ConfigInterface                $diContainerConfig,
         App\ObjectManager\ConfigLoader $configLoader,
-        ArgumentsResolverFactory $argumentsResolverFactory,
-        ClassReaderDecorator $classReaderDecorator,
-        Type $typeReader
-    ) {
+        ArgumentsResolverFactory       $argumentsResolverFactory,
+        ClassReaderDecorator           $classReaderDecorator,
+        Type                           $typeReader
+    )
+    {
         $this->diContainerConfig = $diContainerConfig;
         $this->configLoader = $configLoader;
         $this->argumentsResolverFactory = $argumentsResolverFactory;
@@ -77,8 +79,9 @@ class Reader
      */
     public function generateCachePerScope(
         DefinitionsCollection $definitionsCollection,
-        $areaCode
-    ) {
+                              $areaCode
+    )
+    {
         $areaConfig = clone $this->diContainerConfig;
         if ($areaCode !== App\Area::AREA_GLOBAL) {
             $areaConfig->extend($this->configLoader->load($areaCode));
@@ -109,12 +112,28 @@ class Reader
     }
 
     /**
+     * Returns preferences for third party code
+     *
+     * @param ConfigInterface $config
+     * @param DefinitionsCollection $definitionsCollection
+     *
+     * @return void
+     */
+    private function fillThirdPartyInterfaces(ConfigInterface $config, DefinitionsCollection $definitionsCollection)
+    {
+        $definedInstances = $definitionsCollection->getCollection();
+        $newInstances = array_fill_keys(array_keys($config->getPreferences()), []);
+        $newCollection = array_merge($newInstances, $definedInstances);
+        $definitionsCollection->initialize($newCollection);
+    }
+
+    /**
      * Returns constructor with defined arguments
      *
      * @param DefinitionsCollection $definitionsCollection
      * @param ConfigInterface $config
      * @return array|mixed
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     private function getConfigForScope(DefinitionsCollection $definitionsCollection, ConfigInterface $config)
     {
@@ -145,21 +164,5 @@ class Reader
             );
         }
         return $constructors;
-    }
-
-    /**
-     * Returns preferences for third party code
-     *
-     * @param ConfigInterface $config
-     * @param DefinitionsCollection $definitionsCollection
-     *
-     * @return void
-     */
-    private function fillThirdPartyInterfaces(ConfigInterface $config, DefinitionsCollection $definitionsCollection)
-    {
-        $definedInstances = $definitionsCollection->getCollection();
-        $newInstances = array_fill_keys(array_keys($config->getPreferences()), []);
-        $newCollection = array_merge($newInstances, $definedInstances);
-        $definitionsCollection->initialize($newCollection);
     }
 }

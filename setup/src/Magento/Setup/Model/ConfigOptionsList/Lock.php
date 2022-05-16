@@ -7,11 +7,11 @@ declare(strict_types=1);
 
 namespace Magento\Setup\Model\ConfigOptionsList;
 
-use Magento\Framework\Lock\Backend\Zookeeper as ZookeeperLock;
-use Magento\Framework\Lock\LockBackendFactory;
 use Magento\Framework\App\DeploymentConfig;
 use Magento\Framework\Config\Data\ConfigData;
 use Magento\Framework\Config\File\ConfigFilePool;
+use Magento\Framework\Lock\Backend\Zookeeper as ZookeeperLock;
+use Magento\Framework\Lock\LockBackendFactory;
 use Magento\Framework\Setup\ConfigOptionsListInterface;
 use Magento\Framework\Setup\Option\SelectConfigOption;
 use Magento\Framework\Setup\Option\TextConfigOption;
@@ -200,6 +200,63 @@ class Lock implements ConfigOptionsListInterface
     }
 
     /**
+     * Returns the name of lock provider
+     *
+     * @param array $options
+     * @param DeploymentConfig $deploymentConfig
+     * @return string
+     */
+    private function getLockProvider(array $options, DeploymentConfig $deploymentConfig): string
+    {
+        if (!isset($options[self::INPUT_KEY_LOCK_PROVIDER])) {
+            return (string)$deploymentConfig->get(
+                self::CONFIG_PATH_LOCK_PROVIDER,
+                $this->getDefaultValue(self::INPUT_KEY_LOCK_PROVIDER)
+            );
+        }
+
+        return (string)$options[self::INPUT_KEY_LOCK_PROVIDER];
+    }
+
+    /**
+     * Returns default value by input key
+     *
+     * If default value is not set returns null
+     *
+     * @param string $inputKey
+     * @return mixed|null
+     */
+    private function getDefaultValue(string $inputKey)
+    {
+        if (isset($this->defaultConfigValues[$inputKey])) {
+            return $this->defaultConfigValues[$inputKey];
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Sets default configuration for locks
+     *
+     * @param ConfigData $configData
+     * @param DeploymentConfig $deploymentConfig
+     * @param string $lockProvider
+     * @return ConfigData
+     */
+    private function setDefaultConfiguration(
+        ConfigData       $configData,
+        DeploymentConfig $deploymentConfig,
+        string           $lockProvider
+    )
+    {
+        foreach ($this->mappingInputKeyToConfigPath[$lockProvider] as $input => $path) {
+            $configData->set($path, $deploymentConfig->get($path, $this->getDefaultValue($input)));
+        }
+
+        return $configData;
+    }
+
+    /**
      * @inheritdoc
      */
     public function validate(array $options, DeploymentConfig $deploymentConfig)
@@ -218,30 +275,6 @@ class Lock implements ConfigOptionsListInterface
                 break;
             default:
                 $errors[] = 'The lock provider ' . $lockProvider . ' does not exist.';
-        }
-
-        return $errors;
-    }
-
-    /**
-     * Validates File locks configuration
-     *
-     * @param array $options
-     * @param DeploymentConfig $deploymentConfig
-     * @return array
-     */
-    private function validateFileConfig(array $options, DeploymentConfig $deploymentConfig): array
-    {
-        $errors = [];
-
-        $path = $options[self::INPUT_KEY_LOCK_FILE_PATH]
-            ?? $deploymentConfig->get(
-                self::CONFIG_PATH_LOCK_FILE_PATH,
-                $this->getDefaultValue(self::INPUT_KEY_LOCK_FILE_PATH)
-            );
-
-        if (!$path) {
-            $errors[] = 'The path needs to be a non-empty string.';
         }
 
         return $errors;
@@ -285,58 +318,26 @@ class Lock implements ConfigOptionsListInterface
     }
 
     /**
-     * Returns the name of lock provider
+     * Validates File locks configuration
      *
      * @param array $options
      * @param DeploymentConfig $deploymentConfig
-     * @return string
+     * @return array
      */
-    private function getLockProvider(array $options, DeploymentConfig $deploymentConfig): string
+    private function validateFileConfig(array $options, DeploymentConfig $deploymentConfig): array
     {
-        if (!isset($options[self::INPUT_KEY_LOCK_PROVIDER])) {
-            return (string) $deploymentConfig->get(
-                self::CONFIG_PATH_LOCK_PROVIDER,
-                $this->getDefaultValue(self::INPUT_KEY_LOCK_PROVIDER)
+        $errors = [];
+
+        $path = $options[self::INPUT_KEY_LOCK_FILE_PATH]
+            ?? $deploymentConfig->get(
+                self::CONFIG_PATH_LOCK_FILE_PATH,
+                $this->getDefaultValue(self::INPUT_KEY_LOCK_FILE_PATH)
             );
+
+        if (!$path) {
+            $errors[] = 'The path needs to be a non-empty string.';
         }
 
-        return (string) $options[self::INPUT_KEY_LOCK_PROVIDER];
-    }
-
-    /**
-     * Sets default configuration for locks
-     *
-     * @param ConfigData $configData
-     * @param DeploymentConfig $deploymentConfig
-     * @param string $lockProvider
-     * @return ConfigData
-     */
-    private function setDefaultConfiguration(
-        ConfigData $configData,
-        DeploymentConfig $deploymentConfig,
-        string $lockProvider
-    ) {
-        foreach ($this->mappingInputKeyToConfigPath[$lockProvider] as $input => $path) {
-            $configData->set($path, $deploymentConfig->get($path, $this->getDefaultValue($input)));
-        }
-
-        return $configData;
-    }
-
-    /**
-     * Returns default value by input key
-     *
-     * If default value is not set returns null
-     *
-     * @param string $inputKey
-     * @return mixed|null
-     */
-    private function getDefaultValue(string $inputKey)
-    {
-        if (isset($this->defaultConfigValues[$inputKey])) {
-            return $this->defaultConfigValues[$inputKey];
-        } else {
-            return null;
-        }
+        return $errors;
     }
 }

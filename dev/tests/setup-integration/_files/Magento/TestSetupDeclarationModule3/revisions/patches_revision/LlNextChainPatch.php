@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestSetupDeclarationModule3\Setup\Patch\Data;
 
 use Magento\Framework\App\ResourceConnection;
@@ -43,6 +44,16 @@ class LlNextChainPatch implements
     /**
      * @return array
      */
+    public static function getDependencies()
+    {
+        return [
+            ZFirstPatch::class
+        ];
+    }
+
+    /**
+     * @return array
+     */
     public function getAliases()
     {
         return [];
@@ -61,15 +72,5 @@ class LlNextChainPatch implements
     {
         $adapter = $this->resourceConnection->getConnection();
         $adapter->delete('reference_table', ['for_patch_testing = ?' => 'very_secret_string']);
-    }
-
-    /**
-     * @return array
-     */
-    public static function getDependencies()
-    {
-        return [
-            ZFirstPatch::class
-        ];
     }
 }

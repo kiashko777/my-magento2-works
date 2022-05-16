@@ -8,15 +8,18 @@ declare(strict_types=1);
 namespace Magento\Elasticsearch6\SearchAdapter;
 
 use Magento\Elasticsearch\Elasticsearch5\SearchAdapter\ConnectionManager;
+use Magento\Elasticsearch6\Model\Client\Elasticsearch;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for \Magento\Elasticsearch\SearchAdapter\ConnectionManager class.
  */
-class ConnectionManagerTest extends \PHPUnit\Framework\TestCase
+class ConnectionManagerTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
@@ -24,13 +27,6 @@ class ConnectionManagerTest extends \PHPUnit\Framework\TestCase
      * @var \Magento\Elasticsearch\SearchAdapter\ConnectionManager
      */
     private $connectionManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-
-        $this->connectionManager = $this->objectManager->create(ConnectionManager::class);
-    }
 
     /**
      * Test if 'elasticsearch5' search engine returned by connection manager.
@@ -57,8 +53,15 @@ class ConnectionManagerTest extends \PHPUnit\Framework\TestCase
     {
         $connection = $this->connectionManager->getConnection();
         $this->assertInstanceOf(
-            \Magento\Elasticsearch6\Model\Client\Elasticsearch::class,
+            Elasticsearch::class,
             $connection
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->connectionManager = $this->objectManager->create(ConnectionManager::class);
     }
 }

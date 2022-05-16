@@ -3,21 +3,23 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Library;
 
-use Magento\Framework\App\Utility\Files;
+use Laminas\Code\Reflection\FileReflection;
 use Magento\Framework\App\Utility\AggregateInvoker;
+use Magento\Framework\App\Utility\Files;
 use Magento\Framework\Component\ComponentRegistrar;
 use Magento\TestFramework\Integrity\Library\Injectable;
 use Magento\TestFramework\Integrity\Library\PhpParser\ParserFactory;
 use Magento\TestFramework\Integrity\Library\PhpParser\Tokens;
-use Laminas\Code\Reflection\FileReflection;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test check if Magento library components contain incorrect dependencies to application layer
  *
  */
-class DependencyTest extends \PHPUnit\Framework\TestCase
+class DependencyTest extends TestCase
 {
     /**
      * Collect errors
@@ -25,6 +27,46 @@ class DependencyTest extends \PHPUnit\Framework\TestCase
      * @var array
      */
     protected $errors = [];
+
+    public function testCheckDependencies()
+    {
+        $invoker = new AggregateInvoker($this);
+        $invoker(
+        /**
+         * @param string $file
+         */
+            function ($file) {
+                $componentRegistrar = new ComponentRegistrar();
+                $fileReflection = new FileReflection($file);
+                $tokens = new Tokens($fileReflection->getContents(), new ParserFactory());
+                $tokens->parseContent();
+
+                $dependencies = array_merge(
+                    (new Injectable())->getDependencies($fileReflection),
+                    $tokens->getDependencies()
+                );
+                $allowedNamespaces = str_replace('\\', '\\\\', implode('|', $this->getAllowedNamespaces()));
+                $pattern = '#Magento\\\\(?!' . $allowedNamespaces . ').*#';
+                foreach ($dependencies as $dependency) {
+                    $dependencyPaths = explode('\\', $dependency);
+                    $dependencyPaths = array_slice($dependencyPaths, 2);
+                    $dependencyPath = implode('\\', $dependencyPaths);
+                    $libraryPaths = $componentRegistrar->getPaths(ComponentRegistrar::LIBRARY);
+                    foreach ($libraryPaths as $libraryPath) {
+                        $filePath = str_replace('\\', '/', $libraryPath . '/' . $dependencyPath . '.php');
+                        if (preg_match($pattern, $dependency) && !file_exists($filePath)) {
+                            $this->errors[$fileReflection->getFileName()][] = $dependency;
+                        }
+                    }
+                }
+
+                if (!empty($this->errors)) {
+                    $this->fail($this->getFailMessage());
+                }
+            },
+            $this->libraryDataProvider()
+        );
+    }
 
     /**
      * Allowed sub namespaces
@@ -54,54 +96,6 @@ class DependencyTest extends \PHPUnit\Framework\TestCase
             'SalesRule\Model\Rule\Proxy',
             'Theme\Model\View\Design'
         ];
-    }
-
-    public function testCheckDependencies()
-    {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
-        $invoker(
-            /**
-             * @param string $file
-             */
-            function ($file) {
-                $componentRegistrar = new ComponentRegistrar();
-                $fileReflection = new FileReflection($file);
-                $tokens = new Tokens($fileReflection->getContents(), new ParserFactory());
-                $tokens->parseContent();
-
-                $dependencies = array_merge(
-                    (new Injectable())->getDependencies($fileReflection),
-                    $tokens->getDependencies()
-                );
-                $allowedNamespaces = str_replace('\\', '\\\\', implode('|', $this->getAllowedNamespaces()));
-                $pattern = '#Magento\\\\(?!' . $allowedNamespaces . ').*#';
-                foreach ($dependencies as $dependency) {
-                    $dependencyPaths = explode('\\', $dependency);
-                    $dependencyPaths = array_slice($dependencyPaths, 2);
-                    $dependencyPath = implode('\\', $dependencyPaths);
-                    $libraryPaths = $componentRegistrar->getPaths(ComponentRegistrar::LIBRARY);
-                    foreach ($libraryPaths as $libraryPath) {
-                        $filePath = str_replace('\\', '/', $libraryPath .  '/' . $dependencyPath . '.php');
-                        if (preg_match($pattern, $dependency) && !file_exists($filePath)) {
-                            $this->errors[$fileReflection->getFileName()][] = $dependency;
-                        }
-                    }
-                }
-
-                if (!empty($this->errors)) {
-                    $this->fail($this->getFailMessage());
-                }
-            },
-            $this->libraryDataProvider()
-        );
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->errors = [];
     }
 
     /**
@@ -144,5 +138,13 @@ class DependencyTest extends \PHPUnit\Framework\TestCase
             }
         }
         return $dataProvider;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->errors = [];
     }
 }

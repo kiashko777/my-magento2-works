@@ -30,6 +30,26 @@ class VarcharAttributeTest extends AbstractEavTest
     }
 
     /**
+     * @return array
+     */
+    private function getAttributeMeta(): array
+    {
+        return [
+            'dataType' => 'text',
+            'formElement' => 'input',
+            'visible' => '1',
+            'required' => '0',
+            'label' => 'Varchar Attribute',
+            'code' => 'varchar_attribute',
+            'source' => 'product-details',
+            'scopeLabel' => '[GLOBAL]',
+            'globalScope' => true,
+            'sortOrder' => '__placeholder__',
+            'componentType' => 'field'
+        ];
+    }
+
+    /**
      * @magentoDataFixture Magento/Catalog/_files/product_varchar_attribute.php
      * @return void
      */
@@ -57,25 +77,5 @@ class VarcharAttributeTest extends AbstractEavTest
         $this->saveProduct($product, $attributeData);
         $expectedData = $this->addDataNesting($attributeData);
         $this->callModifyDataAndAssert($product, $expectedData);
-    }
-
-    /**
-     * @return array
-     */
-    private function getAttributeMeta(): array
-    {
-        return [
-            'dataType' => 'text',
-            'formElement' => 'input',
-            'visible' => '1',
-            'required' => '0',
-            'label' => 'Varchar Attribute',
-            'code' => 'varchar_attribute',
-            'source' => 'product-details',
-            'scopeLabel' => '[GLOBAL]',
-            'globalScope' => true,
-            'sortOrder' => '__placeholder__',
-            'componentType' => 'field'
-        ];
     }
 }

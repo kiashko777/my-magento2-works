@@ -3,34 +3,35 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Search\Model;
 
-class SynonymGroupRepositoryTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Search\Api\Data\SynonymGroupInterface;
+use Magento\Search\Model\Synonym\MergeConflictException;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class SynonymGroupRepositoryTest extends TestCase
 {
     /**
-     * @var \Magento\Search\Model\SynonymGroupRepository
+     * @var SynonymGroupRepository
      */
     private $model;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->model = $this->objectManager->get(\Magento\Search\Model\SynonymGroupRepository::class);
-    }
-
     public function testSaveCreate()
     {
-        /** @var \Magento\Search\Api\Data\SynonymGroupInterface $synonymGroup */
-        $synonymGroup = $this->objectManager->create(\Magento\Search\Api\Data\SynonymGroupInterface::class);
+        /** @var SynonymGroupInterface $synonymGroup */
+        $synonymGroup = $this->objectManager->create(SynonymGroupInterface::class);
         $synonymGroup->setSynonymGroup('a,b,c');
         $this->model->save($synonymGroup);
-        /** @var \Magento\Search\Model\SynonymGroup $synonymGroupModel */
-        $synonymGroupModel = $this->objectManager->create(\Magento\Search\Model\SynonymGroup::class);
+        /** @var SynonymGroup $synonymGroupModel */
+        $synonymGroupModel = $this->objectManager->create(SynonymGroup::class);
         $synonymGroupModel->load($synonymGroup->getGroupId());
         $this->assertEquals('a,b,c', $synonymGroupModel->getSynonymGroup());
         $this->assertEquals(0, $synonymGroupModel->getStoreId());
@@ -42,25 +43,25 @@ class SynonymGroupRepositoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testSaveCreateMergeConflict()
     {
-        $this->expectException(\Magento\Search\Model\Synonym\MergeConflictException::class);
+        $this->expectException(MergeConflictException::class);
         $this->expectExceptionMessage('(a,b,c), (d,e,f)');
 
-        /** @var \Magento\Search\Api\Data\SynonymGroupInterface $synonymGroup */
-        $synonymGroup = $this->objectManager->create(\Magento\Search\Api\Data\SynonymGroupInterface::class);
+        /** @var SynonymGroupInterface $synonymGroup */
+        $synonymGroup = $this->objectManager->create(SynonymGroupInterface::class);
         $synonymGroup->setSynonymGroup('a,b,c');
         $this->model->save($synonymGroup);
         $id1 = $synonymGroup->getGroupId();
-        $synonymGroup = $this->objectManager->create(\Magento\Search\Api\Data\SynonymGroupInterface::class);
+        $synonymGroup = $this->objectManager->create(SynonymGroupInterface::class);
         $synonymGroup->setSynonymGroup('d,e,f');
         $this->model->save($synonymGroup);
         $id2 = $synonymGroup->getGroupId();
-        $synonymGroup = $this->objectManager->create(\Magento\Search\Api\Data\SynonymGroupInterface::class);
+        $synonymGroup = $this->objectManager->create(SynonymGroupInterface::class);
         $synonymGroup->setSynonymGroup('a,d,z');
         try {
             $this->model->save($synonymGroup, true);
-        } catch (\Magento\Search\Model\Synonym\MergeConflictException $e) {
-            /** @var \Magento\Search\Model\SynonymGroup $synonymGroupModel */
-            $synonymGroupModel = $this->objectManager->create(\Magento\Search\Model\SynonymGroup::class);
+        } catch (MergeConflictException $e) {
+            /** @var SynonymGroup $synonymGroupModel */
+            $synonymGroupModel = $this->objectManager->create(SynonymGroup::class);
             $synonymGroupModel->load($id1);
             $synonymGroupModel->delete();
             $synonymGroupModel->load($id2);
@@ -71,26 +72,26 @@ class SynonymGroupRepositoryTest extends \PHPUnit\Framework\TestCase
 
     public function testSaveUpdate()
     {
-        /** @var \Magento\Search\Api\Data\SynonymGroupInterface $synonymGroup */
-        $synonymGroup = $this->objectManager->create(\Magento\Search\Api\Data\SynonymGroupInterface::class);
+        /** @var SynonymGroupInterface $synonymGroup */
+        $synonymGroup = $this->objectManager->create(SynonymGroupInterface::class);
         $synonymGroup->setSynonymGroup('a,b,c');
         $this->model->save($synonymGroup);
         $id = $synonymGroup->getGroupId();
 
-        /** @var \Magento\Search\Api\Data\SynonymGroupInterface $updateSynonymGroup */
-        $updateSynonymGroup = $this->objectManager->create(\Magento\Search\Api\Data\SynonymGroupInterface::class);
+        /** @var SynonymGroupInterface $updateSynonymGroup */
+        $updateSynonymGroup = $this->objectManager->create(SynonymGroupInterface::class);
         $updateSynonymGroup->setGroupId($id);
         $updateSynonymGroup->setSynonymGroup('d,e,f');
         $this->model->save($updateSynonymGroup);
 
-        /** @var \Magento\Search\Model\SynonymGroup $synonymGroupModel */
-        $synonymGroupModel = $this->objectManager->create(\Magento\Search\Model\SynonymGroup::class);
+        /** @var SynonymGroup $synonymGroupModel */
+        $synonymGroupModel = $this->objectManager->create(SynonymGroup::class);
         $synonymGroupModel->load($id);
         $this->assertEquals('d,e,f', $synonymGroupModel->getSynonymGroup());
         $this->assertEquals(0, $synonymGroupModel->getStoreId());
         $this->assertEquals(0, $synonymGroupModel->getWebsiteId());
-        /** @var \Magento\Search\Model\SynonymGroup $synonymGroupModel */
-        $synonymGroupModel = $this->objectManager->create(\Magento\Search\Model\SynonymGroup::class);
+        /** @var SynonymGroup $synonymGroupModel */
+        $synonymGroupModel = $this->objectManager->create(SynonymGroup::class);
         $synonymGroupModel->load($id);
         $synonymGroupModel->delete();
     }
@@ -99,28 +100,28 @@ class SynonymGroupRepositoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testSaveUpdateMergeConflict()
     {
-        $this->expectException(\Magento\Search\Model\Synonym\MergeConflictException::class);
+        $this->expectException(MergeConflictException::class);
         $this->expectExceptionMessage('(d,e,f)');
 
-        /** @var \Magento\Search\Api\Data\SynonymGroupInterface $synonymGroup */
-        $synonymGroup = $this->objectManager->create(\Magento\Search\Api\Data\SynonymGroupInterface::class);
+        /** @var SynonymGroupInterface $synonymGroup */
+        $synonymGroup = $this->objectManager->create(SynonymGroupInterface::class);
         $synonymGroup->setSynonymGroup('a,b,c');
         $this->model->save($synonymGroup);
         $id1 = $synonymGroup->getGroupId();
-        $synonymGroup = $this->objectManager->create(\Magento\Search\Api\Data\SynonymGroupInterface::class);
+        $synonymGroup = $this->objectManager->create(SynonymGroupInterface::class);
         $synonymGroup->setSynonymGroup('d,e,f');
         $this->model->save($synonymGroup);
         $id2 = $synonymGroup->getGroupId();
 
-        /** @var \Magento\Search\Api\Data\SynonymGroupInterface $updateSynonymGroup */
-        $updateSynonymGroup = $this->objectManager->create(\Magento\Search\Api\Data\SynonymGroupInterface::class);
+        /** @var SynonymGroupInterface $updateSynonymGroup */
+        $updateSynonymGroup = $this->objectManager->create(SynonymGroupInterface::class);
         $updateSynonymGroup->setGroupId($id1);
         $updateSynonymGroup->setSynonymGroup('a,b,d');
         try {
             $this->model->save($updateSynonymGroup, true);
-        } catch (\Magento\Search\Model\Synonym\MergeConflictException $e) {
-            /** @var \Magento\Search\Model\SynonymGroup $synonymGroupModel */
-            $synonymGroupModel = $this->objectManager->create(\Magento\Search\Model\SynonymGroup::class);
+        } catch (MergeConflictException $e) {
+            /** @var SynonymGroup $synonymGroupModel */
+            $synonymGroupModel = $this->objectManager->create(SynonymGroup::class);
             $synonymGroupModel->load($id1);
             $synonymGroupModel->delete();
             $synonymGroupModel->load($id2);
@@ -131,33 +132,33 @@ class SynonymGroupRepositoryTest extends \PHPUnit\Framework\TestCase
 
     public function testSaveCreateMerge()
     {
-        /** @var \Magento\Search\Api\Data\SynonymGroupInterface $synonymGroup1 */
-        $synonymGroup1 = $this->objectManager->create(\Magento\Search\Api\Data\SynonymGroupInterface::class);
+        /** @var SynonymGroupInterface $synonymGroup1 */
+        $synonymGroup1 = $this->objectManager->create(SynonymGroupInterface::class);
         $synonymGroup1->setSynonymGroup('a,b,c');
         $this->model->save($synonymGroup1);
         $id1 = $synonymGroup1->getGroupId();
 
-        /** @var \Magento\Search\Api\Data\SynonymGroupInterface $synonymGroup2 */
-        $synonymGroup2 = $this->objectManager->create(\Magento\Search\Api\Data\SynonymGroupInterface::class);
+        /** @var SynonymGroupInterface $synonymGroup2 */
+        $synonymGroup2 = $this->objectManager->create(SynonymGroupInterface::class);
         $synonymGroup2->setSynonymGroup('d,e,f');
         $this->model->save($synonymGroup2);
         $id2 = $synonymGroup2->getGroupId();
 
-        /** @var \Magento\Search\Api\Data\SynonymGroupInterface $synonymGroup3 */
-        $synonymGroup3 = $this->objectManager->create(\Magento\Search\Api\Data\SynonymGroupInterface::class);
+        /** @var SynonymGroupInterface $synonymGroup3 */
+        $synonymGroup3 = $this->objectManager->create(SynonymGroupInterface::class);
         $synonymGroup3->setSynonymGroup('g,h,i');
         $this->model->save($synonymGroup3);
         $id3 = $synonymGroup3->getGroupId();
 
-        /** @var \Magento\Search\Api\Data\SynonymGroupInterface $synonymGroup4 */
-        $synonymGroup4 = $this->objectManager->create(\Magento\Search\Api\Data\SynonymGroupInterface::class);
+        /** @var SynonymGroupInterface $synonymGroup4 */
+        $synonymGroup4 = $this->objectManager->create(SynonymGroupInterface::class);
         $synonymGroup4->setSynonymGroup('a,d,z');
         // merging a,b,c and d,e,f with a,d,z
         $this->model->save($synonymGroup4);
         $id4 = $synonymGroup4->getGroupId();
 
-        /** @var \Magento\Search\Model\SynonymGroup $synonymGroupModel */
-        $synonymGroupModel = $this->objectManager->create(\Magento\Search\Model\SynonymGroup::class);
+        /** @var SynonymGroup $synonymGroupModel */
+        $synonymGroupModel = $this->objectManager->create(SynonymGroup::class);
         $synonymGroupModel->load($id4);
         $this->assertEquals('a,b,c,d,e,f,z', $synonymGroupModel->getSynonyms());
         $this->assertEquals(0, $synonymGroupModel->getStoreId());
@@ -170,50 +171,50 @@ class SynonymGroupRepositoryTest extends \PHPUnit\Framework\TestCase
         $synonymGroupModel->delete();
 
         // merged rows should be deleted
-        $synonymGroupModel = $this->objectManager->create(\Magento\Search\Model\SynonymGroup::class);
+        $synonymGroupModel = $this->objectManager->create(SynonymGroup::class);
         $synonymGroupModel->load($id1);
         $this->assertNull($synonymGroupModel->getSynonyms());
 
-        $synonymGroupModel = $this->objectManager->create(\Magento\Search\Model\SynonymGroup::class);
+        $synonymGroupModel = $this->objectManager->create(SynonymGroup::class);
         $synonymGroupModel->load($id2);
         $this->assertNull($synonymGroupModel->getSynonyms());
     }
 
     public function testSaveUpdateMerge()
     {
-        /** @var \Magento\Search\Api\Data\SynonymGroupInterface $synonymGroup1 */
-        $synonymGroup1 = $this->objectManager->create(\Magento\Search\Api\Data\SynonymGroupInterface::class);
+        /** @var SynonymGroupInterface $synonymGroup1 */
+        $synonymGroup1 = $this->objectManager->create(SynonymGroupInterface::class);
         $synonymGroup1->setSynonymGroup('a,b,c');
         $this->model->save($synonymGroup1);
         $id1 = $synonymGroup1->getGroupId();
 
-        /** @var \Magento\Search\Api\Data\SynonymGroupInterface $synonymGroup2 */
-        $synonymGroup2 = $this->objectManager->create(\Magento\Search\Api\Data\SynonymGroupInterface::class);
+        /** @var SynonymGroupInterface $synonymGroup2 */
+        $synonymGroup2 = $this->objectManager->create(SynonymGroupInterface::class);
         $synonymGroup2->setSynonymGroup('d,e,f');
         $this->model->save($synonymGroup2);
         $id2 = $synonymGroup2->getGroupId();
 
-        /** @var \Magento\Search\Api\Data\SynonymGroupInterface $synonymGroup3 */
-        $synonymGroup3 = $this->objectManager->create(\Magento\Search\Api\Data\SynonymGroupInterface::class);
+        /** @var SynonymGroupInterface $synonymGroup3 */
+        $synonymGroup3 = $this->objectManager->create(SynonymGroupInterface::class);
         $synonymGroup3->setSynonymGroup('g,h,i');
         $this->model->save($synonymGroup3);
         $id3 = $synonymGroup3->getGroupId();
 
-        /** @var \Magento\Search\Api\Data\SynonymGroupInterface $synonymGroup4 */
-        $synonymGroup4 = $this->objectManager->create(\Magento\Search\Api\Data\SynonymGroupInterface::class);
+        /** @var SynonymGroupInterface $synonymGroup4 */
+        $synonymGroup4 = $this->objectManager->create(SynonymGroupInterface::class);
         $synonymGroup4->setSynonymGroup('j,k,l');
         $this->model->save($synonymGroup4);
         $id4 = $synonymGroup4->getGroupId();
 
-        /** @var \Magento\Search\Api\Data\SynonymGroupInterface $synonymGroup5 */
-        $synonymGroup5 = $this->objectManager->create(\Magento\Search\Api\Data\SynonymGroupInterface::class);
+        /** @var SynonymGroupInterface $synonymGroup5 */
+        $synonymGroup5 = $this->objectManager->create(SynonymGroupInterface::class);
         $synonymGroup5->setSynonymGroup('a,d,g,z');
         $synonymGroup5->setGroupId($id1);
         // updates a,b,c to a,d,g,z
         $this->model->save($synonymGroup5);
 
-        /** @var \Magento\Search\Model\SynonymGroup $synonymGroupModel */
-        $synonymGroupModel = $this->objectManager->create(\Magento\Search\Model\SynonymGroup::class);
+        /** @var SynonymGroup $synonymGroupModel */
+        $synonymGroupModel = $this->objectManager->create(SynonymGroup::class);
         $synonymGroupModel->load($id1);
         $this->assertEquals('d,e,f,g,h,i,a,z', $synonymGroupModel->getSynonymGroup());
         $this->assertEquals(0, $synonymGroupModel->getStoreId());
@@ -226,36 +227,42 @@ class SynonymGroupRepositoryTest extends \PHPUnit\Framework\TestCase
         $synonymGroupModel->delete();
 
         // no new group is inserted
-        $synonymGroupModel = $this->objectManager->create(\Magento\Search\Model\SynonymGroup::class);
+        $synonymGroupModel = $this->objectManager->create(SynonymGroup::class);
         $synonymGroupModel->load($id4 + 1);
         $this->assertNull($synonymGroupModel->getSynonymGroup());
 
         // merged rows are deleted
-        $synonymGroupModel = $this->objectManager->create(\Magento\Search\Model\SynonymGroup::class);
+        $synonymGroupModel = $this->objectManager->create(SynonymGroup::class);
         $synonymGroupModel->load($id2);
         $this->assertNull($synonymGroupModel->getSynonyms());
 
-        $synonymGroupModel = $this->objectManager->create(\Magento\Search\Model\SynonymGroup::class);
+        $synonymGroupModel = $this->objectManager->create(SynonymGroup::class);
         $synonymGroupModel->load($id3);
         $this->assertNull($synonymGroupModel->getSynonyms());
     }
 
     public function testDelete()
     {
-        /** @var \Magento\Search\Api\Data\SynonymGroupInterface $synonymGroup */
-        $synonymGroup = $this->objectManager->create(\Magento\Search\Api\Data\SynonymGroupInterface::class);
+        /** @var SynonymGroupInterface $synonymGroup */
+        $synonymGroup = $this->objectManager->create(SynonymGroupInterface::class);
         $synonymGroup->setSynonymGroup('test1,test2,test3');
         $this->model->save($synonymGroup);
         $id = $synonymGroup->getGroupId();
 
-        /** @var \Magento\Search\Model\SynonymGroup $synonymGroupModel */
-        $synonymGroupModel = $this->objectManager->create(\Magento\Search\Model\SynonymGroup::class);
+        /** @var SynonymGroup $synonymGroupModel */
+        $synonymGroupModel = $this->objectManager->create(SynonymGroup::class);
         $synonymGroupModel->load($id);
 
         $this->model->delete($synonymGroupModel);
 
-        $synonymGroupModel = $this->objectManager->create(\Magento\Search\Model\SynonymGroup::class);
+        $synonymGroupModel = $this->objectManager->create(SynonymGroup::class);
         $synonymGroupModel->load($id);
         $this->assertNull($synonymGroupModel->getSynonymGroup());
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->model = $this->objectManager->get(SynonymGroupRepository::class);
     }
 }

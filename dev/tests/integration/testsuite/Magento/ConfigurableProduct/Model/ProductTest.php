@@ -7,10 +7,11 @@ declare(strict_types=1);
 
 namespace Magento\ConfigurableProduct\Model;
 
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class ProductTest extends \PHPUnit\Framework\TestCase
+class ProductTest extends TestCase
 {
     /**
      * Check that no children identities are added to the parent product in frontend area

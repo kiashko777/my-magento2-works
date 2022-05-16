@@ -6,6 +6,9 @@
 
 namespace Magento\Sales\Service\V1;
 
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Sales\Model\Order;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 class OrderUnHoldTest extends WebapiAbstract
@@ -19,16 +22,16 @@ class OrderUnHoldTest extends WebapiAbstract
      */
     public function testOrderUnHold()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var \Magento\Sales\Model\Order $order */
-        $order = $objectManager->get(\Magento\Sales\Model\Order::class)->loadByIncrementId('100000001');
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var Order $order */
+        $order = $objectManager->get(Order::class)->loadByIncrementId('100000001');
         if ($order->canHold()) {
             $order->hold()->save();
         }
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/orders/' . $order->getId() . '/unhold',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,

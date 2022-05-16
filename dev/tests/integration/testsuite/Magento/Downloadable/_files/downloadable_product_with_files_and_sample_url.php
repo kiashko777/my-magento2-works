@@ -4,18 +4,30 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Downloadable\Api\Data\File\ContentInterface;
+use Magento\Downloadable\Api\Data\File\ContentInterfaceFactory;
+use Magento\Downloadable\Api\Data\LinkInterfaceFactory;
+use Magento\Downloadable\Api\Data\SampleInterface;
+use Magento\Downloadable\Api\Data\SampleInterfaceFactory;
 use Magento\Downloadable\Api\DomainManagerInterface;
+use Magento\Downloadable\Helper\Download;
+use Magento\Downloadable\Model\Link;
+use Magento\TestFramework\Helper\Bootstrap;
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 
 /** @var DomainManagerInterface $domainManager */
 $domainManager = $objectManager->get(DomainManagerInterface::class);
 $domainManager->addDomains(['example.com', 'sampleurl.com']);
 
 /**
- * @var \Magento\Catalog\Model\Product $product
+ * @var Product $product
  */
-$product = $objectManager->create(\Magento\Catalog\Model\Product::class);
+$product = $objectManager->create(Product::class);
 $product
     ->setTypeId(\Magento\Downloadable\Model\Product\Type::TYPE_DOWNLOADABLE)
     ->setId(1)
@@ -24,8 +36,8 @@ $product
     ->setName('Downloadable Products')
     ->setSku('downloadable-product')
     ->setPrice(10)
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setLinksPurchasedSeparately(true)
     ->setStockData(
         [
@@ -38,14 +50,14 @@ $product
     );
 
 /**
- * @var \Magento\Downloadable\Api\Data\LinkInterfaceFactory $linkFactory
+ * @var LinkInterfaceFactory $linkFactory
  */
-$linkFactory = $objectManager->get(\Magento\Downloadable\Api\Data\LinkInterfaceFactory::class);
+$linkFactory = $objectManager->get(LinkInterfaceFactory::class);
 $links = [];
 $linkData = [
     'title' => 'Downloadable Products link',
-    'type' => \Magento\Downloadable\Helper\Download::LINK_TYPE_URL,
-    'is_shareable' => \Magento\Downloadable\Model\Link::LINK_SHAREABLE_CONFIG,
+    'type' => Download::LINK_TYPE_URL,
+    'is_shareable' => Link::LINK_SHAREABLE_CONFIG,
     'link_url' => 'http://example.com/downloadable.txt',
     'link_id' => 0,
     'is_delete' => null,
@@ -64,22 +76,22 @@ $links[] = $link;
 $linkData = [
     'title' => 'Downloadable Products link',
     'sample' => [
-        'type' => \Magento\Downloadable\Helper\Download::LINK_TYPE_URL,
+        'type' => Download::LINK_TYPE_URL,
         'url' => 'http://sampleUrl.com',
     ],
-    'type' => \Magento\Downloadable\Helper\Download::LINK_TYPE_FILE,
-    'is_shareable' => \Magento\Downloadable\Model\Link::LINK_SHAREABLE_CONFIG,
+    'type' => Download::LINK_TYPE_FILE,
+    'is_shareable' => Link::LINK_SHAREABLE_CONFIG,
     'link_url' => 'http://example.com/downloadable.txt',
     'is_delete' => null,
     'number_of_downloads' => 0,
     'price' => 0,
 ];
 /**
- * @var \Magento\Downloadable\Api\Data\File\ContentInterface $sampleContent
+ * @var ContentInterface $sampleContent
  */
-$sampleContent = $objectManager->create(\Magento\Downloadable\Api\Data\File\ContentInterfaceFactory::class)->create();
+$sampleContent = $objectManager->create(ContentInterfaceFactory::class)->create();
 $sampleContent->setFileData(
-    // @codingStandardsIgnoreLine
+// @codingStandardsIgnoreLine
     base64_encode(file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . DIRECTORY_SEPARATOR . 'test_image.jpg'))
 );
 $sampleContent->setName('jellyfish_1_3.jpg');
@@ -94,11 +106,11 @@ $sampleLink->setWebsiteId($product->getStore()->getWebsiteId());
 $sampleLink->setProductWebsiteIds($product->getWebsiteIds());
 $sampleLink->setSortOrder(2);
 /**
- * @var \Magento\Downloadable\Api\Data\File\ContentInterface $content
+ * @var ContentInterface $content
  */
-$content = $objectManager->create(\Magento\Downloadable\Api\Data\File\ContentInterfaceFactory::class)->create();
+$content = $objectManager->create(ContentInterfaceFactory::class)->create();
 $content->setFileData(
-    // @codingStandardsIgnoreLine
+// @codingStandardsIgnoreLine
     base64_encode(file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . DIRECTORY_SEPARATOR . 'test_image.jpg'))
 );
 $content->setName('jellyfish_2_4.jpg');
@@ -111,7 +123,7 @@ $downloadableData = [
             'is_delete' => 0,
             'sample_id' => 0,
             'title' => 'Downloadable Products Sample Title',
-            'type' => \Magento\Downloadable\Helper\Download::LINK_TYPE_FILE,
+            'type' => Download::LINK_TYPE_FILE,
             'file' => json_encode(
                 [
                     [
@@ -131,14 +143,14 @@ $downloadableData = [
 $extension = $product->getExtensionAttributes();
 
 $samples = [];
-$sampleFactory = $objectManager->create(\Magento\Downloadable\Api\Data\SampleInterfaceFactory::class);
+$sampleFactory = $objectManager->create(SampleInterfaceFactory::class);
 foreach ($downloadableData['sample'] as $sampleData) {
     if (!$sampleData || (isset($sampleData['is_delete']) && (bool)$sampleData['is_delete'])) {
         continue;
     } else {
         unset($sampleData['sample_id']);
         /**
-         * @var \Magento\Downloadable\Api\Data\SampleInterface $sample
+         * @var SampleInterface $sample
          */
         $sample = $sampleFactory->create(['data' => $sampleData]);
         $sample->setId(null);
@@ -146,13 +158,13 @@ foreach ($downloadableData['sample'] as $sampleData) {
         $sample->setSampleType($sampleData['type']);
         $sample->setSampleUrl($sampleData['sample_url']);
         /**
-         * @var \Magento\Downloadable\Api\Data\File\ContentInterface $content
+         * @var ContentInterface $content
          */
         $content = $objectManager->create(
-            \Magento\Downloadable\Api\Data\File\ContentInterfaceFactory::class
+            ContentInterfaceFactory::class
         )->create();
         $content->setFileData(
-            // @codingStandardsIgnoreLine
+        // @codingStandardsIgnoreLine
             base64_encode(file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . DIRECTORY_SEPARATOR . 'test_image.jpg'))
         );
         $content->setName('jellyfish_1_4.jpg');
@@ -167,6 +179,6 @@ $extension->setDownloadableProductSamples($samples);
 $extension->setDownloadableProductLinks($links);
 $product->setExtensionAttributes($extension);
 
-/** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-$productRepository = $objectManager->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+/** @var ProductRepositoryInterface $productRepository */
+$productRepository = $objectManager->get(ProductRepositoryInterface::class);
 $productRepository->save($product);

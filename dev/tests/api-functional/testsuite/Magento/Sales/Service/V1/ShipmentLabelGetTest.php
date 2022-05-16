@@ -3,8 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Service\V1;
 
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Sales\Model\Order\Shipment;
+use Magento\Sales\Model\ResourceModel\Order\Shipment\Collection;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
@@ -17,23 +23,18 @@ class ShipmentLabelGetTest extends WebapiAbstract
     const SERVICE_VERSION = 'V1';
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoApiDataFixture Magento/Sales/_files/shipment.php
      */
     public function testShipmentGet()
     {
-        /** @var \Magento\Sales\Model\Order\Shipment $shipment */
+        /** @var Shipment $shipment */
         $shipmentCollection = $this->objectManager->get(
-            \Magento\Sales\Model\ResourceModel\Order\Shipment\Collection::class
+            Collection::class
         );
         $shipment = $shipmentCollection->getFirstItem();
         $shipment->setShippingLabel('test_shipping_label');
@@ -41,7 +42,7 @@ class ShipmentLabelGetTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/' . $shipment->getId() . '/label',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_READ_NAME,
@@ -51,5 +52,10 @@ class ShipmentLabelGetTest extends WebapiAbstract
         ];
         $result = $this->_webApiCall($serviceInfo, ['id' => $shipment->getId()]);
         $this->assertEquals($result, base64_encode('test_shipping_label'));
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

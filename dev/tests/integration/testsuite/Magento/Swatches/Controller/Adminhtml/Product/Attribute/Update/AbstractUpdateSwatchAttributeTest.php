@@ -63,6 +63,25 @@ abstract class AbstractUpdateSwatchAttributeTest extends AbstractUpdateAttribute
     }
 
     /**
+     * Get attribute option swatch values by option id.
+     *
+     * @param int $optionId
+     * @return array
+     */
+    private function getAttributeOptionSwatchValues(int $optionId): array
+    {
+        $swatchValues = [];
+        $collection = $this->swatchCollectionFactory->create();
+        $collection->addFieldToFilter('option_id', $optionId);
+
+        foreach ($collection as $item) {
+            $swatchValues[$item->getData('store_id')] = $item->getData('value');
+        }
+
+        return $swatchValues;
+    }
+
+    /**
      * @inheritdoc
      */
     protected function prepareStoreOptionsPostData(array $optionsData): array
@@ -91,6 +110,13 @@ abstract class AbstractUpdateSwatchAttributeTest extends AbstractUpdateAttribute
     }
 
     /**
+     * Get swatch type.
+     *
+     * @return string
+     */
+    abstract protected function getSwatchType(): string;
+
+    /**
      * @inheritdoc
      */
     protected function prepareStoreOptionsExpectedData(array $optionsData): array
@@ -112,35 +138,10 @@ abstract class AbstractUpdateSwatchAttributeTest extends AbstractUpdateAttribute
      */
     protected function assertUpdateAttributeData(
         ProductAttributeInterface $attribute,
-        array $expectedData
-    ): void {
+        array                     $expectedData
+    ): void
+    {
         $this->swatchAttributeType->isSwatchAttribute($attribute);
         parent::assertUpdateAttributeData($attribute, $expectedData);
     }
-
-    /**
-     * Get attribute option swatch values by option id.
-     *
-     * @param int $optionId
-     * @return array
-     */
-    private function getAttributeOptionSwatchValues(int $optionId): array
-    {
-        $swatchValues = [];
-        $collection = $this->swatchCollectionFactory->create();
-        $collection->addFieldToFilter('option_id', $optionId);
-
-        foreach ($collection as $item) {
-            $swatchValues[$item->getData('store_id')] = $item->getData('value');
-        }
-
-        return $swatchValues;
-    }
-
-    /**
-     * Get swatch type.
-     *
-     * @return string
-     */
-    abstract protected function getSwatchType(): string;
 }

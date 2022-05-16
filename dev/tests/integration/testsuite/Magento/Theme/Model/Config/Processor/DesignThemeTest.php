@@ -3,11 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Theme\Model\Config\Processor;
 
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class DesignThemeTest extends \PHPUnit\Framework\TestCase
+class DesignThemeTest extends TestCase
 {
     /**
      * Verifies that empty 'design/theme/theme_id' config value is processed without errors.

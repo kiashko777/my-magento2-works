@@ -8,21 +8,20 @@ namespace Magento\AsynchronousOperations\Model;
 
 use Magento\AsynchronousOperations\Api\Data\OperationInterface;
 use Magento\AsynchronousOperations\Api\Data\OperationInterfaceFactory;
-use Magento\AsynchronousOperations\Model\BulkStatus;
-use Magento\AsynchronousOperations\Model\OperationManagement;
-use Magento\Framework\EntityManager\EntityManager;
 use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\EntityManager\EntityManager;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class OperationManagementTest extends \PHPUnit\Framework\TestCase
+class OperationManagementTest extends TestCase
 {
     /**
-     * @var \Magento\AsynchronousOperations\Model\OperationManagement
+     * @var OperationManagement
      */
     private $model;
 
     /**
-     * @var \Magento\AsynchronousOperations\Model\BulkStatus
+     * @var BulkStatus
      */
     private $bulkStatusManagement;
 
@@ -41,21 +40,12 @@ class OperationManagementTest extends \PHPUnit\Framework\TestCase
      */
     private $connection;
 
-    protected function setUp(): void
-    {
-        $this->connection = Bootstrap::getObjectManager()->get(ResourceConnection::class);
-        $this->model = Bootstrap::getObjectManager()->get(OperationManagement::class);
-        $this->bulkStatusManagement = Bootstrap::getObjectManager()->get(BulkStatus::class);
-        $this->operationFactory = Bootstrap::getObjectManager()->get(OperationInterfaceFactory::class);
-        $this->entityManager = Bootstrap::getObjectManager()->get(EntityManager::class);
-    }
-
     /**
      * @magentoDataFixture Magento/AsynchronousOperations/_files/bulk.php
      */
     public function testGetBulkStatus()
     {
-        $operations =  $this->bulkStatusManagement->getFailedOperationsByBulkId('bulk-uuid-5', 3);
+        $operations = $this->bulkStatusManagement->getFailedOperationsByBulkId('bulk-uuid-5', 3);
         if (empty($operations)) {
             $this->fail('Operation doesn\'t exist');
         }
@@ -80,5 +70,14 @@ class OperationManagementTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(OperationInterface::STATUS_TYPE_OPEN, $updatedOperation['status']);
         $this->assertNull($updatedOperation['result_message']);
         $this->assertNull($updatedOperation['serialized_data']);
+    }
+
+    protected function setUp(): void
+    {
+        $this->connection = Bootstrap::getObjectManager()->get(ResourceConnection::class);
+        $this->model = Bootstrap::getObjectManager()->get(OperationManagement::class);
+        $this->bulkStatusManagement = Bootstrap::getObjectManager()->get(BulkStatus::class);
+        $this->operationFactory = Bootstrap::getObjectManager()->get(OperationInterfaceFactory::class);
+        $this->entityManager = Bootstrap::getObjectManager()->get(EntityManager::class);
     }
 }

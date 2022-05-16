@@ -26,6 +26,19 @@ class ColumnsTest extends TestCase
     private $columns;
 
     /**
+     * @magentoDbIsolation enabled
+     * @magentoDataFixture Magento/Weee/_files/fixed_product_attribute.php
+     */
+    public function testGetProductWeeeAttributesConfig()
+    {
+        $this->columns->prepare();
+        $column = $this->columns->getComponent('fixed_product_attribute');
+        $columnConfig = $column->getData('config');
+        $this->assertArrayHasKey('sortable', $columnConfig);
+        $this->assertFalse($columnConfig['sortable']);
+    }
+
+    /**
      * @inheritDoc
      */
     protected function setUp(): void
@@ -46,18 +59,5 @@ class ColumnsTest extends TestCase
             Columns::class,
             ['attributeRepository' => $attributeRepository, 'context' => $context]
         );
-    }
-
-    /**
-     * @magentoDbIsolation enabled
-     * @magentoDataFixture Magento/Weee/_files/fixed_product_attribute.php
-     */
-    public function testGetProductWeeeAttributesConfig()
-    {
-        $this->columns->prepare();
-        $column = $this->columns->getComponent('fixed_product_attribute');
-        $columnConfig = $column->getData('config');
-        $this->assertArrayHasKey('sortable', $columnConfig);
-        $this->assertFalse($columnConfig['sortable']);
     }
 }

@@ -3,13 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-use Magento\TestFramework\Helper\Bootstrap;
+
+use Magento\Authorization\Model\UserContextInterface;
+use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Bulk\OperationInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 
 /**
  * @var $resource Magento\Framework\App\ResourceConnection
  */
-$resource = Bootstrap::getObjectManager()->get(\Magento\Framework\App\ResourceConnection::class);
+$resource = Bootstrap::getObjectManager()->get(ResourceConnection::class);
 $connection = $resource->getConnection();
 $bulkTable = $resource->getTableName('magento_bulk');
 $operationTable = $resource->getTableName('magento_operation');
@@ -18,35 +21,35 @@ $bulks = [
     'not_started' => [
         'uuid' => 'bulk-uuid-1',
         'user_id' => 1,
-        'user_type' => \Magento\Authorization\Model\UserContextInterface::USER_TYPE_ADMIN,
+        'user_type' => UserContextInterface::USER_TYPE_ADMIN,
         'description' => 'Bulk Description',
         'operation_count' => 1,
     ],
     'in_progress_success' => [
         'uuid' => 'bulk-uuid-2',
         'user_id' => 1,
-        'user_type' => \Magento\Authorization\Model\UserContextInterface::USER_TYPE_ADMIN,
+        'user_type' => UserContextInterface::USER_TYPE_ADMIN,
         'description' => 'Bulk Description',
         'operation_count' => 3,
     ],
     'in_progress_failed' => [
         'uuid' => 'bulk-uuid-3',
         'user_id' => 1,
-        'user_type' => \Magento\Authorization\Model\UserContextInterface::USER_TYPE_ADMIN,
+        'user_type' => UserContextInterface::USER_TYPE_ADMIN,
         'description' => 'Bulk Description',
         'operation_count' => 2,
     ],
     'finish_success' => [
         'uuid' => 'bulk-uuid-4',
         'user_id' => 1,
-        'user_type' => \Magento\Authorization\Model\UserContextInterface::USER_TYPE_ADMIN,
+        'user_type' => UserContextInterface::USER_TYPE_ADMIN,
         'description' => 'Bulk Description',
         'operation_count' => 1,
     ],
     'finish_failed' => [
         'uuid' => 'bulk-uuid-5',
         'user_id' => 1,
-        'user_type' => \Magento\Authorization\Model\UserContextInterface::USER_TYPE_ADMIN,
+        'user_type' => UserContextInterface::USER_TYPE_ADMIN,
         'description' => 'Bulk Description',
         'operation_count' => 2,
     ],

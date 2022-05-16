@@ -7,9 +7,11 @@
 
 namespace Magento\Catalog\Api;
 
-use Magento\TestFramework\TestCase\WebapiAbstract;
+use Magento\Catalog\Model\Category;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Helper\CompareArraysRecursively;
+use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
  * Tests CategoryManagement
@@ -26,15 +28,6 @@ class CategoryManagementTest extends WebapiAbstract
     private $compareArraysRecursively;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->compareArraysRecursively = $objectManager->create(CompareArraysRecursively::class);
-    }
-
-    /**
      * Tests getTree operation
      *
      * @dataProvider treeDataProvider
@@ -46,7 +39,7 @@ class CategoryManagementTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '?' . http_build_query($requestData),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET
+                'httpMethod' => Request::HTTP_METHOD_GET
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -166,7 +159,7 @@ class CategoryManagementTest extends WebapiAbstract
             [
                 'rest' => [
                     'resourcePath' => self::RESOURCE_PATH . '/' . $categoryId . '/move',
-                    'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT
+                    'httpMethod' => Request::HTTP_METHOD_PUT
                 ],
                 'soap' => [
                     'service' => self::SERVICE_NAME,
@@ -175,8 +168,8 @@ class CategoryManagementTest extends WebapiAbstract
                 ]
             ];
         $this->assertTrue($this->_webApiCall($serviceInfo, $categoryData));
-        /** @var \Magento\Catalog\Model\Category $model */
-        $readService = Bootstrap::getObjectManager()->create(\Magento\Catalog\Api\CategoryRepositoryInterface::class);
+        /** @var Category $model */
+        $readService = Bootstrap::getObjectManager()->create(CategoryRepositoryInterface::class);
         $model = $readService->get($categoryId);
         $this->assertEquals($expectedPath, $model->getPath());
         $this->assertEquals($expectedPosition, $model->getPosition());
@@ -191,5 +184,14 @@ class CategoryManagementTest extends WebapiAbstract
             [402, 400, 999, 2],
             [402, 400, 0, 1]
         ];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->compareArraysRecursively = $objectManager->create(CompareArraysRecursively::class);
     }
 }

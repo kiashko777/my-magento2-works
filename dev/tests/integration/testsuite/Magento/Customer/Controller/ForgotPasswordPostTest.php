@@ -29,17 +29,6 @@ class ForgotPasswordPostTest extends AbstractController
     private $transportBuilderMock;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->transportBuilderMock = $this->objectManager->get(TransportBuilderMock::class);
-    }
-
-    /**
      * @magentoConfigFixture current_store customer/captcha/enable 0
      *
      * @return void
@@ -83,6 +72,21 @@ class ForgotPasswordPostTest extends AbstractController
     }
 
     /**
+     * Assert success session message
+     *
+     * @param string $email
+     * @return void
+     */
+    private function assertSuccessSessionMessage(string $email): void
+    {
+        $message = __(
+            'If there is an account associated with %1 you will receive an email with a link to reset your password.',
+            $email
+        );
+        $this->assertSessionMessages($this->equalTo([$message]), MessageInterface::TYPE_SUCCESS);
+    }
+
+    /**
      * @magentoConfigFixture current_store customer/password/limit_password_reset_requests_method 0
      * @codingStandardsIgnoreStart
      * @magentoConfigFixture current_store customer/password/forgot_email_template customer_password_forgot_email_template
@@ -121,17 +125,13 @@ class ForgotPasswordPostTest extends AbstractController
     }
 
     /**
-     * Assert success session message
-     *
-     * @param string $email
-     * @return void
+     * @inheritdoc
      */
-    private function assertSuccessSessionMessage(string $email): void
+    protected function setUp(): void
     {
-        $message = __(
-            'If there is an account associated with %1 you will receive an email with a link to reset your password.',
-            $email
-        );
-        $this->assertSessionMessages($this->equalTo([$message]), MessageInterface::TYPE_SUCCESS);
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->transportBuilderMock = $this->objectManager->get(TransportBuilderMock::class);
     }
 }

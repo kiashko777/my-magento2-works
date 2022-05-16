@@ -3,18 +3,22 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Theme\Block\Html;
 
+use Magento\Framework\App\State;
 use Magento\Framework\Serialize\SerializerInterface;
+use Magento\Framework\View\LayoutInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea frontend
  */
-class BreadcrumbsTest extends \PHPUnit\Framework\TestCase
+class BreadcrumbsTest extends TestCase
 {
     /**
-     * @var \Magento\Theme\Block\Html\Breadcrumbs
+     * @var Breadcrumbs
      */
     private $block;
 
@@ -22,15 +26,6 @@ class BreadcrumbsTest extends \PHPUnit\Framework\TestCase
      * @var SerializerInterface
      */
     private $serializer;
-
-    protected function setUp(): void
-    {
-        Bootstrap::getObjectManager()->get(\Magento\Framework\App\State::class)->setAreaCode('frontend');
-        $this->block = Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\View\LayoutInterface::class)
-            ->createBlock(\Magento\Theme\Block\Html\Breadcrumbs::class);
-        $this->serializer = Bootstrap::getObjectManager()->get(SerializerInterface::class);
-    }
 
     public function testAddCrumb()
     {
@@ -54,5 +49,14 @@ class BreadcrumbsTest extends \PHPUnit\Framework\TestCase
         $cacheKeyInfo = $this->block->getCacheKeyInfo();
         $crumbsFromCacheKey = $this->serializer->unserialize(base64_decode($cacheKeyInfo['crumbs']));
         $this->assertEquals($crumbs, $crumbsFromCacheKey);
+    }
+
+    protected function setUp(): void
+    {
+        Bootstrap::getObjectManager()->get(State::class)->setAreaCode('frontend');
+        $this->block = Bootstrap::getObjectManager()
+            ->get(LayoutInterface::class)
+            ->createBlock(Breadcrumbs::class);
+        $this->serializer = Bootstrap::getObjectManager()->get(SerializerInterface::class);
     }
 }

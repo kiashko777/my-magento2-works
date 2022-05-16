@@ -45,17 +45,6 @@ class AuthorizationTest extends TestCase
     private $productRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->initializationHelper = $this->objectManager->get(Helper::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->request = $this->objectManager->get(HttpRequest::class);
-    }
-
-    /**
      * Verify AuthorizedSavingOf
      *
      * @magentoDataFixture Magento/Catalog/_files/product_simple_with_design_attributes.php
@@ -167,5 +156,16 @@ class AuthorizationTest extends TestCase
                 ],
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->initializationHelper = $this->objectManager->get(Helper::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->request = $this->objectManager->get(HttpRequest::class);
     }
 }

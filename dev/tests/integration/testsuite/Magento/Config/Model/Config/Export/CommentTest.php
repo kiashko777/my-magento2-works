@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Config\Model\Config\Export;
 
+use Closure;
 use Magento\Config\Model\Config\TypePool;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
@@ -17,11 +18,6 @@ class CommentTest extends TestCase
      * @var Comment
      */
     private $comment;
-
-    protected function setUp(): void
-    {
-        $this->comment = Bootstrap::getObjectManager()->create(Comment::class);
-    }
 
     public function testGet()
     {
@@ -52,7 +48,7 @@ class CommentTest extends TestCase
     private function getSensitivePaths(): array
     {
         $typePool = Bootstrap::getObjectManager()->get(TypePool::class);
-        $sensitivePathsReader = \Closure::bind(
+        $sensitivePathsReader = Closure::bind(
             function () {
                 return $this->getPathsByType(TypePool::TYPE_SENSITIVE);
             },
@@ -61,5 +57,10 @@ class CommentTest extends TestCase
         );
 
         return $sensitivePathsReader();
+    }
+
+    protected function setUp(): void
+    {
+        $this->comment = Bootstrap::getObjectManager()->create(Comment::class);
     }
 }

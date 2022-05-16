@@ -12,7 +12,8 @@ if ($block->hasRequiredOptions()) {
     $required = ' data-hasrequired="' . $block->escapeHtmlAttr(__('* Required Fields')) . '"';
 }
 ?>
-<div class="product-options-wrapper" id="product-options-wrapper"<?= /* @noEscape */ $required ?>>
+<div class="product-options-wrapper" id="product-options-wrapper"<?= /* @noEscape */
+$required ?>>
     <div class="fieldset" tabindex="0">
         <?= $block->getChildHtml('', true) ?>
     </div>

@@ -7,6 +7,10 @@
 namespace Magento\Catalog\Api;
 
 use Magento\Catalog\Api\Data\ProductInterface as Product;
+use Magento\Framework\Registry;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Store\Model\Group;
+use Magento\Store\Model\Store;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
@@ -34,6 +38,30 @@ class ProductRepositoryMultiStoreTest extends WebapiAbstract
     ];
 
     /**
+     * Remove test store
+     */
+    public static function tearDownAfterClass(): void
+    {
+        parent::tearDownAfterClass();
+        /** @var Registry $registry */
+        $registry = Bootstrap::getObjectManager()
+            ->get(Registry::class);
+
+        $registry->unregister('isSecureArea');
+        $registry->register('isSecureArea', true);
+
+        /** @var $store Store */
+        $store = Bootstrap::getObjectManager()->create(Store::class);
+        $store->load('fixturestore');
+        if ($store->getId()) {
+            $store->delete();
+        }
+
+        $registry->unregister('isSecureArea');
+        $registry->register('isSecureArea', false);
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Store/_files/core_fixturestore.php
      * @magentoApiDataFixture Magento/CatalogSearch/_files/full_reindex.php
      * @magentoApiDataFixture Magento/Catalog/_files/product_simple.php
@@ -42,8 +70,8 @@ class ProductRepositoryMultiStoreTest extends WebapiAbstract
     {
         $productData = $this->productData[0];
         $nameInFixtureStore = 'Name in fixture store';
-        /** @var $store \Magento\Store\Model\Group   */
-        $store = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Store\Model\Store::class);
+        /** @var $store Group */
+        $store = Bootstrap::getObjectManager()->create(Store::class);
         $store->load(self::STORE_CODE_FROM_FIXTURE);
         $this->assertEquals(
             self::STORE_NAME_FROM_FIXTURE,
@@ -58,7 +86,7 @@ class ProductRepositoryMultiStoreTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/' . $sku,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET
+                'httpMethod' => Request::HTTP_METHOD_GET
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -81,29 +109,5 @@ class ProductRepositoryMultiStoreTest extends WebapiAbstract
             $fixtureStoreResponse[Product::NAME],
             'Products name in fixture store is invalid.'
         );
-    }
-
-    /**
-     * Remove test store
-     */
-    public static function tearDownAfterClass(): void
-    {
-        parent::tearDownAfterClass();
-        /** @var \Magento\Framework\Registry $registry */
-        $registry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\Registry::class);
-
-        $registry->unregister('isSecureArea');
-        $registry->register('isSecureArea', true);
-
-        /** @var $store \Magento\Store\Model\Store */
-        $store = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Store\Model\Store::class);
-        $store->load('fixturestore');
-        if ($store->getId()) {
-            $store->delete();
-        }
-
-        $registry->unregister('isSecureArea');
-        $registry->register('isSecureArea', false);
     }
 }

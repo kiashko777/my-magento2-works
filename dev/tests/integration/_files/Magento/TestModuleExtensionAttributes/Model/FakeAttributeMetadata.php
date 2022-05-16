@@ -7,11 +7,14 @@ declare(strict_types=1);
 
 namespace Magento\TestModuleExtensionAttributes\Api\Model;
 
+use Magento\Framework\Api\AbstractSimpleObject;
+use Magento\TestModuleExtensionAttributes\Api\Data\FakeAttributeMetadataInterface;
+
 /**
  * Customer attribute metadata class.
  */
-class FakeAttributeMetadata extends \Magento\Framework\Api\AbstractSimpleObject implements
-    \Magento\TestModuleExtensionAttributes\Api\Data\FakeAttributeMetadataInterface
+class FakeAttributeMetadata extends AbstractSimpleObject implements
+    FakeAttributeMetadataInterface
 {
     /**
      * {@inheritdoc}

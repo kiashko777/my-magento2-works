@@ -4,8 +4,15 @@
  * See COPYING.txt for license details.
  */
 
-/** @var \Magento\Framework\Registry $registry */
-$registry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
+/** @var Registry $registry */
+
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Category;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$registry = Bootstrap::getObjectManager()->get(Registry::class);
 
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
@@ -14,19 +21,19 @@ $registry->register('isSecureArea', true);
 $productSkuList = ['simple', '12345'];
 foreach ($productSkuList as $sku) {
     try {
-        $productRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+        $productRepository = Bootstrap::getObjectManager()
+            ->get(ProductRepositoryInterface::class);
         $product = $productRepository->get($sku, true);
         if ($product->getId()) {
             $productRepository->delete($product);
         }
-    } catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+    } catch (NoSuchEntityException $e) {
         //Products already removed
     }
 }
 
-/** @var $category \Magento\Catalog\Model\Category */
-$category = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Category::class);
+/** @var $category Category */
+$category = Bootstrap::getObjectManager()->create(Category::class);
 $category->load(9);
 if ($category->getId()) {
     $category->delete();

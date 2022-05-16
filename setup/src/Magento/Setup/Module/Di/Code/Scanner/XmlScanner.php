@@ -3,21 +3,27 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Di\Code\Scanner;
 
+use DOMDocument;
+use DOMNode;
+use DOMXPath;
 use Magento\Framework\ObjectManager\Code\Generator\Proxy as ProxyGenerator;
+use Magento\Setup\Module\Di\Compiler\Log\Log;
+use RuntimeException;
 
 class XmlScanner implements ScannerInterface
 {
     /**
-     * @var \Magento\Setup\Module\Di\Compiler\Log\Log $log
+     * @var Log $log
      */
     protected $_log;
 
     /**
-     * @param \Magento\Setup\Module\Di\Compiler\Log\Log $log
+     * @param Log $log
      */
-    public function __construct(\Magento\Setup\Module\Di\Compiler\Log\Log $log)
+    public function __construct(Log $log)
     {
         $this->_log = $log;
     }
@@ -34,9 +40,9 @@ class XmlScanner implements ScannerInterface
         $output = [];
         $factoriesOutput = [];
         foreach ($files as $file) {
-            $dom = new \DOMDocument();
+            $dom = new DOMDocument();
             $dom->load($file);
-            $xpath = new \DOMXPath($dom);
+            $xpath = new DOMXPath($dom);
             $xpath->registerNamespace("php", "http://php.net/xpath");
             $xpath->registerPhpFunctions('preg_match');
             $virtualTypeQuery = "//virtualType/@name";
@@ -50,7 +56,7 @@ class XmlScanner implements ScannerInterface
                 "//argument[@xsi:type='object' and php:functionString('preg_match', '{$regex}', text()) > 0] |" .
                 "//item[@xsi:type='object' and php:functionString('preg_match', '{$regex}', text()) > 0] |" .
                 "/config/virtualType[ php:functionString('preg_match', '{$regex}', @type) > 0]/@type";
-            /** @var \DOMNode $node */
+            /** @var DOMNode $node */
             foreach ($xpath->query($query) as $node) {
                 $output[] = $node->nodeValue;
             }
@@ -67,10 +73,10 @@ class XmlScanner implements ScannerInterface
     /**
      * Scan factories from all di.xml and retrieve non virtual one
      *
-     * @param \DOMXPath $domXpath
+     * @param DOMXPath $domXpath
      * @return array
      */
-    private function scanFactories(\DOMXPath $domXpath)
+    private function scanFactories(DOMXPath $domXpath)
     {
         $output = [];
         $regex = '/^(.*)Factory$/';
@@ -100,14 +106,14 @@ class XmlScanner implements ScannerInterface
             $isClassExists = false;
             try {
                 $isClassExists = class_exists($className);
-            } catch (\RuntimeException $e) {
+            } catch (RuntimeException $e) {
             }
             if (false === $isClassExists) {
                 if (class_exists($entityName) || interface_exists($entityName)) {
                     $filteredEntities[] = $className;
                 } else {
                     $this->_log->add(
-                        \Magento\Setup\Module\Di\Compiler\Log\Log::CONFIGURATION_ERROR,
+                        Log::CONFIGURATION_ERROR,
                         $className,
                         'Invalid proxy class for ' . substr($className, 0, -5)
                     );

@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestSetupDeclarationModule5\Setup;
 
 use Magento\Framework\Setup\ModuleContextInterface;

@@ -10,10 +10,10 @@ namespace Magento\Csp;
 use Magento\Csp\Model\Collector\DynamicCollector;
 use Magento\Csp\Model\Collector\DynamicCollectorMock;
 use Magento\Framework\Math\Random;
-use Magento\Framework\View\LayoutInterface;
-use PHPUnit\Framework\TestCase;
 use Magento\Framework\View\Element\Template;
+use Magento\Framework\View\LayoutInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test that inline util works fine with cached blocks.
@@ -34,21 +34,6 @@ class CachedBlockTest extends TestCase
      * @var Random
      */
     private $random;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        Bootstrap::getObjectManager()->configure([
-            'preferences' => [
-                DynamicCollector::class => DynamicCollectorMock::class
-            ]
-        ]);
-        $this->layout = Bootstrap::getObjectManager()->get(LayoutInterface::class);
-        $this->dynamicCollected = Bootstrap::getObjectManager()->get(DynamicCollector::class);
-        $this->random = Bootstrap::getObjectManager()->get(Random::class);
-    }
 
     /**
      * Validate policies preserved when reading block from cache.
@@ -78,5 +63,20 @@ class CachedBlockTest extends TestCase
         $block->toHtml();
         $cached = $this->dynamicCollected->consumeAdded();
         $this->assertEquals($dynamic, $cached);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        Bootstrap::getObjectManager()->configure([
+            'preferences' => [
+                DynamicCollector::class => DynamicCollectorMock::class
+            ]
+        ]);
+        $this->layout = Bootstrap::getObjectManager()->get(LayoutInterface::class);
+        $this->dynamicCollected = Bootstrap::getObjectManager()->get(DynamicCollector::class);
+        $this->random = Bootstrap::getObjectManager()->get(Random::class);
     }
 }

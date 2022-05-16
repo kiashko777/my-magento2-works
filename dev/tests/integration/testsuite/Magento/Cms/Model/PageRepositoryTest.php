@@ -10,9 +10,12 @@ namespace Magento\Cms\Model;
 
 use Magento\Cms\Api\GetPageByIdentifierInterface;
 use Magento\Cms\Api\PageRepositoryInterface;
+use Magento\Cms\Model\Page\CustomLayoutManagerInterface;
 use Magento\Framework\Exception\CouldNotSaveException;
+use Magento\TestFramework\Cms\Model\CustomLayoutManager;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
+use Throwable;
 
 /**
  * Test page repo.
@@ -30,27 +33,11 @@ class PageRepositoryTest extends TestCase
     private $retriever;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        Bootstrap::getObjectManager()->configure([
-            'preferences' => [
-                \Magento\Cms\Model\Page\CustomLayoutManagerInterface::class =>
-                    \Magento\TestFramework\Cms\Model\CustomLayoutManager::class
-            ]
-        ]);
-        $objectManager = Bootstrap::getObjectManager();
-        $this->repo = $objectManager->get(PageRepositoryInterface::class);
-        $this->retriever = $objectManager->get(GetPageByIdentifierInterface::class);
-    }
-
-    /**
      * Test that the field is deprecated.
      *
-     * @throws \Throwable
-     * @magentoDataFixture Magento/Cms/_files/pages_with_layout_xml.php
      * @return void
+     * @throws Throwable
+     * @magentoDataFixture Magento/Cms/_files/pages_with_layout_xml.php
      */
     public function testSaveUpdateXml(): void
     {
@@ -92,7 +79,7 @@ class PageRepositoryTest extends TestCase
      * Verifies that cms page with identifier which duplicates existed route shouldn't be saved
      *
      * @return void
-     * @throws \Throwable
+     * @throws Throwable
      * @magentoDataFixture Magento/Cms/_files/pages.php
      */
     public function testSaveWithRouteDuplicate(): void
@@ -101,5 +88,21 @@ class PageRepositoryTest extends TestCase
         $page->setIdentifier('customer');
         $this->expectException(CouldNotSaveException::class);
         $this->repo->save($page);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        Bootstrap::getObjectManager()->configure([
+            'preferences' => [
+                CustomLayoutManagerInterface::class =>
+                    CustomLayoutManager::class
+            ]
+        ]);
+        $objectManager = Bootstrap::getObjectManager();
+        $this->repo = $objectManager->get(PageRepositoryInterface::class);
+        $this->retriever = $objectManager->get(GetPageByIdentifierInterface::class);
     }
 }

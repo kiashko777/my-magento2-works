@@ -5,11 +5,18 @@
  */
 declare(strict_types=1);
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\Catalog\Model\Category\Attribute\Source\Mode;
+use Magento\Catalog\Model\Product;
+use Magento\Eav\Model\Config;
+use Magento\Eav\Model\Entity\Attribute\ScopedAttributeInterface;
+use Magento\Eav\Setup\EavSetup;
+use Magento\TestFramework\Helper\Bootstrap;
 
-$eavSetup = $objectManager->create(\Magento\Eav\Setup\EavSetup::class);
+$objectManager = Bootstrap::getObjectManager();
+
+$eavSetup = $objectManager->create(EavSetup::class);
 $eavSetup->addAttribute(
-    \Magento\Catalog\Model\Product::ENTITY,
+    Product::ENTITY,
     'test_configurable_with_sm',
     [
         'group' => 'General',
@@ -18,8 +25,8 @@ $eavSetup->addAttribute(
         'frontend' => '',
         'label' => 'Test configurable with source model',
         'input' => 'select',
-        'source' => \Magento\Catalog\Model\Category\Attribute\Source\Mode::class,
-        'global' => \Magento\Eav\Model\Entity\Attribute\ScopedAttributeInterface::SCOPE_GLOBAL,
+        'source' => Mode::class,
+        'global' => ScopedAttributeInterface::SCOPE_GLOBAL,
         'visible' => true,
         'required' => false,
         'user_defined' => true,
@@ -34,5 +41,5 @@ $eavSetup->addAttribute(
     ]
 );
 
-$eavConfig = $objectManager->get(\Magento\Eav\Model\Config::class);
+$eavConfig = $objectManager->get(Config::class);
 $eavConfig->clear();

@@ -9,9 +9,12 @@ namespace Magento\GraphQl\ConfigurableProduct;
 
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
 use Magento\Catalog\Pricing\Price\FinalPrice;
+use Magento\Catalog\Pricing\Price\FinalPriceInterface;
 use Magento\Catalog\Pricing\Price\RegularPrice;
 use Magento\Framework\EntityManager\MetadataPool;
+use Magento\Framework\Pricing\PriceInfo\Factory;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
 
@@ -220,14 +223,14 @@ QUERY;
      */
     private function assertBaseFields($product, $actualResponse)
     {
-        /** @var \Magento\Framework\Pricing\PriceInfo\Factory $priceInfoFactory */
-        $priceInfoFactory = ObjectManager::getInstance()->get(\Magento\Framework\Pricing\PriceInfo\Factory::class);
+        /** @var Factory $priceInfoFactory */
+        $priceInfoFactory = ObjectManager::getInstance()->get(Factory::class);
         $priceInfo = $priceInfoFactory->create($product);
-        /** @var \Magento\Catalog\Pricing\Price\FinalPriceInterface $finalPrice */
+        /** @var FinalPriceInterface $finalPrice */
         $finalPrice = $priceInfo->getPrice(FinalPrice::PRICE_CODE);
-        $minimalPriceAmount =  $finalPrice->getMinimalPrice();
-        $maximalPriceAmount =  $finalPrice->getMaximalPrice();
-        $regularPriceAmount =  $priceInfo->getPrice(RegularPrice::PRICE_CODE)->getAmount();
+        $minimalPriceAmount = $finalPrice->getMinimalPrice();
+        $maximalPriceAmount = $finalPrice->getMaximalPrice();
+        $regularPriceAmount = $priceInfo->getPrice(RegularPrice::PRICE_CODE)->getAmount();
         /** @var MetadataPool $metadataPool */
         $metadataPool = ObjectManager::getInstance()->get(MetadataPool::class);
         $assertionMap = [
@@ -272,144 +275,6 @@ QUERY;
         ];
 
         $this->assertResponseFields($actualResponse, $assertionMap);
-    }
-
-    /**
-     * Asserts various fields for child products for a configurable products
-     *
-     * @param $actualResponse
-     * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-     */
-    private function assertConfigurableVariants($actualResponse)
-    {
-        $this->assertNotEmpty(
-            $actualResponse['variants'],
-            "Precondition failed: 'variants' must not be empty"
-        );
-        foreach ($actualResponse['variants'] as $variantKey => $variantArray) {
-            $this->assertNotEmpty($variantArray);
-            $this->assertNotEmpty($variantArray['product']);
-            $this->assertTrue(
-                isset($variantArray['product']['id']),
-                'variant product elements don\'t contain id key'
-            );
-            $variantProductId = $variantArray['product']['id'];
-            $indexValue = $variantArray['product']['sku'];
-            unset($variantArray['product']['id']);
-            $this->assertTrue(
-                isset($variantArray['product']['categories']),
-                'variant product doesn\'t contain categories key'
-            );
-            $productRepository = ObjectManager::getInstance()->get(ProductRepositoryInterface::class);
-            /** @var \Magento\Catalog\Model\Product $childProduct */
-            $childProduct = $productRepository->get($indexValue);
-
-            switch ($variantProductId) {
-                case 10:
-                    $this->assertEmpty(
-                        $actualResponse['variants'][$variantKey]['product']['categories'],
-                        'No category is expected for product, that not visible individually'
-                    );
-                    break;
-                case 20:
-                    $this->assertEquals(
-                        $actualResponse['variants'][$variantKey]['product']['categories'][0],
-                        ['id' => 333]
-                    );
-                    break;
-            }
-            unset($variantArray['product']['categories']);
-
-            $mediaGalleryEntries = $childProduct->getMediaGalleryEntries();
-            $this->assertCount(
-                1,
-                $mediaGalleryEntries,
-                "Precondition failed since there are incorrect number of media gallery entries"
-            );
-            $this->assertIsArray($actualResponse['variants'][$variantKey]['product']['media_gallery_entries']);
-            $this->assertCount(
-                1,
-                $actualResponse['variants'][$variantKey]['product']['media_gallery_entries'],
-                "there must be 1 record in the media gallery"
-            );
-            $mediaGalleryEntry = $mediaGalleryEntries[0];
-            $this->assertResponseFields(
-                $actualResponse['variants'][$variantKey]['product']['media_gallery_entries'][0],
-                [
-                    'disabled' => (bool)$mediaGalleryEntry->isDisabled(),
-                    'file' => $mediaGalleryEntry->getFile(),
-                    'id' => $mediaGalleryEntry->getId(),
-                    'label' => $mediaGalleryEntry->getLabel(),
-                    'media_type' => $mediaGalleryEntry->getMediaType(),
-                    'position' => $mediaGalleryEntry->getPosition()
-                ]
-            );
-            $videoContent = $mediaGalleryEntry->getExtensionAttributes()->getVideoContent();
-            $this->assertResponseFields(
-                $actualResponse['variants'][$variantKey]['product']['media_gallery_entries'][0]['video_content'],
-                [
-                    'media_type' =>$videoContent->getMediaType(),
-                    'video_description' => $videoContent->getVideoDescription(),
-                    'video_metadata' =>$videoContent->getVideoMetadata(),
-                    'video_provider' => $videoContent->getVideoProvider(),
-                    'video_title' => $videoContent->getVideoTitle(),
-                    'video_url' => $videoContent->getVideoUrl()
-                ]
-            );
-            unset($variantArray['product']['media_gallery_entries']);
-
-            foreach ($variantArray['product'] as $key => $value) {
-                if ($key !== 'price') {
-                    $this->assertEquals($value, $childProduct->getData($key));
-                }
-            }
-            //assert prices
-            $this->assertEquals(
-                [
-                    'minimalPrice' => [
-                        'amount' => [
-                            'value' => $childProduct->getFinalPrice(),
-                            'currency' => 'USD'
-                        ],
-                        'adjustments' => []
-                    ],
-                    'regularPrice' => [
-                        'amount' => [
-                            'value' => $childProduct->getFinalPrice(),
-                            'currency' => 'USD'
-                        ],
-                        'adjustments' => []
-                    ],
-                    'maximalPrice' => [
-                        'amount' => [
-                            'value' => $childProduct->getFinalPrice(),
-                            'currency' => 'USD'
-                        ],
-                        'adjustments' => []
-                    ],
-                ],
-                $variantArray['product']['price']
-            );
-            $configurableOptions = $this->getConfigurableOptions();
-            $this->assertCount(1, $variantArray['attributes']);
-            foreach ($variantArray['attributes'] as $attribute) {
-                $hasAssertion = false;
-                foreach ($configurableOptions as $option) {
-                    foreach ($option['options'] as $value) {
-                        if ((int)$value['value_index'] === (int)$attribute['value_index']) {
-                            $this->assertEquals((int)$attribute['value_index'], (int)$value['value_index']);
-                            $this->assertEquals($attribute['label'], $value['label']);
-                            $hasAssertion = true;
-                        }
-                    }
-                    $this->assertEquals($attribute['code'], $option['attribute_code']);
-                }
-                if (!$hasAssertion) {
-                    $this->fail('variant did not contain correct attributes');
-                }
-            }
-        }
     }
 
     private function assertConfigurableProductOptions($actualResponse)
@@ -503,5 +368,143 @@ QUERY;
         }
 
         return $this->configurableOptions = $configurableAttributeOptionsData;
+    }
+
+    /**
+     * Asserts various fields for child products for a configurable products
+     *
+     * @param $actualResponse
+     * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     */
+    private function assertConfigurableVariants($actualResponse)
+    {
+        $this->assertNotEmpty(
+            $actualResponse['variants'],
+            "Precondition failed: 'variants' must not be empty"
+        );
+        foreach ($actualResponse['variants'] as $variantKey => $variantArray) {
+            $this->assertNotEmpty($variantArray);
+            $this->assertNotEmpty($variantArray['product']);
+            $this->assertTrue(
+                isset($variantArray['product']['id']),
+                'variant product elements don\'t contain id key'
+            );
+            $variantProductId = $variantArray['product']['id'];
+            $indexValue = $variantArray['product']['sku'];
+            unset($variantArray['product']['id']);
+            $this->assertTrue(
+                isset($variantArray['product']['categories']),
+                'variant product doesn\'t contain categories key'
+            );
+            $productRepository = ObjectManager::getInstance()->get(ProductRepositoryInterface::class);
+            /** @var Product $childProduct */
+            $childProduct = $productRepository->get($indexValue);
+
+            switch ($variantProductId) {
+                case 10:
+                    $this->assertEmpty(
+                        $actualResponse['variants'][$variantKey]['product']['categories'],
+                        'No category is expected for product, that not visible individually'
+                    );
+                    break;
+                case 20:
+                    $this->assertEquals(
+                        $actualResponse['variants'][$variantKey]['product']['categories'][0],
+                        ['id' => 333]
+                    );
+                    break;
+            }
+            unset($variantArray['product']['categories']);
+
+            $mediaGalleryEntries = $childProduct->getMediaGalleryEntries();
+            $this->assertCount(
+                1,
+                $mediaGalleryEntries,
+                "Precondition failed since there are incorrect number of media gallery entries"
+            );
+            $this->assertIsArray($actualResponse['variants'][$variantKey]['product']['media_gallery_entries']);
+            $this->assertCount(
+                1,
+                $actualResponse['variants'][$variantKey]['product']['media_gallery_entries'],
+                "there must be 1 record in the media gallery"
+            );
+            $mediaGalleryEntry = $mediaGalleryEntries[0];
+            $this->assertResponseFields(
+                $actualResponse['variants'][$variantKey]['product']['media_gallery_entries'][0],
+                [
+                    'disabled' => (bool)$mediaGalleryEntry->isDisabled(),
+                    'file' => $mediaGalleryEntry->getFile(),
+                    'id' => $mediaGalleryEntry->getId(),
+                    'label' => $mediaGalleryEntry->getLabel(),
+                    'media_type' => $mediaGalleryEntry->getMediaType(),
+                    'position' => $mediaGalleryEntry->getPosition()
+                ]
+            );
+            $videoContent = $mediaGalleryEntry->getExtensionAttributes()->getVideoContent();
+            $this->assertResponseFields(
+                $actualResponse['variants'][$variantKey]['product']['media_gallery_entries'][0]['video_content'],
+                [
+                    'media_type' => $videoContent->getMediaType(),
+                    'video_description' => $videoContent->getVideoDescription(),
+                    'video_metadata' => $videoContent->getVideoMetadata(),
+                    'video_provider' => $videoContent->getVideoProvider(),
+                    'video_title' => $videoContent->getVideoTitle(),
+                    'video_url' => $videoContent->getVideoUrl()
+                ]
+            );
+            unset($variantArray['product']['media_gallery_entries']);
+
+            foreach ($variantArray['product'] as $key => $value) {
+                if ($key !== 'price') {
+                    $this->assertEquals($value, $childProduct->getData($key));
+                }
+            }
+            //assert prices
+            $this->assertEquals(
+                [
+                    'minimalPrice' => [
+                        'amount' => [
+                            'value' => $childProduct->getFinalPrice(),
+                            'currency' => 'USD'
+                        ],
+                        'adjustments' => []
+                    ],
+                    'regularPrice' => [
+                        'amount' => [
+                            'value' => $childProduct->getFinalPrice(),
+                            'currency' => 'USD'
+                        ],
+                        'adjustments' => []
+                    ],
+                    'maximalPrice' => [
+                        'amount' => [
+                            'value' => $childProduct->getFinalPrice(),
+                            'currency' => 'USD'
+                        ],
+                        'adjustments' => []
+                    ],
+                ],
+                $variantArray['product']['price']
+            );
+            $configurableOptions = $this->getConfigurableOptions();
+            $this->assertCount(1, $variantArray['attributes']);
+            foreach ($variantArray['attributes'] as $attribute) {
+                $hasAssertion = false;
+                foreach ($configurableOptions as $option) {
+                    foreach ($option['options'] as $value) {
+                        if ((int)$value['value_index'] === (int)$attribute['value_index']) {
+                            $this->assertEquals((int)$attribute['value_index'], (int)$value['value_index']);
+                            $this->assertEquals($attribute['label'], $value['label']);
+                            $hasAssertion = true;
+                        }
+                    }
+                    $this->assertEquals($attribute['code'], $option['attribute_code']);
+                }
+                if (!$hasAssertion) {
+                    $this->fail('variant did not contain correct attributes');
+                }
+            }
+        }
     }
 }

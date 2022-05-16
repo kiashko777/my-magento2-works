@@ -6,6 +6,12 @@
 
 namespace Magento\Setup\Fixtures;
 
+use Magento\Config\App\Config\Type\System;
+use Magento\Framework\App\CacheInterface;
+use Magento\Framework\App\Config;
+use Magento\Framework\App\Config\Value;
+use Magento\Framework\App\Config\ValueInterface;
+
 /**
  * Class ConfigsApplyFixture
  */
@@ -30,9 +36,9 @@ class ConfigsApplyFixture extends Fixture
         foreach ($configs['config'] as $config) {
             $backendModel = isset($config['backend_model'])
                 ?
-                $config['backend_model'] : \Magento\Framework\App\Config\Value::class;
+                $config['backend_model'] : Value::class;
             /**
-             * @var \Magento\Framework\App\Config\ValueInterface $configData
+             * @var ValueInterface $configData
              */
             $configData = $this->fixtureModel->getObjectManager()->create($backendModel);
             $configData->setPath($config['path'])
@@ -42,11 +48,11 @@ class ConfigsApplyFixture extends Fixture
                 ->save();
         }
         $this->fixtureModel->getObjectManager()
-            ->get(\Magento\Framework\App\CacheInterface::class)
-            ->clean([\Magento\Framework\App\Config::CACHE_TAG]);
+            ->get(CacheInterface::class)
+            ->clean([Config::CACHE_TAG]);
 
         $this->fixtureModel->getObjectManager()
-            ->get(\Magento\Config\App\Config\Type\System::class)
+            ->get(System::class)
             ->clean();
     }
 

@@ -3,11 +3,22 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Customer\Block\Adminhtml\Edit\Tab;
 
+use Magento\Backend\Block\Template\Context;
 use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Api\Data\CustomerInterface;
 use Magento\Customer\Api\Data\CustomerInterfaceFactory;
 use Magento\Customer\Controller\RegistryConstants;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Reflection\DataObjectProcessor;
+use Magento\Framework\Registry;
+use Magento\Framework\View\LayoutInterface;
+use Magento\Store\Model\StoreManager;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Magento\Customer\Block\Adminhtml\Edit\Tab\View
@@ -15,12 +26,12 @@ use Magento\Customer\Controller\RegistryConstants;
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @magentoAppArea Adminhtml
  */
-class ViewTest extends \PHPUnit\Framework\TestCase
+class ViewTest extends TestCase
 {
-    /** @var  \Magento\Backend\Block\Template\Context */
+    /** @var  Context */
     private $_context;
 
-    /** @var  \Magento\Framework\Registry */
+    /** @var  Registry */
     private $_coreRegistry;
 
     /** @var  CustomerDataBuilder */
@@ -29,55 +40,17 @@ class ViewTest extends \PHPUnit\Framework\TestCase
     /** @var  CustomerRepositoryInterface */
     private $_customerRepository;
 
-    /** @var \Magento\Store\Model\StoreManagerInterface */
+    /** @var StoreManagerInterface */
     private $_storeManager;
 
-    /** @var \Magento\Framework\ObjectManagerInterface */
+    /** @var ObjectManagerInterface */
     private $_objectManager;
 
-    /** @var \Magento\Framework\Reflection\DataObjectProcessor */
+    /** @var DataObjectProcessor */
     private $_dataObjectProcessor;
 
     /** @var  View */
     private $_block;
-
-    protected function setUp(): void
-    {
-        $this->_objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-
-        $this->_storeManager = $this->_objectManager->get(\Magento\Store\Model\StoreManager::class);
-        $this->_context = $this->_objectManager->get(
-            \Magento\Backend\Block\Template\Context::class,
-            ['storeManager' => $this->_storeManager]
-        );
-
-        $this->_customerFactory = $this->_objectManager->get(
-            \Magento\Customer\Api\Data\CustomerInterfaceFactory::class
-        );
-        $this->_coreRegistry = $this->_objectManager->get(\Magento\Framework\Registry::class);
-        $this->_customerRepository = $this->_objectManager->get(
-            \Magento\Customer\Api\CustomerRepositoryInterface::class
-        );
-        $this->_dataObjectProcessor = $this->_objectManager->get(
-            \Magento\Framework\Reflection\DataObjectProcessor::class
-        );
-
-        $this->_block = $this->_objectManager->get(
-            \Magento\Framework\View\LayoutInterface::class
-        )->createBlock(
-            \Magento\Customer\Block\Adminhtml\Edit\Tab\View::class,
-            '',
-            [
-                'context' => $this->_context,
-                'registry' => $this->_coreRegistry
-            ]
-        );
-    }
-
-    protected function tearDown(): void
-    {
-        $this->_coreRegistry->unregister(RegistryConstants::CURRENT_CUSTOMER_ID);
-    }
 
     public function testGetTabLabel()
     {
@@ -98,10 +71,43 @@ class ViewTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue($this->_block->canShowTab());
     }
 
+    /**
+     * @return CustomerInterface
+     */
+    private function _loadCustomer()
+    {
+        /** @var CustomerInterface $customer */
+        $customer = $this->_customerRepository->getById(1);
+        $data = ['account' => $this->_dataObjectProcessor
+            ->buildOutputDataArray($customer, CustomerInterface::class),];
+        $this->_context->getBackendSession()->setCustomerData($data);
+        $this->_coreRegistry->register(RegistryConstants::CURRENT_CUSTOMER_ID, $customer->getId());
+        return $customer;
+    }
+
     public function testCanShowTabNot()
     {
         $this->_createCustomer();
         $this->assertFalse($this->_block->canShowTab());
+    }
+
+    /**
+     * @return CustomerInterface
+     */
+    private function _createCustomer()
+    {
+        /** @var CustomerInterface $customer */
+        $customer = $this->_customerFactory->create()->setFirstname(
+            'firstname'
+        )->setLastname(
+            'lastname'
+        )->setEmail(
+            'email@email.com'
+        );
+        $data = ['account' => $this->_dataObjectProcessor
+            ->buildOutputDataArray($customer, CustomerInterface::class),];
+        $this->_context->getBackendSession()->setCustomerData($data);
+        return $customer;
     }
 
     /**
@@ -119,37 +125,42 @@ class ViewTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue($this->_block->isHidden());
     }
 
-    /**
-     * @return \Magento\Customer\Api\Data\CustomerInterface
-     */
-    private function _createCustomer()
+    protected function setUp(): void
     {
-        /** @var \Magento\Customer\Api\Data\CustomerInterface $customer */
-        $customer = $this->_customerFactory->create()->setFirstname(
-            'firstname'
-        )->setLastname(
-            'lastname'
-        )->setEmail(
-            'email@email.com'
+        $this->_objectManager = Bootstrap::getObjectManager();
+
+        $this->_storeManager = $this->_objectManager->get(StoreManager::class);
+        $this->_context = $this->_objectManager->get(
+            Context::class,
+            ['storeManager' => $this->_storeManager]
         );
-        $data = ['account' => $this->_dataObjectProcessor
-            ->buildOutputDataArray($customer, \Magento\Customer\Api\Data\CustomerInterface::class), ];
-        $this->_context->getBackendSession()->setCustomerData($data);
-        return $customer;
+
+        $this->_customerFactory = $this->_objectManager->get(
+            CustomerInterfaceFactory::class
+        );
+        $this->_coreRegistry = $this->_objectManager->get(Registry::class);
+        $this->_customerRepository = $this->_objectManager->get(
+            CustomerRepositoryInterface::class
+        );
+        $this->_dataObjectProcessor = $this->_objectManager->get(
+            DataObjectProcessor::class
+        );
+
+        $this->_block = $this->_objectManager->get(
+            LayoutInterface::class
+        )->createBlock(
+            View::class,
+            '',
+            [
+                'context' => $this->_context,
+                'registry' => $this->_coreRegistry
+            ]
+        );
     }
 
-    /**
-     * @return \Magento\Customer\Api\Data\CustomerInterface
-     */
-    private function _loadCustomer()
+    protected function tearDown(): void
     {
-        /** @var \Magento\Customer\Api\Data\CustomerInterface $customer */
-        $customer = $this->_customerRepository->getById(1);
-        $data = ['account' => $this->_dataObjectProcessor
-            ->buildOutputDataArray($customer, \Magento\Customer\Api\Data\CustomerInterface::class), ];
-        $this->_context->getBackendSession()->setCustomerData($data);
-        $this->_coreRegistry->register(RegistryConstants::CURRENT_CUSTOMER_ID, $customer->getId());
-        return $customer;
+        $this->_coreRegistry->unregister(RegistryConstants::CURRENT_CUSTOMER_ID);
     }
 
     protected function dataToString($data)

@@ -5,13 +5,19 @@
  */
 //@codingStandardsIgnoreFile
 /** @var \Magento\Customer\Model\Attribute $model */
-$model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Customer\Model\Attribute::class);
-/** @var \Magento\Store\Model\StoreManagerInterface $storeManager */
-$storeManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Store\Model\StoreManager::class);
+
+use Magento\Store\Api\Data\WebsiteInterface;
+use Magento\Store\Model\StoreManager;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$model = Bootstrap::getObjectManager()->create(\Magento\Customer\Model\Attribute::class);
+/** @var StoreManagerInterface $storeManager */
+$storeManager = Bootstrap::getObjectManager()->create(StoreManager::class);
 $model->loadByCode('customer_address', 'city');
 $storeLabels = $model->getStoreLabels();
 $stores = $storeManager->getStores();
-/** @var \Magento\Store\Api\Data\WebsiteInterface $website */
+/** @var WebsiteInterface $website */
 foreach ($stores as $store) {
     $storeLabels[$store->getId()] = 'Suburb';
 }

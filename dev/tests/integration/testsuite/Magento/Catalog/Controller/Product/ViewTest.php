@@ -8,7 +8,9 @@ declare(strict_types=1);
 namespace Magento\Catalog\Controller\Product;
 
 use Magento\Catalog\Api\AttributeSetRepositoryInterface;
+use Magento\Catalog\Api\Data\ProductAttributeInterface;
 use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Api\ProductAttributeRepositoryInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Visibility;
@@ -24,12 +26,10 @@ use Magento\Store\Model\Store;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Eav\Model\GetAttributeSetByName;
 use Magento\TestFramework\Request;
-use PHPUnit\Framework\MockObject\MockObject;
-use Psr\Log\LoggerInterface;
-use Magento\Catalog\Api\Data\ProductAttributeInterface;
-use Magento\Catalog\Api\ProductAttributeRepositoryInterface;
 use Magento\TestFramework\Response;
 use Magento\TestFramework\TestCase\AbstractController;
+use PHPUnit\Framework\MockObject\MockObject;
+use Psr\Log\LoggerInterface;
 
 /**
  * Integration test for product view front action.
@@ -75,25 +75,6 @@ class ViewTest extends AbstractController
 
     /** @var ScopeConfigInterface */
     private $config;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->productRepository = $this->_objectManager->create(ProductRepositoryInterface::class);
-        $this->attributeSetRepository = $this->_objectManager->create(AttributeSetRepositoryInterface::class);
-        $this->attributeRepository = $this->_objectManager->create(ProductAttributeRepositoryInterface::class);
-        $this->productEntityType = $this->_objectManager->create(Type::class)
-            ->loadByCode(Product::ENTITY);
-        $this->registry = $this->_objectManager->get(Registry::class);
-        $this->storeManager = $this->_objectManager->get(StoreManagerInterface::class);
-        $this->getAttributeSetByName = $this->_objectManager->get(GetAttributeSetByName::class);
-        $this->urlEncoder = $this->_objectManager->get(EncoderInterface::class);
-        $this->config = $this->_objectManager->get(ScopeConfigInterface::class);
-    }
 
     /**
      * @magentoDbIsolation disabled
@@ -149,6 +130,21 @@ class ViewTest extends AbstractController
     }
 
     /**
+     * Setup logger mock to check there are no warning messages logged.
+     *
+     * @return MockObject
+     */
+    private function setupLoggerMock(): MockObject
+    {
+        $logger = $this->getMockBuilder(LoggerInterface::class)
+            ->disableOriginalConstructor()
+            ->getMockForAbstractClass();
+        $this->_objectManager->addSharedInstance($logger, LoggerInterface::class, true);
+
+        return $logger;
+    }
+
+    /**
      * @magentoDataFixture Magento/Quote/_files/is_not_salable_product.php
      * @return void
      */
@@ -158,6 +154,16 @@ class ViewTest extends AbstractController
         $this->dispatch(sprintf('catalog/product/view/id/%s/', $product->getId()));
 
         $this->assert404NotFound();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function assert404NotFound()
+    {
+        parent::assert404NotFound();
+
+        $this->assertNull($this->registry->registry('current_product'));
     }
 
     /**
@@ -172,6 +178,43 @@ class ViewTest extends AbstractController
         $this->dispatch(sprintf('catalog/product/view/id/%s/', $product->getId()));
 
         $this->assertProductIsVisible($product);
+    }
+
+    /**
+     * Update product visibility
+     *
+     * @param string $sku
+     * @param int $visibility
+     * @return ProductInterface
+     */
+    private function updateProductVisibility(string $sku, int $visibility): ProductInterface
+    {
+        $product = $this->productRepository->get($sku);
+        $product->setVisibility($visibility);
+
+        return $this->productRepository->save($product);
+    }
+
+    /**
+     * Assert that product is available in storefront
+     *
+     * @param ProductInterface $product
+     * @return void
+     */
+    private function assertProductIsVisible(ProductInterface $product): void
+    {
+        $this->assertEquals(
+            Response::STATUS_CODE_200,
+            $this->getResponse()->getHttpResponseCode(),
+            'Wrong response code is returned'
+        );
+        $currentProduct = $this->registry->registry('current_product');
+        $this->assertNotNull($currentProduct);
+        $this->assertEquals(
+            $product->getSku(),
+            $currentProduct->getSku(),
+            'Wrong product is registered'
+        );
     }
 
     /**
@@ -221,6 +264,20 @@ class ViewTest extends AbstractController
     }
 
     /**
+     * Clean up cached objects.
+     *
+     * @return void
+     */
+    private function cleanUpCachedObjects(): void
+    {
+        $this->_objectManager->removeSharedInstance(Http::class);
+        $this->_objectManager->removeSharedInstance(Request::class);
+        $this->_objectManager->removeSharedInstance(Response::class);
+        $this->_request = null;
+        $this->_response = null;
+    }
+
+    /**
      * @magentoDataFixture Magento/Catalog/_files/product_two_websites.php
      * @magentoDbIsolation disabled
      * @return void
@@ -243,6 +300,19 @@ class ViewTest extends AbstractController
         } finally {
             $this->storeManager->setCurrentStore($currentStore->getId());
         }
+    }
+
+    /**
+     * @param string|ProductInterface $product
+     * @param array $data
+     * @return ProductInterface
+     */
+    public function updateProduct($product, array $data): ProductInterface
+    {
+        $product = is_string($product) ? $this->productRepository->get($product) : $product;
+        $product->addData($data);
+
+        return $this->productRepository->save($product);
     }
 
     /**
@@ -338,91 +408,21 @@ class ViewTest extends AbstractController
     }
 
     /**
-     * @param string|ProductInterface $product
-     * @param array $data
-     * @return ProductInterface
-     */
-    public function updateProduct($product, array $data): ProductInterface
-    {
-        $product = is_string($product) ? $this->productRepository->get($product) : $product;
-        $product->addData($data);
-
-        return $this->productRepository->save($product);
-    }
-
-    /**
      * @inheritdoc
      */
-    public function assert404NotFound()
+    protected function setUp(): void
     {
-        parent::assert404NotFound();
+        parent::setUp();
 
-        $this->assertNull($this->registry->registry('current_product'));
-    }
-
-    /**
-     * Assert that product is available in storefront
-     *
-     * @param ProductInterface $product
-     * @return void
-     */
-    private function assertProductIsVisible(ProductInterface $product): void
-    {
-        $this->assertEquals(
-            Response::STATUS_CODE_200,
-            $this->getResponse()->getHttpResponseCode(),
-            'Wrong response code is returned'
-        );
-        $currentProduct = $this->registry->registry('current_product');
-        $this->assertNotNull($currentProduct);
-        $this->assertEquals(
-            $product->getSku(),
-            $currentProduct->getSku(),
-            'Wrong product is registered'
-        );
-    }
-
-    /**
-     * Clean up cached objects.
-     *
-     * @return void
-     */
-    private function cleanUpCachedObjects(): void
-    {
-        $this->_objectManager->removeSharedInstance(Http::class);
-        $this->_objectManager->removeSharedInstance(Request::class);
-        $this->_objectManager->removeSharedInstance(Response::class);
-        $this->_request = null;
-        $this->_response = null;
-    }
-
-    /**
-     * Setup logger mock to check there are no warning messages logged.
-     *
-     * @return MockObject
-     */
-    private function setupLoggerMock(): MockObject
-    {
-        $logger = $this->getMockBuilder(LoggerInterface::class)
-            ->disableOriginalConstructor()
-            ->getMockForAbstractClass();
-        $this->_objectManager->addSharedInstance($logger, LoggerInterface::class, true);
-
-        return $logger;
-    }
-
-    /**
-     * Update product visibility
-     *
-     * @param string $sku
-     * @param int $visibility
-     * @return ProductInterface
-     */
-    private function updateProductVisibility(string $sku, int $visibility): ProductInterface
-    {
-        $product = $this->productRepository->get($sku);
-        $product->setVisibility($visibility);
-
-        return $this->productRepository->save($product);
+        $this->productRepository = $this->_objectManager->create(ProductRepositoryInterface::class);
+        $this->attributeSetRepository = $this->_objectManager->create(AttributeSetRepositoryInterface::class);
+        $this->attributeRepository = $this->_objectManager->create(ProductAttributeRepositoryInterface::class);
+        $this->productEntityType = $this->_objectManager->create(Type::class)
+            ->loadByCode(Product::ENTITY);
+        $this->registry = $this->_objectManager->get(Registry::class);
+        $this->storeManager = $this->_objectManager->get(StoreManagerInterface::class);
+        $this->getAttributeSetByName = $this->_objectManager->get(GetAttributeSetByName::class);
+        $this->urlEncoder = $this->_objectManager->get(EncoderInterface::class);
+        $this->config = $this->_objectManager->get(ScopeConfigInterface::class);
     }
 }

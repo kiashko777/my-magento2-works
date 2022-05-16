@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Magento\GraphQl\Quote\Customer;
 
 use Exception;
+use Magento\Framework\Exception\AuthenticationException;
 use Magento\Framework\Registry;
 use Magento\GraphQl\Quote\GetMaskedQuoteIdByReservedOrderId;
 use Magento\Integration\Api\CustomerTokenServiceInterface;
@@ -47,19 +48,6 @@ class PlaceOrderTest extends GraphQlAbstract
     private $registry;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-        $this->orderCollectionFactory = $objectManager->get(CollectionFactory::class);
-        $this->orderRepository = $objectManager->get(OrderRepositoryInterface::class);
-        $this->registry = Bootstrap::getObjectManager()->get(Registry::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
      * @magentoConfigFixture default_store carriers/flatrate/active 1
@@ -90,11 +78,41 @@ class PlaceOrderTest extends GraphQlAbstract
     }
 
     /**
+     * @param string $maskedQuoteId
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId): string
+    {
+        return <<<QUERY
+mutation {
+  placeOrder(input: {cart_id: "{$maskedQuoteId}"}) {
+    order {
+      order_number
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
+     * @param string $username
+     * @param string $password
+     * @return array
+     * @throws AuthenticationException
+     */
+    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
+        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
+        return $headerMap;
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      */
     public function testPlaceOrderIfCartIdIsEmpty()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Required parameter "cart_id" is missing');
 
         $maskedQuoteId = '';
@@ -282,33 +300,16 @@ class PlaceOrderTest extends GraphQlAbstract
     }
 
     /**
-     * @param string $maskedQuoteId
-     * @return string
+     * @inheritdoc
      */
-    private function getQuery(string $maskedQuoteId): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-mutation {
-  placeOrder(input: {cart_id: "{$maskedQuoteId}"}) {
-    order {
-      order_number
-    }
-  }
-}
-QUERY;
-    }
-
-    /**
-     * @param string $username
-     * @param string $password
-     * @return array
-     * @throws \Magento\Framework\Exception\AuthenticationException
-     */
-    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
-    {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
-        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
-        return $headerMap;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
+        $this->orderCollectionFactory = $objectManager->get(CollectionFactory::class);
+        $this->orderRepository = $objectManager->get(OrderRepositoryInterface::class);
+        $this->registry = Bootstrap::getObjectManager()->get(Registry::class);
     }
 
     /**

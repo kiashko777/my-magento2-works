@@ -5,6 +5,8 @@
  */
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Indexer\Model\Indexer;
+use Magento\Indexer\Model\Indexer\Collection;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Helper\CacheCleaner;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
@@ -29,10 +31,10 @@ foreach ($noIds as $id) {
     $productRepository->save($product);
 }
 CacheCleaner::cleanAll();
-/** @var \Magento\Indexer\Model\Indexer\Collection $indexerCollection */
-$indexerCollection = $objectManager->get(\Magento\Indexer\Model\Indexer\Collection::class);
+/** @var Collection $indexerCollection */
+$indexerCollection = $objectManager->get(Collection::class);
 $indexerCollection->load();
-/** @var \Magento\Indexer\Model\Indexer $indexer */
+/** @var Indexer $indexer */
 foreach ($indexerCollection->getItems() as $indexer) {
     $indexer->reindexAll();
 }

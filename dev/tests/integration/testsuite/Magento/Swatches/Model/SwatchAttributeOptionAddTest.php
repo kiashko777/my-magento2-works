@@ -3,27 +3,28 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Swatches\Model;
 
+use Magento\Catalog\Api\Data\ProductAttributeInterface;
 use Magento\Catalog\Api\ProductAttributeOptionManagementInterface;
+use Magento\Catalog\Model\ResourceModel\Eav\Attribute;
 use Magento\Eav\Api\Data\AttributeOptionInterface;
 use Magento\Eav\Api\Data\AttributeOptionInterfaceFactory;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test add option of swatch attribute
  *
  */
-class SwatchAttributeOptionAddTest extends \PHPUnit\Framework\TestCase
+class SwatchAttributeOptionAddTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoAppArea Adminhtml
@@ -32,9 +33,9 @@ class SwatchAttributeOptionAddTest extends \PHPUnit\Framework\TestCase
      */
     public function testSwatchOptionAdd()
     {
-        /** @var \Magento\Catalog\Api\Data\ProductAttributeInterface $attribute */
+        /** @var ProductAttributeInterface $attribute */
         $attribute = $this->objectManager
-            ->create(\Magento\Catalog\Model\ResourceModel\Eav\Attribute::class)
+            ->create(Attribute::class)
             ->load('color_swatch', 'attribute_code');
         $optionsPerAttribute = 4;
 
@@ -78,5 +79,10 @@ class SwatchAttributeOptionAddTest extends \PHPUnit\Framework\TestCase
         foreach ($options as $option) {
             $this->assertTrue(in_array($option->getLabel(), $items));
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

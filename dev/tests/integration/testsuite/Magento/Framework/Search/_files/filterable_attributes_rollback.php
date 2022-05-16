@@ -4,8 +4,10 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Catalog\Api\Data\ProductAttributeInterface;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\ResourceModel\Eav\Attribute;
+use Magento\Catalog\Model\ResourceModel\Product\Collection;
 use Magento\Catalog\Setup\CategorySetup;
 use Magento\Framework\Registry;
 use Magento\TestFramework\Helper\Bootstrap;
@@ -14,7 +16,7 @@ $registry = Bootstrap::getObjectManager()->get(Registry::class);
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
-/** @var $productCollection \Magento\Catalog\Model\ResourceModel\Product\Collection */
+/** @var $productCollection Collection */
 $productCollection = Bootstrap::getObjectManager()
     ->create(Product::class)
     ->getCollection();
@@ -29,7 +31,7 @@ $attribute = Bootstrap::getObjectManager()->create(
 /** @var $installer CategorySetup */
 $installer = Bootstrap::getObjectManager()->create(CategorySetup::class);
 $productEntityTypeId = $installer->getEntityTypeId(
-    \Magento\Catalog\Api\Data\ProductAttributeInterface::ENTITY_TYPE_CODE
+    ProductAttributeInterface::ENTITY_TYPE_CODE
 );
 foreach (range(1, 2) as $index) {
     $attribute->loadByCode($productEntityTypeId, 'select_attribute_' . $index);

@@ -3,36 +3,44 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Backend\App;
+
+use Magento\Backend\Controller\Adminhtml\Dashboard;
+use Magento\Framework\App\AreaList;
+use Magento\Framework\App\Request\Http;
+use Magento\Framework\App\Route\Config\Reader;
+use Magento\Framework\Config\CacheInterface;
+use Magento\Framework\Config\ScopeInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFixture\Controller\Adminhtml\Noroute;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Request;
+use Magento\TestModule\Controller\Adminhtml\Controller;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class RouterTest extends \PHPUnit\Framework\TestCase
+class RouterTest extends TestCase
 {
     /**
-     * @var \Magento\Backend\App\Router
+     * @var Router
      */
     protected $model;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->model = $this->objectManager->create(\Magento\Backend\App\Router::class);
-    }
-
     public function testRouterCanProcessRequestsWithProperPathInfo()
     {
-        $request = $this->createMock(\Magento\Framework\App\Request\Http::class);
+        $request = $this->createMock(Http::class);
         $request->expects($this->once())->method('getPathInfo')->willReturn('backend/admin/dashboard');
 
-        $this->assertInstanceOf(\Magento\Backend\Controller\Adminhtml\Dashboard::class, $this->model->match($request));
+        $this->assertInstanceOf(Dashboard::class, $this->model->match($request));
     }
 
     /**
@@ -50,13 +58,13 @@ class RouterTest extends \PHPUnit\Framework\TestCase
     public function getControllerClassNameDataProvider()
     {
         return [
-            ['Magento_TestModule', 'controller', \Magento\TestModule\Controller\Adminhtml\Controller::class],
+            ['Magento_TestModule', 'controller', Controller::class],
         ];
     }
 
     public function testMatchCustomNoRouteAction()
     {
-        if (!\Magento\TestFramework\Helper\Bootstrap::canTestHeaders()) {
+        if (!Bootstrap::canTestHeaders()) {
             $this->markTestSkipped('Can\'t test get match without sending headers');
         }
 
@@ -72,10 +80,10 @@ class RouterTest extends \PHPUnit\Framework\TestCase
             ->setMethods(['_getRoutes'])
             ->setConstructorArgs(
                 [
-                    'reader' => $this->objectManager->get(\Magento\Framework\App\Route\Config\Reader::class),
-                    'cache' => $this->objectManager->get(\Magento\Framework\Config\CacheInterface::class),
-                    'configScope' => $this->objectManager->get(\Magento\Framework\Config\ScopeInterface::class),
-                    'areaList' => $this->objectManager->get(\Magento\Framework\App\AreaList::class),
+                    'reader' => $this->objectManager->get(Reader::class),
+                    'cache' => $this->objectManager->get(CacheInterface::class),
+                    'configScope' => $this->objectManager->get(ScopeInterface::class),
+                    'areaList' => $this->objectManager->get(AreaList::class),
                     'cacheId' => 'RoutesConfig'
                 ]
             )
@@ -84,16 +92,22 @@ class RouterTest extends \PHPUnit\Framework\TestCase
         $routeConfig->expects($this->any())->method('_getRoutes')->willReturn($routers);
 
         $defaultRouter = $this->objectManager->create(
-            \Magento\Backend\App\Router::class,
+            Router::class,
             ['routeConfig' => $routeConfig]
         );
 
-        /** @var $request \Magento\TestFramework\Request */
-        $request = $this->objectManager->get(\Magento\TestFramework\Request::class);
+        /** @var $request Request */
+        $request = $this->objectManager->get(Request::class);
 
         $request->setPathInfo('backend/testfixture/test_controller');
         $controller = $defaultRouter->match($request);
-        $this->assertInstanceOf(\Magento\TestFixture\Controller\Adminhtml\Noroute::class, $controller);
+        $this->assertInstanceOf(Noroute::class, $controller);
         $this->assertEquals('noroute', $request->getActionName());
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->model = $this->objectManager->create(Router::class);
     }
 }

@@ -4,14 +4,21 @@
  * See COPYING.txt for license details.
  */
 
-/** @var $product \Magento\Catalog\Model\Product */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+/** @var $product Product */
 
-/** @var \Magento\Eav\Model\AttributeSetManagement $attributeSetManagement */
-$attributeSetManagement = $objectManager->create(\Magento\Eav\Model\AttributeSetManagement::class);
+use Magento\Catalog\Model\Product;
+use Magento\Eav\Api\Data\AttributeSetInterface;
+use Magento\Eav\Model\AttributeSetManagement;
+use Magento\Eav\Model\Entity\Attribute\Set;
+use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var \Magento\Eav\Api\Data\AttributeSetInterface $attributeSet */
-$attributeSet = $objectManager->create(\Magento\Eav\Model\Entity\Attribute\Set::class);
+$objectManager = Bootstrap::getObjectManager();
+
+/** @var AttributeSetManagement $attributeSetManagement */
+$attributeSetManagement = $objectManager->create(AttributeSetManagement::class);
+
+/** @var AttributeSetInterface $attributeSet */
+$attributeSet = $objectManager->create(Set::class);
 
 $data = [
     'attribute_set_name' => 'second_attribute_set',
@@ -20,6 +27,6 @@ $data = [
 
 $attributeSet->organizeData($data);
 
-$defaultSetId = $objectManager->create(\Magento\Catalog\Model\Product::class)->getDefaultAttributeSetId();
+$defaultSetId = $objectManager->create(Product::class)->getDefaultAttributeSetId();
 
-$attributeSetManagement->create(\Magento\Catalog\Model\Product::ENTITY, $attributeSet, $defaultSetId);
+$attributeSetManagement->create(Product::ENTITY, $attributeSet, $defaultSetId);

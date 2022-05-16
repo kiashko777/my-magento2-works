@@ -6,28 +6,33 @@
 
 namespace Magento\Cms\Controller\Adminhtml\Wysiwyg\Images;
 
+use Magento\Cms\Helper\Wysiwyg\Images;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\App\Response\HttpFactory as ResponseFactory;
+use Magento\Framework\Filesystem;
+use Magento\Framework\Filesystem\Directory\WriteInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for \Magento\Cms\Controller\Adminhtml\Wysiwyg\Images\DeleteFolder class.
  *
  * @magentoAppArea Adminhtml
  */
-class DeleteFolderTest extends \PHPUnit\Framework\TestCase
+class DeleteFolderTest extends TestCase
 {
     /**
-     * @var \Magento\Cms\Controller\Adminhtml\Wysiwyg\Images\DeleteFolder
+     * @var DeleteFolder
      */
     private $model;
 
     /**
-     * @var  \Magento\Cms\Helper\Wysiwyg\Images
+     * @var  Images
      */
     private $imagesHelper;
 
     /**
-     * @var \Magento\Framework\Filesystem\Directory\WriteInterface
+     * @var WriteInterface
      */
     private $mediaDirectory;
 
@@ -37,7 +42,7 @@ class DeleteFolderTest extends \PHPUnit\Framework\TestCase
     private $fullDirectoryPath;
 
     /**
-     * @var \Magento\Framework\Filesystem
+     * @var Filesystem
      */
     private $filesystem;
 
@@ -49,16 +54,18 @@ class DeleteFolderTest extends \PHPUnit\Framework\TestCase
     /**
      * @inheritdoc
      */
-    protected function setUp(): void
+    public static function tearDownAfterClass(): void
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->filesystem = $objectManager->get(\Magento\Framework\Filesystem::class);
-        $this->mediaDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::MEDIA);
-        /** @var \Magento\Cms\Helper\Wysiwyg\Images $imagesHelper */
-        $this->imagesHelper = $objectManager->get(\Magento\Cms\Helper\Wysiwyg\Images::class);
-        $this->fullDirectoryPath = $this->imagesHelper->getStorageRoot();
-        $this->responseFactory = $objectManager->get(ResponseFactory::class);
-        $this->model = $objectManager->get(\Magento\Cms\Controller\Adminhtml\Wysiwyg\Images\DeleteFolder::class);
+        $filesystem = Bootstrap::getObjectManager()
+            ->get(Filesystem::class);
+        /** @var WriteInterface $directory */
+        $directory = $filesystem->getDirectoryWrite(DirectoryList::MEDIA);
+        if ($directory->isExist('wysiwyg')) {
+            $directory->delete('wysiwyg');
+        }
+        if ($directory->isExist('downloadable')) {
+            $directory->delete('downloadable');
+        }
     }
 
     /**
@@ -97,7 +104,7 @@ class DeleteFolderTest extends \PHPUnit\Framework\TestCase
     public function testExecuteWithLinkedMedia()
     {
         $linkedDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::PUB);
-        $linkedDirectoryPath =  $this->filesystem->getDirectoryRead(DirectoryList::PUB)
+        $linkedDirectoryPath = $this->filesystem->getDirectoryRead(DirectoryList::PUB)
                 ->getAbsolutePath() . 'linked_media';
         $directoryName = 'NewDirectory';
 
@@ -155,17 +162,15 @@ class DeleteFolderTest extends \PHPUnit\Framework\TestCase
     /**
      * @inheritdoc
      */
-    public static function tearDownAfterClass(): void
+    protected function setUp(): void
     {
-        $filesystem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\Filesystem::class);
-        /** @var \Magento\Framework\Filesystem\Directory\WriteInterface $directory */
-        $directory = $filesystem->getDirectoryWrite(DirectoryList::MEDIA);
-        if ($directory->isExist('wysiwyg')) {
-            $directory->delete('wysiwyg');
-        }
-        if ($directory->isExist('downloadable')) {
-            $directory->delete('downloadable');
-        }
+        $objectManager = Bootstrap::getObjectManager();
+        $this->filesystem = $objectManager->get(Filesystem::class);
+        $this->mediaDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::MEDIA);
+        /** @var Images $imagesHelper */
+        $this->imagesHelper = $objectManager->get(Images::class);
+        $this->fullDirectoryPath = $this->imagesHelper->getStorageRoot();
+        $this->responseFactory = $objectManager->get(ResponseFactory::class);
+        $this->model = $objectManager->get(DeleteFolder::class);
     }
 }

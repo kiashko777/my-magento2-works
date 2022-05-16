@@ -24,15 +24,6 @@ class UpdateProductsFromWishlistTest extends GraphQlAbstract
     private $customerTokenService;
 
     /**
-     * Set Up
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-    }
-
-    /**
      * @magentoConfigFixture default_store wishlist/general/active 1
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      * @magentoApiDataFixture Magento/Wishlist/_files/wishlist_with_simple_product.php
@@ -57,6 +48,117 @@ class UpdateProductsFromWishlistTest extends GraphQlAbstract
         $wishlistResponse = $response['updateProductsInWishlist']['wishlist'];
         $this->assertEquals($qty, $wishlistResponse['items_v2']['items'][0]['quantity']);
         $this->assertEquals($description, $wishlistResponse['items_v2']['items'][0]['description']);
+    }
+
+    /**
+     * Get wishlist result
+     *
+     * @param string $username
+     * @return array
+     *
+     * @throws Exception
+     */
+    public function getWishlist(string $username = 'customer@example.com'): array
+    {
+        return $this->graphQlQuery($this->getCustomerWishlistQuery(), [], '', $this->getHeaderMap($username));
+    }
+
+    /**
+     * Get customer wishlist query
+     *
+     * @return string
+     */
+    private function getCustomerWishlistQuery(): string
+    {
+        return <<<QUERY
+query {
+  customer {
+    wishlists {
+      id
+      items_count
+      sharing_code
+      updated_at
+      items_v2 {
+       items {
+        id
+        quantity
+        description
+         product {
+          sku
+        }
+      }
+      }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
+     * Authentication header map
+     *
+     * @param string $username
+     * @param string $password
+     *
+     * @return array
+     *
+     * @throws AuthenticationException
+     */
+    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
+
+        return ['Authorization' => 'Bearer ' . $customerToken];
+    }
+
+    /**
+     * Returns GraphQl mutation string
+     *
+     * @param int $wishlistId
+     * @param int $wishlistItemId
+     * @param int $qty
+     * @param string $description
+     *
+     * @return string
+     */
+    private function getQuery(
+        string $wishlistId,
+        string $wishlistItemId,
+        int    $qty,
+        string $description
+    ): string
+    {
+        return <<<MUTATION
+mutation {
+  updateProductsInWishlist(
+    wishlistId: "{$wishlistId}",
+    wishlistItems: [
+      {
+        wishlist_item_id: "{$wishlistItemId}"
+        quantity: {$qty}
+        description: "{$description}"
+      }
+    ]
+) {
+    user_errors {
+      code
+      message
+    }
+    wishlist {
+      id
+      sharing_code
+      items_count
+      items_v2 {
+        items{
+          id
+        description
+        quantity
+        }
+      }
+    }
+  }
+}
+MUTATION;
     }
 
     /**
@@ -146,72 +248,6 @@ class UpdateProductsFromWishlistTest extends GraphQlAbstract
     }
 
     /**
-     * Authentication header map
-     *
-     * @param string $username
-     * @param string $password
-     *
-     * @return array
-     *
-     * @throws AuthenticationException
-     */
-    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
-    {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
-
-        return ['Authorization' => 'Bearer ' . $customerToken];
-    }
-
-    /**
-     * Returns GraphQl mutation string
-     *
-     * @param int $wishlistId
-     * @param int $wishlistItemId
-     * @param int $qty
-     * @param string $description
-     *
-     * @return string
-     */
-    private function getQuery(
-        string $wishlistId,
-        string $wishlistItemId,
-        int $qty,
-        string $description
-    ): string {
-        return <<<MUTATION
-mutation {
-  updateProductsInWishlist(
-    wishlistId: "{$wishlistId}",
-    wishlistItems: [
-      {
-        wishlist_item_id: "{$wishlistItemId}"
-        quantity: {$qty}
-        description: "{$description}"
-      }
-    ]
-) {
-    user_errors {
-      code
-      message
-    }
-    wishlist {
-      id
-      sharing_code
-      items_count
-      items_v2 {
-        items{
-          id
-        description
-        quantity
-        }
-      }
-    }
-  }
-}
-MUTATION;
-    }
-
-    /**
      * Returns GraphQl mutation string
      *
      * @param int $wishlistId
@@ -223,8 +259,9 @@ MUTATION;
     private function getQueryWithNoDescription(
         string $wishlistId,
         string $wishlistItemId,
-        int $qty
-    ): string {
+        int    $qty
+    ): string
+    {
         return <<<MUTATION
 mutation {
   updateProductsInWishlist(
@@ -259,46 +296,11 @@ MUTATION;
     }
 
     /**
-     * Get wishlist result
-     *
-     * @param string $username
-     * @return array
-     *
-     * @throws Exception
+     * Set Up
      */
-    public function getWishlist(string $username = 'customer@example.com'): array
+    protected function setUp(): void
     {
-        return $this->graphQlQuery($this->getCustomerWishlistQuery(), [], '', $this->getHeaderMap($username));
-    }
-
-    /**
-     * Get customer wishlist query
-     *
-     * @return string
-     */
-    private function getCustomerWishlistQuery(): string
-    {
-        return <<<QUERY
-query {
-  customer {
-    wishlists {
-      id
-      items_count
-      sharing_code
-      updated_at
-      items_v2 {
-       items {
-        id
-        quantity
-        description
-         product {
-          sku
-        }
-      }
-      }
-    }
-  }
-}
-QUERY;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
     }
 }

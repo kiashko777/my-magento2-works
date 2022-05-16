@@ -120,11 +120,11 @@ define([
 
         it('checks that "unserializeData" unserializes data', function () {
             var matrixString = '[{"name":"Small Products","attributes":"Size: small","price":5.5},' +
-                '{"name":"Medium Products","attributes":"Size: medium","price":10.99},' +
-                '{"name":"Large Products","attributes":"Size: large","price":25}]',
-            idString = '[100, 101, 102]',
-            resultMatrix = JSON.parse(matrixString),
-            resultIds = JSON.parse(idString);
+                    '{"name":"Medium Products","attributes":"Size: medium","price":10.99},' +
+                    '{"name":"Large Products","attributes":"Size: large","price":25}]',
+                idString = '[100, 101, 102]',
+                resultMatrix = JSON.parse(matrixString),
+                resultIds = JSON.parse(idString);
 
             variation.source.data['configurable-matrix-serialized'] = matrixString;
             variation.source.data['associated_product_ids_serialized'] = idString;

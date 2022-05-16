@@ -3,12 +3,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Integration\Model\ResourceModel;
+
+use Magento\Integration\Model\Oauth\Consumer;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Integration test for \Magento\Integration\Model\ResourceModel\Integration
  */
-class IntegrationTest extends \PHPUnit\Framework\TestCase
+class IntegrationTest extends TestCase
 {
     /**
      * @var \Magento\Integration\Model\Integration
@@ -16,14 +21,20 @@ class IntegrationTest extends \PHPUnit\Framework\TestCase
     protected $integration;
 
     /**
-     * @var \Magento\Integration\Model\Oauth\Consumer
+     * @var Consumer
      */
     protected $consumer;
 
+    public function testLoadActiveIntegrationByConsumerId()
+    {
+        $integration = $this->integration->getResource()->selectActiveIntegrationByConsumerId($this->consumer->getId());
+        $this->assertEquals($this->integration->getId(), $integration['integration_id']);
+    }
+
     protected function setUp(): void
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->consumer = $objectManager->create(\Magento\Integration\Model\Oauth\Consumer::class);
+        $objectManager = Bootstrap::getObjectManager();
+        $this->consumer = $objectManager->create(Consumer::class);
         $this->consumer->setData(
             [
                 // md5() here just to generate unique string
@@ -40,11 +51,5 @@ class IntegrationTest extends \PHPUnit\Framework\TestCase
             ->setConsumerId($this->consumer->getId())
             ->setStatus(\Magento\Integration\Model\Integration::STATUS_ACTIVE)
             ->save();
-    }
-
-    public function testLoadActiveIntegrationByConsumerId()
-    {
-        $integration = $this->integration->getResource()->selectActiveIntegrationByConsumerId($this->consumer->getId());
-        $this->assertEquals($this->integration->getId(), $integration['integration_id']);
     }
 }

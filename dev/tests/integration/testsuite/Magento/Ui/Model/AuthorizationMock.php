@@ -7,16 +7,18 @@ declare(strict_types=1);
 
 namespace Magento\Ui\Model;
 
+use Magento\Framework\Authorization;
+
 /**
  * Class AuthorizationMock
  */
-class AuthorizationMock extends \Magento\Framework\Authorization
+class AuthorizationMock extends Authorization
 {
     /**
      * Check current user permission on resource and privilege
      *
-     * @param   string $resource
-     * @param   string $privilege
+     * @param string $resource
+     * @param string $privilege
      * @return  boolean
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */

@@ -24,11 +24,6 @@ class ContextTest extends TestCase
      */
     protected $componentRegistrar;
 
-    protected function setUp(): void
-    {
-        $this->componentRegistrar = $this->createMock(ComponentRegistrar::class);
-    }
-
     /**
      * @param array $context
      * @param string $path
@@ -149,5 +144,10 @@ class ContextTest extends TestCase
             ->method('getPath');
         $this->context = new Context($this->componentRegistrar);
         $this->context->buildPathToLocaleDirectoryByContext('invalid_type', 'Magento_Module');
+    }
+
+    protected function setUp(): void
+    {
+        $this->componentRegistrar = $this->createMock(ComponentRegistrar::class);
     }
 }

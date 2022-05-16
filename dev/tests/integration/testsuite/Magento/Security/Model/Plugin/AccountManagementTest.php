@@ -48,28 +48,6 @@ class AccountManagementTest extends TestCase
     private $errorMessage;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->moduleManager = $this->objectManager->get(Manager::class);
-        //This check is needed because Magento_Security independent of Magento_Customer
-        if (!$this->moduleManager->isEnabled('Magento_Customer')) {
-            $this->markTestSkipped('Magento_Customer module disabled.');
-        }
-        $this->accountManagement = $this->objectManager->get(AccountManagementInterface::class);
-        $this->request = $this->objectManager->get(RequestInterface::class);
-        $this->securityConfig = $this->objectManager->get(ConfigInterface::class);
-        $this->errorMessage = __(
-            'We received too many requests for password resets. Please wait and try again later or contact %1.',
-            $this->securityConfig->getCustomerServiceEmail()
-        );
-    }
-
-    /**
      * @return void
      */
     public function testPluginIsRegistered(): void
@@ -95,6 +73,18 @@ class AccountManagementTest extends TestCase
             'customer@example.com',
             CustomerAccountManagement::EMAIL_REMINDER
         );
+    }
+
+    /**
+     * Prepare server parameters.
+     *
+     * @return void
+     */
+    private function prepareServerParameters(): void
+    {
+        $parameters = $this->objectManager->create(Parameters::class);
+        $parameters->set('REMOTE_ADDR', '127.0.0.1');
+        $this->request->setServer($parameters);
     }
 
     /**
@@ -183,14 +173,24 @@ class AccountManagementTest extends TestCase
     }
 
     /**
-     * Prepare server parameters.
-     *
-     * @return void
+     * @inheritdoc
      */
-    private function prepareServerParameters(): void
+    protected function setUp(): void
     {
-        $parameters = $this->objectManager->create(Parameters::class);
-        $parameters->set('REMOTE_ADDR', '127.0.0.1');
-        $this->request->setServer($parameters);
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->moduleManager = $this->objectManager->get(Manager::class);
+        //This check is needed because Magento_Security independent of Magento_Customer
+        if (!$this->moduleManager->isEnabled('Magento_Customer')) {
+            $this->markTestSkipped('Magento_Customer module disabled.');
+        }
+        $this->accountManagement = $this->objectManager->get(AccountManagementInterface::class);
+        $this->request = $this->objectManager->get(RequestInterface::class);
+        $this->securityConfig = $this->objectManager->get(ConfigInterface::class);
+        $this->errorMessage = __(
+            'We received too many requests for password resets. Please wait and try again later or contact %1.',
+            $this->securityConfig->getCustomerServiceEmail()
+        );
     }
 }

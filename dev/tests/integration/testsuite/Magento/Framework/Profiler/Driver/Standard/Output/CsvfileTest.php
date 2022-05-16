@@ -5,12 +5,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Profiler\Driver\Standard\Output;
 
-class CsvfileTest extends \PHPUnit\Framework\TestCase
+use PHPUnit\Framework\TestCase;
+
+class CsvfileTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Profiler\Driver\Standard\Output\Csvfile
+     * @var Csvfile
      */
     protected $_output;
 
@@ -18,11 +21,6 @@ class CsvfileTest extends \PHPUnit\Framework\TestCase
      * @var string
      */
     protected $_outputFile;
-
-    protected function setUp(): void
-    {
-        $this->_outputFile = tempnam(sys_get_temp_dir(), __CLASS__);
-    }
 
     /**
      * Test display method
@@ -35,7 +33,7 @@ class CsvfileTest extends \PHPUnit\Framework\TestCase
      */
     public function testDisplay($statFile, $expectedFile, $delimiter = ',', $enclosure = '"')
     {
-        $this->_output = new \Magento\Framework\Profiler\Driver\Standard\Output\Csvfile(
+        $this->_output = new Csvfile(
             ['filePath' => $this->_outputFile, 'delimiter' => $delimiter, 'enclosure' => $enclosure]
         );
         $stat = include $statFile;
@@ -60,5 +58,10 @@ class CsvfileTest extends \PHPUnit\Framework\TestCase
                 '`',
             ]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->_outputFile = tempnam(sys_get_temp_dir(), __CLASS__);
     }
 }

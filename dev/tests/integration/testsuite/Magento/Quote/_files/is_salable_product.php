@@ -4,9 +4,17 @@
  * See COPYING.txt for license details.
  */
 
-/** @var $objectManager \Magento\TestFramework\ObjectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-$product = $objectManager->create(\Magento\Catalog\Model\Product::class);
+/** @var $objectManager ObjectManager */
+
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+
+$objectManager = Bootstrap::getObjectManager();
+$product = $objectManager->create(Product::class);
 $product->isObjectNew(true);
 $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setId(99)
@@ -22,19 +30,19 @@ $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setMetaTitle('meta title')
     ->setMetaKeyword('meta keyword')
     ->setMetaDescription('meta description')
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setStockData(
         [
-            'use_config_manage_stock'   => 1,
-            'qty'                       => 100,
-            'is_qty_decimal'            => 0,
-            'is_in_stock'               => 1,
+            'use_config_manage_stock' => 1,
+            'qty' => 100,
+            'is_qty_decimal' => 0,
+            'is_in_stock' => 1,
         ]
     )
     ->setCanSaveCustomOptions(true)
     ->setHasOptions(true);
 
-/** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepositoryFactory */
-$productRepositoryFactory = $objectManager->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+/** @var ProductRepositoryInterface $productRepositoryFactory */
+$productRepositoryFactory = $objectManager->get(ProductRepositoryInterface::class);
 $productRepositoryFactory->save($product);

@@ -39,14 +39,6 @@ class ObjectManagerProviderTest extends TestCase
      */
     private $model;
 
-    protected function setUp(): void
-    {
-        $this->serviceLocatorMock = $this->getMockForAbstractClass(ServiceLocatorInterface::class);
-        $this->bootstrapMock = $this->createMock(Bootstrap::class);
-
-        $this->model = new ObjectManagerProvider($this->serviceLocatorMock, $this->bootstrapMock);
-    }
-
     public function testGet()
     {
         $initParams = ['param' => 'value'];
@@ -101,5 +93,13 @@ class ObjectManagerProviderTest extends TestCase
         foreach ($commands as $command) {
             $this->assertSame($application, $command->getApplication());
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->serviceLocatorMock = $this->getMockForAbstractClass(ServiceLocatorInterface::class);
+        $this->bootstrapMock = $this->createMock(Bootstrap::class);
+
+        $this->model = new ObjectManagerProvider($this->serviceLocatorMock, $this->bootstrapMock);
     }
 }

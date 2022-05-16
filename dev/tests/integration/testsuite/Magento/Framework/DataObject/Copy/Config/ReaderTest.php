@@ -5,31 +5,25 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\DataObject\Copy\Config;
 
+use Magento\Framework\Config\FileResolverInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
-class ReaderTest extends \PHPUnit\Framework\TestCase
+class ReaderTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\DataObject\Copy\Config\Reader
+     * @var Reader
      */
     private $model;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     private $fileResolver;
-
-    protected function setUp(): void
-    {
-        $this->fileResolver = $this->getMockForAbstractClass(\Magento\Framework\Config\FileResolverInterface::class);
-        $objectManager = Bootstrap::getObjectManager();
-        $this->model = $objectManager->create(
-            \Magento\Framework\DataObject\Copy\Config\Reader::class,
-            ['fileResolver' => $this->fileResolver]
-        );
-    }
 
     public function testRead()
     {
@@ -61,5 +55,15 @@ class ReaderTest extends \PHPUnit\Framework\TestCase
             ],
         ];
         $this->assertEquals($expected, $this->model->read('global'));
+    }
+
+    protected function setUp(): void
+    {
+        $this->fileResolver = $this->getMockForAbstractClass(FileResolverInterface::class);
+        $objectManager = Bootstrap::getObjectManager();
+        $this->model = $objectManager->create(
+            Reader::class,
+            ['fileResolver' => $this->fileResolver]
+        );
     }
 }

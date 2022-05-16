@@ -3,10 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Model;
 
 use Magento\Framework\App\DeploymentConfig;
+use Magento\Framework\Config\ConfigOptionsListConstants;
+use Magento\Framework\Config\File\ConfigFilePool;
 use Magento\Framework\Module\ModuleList\Loader;
+use Magento\Framework\Setup\ModuleDataSetupInterface;
 use Magento\Setup\Module\DataSetupFactory;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -44,11 +48,12 @@ class ModuleRegistryUninstaller
      * @param Loader $loader
      */
     public function __construct(
-        DataSetupFactory $dataSetupFactory,
-        DeploymentConfig $deploymentConfig,
+        DataSetupFactory        $dataSetupFactory,
+        DeploymentConfig        $deploymentConfig,
         DeploymentConfig\Writer $writer,
-        Loader $loader
-    ) {
+        Loader                  $loader
+    )
+    {
         $this->dataSetupFactory = $dataSetupFactory;
         $this->deploymentConfig = $deploymentConfig;
         $this->writer = $writer;
@@ -67,7 +72,7 @@ class ModuleRegistryUninstaller
         $output->writeln(
             '<info>Removing ' . implode(', ', $modules) . ' from module registry in database</info>'
         );
-        /** @var \Magento\Framework\Setup\ModuleDataSetupInterface $setup */
+        /** @var ModuleDataSetupInterface $setup */
         $setup = $this->dataSetupFactory->create();
         foreach ($modules as $module) {
             $setup->deleteTableRow('setup_module', 'module', $module);
@@ -84,10 +89,10 @@ class ModuleRegistryUninstaller
     public function removeModulesFromDeploymentConfig(OutputInterface $output, array $modules)
     {
         $output->writeln(
-            '<info>Removing ' . implode(', ', $modules) .  ' from module list in deployment configuration</info>'
+            '<info>Removing ' . implode(', ', $modules) . ' from module list in deployment configuration</info>'
         );
         $configuredModules = $this->deploymentConfig->getConfigData(
-            \Magento\Framework\Config\ConfigOptionsListConstants::KEY_MODULES
+            ConfigOptionsListConstants::KEY_MODULES
         );
         $existingModules = $this->loader->load($modules);
         $newModules = [];
@@ -96,8 +101,8 @@ class ModuleRegistryUninstaller
         }
         $this->writer->saveConfig(
             [
-                \Magento\Framework\Config\File\ConfigFilePool::APP_CONFIG =>
-                    [\Magento\Framework\Config\ConfigOptionsListConstants::KEY_MODULES => $newModules]
+                ConfigFilePool::APP_CONFIG =>
+                    [ConfigOptionsListConstants::KEY_MODULES => $newModules]
             ],
             true
         );

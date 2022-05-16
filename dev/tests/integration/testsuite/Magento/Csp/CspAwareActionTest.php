@@ -36,7 +36,7 @@ class CspAwareActionTest extends AbstractController
 
         $this->assertStringContainsString(
             'script-src https://controller.magento.com'
-                .' \'self\' \'sha256-H4RRnauTM2X2Xg/z9zkno1crqhsaY3uKKu97uwmnXXE=\'',
+            . ' \'self\' \'sha256-H4RRnauTM2X2Xg/z9zkno1crqhsaY3uKKu97uwmnXXE=\'',
             $header->getFieldValue()
         );
     }

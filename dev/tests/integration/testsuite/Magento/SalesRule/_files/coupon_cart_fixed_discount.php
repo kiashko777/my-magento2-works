@@ -9,6 +9,7 @@ use Magento\Customer\Model\GroupManagement;
 use Magento\SalesRule\Api\CouponRepositoryInterface;
 use Magento\SalesRule\Model\Coupon;
 use Magento\SalesRule\Model\Rule;
+use Magento\SalesRule\Model\Rule\Condition\Address;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 
@@ -24,7 +25,7 @@ $salesRule->setData(
         'coupon_type' => Rule::COUPON_TYPE_SPECIFIC,
         'conditions' => [
             [
-                'type' => \Magento\SalesRule\Model\Rule\Condition\Address::class,
+                'type' => Address::class,
                 'attribute' => 'base_subtotal',
                 'operator' => '>',
                 'value' => 45,

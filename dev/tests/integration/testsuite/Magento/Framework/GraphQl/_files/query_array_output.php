@@ -29,16 +29,16 @@ return [
                                         ],
 
                                 ],
-                                'required' => false,
-                                'isList' => false,
-                                'resolver' => Magento\EavGraphQl\Model\Resolver\CustomAttributeMetadata::class,
-                                'description' => 'Returns the attribute type, given an attribute code and entity type',
-                                'cache' => [
-                                    'cacheIdentity' =>
-                                        Magento\EavGraphQl\Model\Resolver\CustomAttributeMetadata::class
-                                ]
+                            'required' => false,
+                            'isList' => false,
+                            'resolver' => Magento\EavGraphQl\Model\Resolver\CustomAttributeMetadata::class,
+                            'description' => 'Returns the attribute type, given an attribute code and entity type',
+                            'cache' => [
+                                'cacheIdentity' =>
+                                    Magento\EavGraphQl\Model\Resolver\CustomAttributeMetadata::class
+                            ]
                         ],
-                        'products' => [
+                    'products' => [
                         'name' => 'products',
                         'type' => 'Products',
                         'arguments' =>
@@ -54,7 +54,7 @@ return [
                                         'defaultValue' => null
                                     ],
 
-                                    'filter' =>
+                                'filter' =>
                                     [
                                         'name' => 'filter',
                                         'type' => 'ProductFilterInput',
@@ -65,7 +65,7 @@ return [
                                         'defaultValue' => null
                                     ],
 
-                                    'pageSize' =>
+                                'pageSize' =>
                                     [
                                         'name' => 'pageSize',
                                         'type' => 'Int',
@@ -76,7 +76,7 @@ return [
                                         'defaultValue' => 10
                                     ],
 
-                                    'currentPage' =>
+                                'currentPage' =>
                                     [
                                         'name' => 'currentPage',
                                         'type' => 'Int',
@@ -86,7 +86,7 @@ return [
                                         'itemsRequired' => false,
                                         'defaultValue' => 1
                                     ],
-                                    'sort' =>
+                                'sort' =>
                                     [
                                         'name' => 'sort',
                                         'type' => 'ProductSortInput',
@@ -97,14 +97,14 @@ return [
                                         'defaultValue' => null
                                     ]
                             ],
-                            'required' => false,
-                            'isList' => false,
-                            'resolver' => Magento\CatalogGraphQl\Model\Resolver\Products::class,
-                            'description' => 'comment for products fields'
-                        ]
+                        'required' => false,
+                        'isList' => false,
+                        'resolver' => Magento\CatalogGraphQl\Model\Resolver\Products::class,
+                        'description' => 'comment for products fields'
+                    ]
                 ]
         ],
-        'PriceAdjustmentDescriptionEnum' =>
+    'PriceAdjustmentDescriptionEnum' =>
         [
             'name' => 'PriceAdjustmentDescriptionEnum',
             'values' =>
@@ -115,16 +115,16 @@ return [
                             'value' => 'INCLUDED',
                             'description' => 'price is included'
                         ],
-                        'EXCLUDED' =>
+                    'EXCLUDED' =>
                         [
                             'name' => 'excluded',
                             'value' => 'EXCLUDED',
                             'description' => 'price is excluded'
                         ]
                 ],
-                'description' => 'Description for enumType PriceAdjustmentDescriptionEnum'
+            'description' => 'Description for enumType PriceAdjustmentDescriptionEnum'
         ],
-        'ProductLinks' =>
+    'ProductLinks' =>
         [
             'name' => 'ProductLinks',
             'fields' =>
@@ -137,66 +137,66 @@ return [
                             'arguments' =>
                                 [
                                 ],
-                                'required' => false,
-                                'isList' => false,
-                                'resolver' => '',
-                                'description' => 'The identifier of the linked product',
+                            'required' => false,
+                            'isList' => false,
+                            'resolver' => '',
+                            'description' => 'The identifier of the linked product',
 
                         ],
-                        'link_type' =>
+                    'link_type' =>
                         [
                             'name' => 'link_type',
                             'type' => 'String',
                             'arguments' =>
                                 [
                                 ],
-                                'required' => false,
-                                'isList' => false,
-                                'resolver' => '',
-                                'description' => '',
+                            'required' => false,
+                            'isList' => false,
+                            'resolver' => '',
+                            'description' => '',
 
                         ],
-                        'linked_product_sku' =>
+                    'linked_product_sku' =>
                         [
                             'name' => 'linked_product_sku',
                             'type' => 'String',
                             'arguments' =>
                                 [
                                 ],
-                                'required' => false,
-                                'isList' => false,
-                                'resolver' => '',
-                                'description' => 'The SKU of the linked product',
+                            'required' => false,
+                            'isList' => false,
+                            'resolver' => '',
+                            'description' => 'The SKU of the linked product',
 
                         ],
-                        'linked_product_type' =>
+                    'linked_product_type' =>
                         [
                             'name' => 'linked_product_type',
                             'type' => 'String',
                             'arguments' =>
                                 [
                                 ],
-                                'required' => false,
-                                'isList' => false,
-                                'resolver' => '',
-                                'description' => '',
+                            'required' => false,
+                            'isList' => false,
+                            'resolver' => '',
+                            'description' => '',
 
                         ],
-                        'position' =>
+                    'position' =>
                         [
                             'name' => 'position',
                             'type' => 'Int',
                             'arguments' =>
                                 [
                                 ],
-                                'required' => false,
-                                'isList' => false,
-                                'resolver' => '',
-                                'description' => 'The position within the list of product links',
+                            'required' => false,
+                            'isList' => false,
+                            'resolver' => '',
+                            'description' => 'The position within the list of product links',
 
                         ]
                 ],
-                'interfaces' =>
+            'interfaces' =>
                 [
                     'ProductLinksInterface' =>
                         [
@@ -204,9 +204,9 @@ return [
                             'copyFields' => true,
                         ],
                 ],
-                'description' => 'ProductLinks is an implementation of ProductLinksInterface.'
+            'description' => 'ProductLinks is an implementation of ProductLinksInterface.'
         ],
-        'ProductLinksInterface' =>
+    'ProductLinksInterface' =>
         [
             'name' => 'ProductLinksInterface',
             'fields' =>
@@ -219,66 +219,66 @@ return [
                             'arguments' =>
                                 [
                                 ],
-                                'required' => false,
-                                'isList' => false,
-                                'resolver' => '',
-                                'description' => 'The identifier of the linked product',
+                            'required' => false,
+                            'isList' => false,
+                            'resolver' => '',
+                            'description' => 'The identifier of the linked product',
 
                         ],
-                        'link_type' =>
+                    'link_type' =>
                         [
                             'name' => 'link_type',
                             'type' => 'String',
                             'arguments' =>
                                 [
                                 ],
-                                'required' => false,
-                                'isList' => false,
-                                'resolver' => '',
-                                'description' => '',
+                            'required' => false,
+                            'isList' => false,
+                            'resolver' => '',
+                            'description' => '',
 
                         ],
-                        'linked_product_sku' =>
+                    'linked_product_sku' =>
                         [
                             'name' => 'linked_product_sku',
                             'type' => 'String',
                             'arguments' =>
                                 [
                                 ],
-                                'required' => false,
-                                'isList' => false,
-                                'resolver' => '',
-                                'description' => 'The SKU of the linked product',
+                            'required' => false,
+                            'isList' => false,
+                            'resolver' => '',
+                            'description' => 'The SKU of the linked product',
 
                         ],
-                        'linked_product_type' =>
+                    'linked_product_type' =>
                         [
                             'name' => 'linked_product_type',
                             'type' => 'String',
                             'arguments' =>
                                 [
                                 ],
-                                'required' => false,
-                                'isList' => false,
-                                'resolver' => '',
-                                'description' => '',
+                            'required' => false,
+                            'isList' => false,
+                            'resolver' => '',
+                            'description' => '',
 
                         ],
-                        'position' =>
+                    'position' =>
                         [
                             'name' => 'position',
                             'type' => 'Int',
                             'arguments' =>
                                 [
                                 ],
-                                'required' => false,
-                                'isList' => false,
-                                'resolver' => '',
-                                'description' => 'The position within the list of product links',
+                            'required' => false,
+                            'isList' => false,
+                            'resolver' => '',
+                            'description' => 'The position within the list of product links',
 
                         ]
                 ],
-                'typeResolver' => Magento\CatalogGraphQl\Model\ProductLinkTypeResolverComposite::class,
-                'description' => 'description for ProductLinksInterface'
+            'typeResolver' => Magento\CatalogGraphQl\Model\ProductLinkTypeResolverComposite::class,
+            'description' => 'description for ProductLinksInterface'
         ]
 ];

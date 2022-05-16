@@ -4,9 +4,13 @@
  * See COPYING.txt for license details.
  */
 
-/** @var $integration \Magento\Integration\Model\Integration */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-$integration = $objectManager->create(\Magento\Integration\Model\Integration::class);
+/** @var $integration Integration */
+
+use Magento\Integration\Model\Integration;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
+$integration = $objectManager->create(Integration::class);
 $integration->load('Fixture Integration', 'name');
 if ($integration->getId()) {
     $integration->delete();

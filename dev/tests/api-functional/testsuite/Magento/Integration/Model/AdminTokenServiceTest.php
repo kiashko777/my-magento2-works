@@ -6,13 +6,15 @@
 
 namespace Magento\Integration\Model;
 
-use Magento\Framework\Exception\InputException;
+use Exception;
+use Magento\Framework\Webapi\Exception as HTTPExceptionCodes;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Integration\Api\AdminTokenServiceInterface;
 use Magento\Integration\Model\Oauth\Token as TokenModel;
+use Magento\Integration\Model\Oauth\Token\RequestLog\Config as TokenThrottlerConfig;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 use Magento\User\Model\User as UserModel;
-use Magento\Framework\Webapi\Exception as HTTPExceptionCodes;
-use Magento\Integration\Model\Oauth\Token\RequestLog\Config as TokenThrottlerConfig;
 
 /**
  * api-functional test for \Magento\Integration\Model\AdminTokenService.
@@ -25,7 +27,7 @@ class AdminTokenServiceTest extends WebapiAbstract
     const RESOURCE_PATH_ADMIN_TOKEN = "/V1/integration/admin/token";
 
     /**
-     * @var \Magento\Integration\Api\AdminTokenServiceInterface
+     * @var AdminTokenServiceInterface
      */
     private $tokenService;
 
@@ -45,21 +47,6 @@ class AdminTokenServiceTest extends WebapiAbstract
     private $attemptsCountToLockAccount;
 
     /**
-     * Setup AdminTokenService
-     */
-    protected function setUp(): void
-    {
-        $this->markTestSkipped('Skipped until MC-34201 is addressed');
-        $this->_markTestAsRestOnly();
-        $this->tokenService = Bootstrap::getObjectManager()->get(\Magento\Integration\Model\AdminTokenService::class);
-        $this->tokenModel = Bootstrap::getObjectManager()->get(\Magento\Integration\Model\Oauth\Token::class);
-        $this->userModel = Bootstrap::getObjectManager()->get(\Magento\User\Model\User::class);
-        /** @var TokenThrottlerConfig $tokenThrottlerConfig */
-        $tokenThrottlerConfig = Bootstrap::getObjectManager()->get(TokenThrottlerConfig::class);
-        $this->attemptsCountToLockAccount = $tokenThrottlerConfig->getMaxFailuresCount();
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Webapi/_files/webapi_user.php
      */
     public function testCreateAdminAccessToken()
@@ -69,7 +56,7 @@ class AdminTokenServiceTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH_ADMIN_TOKEN,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
         ];
         $requestData = [
@@ -78,6 +65,22 @@ class AdminTokenServiceTest extends WebapiAbstract
         ];
         $accessToken = $this->_webApiCall($serviceInfo, $requestData);
         $this->assertToken($adminUserNameFromFixture, $accessToken);
+    }
+
+    /**
+     * Make sure provided token is valid and belongs to the specified user.
+     *
+     * @param string $username
+     * @param string $accessToken
+     */
+    private function assertToken($username, $accessToken)
+    {
+        $adminUserId = $this->userModel->loadByUsername($username)->getId();
+        /** @var $token TokenModel */
+        $token = $this->tokenModel
+            ->loadByAdminId($adminUserId)
+            ->getToken();
+        $this->assertEquals($accessToken, $token);
     }
 
     /**
@@ -103,13 +106,13 @@ class AdminTokenServiceTest extends WebapiAbstract
             $serviceInfo = [
                 'rest' => [
                     'resourcePath' => self::RESOURCE_PATH_ADMIN_TOKEN,
-                    'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                    'httpMethod' => Request::HTTP_METHOD_POST,
                 ],
             ];
             $requestData = ['username' => '', 'password' => ''];
             $this->_webApiCall($serviceInfo, $requestData);
             $noExceptionOccurred = true;
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             $this->assertInputExceptionMessages($exception);
         }
         if ($noExceptionOccurred) {
@@ -117,183 +120,10 @@ class AdminTokenServiceTest extends WebapiAbstract
         }
     }
 
-    public function testCreateAdminAccessTokenInvalidCredentials()
-    {
-        $customerUserName = 'invalid';
-        $password = 'invalid';
-        $noExceptionOccurred = false;
-        try {
-            $serviceInfo = [
-                'rest' => [
-                    'resourcePath' => self::RESOURCE_PATH_ADMIN_TOKEN,
-                    'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
-                ],
-            ];
-            $requestData = ['username' => $customerUserName, 'password' => $password];
-            $this->_webApiCall($serviceInfo, $requestData);
-            $noExceptionOccurred = true;
-        } catch (\Exception $exception) {
-            $this->assertInvalidCredentialsException($exception);
-        }
-        if ($noExceptionOccurred) {
-            $this->fail("Exception was expected to be thrown when provided credentials are invalid.");
-        }
-    }
-
-    /**
-     * @magentoApiDataFixture Magento/Webapi/_files/webapi_user.php
-     */
-    public function testUseAdminAccessTokenInactiveAdmin()
-    {
-        $adminUserNameFromFixture = 'webapi_user';
-
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH_ADMIN_TOKEN,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
-            ],
-        ];
-        $requestData = [
-            'username' => $adminUserNameFromFixture,
-            'password' => \Magento\TestFramework\Bootstrap::ADMIN_PASSWORD,
-        ];
-        $accessToken = $this->_webApiCall($serviceInfo, $requestData);
-        $this->assertToken($adminUserNameFromFixture, $accessToken);
-
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => '/V1/store/storeConfigs',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
-                'token' => $accessToken
-            ]
-        ];
-        $requestData = [
-            'storeCodes' => ['default'],
-        ];
-        $storeConfigs = $this->_webApiCall($serviceInfo, $requestData);
-        $this->assertNotNull($storeConfigs);
-
-        $adminUser = $this->userModel->loadByUsername($adminUserNameFromFixture);
-        $adminUser->setData("is_active", 0);
-        $adminUser->save();
-
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => '/V1/store/storeConfigs',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
-                'token' => $accessToken
-            ]
-        ];
-        $requestData = [
-            'storeCodes' => ['default'],
-        ];
-
-        $noExceptionOccurred = false;
-        try {
-            $this->_webApiCall($serviceInfo, $requestData);
-            $noExceptionOccurred = true;
-        } catch (\Exception $exception) {
-            $this->assertUnauthorizedAccessException($exception);
-        }
-        if ($noExceptionOccurred) {
-            $this->fail("Exception was expected to be thrown when provided token is expired.");
-        }
-    }
-
-    /**
-     * @magentoApiDataFixture Magento/Webapi/_files/webapi_user.php
-     */
-    public function testThrottlingMaxAttempts()
-    {
-        $adminUserNameFromFixture = 'webapi_user';
-
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH_ADMIN_TOKEN,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
-            ],
-        ];
-        $invalidCredentials = [
-            'username' => $adminUserNameFromFixture,
-            'password' => 'invalid',
-        ];
-        $validCredentials = [
-            'username' => $adminUserNameFromFixture,
-            'password' => \Magento\TestFramework\Bootstrap::ADMIN_PASSWORD,
-        ];
-
-        /* Try to get token using invalid credentials for 5 times (account is locked after 6 attempts) */
-        $noExceptionOccurred = false;
-        for ($i = 0; $i < ($this->attemptsCountToLockAccount - 1); $i++) {
-            try {
-                $this->_webApiCall($serviceInfo, $invalidCredentials);
-                $noExceptionOccurred = true;
-            } catch (\Exception $exception) {
-            }
-        }
-        if ($noExceptionOccurred) {
-            $this->fail(
-                "Precondition failed: exception should have occurred when token was requested with invalid credentials."
-            );
-        }
-
-        /** On 6th attempt it still should be possible to get token if valid credentials are specified */
-        $accessToken = $this->_webApiCall($serviceInfo, $validCredentials);
-        $this->assertToken($adminUserNameFromFixture, $accessToken);
-    }
-
-    /**
-     * @magentoApiDataFixture Magento/Webapi/_files/webapi_user.php
-     */
-    public function testThrottlingAccountLockout()
-    {
-        $adminUserNameFromFixture = 'webapi_user';
-
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH_ADMIN_TOKEN,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
-            ],
-        ];
-        $invalidCredentials = [
-            'username' => $adminUserNameFromFixture,
-            'password' => 'invalid',
-        ];
-        $validCredentials = [
-            'username' => $adminUserNameFromFixture,
-            'password' => \Magento\TestFramework\Bootstrap::ADMIN_PASSWORD,
-        ];
-
-        /* Try to get token using invalid credentials for 5 times (account would be locked after 6 attempts) */
-        $noExceptionOccurred = false;
-        for ($i = 0; $i < $this->attemptsCountToLockAccount; $i++) {
-            try {
-                $this->_webApiCall($serviceInfo, $invalidCredentials);
-                $noExceptionOccurred = true;
-            } catch (\Exception $exception) {
-                $this->assertInvalidCredentialsException($exception);
-            }
-            if ($noExceptionOccurred) {
-                $this->fail("Exception was expected to be thrown when provided credentials are invalid.");
-            }
-        }
-
-        $noExceptionOccurred = false;
-        try {
-            $this->_webApiCall($serviceInfo, $validCredentials);
-            $noExceptionOccurred = true;
-        } catch (\Exception $exception) {
-            $this->assertInvalidCredentialsException($exception);
-        }
-        if ($noExceptionOccurred) {
-            $this->fail("Exception was expected to be thrown because account should have been locked at this point.");
-        }
-    }
-
     /**
      * Assert for presence of Input exception messages
      *
-     * @param \Exception $exception
+     * @param Exception $exception
      */
     private function assertInputExceptionMessages($exception)
     {
@@ -319,10 +149,33 @@ class AdminTokenServiceTest extends WebapiAbstract
         $this->assertEquals($expectedExceptionData, $exceptionData);
     }
 
+    public function testCreateAdminAccessTokenInvalidCredentials()
+    {
+        $customerUserName = 'invalid';
+        $password = 'invalid';
+        $noExceptionOccurred = false;
+        try {
+            $serviceInfo = [
+                'rest' => [
+                    'resourcePath' => self::RESOURCE_PATH_ADMIN_TOKEN,
+                    'httpMethod' => Request::HTTP_METHOD_POST,
+                ],
+            ];
+            $requestData = ['username' => $customerUserName, 'password' => $password];
+            $this->_webApiCall($serviceInfo, $requestData);
+            $noExceptionOccurred = true;
+        } catch (Exception $exception) {
+            $this->assertInvalidCredentialsException($exception);
+        }
+        if ($noExceptionOccurred) {
+            $this->fail("Exception was expected to be thrown when provided credentials are invalid.");
+        }
+    }
+
     /**
      * Make sure that status code and message are correct in case of authentication failure.
      *
-     * @param \Exception $exception
+     * @param Exception $exception
      */
     private function assertInvalidCredentialsException($exception)
     {
@@ -340,9 +193,69 @@ class AdminTokenServiceTest extends WebapiAbstract
     }
 
     /**
+     * @magentoApiDataFixture Magento/Webapi/_files/webapi_user.php
+     */
+    public function testUseAdminAccessTokenInactiveAdmin()
+    {
+        $adminUserNameFromFixture = 'webapi_user';
+
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH_ADMIN_TOKEN,
+                'httpMethod' => Request::HTTP_METHOD_POST,
+            ],
+        ];
+        $requestData = [
+            'username' => $adminUserNameFromFixture,
+            'password' => \Magento\TestFramework\Bootstrap::ADMIN_PASSWORD,
+        ];
+        $accessToken = $this->_webApiCall($serviceInfo, $requestData);
+        $this->assertToken($adminUserNameFromFixture, $accessToken);
+
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => '/V1/store/storeConfigs',
+                'httpMethod' => Request::HTTP_METHOD_GET,
+                'token' => $accessToken
+            ]
+        ];
+        $requestData = [
+            'storeCodes' => ['default'],
+        ];
+        $storeConfigs = $this->_webApiCall($serviceInfo, $requestData);
+        $this->assertNotNull($storeConfigs);
+
+        $adminUser = $this->userModel->loadByUsername($adminUserNameFromFixture);
+        $adminUser->setData("is_active", 0);
+        $adminUser->save();
+
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => '/V1/store/storeConfigs',
+                'httpMethod' => Request::HTTP_METHOD_GET,
+                'token' => $accessToken
+            ]
+        ];
+        $requestData = [
+            'storeCodes' => ['default'],
+        ];
+
+        $noExceptionOccurred = false;
+        try {
+            $this->_webApiCall($serviceInfo, $requestData);
+            $noExceptionOccurred = true;
+        } catch (Exception $exception) {
+            $this->assertUnauthorizedAccessException($exception);
+        }
+        if ($noExceptionOccurred) {
+            $this->fail("Exception was expected to be thrown when provided token is expired.");
+        }
+    }
+
+    /**
      * Make sure that status code and message are correct in case of authentication failure.
      *
-     * @param \Exception $exception
+     * @param Exception $exception
      */
     private function assertUnauthorizedAccessException($exception)
     {
@@ -362,18 +275,107 @@ class AdminTokenServiceTest extends WebapiAbstract
     }
 
     /**
-     * Make sure provided token is valid and belongs to the specified user.
-     *
-     * @param string $username
-     * @param string $accessToken
+     * @magentoApiDataFixture Magento/Webapi/_files/webapi_user.php
      */
-    private function assertToken($username, $accessToken)
+    public function testThrottlingMaxAttempts()
     {
-        $adminUserId = $this->userModel->loadByUsername($username)->getId();
-        /** @var $token TokenModel */
-        $token = $this->tokenModel
-            ->loadByAdminId($adminUserId)
-            ->getToken();
-        $this->assertEquals($accessToken, $token);
+        $adminUserNameFromFixture = 'webapi_user';
+
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH_ADMIN_TOKEN,
+                'httpMethod' => Request::HTTP_METHOD_POST,
+            ],
+        ];
+        $invalidCredentials = [
+            'username' => $adminUserNameFromFixture,
+            'password' => 'invalid',
+        ];
+        $validCredentials = [
+            'username' => $adminUserNameFromFixture,
+            'password' => \Magento\TestFramework\Bootstrap::ADMIN_PASSWORD,
+        ];
+
+        /* Try to get token using invalid credentials for 5 times (account is locked after 6 attempts) */
+        $noExceptionOccurred = false;
+        for ($i = 0; $i < ($this->attemptsCountToLockAccount - 1); $i++) {
+            try {
+                $this->_webApiCall($serviceInfo, $invalidCredentials);
+                $noExceptionOccurred = true;
+            } catch (Exception $exception) {
+            }
+        }
+        if ($noExceptionOccurred) {
+            $this->fail(
+                "Precondition failed: exception should have occurred when token was requested with invalid credentials."
+            );
+        }
+
+        /** On 6th attempt it still should be possible to get token if valid credentials are specified */
+        $accessToken = $this->_webApiCall($serviceInfo, $validCredentials);
+        $this->assertToken($adminUserNameFromFixture, $accessToken);
+    }
+
+    /**
+     * @magentoApiDataFixture Magento/Webapi/_files/webapi_user.php
+     */
+    public function testThrottlingAccountLockout()
+    {
+        $adminUserNameFromFixture = 'webapi_user';
+
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH_ADMIN_TOKEN,
+                'httpMethod' => Request::HTTP_METHOD_POST,
+            ],
+        ];
+        $invalidCredentials = [
+            'username' => $adminUserNameFromFixture,
+            'password' => 'invalid',
+        ];
+        $validCredentials = [
+            'username' => $adminUserNameFromFixture,
+            'password' => \Magento\TestFramework\Bootstrap::ADMIN_PASSWORD,
+        ];
+
+        /* Try to get token using invalid credentials for 5 times (account would be locked after 6 attempts) */
+        $noExceptionOccurred = false;
+        for ($i = 0; $i < $this->attemptsCountToLockAccount; $i++) {
+            try {
+                $this->_webApiCall($serviceInfo, $invalidCredentials);
+                $noExceptionOccurred = true;
+            } catch (Exception $exception) {
+                $this->assertInvalidCredentialsException($exception);
+            }
+            if ($noExceptionOccurred) {
+                $this->fail("Exception was expected to be thrown when provided credentials are invalid.");
+            }
+        }
+
+        $noExceptionOccurred = false;
+        try {
+            $this->_webApiCall($serviceInfo, $validCredentials);
+            $noExceptionOccurred = true;
+        } catch (Exception $exception) {
+            $this->assertInvalidCredentialsException($exception);
+        }
+        if ($noExceptionOccurred) {
+            $this->fail("Exception was expected to be thrown because account should have been locked at this point.");
+        }
+    }
+
+    /**
+     * Setup AdminTokenService
+     */
+    protected function setUp(): void
+    {
+        $this->markTestSkipped('Skipped until MC-34201 is addressed');
+        $this->_markTestAsRestOnly();
+        $this->tokenService = Bootstrap::getObjectManager()->get(AdminTokenService::class);
+        $this->tokenModel = Bootstrap::getObjectManager()->get(TokenModel::class);
+        $this->userModel = Bootstrap::getObjectManager()->get(UserModel::class);
+        /** @var TokenThrottlerConfig $tokenThrottlerConfig */
+        $tokenThrottlerConfig = Bootstrap::getObjectManager()->get(TokenThrottlerConfig::class);
+        $this->attemptsCountToLockAccount = $tokenThrottlerConfig->getMaxFailuresCount();
     }
 }

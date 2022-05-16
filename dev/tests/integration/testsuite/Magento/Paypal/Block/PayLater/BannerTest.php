@@ -42,6 +42,21 @@ class BannerTest extends TestCase
     }
 
     /**
+     * Set system configuration value for test
+     *
+     * @param $config
+     */
+    private function setConfig($config)
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var $scopeConfig MutableScopeConfig */
+        $scopeConfig = $objectManager->get(MutableScopeConfigInterface::class);
+        foreach ($config as $path => $value) {
+            $scopeConfig->setValue($path, $value, ScopeInterface::SCOPE_STORE);
+        }
+    }
+
+    /**
      * @return array
      */
     public function getJsLayoutDataProvider()
@@ -67,7 +82,7 @@ class BannerTest extends TestCase
                         ]
                     ]
                 ],
-                 'expectedConfig' => [
+                'expectedConfig' => [
                     'attributes' => [
                         'data-pp-style-layout' => 'flex',
                         'data-pp-style-logo-type' => null,
@@ -122,8 +137,8 @@ class BannerTest extends TestCase
     /**
      * @magentoAppArea frontend
      * @dataProvider sdkUrlDataProvider
-     * @covers \Magento\Paypal\Block\PayLater\Banner::getJsLayout()
-     * @covers \Magento\Paypal\Block\PayLater\Banner::getPayPalSdkUrl()
+     * @covers       \Magento\Paypal\Block\PayLater\Banner::getJsLayout()
+     * @covers       \Magento\Paypal\Block\PayLater\Banner::getPayPalSdkUrl()
      */
     public function testSdkUrl($blockConfig, $expectedUrl)
     {
@@ -191,11 +206,11 @@ class BannerTest extends TestCase
     {
         $paymentMethod = sprintf('payment/%s/active', Config::METHOD_EXPRESS);
         $systemConfig = [
-                $paymentMethod => 1,
-                'payment/paypal_paylater/experience_active' => 1,
-                'payment/paypal_paylater/enabled' => 1,
-                'payment/paypal_paylater/test3page_display' => 1,
-                'payment/paypal_paylater/test3page_position' => 'header'
+            $paymentMethod => 1,
+            'payment/paypal_paylater/experience_active' => 1,
+            'payment/paypal_paylater/enabled' => 1,
+            'payment/paypal_paylater/test3page_display' => 1,
+            'payment/paypal_paylater/test3page_position' => 'header'
         ];
         $blockConfig = [
             'placement' => 'test3',
@@ -280,20 +295,5 @@ class BannerTest extends TestCase
                 'blockConfig' => []
             ],
         ];
-    }
-
-    /**
-     * Set system configuration value for test
-     *
-     * @param $config
-     */
-    private function setConfig($config)
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        /** @var $scopeConfig MutableScopeConfig */
-        $scopeConfig = $objectManager->get(MutableScopeConfigInterface::class);
-        foreach ($config as $path => $value) {
-            $scopeConfig->setValue($path, $value, ScopeInterface::SCOPE_STORE);
-        }
     }
 }

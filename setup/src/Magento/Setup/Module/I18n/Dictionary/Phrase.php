@@ -3,7 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\I18n\Dictionary;
+
+use DomainException;
 
 /**
  *  Phrase
@@ -78,133 +81,20 @@ class Phrase
     }
 
     /**
-     * Set phrase
-     *
-     * @param string $phrase
-     * @return void
-     * @throws \DomainException
-     */
-    public function setPhrase($phrase)
-    {
-        if (!$phrase) {
-            throw new \DomainException('Missed phrase');
-        }
-        $this->_phrase = $phrase;
-    }
-
-    /**
-     * Get phrase
-     *
-     * @return string
-     */
-    public function getPhrase()
-    {
-        return $this->_phrase;
-    }
-
-    /**
-     * Set quote type
-     *
-     * @param string $quote
-     * @return void
-     */
-    public function setQuote($quote)
-    {
-        if (in_array($quote, [self::QUOTE_SINGLE, self::QUOTE_DOUBLE])) {
-            $this->_quote = $quote;
-        }
-    }
-
-    /**
-     * Get quote type
-     *
-     * @return string
-     */
-    public function getQuote()
-    {
-        return $this->_quote;
-    }
-
-    /**
-     * Set translation
-     *
-     * @param string $translation
-     * @return void
-     * @throws \DomainException
-     */
-    public function setTranslation($translation)
-    {
-        if (!$translation) {
-            throw new \DomainException('Missed translation');
-        }
-        $this->_translation = $translation;
-    }
-
-    /**
-     * Get translation
-     *
-     * @return string
-     */
-    public function getTranslation()
-    {
-        return $this->_translation;
-    }
-
-    /**
-     * Set context type
-     *
-     * @param string $contextType
-     * @return void
-     */
-    public function setContextType($contextType)
-    {
-        $this->_contextType = $contextType;
-    }
-
-    /**
-     * Get context type
-     *
-     * @return string
-     */
-    public function getContextType()
-    {
-        return $this->_contextType;
-    }
-
-    /**
      * Add context value
      *
      * @param string $contextValue
      * @return void
-     * @throws \DomainException
+     * @throws DomainException
      */
     public function addContextValue($contextValue)
     {
         if (empty($contextValue)) {
-            throw new \DomainException('Context value is empty');
+            throw new DomainException('Context value is empty');
         }
         if (!in_array($contextValue, $this->_contextValue)) {
             $this->_contextValue[] = $contextValue;
         }
-    }
-
-    /**
-     * Set context type
-     *
-     * @param string $contextValue
-     * @return void
-     * @throws \DomainException
-     */
-    public function setContextValue($contextValue)
-    {
-        if (is_string($contextValue)) {
-            $contextValue = explode(',', $contextValue);
-        } elseif (null == $contextValue) {
-            $contextValue = [];
-        } elseif (!is_array($contextValue)) {
-            throw new \DomainException('Wrong context type');
-        }
-        $this->_contextValue = $contextValue;
     }
 
     /**
@@ -215,6 +105,25 @@ class Phrase
     public function getContextValue()
     {
         return $this->_contextValue;
+    }
+
+    /**
+     * Set context type
+     *
+     * @param string $contextValue
+     * @return void
+     * @throws DomainException
+     */
+    public function setContextValue($contextValue)
+    {
+        if (is_string($contextValue)) {
+            $contextValue = explode(',', $contextValue);
+        } elseif (null == $contextValue) {
+            $contextValue = [];
+        } elseif (!is_array($contextValue)) {
+            throw new DomainException('Wrong context type');
+        }
+        $this->_contextValue = $contextValue;
     }
 
     /**
@@ -239,13 +148,49 @@ class Phrase
     }
 
     /**
-     * Compile PHP string based on quotes type it enclosed with
+     * Get phrase
      *
      * @return string
      */
-    public function getCompiledPhrase()
+    public function getPhrase()
     {
-        return $this->getCompiledString($this->getPhrase());
+        return $this->_phrase;
+    }
+
+    /**
+     * Set phrase
+     *
+     * @param string $phrase
+     * @return void
+     * @throws DomainException
+     */
+    public function setPhrase($phrase)
+    {
+        if (!$phrase) {
+            throw new DomainException('Missed phrase');
+        }
+        $this->_phrase = $phrase;
+    }
+
+    /**
+     * Get context type
+     *
+     * @return string
+     */
+    public function getContextType()
+    {
+        return $this->_contextType;
+    }
+
+    /**
+     * Set context type
+     *
+     * @param string $contextType
+     * @return void
+     */
+    public function setContextType($contextType)
+    {
+        $this->_contextType = $contextType;
     }
 
     /**
@@ -253,9 +198,9 @@ class Phrase
      *
      * @return string
      */
-    public function getCompiledTranslation()
+    public function getCompiledPhrase()
     {
-        return $this->getCompiledString($this->getTranslation());
+        return $this->getCompiledString($this->getPhrase());
     }
 
     /**
@@ -277,5 +222,63 @@ class Phrase
         $string = str_replace('\"', '"', $string);
         $string = str_replace("\\'", "'", $string);
         return $string;
+    }
+
+    /**
+     * Get quote type
+     *
+     * @return string
+     */
+    public function getQuote()
+    {
+        return $this->_quote;
+    }
+
+    /**
+     * Set quote type
+     *
+     * @param string $quote
+     * @return void
+     */
+    public function setQuote($quote)
+    {
+        if (in_array($quote, [self::QUOTE_SINGLE, self::QUOTE_DOUBLE])) {
+            $this->_quote = $quote;
+        }
+    }
+
+    /**
+     * Compile PHP string based on quotes type it enclosed with
+     *
+     * @return string
+     */
+    public function getCompiledTranslation()
+    {
+        return $this->getCompiledString($this->getTranslation());
+    }
+
+    /**
+     * Get translation
+     *
+     * @return string
+     */
+    public function getTranslation()
+    {
+        return $this->_translation;
+    }
+
+    /**
+     * Set translation
+     *
+     * @param string $translation
+     * @return void
+     * @throws DomainException
+     */
+    public function setTranslation($translation)
+    {
+        if (!$translation) {
+            throw new DomainException('Missed translation');
+        }
+        $this->_translation = $translation;
     }
 }

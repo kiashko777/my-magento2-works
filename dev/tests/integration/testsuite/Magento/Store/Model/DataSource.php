@@ -3,12 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Store\Model;
+
+use Magento\Framework\Data\Collection;
 
 /**
  * Dummy layout argument data source object
  */
-class DataSource extends \Magento\Framework\Data\Collection
+class DataSource extends Collection
 {
     /**
      * Property which stores all updater calls
@@ -31,7 +34,7 @@ class DataSource extends \Magento\Framework\Data\Collection
      * Set updater calls
      *
      * @param array $calls
-     * @return \Magento\Store\Model\DataSource
+     * @return DataSource
      */
     public function setUpdaterCall(array $calls)
     {

@@ -4,14 +4,20 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Sales\Api\Data\InvoiceItemCreationInterface;
+use Magento\Sales\Api\Data\OrderItemInterface;
+use Magento\Sales\Api\Data\ShipmentItemCreationInterface;
+use Magento\Sales\Api\InvoiceOrderInterface;
+use Magento\Sales\Api\ShipOrderInterface;
+use Magento\Sales\Model\Order;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Sales/_files/order.php');
 
 $objectManager = Bootstrap::getObjectManager();
-/** @var \Magento\Sales\Model\Order $order */
-$order = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Sales\Model\Order::class);
+/** @var Order $order */
+$order = Bootstrap::getObjectManager()->create(Order::class);
 $order->loadByIncrementId('100000001');
 
 $order->setData(
@@ -35,21 +41,21 @@ $order->setData(
 )->save();
 
 $orderItems = $order->getItems();
-/** @var \Magento\Sales\Api\Data\OrderItemInterface $orderItem */
+/** @var OrderItemInterface $orderItem */
 $orderItem = array_values($orderItems)[0];
 
-/** @var \Magento\Sales\Api\Data\ShipmentItemCreationInterface $shipmentItem */
-$invoiceItem = $objectManager->create(\Magento\Sales\Api\Data\InvoiceItemCreationInterface::class);
+/** @var ShipmentItemCreationInterface $shipmentItem */
+$invoiceItem = $objectManager->create(InvoiceItemCreationInterface::class);
 $invoiceItem->setOrderItemId($orderItem->getItemId());
 $invoiceItem->setQty($orderItem->getQtyOrdered());
-/** @var \Magento\Sales\Api\InvoiceOrderInterface $invoiceOrder */
-$invoiceOrder = $objectManager->create(\Magento\Sales\Api\InvoiceOrderInterface::class);
+/** @var InvoiceOrderInterface $invoiceOrder */
+$invoiceOrder = $objectManager->create(InvoiceOrderInterface::class);
 $invoiceOrder->execute($order->getEntityId(), false, [$invoiceItem]);
 
-/** @var \Magento\Sales\Api\Data\ShipmentItemCreationInterface $shipmentItem */
-$shipmentItem = $objectManager->create(\Magento\Sales\Api\Data\ShipmentItemCreationInterface::class);
+/** @var ShipmentItemCreationInterface $shipmentItem */
+$shipmentItem = $objectManager->create(ShipmentItemCreationInterface::class);
 $shipmentItem->setOrderItemId($orderItem->getItemId());
 $shipmentItem->setQty($orderItem->getQtyOrdered());
-/** @var \Magento\Sales\Api\ShipOrderInterface $shipOrder */
-$shipOrder = $objectManager->create(\Magento\Sales\Api\ShipOrderInterface::class);
+/** @var ShipOrderInterface $shipOrder */
+$shipOrder = $objectManager->create(ShipOrderInterface::class);
 $shipOrder->execute($order->getEntityId(), [$shipmentItem]);

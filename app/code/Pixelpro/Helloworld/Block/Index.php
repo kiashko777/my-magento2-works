@@ -1,6 +1,8 @@
 <?php
 
 namespace Pixelpro\Helloworld\Block;
-class Index extends \Magento\Framework\View\Element\Template
+use Magento\Framework\View\Element\Template;
+
+class Index extends Template
 {
 }

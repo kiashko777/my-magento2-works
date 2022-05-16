@@ -3,23 +3,27 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Helper;
 
-class MemoryTest extends \PHPUnit\Framework\TestCase
+use InvalidArgumentException;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Shell;
+use Magento\TestFramework\Helper\Memory;
+use OutOfBoundsException;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+
+class MemoryTest extends TestCase
 {
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     private $_shell;
 
-    protected function setUp(): void
-    {
-        $this->_shell = $this->createPartialMock(\Magento\Framework\Shell::class, ['execute']);
-    }
-
     public function testGetRealMemoryUsageUnix()
     {
-        $object = new \Magento\TestFramework\Helper\Memory($this->_shell);
+        $object = new Memory($this->_shell);
         $this->_shell->expects(
             $this->once()
         )->method(
@@ -41,7 +45,7 @@ class MemoryTest extends \PHPUnit\Framework\TestCase
         )->with(
             $this->stringStartsWith('ps ')
         )->will(
-            $this->throwException(new \Magento\Framework\Exception\LocalizedException(__('command not found')))
+            $this->throwException(new LocalizedException(__('command not found')))
         );
         $this->_shell->expects(
             $this->at(1)
@@ -52,7 +56,7 @@ class MemoryTest extends \PHPUnit\Framework\TestCase
         )->willReturn(
             '"php.exe","12345","N/A","0","26,321 K"'
         );
-        $object = new \Magento\TestFramework\Helper\Memory($this->_shell);
+        $object = new Memory($this->_shell);
         $this->assertEquals(26952704, $object->getRealMemoryUsage());
     }
 
@@ -63,7 +67,7 @@ class MemoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testConvertToBytes($number, $expected)
     {
-        $this->assertEquals($expected, \Magento\TestFramework\Helper\Memory::convertToBytes($number));
+        $this->assertEquals($expected, Memory::convertToBytes($number));
     }
 
     /**
@@ -90,9 +94,9 @@ class MemoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testConvertToBytesBadFormat($number)
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
-        \Magento\TestFramework\Helper\Memory::convertToBytes($number);
+        Memory::convertToBytes($number);
     }
 
     /**
@@ -117,7 +121,7 @@ class MemoryTest extends \PHPUnit\Framework\TestCase
         if (PHP_INT_SIZE <= 4) {
             $this->markTestSkipped('A 64-bit system is required to perform this test.');
         }
-        $this->assertEquals($expected, \Magento\TestFramework\Helper\Memory::convertToBytes($number));
+        $this->assertEquals($expected, Memory::convertToBytes($number));
     }
 
     /**
@@ -136,20 +140,25 @@ class MemoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testConvertToBytesInvalidArgument()
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
-        \Magento\TestFramework\Helper\Memory::convertToBytes('3Z');
+        Memory::convertToBytes('3Z');
     }
 
     /**
      */
     public function testConvertToBytesOutOfBounds()
     {
-        $this->expectException(\OutOfBoundsException::class);
+        $this->expectException(OutOfBoundsException::class);
 
         if (PHP_INT_SIZE > 4) {
             $this->markTestSkipped('A 32-bit system is required to perform this test.');
         }
-        \Magento\TestFramework\Helper\Memory::convertToBytes('2P');
+        Memory::convertToBytes('2P');
+    }
+
+    protected function setUp(): void
+    {
+        $this->_shell = $this->createPartialMock(Shell::class, ['execute']);
     }
 }

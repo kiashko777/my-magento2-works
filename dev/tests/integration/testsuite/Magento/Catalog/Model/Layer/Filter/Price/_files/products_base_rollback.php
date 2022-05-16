@@ -8,19 +8,27 @@
  * Products generation to test base data
  */
 
-\Magento\TestFramework\Helper\Bootstrap::getInstance()->loadArea('Adminhtml');
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\ResourceModel\Category\Collection;
+use Magento\Catalog\Setup\CategorySetup;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\TestFramework\Helper\Bootstrap;
+
+Bootstrap::getInstance()->loadArea('Adminhtml');
 
 $testCases = include __DIR__ . '/_algorithm_base_data.php';
 
-/** @var $installer \Magento\Catalog\Setup\CategorySetup */
-$installer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Catalog\Setup\CategorySetup::class
+/** @var $installer CategorySetup */
+$installer = Bootstrap::getObjectManager()->create(
+    CategorySetup::class
 );
 /**
  * After installation system has two categories: root one with ID:1 and Default category with ID:2
  */
-/** @var $category \Magento\Catalog\Model\Category */
-$category = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Category::class);
+/** @var $category Category */
+$category = Bootstrap::getObjectManager()->create(Category::class);
 $category->isObjectNew(true);
 $category->setId(
     3
@@ -45,21 +53,21 @@ $category->setId(
 $lastProductId = 0;
 foreach ($testCases as $index => $testCase) {
 
-    /** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-    $productRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-        \Magento\Catalog\Api\ProductRepositoryInterface::class
+    /** @var ProductRepositoryInterface $productRepository */
+    $productRepository = Bootstrap::getObjectManager()->create(
+        ProductRepositoryInterface::class
     );
 
     foreach ($testCase[0] as $price) {
-        /** @var \Magento\Catalog\Model\Product $product */
-        $product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\Product::class
+        /** @var Product $product */
+        $product = Bootstrap::getObjectManager()->create(
+            Product::class
         );
         $productId = $lastProductId + 1;
         try {
             $product = $productRepository->get('simple-' . $productId, false, null, true);
             $productRepository->delete($product);
-        } catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+        } catch (NoSuchEntityException $e) {
             //Products already removed
         }
         ++$lastProductId;
@@ -67,8 +75,8 @@ foreach ($testCases as $index => $testCase) {
 }
 
 /** @var \Magento\Catalog\Model\ResourceModel\Product\Collection $collection */
-$collection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->create(\Magento\Catalog\Model\ResourceModel\Category\Collection::class);
+$collection = Bootstrap::getObjectManager()
+    ->create(Collection::class);
 $collection
     ->addAttributeToFilter('level', ['in' => [2, 3, 4]])
     ->load()

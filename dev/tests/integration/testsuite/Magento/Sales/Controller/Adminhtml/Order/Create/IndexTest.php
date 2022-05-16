@@ -33,18 +33,6 @@ class IndexTest extends AbstractBackendController
     private $quoteSession;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->registry = $this->_objectManager->get(Registry::class);
-        $this->storeManager = $this->_objectManager->get(StoreManagerInterface::class);
-        $this->quoteSession = $this->_objectManager->get(Quote::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
      *
      * @return void
@@ -71,5 +59,17 @@ class IndexTest extends AbstractBackendController
             ['store_id' => $store->getId(), 'website_id' => $store->getWebsiteId(), 'customer_group_id' => 1],
             $ruleData->getData()
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->registry = $this->_objectManager->get(Registry::class);
+        $this->storeManager = $this->_objectManager->get(StoreManagerInterface::class);
+        $this->quoteSession = $this->_objectManager->get(Quote::class);
     }
 }

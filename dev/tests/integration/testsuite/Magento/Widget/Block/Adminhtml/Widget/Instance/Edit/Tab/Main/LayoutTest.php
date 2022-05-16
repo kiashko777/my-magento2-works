@@ -33,26 +33,6 @@ class LayoutTest extends TestCase
     private $block;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-
-        $this->block = $this->objectManager->get(LayoutInterface::class)
-            ->createBlock(
-                Layout::class,
-                '',
-                [
-                    'data' => [
-                        'widget_instance' => $this->objectManager->create(Instance::class),
-                    ],
-                ]
-            );
-        $this->block->setLayout($this->objectManager->get(LayoutInterface::class));
-    }
-
-    /**
      * @magentoAppIsolation enabled
      */
     public function testGetLayoutsChooser()
@@ -85,6 +65,26 @@ class LayoutTest extends TestCase
             ->method('escapeUrl');
 
         $this->block->toHtml();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->block = $this->objectManager->get(LayoutInterface::class)
+            ->createBlock(
+                Layout::class,
+                '',
+                [
+                    'data' => [
+                        'widget_instance' => $this->objectManager->create(Instance::class),
+                    ],
+                ]
+            );
+        $this->block->setLayout($this->objectManager->get(LayoutInterface::class));
     }
 
     /**

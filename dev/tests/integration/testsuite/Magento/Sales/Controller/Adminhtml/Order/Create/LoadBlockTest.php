@@ -47,39 +47,6 @@ class LoadBlockTest extends AbstractBackendController
     private $quoteIdsToRemove;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->layout = $this->_objectManager->get(LayoutInterface::class);
-        $this->getQuoteByReservedOrderId = $this->_objectManager->get(GetQuoteByReservedOrderId::class);
-        $this->session = $this->_objectManager->get(Quote::class);
-        $this->quoteRepository = $this->_objectManager->get(CartRepositoryInterface::class);
-        $this->storeManager = $this->_objectManager->get(StoreManagerInterface::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->quoteIdsToRemove[] = $this->session->getQuote()->getId();
-        foreach ($this->quoteIdsToRemove as $quoteId) {
-            try {
-                $this->quoteRepository->delete($this->quoteRepository->get($quoteId));
-            } catch (NoSuchEntityException $e) {
-                //do nothing
-            }
-        }
-
-        $this->session->clearStorage();
-
-        parent::tearDown();
-    }
-
-    /**
      * @dataProvider responseFlagsProvider
      *
      * @magentoDataFixture Magento/Checkout/_files/quote_with_customer_without_address.php
@@ -110,6 +77,104 @@ class LoadBlockTest extends AbstractBackendController
 
         if ($asJsVarname) {
             $this->assertRedirect($this->stringContains('sales/order_create/showUpdateResult'));
+        }
+    }
+
+    /**
+     * Fill params array to proper state
+     *
+     * @param array $inputArray
+     * @return array
+     */
+    private function hydrateParams(array $inputArray = []): array
+    {
+        return array_merge(
+            [
+                'json' => true,
+                'block' => 'sidebar,items,shipping_method,billing_method,totals,giftmessage',
+                'as_js_varname' => true,
+            ],
+            $inputArray
+        );
+    }
+
+    /**
+     * Fill post params array to proper state
+     *
+     * @param array $inputArray
+     * @return array
+     */
+    private function hydratePost(array $inputArray = []): array
+    {
+        return array_merge(
+            [
+                'customer_id' => 1,
+                'store_id' => $this->storeManager->getStore('default')->getId(),
+                'sidebar' => [],
+            ],
+            $inputArray
+        );
+    }
+
+    /**
+     * Dispatch request with params
+     *
+     * @param array $params
+     * @param array $postParams
+     * @return void
+     */
+    private function dispatchWitParams(array $params, array $postParams): void
+    {
+        $this->getRequest()->setMethod(Http::METHOD_POST)
+            ->setPostValue($postParams)
+            ->setParams($params);
+        $this->dispatch('backend/sales/order_create/loadBlock');
+    }
+
+    /**
+     * Check that all required handles were applied
+     *
+     * @param array $blocks
+     * @param bool $asJson
+     * @return void
+     */
+    private function checkHandles(array $blocks, bool $asJson = true): void
+    {
+        $handles = $this->layout->getUpdate()->getHandles();
+
+        if ($asJson) {
+            $this->assertContains('sales_order_create_load_block_message', $handles);
+            $this->assertContains('sales_order_create_load_block_json', $handles);
+        } else {
+            $this->assertContains('sales_order_create_load_block_plain', $handles);
+        }
+
+        foreach ($blocks as $block) {
+            $this->assertContains(
+                'sales_order_create_load_block_' . $block,
+                $handles
+            );
+        }
+    }
+
+    /**
+     * Check customer quotes
+     *
+     * @param CartInterface $oldQuote
+     * @param string|null $expectedSku
+     * @return void
+     */
+    private function checkQuotes(CartInterface $oldQuote, ?string $expectedSku = null): void
+    {
+        $newQuote = $this->session->getQuote();
+        $oldQuoteItemCollection = $oldQuote->getItemsCollection(false);
+        $this->assertEmpty($oldQuoteItemCollection->getItems());
+        $newQuoteItemsCollection = $newQuote->getItemsCollection(false);
+
+        if ($expectedSku !== null) {
+            $this->assertNotNull($newQuoteItemsCollection->getItemByColumnValue('sku', $expectedSku));
+        } else {
+            $this->assertEmpty($newQuoteItemsCollection->getItems());
         }
     }
 
@@ -266,100 +331,35 @@ class LoadBlockTest extends AbstractBackendController
     }
 
     /**
-     * Check customer quotes
-     *
-     * @param CartInterface $oldQuote
-     * @param string|null $expectedSku
-     * @return void
+     * @inheritdoc
      */
-    private function checkQuotes(CartInterface $oldQuote, ?string $expectedSku = null): void
+    protected function setUp(): void
     {
-        $newQuote = $this->session->getQuote();
-        $oldQuoteItemCollection = $oldQuote->getItemsCollection(false);
-        $this->assertEmpty($oldQuoteItemCollection->getItems());
-        $newQuoteItemsCollection = $newQuote->getItemsCollection(false);
+        parent::setUp();
 
-        if ($expectedSku !== null) {
-            $this->assertNotNull($newQuoteItemsCollection->getItemByColumnValue('sku', $expectedSku));
-        } else {
-            $this->assertEmpty($newQuoteItemsCollection->getItems());
-        }
+        $this->layout = $this->_objectManager->get(LayoutInterface::class);
+        $this->getQuoteByReservedOrderId = $this->_objectManager->get(GetQuoteByReservedOrderId::class);
+        $this->session = $this->_objectManager->get(Quote::class);
+        $this->quoteRepository = $this->_objectManager->get(CartRepositoryInterface::class);
+        $this->storeManager = $this->_objectManager->get(StoreManagerInterface::class);
     }
 
     /**
-     * Check that all required handles were applied
-     *
-     * @param array $blocks
-     * @param bool $asJson
-     * @return void
+     * @inheritdoc
      */
-    private function checkHandles(array $blocks, bool $asJson = true): void
+    protected function tearDown(): void
     {
-        $handles = $this->layout->getUpdate()->getHandles();
-
-        if ($asJson) {
-            $this->assertContains('sales_order_create_load_block_message', $handles);
-            $this->assertContains('sales_order_create_load_block_json', $handles);
-        } else {
-            $this->assertContains('sales_order_create_load_block_plain', $handles);
+        $this->quoteIdsToRemove[] = $this->session->getQuote()->getId();
+        foreach ($this->quoteIdsToRemove as $quoteId) {
+            try {
+                $this->quoteRepository->delete($this->quoteRepository->get($quoteId));
+            } catch (NoSuchEntityException $e) {
+                //do nothing
+            }
         }
 
-        foreach ($blocks as $block) {
-            $this->assertContains(
-                'sales_order_create_load_block_' . $block,
-                $handles
-            );
-        }
-    }
+        $this->session->clearStorage();
 
-    /**
-     * Fill post params array to proper state
-     *
-     * @param array $inputArray
-     * @return array
-     */
-    private function hydratePost(array $inputArray = []): array
-    {
-        return array_merge(
-            [
-                'customer_id' => 1,
-                'store_id' => $this->storeManager->getStore('default')->getId(),
-                'sidebar' => [],
-            ],
-            $inputArray
-        );
-    }
-
-    /**
-     * Fill params array to proper state
-     *
-     * @param array $inputArray
-     * @return array
-     */
-    private function hydrateParams(array $inputArray = []): array
-    {
-        return array_merge(
-            [
-                'json' => true,
-                'block' => 'sidebar,items,shipping_method,billing_method,totals,giftmessage',
-                'as_js_varname' => true,
-            ],
-            $inputArray
-        );
-    }
-
-    /**
-     * Dispatch request with params
-     *
-     * @param array $params
-     * @param array $postParams
-     * @return void
-     */
-    private function dispatchWitParams(array $params, array $postParams): void
-    {
-        $this->getRequest()->setMethod(Http::METHOD_POST)
-            ->setPostValue($postParams)
-            ->setParams($params);
-        $this->dispatch('backend/sales/order_create/loadBlock');
+        parent::tearDown();
     }
 }

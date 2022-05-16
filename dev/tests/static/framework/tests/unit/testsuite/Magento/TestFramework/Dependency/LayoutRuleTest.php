@@ -3,9 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Dependency;
 
-class LayoutRuleTest extends \PHPUnit\Framework\TestCase
+use Magento\Test\Integrity\DependencyTest;
+use PHPUnit\Framework\TestCase;
+
+class LayoutRuleTest extends TestCase
 {
     public function testNonLayoutGetDependencyInfo()
     {
@@ -33,7 +37,7 @@ class LayoutRuleTest extends \PHPUnit\Framework\TestCase
                 [
                     [
                         'modules' => ['Magento\AnotherModule'],
-                        'type' => \Magento\Test\Integrity\DependencyTest::TYPE_SOFT,
+                        'type' => DependencyTest::TYPE_SOFT,
                         'source' => '<element module="Magento\AnotherModule"/>',
                     ]
                 ],
@@ -44,7 +48,7 @@ class LayoutRuleTest extends \PHPUnit\Framework\TestCase
                 [
                     [
                         'modules' => ['Magento\AnotherModule'],
-                        'type' => \Magento\Test\Integrity\DependencyTest::TYPE_HARD,
+                        'type' => DependencyTest::TYPE_HARD,
                         'source' => '<block class="Magento\AnotherModule\Several\Chunks"/>',
                     ]
                 ]
@@ -57,7 +61,7 @@ class LayoutRuleTest extends \PHPUnit\Framework\TestCase
                 [
                     [
                         'modules' => ['Magento\AnotherModule'],
-                        'type' => \Magento\Test\Integrity\DependencyTest::TYPE_SOFT,
+                        'type' => DependencyTest::TYPE_SOFT,
                         'source' => '<block template="Magento_AnotherModule::template/path.phtml"/>',
                     ]
                 ]
@@ -68,7 +72,7 @@ class LayoutRuleTest extends \PHPUnit\Framework\TestCase
                 [
                     [
                         'modules' => ['Magento\AnotherModule'],
-                        'type' => \Magento\Test\Integrity\DependencyTest::TYPE_SOFT,
+                        'type' => DependencyTest::TYPE_SOFT,
                         'source' => '<block>Magento\AnotherModule\Several\Chunks</block>',
                     ]
                 ]
@@ -79,7 +83,7 @@ class LayoutRuleTest extends \PHPUnit\Framework\TestCase
                 [
                     [
                         'modules' => ['Magento\AnotherModule'],
-                        'type' => \Magento\Test\Integrity\DependencyTest::TYPE_SOFT,
+                        'type' => DependencyTest::TYPE_SOFT,
                         'source' => '<template>Magento_AnotherModule::template/path.phtml</template>',
                     ]
                 ]
@@ -90,7 +94,7 @@ class LayoutRuleTest extends \PHPUnit\Framework\TestCase
                 [
                     [
                         'modules' => ['Magento\AnotherModule'],
-                        'type' => \Magento\Test\Integrity\DependencyTest::TYPE_SOFT,
+                        'type' => DependencyTest::TYPE_SOFT,
                         'source' => '<file>Magento_AnotherModule::file/path.txt</file>',
                     ]
                 ]
@@ -101,7 +105,7 @@ class LayoutRuleTest extends \PHPUnit\Framework\TestCase
                 [
                     [
                         'modules' => ['Magento\AnotherModule'],
-                        'type' => \Magento\Test\Integrity\DependencyTest::TYPE_SOFT,
+                        'type' => DependencyTest::TYPE_SOFT,
                         'source' => '<any helper="Magento\AnotherModule\Several\Chunks::text"/>',
                     ]
                 ]
@@ -175,27 +179,6 @@ class LayoutRuleTest extends \PHPUnit\Framework\TestCase
         );
     }
 
-    public function layoutGetDependencyInfoDataProvider()
-    {
-        return [
-            [
-                $this->_getLayoutFileContent('layout_handle.xml'),
-                \Magento\Test\Integrity\DependencyTest::TYPE_SOFT,
-                true,
-            ],
-            [
-                $this->_getLayoutFileContent('layout_handle_parent.xml'),
-                \Magento\Test\Integrity\DependencyTest::TYPE_HARD,
-                true
-            ],
-            [
-                $this->_getLayoutFileContent('layout_handle_update.xml'),
-                \Magento\Test\Integrity\DependencyTest::TYPE_SOFT,
-                true
-            ]
-        ];
-    }
-
     public function layoutGetDependencyInfoWithReferenceDataProvider()
     {
         return array_merge(
@@ -203,11 +186,32 @@ class LayoutRuleTest extends \PHPUnit\Framework\TestCase
             [
                 [
                     $this->_getLayoutFileContent('layout_reference.xml'),
-                    \Magento\Test\Integrity\DependencyTest::TYPE_SOFT,
+                    DependencyTest::TYPE_SOFT,
                     false,
                 ]
             ]
         );
+    }
+
+    public function layoutGetDependencyInfoDataProvider()
+    {
+        return [
+            [
+                $this->_getLayoutFileContent('layout_handle.xml'),
+                DependencyTest::TYPE_SOFT,
+                true,
+            ],
+            [
+                $this->_getLayoutFileContent('layout_handle_parent.xml'),
+                DependencyTest::TYPE_HARD,
+                true
+            ],
+            [
+                $this->_getLayoutFileContent('layout_handle_update.xml'),
+                DependencyTest::TYPE_SOFT,
+                true
+            ]
+        ];
     }
 
     /**

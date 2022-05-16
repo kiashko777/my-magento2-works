@@ -11,8 +11,9 @@ use Magento\Customer\Model\Metadata\AddressMetadata;
 use Magento\Eav\Model\Config;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class CustomerAddressAttributeTest extends \PHPUnit\Framework\TestCase
+class CustomerAddressAttributeTest extends TestCase
 {
     /**
      * @var Config
@@ -23,16 +24,6 @@ class CustomerAddressAttributeTest extends \PHPUnit\Framework\TestCase
      * @var StoreManagerInterface
      */
     private $storeManager;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->config = $objectManager->get(Config::class);
-        $this->storeManager = $objectManager->get(StoreManagerInterface::class);
-    }
 
     /**
      * Tests cached scope_is_required attribute value for a certain website
@@ -59,5 +50,15 @@ class CustomerAddressAttributeTest extends \PHPUnit\Framework\TestCase
         } finally {
             $this->storeManager->setCurrentStore($currentStore);
         }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->config = $objectManager->get(Config::class);
+        $this->storeManager = $objectManager->get(StoreManagerInterface::class);
     }
 }

@@ -49,34 +49,6 @@ class ItemTest extends TestCase
     private $itemFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = ObjectManager::getInstance();
-        $this->dataObjectFactory = $this->objectManager->get(DataObjectFactory::class);
-        $this->model = $this->objectManager->get(Item::class);
-        $this->itemFactory = $this->objectManager->get(ItemFactory::class);
-        $this->optionFactory = $this->objectManager->get(OptionFactory::class);
-        $this->getWishlistByCustomerId = $this->objectManager->get(GetWishlistByCustomerId::class);
-        $this->cartFactory = $this->objectManager->get(CartFactory::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->cartFactory->create()->truncate();
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
      *
      * @return void
@@ -181,5 +153,33 @@ class ItemTest extends TestCase
         $product = $this->productRepository->get('simple_not_visible_1');
         $item = $this->itemFactory->create()->setProduct($product)->setStoreId($product->getStoreId());
         $this->assertFalse($item->addToCart($this->cartFactory->create()));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = ObjectManager::getInstance();
+        $this->dataObjectFactory = $this->objectManager->get(DataObjectFactory::class);
+        $this->model = $this->objectManager->get(Item::class);
+        $this->itemFactory = $this->objectManager->get(ItemFactory::class);
+        $this->optionFactory = $this->objectManager->get(OptionFactory::class);
+        $this->getWishlistByCustomerId = $this->objectManager->get(GetWishlistByCustomerId::class);
+        $this->cartFactory = $this->objectManager->get(CartFactory::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->cartFactory->create()->truncate();
+
+        parent::tearDown();
     }
 }

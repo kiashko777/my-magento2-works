@@ -12,10 +12,12 @@ use Magento\CatalogInventory\Api\Data\StockItemInterface;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\Quote\Address;
+use Magento\Store\Api\Data\StoreInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 
-/** @var \Magento\TestFramework\ObjectManager $objectManager */
+/** @var ObjectManager $objectManager */
 $objectManager = Bootstrap::getObjectManager();
 
 /** @var Product $product */
@@ -48,7 +50,7 @@ $shippingAddress = clone $billingAddress;
 $shippingAddress->setId(null)
     ->setAddressType('shipping');
 
-/** @var \Magento\Store\Api\Data\StoreInterface $store */
+/** @var StoreInterface $store */
 $store = $objectManager->get(StoreManagerInterface::class)
     ->getStore();
 

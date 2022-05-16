@@ -6,6 +6,7 @@
 
 namespace Magento\Setup;
 
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Module\ModuleResource;
 use Magento\Framework\Setup\Patch\PatchHistory;
 use Magento\TestFramework\Deploy\CliCommand;
@@ -47,16 +48,6 @@ class DataPatchInstallationTest extends SetupTestCase
      */
     private $tableData;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->moduleManager = $objectManager->get(TestModuleManager::class);
-        $this->cliCommad = $objectManager->get(CliCommand::class);
-        $this->moduleResource = $objectManager->get(ModuleResource::class);
-        $this->patchList = $objectManager->get(PatchHistory::class);
-        $this->tableData = $objectManager->get(TableData::class);
-    }
-
     /**
      * @moduleName Magento_TestSetupDeclarationModule3
      */
@@ -92,11 +83,66 @@ class DataPatchInstallationTest extends SetupTestCase
     }
 
     /**
+     * Move patches
+     */
+    private function movePatches()
+    {
+        //Install with patches
+        $this->moduleManager->addRevision(
+            'Magento_TestSetupDeclarationModule3',
+            'patches_revision',
+            'Setup/Patch/Data'
+        );
+        //Upgrade with UpgradeData
+        $this->moduleManager->updateRevision(
+            'Magento_TestSetupDeclarationModule3',
+            'first_patch_revision',
+            'UpgradeData.php',
+            'Setup'
+        );
+
+        //Upgrade with UpgradeData
+        $this->moduleManager->updateRevision(
+            'Magento_TestSetupDeclarationModule3',
+            'first_patch_revision',
+            'module.xml',
+            'etc'
+        );
+    }
+
+    /**
+     * @return array
+     */
+    private function getTestTableData()
+    {
+        return [
+            [
+                'smallint' => '1',
+                'tinyint' => null,
+                'varchar' => 'Ololo123',
+                'varbinary' => '33288',
+            ],
+            [
+                'smallint' => '2',
+                'tinyint' => null,
+                'varchar' => 'Ololo123_ref',
+                'varbinary' => '33288',
+            ],
+            [
+                'smallint' => '3',
+                'tinyint' => null,
+                'varchar' => 'changed__very_secret_string',
+                'varbinary' => '0',
+            ],
+        ];
+    }
+
+    /**
      * @moduleName Magento_TestSetupDeclarationModule3
      */
     public function testCyclomaticDependency()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
 
         $this->moduleManager->updateRevision(
             'Magento_TestSetupDeclarationModule3',
@@ -131,34 +177,6 @@ class DataPatchInstallationTest extends SetupTestCase
     }
 
     /**
-     * Move patches
-     */
-    private function movePatches()
-    {
-        //Install with patches
-        $this->moduleManager->addRevision(
-            'Magento_TestSetupDeclarationModule3',
-            'patches_revision',
-            'Setup/Patch/Data'
-        );
-        //Upgrade with UpgradeData
-        $this->moduleManager->updateRevision(
-            'Magento_TestSetupDeclarationModule3',
-            'first_patch_revision',
-            'UpgradeData.php',
-            'Setup'
-        );
-
-        //Upgrade with UpgradeData
-        $this->moduleManager->updateRevision(
-            'Magento_TestSetupDeclarationModule3',
-            'first_patch_revision',
-            'module.xml',
-            'etc'
-        );
-    }
-
-    /**
      * @moduleName Magento_TestSetupDeclarationModule3
      */
     public function testPatchesRevert()
@@ -172,33 +190,6 @@ class DataPatchInstallationTest extends SetupTestCase
         self::assertEmpty($testTableData);
         $refTableData = $this->tableData->describeTableData('reference_table');
         self::assertEquals($this->getRefTableData(), $refTableData);
-    }
-
-    /**
-     * @return array
-     */
-    private function getTestTableData()
-    {
-        return [
-            [
-                'smallint' => '1',
-                'tinyint' => null,
-                'varchar' => 'Ololo123',
-                'varbinary' => '33288',
-            ],
-            [
-                'smallint' => '2',
-                'tinyint' => null,
-                'varchar' => 'Ololo123_ref',
-                'varbinary' => '33288',
-            ],
-            [
-                'smallint' => '3',
-                'tinyint' => null,
-                'varchar' => 'changed__very_secret_string',
-                'varbinary' => '0',
-            ],
-        ];
     }
 
     /**
@@ -235,5 +226,15 @@ class DataPatchInstallationTest extends SetupTestCase
                 'for_patch_testing' => null,
             ],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->moduleManager = $objectManager->get(TestModuleManager::class);
+        $this->cliCommad = $objectManager->get(CliCommand::class);
+        $this->moduleResource = $objectManager->get(ModuleResource::class);
+        $this->patchList = $objectManager->get(PatchHistory::class);
+        $this->tableData = $objectManager->get(TableData::class);
     }
 }

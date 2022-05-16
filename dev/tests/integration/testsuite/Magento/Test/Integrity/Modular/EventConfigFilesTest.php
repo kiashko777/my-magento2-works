@@ -3,20 +3,22 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Modular;
 
-class EventConfigFilesTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\App\Utility\Files;
+use Magento\Framework\Config\Dom;
+use Magento\Framework\Config\ValidationStateInterface;
+use Magento\Framework\Event\Config\SchemaLocator;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class EventConfigFilesTest extends TestCase
 {
     /**
      * @var string
      */
     protected $_schemaFile;
-
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->_schemaFile = $objectManager->get(\Magento\Framework\Event\Config\SchemaLocator::class)->getSchema();
-    }
 
     /**
      * @param string $file
@@ -25,10 +27,10 @@ class EventConfigFilesTest extends \PHPUnit\Framework\TestCase
     public function testEventConfigFiles($file)
     {
         $errors = [];
-        $validationStateMock = $this->createMock(\Magento\Framework\Config\ValidationStateInterface::class);
+        $validationStateMock = $this->createMock(ValidationStateInterface::class);
         $validationStateMock->method('isValidationRequired')
             ->willReturn(true);
-        $dom = new \Magento\Framework\Config\Dom(file_get_contents($file), $validationStateMock);
+        $dom = new Dom(file_get_contents($file), $validationStateMock);
         $result = $dom->validate($this->_schemaFile, $errors);
         $message = "Invalid XML-file: {$file}\n";
         foreach ($errors as $error) {
@@ -42,6 +44,12 @@ class EventConfigFilesTest extends \PHPUnit\Framework\TestCase
      */
     public function eventConfigFilesDataProvider()
     {
-        return \Magento\Framework\App\Utility\Files::init()->getConfigFiles('{*/events.xml,events.xml}');
+        return Files::init()->getConfigFiles('{*/events.xml,events.xml}');
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->_schemaFile = $objectManager->get(SchemaLocator::class)->getSchema();
     }
 }

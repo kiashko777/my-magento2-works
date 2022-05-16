@@ -80,11 +80,12 @@ class BooleanFilterTest extends AbstractFiltersTest
      * @return void
      */
     public function testGetActiveFiltersWithCustomAttribute(
-        array $products,
-        array $expectation,
+        array  $products,
+        array  $expectation,
         string $filterValue,
-        int $productsCount
-    ): void {
+        int    $productsCount
+    ): void
+    {
         $this->getCategoryActiveFiltersAndAssert($products, $expectation, 'Category 999', $filterValue, $productsCount);
     }
 

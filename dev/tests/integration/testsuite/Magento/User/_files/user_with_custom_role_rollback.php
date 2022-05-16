@@ -6,16 +6,17 @@
 
 declare(strict_types=1);
 
-use Magento\Authorization\Model\RoleFactory;
 use Magento\Authorization\Model\Role;
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\User\Model\UserFactory;
-use Magento\User\Model\User;
-use Magento\Authorization\Model\RulesFactory;
+use Magento\Authorization\Model\RoleFactory;
 use Magento\Authorization\Model\Rules;
+use Magento\Authorization\Model\RulesFactory;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\User\Model\User;
+use Magento\User\Model\UserFactory;
 
 //Deleting the user and the role.
-/** @var \Magento\Framework\ObjectManagerInterface $objectManager */
+/** @var ObjectManagerInterface $objectManager */
 $objectManager = Bootstrap::getObjectManager();
 /** @var User $user */
 $user = $objectManager->create(UserFactory::class)->create();

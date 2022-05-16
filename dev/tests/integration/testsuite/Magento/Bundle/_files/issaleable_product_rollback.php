@@ -4,24 +4,29 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Bundle/_files/multiple_products_rollback.php');
 
-/** @var \Magento\Framework\Registry $registry */
-$registry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
+/** @var Registry $registry */
+$registry = Bootstrap::getObjectManager()->get(Registry::class);
 
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
-/** @var $product \Magento\Catalog\Model\Product */
-$productRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+/** @var $product Product */
+$productRepository = Bootstrap::getObjectManager()
+    ->create(ProductRepositoryInterface::class);
 
 try {
     $product = $productRepository->get('bundle-product');
     $productRepository->delete($product);
-} catch (\Magento\Framework\Exception\NoSuchEntityException $exception) {
+} catch (NoSuchEntityException $exception) {
     //Products already removed
 }
 

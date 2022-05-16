@@ -13,8 +13,8 @@ use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Theme\Model\ResourceModel\Theme\CollectionFactory;
 use Magento\Theme\Model\ResourceModel\Theme\Collection;
+use Magento\Theme\Model\ResourceModel\Theme\CollectionFactory;
 use PHPUnit\Framework\TestCase;
 
 class StoreThemesResolverInterfaceTest extends TestCase
@@ -44,39 +44,6 @@ class StoreThemesResolverInterfaceTest extends TestCase
      * @var string
      */
     private $userAgentDesignConfig;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $objectManager = Bootstrap::getObjectManager();
-        $this->model = $objectManager->get(StoreThemesResolverInterface::class);
-        $themesCollectionFactory = $objectManager->get(CollectionFactory::class);
-        $this->themesCollection = $themesCollectionFactory->create();
-        $this->mutableScopeConfig = $objectManager->get(MutableScopeConfigInterface::class);
-        $this->serializer = $objectManager->get(Json::class);
-        $this->storeManager = $objectManager->get(StoreManagerInterface::class);
-        $scopeConfig = $objectManager->get(ScopeConfigInterface::class);
-        $this->userAgentDesignConfig = $scopeConfig->getValue(
-            self::XML_PATH_THEME_USER_AGENT,
-            ScopeInterface::SCOPE_STORE
-        );
-    }
-
-    /**
-     * @inheritDoc
-     */
-    protected function tearDown(): void
-    {
-        $this->mutableScopeConfig->setValue(
-            self::XML_PATH_THEME_USER_AGENT,
-            $this->userAgentDesignConfig,
-            ScopeInterface::SCOPE_STORE
-        );
-        parent::tearDown();
-    }
 
     /**
      * @param array $config
@@ -143,5 +110,38 @@ class StoreThemesResolverInterfaceTest extends TestCase
                 ]
             ]
         ];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $objectManager = Bootstrap::getObjectManager();
+        $this->model = $objectManager->get(StoreThemesResolverInterface::class);
+        $themesCollectionFactory = $objectManager->get(CollectionFactory::class);
+        $this->themesCollection = $themesCollectionFactory->create();
+        $this->mutableScopeConfig = $objectManager->get(MutableScopeConfigInterface::class);
+        $this->serializer = $objectManager->get(Json::class);
+        $this->storeManager = $objectManager->get(StoreManagerInterface::class);
+        $scopeConfig = $objectManager->get(ScopeConfigInterface::class);
+        $this->userAgentDesignConfig = $scopeConfig->getValue(
+            self::XML_PATH_THEME_USER_AGENT,
+            ScopeInterface::SCOPE_STORE
+        );
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function tearDown(): void
+    {
+        $this->mutableScopeConfig->setValue(
+            self::XML_PATH_THEME_USER_AGENT,
+            $this->userAgentDesignConfig,
+            ScopeInterface::SCOPE_STORE
+        );
+        parent::tearDown();
     }
 }

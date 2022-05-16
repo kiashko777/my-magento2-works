@@ -7,6 +7,7 @@
 /**
  * Factory for helpers, used in Magento testing framework
  */
+
 namespace Magento\TestFramework\Helper;
 
 class Factory

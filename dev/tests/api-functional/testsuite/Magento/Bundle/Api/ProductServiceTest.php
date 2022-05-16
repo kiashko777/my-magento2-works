@@ -6,11 +6,14 @@
 
 namespace Magento\Bundle\Api;
 
+use Magento\Bundle\Api\Data\LinkInterface;
+use Magento\Bundle\Model\Product\Price;
 use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Model\ResourceModel\Product\Collection;
 use Magento\Framework\Api\ExtensibleDataInterface;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
-use Magento\Bundle\Api\Data\LinkInterface;
 
 /**
  * Class ProductServiceTest for testing Bundle Products API
@@ -23,27 +26,9 @@ class ProductServiceTest extends WebapiAbstract
     const BUNDLE_PRODUCT_ID = 'sku-test-product-bundle';
 
     /**
-     * @var \Magento\Catalog\Model\ResourceModel\Product\Collection
+     * @var Collection
      */
     protected $productCollection;
-
-    /**
-     * Execute per test initialization
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->productCollection = $objectManager->get(\Magento\Catalog\Model\ResourceModel\Product\Collection::class);
-    }
-
-    /**
-     * Execute per test cleanup
-     */
-    protected function tearDown(): void
-    {
-        $this->deleteProductBySku(self::BUNDLE_PRODUCT_ID);
-        parent::tearDown();
-    }
 
     /**
      * @magentoApiDataFixture Magento/Catalog/_files/products_new.php
@@ -76,7 +61,7 @@ class ProductServiceTest extends WebapiAbstract
             "custom_attributes" => [
                 [
                     "attribute_code" => "price_type",
-                    "value" => \Magento\Bundle\Model\Product\Price::PRICE_TYPE_FIXED,
+                    "value" => Price::PRICE_TYPE_FIXED,
                 ],
                 [
                     "attribute_code" => "price_view",
@@ -111,6 +96,56 @@ class ProductServiceTest extends WebapiAbstract
     }
 
     /**
+     * Create product
+     *
+     * @param array $product
+     * @return array the created product data
+     */
+    protected function createProduct($product)
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH,
+                'httpMethod' => Request::HTTP_METHOD_POST
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'Save',
+            ],
+        ];
+        $requestData = ['product' => $product];
+        $response = $this->_webApiCall($serviceInfo, $requestData);
+        return $response;
+    }
+
+    /**
+     * Get product
+     *
+     * @param string $productSku
+     * @return array the product data
+     */
+    protected function getProduct($productSku)
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH . '/' . $productSku,
+                'httpMethod' => Request::HTTP_METHOD_GET,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'Get',
+            ],
+        ];
+
+        $response = (TESTS_WEB_API_ADAPTER == self::ADAPTER_SOAP) ?
+            $this->_webApiCall($serviceInfo, ['sku' => $productSku]) : $this->_webApiCall($serviceInfo);
+
+        return $response;
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Catalog/_files/products_new.php
      * @magentoApiDataFixture Magento/Catalog/_files/second_product_simple.php
      */
@@ -136,6 +171,135 @@ class ProductServiceTest extends WebapiAbstract
         $this->assertEquals(2, $bundleOptions[0]['product_links'][0]['qty']);
         $this->assertEquals(10, $bundleOptions[0]['product_links'][0]['price']);
         $this->assertEquals(1, $bundleOptions[0]['product_links'][0]['price_type']);
+    }
+
+    /**
+     * Create fixed price bundle product with one option
+     *
+     * @return array
+     */
+    protected function createFixedPriceBundleProduct()
+    {
+        $bundleProductOptions = [
+            [
+                "title" => "test option",
+                "type" => "checkbox",
+                "required" => 1,
+                "product_links" => [
+                    [
+                        "sku" => 'simple',
+                        "qty" => 1,
+                        "price" => 20,
+                        "price_type" => 1,
+                        "is_default" => true,
+                    ],
+                ],
+            ],
+        ];
+
+        $uniqueId = self::BUNDLE_PRODUCT_ID;
+        $product = [
+            "sku" => $uniqueId,
+            "name" => $uniqueId,
+            "type_id" => "bundle",
+            "price" => 50,
+            'attribute_set_id' => 4,
+            "custom_attributes" => [
+                "price_type" => [
+                    'attribute_code' => 'price_type',
+                    'value' => Price::PRICE_TYPE_FIXED
+                ],
+                "price_view" => [
+                    "attribute_code" => "price_view",
+                    "value" => "1",
+                ],
+            ],
+            "extension_attributes" => [
+                "bundle_product_options" => $bundleProductOptions,
+            ],
+        ];
+
+        $response = $this->createProduct($product);
+        $resultBundleProductOptions
+            = $response[ExtensibleDataInterface::EXTENSION_ATTRIBUTES_KEY]["bundle_product_options"];
+        $this->assertEquals('simple', $resultBundleProductOptions[0]["product_links"][0]["sku"]);
+        $this->assertTrue(isset($response['custom_attributes']));
+        $customAttributes = $this->convertCustomAttributes($response['custom_attributes']);
+        $this->assertTrue(isset($customAttributes['price_type']));
+        $this->assertEquals(Price::PRICE_TYPE_FIXED, $customAttributes['price_type']);
+        $this->assertTrue(isset($customAttributes['price_view']));
+        $this->assertEquals(1, $customAttributes['price_view']);
+        return $response;
+    }
+
+    protected function convertCustomAttributes($customAttributes)
+    {
+        $convertedCustomAttribute = [];
+        foreach ($customAttributes as $customAttribute) {
+            $convertedCustomAttribute[$customAttribute['attribute_code']] = $customAttribute['value'];
+        }
+        return $convertedCustomAttribute;
+    }
+
+    /**
+     * Get the bundle_product_options custom attribute from product, null if the attribute is not set
+     *
+     * @param array $product
+     * @return array|null
+     */
+    protected function getBundleProductOptions($product)
+    {
+        if (isset($product[ExtensibleDataInterface::EXTENSION_ATTRIBUTES_KEY]["bundle_product_options"])) {
+            return $product[ExtensibleDataInterface::EXTENSION_ATTRIBUTES_KEY]["bundle_product_options"];
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Set the bundle_product_options custom attribute, replace existing attribute if exists
+     *
+     * @param array $product
+     * @param array $bundleProductOptions
+     */
+    protected function setBundleProductOptions(&$product, $bundleProductOptions)
+    {
+        $product["extension_attributes"]["bundle_product_options"] = $bundleProductOptions;
+    }
+
+    /**
+     * Save product
+     *
+     * @param array $product
+     * @return array the created product data
+     */
+    protected function saveProduct($product)
+    {
+        if (isset($product['custom_attributes'])) {
+            $count = count($product['custom_attributes']);
+            for ($i = 0; $i < $count; $i++) {
+                if ($product['custom_attributes'][$i]['attribute_code'] == 'category_ids'
+                    && !is_array($product['custom_attributes'][$i]['value'])
+                ) {
+                    $product['custom_attributes'][$i]['value'] = [""];
+                }
+            }
+        }
+        $resourcePath = self::RESOURCE_PATH . '/' . $product['sku'];
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => $resourcePath,
+                'httpMethod' => Request::HTTP_METHOD_PUT
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'Save',
+            ],
+        ];
+        $requestData = ['product' => $product];
+        $response = $this->_webApiCall($serviceInfo, $requestData);
+        return $response;
     }
 
     /**
@@ -219,6 +383,68 @@ class ProductServiceTest extends WebapiAbstract
     }
 
     /**
+     * Create dynamic bundle product with one option
+     *
+     * @return array
+     */
+    protected function createDynamicBundleProduct()
+    {
+        $bundleProductOptions = [
+            [
+                "title" => "test option",
+                "type" => "checkbox",
+                "required" => 1,
+                "product_links" => [
+                    [
+                        "sku" => 'simple',
+                        "qty" => 1,
+                        "is_default" => true,
+                        "price" => 10,
+                        "price_type" => 1,
+                    ],
+                ],
+            ],
+        ];
+
+        $uniqueId = self::BUNDLE_PRODUCT_ID;
+        $product = [
+            "sku" => $uniqueId,
+            "name" => $uniqueId,
+            "type_id" => "bundle",
+            'attribute_set_id' => 4,
+            "custom_attributes" => [
+                "price_type" => [
+                    'attribute_code' => 'price_type',
+                    'value' => Price::PRICE_TYPE_DYNAMIC
+                ],
+                "price_view" => [
+                    "attribute_code" => "price_view",
+                    "value" => "1",
+                ],
+            ],
+            "extension_attributes" => [
+                "bundle_product_options" => $bundleProductOptions,
+            ],
+        ];
+
+        $response = $this->createProduct($product);
+        $this->assertTrue(
+            isset($response[ExtensibleDataInterface::EXTENSION_ATTRIBUTES_KEY]["bundle_product_options"])
+        );
+        $resultBundleProductOptions
+            = $response[ExtensibleDataInterface::EXTENSION_ATTRIBUTES_KEY]["bundle_product_options"];
+        $this->assertTrue(isset($resultBundleProductOptions[0]["product_links"][0]["sku"]));
+        $this->assertEquals('simple', $resultBundleProductOptions[0]["product_links"][0]["sku"]);
+        $this->assertTrue(isset($response['custom_attributes']));
+        $customAttributes = $this->convertCustomAttributes($response['custom_attributes']);
+        $this->assertTrue(isset($customAttributes['price_type']));
+        $this->assertEquals(Price::PRICE_TYPE_DYNAMIC, $customAttributes['price_type']);
+        $this->assertTrue(isset($customAttributes['price_view']));
+        $this->assertEquals(1, $customAttributes['price_view']);
+        return $response;
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Catalog/_files/products_new.php
      * @magentoApiDataFixture Magento/Catalog/_files/second_product_simple.php
      */
@@ -296,209 +522,21 @@ class ProductServiceTest extends WebapiAbstract
     }
 
     /**
-     * Get the bundle_product_options custom attribute from product, null if the attribute is not set
-     *
-     * @param array $product
-     * @return array|null
+     * Execute per test initialization
      */
-    protected function getBundleProductOptions($product)
+    protected function setUp(): void
     {
-        if (isset($product[ExtensibleDataInterface::EXTENSION_ATTRIBUTES_KEY]["bundle_product_options"])) {
-            return $product[ExtensibleDataInterface::EXTENSION_ATTRIBUTES_KEY]["bundle_product_options"];
-        } else {
-            return null;
-        }
+        $objectManager = Bootstrap::getObjectManager();
+        $this->productCollection = $objectManager->get(Collection::class);
     }
 
     /**
-     * Set the bundle_product_options custom attribute, replace existing attribute if exists
-     *
-     * @param array $product
-     * @param array $bundleProductOptions
+     * Execute per test cleanup
      */
-    protected function setBundleProductOptions(&$product, $bundleProductOptions)
+    protected function tearDown(): void
     {
-        $product["extension_attributes"]["bundle_product_options"] = $bundleProductOptions;
-    }
-
-    /**
-     * Create dynamic bundle product with one option
-     *
-     * @return array
-     */
-    protected function createDynamicBundleProduct()
-    {
-        $bundleProductOptions = [
-            [
-                "title" => "test option",
-                "type" => "checkbox",
-                "required" => 1,
-                "product_links" => [
-                    [
-                        "sku" => 'simple',
-                        "qty" => 1,
-                        "is_default" => true,
-                        "price" => 10,
-                        "price_type" => 1,
-                    ],
-                ],
-            ],
-        ];
-
-        $uniqueId = self::BUNDLE_PRODUCT_ID;
-        $product = [
-            "sku" => $uniqueId,
-            "name" => $uniqueId,
-            "type_id" => "bundle",
-            'attribute_set_id' => 4,
-            "custom_attributes" => [
-                "price_type" => [
-                    'attribute_code' => 'price_type',
-                    'value' => \Magento\Bundle\Model\Product\Price::PRICE_TYPE_DYNAMIC
-                ],
-                "price_view" => [
-                    "attribute_code" => "price_view",
-                    "value" => "1",
-                ],
-            ],
-            "extension_attributes" => [
-                "bundle_product_options" => $bundleProductOptions,
-            ],
-        ];
-
-        $response = $this->createProduct($product);
-        $this->assertTrue(
-            isset($response[ExtensibleDataInterface::EXTENSION_ATTRIBUTES_KEY]["bundle_product_options"])
-        );
-        $resultBundleProductOptions
-            = $response[ExtensibleDataInterface::EXTENSION_ATTRIBUTES_KEY]["bundle_product_options"];
-        $this->assertTrue(isset($resultBundleProductOptions[0]["product_links"][0]["sku"]));
-        $this->assertEquals('simple', $resultBundleProductOptions[0]["product_links"][0]["sku"]);
-        $this->assertTrue(isset($response['custom_attributes']));
-        $customAttributes = $this->convertCustomAttributes($response['custom_attributes']);
-        $this->assertTrue(isset($customAttributes['price_type']));
-        $this->assertEquals(\Magento\Bundle\Model\Product\Price::PRICE_TYPE_DYNAMIC, $customAttributes['price_type']);
-        $this->assertTrue(isset($customAttributes['price_view']));
-        $this->assertEquals(1, $customAttributes['price_view']);
-        return $response;
-    }
-
-    /**
-     * Create fixed price bundle product with one option
-     *
-     * @return array
-     */
-    protected function createFixedPriceBundleProduct()
-    {
-        $bundleProductOptions = [
-            [
-                "title" => "test option",
-                "type" => "checkbox",
-                "required" => 1,
-                "product_links" => [
-                    [
-                        "sku" => 'simple',
-                        "qty" => 1,
-                        "price" => 20,
-                        "price_type" => 1,
-                        "is_default" => true,
-                    ],
-                ],
-            ],
-        ];
-
-        $uniqueId = self::BUNDLE_PRODUCT_ID;
-        $product = [
-            "sku" => $uniqueId,
-            "name" => $uniqueId,
-            "type_id" => "bundle",
-            "price" => 50,
-            'attribute_set_id' => 4,
-            "custom_attributes" => [
-                "price_type" => [
-                    'attribute_code' => 'price_type',
-                    'value' => \Magento\Bundle\Model\Product\Price::PRICE_TYPE_FIXED
-                ],
-                "price_view" => [
-                    "attribute_code" => "price_view",
-                    "value" => "1",
-                ],
-            ],
-            "extension_attributes" => [
-                "bundle_product_options" => $bundleProductOptions,
-            ],
-        ];
-
-        $response = $this->createProduct($product);
-        $resultBundleProductOptions
-            = $response[ExtensibleDataInterface::EXTENSION_ATTRIBUTES_KEY]["bundle_product_options"];
-        $this->assertEquals('simple', $resultBundleProductOptions[0]["product_links"][0]["sku"]);
-        $this->assertTrue(isset($response['custom_attributes']));
-        $customAttributes = $this->convertCustomAttributes($response['custom_attributes']);
-        $this->assertTrue(isset($customAttributes['price_type']));
-        $this->assertEquals(\Magento\Bundle\Model\Product\Price::PRICE_TYPE_FIXED, $customAttributes['price_type']);
-        $this->assertTrue(isset($customAttributes['price_view']));
-        $this->assertEquals(1, $customAttributes['price_view']);
-        return $response;
-    }
-
-    protected function convertCustomAttributes($customAttributes)
-    {
-        $convertedCustomAttribute = [];
-        foreach ($customAttributes as $customAttribute) {
-            $convertedCustomAttribute[$customAttribute['attribute_code']] = $customAttribute['value'];
-        }
-        return $convertedCustomAttribute;
-    }
-
-    /**
-     * Get product
-     *
-     * @param string $productSku
-     * @return array the product data
-     */
-    protected function getProduct($productSku)
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . '/' . $productSku,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'Get',
-            ],
-        ];
-
-        $response = (TESTS_WEB_API_ADAPTER == self::ADAPTER_SOAP) ?
-            $this->_webApiCall($serviceInfo, ['sku' => $productSku]) : $this->_webApiCall($serviceInfo);
-
-        return $response;
-    }
-
-    /**
-     * Create product
-     *
-     * @param array $product
-     * @return array the created product data
-     */
-    protected function createProduct($product)
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'Save',
-            ],
-        ];
-        $requestData = ['product' => $product];
-        $response = $this->_webApiCall($serviceInfo, $requestData);
-        return $response;
+        $this->deleteProductBySku(self::BUNDLE_PRODUCT_ID);
+        parent::tearDown();
     }
 
     /**
@@ -513,7 +551,7 @@ class ProductServiceTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => $resourcePath,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE
+                'httpMethod' => Request::HTTP_METHOD_DELETE
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -522,41 +560,6 @@ class ProductServiceTest extends WebapiAbstract
             ],
         ];
         $requestData = ["sku" => $productSku];
-        $response = $this->_webApiCall($serviceInfo, $requestData);
-        return $response;
-    }
-
-    /**
-     * Save product
-     *
-     * @param array $product
-     * @return array the created product data
-     */
-    protected function saveProduct($product)
-    {
-        if (isset($product['custom_attributes'])) {
-            $count = count($product['custom_attributes']);
-            for ($i=0; $i < $count; $i++) {
-                if ($product['custom_attributes'][$i]['attribute_code'] == 'category_ids'
-                    && !is_array($product['custom_attributes'][$i]['value'])
-                ) {
-                    $product['custom_attributes'][$i]['value'] = [""];
-                }
-            }
-        }
-        $resourcePath = self::RESOURCE_PATH . '/' . $product['sku'];
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => $resourcePath,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'Save',
-            ],
-        ];
-        $requestData = ['product' => $product];
         $response = $this->_webApiCall($serviceInfo, $requestData);
         return $response;
     }

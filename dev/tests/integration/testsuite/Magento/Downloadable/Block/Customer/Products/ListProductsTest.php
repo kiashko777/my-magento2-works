@@ -53,30 +53,6 @@ class ListProductsTest extends TestCase
     private $invoiceOrder;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->customerSession = $this->objectManager->get(Session::class);
-        $this->orderRepository = $this->objectManager->get(OrderRepositoryInterface::class);
-        $this->invoiceOrder = $this->objectManager->get(InvoiceOrderInterface::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->customerSession->logout();
-
-        parent::tearDown();
-    }
-
-    /**
      * @return void
      */
     public function testNoItems(): void
@@ -86,6 +62,20 @@ class ListProductsTest extends TestCase
             (string)__('You have not purchased any downloadable products yet.'),
             strip_tags($html)
         );
+    }
+
+    /**
+     * Create ProductsList block
+     *
+     * @return ListProducts
+     */
+    private function createBlock(): ListProducts
+    {
+        $block = $this->objectManager->create(ListProducts::class);
+        $block->setTemplate('Magento_Downloadable::customer/products/list.phtml');
+        $this->layout->addBlock($block, 'downloadable_customer_products_list');
+
+        return $block;
     }
 
     /**
@@ -130,6 +120,19 @@ class ListProductsTest extends TestCase
     }
 
     /**
+     * Load order by increment id
+     *
+     * @param $orderIncrementId
+     * @return OrderInterface
+     */
+    private function getOrder($orderIncrementId): OrderInterface
+    {
+        $order = $this->objectManager->get(OrderFactory::class)->create();
+
+        return $order->loadByIncrementId($orderIncrementId);
+    }
+
+    /**
      * @magentoDataFixture Magento/Downloadable/_files/order_with_customer_and_downloadable_product.php
      *
      * @return void
@@ -156,29 +159,26 @@ class ListProductsTest extends TestCase
     }
 
     /**
-     * Load order by increment id
-     *
-     * @param $orderIncrementId
-     * @return OrderInterface
+     * @inheritdoc
      */
-    private function getOrder($orderIncrementId): OrderInterface
+    protected function setUp(): void
     {
-        $order = $this->objectManager->get(OrderFactory::class)->create();
+        parent::setUp();
 
-        return $order->loadByIncrementId($orderIncrementId);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->customerSession = $this->objectManager->get(Session::class);
+        $this->orderRepository = $this->objectManager->get(OrderRepositoryInterface::class);
+        $this->invoiceOrder = $this->objectManager->get(InvoiceOrderInterface::class);
     }
 
     /**
-     * Create ProductsList block
-     *
-     * @return ListProducts
+     * @inheritdoc
      */
-    private function createBlock(): ListProducts
+    protected function tearDown(): void
     {
-        $block = $this->objectManager->create(ListProducts::class);
-        $block->setTemplate('Magento_Downloadable::customer/products/list.phtml');
-        $this->layout->addBlock($block, 'downloadable_customer_products_list');
+        $this->customerSession->logout();
 
-        return $block;
+        parent::tearDown();
     }
 }

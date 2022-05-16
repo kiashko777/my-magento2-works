@@ -32,18 +32,6 @@ class WishlistTest extends TestCase
     private $productRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->block = $this->objectManager->get(LayoutInterface::class)
-            ->createBlock(Wishlist::class)->setTemplate('Magento_Wishlist::catalog/product/list/addto/wishlist.phtml');
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/second_product_simple.php
      *
      * @return void
@@ -65,5 +53,17 @@ class WishlistTest extends TestCase
     {
         $product = $this->productRepository->get('simple2');
         $this->assertEmpty($this->block->setProduct($product)->toHtml());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->block = $this->objectManager->get(LayoutInterface::class)
+            ->createBlock(Wishlist::class)->setTemplate('Magento_Wishlist::catalog/product/list/addto/wishlist.phtml');
     }
 }

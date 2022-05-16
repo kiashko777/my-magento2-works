@@ -7,9 +7,10 @@ declare(strict_types=1);
 
 namespace Magento\PaypalGraphQl\Model\Resolver\Customer;
 
+use Magento\Framework\Serialize\SerializerInterface;
+use Magento\Integration\Model\Oauth\Token;
 use Magento\Paypal\Model\Api\Nvp;
 use Magento\PaypalGraphQl\PaypalExpressAbstractTest;
-use Magento\Framework\Serialize\SerializerInterface;
 use Magento\Quote\Model\QuoteIdToMaskedQuoteId;
 
 /**
@@ -28,14 +29,6 @@ class PaypalExpressSetPaymentMethodTest extends PaypalExpressAbstractTest
      * @var QuoteIdToMaskedQuoteId
      */
     private $quoteIdToMaskedId;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->json = $this->objectManager->get(SerializerInterface::class);
-        $this->quoteIdToMaskedId = $this->objectManager->get(QuoteIdToMaskedQuoteId::class);
-    }
 
     /**
      * Test end to end test to process a paypal express order
@@ -68,7 +61,7 @@ class PaypalExpressSetPaymentMethodTest extends PaypalExpressAbstractTest
 
         $cart = $this->getQuoteByReservedOrderId($reservedQuoteId);
         $cartId = $cart->getId();
-        $maskedCartId = $this->quoteIdToMaskedId->execute((int) $cartId);
+        $maskedCartId = $this->quoteIdToMaskedId->execute((int)$cartId);
 
         $query = <<<QUERY
 mutation {
@@ -119,8 +112,8 @@ mutation {
 }
 QUERY;
 
-        /** @var \Magento\Integration\Model\Oauth\Token $tokenModel */
-        $tokenModel = $this->objectManager->create(\Magento\Integration\Model\Oauth\Token::class);
+        /** @var Token $tokenModel */
+        $tokenModel = $this->objectManager->create(Token::class);
         $customerToken = $tokenModel->createCustomerToken(1)->getToken();
 
         $requestHeaders = [
@@ -224,5 +217,13 @@ QUERY;
             ['paypal_express'],
             ['payflow_express'],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->json = $this->objectManager->get(SerializerInterface::class);
+        $this->quoteIdToMaskedId = $this->objectManager->get(QuoteIdToMaskedQuoteId::class);
     }
 }

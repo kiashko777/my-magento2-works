@@ -4,10 +4,15 @@
  * See COPYING.txt for license details.
  */
 
-$quote = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Quote\Model\Quote::class);
+use Magento\Paypal\Model\Config;
+use Magento\Paypal\Model\Express\Checkout;
+use Magento\Quote\Model\Quote;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$quote = Bootstrap::getObjectManager()->create(Quote::class);
 $quote->load('test01', 'reserved_order_id');
 
 $payment = $quote->getPayment();
-$payment->setMethod(\Magento\Paypal\Model\Config::METHOD_WPP_EXPRESS)
-    ->setAdditionalInformation(\Magento\Paypal\Model\Express\Checkout::PAYMENT_INFO_TRANSPORT_PAYER_ID, 123);
+$payment->setMethod(Config::METHOD_WPP_EXPRESS)
+    ->setAdditionalInformation(Checkout::PAYMENT_INFO_TRANSPORT_PAYER_ID, 123);
 $quote->collectTotals()->save();

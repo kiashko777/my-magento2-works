@@ -7,18 +7,22 @@ declare(strict_types=1);
 
 use Magento\Catalog\Api\Data\ProductInterfaceFactory;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 
 Bootstrap::getInstance()->reinitialize();
 
-/** @var \Magento\TestFramework\ObjectManager $objectManager */
+/** @var ObjectManager $objectManager */
 $objectManager = Bootstrap::getObjectManager();
 
 /** @var ProductRepositoryInterface $productRepository */
 $productRepository = $objectManager->create(ProductRepositoryInterface::class);
 /** @var ProductRepositoryInterface $productRepository */
 $productFactory = $objectManager->create(ProductInterfaceFactory::class);
-/** @var $product \Magento\Catalog\Model\Product */
+/** @var $product Product */
 
 $product = $productFactory->create();
 $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
@@ -35,14 +39,14 @@ $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setMetaTitle('meta title')
     ->setMetaKeyword('meta keyword')
     ->setMetaDescription('meta description')
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setStockData(
         [
-            'use_config_manage_stock'   => 1,
-            'qty'                       => 100,
-            'is_qty_decimal'            => 0,
-            'is_in_stock'               => 1,
+            'use_config_manage_stock' => 1,
+            'qty' => 100,
+            'is_qty_decimal' => 0,
+            'is_in_stock' => 1,
         ]
     );
 

@@ -6,19 +6,24 @@
 
 namespace Magento\Test\Integrity\Xml;
 
+use DOMDocument;
+use Exception;
+use Magento\Framework\App\Utility\AggregateInvoker;
 use Magento\Framework\Component\ComponentRegistrar;
+use Magento\Framework\Config\Dom;
+use PHPUnit\Framework\TestCase;
 
-class SchemaTest extends \PHPUnit\Framework\TestCase
+class SchemaTest extends TestCase
 {
     public function testXmlFiles()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
-            /**
-             * @param string $filename
-             */
+        /**
+         * @param string $filename
+         */
             function ($filename) {
-                $dom = new \DOMDocument();
+                $dom = new DOMDocument();
                 $xmlFile = file_get_contents($filename);
                 $dom->loadXML($xmlFile);
                 $errors = libxml_get_errors();
@@ -36,8 +41,8 @@ class SchemaTest extends \PHPUnit\Framework\TestCase
                 );
 
                 try {
-                    $errors = \Magento\Framework\Config\Dom::validateDomDocument($dom, $schemaLocations[1]);
-                } catch (\Exception $exception) {
+                    $errors = Dom::validateDomDocument($dom, $schemaLocations[1]);
+                } catch (Exception $exception) {
                     $errors = [$exception->getMessage()];
                 }
                 $this->assertEmpty(
@@ -47,20 +52,6 @@ class SchemaTest extends \PHPUnit\Framework\TestCase
             },
             $this->getXmlFiles()
         );
-    }
-
-    public function getSchemas()
-    {
-        $componentRegistrar = new ComponentRegistrar();
-        $codeSchemas = [];
-        foreach ($componentRegistrar->getPaths(ComponentRegistrar::MODULE) as $modulePath) {
-            $codeSchemas = array_merge($codeSchemas, $this->_getFiles($modulePath, '*.xsd'));
-        }
-        $libSchemas = [];
-        foreach ($componentRegistrar->getPaths(ComponentRegistrar::LIBRARY) as $libraryPath) {
-            $libSchemas = array_merge($libSchemas, $this->_getFiles($libraryPath, '*.xsd'));
-        }
-        return $this->_dataSet(array_merge($codeSchemas, $libSchemas));
     }
 
     public function getXmlFiles()
@@ -127,5 +118,19 @@ class SchemaTest extends \PHPUnit\Framework\TestCase
             $data[substr($file, strlen(BP))] = [$file];
         }
         return $data;
+    }
+
+    public function getSchemas()
+    {
+        $componentRegistrar = new ComponentRegistrar();
+        $codeSchemas = [];
+        foreach ($componentRegistrar->getPaths(ComponentRegistrar::MODULE) as $modulePath) {
+            $codeSchemas = array_merge($codeSchemas, $this->_getFiles($modulePath, '*.xsd'));
+        }
+        $libSchemas = [];
+        foreach ($componentRegistrar->getPaths(ComponentRegistrar::LIBRARY) as $libraryPath) {
+            $libSchemas = array_merge($libSchemas, $this->_getFiles($libraryPath, '*.xsd'));
+        }
+        return $this->_dataSet(array_merge($codeSchemas, $libSchemas));
     }
 }

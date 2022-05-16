@@ -7,6 +7,7 @@
 namespace Magento\Setup\Console\Command;
 
 use Magento\Framework\App\ObjectManager;
+use Magento\Framework\Console\Cli;
 use Magento\Framework\Setup\Lists;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\TableFactory;
@@ -65,6 +66,6 @@ class InfoLanguageListCommand extends Command
         }
 
         $tableHelper->render();
-        return \Magento\Framework\Console\Cli::RETURN_SUCCESS;
+        return Cli::RETURN_SUCCESS;
     }
 }

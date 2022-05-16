@@ -4,17 +4,21 @@
  * See COPYING.txt for license details.
  */
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\Catalog\Setup\CategorySetup;
+use Magento\Eav\Api\AttributeRepositoryInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var \Magento\Catalog\Setup\CategorySetup $installer */
-$installer = $objectManager->create(\Magento\Catalog\Setup\CategorySetup::class);
+$objectManager = Bootstrap::getObjectManager();
 
-/** @var \Magento\Eav\Api\AttributeRepositoryInterface $eavRepository */
-$eavRepository = $objectManager->get(\Magento\Eav\Api\AttributeRepositoryInterface::class);
+/** @var CategorySetup $installer */
+$installer = $objectManager->create(CategorySetup::class);
+
+/** @var AttributeRepositoryInterface $eavRepository */
+$eavRepository = $objectManager->get(AttributeRepositoryInterface::class);
 
 try {
     $attribute = $eavRepository->get($installer->getEntityTypeId('catalog_product'), 'test_attribute');
     $eavRepository->delete($attribute);
-} catch (\Exception $ex) {
+} catch (Exception $ex) {
     //Nothing to remove
 }

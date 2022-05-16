@@ -16,15 +16,6 @@ use Magento\TestFramework\TestCase\AbstractController;
 class AuthenticationTest extends AbstractController
 {
     /**
-     * Make sure that customized AccountPlugin was reverted.
-     */
-    protected function tearDown(): void
-    {
-        $this->resetAllowedActions();
-        parent::tearDown();
-    }
-
-    /**
      * After changes to `di.xml` and overriding list of allowed actions, unallowed ones should cause redirect.
      */
     public function testExpectRedirectResponseWhenDispatchNotAllowedAction()
@@ -33,6 +24,19 @@ class AuthenticationTest extends AbstractController
 
         $this->dispatch('customer/account/create');
         $this->assertRedirect($this->stringContains('customer/account/login'));
+    }
+
+    /**
+     * Overrides list of `allowedActions` for Authorization Plugin
+     *
+     * @param string[] $allowedActions
+     * @see \Magento\Customer\Controller\Plugin\Account
+     */
+    private function overrideAllowedActions(array $allowedActions): void
+    {
+        $allowedActions = array_combine($allowedActions, $allowedActions);
+        $pluginFake = $this->_objectManager->create(AccountPlugin::class, ['allowedActions' => $allowedActions]);
+        $this->_objectManager->addSharedInstance($pluginFake, AccountPlugin::class);
     }
 
     /**
@@ -47,16 +51,12 @@ class AuthenticationTest extends AbstractController
     }
 
     /**
-     * Overrides list of `allowedActions` for Authorization Plugin
-     *
-     * @param string[] $allowedActions
-     * @see \Magento\Customer\Controller\Plugin\Account
+     * Make sure that customized AccountPlugin was reverted.
      */
-    private function overrideAllowedActions(array $allowedActions): void
+    protected function tearDown(): void
     {
-        $allowedActions = array_combine($allowedActions, $allowedActions);
-        $pluginFake = $this->_objectManager->create(AccountPlugin::class, ['allowedActions' => $allowedActions]);
-        $this->_objectManager->addSharedInstance($pluginFake, AccountPlugin::class);
+        $this->resetAllowedActions();
+        parent::tearDown();
     }
 
     /**

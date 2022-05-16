@@ -7,8 +7,10 @@
 /**
  * Class to test Core Web API routing
  */
+
 namespace Magento\Webapi\Routing;
 
+use Exception;
 use Magento\Framework\Webapi\Rest\Request;
 use Magento\Integration\Model\Integration;
 use Magento\TestFramework\Authentication\OauthHelper;
@@ -59,7 +61,7 @@ class CoreRoutingTest extends BaseService
 
         try {
             $this->assertUnauthorizedException($serviceInfo, $requestData);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             /** Restore original status of integration associated with active OAuth credentials */
             $integration->setStatus($originalStatus)->save();
             throw $e;
@@ -112,7 +114,7 @@ class CoreRoutingTest extends BaseService
 
         try {
             $this->_webApiCall($serviceInfo);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $exceptionResult = $this->processRestExceptionResult($e);
             $actualMessage = $exceptionResult['message'];
             $this->assertStringNotContainsString($unexpectedMessage, $actualMessage);

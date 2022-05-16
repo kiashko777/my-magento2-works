@@ -3,14 +3,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Backend\Controller\Adminhtml\System;
 
+use Magento\Backend\Block\System\Account\Edit\Form;
+use Magento\Framework\Encryption\EncryptorInterface;
 use Magento\TestFramework\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractBackendController;
+use Magento\User\Model\User;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class AccountTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class AccountTest extends AbstractBackendController
 {
     /**
      * @dataProvider saveDataProvider
@@ -19,9 +24,9 @@ class AccountTest extends \Magento\TestFramework\TestCase\AbstractBackendControl
     public function testSaveAction($password, $passwordConfirmation, $isPasswordChanged)
     {
         $userId = $this->_session->getUser()->getId();
-        /** @var $user \Magento\User\Model\User */
+        /** @var $user User */
         $user = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\User\Model\User::class
+            User::class
         )->load(
             $userId
         );
@@ -47,14 +52,14 @@ class AccountTest extends \Magento\TestFramework\TestCase\AbstractBackendControl
             'password_confirmation',
             $passwordConfirmation
         )->setParam(
-            \Magento\Backend\Block\System\Account\Edit\Form::IDENTITY_VERIFICATION_PASSWORD_FIELD,
+            Form::IDENTITY_VERIFICATION_PASSWORD_FIELD,
             Bootstrap::ADMIN_PASSWORD
         );
         $this->dispatch('backend/admin/system_account/save');
 
-        /** @var $user \Magento\User\Model\User */
+        /** @var $user User */
         $user = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\User\Model\User::class
+            User::class
         )->load(
             $userId
         );
@@ -62,8 +67,8 @@ class AccountTest extends \Magento\TestFramework\TestCase\AbstractBackendControl
         if ($isPasswordChanged) {
             $this->assertNotEquals($oldPassword, $user->getPassword());
             $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-            /** @var $encryptor \Magento\Framework\Encryption\EncryptorInterface */
-            $encryptor = $objectManager->get(\Magento\Framework\Encryption\EncryptorInterface::class);
+            /** @var $encryptor EncryptorInterface */
+            $encryptor = $objectManager->get(EncryptorInterface::class);
             $this->assertTrue($encryptor->validateHash($password, $user->getPassword()));
         } else {
             $this->assertEquals($oldPassword, $user->getPassword());

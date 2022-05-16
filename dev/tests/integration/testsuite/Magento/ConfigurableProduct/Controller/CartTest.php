@@ -7,11 +7,19 @@
 /**
  * Test class for \Magento\Checkout\Controller\Cart
  */
+
 namespace Magento\ConfigurableProduct\Controller;
 
+use Magento\Checkout\Model\Session;
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\Message\MessageInterface;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\Quote\Item;
+use Magento\TestFramework\Helper\Xpath;
+use Magento\TestFramework\TestCase\AbstractController;
+use ReflectionObject;
 
-class CartTest extends \Magento\TestFramework\TestCase\AbstractController
+class CartTest extends AbstractController
 {
     /**
      * Test for \Magento\Checkout\Controller\Cart::configureAction() with configurable product
@@ -20,8 +28,8 @@ class CartTest extends \Magento\TestFramework\TestCase\AbstractController
      */
     public function testConfigureActionWithConfigurableProduct()
     {
-        /** @var $session \Magento\Checkout\Model\Session  */
-        $session = $this->_objectManager->create(\Magento\Checkout\Model\Session::class);
+        /** @var $session Session */
+        $session = $this->_objectManager->create(Session::class);
 
         $quoteItem = $this->_getQuoteItemIdByProductId($session->getQuote(), 1);
         $this->assertNotNull($quoteItem, 'Cannot get quote item for configurable product');
@@ -31,11 +39,11 @@ class CartTest extends \Magento\TestFramework\TestCase\AbstractController
         );
         $response = $this->getResponse();
 
-        $this->assertSessionMessages($this->isEmpty(), \Magento\Framework\Message\MessageInterface::TYPE_ERROR);
+        $this->assertSessionMessages($this->isEmpty(), MessageInterface::TYPE_ERROR);
 
         $this->assertEquals(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//button[@type="submit" and @title="Update Cart"]',
                 $response->getBody()
             ),
@@ -44,7 +52,7 @@ class CartTest extends \Magento\TestFramework\TestCase\AbstractController
 
         $this->assertEquals(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//select[contains(@class,"super-attribute-select")]',
                 $response->getBody()
             ),
@@ -55,13 +63,13 @@ class CartTest extends \Magento\TestFramework\TestCase\AbstractController
     /**
      * Gets \Magento\Quote\Model\Quote\Item from \Magento\Quote\Model\Quote by product id
      *
-     * @param \Magento\Quote\Model\Quote $quote
+     * @param Quote $quote
      * @param mixed $productId
-     * @return \Magento\Quote\Model\Quote\Item|null
+     * @return Item|null
      */
-    private function _getQuoteItemIdByProductId(\Magento\Quote\Model\Quote $quote, $productId)
+    private function _getQuoteItemIdByProductId(Quote $quote, $productId)
     {
-        /** @var $quoteItems \Magento\Quote\Model\Quote\Item[] */
+        /** @var $quoteItems Item[] */
         $quoteItems = $quote->getAllItems();
         foreach ($quoteItems as $quoteItem) {
             if ($productId == $quoteItem->getProductId()) {
@@ -79,8 +87,8 @@ class CartTest extends \Magento\TestFramework\TestCase\AbstractController
      */
     public function testExecuteForConfigurableLastOption()
     {
-        /** @var $session \Magento\Checkout\Model\Session */
-        $session = $this->_objectManager->create(\Magento\Checkout\Model\Session::class);
+        /** @var $session Session */
+        $session = $this->_objectManager->create(Session::class);
         $quote = $session->getQuote();
         $quote->setData('trigger_recollect', 1)->setTotalsCollectedFlag(true);
         $inputData = [
@@ -95,7 +103,7 @@ class CartTest extends \Magento\TestFramework\TestCase\AbstractController
 
         $this->assertSessionMessages(
             $this->equalTo(['The coupon code &quot;test&quot; is not valid.']),
-            \Magento\Framework\Message\MessageInterface::TYPE_ERROR
+            MessageInterface::TYPE_ERROR
         );
     }
 
@@ -105,7 +113,7 @@ class CartTest extends \Magento\TestFramework\TestCase\AbstractController
     protected function tearDown(): void
     {
         parent::tearDown();
-        $reflection = new \ReflectionObject($this);
+        $reflection = new ReflectionObject($this);
         foreach ($reflection->getProperties() as $property) {
             if (!$property->isStatic() && 0 !== strpos($property->getDeclaringClass()->getName(), 'PHPUnit')) {
                 $property->setAccessible(true);

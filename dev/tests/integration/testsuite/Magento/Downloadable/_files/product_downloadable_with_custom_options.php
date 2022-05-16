@@ -4,6 +4,8 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Catalog\Api\Data\ProductCustomOptionInterface;
+use Magento\Catalog\Api\Data\ProductCustomOptionInterfaceFactory;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
@@ -87,12 +89,12 @@ $options = [
 
 $customOptions = [];
 
-/** @var \Magento\Catalog\Api\Data\ProductCustomOptionInterfaceFactory $customOptionFactory */
+/** @var ProductCustomOptionInterfaceFactory $customOptionFactory */
 $customOptionFactory = Bootstrap::getObjectManager()
-    ->get(\Magento\Catalog\Api\Data\ProductCustomOptionInterfaceFactory::class);
+    ->get(ProductCustomOptionInterfaceFactory::class);
 
 foreach ($options as $option) {
-    /** @var \Magento\Catalog\Api\Data\ProductCustomOptionInterface $customOption */
+    /** @var ProductCustomOptionInterface $customOption */
     $customOption = $customOptionFactory->create(['data' => $option]);
     $customOption->setProductSku($product->getSku());
 

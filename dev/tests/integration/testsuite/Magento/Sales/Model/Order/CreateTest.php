@@ -18,6 +18,7 @@ use Magento\Sales\Model\OrderRepository;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Mail\Template\TransportBuilderMock;
 use PHPUnit\Framework\Constraint\StringContains;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class verifies order creation.
@@ -25,7 +26,7 @@ use PHPUnit\Framework\Constraint\StringContains;
  * @magentoDbIsolation enabled
  * @magentoAppArea frontend
  */
-class CreateTest extends \PHPUnit\Framework\TestCase
+class CreateTest extends TestCase
 {
     /**
      * @var ObjectManagerInterface
@@ -46,18 +47,6 @@ class CreateTest extends \PHPUnit\Framework\TestCase
      * @var FormKey
      */
     private $formKey;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->transportBuilder = $this->objectManager->get(TransportBuilderMock::class);
-        $this->quoteIdMaskFactory = $this->objectManager->get(QuoteIdMaskFactory::class);
-        $this->formKey = $this->objectManager->get(FormKey::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Sales/_files/guest_quote_with_addresses.php
@@ -96,5 +85,17 @@ class CreateTest extends \PHPUnit\Framework\TestCase
 
         $this->assertEquals($message->getSubject(), $subject);
         $this->assertThat($message->getBody()->getParts()[0]->getRawContent(), $assert);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->transportBuilder = $this->objectManager->get(TransportBuilderMock::class);
+        $this->quoteIdMaskFactory = $this->objectManager->get(QuoteIdMaskFactory::class);
+        $this->formKey = $this->objectManager->get(FormKey::class);
     }
 }

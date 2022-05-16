@@ -7,10 +7,10 @@ declare(strict_types=1);
 
 namespace Magento\LayeredNavigation\Block\Navigation\Category;
 
+use Magento\Catalog\Model\Layer\Filter\AbstractFilter;
 use Magento\Catalog\Model\Layer\Resolver;
 use Magento\Catalog\Model\ResourceModel\Product\Collection;
 use Magento\LayeredNavigation\Block\Navigation\AbstractFiltersTest;
-use Magento\Catalog\Model\Layer\Filter\AbstractFilter;
 use Magento\Store\Model\Store;
 
 /**
@@ -36,7 +36,8 @@ class MultipleFiltersTest extends AbstractFiltersTest
         array $products,
         array $filters,
         array $expectedProducts
-    ): void {
+    ): void
+    {
         $this->updateAttributesAndProducts(
             $products,
             ['is_filterable' => AbstractFilter::ATTRIBUTE_OPTIONS_ONLY_WITH_RESULTS]
@@ -49,71 +50,6 @@ class MultipleFiltersTest extends AbstractFiltersTest
         $this->navigationBlock->setLayout($this->layout);
         $resultProducts = $this->getProductSkus($this->navigationBlock->getLayer()->getProductCollection());
         $this->assertEquals($expectedProducts, $resultProducts);
-    }
-
-    /**
-     * @return array
-     */
-    public function getMultipleActiveFiltersDataProvider(): array
-    {
-        return [
-            'without_filters' => [
-                'products_data' => [
-                    'test_configurable' => [
-                        'simple1000' => 'Option 1',
-                        'simple1001' => 'Option 2',
-                        'simple1002' => 'Option 2',
-                    ],
-                    'dropdown_attribute' => [
-                        'simple1000' => 'Option 1',
-                        'simple1001' => 'Option 2',
-                        'simple1002' => 'Option 3',
-                    ],
-                ],
-                'filters' => [],
-                'expected_products' => ['simple1000', 'simple1001', 'simple1002'],
-            ],
-            'applied_first_option_in_both_filters' => [
-                'products_data' => [
-                    'test_configurable' => [
-                        'simple1000' => 'Option 1',
-                        'simple1001' => 'Option 1',
-                        'simple1002' => 'Option 2',
-                    ],
-                    'dropdown_attribute' => [
-                        'simple1000' => 'Option 1',
-                        'simple1001' => 'Option 1',
-                        'simple1002' => 'Option 3',
-                    ],
-                ],
-                'filters' => ['test_configurable' => 'Option 1', 'dropdown_attribute' => 'Option 1'],
-                'expected_products' => ['simple1000', 'simple1001'],
-            ],
-            'applied_mixed_options_in_filters' => [
-                'products_data' => [
-                    'test_configurable' => [
-                        'simple1000' => 'Option 1',
-                        'simple1001' => 'Option 2',
-                        'simple1002' => 'Option 2',
-                    ],
-                    'dropdown_attribute' => [
-                        'simple1000' => 'Option 1',
-                        'simple1001' => 'Option 2',
-                        'simple1002' => 'Option 3',
-                    ],
-                ],
-                'filters' => ['test_configurable' => 'Option 2', 'dropdown_attribute' => 'Option 3'],
-                'expected_products' => ['simple1002'],
-            ],
-        ];
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function getLayerType(): string
-    {
-        return Resolver::CATALOG_LAYER_CATEGORY;
     }
 
     /**
@@ -183,5 +119,70 @@ class MultipleFiltersTest extends AbstractFiltersTest
         }
 
         return $skus;
+    }
+
+    /**
+     * @return array
+     */
+    public function getMultipleActiveFiltersDataProvider(): array
+    {
+        return [
+            'without_filters' => [
+                'products_data' => [
+                    'test_configurable' => [
+                        'simple1000' => 'Option 1',
+                        'simple1001' => 'Option 2',
+                        'simple1002' => 'Option 2',
+                    ],
+                    'dropdown_attribute' => [
+                        'simple1000' => 'Option 1',
+                        'simple1001' => 'Option 2',
+                        'simple1002' => 'Option 3',
+                    ],
+                ],
+                'filters' => [],
+                'expected_products' => ['simple1000', 'simple1001', 'simple1002'],
+            ],
+            'applied_first_option_in_both_filters' => [
+                'products_data' => [
+                    'test_configurable' => [
+                        'simple1000' => 'Option 1',
+                        'simple1001' => 'Option 1',
+                        'simple1002' => 'Option 2',
+                    ],
+                    'dropdown_attribute' => [
+                        'simple1000' => 'Option 1',
+                        'simple1001' => 'Option 1',
+                        'simple1002' => 'Option 3',
+                    ],
+                ],
+                'filters' => ['test_configurable' => 'Option 1', 'dropdown_attribute' => 'Option 1'],
+                'expected_products' => ['simple1000', 'simple1001'],
+            ],
+            'applied_mixed_options_in_filters' => [
+                'products_data' => [
+                    'test_configurable' => [
+                        'simple1000' => 'Option 1',
+                        'simple1001' => 'Option 2',
+                        'simple1002' => 'Option 2',
+                    ],
+                    'dropdown_attribute' => [
+                        'simple1000' => 'Option 1',
+                        'simple1001' => 'Option 2',
+                        'simple1002' => 'Option 3',
+                    ],
+                ],
+                'filters' => ['test_configurable' => 'Option 2', 'dropdown_attribute' => 'Option 3'],
+                'expected_products' => ['simple1002'],
+            ],
+        ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function getLayerType(): string
+    {
+        return Resolver::CATALOG_LAYER_CATEGORY;
     }
 }

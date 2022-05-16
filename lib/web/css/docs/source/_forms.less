@@ -215,6 +215,7 @@
     .example-form-1-fieldset {
         .lib-form-fieldset();
         .lib-form-hasrequired(bottom);
+
         > .field {
             .lib-form-field();
         }
@@ -224,11 +225,12 @@
 .example-form-2 {
     .example-form-2-fieldset {
         .lib-form-fieldset();
+
         > .field {
             .lib-form-field(
-                    @_type: block,
-                    @_column: true
-                );
+                @_type: block,
+                @_column: true
+            );
         }
     }
 }

@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\ImportExport\Controller\Adminhtml;
 
 use Magento\TestFramework\Helper\Xpath;
@@ -21,30 +22,6 @@ class ExportTest extends AbstractBackendController
     protected $_httpXRequestedWith;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-            $this->_httpXRequestedWith = $_SERVER['HTTP_X_REQUESTED_WITH'];
-        }
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        if ($this->_httpXRequestedWith !== null) {
-            $_SERVER['HTTP_X_REQUESTED_WITH'] = $this->_httpXRequestedWith;
-        }
-
-        parent::tearDown();
-    }
-
-    /**
      * Test getFilter action
      *
      * @dataProvider getEntityTypesDataProvider
@@ -56,8 +33,9 @@ class ExportTest extends AbstractBackendController
     public function testGetFilterAction(
         string $entityType,
         string $customerEntityType = null,
-        array $expectedAttributes = []
-    ) {
+        array  $expectedAttributes = []
+    )
+    {
         $this->getRequest()->setParam('isAjax', true);
 
         // Provide X_REQUESTED_WITH header in response to mark next action as ajax
@@ -124,5 +102,29 @@ class ExportTest extends AbstractBackendController
                 $body
             )
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+            $this->_httpXRequestedWith = $_SERVER['HTTP_X_REQUESTED_WITH'];
+        }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        if ($this->_httpXRequestedWith !== null) {
+            $_SERVER['HTTP_X_REQUESTED_WITH'] = $this->_httpXRequestedWith;
+        }
+
+        parent::tearDown();
     }
 }

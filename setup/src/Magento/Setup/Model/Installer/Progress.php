@@ -6,6 +6,8 @@
 
 namespace Magento\Setup\Model\Installer;
 
+use LogicException;
+
 /**
  * Installation progress model
  */
@@ -36,6 +38,24 @@ class Progress
         $this->validate($total, $current);
         $this->total = $total;
         $this->current = $current;
+    }
+
+    /**
+     * Asserts invariants
+     *
+     * @param int $total
+     * @param int $current
+     * @return void
+     * @throws LogicException
+     */
+    private function validate($total, $current)
+    {
+        if (empty($total) || 0 >= $total) {
+            throw new LogicException('Total number must be more than zero.');
+        }
+        if ($current > $total) {
+            throw new LogicException('Current cannot exceed total number.');
+        }
     }
 
     /**
@@ -87,23 +107,5 @@ class Progress
     public function getRatio()
     {
         return $this->current / $this->total;
-    }
-
-    /**
-     * Asserts invariants
-     *
-     * @param int $total
-     * @param int $current
-     * @return void
-     * @throws \LogicException
-     */
-    private function validate($total, $current)
-    {
-        if (empty($total) || 0 >= $total) {
-            throw new \LogicException('Total number must be more than zero.');
-        }
-        if ($current > $total) {
-            throw new \LogicException('Current cannot exceed total number.');
-        }
     }
 }

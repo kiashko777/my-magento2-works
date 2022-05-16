@@ -3,27 +3,31 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\AsynchronousOperations\Model;
 
+use Exception;
 use Magento\AsynchronousOperations\Api\Data\BulkSummaryInterface;
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Framework\ObjectManagerInterface;
+use Magento\AsynchronousOperations\Api\Data\BulkSummaryInterfaceFactory;
 use Magento\AsynchronousOperations\Api\Data\OperationInterface;
-use Magento\Framework\MessageQueue\BulkPublisherInterface;
-use Magento\Framework\EntityManager\MetadataPool;
+use Magento\AsynchronousOperations\Api\Data\OperationInterfaceFactory;
+use Magento\AsynchronousOperations\Model\ResourceModel\Operation\CollectionFactory;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\EntityManager\EntityManager;
-use Magento\AsynchronousOperations\Model\ResourceModel\Operation\CollectionFactory;
-use Magento\AsynchronousOperations\Api\Data\BulkSummaryInterfaceFactory;
-use Magento\AsynchronousOperations\Api\Data\OperationInterfaceFactory;
+use Magento\Framework\EntityManager\MetadataPool;
+use Magento\Framework\MessageQueue\BulkPublisherInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\MockObject_MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class BulkManagementTest extends \PHPUnit\Framework\TestCase
+class BulkManagementTest extends TestCase
 {
     /**
-     * @var \PHPUnit\Framework\MockObject_MockObject
+     * @var MockObject_MockObject
      */
     private $publisherMock;
 
@@ -36,19 +40,6 @@ class BulkManagementTest extends \PHPUnit\Framework\TestCase
      * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->publisherMock = $this->getMockForAbstractClass(BulkPublisherInterface::class);
-
-        $this->model = $this->objectManager->create(
-            BulkManagement::class,
-            [
-                'publisher' => $this->publisherMock
-            ]
-        );
-    }
 
     public function testScheduleBulk()
     {
@@ -80,6 +71,24 @@ class BulkManagementTest extends \PHPUnit\Framework\TestCase
         $storedData = $this->getStoredOperationData();
         // No operations should be saved to database during bulk creation
         $this->assertCount(0, $storedData);
+    }
+
+    /**
+     * Retrieve stored operation data
+     *
+     * @return array
+     * @throws Exception
+     */
+    private function getStoredOperationData()
+    {
+        /** @var MetadataPool $metadataPool */
+        $metadataPool = $this->objectManager->get(MetadataPool::class);
+        $operationMetadata = $metadataPool->getMetadata(OperationInterface::class);
+        /** @var ResourceConnection $resourceConnection */
+        $resourceConnection = $this->objectManager->get(ResourceConnection::class);
+        $connection = $resourceConnection->getConnectionByName($operationMetadata->getEntityConnectionName());
+
+        return $connection->fetchAll($connection->select()->from($operationMetadata->getEntityTable()));
     }
 
     /**
@@ -122,21 +131,16 @@ class BulkManagementTest extends \PHPUnit\Framework\TestCase
         $this->assertNull($bulkSummary->getBulkId());
     }
 
-    /**
-     * Retrieve stored operation data
-     *
-     * @return array
-     * @throws \Exception
-     */
-    private function getStoredOperationData()
+    protected function setUp(): void
     {
-        /** @var MetadataPool $metadataPool */
-        $metadataPool = $this->objectManager->get(MetadataPool::class);
-        $operationMetadata = $metadataPool->getMetadata(OperationInterface::class);
-        /** @var ResourceConnection $resourceConnection */
-        $resourceConnection = $this->objectManager->get(ResourceConnection::class);
-        $connection = $resourceConnection->getConnectionByName($operationMetadata->getEntityConnectionName());
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->publisherMock = $this->getMockForAbstractClass(BulkPublisherInterface::class);
 
-        return $connection->fetchAll($connection->select()->from($operationMetadata->getEntityTable()));
+        $this->model = $this->objectManager->create(
+            BulkManagement::class,
+            [
+                'publisher' => $this->publisherMock
+            ]
+        );
     }
 }

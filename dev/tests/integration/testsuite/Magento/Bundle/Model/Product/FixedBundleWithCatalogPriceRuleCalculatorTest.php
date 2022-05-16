@@ -7,7 +7,9 @@ declare(strict_types=1);
 
 namespace Magento\Bundle\Model\Product;
 
-use \Magento\Bundle\Api\Data\LinkInterface;
+use Magento\Bundle\Api\Data\LinkInterface;
+use Magento\Catalog\Pricing\Price\FinalPrice;
+use Magento\Framework\Pricing\PriceInfo\Base;
 
 /**
  * @magentoAppArea frontend
@@ -27,9 +29,9 @@ class FixedBundleWithCatalogPriceRuleCalculatorTest extends BundlePriceAbstract
         $this->prepareFixture($strategyModifiers, 'bundle_product');
         $bundleProduct = $this->productRepository->get('bundle_product', false, null, true);
 
-        /** @var \Magento\Framework\Pricing\PriceInfo\Base $priceInfo */
+        /** @var Base $priceInfo */
         $priceInfo = $bundleProduct->getPriceInfo();
-        $priceCode = \Magento\Catalog\Pricing\Price\FinalPrice::PRICE_CODE;
+        $priceCode = FinalPrice::PRICE_CODE;
 
         $this->assertEquals(
             $expectedResults['minimalPrice'],
@@ -110,10 +112,10 @@ class FixedBundleWithCatalogPriceRuleCalculatorTest extends BundlePriceAbstract
                 ),
                 'expectedResults' => [
                     // 0.9 * 110 + 1 * 20 + 0.9 * 110 * 1
-                   'minimalPrice' => 218,
+                    'minimalPrice' => 218,
 
                     // 0.9 * 110 + 1 * 20 + 0.9 * 110 * 1
-                   'maximalPrice' => 218
+                    'maximalPrice' => 218
                 ]
             ],
 
@@ -127,10 +129,10 @@ class FixedBundleWithCatalogPriceRuleCalculatorTest extends BundlePriceAbstract
                 ),
                 'expectedResults' => [
                     // 0.9 * 110 + 0.9 * 110 * 0.2 + 100
-                   'minimalPrice' => 218.8,
+                    'minimalPrice' => 218.8,
 
                     // 0.9 * 110 + 0.9 * 110 * 0.2 + 100
-                   'maximalPrice' => 218.8
+                    'maximalPrice' => 218.8
                 ]
             ],
 

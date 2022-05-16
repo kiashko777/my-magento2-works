@@ -42,11 +42,12 @@ class CreateAddressTest extends CreateAddressViaAddressRepositoryTest
      * @return AddressInterface
      */
     protected function createAddress(
-        int $customerId,
+        int   $customerId,
         array $addressData,
-        bool $isDefaultShipping = false,
-        bool $isDefaultBilling = false
-    ): AddressInterface {
+        bool  $isDefaultShipping = false,
+        bool  $isDefaultBilling = false
+    ): AddressInterface
+    {
         if (isset($addressData['custom_region_name'])) {
             $addressData[AddressInterface::REGION_ID] = $this->getRegionIdByName->execute(
                 $addressData['custom_region_name'],

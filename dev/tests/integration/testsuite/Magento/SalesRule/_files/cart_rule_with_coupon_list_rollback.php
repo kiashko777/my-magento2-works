@@ -5,11 +5,12 @@
  */
 declare(strict_types=1);
 
+use Magento\Framework\Registry;
 use Magento\SalesRule\Model\ResourceModel\Rule\Collection as RuleCollection;
 use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var \Magento\Framework\Registry $registry */
-$registry = Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
+/** @var Registry $registry */
+$registry = Bootstrap::getObjectManager()->get(Registry::class);
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 

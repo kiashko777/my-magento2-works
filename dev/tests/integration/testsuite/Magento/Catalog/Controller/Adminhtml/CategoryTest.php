@@ -7,24 +7,28 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Controller\Adminhtml;
 
-use Magento\Framework\Acl\Builder;
 use Magento\Backend\App\Area\FrontNameResolver;
 use Magento\Catalog\Api\CategoryRepositoryInterface;
+use Magento\Catalog\Model\Category as CategoryModel;
+use Magento\Catalog\Model\Category\Attribute\LayoutUpdateManager;
+use Magento\Catalog\Model\CategoryFactory as CategoryModelFactory;
+use Magento\Catalog\Model\ResourceModel\Product as ProductResource;
+use Magento\Framework\Acl\Builder;
 use Magento\Framework\App\ProductMetadata;
 use Magento\Framework\App\ProductMetadataInterface;
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\Exception\AuthenticationException;
+use Magento\Framework\Exception\CouldNotSaveException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Message\MessageInterface;
 use Magento\Framework\Registry;
-use Magento\TestFramework\Catalog\Model\CategoryLayoutUpdateManager;
 use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Store\Api\StoreRepositoryInterface;
-use Magento\TestFramework\TestCase\AbstractBackendController;
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Store\Model\Store;
-use Magento\Catalog\Model\ResourceModel\Product as ProductResource;
-use Magento\Catalog\Model\Category as CategoryModel;
-use Magento\Catalog\Model\CategoryFactory as CategoryModelFactory;
+use Magento\TestFramework\Catalog\Model\CategoryLayoutUpdateManager;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractBackendController;
+use Throwable;
 
 /**
  * Test for admin category functionality.
@@ -64,29 +68,26 @@ class CategoryTest extends AbstractBackendController
     private $json;
 
     /**
-     * @inheritDoc
+     * Get category post data
      *
-     * @throws \Magento\Framework\Exception\AuthenticationException
+     * @static
+     * @return array
      */
-    protected function setUp(): void
+    public static function categoryCreatedFromProductCreationPageDataProvider(): array
     {
-        Bootstrap::getObjectManager()->configure([
-            'preferences' => [
-                \Magento\Catalog\Model\Category\Attribute\LayoutUpdateManager::class
-                => \Magento\TestFramework\Catalog\Model\CategoryLayoutUpdateManager::class
-            ]
-        ]);
-        parent::setUp();
+        /* Keep in sync with new-category-dialog.js */
+        $postData = [
+            'name' => 'Category Created From Products Creation Page',
+            'is_active' => 1,
+            'include_in_menu' => 0,
+            'use_config' => [
+                'available_sort_by' => 1,
+                'default_sort_by' => 1
+            ],
+            'parent' => 2,
+        ];
 
-        /** @var ProductResource $productResource */
-        $this->productResource = Bootstrap::getObjectManager()->get(
-            ProductResource::class
-        );
-        $this->aclBuilder = Bootstrap::getObjectManager()->get(Builder::class);
-        $this->categoryFactory = Bootstrap::getObjectManager()->get(CategoryModelFactory::class);
-        $this->categoryRepository = $this->_objectManager->get(CategoryRepositoryInterface::class);
-        $this->storeRepository = $this->_objectManager->get(StoreRepositoryInterface::class);
-        $this->json = $this->_objectManager->get(Json::class);
+        return [[$postData], [$postData + ['return_session_messages_only' => 1]]];
     }
 
     /**
@@ -145,7 +146,7 @@ class CategoryTest extends AbstractBackendController
      * @magentoDbIsolation enabled
      * @magentoDataFixture Magento/CatalogUrlRewrite/_files/categories.php
      * @return void
-     * @throws \Magento\Framework\Exception\CouldNotSaveException
+     * @throws CouldNotSaveException
      * @throws NoSuchEntityException
      */
     public function testDefaultValueForCategoryUrlPath(): void
@@ -216,29 +217,6 @@ class CategoryTest extends AbstractBackendController
     }
 
     /**
-     * Get category post data
-     *
-     * @static
-     * @return array
-     */
-    public static function categoryCreatedFromProductCreationPageDataProvider(): array
-    {
-        /* Keep in sync with new-category-dialog.js */
-        $postData = [
-            'name' => 'Category Created From Products Creation Page',
-            'is_active' => 1,
-            'include_in_menu' => 0,
-            'use_config' => [
-                'available_sort_by' => 1,
-                'default_sort_by' => 1
-            ],
-            'parent' => 2,
-        ];
-
-        return [[$postData], [$postData + ['return_session_messages_only' => 1]]];
-    }
-
-    /**
      * Test save action with different store
      *
      * @return void
@@ -248,20 +226,20 @@ class CategoryTest extends AbstractBackendController
     public function testSaveActionWithDifferentStore(): void
     {
         $categoryDetails =
-        [
-            'id' => '20',
-            'entity_id' => '20',
-            'path' => '1/2',
-            'url_key' => 'test-category',
-            'is_anchor' => false,
-            'use_default' =>
             [
-                'name' => 'test-category',
-                'is_active' => 1,
-                'thumbnail' => 1,
-                'description' => 'Test description for test-category'
-            ]
-        ];
+                'id' => '20',
+                'entity_id' => '20',
+                'path' => '1/2',
+                'url_key' => 'test-category',
+                'is_anchor' => false,
+                'use_default' =>
+                    [
+                        'name' => 'test-category',
+                        'is_active' => 1,
+                        'thumbnail' => 1,
+                        'description' => 'Test description for test-category'
+                    ]
+            ];
         $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
         $this->getRequest()->setPostValue($categoryDetails);
         $this->getRequest()->setParam('id', $categoryDetails['id']);
@@ -514,13 +492,14 @@ class CategoryTest extends AbstractBackendController
      * @return void
      */
     public function testMoveAction(
-        int $parentId,
-        int $childId,
+        int    $parentId,
+        int    $childId,
         string $childUrlKey,
-        int $grandChildId,
+        int    $grandChildId,
         string $grandChildUrlKey,
-        bool $error
-    ): void {
+        bool   $error
+    ): void
+    {
         $urlKeys = [
             $childId => $childUrlKey,
             $grandChildId => $grandChildUrlKey,
@@ -587,6 +566,22 @@ class CategoryTest extends AbstractBackendController
             $oldCategoryProductsCount,
             $newCategoryProductsCount,
             'After changing product position number of records from catalog_category_product has changed'
+        );
+    }
+
+    /**
+     * Get items count from catalog_category_product.
+     *
+     * @return int
+     */
+    private function getCategoryProductsCount(): int
+    {
+        $oldCategoryProducts = $this->productResource->getConnection()->select()->from(
+            $this->productResource->getTable('catalog_category_product'),
+            'product_id'
+        );
+        return count(
+            $this->productResource->getConnection()->fetchAll($oldCategoryProducts)
         );
     }
 
@@ -673,32 +668,16 @@ class CategoryTest extends AbstractBackendController
     }
 
     /**
-     * Get items count from catalog_category_product.
-     *
-     * @return int
-     */
-    private function getCategoryProductsCount(): int
-    {
-        $oldCategoryProducts = $this->productResource->getConnection()->select()->from(
-            $this->productResource->getTable('catalog_category_product'),
-            'product_id'
-        );
-        return count(
-            $this->productResource->getConnection()->fetchAll($oldCategoryProducts)
-        );
-    }
-
-    /**
      * Check whether additional authorization is required for the design fields.
      *
      * @magentoDbIsolation enabled
      * @magentoDataFixture Magento/Store/_files/core_fixturestore.php
-     * @throws \Throwable
      * @return void
+     * @throws Throwable
      */
     public function testSaveDesign(): void
     {
-        /** @var $store \Magento\Store\Model\Store */
+        /** @var $store Store */
         $store = Bootstrap::getObjectManager()->create(Store::class);
         $store->load('fixturestore', 'code');
         $storeId = $store->getId();
@@ -789,11 +768,11 @@ class CategoryTest extends AbstractBackendController
      * @magentoDbIsolation enabled
      * @magentoDataFixture Magento/Store/_files/core_fixturestore.php
      * @return void
-     * @throws \Throwable
+     * @throws Throwable
      */
     public function testSaveDesignWithDefaults(): void
     {
-        /** @var $store \Magento\Store\Model\Store */
+        /** @var $store Store */
         $store = Bootstrap::getObjectManager()->create(Store::class);
         $store->load('fixturestore', 'code');
         $storeId = $store->getId();
@@ -850,13 +829,13 @@ class CategoryTest extends AbstractBackendController
      *
      * @magentoDbIsolation enabled
      * @magentoDataFixture Magento/Store/_files/core_fixturestore.php
-     * @throws \Throwable
      * @return void
+     * @throws Throwable
      */
     public function testSaveCustomLayout(): void
     {
         $file = 'test_file';
-        /** @var $store \Magento\Store\Model\Store */
+        /** @var $store Store */
         $store = Bootstrap::getObjectManager()->create(Store::class);
         /** @var CategoryLayoutUpdateManager $layoutManager */
         $layoutManager = Bootstrap::getObjectManager()->get(CategoryLayoutUpdateManager::class);
@@ -1016,5 +995,31 @@ class CategoryTest extends AbstractBackendController
             ),
             MessageInterface::TYPE_ERROR
         );
+    }
+
+    /**
+     * @inheritDoc
+     *
+     * @throws AuthenticationException
+     */
+    protected function setUp(): void
+    {
+        Bootstrap::getObjectManager()->configure([
+            'preferences' => [
+                LayoutUpdateManager::class
+                => CategoryLayoutUpdateManager::class
+            ]
+        ]);
+        parent::setUp();
+
+        /** @var ProductResource $productResource */
+        $this->productResource = Bootstrap::getObjectManager()->get(
+            ProductResource::class
+        );
+        $this->aclBuilder = Bootstrap::getObjectManager()->get(Builder::class);
+        $this->categoryFactory = Bootstrap::getObjectManager()->get(CategoryModelFactory::class);
+        $this->categoryRepository = $this->_objectManager->get(CategoryRepositoryInterface::class);
+        $this->storeRepository = $this->_objectManager->get(StoreRepositoryInterface::class);
+        $this->json = $this->_objectManager->get(Json::class);
     }
 }

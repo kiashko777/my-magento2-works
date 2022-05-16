@@ -4,10 +4,12 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\SalesRule\Model\ResourceModel\Rule\Collection;
 use Magento\SalesRule\Model\Rule;
+use Magento\TestFramework\Helper\Bootstrap;
 
-$collection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->get(\Magento\SalesRule\Model\ResourceModel\Rule\Collection::class);
+$collection = Bootstrap::getObjectManager()
+    ->get(Collection::class);
 
 /** @var Rule $rule */
 foreach ($collection as $rule) {

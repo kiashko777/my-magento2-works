@@ -3,9 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Modular;
 
-class AclConfigFilesTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\App\Utility\Files;
+use Magento\Framework\Config\Dom;
+use Magento\Framework\Config\Dom\UrnResolver;
+use Magento\Framework\Config\ValidationStateInterface;
+use PHPUnit\Framework\TestCase;
+
+class AclConfigFilesTest extends TestCase
 {
     /**
      * Configuration acl file list
@@ -21,12 +28,6 @@ class AclConfigFilesTest extends \PHPUnit\Framework\TestCase
      */
     protected $_schemeFile;
 
-    protected function setUp(): void
-    {
-        $urnResolver = new \Magento\Framework\Config\Dom\UrnResolver();
-        $this->_schemeFile = $urnResolver->getRealPath('urn:magento:framework:Acl/etc/acl.xsd');
-    }
-
     /**
      * Test each acl configuration file
      * @param string $file
@@ -34,10 +35,10 @@ class AclConfigFilesTest extends \PHPUnit\Framework\TestCase
      */
     public function testAclConfigFile($file)
     {
-        $validationStateMock = $this->createMock(\Magento\Framework\Config\ValidationStateInterface::class);
+        $validationStateMock = $this->createMock(ValidationStateInterface::class);
         $validationStateMock->method('isValidationRequired')
             ->willReturn(true);
-        $domConfig = new \Magento\Framework\Config\Dom(file_get_contents($file), $validationStateMock);
+        $domConfig = new Dom(file_get_contents($file), $validationStateMock);
         $result = $domConfig->validate($this->_schemeFile, $errors);
         $message = "Invalid XML-file: {$file}\n";
         foreach ($errors as $error) {
@@ -51,6 +52,12 @@ class AclConfigFilesTest extends \PHPUnit\Framework\TestCase
      */
     public function aclConfigFileDataProvider()
     {
-        return \Magento\Framework\App\Utility\Files::init()->getConfigFiles('acl.xml');
+        return Files::init()->getConfigFiles('acl.xml');
+    }
+
+    protected function setUp(): void
+    {
+        $urnResolver = new UrnResolver();
+        $this->_schemeFile = $urnResolver->getRealPath('urn:magento:framework:Acl/etc/acl.xsd');
     }
 }

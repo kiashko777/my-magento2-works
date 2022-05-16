@@ -8,56 +8,40 @@ declare(strict_types=1);
 
 namespace Magento\Framework\Interception\Config;
 
+use Magento\Framework\App\CacheInterface;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\App\ObjectManager\ConfigLoader\Compiled;
+use Magento\Framework\App\ObjectManager\ConfigWriter\Filesystem;
+use Magento\Framework\App\ObjectManager\ConfigWriterInterface;
+use Magento\Framework\Cache\FrontendInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Serialize\SerializerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class CacheManagerTest extends \PHPUnit\Framework\TestCase
+class CacheManagerTest extends TestCase
 {
     const CACHE_ID = 'interceptiontest';
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
     /**
-     * @var \Magento\Framework\Serialize\SerializerInterface
+     * @var SerializerInterface
      */
     private $serializer;
 
     /**
-     * @var \Magento\Framework\Cache\FrontendInterface
+     * @var FrontendInterface
      */
     private $cache;
 
     /**
-     * @var \Magento\Framework\App\ObjectManager\ConfigWriterInterface
+     * @var ConfigWriterInterface
      */
     private $configWriter;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-
-        $this->serializer = $this->objectManager->get(\Magento\Framework\Serialize\SerializerInterface::class);
-        $this->cache = $this->objectManager->get(\Magento\Framework\App\CacheInterface::class);
-        $this->configWriter =
-            $this->objectManager->get(\Magento\Framework\App\ObjectManager\ConfigWriter\Filesystem::class);
-
-        $this->initializeMetadataDirectory();
-    }
-
-    /**
-     * Delete compiled file if it was created and clear cache data
-     */
-    protected function tearDown(): void
-    {
-        $compiledPath = \Magento\Framework\App\ObjectManager\ConfigLoader\Compiled::getFilePath(self::CACHE_ID);
-        if (file_exists($compiledPath)) {
-            unlink($compiledPath);
-        }
-
-        $this->cache->remove(self::CACHE_ID);
-    }
 
     /**
      * Test load interception cache from generated/metadata
@@ -70,6 +54,26 @@ class CacheManagerTest extends \PHPUnit\Framework\TestCase
         $config = $this->getConfig();
 
         $this->assertEquals($testConfig, $config->load(self::CACHE_ID));
+    }
+
+    /**
+     * Create instance of Config class with specific cacheId. This is done to prevent our test
+     * from altering the interception config that may have been generated during application
+     * installation. Inject a new instance of the compileLoaded to bypass it's caching.
+     *
+     * @return CacheManager
+     */
+    private function getConfig()
+    {
+        return $this->objectManager->create(
+            CacheManager::class,
+            [
+                'cacheId' => self::CACHE_ID,
+                'compiledLoader' => $this->objectManager->create(
+                    Compiled::class
+                ),
+            ]
+        );
     }
 
     /**
@@ -101,6 +105,18 @@ class CacheManagerTest extends \PHPUnit\Framework\TestCase
         ];
     }
 
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->serializer = $this->objectManager->get(SerializerInterface::class);
+        $this->cache = $this->objectManager->get(CacheInterface::class);
+        $this->configWriter =
+            $this->objectManager->get(Filesystem::class);
+
+        $this->initializeMetadataDirectory();
+    }
+
     /**
      * Ensure generated/metadata exists
      */
@@ -114,22 +130,15 @@ class CacheManagerTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Create instance of Config class with specific cacheId. This is done to prevent our test
-     * from altering the interception config that may have been generated during application
-     * installation. Inject a new instance of the compileLoaded to bypass it's caching.
-     *
-     * @return \Magento\Framework\Interception\Config\CacheManager
+     * Delete compiled file if it was created and clear cache data
      */
-    private function getConfig()
+    protected function tearDown(): void
     {
-        return $this->objectManager->create(
-            \Magento\Framework\Interception\Config\CacheManager::class,
-            [
-                'cacheId' => self::CACHE_ID,
-                'compiledLoader' => $this->objectManager->create(
-                    \Magento\Framework\App\ObjectManager\ConfigLoader\Compiled::class
-                ),
-            ]
-        );
+        $compiledPath = Compiled::getFilePath(self::CACHE_ID);
+        if (file_exists($compiledPath)) {
+            unlink($compiledPath);
+        }
+
+        $this->cache->remove(self::CACHE_ID);
     }
 }

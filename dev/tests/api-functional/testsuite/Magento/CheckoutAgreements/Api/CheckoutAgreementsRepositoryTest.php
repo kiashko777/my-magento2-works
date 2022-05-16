@@ -3,8 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CheckoutAgreements\Api;
 
+use InvalidArgumentException;
+use Magento\CheckoutAgreements\Model\Agreement;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 class CheckoutAgreementsRepositoryTest extends WebapiAbstract
@@ -13,40 +18,6 @@ class CheckoutAgreementsRepositoryTest extends WebapiAbstract
      * @var array
      */
     private $listServiceInfo;
-
-    protected function setUp(): void
-    {
-        $this->listServiceInfo = [
-            'soap' => [
-                'service' => 'checkoutAgreementsCheckoutAgreementsRepositoryV1',
-                'serviceVersion' => 'V1',
-                'operation' => 'checkoutAgreementsCheckoutAgreementsRepositoryV1getList',
-            ],
-            'rest' => [
-                'resourcePath' => '/V1/carts/licence/',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
-            ],
-        ];
-    }
-
-    /**
-     * Retrieve agreement by given name
-     *
-     * @param string $name
-     * @return \Magento\CheckoutAgreements\Model\Agreement
-     * @throws \InvalidArgumentException
-     */
-    protected function getAgreementByName($name)
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var $agreement \Magento\CheckoutAgreements\Model\Agreement */
-        $agreement = $objectManager->create(\Magento\CheckoutAgreements\Model\Agreement::class);
-        $agreement->load($name, 'name');
-        if (!$agreement->getId()) {
-            throw new \InvalidArgumentException('There is no checkout agreement with provided ID.');
-        }
-        return $agreement;
-    }
 
     /**
      * @magentoApiDataFixture Magento/CheckoutAgreements/_files/agreement_active_with_html_content.php
@@ -80,5 +51,39 @@ class CheckoutAgreementsRepositoryTest extends WebapiAbstract
         $this->assertEquals($agreementModel->getCheckboxText(), $agreementData['checkbox_text']);
         $this->assertEquals($agreementModel->getIsActive(), $agreementData['is_active']);
         $this->assertEquals($agreementModel->getIsHtml(), $agreementData['is_html']);
+    }
+
+    /**
+     * Retrieve agreement by given name
+     *
+     * @param string $name
+     * @return Agreement
+     * @throws InvalidArgumentException
+     */
+    protected function getAgreementByName($name)
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var $agreement Agreement */
+        $agreement = $objectManager->create(Agreement::class);
+        $agreement->load($name, 'name');
+        if (!$agreement->getId()) {
+            throw new InvalidArgumentException('There is no checkout agreement with provided ID.');
+        }
+        return $agreement;
+    }
+
+    protected function setUp(): void
+    {
+        $this->listServiceInfo = [
+            'soap' => [
+                'service' => 'checkoutAgreementsCheckoutAgreementsRepositoryV1',
+                'serviceVersion' => 'V1',
+                'operation' => 'checkoutAgreementsCheckoutAgreementsRepositoryV1getList',
+            ],
+            'rest' => [
+                'resourcePath' => '/V1/carts/licence/',
+                'httpMethod' => Request::HTTP_METHOD_GET,
+            ],
+        ];
     }
 }

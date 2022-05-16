@@ -3,8 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Fixtures\FixturesAsserts;
 
+use AssertionError;
+use Magento\Bundle\Model\Product\OptionList;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Setup\Fixtures\BundleProductsFixture;
 
 /**
@@ -16,30 +21,31 @@ use Magento\Setup\Fixtures\BundleProductsFixture;
 class BundleProductsAssert
 {
     /**
-     * @var \Magento\Catalog\Api\ProductRepositoryInterface
+     * @var ProductRepositoryInterface
      */
     private $productRepository;
 
     /**
-     * @var \Magento\Bundle\Model\Product\OptionList
+     * @var OptionList
      */
     private $optionList;
 
     /**
-     * @var \Magento\Setup\Fixtures\FixturesAsserts\ProductAssert
+     * @var ProductAssert
      */
     private $productAssert;
 
     /**
-     * @param \Magento\Catalog\Api\ProductRepositoryInterface $productRepository
-     * @param \Magento\Bundle\Model\Product\OptionList $optionList
-     * @param \Magento\Setup\Fixtures\FixturesAsserts\ProductAssert $productAssert
+     * @param ProductRepositoryInterface $productRepository
+     * @param OptionList $optionList
+     * @param ProductAssert $productAssert
      */
     public function __construct(
-        \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
-        \Magento\Bundle\Model\Product\OptionList $optionList,
-        \Magento\Setup\Fixtures\FixturesAsserts\ProductAssert $productAssert
-    ) {
+        ProductRepositoryInterface       $productRepository,
+        OptionList              $optionList,
+        ProductAssert $productAssert
+    )
+    {
         $this->productRepository = $productRepository;
         $this->optionList = $optionList;
         $this->productAssert = $productAssert;
@@ -49,8 +55,8 @@ class BundleProductsAssert
      * Asserts that generated bundled products are valid
      *
      * @return bool
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
-     * @throws \AssertionError
+     * @throws NoSuchEntityException
+     * @throws AssertionError
      */
     public function assert()
     {
@@ -66,12 +72,12 @@ class BundleProductsAssert
         $this->productAssert->assertProductType('bundle', $product);
 
         if (2 !== count($this->optionList->getItems($product))) {
-            throw new \AssertionError('Bundle options amount is wrong');
+            throw new AssertionError('Bundle options amount is wrong');
         }
 
         foreach ($this->optionList->getItems($product) as $option) {
             if (2 !== count($option->getProductLinks())) {
-                throw new \AssertionError('Bundle option product links amount is wrong');
+                throw new AssertionError('Bundle option product links amount is wrong');
             }
         }
 

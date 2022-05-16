@@ -3,7 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Model\Order\Payment;
+
+use Magento\Sales\Model\Order;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Tests transaction model:
@@ -11,21 +16,21 @@ namespace Magento\Sales\Model\Order\Payment;
  * @see \Magento\Sales\Model\Order\Payment\Transaction
  * @magentoDataFixture Magento/Sales/_files/transactions.php
  */
-class TransactionTest extends \PHPUnit\Framework\TestCase
+class TransactionTest extends TestCase
 {
     public function testLoadByTxnId()
     {
-        $order = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Sales\Model\Order::class);
+        $order = Bootstrap::getObjectManager()->create(Order::class);
         $order->loadByIncrementId('100000001');
 
         /**
          * @var $repository \Magento\Sales\Model\Order\Payment\Transaction\Repository
          */
-        $repository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+        $repository = Bootstrap::getObjectManager()->create(
             \Magento\Sales\Model\Order\Payment\Transaction\Repository::class
         );
         /**
-         * @var $model \Magento\Sales\Model\Order\Payment\Transaction
+         * @var $model Transaction
          */
         $model = $repository->getByTransactionId(
             'invalid_transaction_id',

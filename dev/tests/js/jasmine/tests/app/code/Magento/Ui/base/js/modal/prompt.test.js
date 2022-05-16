@@ -17,7 +17,7 @@ define([
 
         beforeEach(function () {
             element = $('<div id="element">some element</div>'),
-            prompt = element.prompt({});
+                prompt = element.prompt({});
             widget = element.prompt({}).data('mage-prompt');
         });
 

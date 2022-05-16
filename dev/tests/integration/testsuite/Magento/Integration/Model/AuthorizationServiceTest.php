@@ -7,50 +7,26 @@
 namespace Magento\Integration\Model;
 
 use Magento\Authorization\Model\UserContextInterface;
+use Magento\Framework\Authorization;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Webapi\Model\WebapiRoleLocator;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 
 /**
  * Integration authorization service test.
  */
-class AuthorizationServiceTest extends \PHPUnit\Framework\TestCase
+class AuthorizationServiceTest extends TestCase
 {
     /** @var AuthorizationService */
     protected $_service;
 
-    /** @var \Magento\Framework\Authorization */
+    /** @var Authorization */
     protected $libAuthorization;
 
-    /** @var \Magento\Authorization\Model\UserContextInterface|\PHPUnit\Framework\MockObject\MockObject */
+    /** @var UserContextInterface|MockObject */
     protected $userContextMock;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $loggerMock = $this->getMockBuilder(\Psr\Log\LoggerInterface::class)->disableOriginalConstructor()->getMock();
-        $loggerMock->expects($this->any())->method('critical')->willReturnSelf();
-        $this->_service = $objectManager->create(
-            \Magento\Integration\Model\AuthorizationService::class,
-            [
-                'logger' => $loggerMock
-            ]
-        );
-
-        $this->userContextMock = $this->getMockForAbstractClass(
-            \Magento\Authorization\Model\UserContextInterface::class
-        );
-        $this->userContextMock
-            ->expects($this->any())
-            ->method('getUserType')
-            ->willReturn(UserContextInterface::USER_TYPE_INTEGRATION);
-        $roleLocator = $objectManager->create(
-            \Magento\Webapi\Model\WebapiRoleLocator::class,
-            ['userContext' => $this->userContextMock]
-        );
-        $this->libAuthorization = $objectManager->create(
-            \Magento\Framework\Authorization::class,
-            ['roleLocator' => $roleLocator]
-        );
-    }
 
     /**
      * @magentoDbIsolation enabled
@@ -66,6 +42,46 @@ class AuthorizationServiceTest extends \PHPUnit\Framework\TestCase
 
         /** Validate that access to the specified resources is granted */
         $this->_ensurePermissionsAreGranted($integrationId, $resources);
+    }
+
+    /**
+     * Check if access to the specified resources is prohibited to the user.
+     *
+     * @param int $integrationId
+     * @param string[] $resources
+     */
+    protected function _ensurePermissionsAreNotGranted($integrationId, $resources)
+    {
+        $this->userContextMock
+            ->expects($this->any())
+            ->method('getUserId')
+            ->willReturn($integrationId);
+        foreach ($resources as $resource) {
+            $this->assertFalse(
+                $this->libAuthorization->isAllowed($resource),
+                "Access to resource '{$resource}' is expected to be prohibited."
+            );
+        }
+    }
+
+    /**
+     * Check if user has access to the specified resources.
+     *
+     * @param int $integrationId
+     * @param string[] $resources
+     */
+    protected function _ensurePermissionsAreGranted($integrationId, $resources)
+    {
+        $this->userContextMock
+            ->expects($this->any())
+            ->method('getUserId')
+            ->willReturn($integrationId);
+        foreach ($resources as $resource) {
+            $this->assertTrue(
+                $this->libAuthorization->isAllowed($resource),
+                "Access to resource '{$resource}' is prohibited while it is expected to be granted."
+            );
+        }
     }
 
     /**
@@ -115,43 +131,33 @@ class AuthorizationServiceTest extends \PHPUnit\Framework\TestCase
         $this->_ensurePermissionsAreGranted($integrationId, ['Magento_Backend::all']);
     }
 
-    /**
-     * Check if user has access to the specified resources.
-     *
-     * @param int $integrationId
-     * @param string[] $resources
-     */
-    protected function _ensurePermissionsAreGranted($integrationId, $resources)
+    protected function setUp(): void
     {
-        $this->userContextMock
-            ->expects($this->any())
-            ->method('getUserId')
-            ->willReturn($integrationId);
-        foreach ($resources as $resource) {
-            $this->assertTrue(
-                $this->libAuthorization->isAllowed($resource),
-                "Access to resource '{$resource}' is prohibited while it is expected to be granted."
-            );
-        }
-    }
+        parent::setUp();
+        $objectManager = Bootstrap::getObjectManager();
+        $loggerMock = $this->getMockBuilder(LoggerInterface::class)->disableOriginalConstructor()->getMock();
+        $loggerMock->expects($this->any())->method('critical')->willReturnSelf();
+        $this->_service = $objectManager->create(
+            AuthorizationService::class,
+            [
+                'logger' => $loggerMock
+            ]
+        );
 
-    /**
-     * Check if access to the specified resources is prohibited to the user.
-     *
-     * @param int $integrationId
-     * @param string[] $resources
-     */
-    protected function _ensurePermissionsAreNotGranted($integrationId, $resources)
-    {
+        $this->userContextMock = $this->getMockForAbstractClass(
+            UserContextInterface::class
+        );
         $this->userContextMock
             ->expects($this->any())
-            ->method('getUserId')
-            ->willReturn($integrationId);
-        foreach ($resources as $resource) {
-            $this->assertFalse(
-                $this->libAuthorization->isAllowed($resource),
-                "Access to resource '{$resource}' is expected to be prohibited."
-            );
-        }
+            ->method('getUserType')
+            ->willReturn(UserContextInterface::USER_TYPE_INTEGRATION);
+        $roleLocator = $objectManager->create(
+            WebapiRoleLocator::class,
+            ['userContext' => $this->userContextMock]
+        );
+        $this->libAuthorization = $objectManager->create(
+            Authorization::class,
+            ['roleLocator' => $roleLocator]
+        );
     }
 }

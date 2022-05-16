@@ -42,18 +42,6 @@ class SubscribeEmailToNewsletterTest extends GraphQlAbstract
     private $subscriberResource;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->customerAuthUpdate = Bootstrap::getObjectManager()->get(CustomerAuthUpdate::class);
-        $this->customerRegistry = Bootstrap::getObjectManager()->get(CustomerRegistry::class);
-        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-        $this->subscriberResource = $objectManager->get(SubscriberResourceModel::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      */
     public function testAddRegisteredCustomerEmailIntoNewsletterSubscription()
@@ -64,6 +52,42 @@ class SubscribeEmailToNewsletterTest extends GraphQlAbstract
         self::assertArrayHasKey('subscribeEmailToNewsletter', $response);
         self::assertNotEmpty($response['subscribeEmailToNewsletter']);
         self::assertEquals('SUBSCRIBED', $response['subscribeEmailToNewsletter']['status']);
+    }
+
+    /**
+     * Returns a mutation query
+     *
+     * @param string $email
+     * @return string
+     */
+    private function getQuery(string $email = ''): string
+    {
+        return <<<QUERY
+mutation {
+  subscribeEmailToNewsletter(
+    email: "$email"
+  ) {
+    status
+  }
+}
+QUERY;
+    }
+
+    /**
+     * Retrieve customer authorization headers
+     *
+     * @param string $username
+     * @param string $password
+     * @return array
+     * @throws AuthenticationException
+     */
+    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
+
+        return [
+            'Authorization' => 'Bearer ' . $customerToken
+        ];
     }
 
     /**
@@ -153,42 +177,6 @@ class SubscribeEmailToNewsletterTest extends GraphQlAbstract
     }
 
     /**
-     * Returns a mutation query
-     *
-     * @param string $email
-     * @return string
-     */
-    private function getQuery(string $email = ''): string
-    {
-        return <<<QUERY
-mutation {
-  subscribeEmailToNewsletter(
-    email: "$email"
-  ) {
-    status
-  }
-}
-QUERY;
-    }
-
-    /**
-     * Retrieve customer authorization headers
-     *
-     * @param string $username
-     * @param string $password
-     * @return array
-     * @throws AuthenticationException
-     */
-    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
-    {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
-
-        return [
-            'Authorization' => 'Bearer ' . $customerToken
-        ];
-    }
-
-    /**
      * @inheritDoc
      */
     public function tearDown(): void
@@ -200,5 +188,17 @@ QUERY;
             );
 
         parent::tearDown();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->customerAuthUpdate = Bootstrap::getObjectManager()->get(CustomerAuthUpdate::class);
+        $this->customerRegistry = Bootstrap::getObjectManager()->get(CustomerRegistry::class);
+        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
+        $this->subscriberResource = $objectManager->get(SubscriberResourceModel::class);
     }
 }

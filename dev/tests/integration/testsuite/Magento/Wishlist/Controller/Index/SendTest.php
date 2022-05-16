@@ -38,30 +38,6 @@ class SendTest extends AbstractController
     private $transportBuilder;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->customerSession = $this->_objectManager->get(Session::class);
-        $this->customerNameGeneration = $this->_objectManager->get(CustomerNameGenerationInterface::class);
-        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->transportBuilder = $this->_objectManager->get(TransportBuilderMock::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->customerSession->setCustomerId(null);
-
-        parent::tearDown();
-    }
-
-    /**
      * @return void
      */
     public function testSendWishList(): void
@@ -107,6 +83,18 @@ class SendTest extends AbstractController
     }
 
     /**
+     * Dispatch send wish list request.
+     *
+     * @param array $postValues
+     * @return void
+     */
+    private function dispatchSendWishListRequest(array $postValues): void
+    {
+        $this->getRequest()->setPostValue($postValues)->setMethod(HttpRequest::METHOD_POST);
+        $this->dispatch('wishlist/index/send');
+    }
+
+    /**
      * @magentoConfigFixture current_store wishlist/email/number_limit 2
      *
      * @return void
@@ -117,6 +105,18 @@ class SendTest extends AbstractController
         $postValues = ['emails' => 'test@example.com, test2@example.com, test3@example.com'];
         $this->dispatchSendWishListRequest($postValues);
         $this->assertResponseWithError('Maximum of 2 emails can be sent.');
+    }
+
+    /**
+     * Assert error message and redirect.
+     *
+     * @param string $message
+     * @return void
+     */
+    private function assertResponseWithError(string $message): void
+    {
+        $this->assertSessionMessages($this->equalTo([__($message)]), MessageInterface::TYPE_ERROR);
+        $this->assertRedirect($this->stringContains('wishlist/index/share'));
     }
 
     /**
@@ -155,26 +155,26 @@ class SendTest extends AbstractController
     }
 
     /**
-     * Dispatch send wish list request.
-     *
-     * @param array $postValues
-     * @return void
+     * @inheritdoc
      */
-    private function dispatchSendWishListRequest(array $postValues): void
+    protected function setUp(): void
     {
-        $this->getRequest()->setPostValue($postValues)->setMethod(HttpRequest::METHOD_POST);
-        $this->dispatch('wishlist/index/send');
+        parent::setUp();
+
+        $this->customerSession = $this->_objectManager->get(Session::class);
+        $this->customerNameGeneration = $this->_objectManager->get(CustomerNameGenerationInterface::class);
+        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->transportBuilder = $this->_objectManager->get(TransportBuilderMock::class);
     }
 
     /**
-     * Assert error message and redirect.
-     *
-     * @param string $message
-     * @return void
+     * @inheritdoc
      */
-    private function assertResponseWithError(string $message): void
+    protected function tearDown(): void
     {
-        $this->assertSessionMessages($this->equalTo([__($message)]), MessageInterface::TYPE_ERROR);
-        $this->assertRedirect($this->stringContains('wishlist/index/share'));
+        $this->customerSession->setCustomerId(null);
+
+        parent::tearDown();
     }
 }

@@ -3,12 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Indexer\Controller\Adminhtml;
+
+use Magento\TestFramework\Helper\Xpath;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class IndexerTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class IndexerTest extends AbstractBackendController
 {
     /**
      * Assert that current page is index management page and that it has indexers mode selector
@@ -22,7 +26,7 @@ class IndexerTest extends \Magento\TestFramework\TestCase\AbstractBackendControl
         $this->assertStringContainsString('<h1 class="page-title">index Management</h1>', $body);
         $this->assertEquals(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//*[@id="gridIndexer_massaction-select"]',
                 $body
             ),
@@ -44,7 +48,7 @@ class IndexerTest extends \Magento\TestFramework\TestCase\AbstractBackendControl
 
         $this->assertGreaterThanOrEqual(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//*[@name="indexer_ids"]',
                 $body
             ),

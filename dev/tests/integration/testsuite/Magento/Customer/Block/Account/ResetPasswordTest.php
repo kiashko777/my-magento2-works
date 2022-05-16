@@ -41,20 +41,6 @@ class ResetPasswordTest extends TestCase
     private $random;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->random = $this->objectManager->get(Random::class);
-        $this->block = $this->layout->createBlock(Resetpassword::class);
-        $this->block->setTemplate('Magento_Customer::form/resetforgottenpassword.phtml');
-    }
-
-    /**
      * @return void
      */
     public function testResetPasswordForm(): void
@@ -102,5 +88,19 @@ class ResetPasswordTest extends TestCase
     public function testAutocompletePasswordDisabled(): void
     {
         $this->assertTrue($this->block->isAutocompleteDisabled());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->random = $this->objectManager->get(Random::class);
+        $this->block = $this->layout->createBlock(Resetpassword::class);
+        $this->block->setTemplate('Magento_Customer::form/resetforgottenpassword.phtml');
     }
 }

@@ -7,6 +7,7 @@
 namespace Magento\Sales\Service\V1;
 
 use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\Sales\Model\Order;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
@@ -25,11 +26,13 @@ class OrderCancelTest extends WebapiAbstract
     private $objectManager;
 
     /**
-     * @inheritdoc
+     * @magentoApiDataFixture Magento/Sales/_files/order.php
      */
-    protected function setUp(): void
+    public function testOrderCancel()
     {
-        $this->objectManager = Bootstrap::getObjectManager();
+        $order = $this->getOrder('100000001');
+        $result = $this->sendCancelRequest($order);
+        $this->assertTrue($result);
     }
 
     /**
@@ -54,7 +57,7 @@ class OrderCancelTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/orders/' . $order->getId() . '/cancel',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -64,16 +67,6 @@ class OrderCancelTest extends WebapiAbstract
         ];
         $requestData = ['id' => $order->getId()];
         return $this->_webApiCall($serviceInfo, $requestData);
-    }
-
-    /**
-     * @magentoApiDataFixture Magento/Sales/_files/order.php
-     */
-    public function testOrderCancel()
-    {
-        $order = $this->getOrder('100000001');
-        $result = $this->sendCancelRequest($order);
-        $this->assertTrue($result);
     }
 
     /**
@@ -94,5 +87,13 @@ class OrderCancelTest extends WebapiAbstract
         $order = $this->getOrder('100000001');
         $result = $this->sendCancelRequest($order);
         $this->assertFalse($result);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

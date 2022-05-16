@@ -52,20 +52,6 @@ class DeclarativeInstallerTest extends SetupTestCase
     private $describeTable;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->moduleManager = $objectManager->get(TestModuleManager::class);
-        $this->cliCommand = $objectManager->get(CliCommand::class);
-        $this->describeTable = $objectManager->get(DescribeTable::class);
-        $this->schemaDiff = $objectManager->get(SchemaDiff::class);
-        $this->schemaConfig = $objectManager->get(SchemaConfigInterface::class);
-        $this->resourceConnection = $objectManager->get(ResourceConnection::class);
-    }
-
-    /**
      * @moduleName Magento_TestSetupDeclarationModule1
      * @dataProviderFromFile Magento/TestSetupDeclarationModule1/fixture/declarative_installer/installation.php
      */
@@ -105,6 +91,22 @@ class DeclarativeInstallerTest extends SetupTestCase
     }
 
     /**
+     * As sometimes we want to ignore spaces and other special characters,
+     * we need to trim data before compare it
+     *
+     * @return array
+     */
+    private function getTrimmedData()
+    {
+        $data = [];
+        foreach ($this->getData() as $key => $createTable) {
+            $data[$key] = preg_replace('/(\s)\n/', '$1', $createTable);
+        }
+
+        return $data;
+    }
+
+    /**
      * @moduleName Magento_TestSetupDeclarationModule1
      * @dataProviderFromFile Magento/TestSetupDeclarationModule1/fixture/declarative_installer/column_modification.php
      * @throws \Exception
@@ -123,6 +125,29 @@ class DeclarativeInstallerTest extends SetupTestCase
             'etc'
         );
 
+        $this->cliCommand->install(
+            ['Magento_TestSetupDeclarationModule1']
+        );
+
+        $diff = $this->schemaDiff->diff(
+            $this->schemaConfig->getDeclarationConfig(),
+            $this->schemaConfig->getDbConfig()
+        );
+        self::assertNull($diff->getAll());
+        $this->compareStructures();
+    }
+
+    /**
+     * @moduleName Magento_TestSetupDeclarationModule1
+     * @dataProviderFromFile Magento/TestSetupDeclarationModule1/fixture/declarative_installer/column_removal.php
+     * @throws \Exception
+     */
+    public function testInstallationWithColumnsRemoval()
+    {
+        $this->cliCommand->install(
+            ['Magento_TestSetupDeclarationModule1']
+        );
+        $this->updateDbSchemaRevision('column_removals');
         $this->cliCommand->install(
             ['Magento_TestSetupDeclarationModule1']
         );
@@ -156,45 +181,6 @@ class DeclarativeInstallerTest extends SetupTestCase
             'db_schema_whitelist.json',
             'etc'
         );
-    }
-
-    /**
-     * @moduleName Magento_TestSetupDeclarationModule1
-     * @dataProviderFromFile Magento/TestSetupDeclarationModule1/fixture/declarative_installer/column_removal.php
-     * @throws \Exception
-     */
-    public function testInstallationWithColumnsRemoval()
-    {
-        $this->cliCommand->install(
-            ['Magento_TestSetupDeclarationModule1']
-        );
-        $this->updateDbSchemaRevision('column_removals');
-        $this->cliCommand->install(
-            ['Magento_TestSetupDeclarationModule1']
-        );
-
-        $diff = $this->schemaDiff->diff(
-            $this->schemaConfig->getDeclarationConfig(),
-            $this->schemaConfig->getDbConfig()
-        );
-        self::assertNull($diff->getAll());
-        $this->compareStructures();
-    }
-
-    /**
-     * As sometimes we want to ignore spaces and other special characters,
-     * we need to trim data before compare it
-     *
-     * @return array
-     */
-    private function getTrimmedData()
-    {
-        $data = [];
-        foreach ($this->getData() as $key => $createTable) {
-            $data[$key] = preg_replace('/(\s)\n/', '$1', $createTable);
-        }
-
-        return $data;
     }
 
     /**
@@ -460,5 +446,19 @@ class DeclarativeInstallerTest extends SetupTestCase
         self::assertNull($diff->getAll());
         $shardData = $this->describeTable->describeShard(Sharding::DEFAULT_CONNECTION);
         self::assertEquals($this->getData(), $shardData);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->moduleManager = $objectManager->get(TestModuleManager::class);
+        $this->cliCommand = $objectManager->get(CliCommand::class);
+        $this->describeTable = $objectManager->get(DescribeTable::class);
+        $this->schemaDiff = $objectManager->get(SchemaDiff::class);
+        $this->schemaConfig = $objectManager->get(SchemaConfigInterface::class);
+        $this->resourceConnection = $objectManager->get(ResourceConnection::class);
     }
 }

@@ -44,25 +44,6 @@ class ProductDataMapperTest extends TestCase
     private $objectManager;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $additionalFieldsProvider = $this->createMock(AdditionalFieldsProviderInterface::class);
-        $additionalFieldsProvider->method('getFields')->willReturn([]);
-        $this->model = $this->objectManager->create(
-            ProductDataMapper::class,
-            [
-                'additionalFieldsProvider' => $additionalFieldsProvider,
-            ]
-        );
-        $this->eavConfig = $this->objectManager->get(Config::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-    }
-
-    /**
      * Test mapping select attribute with different store labels
      *
      * @return void
@@ -112,8 +93,9 @@ class ProductDataMapperTest extends TestCase
      */
     private function getAttributeOptionValue(
         AbstractAttribute $attribute,
-        string $text
-    ): ?string {
+        string            $text
+    ): ?string
+    {
         $value = null;
         $attribute->setStoreId(0);
         foreach ($attribute->getOptions() as $option) {
@@ -123,5 +105,24 @@ class ProductDataMapperTest extends TestCase
             }
         }
         return $value;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $additionalFieldsProvider = $this->createMock(AdditionalFieldsProviderInterface::class);
+        $additionalFieldsProvider->method('getFields')->willReturn([]);
+        $this->model = $this->objectManager->create(
+            ProductDataMapper::class,
+            [
+                'additionalFieldsProvider' => $additionalFieldsProvider,
+            ]
+        );
+        $this->eavConfig = $this->objectManager->get(Config::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
     }
 }

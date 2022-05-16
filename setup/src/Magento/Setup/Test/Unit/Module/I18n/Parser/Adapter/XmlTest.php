@@ -23,12 +23,6 @@ class XmlTest extends TestCase
      */
     protected $_adapter;
 
-    protected function setUp(): void
-    {
-        $objectManagerHelper = new ObjectManager($this);
-        $this->_adapter = $objectManagerHelper->getObject(Xml::class);
-    }
-
     /**
      * @dataProvider parseDataProvider
      * @param string $file
@@ -69,5 +63,11 @@ class XmlTest extends TestCase
                 ],
             ],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $objectManagerHelper = new ObjectManager($this);
+        $this->_adapter = $objectManagerHelper->getObject(Xml::class);
     }
 }

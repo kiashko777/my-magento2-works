@@ -6,38 +6,32 @@
 
 namespace Magento\Framework\App\Language;
 
+use Magento\Framework\Filesystem\Directory\ReadFactory;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class DictionaryTest extends \PHPUnit\Framework\TestCase
+class DictionaryTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
     /**
-     * @var \Magento\Framework\App\Language\Dictionary
+     * @var Dictionary
      */
     private $model;
 
     /**
-     * @var \Magento\Framework\Filesystem\Directory\ReadFactory
+     * @var ReadFactory
      */
     private $directoryFactory;
 
     /**
-     * @var \Magento\Framework\App\Language\ConfigFactory
+     * @var ConfigFactory
      */
     private $configFactory;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->directoryFactory = $this->objectManager->create(
-            \Magento\Framework\Filesystem\Directory\ReadFactory::class
-        );
-        $this->configFactory = $this->objectManager->create(\Magento\Framework\App\Language\ConfigFactory::class);
-    }
 
     /**
      * @param string $languageCode
@@ -48,7 +42,7 @@ class DictionaryTest extends \PHPUnit\Framework\TestCase
     public function testDictionaryGetter($languageCode, $expectation)
     {
         $this->model = $this->objectManager->create(
-            \Magento\Framework\App\Language\Dictionary::class,
+            Dictionary::class,
             ['directoryReadFactory' => $this->directoryFactory, 'configFactory' => $this->configFactory]
         );
         $result = $this->model->getDictionary($languageCode);
@@ -168,5 +162,14 @@ class DictionaryTest extends \PHPUnit\Framework\TestCase
                 'nine' => 'en_ak_nine',
             ]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->directoryFactory = $this->objectManager->create(
+            ReadFactory::class
+        );
+        $this->configFactory = $this->objectManager->create(ConfigFactory::class);
     }
 }

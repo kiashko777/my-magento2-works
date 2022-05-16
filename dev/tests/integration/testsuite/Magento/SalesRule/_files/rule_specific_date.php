@@ -4,11 +4,15 @@
  * See COPYING.txt for license details.
  */
 
-/** @var \Magento\SalesRule\Model\Rule $rule */
-$tomorrow = new \DateTime();
-$tomorrow->add(\DateInterval::createFromDateString('+1 day'));
+/** @var Rule $rule */
 
-$rule = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\SalesRule\Model\Rule::class);
+use Magento\SalesRule\Model\Rule;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$tomorrow = new DateTime();
+$tomorrow->add(DateInterval::createFromDateString('+1 day'));
+
+$rule = Bootstrap::getObjectManager()->create(Rule::class);
 $rule->setName(
     '#1'
 )->setIsActive(

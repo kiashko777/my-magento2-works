@@ -8,12 +8,15 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Model\Attribute\Backend;
 
-use Magento\Catalog\Model\CategoryFactory;
 use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\Category\Attribute\Backend\LayoutUpdate;
+use Magento\Catalog\Model\Category\Attribute\LayoutUpdateManager;
+use Magento\Catalog\Model\CategoryFactory;
+use Magento\Eav\Model\Entity\Attribute\Backend\AbstractBackend;
 use Magento\TestFramework\Catalog\Model\CategoryLayoutUpdateManager;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
-use Magento\Eav\Model\Entity\Attribute\Backend\AbstractBackend;
+use Throwable;
 
 /**
  * Test 'custom layout file' attribute.
@@ -40,38 +43,10 @@ class AbstractLayoutUpdateTest extends TestCase
     private $layoutManager;
 
     /**
-     * Recreate the category model.
-     *
-     * @return void
-     */
-    private function recreateCategory(): void
-    {
-        $this->category = $this->categoryFactory->create();
-        $this->category->load(2);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        Bootstrap::getObjectManager()->configure([
-            'preferences' => [
-                \Magento\Catalog\Model\Category\Attribute\LayoutUpdateManager::class
-                => \Magento\TestFramework\Catalog\Model\CategoryLayoutUpdateManager::class
-            ]
-        ]);
-        $this->categoryFactory = Bootstrap::getObjectManager()->get(CategoryFactory::class);
-        $this->recreateCategory();
-        $this->attribute = $this->category->getAttributes()['custom_layout_update_file']->getBackend();
-        $this->layoutManager = Bootstrap::getObjectManager()->get(CategoryLayoutUpdateManager::class);
-    }
-
-    /**
      * Check that custom layout update file's values erase the old attribute's value.
      *
      * @return void
-     * @throws \Throwable
+     * @throws Throwable
      */
     public function testDependsOnNewUpdate(): void
     {
@@ -92,7 +67,7 @@ class AbstractLayoutUpdateTest extends TestCase
         $this->category->setOrigData('custom_layout_update', 'test');
         $this->category->setData(
             'custom_layout_update_file',
-            \Magento\Catalog\Model\Category\Attribute\Backend\LayoutUpdate::VALUE_USE_UPDATE_XML
+            LayoutUpdate::VALUE_USE_UPDATE_XML
         );
         $this->attribute->beforeSave($this->category);
         $this->assertEquals('test', $this->category->getData('custom_layout_update'));
@@ -107,7 +82,7 @@ class AbstractLayoutUpdateTest extends TestCase
         $this->category->setOrigData('custom_layout_update', 'test');
         $this->category->setData(
             'custom_layout_update_file',
-            \Magento\Catalog\Model\Category\Attribute\Backend\LayoutUpdate::VALUE_NO_UPDATE
+            LayoutUpdate::VALUE_NO_UPDATE
         );
         $this->attribute->beforeSave($this->category);
         $this->assertEmpty($this->category->getData('custom_layout_update'));
@@ -123,5 +98,33 @@ class AbstractLayoutUpdateTest extends TestCase
         $this->attribute->beforeSave($this->category);
         $this->assertEquals('test', $this->category->getData('custom_layout_update'));
         $this->assertNull($this->category->getData('custom_layout_update_file'));
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        Bootstrap::getObjectManager()->configure([
+            'preferences' => [
+                LayoutUpdateManager::class
+                => CategoryLayoutUpdateManager::class
+            ]
+        ]);
+        $this->categoryFactory = Bootstrap::getObjectManager()->get(CategoryFactory::class);
+        $this->recreateCategory();
+        $this->attribute = $this->category->getAttributes()['custom_layout_update_file']->getBackend();
+        $this->layoutManager = Bootstrap::getObjectManager()->get(CategoryLayoutUpdateManager::class);
+    }
+
+    /**
+     * Recreate the category model.
+     *
+     * @return void
+     */
+    private function recreateCategory(): void
+    {
+        $this->category = $this->categoryFactory->create();
+        $this->category->load(2);
     }
 }

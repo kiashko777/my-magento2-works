@@ -3,12 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Console\Command;
 
+use Exception;
+use InvalidArgumentException;
 use Magento\Framework\App\Console\MaintenanceModeEnabler;
 use Magento\Framework\App\DeploymentConfig;
 use Magento\Framework\App\MaintenanceMode;
+use Magento\Framework\App\State;
 use Magento\Framework\Backup\Factory;
+use Magento\Framework\Console\Cli;
+use Magento\Framework\ObjectManager\ConfigLoaderInterface;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Setup\BackupRollbackFactory;
 use Magento\Setup\Model\ObjectManagerProvider;
@@ -66,13 +72,14 @@ class RollbackCommand extends AbstractSetupCommand
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function __construct(
-        ObjectManagerProvider $objectManagerProvider,
-        MaintenanceMode $maintenanceMode,
-        DeploymentConfig $deploymentConfig,
+        ObjectManagerProvider  $objectManagerProvider,
+        MaintenanceMode        $maintenanceMode,
+        DeploymentConfig       $deploymentConfig,
         MaintenanceModeEnabler $maintenanceModeEnabler = null
-    ) {
+    )
+    {
         $this->objectManager = $objectManagerProvider->get();
-        $this->backupRollbackFactory = $this->objectManager->get(\Magento\Framework\Setup\BackupRollbackFactory::class);
+        $this->backupRollbackFactory = $this->objectManager->get(BackupRollbackFactory::class);
         $this->deploymentConfig = $deploymentConfig;
         $this->maintenanceModeEnabler =
             $maintenanceModeEnabler ?: $this->objectManager->get(MaintenanceModeEnabler::class);
@@ -120,7 +127,7 @@ class RollbackCommand extends AbstractSetupCommand
         ) {
             $output->writeln("<info>No information is available: the Magento application is not installed.</info>");
             // we must have an exit code higher than zero to indicate something was wrong
-            return \Magento\Framework\Console\Cli::RETURN_FAILURE;
+            return Cli::RETURN_FAILURE;
         }
 
         return $this->maintenanceModeEnabler->executeInMaintenanceMode(
@@ -132,7 +139,7 @@ class RollbackCommand extends AbstractSetupCommand
                         false
                     );
                     if (!$helper->ask($input, $output, $question) && $input->isInteractive()) {
-                        return \Magento\Framework\Console\Cli::RETURN_FAILURE;
+                        return Cli::RETURN_FAILURE;
                     }
                     $questionKeep = new ConfirmationQuestion(
                         '<info>Do you want to keep the backups?[y/N]<info>',
@@ -143,11 +150,11 @@ class RollbackCommand extends AbstractSetupCommand
                     $this->doRollback($input, $output, $keepSourceFile);
                     $output->writeln('<info>Please set file permission of bin/magento to executable</info>');
 
-                    return \Magento\Framework\Console\Cli::RETURN_SUCCESS;
-                } catch (\Exception $e) {
+                    return Cli::RETURN_SUCCESS;
+                } catch (Exception $e) {
                     $output->writeln('<error>' . $e->getMessage() . '</error>');
                     // we must have an exit code higher than zero to indicate something was wrong
-                    return \Magento\Framework\Console\Cli::RETURN_FAILURE;
+                    return Cli::RETURN_FAILURE;
                 }
             },
             $output,
@@ -162,7 +169,7 @@ class RollbackCommand extends AbstractSetupCommand
      * @param OutputInterface $output
      * @param boolean $keepSourceFile
      * @return void
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     private function doRollback(InputInterface $input, OutputInterface $output, $keepSourceFile)
     {
@@ -190,7 +197,7 @@ class RollbackCommand extends AbstractSetupCommand
             $inputOptionProvided = true;
         }
         if (!$inputOptionProvided) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Not enough information provided to roll back.'
             );
         }
@@ -204,11 +211,11 @@ class RollbackCommand extends AbstractSetupCommand
     private function setAreaCode()
     {
         $areaCode = 'Adminhtml';
-        /** @var \Magento\Framework\App\State $appState */
-        $appState = $this->objectManager->get(\Magento\Framework\App\State::class);
+        /** @var State $appState */
+        $appState = $this->objectManager->get(State::class);
         $appState->setAreaCode($areaCode);
-        /** @var \Magento\Framework\ObjectManager\ConfigLoaderInterface $configLoader */
-        $configLoader = $this->objectManager->get(\Magento\Framework\ObjectManager\ConfigLoaderInterface::class);
+        /** @var ConfigLoaderInterface $configLoader */
+        $configLoader = $this->objectManager->get(ConfigLoaderInterface::class);
         $this->objectManager->configure($configLoader->load($areaCode));
     }
 }

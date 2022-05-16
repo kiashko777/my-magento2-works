@@ -5,8 +5,15 @@
  */
 declare(strict_types=1);
 
-$billingAddress = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Sales\Model\Order\Address::class,
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Address;
+use Magento\Sales\Model\Order\Item;
+use Magento\Sales\Model\Order\Payment;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$billingAddress = Bootstrap::getObjectManager()->create(
+    Address::class,
     [
         'data' => [
             'firstname' => 'guest',
@@ -23,19 +30,19 @@ $billingAddress = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->c
 );
 $billingAddress->setAddressType('billing');
 
-$payment = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Sales\Model\Order\Payment::class
+$payment = Bootstrap::getObjectManager()->create(
+    Payment::class
 );
 $payment->setMethod('checkmo');
 
-/** @var \Magento\Sales\Model\Order\Item $orderItem */
-$orderItem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Sales\Model\Order\Item::class
+/** @var Item $orderItem */
+$orderItem = Bootstrap::getObjectManager()->create(
+    Item::class
 );
 
-/** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-$productRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+/** @var ProductRepositoryInterface $productRepository */
+$productRepository = Bootstrap::getObjectManager()
+    ->get(ProductRepositoryInterface::class);
 $product = $productRepository->getById(1);
 $link = $product->getExtensionAttributes()->getDownloadableProductLinks()[0];
 
@@ -51,7 +58,7 @@ $orderItem->setProductId(
     1
 );
 
-$order = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Sales\Model\Order::class);
+$order = Bootstrap::getObjectManager()->create(Order::class);
 $order->setCustomerEmail(
     'mail@to.co'
 )->addItem(

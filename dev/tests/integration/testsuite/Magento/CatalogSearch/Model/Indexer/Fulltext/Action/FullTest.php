@@ -3,27 +3,29 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogSearch\Model\Indexer\Fulltext\Action;
 
+use Magento\Catalog\Api\Data\ProductAttributeInterface;
+use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Api\ProductAttributeRepositoryInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use Magento\CatalogSearch\Model\ResourceModel\EngineInterface as Engine;
-use Magento\Catalog\Api\ProductAttributeRepositoryInterface;
-use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\CatalogSearch\Model\ResourceModel\EngineProvider;
+use Magento\Customer\Api\Data\GroupInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Store\Model\Store;
-use Magento\Catalog\Model\Product;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class for testing fulltext index rebuild
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class FullTest extends \PHPUnit\Framework\TestCase
+class FullTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        $this->markTestSkipped("MC-18332: Mysql Search Engine is deprecated and will be removed");
-    }
     /**
      * Testing fulltext index rebuild
      *
@@ -34,14 +36,14 @@ class FullTest extends \PHPUnit\Framework\TestCase
     public function testGetIndexData()
     {
         $engineProvider = Bootstrap::getObjectManager()->create(
-            \Magento\CatalogSearch\Model\ResourceModel\EngineProvider::class
+            EngineProvider::class
         );
         $dataProvider = Bootstrap::getObjectManager()->create(
-            \Magento\CatalogSearch\Model\Indexer\Fulltext\Action\DataProvider::class,
+            DataProvider::class,
             ['engineProvider' => $engineProvider]
         );
         $actionFull = Bootstrap::getObjectManager()->create(
-            \Magento\CatalogSearch\Model\Indexer\Fulltext\Action\Full::class,
+            Full::class,
             ['dataProvider' => $dataProvider]
         );
         /** @var ProductRepositoryInterface $productRepository */
@@ -69,7 +71,7 @@ class FullTest extends \PHPUnit\Framework\TestCase
      * Prepare and return expected index data
      *
      * @return array
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @throws NoSuchEntityException
      */
     private function getExpectedIndexData()
     {
@@ -81,10 +83,10 @@ class FullTest extends \PHPUnit\Framework\TestCase
         $configurableId = $attributeRepository->get('test_configurable')->getAttributeId();
         $statusId = $attributeRepository->get(ProductInterface::STATUS)->getAttributeId();
         $taxClassId = $attributeRepository
-            ->get(\Magento\Customer\Api\Data\GroupInterface::TAX_CLASS_ID)
+            ->get(GroupInterface::TAX_CLASS_ID)
             ->getAttributeId();
         $urlKeyId = $attributeRepository
-            ->get(\Magento\Catalog\Api\Data\ProductAttributeInterface::CODE_SEO_FIELD_URL_KEY)
+            ->get(ProductAttributeInterface::CODE_SEO_FIELD_URL_KEY)
             ->getAttributeId();
         return [
             'configurable' => [
@@ -134,7 +136,7 @@ class FullTest extends \PHPUnit\Framework\TestCase
     public function testRebuildStoreIndexConfigurable()
     {
         $actionFull = Bootstrap::getObjectManager()->create(
-            \Magento\CatalogSearch\Model\Indexer\Fulltext\Action\Full::class
+            Full::class
         );
         $storeId = 1;
 
@@ -163,5 +165,10 @@ class FullTest extends \PHPUnit\Framework\TestCase
         $product = Bootstrap::getObjectManager()->get(Product::class);
 
         return $product->getIdBySku($sku);
+    }
+
+    protected function setUp(): void
+    {
+        $this->markTestSkipped("MC-18332: Mysql Search Engine is deprecated and will be removed");
     }
 }

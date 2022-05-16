@@ -7,11 +7,11 @@ declare(strict_types=1);
 
 namespace Magento\Quote\Api;
 
+use Exception;
 use Magento\Catalog\Model\ResourceModel\Product as ProductResource;
 use Magento\Framework\Webapi\Rest\Request;
 use Magento\Integration\Api\CustomerTokenServiceInterface;
 use Magento\Quote\Model\Quote;
-use Magento\Quote\Model\QuoteIdMask;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\WebapiAbstract;
@@ -35,25 +35,6 @@ class CartAddingItemsTest extends WebapiAbstract
      * @var array
      */
     private $createdQuotes = [];
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productResource = $this->objectManager->get(ProductResource::class);
-    }
-
-    protected function tearDown(): void
-    {
-        /** @var Quote $quote */
-        $quote = $this->objectManager->create(Quote::class);
-        foreach ($this->createdQuotes as $quoteId) {
-            $quote->load($quoteId);
-            $quote->delete();
-        }
-    }
 
     /**
      * Test qty for cart after adding grouped product qty specified only for goruped product.
@@ -108,6 +89,23 @@ class CartAddingItemsTest extends WebapiAbstract
             $this->assertEquals(7, $item->getQty());
         }
         $this->createdQuotes[] = $quoteId;
+    }
+
+    /**
+     * Returns service info add to cart
+     *
+     * @param string $token
+     * @return array
+     */
+    private function getServiceInfoAddToCart(string $token): array
+    {
+        return [
+            'rest' => [
+                'resourcePath' => '/V1/carts/mine/items',
+                'httpMethod' => Request::HTTP_METHOD_POST,
+                'token' => $token
+            ]
+        ];
     }
 
     /**
@@ -286,26 +284,28 @@ class CartAddingItemsTest extends WebapiAbstract
 
         $this->createdQuotes[] = $quoteId;
 
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Please specify id and qty for grouped options.');
 
         $this->_webApiCall($this->getServiceInfoAddToCart($token), $requestData);
     }
 
     /**
-     * Returns service info add to cart
-     *
-     * @param string $token
-     * @return array
+     * @inheritDoc
      */
-    private function getServiceInfoAddToCart(string $token): array
+    protected function setUp(): void
     {
-        return [
-            'rest' => [
-                'resourcePath' => '/V1/carts/mine/items',
-                'httpMethod' => Request::HTTP_METHOD_POST,
-                'token' => $token
-            ]
-        ];
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productResource = $this->objectManager->get(ProductResource::class);
+    }
+
+    protected function tearDown(): void
+    {
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
+        foreach ($this->createdQuotes as $quoteId) {
+            $quote->load($quoteId);
+            $quote->delete();
+        }
     }
 }

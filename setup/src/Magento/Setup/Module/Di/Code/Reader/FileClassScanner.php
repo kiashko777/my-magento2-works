@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace Magento\Setup\Module\Di\Code\Reader;
 
+use function is_file;
+
 /**
  * Class FileClassScanner
  */
@@ -53,7 +55,7 @@ class FileClassScanner
         // phpcs:ignore
         $filename = realpath($filename);
         // phpcs:ignore
-        if (!file_exists($filename) || !\is_file($filename)) {
+        if (!file_exists($filename) || !is_file($filename)) {
             throw new InvalidFileException(
                 sprintf(
                     'The file "%s" does not exist or is not a file',
@@ -62,17 +64,6 @@ class FileClassScanner
             );
         }
         $this->filename = $filename;
-    }
-
-    /**
-     * Retrieves the contents of a file.  Mostly here for Mock injection
-     *
-     * @return string
-     */
-    public function getFileContents()
-    {
-        // phpcs:ignore
-        return file_get_contents($this->filename);
     }
 
     /**
@@ -129,10 +120,10 @@ class FileClassScanner
                 }
                 $namespaceParts[] = $token[1];
 
-            // `class` token is not used with a valid class name
+                // `class` token is not used with a valid class name
             } elseif ($triggerClass && !$tokenIsArray) {
                 $triggerClass = false;
-            // The class keyword was found in the last loop
+                // The class keyword was found in the last loop
             } elseif ($triggerClass && $token[0] === T_STRING) {
                 $triggerClass = false;
                 $class = $token[1];
@@ -160,6 +151,17 @@ class FileClassScanner
             }
         }
         return $class;
+    }
+
+    /**
+     * Retrieves the contents of a file.  Mostly here for Mock injection
+     *
+     * @return string
+     */
+    public function getFileContents()
+    {
+        // phpcs:ignore
+        return file_get_contents($this->filename);
     }
 
     /**

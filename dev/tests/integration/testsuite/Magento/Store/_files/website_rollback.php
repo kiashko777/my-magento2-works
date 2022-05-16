@@ -4,14 +4,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-/** @var \Magento\Framework\Registry $registry */
-$registry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
+/** @var Registry $registry */
+
+use Magento\Framework\Registry;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\Store\Model\Website;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$registry = Bootstrap::getObjectManager()->get(Registry::class);
 
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
-/** @var \Magento\Store\Model\Website $website */
-$website = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Store\Model\Website::class);
+/** @var Website $website */
+$website = Bootstrap::getObjectManager()->create(Website::class);
 $website->load('test');
 
 if ($website->getId()) {
@@ -22,6 +28,6 @@ $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', false);
 
 /* Refresh stores memory cache */
-\Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-    \Magento\Store\Model\StoreManagerInterface::class
+Bootstrap::getObjectManager()->get(
+    StoreManagerInterface::class
 )->reinitStores();

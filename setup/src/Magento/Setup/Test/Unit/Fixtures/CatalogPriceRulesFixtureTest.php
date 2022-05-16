@@ -38,13 +38,6 @@ class CatalogPriceRulesFixtureTest extends TestCase
      */
     private $model;
 
-    protected function setUp(): void
-    {
-        $this->fixtureModelMock = $this->createMock(FixtureModel::class);
-
-        $this->model = new CatalogPriceRulesFixture($this->fixtureModelMock);
-    }
-
     public function testExecute()
     {
         $storeMock = $this->createMock(Store::class);
@@ -160,5 +153,12 @@ class CatalogPriceRulesFixtureTest extends TestCase
         $this->assertSame([
             'catalog_price_rules' => 'Catalog Price Rules'
         ], $this->model->introduceParamLabels());
+    }
+
+    protected function setUp(): void
+    {
+        $this->fixtureModelMock = $this->createMock(FixtureModel::class);
+
+        $this->model = new CatalogPriceRulesFixture($this->fixtureModelMock);
     }
 }

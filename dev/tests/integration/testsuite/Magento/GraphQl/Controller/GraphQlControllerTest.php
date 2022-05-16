@@ -7,12 +7,17 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Controller;
 
+use Laminas\Http\Headers;
+use LogicException;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\App\Request\Http;
 use Magento\Framework\EntityManager\MetadataPool;
+use Magento\Framework\GraphQl\Exception\GraphQlInputException;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Serialize\SerializerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Indexer\TestCase;
 
 /**
  * Tests the dispatch method in the GraphQl Controller class using a simple product query
@@ -22,11 +27,11 @@ use Magento\TestFramework\Helper\Bootstrap;
  * @magentoDbIsolation disabled
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class GraphQlControllerTest extends \Magento\TestFramework\Indexer\TestCase
+class GraphQlControllerTest extends TestCase
 {
     const CONTENT_TYPE = 'application/json';
 
-    /** @var \Magento\Framework\ObjectManagerInterface */
+    /** @var ObjectManagerInterface */
     private $objectManager;
 
     /** @var GraphQl */
@@ -47,20 +52,11 @@ class GraphQlControllerTest extends \Magento\TestFramework\Indexer\TestCase
             ->getApplication()
             ->getDbInstance();
         if (!$db->isDbDumpExists()) {
-            throw new \LogicException('DB dump does not exist.');
+            throw new LogicException('DB dump does not exist.');
         }
         $db->restoreFromDbDump();
 
         parent::setUpBeforeClass();
-    }
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->graphql = $this->objectManager->get(\Magento\GraphQl\Controller\GraphQl::class);
-        $this->jsonSerializer = $this->objectManager->get(SerializerInterface::class);
-        $this->metadataPool = $this->objectManager->get(MetadataPool::class);
-        $this->request = $this->objectManager->get(Http::class);
     }
 
     /**
@@ -68,7 +64,7 @@ class GraphQlControllerTest extends \Magento\TestFramework\Indexer\TestCase
      *
      * @return void
      */
-    public function testDispatch() : void
+    public function testDispatch(): void
     {
         /** @var ProductRepositoryInterface $productRepository */
         $productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
@@ -98,7 +94,7 @@ QUERY;
         $this->request->setPathInfo('/graphql');
         $this->request->setMethod('POST');
         $this->request->setContent(json_encode($postData));
-        $headers = $this->objectManager->create(\Laminas\Http\Headers::class)
+        $headers = $this->objectManager->create(Headers::class)
             ->addHeaders(['Content-Type' => 'application/json']);
         $this->request->setHeaders($headers);
         $response = $this->graphql->dispatch($this->request);
@@ -118,7 +114,7 @@ QUERY;
      *
      * @return void
      */
-    public function testDispatchWithGet() : void
+    public function testDispatchWithGet(): void
     {
         /** @var ProductRepositoryInterface $productRepository */
         $productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
@@ -159,7 +155,7 @@ QUERY;
      *
      * @return void
      */
-    public function testDispatchGetWithParameterizedVariables() : void
+    public function testDispatchGetWithParameterizedVariables(): void
     {
         /** @var ProductRepositoryInterface $productRepository */
         $productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
@@ -175,7 +171,7 @@ query GetProducts(\$filterInput:ProductAttributeFilterInput){
             id
             name
             sku
-        }  
+        }
     }
 }
 QUERY;
@@ -211,7 +207,7 @@ QUERY;
      *
      * @return void
      */
-    public function testError() : void
+    public function testError(): void
     {
         $query
             = <<<QUERY
@@ -223,12 +219,12 @@ QUERY;
     }
   ])
     {
-      items{        
+      items{
       attribute_code
       attribute_type
       entity_type
-    }      
-    }  
+    }
+    }
   }
 QUERY;
 
@@ -241,7 +237,7 @@ QUERY;
         $this->request->setPathInfo('/graphql');
         $this->request->setMethod('POST');
         $this->request->setContent(json_encode($postData));
-        $headers = $this->objectManager->create(\Laminas\Http\Headers::class)
+        $headers = $this->objectManager->create(Headers::class)
             ->addHeaders(['Content-Type' => 'application/json']);
         $this->request->setHeaders($headers);
         $response = $this->graphql->dispatch($this->request);
@@ -250,7 +246,7 @@ QUERY;
             if (is_array($outputResponse['errors'][0])) {
                 foreach ($outputResponse['errors'] as $error) {
                     $this->assertEquals(
-                        \Magento\Framework\GraphQl\Exception\GraphQlInputException::EXCEPTION_CATEGORY,
+                        GraphQlInputException::EXCEPTION_CATEGORY,
                         $error['extensions']['category']
                     );
                     if (isset($error['message'])) {
@@ -264,5 +260,14 @@ QUERY;
                 }
             }
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->graphql = $this->objectManager->get(GraphQl::class);
+        $this->jsonSerializer = $this->objectManager->get(SerializerInterface::class);
+        $this->metadataPool = $this->objectManager->get(MetadataPool::class);
+        $this->request = $this->objectManager->get(Http::class);
     }
 }

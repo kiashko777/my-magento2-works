@@ -33,10 +33,11 @@ class PrepareBundleLinks
      * @param ProductExtensionFactory $extensionAttributesFactory
      */
     public function __construct(
-        LinkInterfaceFactory $linkFactory,
-        OptionInterfaceFactory $optionLinkFactory,
+        LinkInterfaceFactory    $linkFactory,
+        OptionInterfaceFactory  $optionLinkFactory,
         ProductExtensionFactory $extensionAttributesFactory
-    ) {
+    )
+    {
         $this->linkFactory = $linkFactory;
         $this->optionLinkFactory = $optionLinkFactory;
         $this->extensionAttributesFactory = $extensionAttributesFactory;
@@ -52,9 +53,10 @@ class PrepareBundleLinks
      */
     public function execute(
         ProductInterface $product,
-        array $bundleOptionsData,
-        array $bundleSelectionsData
-    ): ProductInterface {
+        array            $bundleOptionsData,
+        array            $bundleSelectionsData
+    ): ProductInterface
+    {
         $product->setBundleOptionsData($bundleOptionsData)
             ->setBundleSelectionsData($bundleSelectionsData);
         $options = [];

@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogInventory\Model\StockItemSave\OnProductUpdate\ByProductModel;
 
 use Magento\Catalog\Api\Data\ProductInterface;
@@ -13,8 +14,9 @@ use Magento\CatalogInventory\Api\Data\StockItemInterfaceFactory;
 use Magento\CatalogInventory\Model\StockItemSave\StockItemDataChecker;
 use Magento\Framework\Api\DataObjectHelper;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class ByStockItemTest extends \PHPUnit\Framework\TestCase
+class ByStockItemTest extends TestCase
 {
     /**
      * @var ProductRepositoryInterface
@@ -44,15 +46,6 @@ class ByStockItemTest extends \PHPUnit\Framework\TestCase
         StockItemInterface::MANAGE_STOCK => true,
         StockItemInterface::IS_IN_STOCK => false,
     ];
-
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
-        $this->stockItemFactory = $objectManager->get(StockItemInterfaceFactory::class);
-        $this->dataObjectHelper = $objectManager->get(DataObjectHelper::class);
-        $this->stockItemDataChecker = $objectManager->get(StockItemDataChecker::class);
-    }
 
     /**
      * Test saving of stock item by product data via product model (deprecated)
@@ -112,5 +105,14 @@ class ByStockItemTest extends \PHPUnit\Framework\TestCase
         $product->save();
 
         $this->stockItemDataChecker->checkStockItemData('simple', $this->stockItemData);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
+        $this->stockItemFactory = $objectManager->get(StockItemInterfaceFactory::class);
+        $this->dataObjectHelper = $objectManager->get(DataObjectHelper::class);
+        $this->stockItemDataChecker = $objectManager->get(StockItemDataChecker::class);
     }
 }

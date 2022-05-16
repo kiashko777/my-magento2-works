@@ -3,22 +3,27 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Console\Command;
 
+use Exception;
 use Magento\Framework\App\Console\MaintenanceModeEnabler;
 use Magento\Framework\App\DeploymentConfig;
 use Magento\Framework\App\MaintenanceMode;
+use Magento\Framework\App\State;
 use Magento\Framework\Backup\Factory;
 use Magento\Framework\Composer\ComposerInformation;
 use Magento\Framework\Console\Cli;
 use Magento\Framework\Module\DependencyChecker;
 use Magento\Framework\Module\FullModuleList;
 use Magento\Framework\Module\PackageInfo;
+use Magento\Framework\Module\PackageInfoFactory;
+use Magento\Framework\ObjectManager\ConfigLoaderInterface;
 use Magento\Framework\Setup\BackupRollbackFactory;
+use Magento\Framework\Setup\Patch\PatchApplier;
 use Magento\Setup\Model\ModuleRegistryUninstaller;
 use Magento\Setup\Model\ModuleUninstaller;
 use Magento\Setup\Model\ObjectManagerProvider;
-use Magento\Framework\Setup\Patch\PatchApplier;
 use Magento\Setup\Model\UninstallCollector;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -131,41 +136,29 @@ class ModuleUninstallCommand extends AbstractModuleCommand
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function __construct(
-        ComposerInformation $composer,
-        DeploymentConfig $deploymentConfig,
-        FullModuleList $fullModuleList,
-        MaintenanceMode $maintenanceMode,
-        ObjectManagerProvider $objectManagerProvider,
-        UninstallCollector $collector,
-        ModuleUninstaller $moduleUninstaller,
+        ComposerInformation       $composer,
+        DeploymentConfig          $deploymentConfig,
+        FullModuleList            $fullModuleList,
+        MaintenanceMode           $maintenanceMode,
+        ObjectManagerProvider     $objectManagerProvider,
+        UninstallCollector        $collector,
+        ModuleUninstaller         $moduleUninstaller,
         ModuleRegistryUninstaller $moduleRegistryUninstaller,
-        MaintenanceModeEnabler $maintenanceModeEnabler = null
-    ) {
+        MaintenanceModeEnabler    $maintenanceModeEnabler = null
+    )
+    {
         parent::__construct($objectManagerProvider);
         $this->composer = $composer;
         $this->deploymentConfig = $deploymentConfig;
         $this->fullModuleList = $fullModuleList;
-        $this->packageInfo = $this->objectManager->get(\Magento\Framework\Module\PackageInfoFactory::class)->create();
+        $this->packageInfo = $this->objectManager->get(PackageInfoFactory::class)->create();
         $this->collector = $collector;
-        $this->dependencyChecker = $this->objectManager->get(\Magento\Framework\Module\DependencyChecker::class);
-        $this->backupRollbackFactory = $this->objectManager->get(\Magento\Framework\Setup\BackupRollbackFactory::class);
+        $this->dependencyChecker = $this->objectManager->get(DependencyChecker::class);
+        $this->backupRollbackFactory = $this->objectManager->get(BackupRollbackFactory::class);
         $this->moduleUninstaller = $moduleUninstaller;
         $this->moduleRegistryUninstaller = $moduleRegistryUninstaller;
         $this->maintenanceModeEnabler =
             $maintenanceModeEnabler ?: $this->objectManager->get(MaintenanceModeEnabler::class);
-    }
-
-    /**
-     * @return PatchApplier
-     */
-    private function getPatchApplier()
-    {
-        if (!$this->patchApplier) {
-            $this->patchApplier = $this
-                ->objectManager->get(PatchApplier::class);
-        }
-
-        return $this->patchApplier;
     }
 
     /**
@@ -299,7 +292,7 @@ class ModuleUninstallCommand extends AbstractModuleCommand
                     $this->cleanup($input, $output);
 
                     return Cli::RETURN_SUCCESS;
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $output->writeln('<error>' . $e->getMessage() . '</error>');
                     $output->writeln('<error>Please disable maintenance mode after you resolved above issues</error>');
                     return Cli::RETURN_FAILURE;
@@ -313,46 +306,16 @@ class ModuleUninstallCommand extends AbstractModuleCommand
     }
 
     /**
-     * Check backup options and take backup appropriately
-     *
-     * @param InputInterface $input
-     * @param OutputInterface $output
-     * @return void
+     * @return PatchApplier
      */
-    private function takeBackup(InputInterface $input, OutputInterface $output)
+    private function getPatchApplier()
     {
-        $time = time();
-        if ($input->getOption(self::INPUT_KEY_BACKUP_CODE)) {
-            $codeBackup = $this->backupRollbackFactory->create($output);
-            $codeBackup->codeBackup($time);
+        if (!$this->patchApplier) {
+            $this->patchApplier = $this
+                ->objectManager->get(PatchApplier::class);
         }
-        if ($input->getOption(self::INPUT_KEY_BACKUP_MEDIA)) {
-            $mediaBackup = $this->backupRollbackFactory->create($output);
-            $mediaBackup->codeBackup($time, Factory::TYPE_MEDIA);
-        }
-        if ($input->getOption(self::INPUT_KEY_BACKUP_DB)) {
-            $dbBackup = $this->backupRollbackFactory->create($output);
-            $this->setAreaCode();
-            $dbBackup->dbBackup($time);
-        }
-    }
 
-    /**
-     * Invoke remove data routine in each specified module
-     *
-     * @param string[] $modules
-     * @param OutputInterface $output
-     * @param bool $dbBackupOption
-     * @return void
-     */
-    private function removeData(array $modules, OutputInterface $output, $dbBackupOption)
-    {
-        if (!$dbBackupOption) {
-            $output->writeln('<error>You are removing data without a database backup.</error>');
-        } else {
-            $output->writeln('<info>Removing data</info>');
-        }
-        $this->moduleUninstaller->uninstallData($output, $modules);
+        return $this->patchApplier;
     }
 
     /**
@@ -412,6 +375,31 @@ class ModuleUninstallCommand extends AbstractModuleCommand
     }
 
     /**
+     * Check backup options and take backup appropriately
+     *
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return void
+     */
+    private function takeBackup(InputInterface $input, OutputInterface $output)
+    {
+        $time = time();
+        if ($input->getOption(self::INPUT_KEY_BACKUP_CODE)) {
+            $codeBackup = $this->backupRollbackFactory->create($output);
+            $codeBackup->codeBackup($time);
+        }
+        if ($input->getOption(self::INPUT_KEY_BACKUP_MEDIA)) {
+            $mediaBackup = $this->backupRollbackFactory->create($output);
+            $mediaBackup->codeBackup($time, Factory::TYPE_MEDIA);
+        }
+        if ($input->getOption(self::INPUT_KEY_BACKUP_DB)) {
+            $dbBackup = $this->backupRollbackFactory->create($output);
+            $this->setAreaCode();
+            $dbBackup->dbBackup($time);
+        }
+    }
+
+    /**
      * Sets area code to start a session for database backup and rollback
      *
      * @return void
@@ -419,11 +407,29 @@ class ModuleUninstallCommand extends AbstractModuleCommand
     private function setAreaCode()
     {
         $areaCode = 'Adminhtml';
-        /** @var \Magento\Framework\App\State $appState */
-        $appState = $this->objectManager->get(\Magento\Framework\App\State::class);
+        /** @var State $appState */
+        $appState = $this->objectManager->get(State::class);
         $appState->setAreaCode($areaCode);
-        /** @var \Magento\Framework\ObjectManager\ConfigLoaderInterface $configLoader */
-        $configLoader = $this->objectManager->get(\Magento\Framework\ObjectManager\ConfigLoaderInterface::class);
+        /** @var ConfigLoaderInterface $configLoader */
+        $configLoader = $this->objectManager->get(ConfigLoaderInterface::class);
         $this->objectManager->configure($configLoader->load($areaCode));
+    }
+
+    /**
+     * Invoke remove data routine in each specified module
+     *
+     * @param string[] $modules
+     * @param OutputInterface $output
+     * @param bool $dbBackupOption
+     * @return void
+     */
+    private function removeData(array $modules, OutputInterface $output, $dbBackupOption)
+    {
+        if (!$dbBackupOption) {
+            $output->writeln('<error>You are removing data without a database backup.</error>');
+        } else {
+            $output->writeln('<info>Removing data</info>');
+        }
+        $this->moduleUninstaller->uninstallData($output, $modules);
     }
 }

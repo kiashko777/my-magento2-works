@@ -3,13 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Library\PhpParser;
 
 use Magento\TestFramework\Integrity\Library\PhpParser\Throws;
+use Magento\TestFramework\Integrity\Library\PhpParser\Tokens;
+use Magento\TestFramework\Integrity\Library\PhpParser\Uses;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  */
-class ThrowsTest extends \PHPUnit\Framework\TestCase
+class ThrowsTest extends TestCase
 {
     /**
      * @var Throws
@@ -17,19 +22,9 @@ class ThrowsTest extends \PHPUnit\Framework\TestCase
     protected $throws;
 
     /**
-     * @var \Magento\TestFramework\Integrity\Library\PhpParser\Tokens|\PHPUnit\Framework\MockObject\MockObject
+     * @var Tokens|MockObject
      */
     protected $tokens;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->tokens = $this->getMockBuilder(
-            \Magento\TestFramework\Integrity\Library\PhpParser\Tokens::class
-        )->disableOriginalConstructor()->getMock();
-    }
 
     /**
      * Test get throws dependencies
@@ -49,19 +44,19 @@ class ThrowsTest extends \PHPUnit\Framework\TestCase
         ];
 
         $this->tokens->expects($this->any())->method('getTokenCodeByKey')->willReturnCallback(
-            
-                function ($k) use ($tokens) {
-                    return $tokens[$k][0];
-                }
-            
+
+            function ($k) use ($tokens) {
+                return $tokens[$k][0];
+            }
+
         );
 
         $this->tokens->expects($this->any())->method('getTokenValueByKey')->willReturnCallback(
-            
-                function ($k) use ($tokens) {
-                    return $tokens[$k][1];
-                }
-            
+
+            function ($k) use ($tokens) {
+                return $tokens[$k][1];
+            }
+
         );
 
         $throws = new Throws($this->tokens);
@@ -70,7 +65,7 @@ class ThrowsTest extends \PHPUnit\Framework\TestCase
         }
 
         $uses = $this->getMockBuilder(
-            \Magento\TestFramework\Integrity\Library\PhpParser\Uses::class
+            Uses::class
         )->disableOriginalConstructor()->getMock();
 
         $uses->expects($this->once())->method('hasUses')->willReturn(true);
@@ -78,5 +73,15 @@ class ThrowsTest extends \PHPUnit\Framework\TestCase
         $uses->expects($this->once())->method('getClassNameWithNamespace')->willReturn('\Exception');
 
         $this->assertEquals(['\Exception'], $throws->getDependencies($uses));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->tokens = $this->getMockBuilder(
+            Tokens::class
+        )->disableOriginalConstructor()->getMock();
     }
 }

@@ -5,6 +5,9 @@
  */
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\QuoteIdMask;
+use Magento\Quote\Model\QuoteIdMaskFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
@@ -14,8 +17,8 @@ $objectManager = Bootstrap::getObjectManager();
 /** @var ProductRepositoryInterface $productRepository */
 $productRepository = $objectManager->create(ProductRepositoryInterface::class);
 $product = $productRepository->get('simple');
-/** @var \Magento\Quote\Model\Quote $quote */
-$quote = $objectManager->create(\Magento\Quote\Model\Quote::class);
+/** @var Quote $quote */
+$quote = $objectManager->create(Quote::class);
 $quote->setStoreId(1)
     ->setIsActive(true)
     ->setIsMultiShipping(false)
@@ -25,9 +28,9 @@ $quote->setStoreId(1)
 
 $quote->collectTotals()->save();
 
-/** @var \Magento\Quote\Model\QuoteIdMask $quoteIdMask */
+/** @var QuoteIdMask $quoteIdMask */
 $quoteIdMask = $objectManager
-    ->create(\Magento\Quote\Model\QuoteIdMaskFactory::class)
+    ->create(QuoteIdMaskFactory::class)
     ->create();
 $quoteIdMask->setQuoteId($quote->getId());
 $quoteIdMask->setDataChanges(true);

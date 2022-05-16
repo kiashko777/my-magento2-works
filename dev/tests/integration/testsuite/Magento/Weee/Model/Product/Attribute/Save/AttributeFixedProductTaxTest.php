@@ -30,18 +30,6 @@ class AttributeFixedProductTaxTest extends TestCase
     private $attributeCode;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
-        $this->attributeCode = 'fixed_product_attribute';
-    }
-
-    /**
      * @dataProvider fPTProvider
      * @param array $data
      * @param array $expectedData
@@ -130,5 +118,17 @@ class AttributeFixedProductTaxTest extends TestCase
         $product = $this->productRepository->get('simple2');
         $product->addData([$this->attributeCode => $attributeValues]);
         $this->productRepository->save($product);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+        $this->attributeCode = 'fixed_product_attribute';
     }
 }

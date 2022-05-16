@@ -3,10 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Magento\GraphQl\Quote\Customer;
 
+use Exception;
 use Magento\GraphQl\Quote\GetMaskedQuoteIdByReservedOrderId;
 use Magento\Integration\Api\CustomerTokenServiceInterface;
 use Magento\TestFramework\Helper\Bootstrap;
@@ -26,16 +27,6 @@ class GetAvailableShippingMethodsTest extends GraphQlAbstract
      * @var GetMaskedQuoteIdByReservedOrderId
      */
     private $getMaskedQuoteIdByReservedOrderId;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-    }
 
     /**
      * Test case: get available shipping methods from current customer quote
@@ -80,6 +71,53 @@ class GetAvailableShippingMethodsTest extends GraphQlAbstract
             $expectedAddressData,
             $response['cart']['shipping_addresses'][0]['available_shipping_methods'][0]
         );
+    }
+
+    /**
+     * @param string $maskedQuoteId
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId): string
+    {
+        return <<<QUERY
+query {
+  cart (cart_id: "{$maskedQuoteId}") {
+    shipping_addresses {
+        available_shipping_methods {
+          amount {
+            value
+            currency
+          }
+          carrier_code
+          carrier_title
+          error_message
+          method_code
+          method_title
+          price_excl_tax {
+            value
+            currency
+          }
+          price_incl_tax {
+            value
+            currency
+          }
+        }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
+     * @param string $username
+     * @param string $password
+     * @return array
+     */
+    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
+        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
+        return $headerMap;
     }
 
     /**
@@ -194,7 +232,7 @@ class GetAvailableShippingMethodsTest extends GraphQlAbstract
      */
     public function testGetAvailableShippingMethodsOfNonExistentCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Could not find a cart with ID "non_existent_masked_id"');
 
         $maskedQuoteId = 'non_existent_masked_id';
@@ -204,49 +242,12 @@ class GetAvailableShippingMethodsTest extends GraphQlAbstract
     }
 
     /**
-     * @param string $maskedQuoteId
-     * @return string
+     * @inheritdoc
      */
-    private function getQuery(string $maskedQuoteId): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-query {
-  cart (cart_id: "{$maskedQuoteId}") {
-    shipping_addresses {
-        available_shipping_methods {
-          amount {
-            value
-            currency
-          }
-          carrier_code
-          carrier_title
-          error_message
-          method_code
-          method_title
-          price_excl_tax {
-            value
-            currency
-          }
-          price_incl_tax {
-            value
-            currency
-          }
-        }
-    }
-  }
-}
-QUERY;
-    }
-
-    /**
-     * @param string $username
-     * @param string $password
-     * @return array
-     */
-    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
-    {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
-        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
-        return $headerMap;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
     }
 }

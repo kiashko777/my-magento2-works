@@ -27,7 +27,8 @@
                     <Available>True</Available>
                 </ExtraService>
             </ExtraServices>
-            <SvcDescription>Priority Mail Express International&amp;lt;sup&amp;gt;&amp;#8482;&amp;lt;/sup&amp;gt;</SvcDescription>
+            <SvcDescription>Priority Mail Express International&amp;lt;sup&amp;gt;&amp;#8482;&amp;lt;/sup&amp;gt;
+            </SvcDescription>
         </Service>
         <Service ID="10">
             <Pounds>3</Pounds>
@@ -39,7 +40,9 @@
                     <Available>True</Available>
                 </ExtraService>
             </ExtraServices>
-            <SvcDescription>Priority Mail Express International&amp;lt;sup&amp;gt;&amp;#8482;&amp;lt;/sup&amp;gt; Flat Rate Envelope</SvcDescription>
+            <SvcDescription>Priority Mail Express International&amp;lt;sup&amp;gt;&amp;#8482;&amp;lt;/sup&amp;gt; Flat
+                Rate Envelope
+            </SvcDescription>
         </Service>
         <Service ID="11">
             <Pounds>3</Pounds>
@@ -53,7 +56,9 @@
                     <Available>True</Available>
                 </ExtraService>
             </ExtraServices>
-            <SvcDescription>Priority Mail International&amp;lt;sup&amp;gt;&amp;#174;&amp;lt;/sup&amp;gt; Large Flat Rate Box</SvcDescription>
+            <SvcDescription>Priority Mail International&amp;lt;sup&amp;gt;&amp;#174;&amp;lt;/sup&amp;gt; Large Flat Rate
+                Box
+            </SvcDescription>
         </Service>
         <Service ID="15">
             <Pounds>3</Pounds>
@@ -67,7 +72,9 @@
                     <Available>True</Available>
                 </ExtraService>
             </ExtraServices>
-            <SvcDescription>First-Class Package International Service&amp;lt;sup&amp;gt;&amp;#8482;&amp;lt;/sup&amp;gt;</SvcDescription>
+            <SvcDescription>First-Class Package International
+                Service&amp;lt;sup&amp;gt;&amp;#8482;&amp;lt;/sup&amp;gt;
+            </SvcDescription>
         </Service>
         <Service ID="2">
             <Pounds>3</Pounds>

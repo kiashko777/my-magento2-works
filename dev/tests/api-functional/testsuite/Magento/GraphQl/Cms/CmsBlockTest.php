@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Cms;
 
+use Exception;
 use Magento\Cms\Api\BlockRepositoryInterface;
 use Magento\Store\Model\Store;
 use Magento\TestFramework\Helper\Bootstrap;
@@ -28,12 +29,6 @@ class CmsBlockTest extends GraphQlAbstract
      * @var FilterEmulate
      */
     private $filterEmulate;
-
-    protected function setUp(): void
-    {
-        $this->blockRepository = Bootstrap::getObjectManager()->get(BlockRepositoryInterface::class);
-        $this->filterEmulate = Bootstrap::getObjectManager()->get(FilterEmulate::class);
-    }
 
     /**
      * Verify the fields of CMS Block selected by identifiers
@@ -109,7 +104,7 @@ QUERY;
      */
     public function testGetDisabledCmsBlock()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The CMS block with the "disabled_block" ID doesn\'t exist');
 
         $query =
@@ -133,7 +128,7 @@ QUERY;
      */
     public function testGetCmsBlocksWithoutIdentifiers()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('"identifiers" of CMS blocks should be specified');
 
         $query =
@@ -157,7 +152,7 @@ QUERY;
      */
     public function testGetCmsBlockByNonExistentIdentifier()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The CMS block with the "nonexistent_id" ID doesn\'t exist.');
 
         $query =
@@ -246,7 +241,7 @@ QUERY;
         self::assertEquals('second_store_view', $cmsBlockResponseSecondStore['storeConfig']['code']);
 
         //Verify that exception is returned if block is not assigned to the store specified
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The CMS block with the "test-block-2" ID doesn\'t exist');
 
         $query =
@@ -266,6 +261,34 @@ QUERY;
     }
 
     /**
+     * Get cmsBlockQuery per store
+     *
+     * @param string $blockIdentifier
+     * @param string $storeCode
+     * @return array
+     * @throws Exception
+     */
+    private function getCmsBlockQuery($blockIdentifier, $storeCode): array
+    {
+        $query =
+            <<<QUERY
+{
+  cmsBlocks(identifiers: "$blockIdentifier") {
+    items {
+      identifier
+      title
+      content
+    }
+  }
+  storeConfig{code}
+}
+QUERY;
+        $headerMap['Store'] = $storeCode;
+        $response = $this->graphQlQuery($query, [], '', $headerMap);
+        return $response;
+    }
+
+    /**
      * Verify CMS block for a disabled store
      *
      * @magentoApiDataFixture Magento/Store/_files/multiple_websites_with_store_groups_stores.php
@@ -277,7 +300,7 @@ QUERY;
         $thirdStoreCode = 'third_store_view';
         $store = Bootstrap::getObjectManager()->get(Store::class);
         $store->load('third_store_view', 'code')->setIsActive(0)->save();
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Requested store is not found');
         $this->getCmsBlockQuery($blockIdentifier, $thirdStoreCode);
     }
@@ -306,31 +329,9 @@ QUERY;
         $this->assertEquals($blockIdentifier, $response['cmsBlocks']['items'][0]['identifier']);
     }
 
-    /**
-     * Get cmsBlockQuery per store
-     *
-     * @param string $blockIdentifier
-     * @param string $storeCode
-     * @return array
-     * @throws \Exception
-     */
-    private function getCmsBlockQuery($blockIdentifier, $storeCode): array
+    protected function setUp(): void
     {
-        $query =
-            <<<QUERY
-{
-  cmsBlocks(identifiers: "$blockIdentifier") {
-    items {
-      identifier
-      title
-      content
-    }
-  }
-  storeConfig{code}
-}
-QUERY;
-        $headerMap['Store'] = $storeCode;
-        $response = $this->graphQlQuery($query, [], '', $headerMap);
-        return $response;
+        $this->blockRepository = Bootstrap::getObjectManager()->get(BlockRepositoryInterface::class);
+        $this->filterEmulate = Bootstrap::getObjectManager()->get(FilterEmulate::class);
     }
 }

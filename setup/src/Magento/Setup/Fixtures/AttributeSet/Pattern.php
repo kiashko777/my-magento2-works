@@ -42,7 +42,8 @@ class Pattern
         $attributesPerSet,
         $optionsPerAttribute,
         $attributePattern = null
-    ) {
+    )
+    {
         $attributeSet = [
             'name' => $name,
             'attributes' => []

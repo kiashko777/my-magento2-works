@@ -42,10 +42,11 @@ class ConfigStorage
      * @return string|false
      */
     public function getValueFromDb(
-        string $path,
-        string $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
+        string  $path,
+        string  $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
         ?string $scopeCode = null
-    ) {
+    )
+    {
         $connect = $this->configResource->getConnection();
         $scope = $this->normalizeScope($scope);
         $scopeId = $this->getIdByScope($scope, $scopeCode);
@@ -59,28 +60,21 @@ class ConfigStorage
     }
 
     /**
-     * Check is record exist in DB
+     * Normalize scope
      *
-     * @param string $path
      * @param string $scope
-     * @param string|null $scopeCode
-     * @return bool
+     * @return string
      */
-    public function checkIsRecordExist(
-        string $path,
-        string $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
-        ?string $scopeCode = null
-    ): bool {
-        $connect = $this->configResource->getConnection();
-        $scope = $this->normalizeScope($scope);
-        $scopeId = $this->getIdByScope($scope, $scopeCode);
+    private function normalizeScope(string $scope): string
+    {
+        if ($scope === ScopeInterface::SCOPE_WEBSITE) {
+            $scope = ScopeInterface::SCOPE_WEBSITES;
+        }
+        if ($scope === ScopeInterface::SCOPE_STORE) {
+            $scope = ScopeInterface::SCOPE_STORES;
+        }
 
-        $select = $connect->select()->from(['main_table' => $this->configResource->getMainTable()], 'COUNT(*)')
-            ->where('main_table.path = ?', $path)
-            ->where('main_table.scope = ?', $scope)
-            ->where('main_table.scope_id = ?', $scopeId);
-
-        return (bool)$connect->fetchOne($select);
+        return $scope;
     }
 
     /**
@@ -104,20 +98,28 @@ class ConfigStorage
     }
 
     /**
-     * Normalize scope
+     * Check is record exist in DB
      *
+     * @param string $path
      * @param string $scope
-     * @return string
+     * @param string|null $scopeCode
+     * @return bool
      */
-    private function normalizeScope(string $scope): string
+    public function checkIsRecordExist(
+        string  $path,
+        string  $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
+        ?string $scopeCode = null
+    ): bool
     {
-        if ($scope === ScopeInterface::SCOPE_WEBSITE) {
-            $scope = ScopeInterface::SCOPE_WEBSITES;
-        }
-        if ($scope === ScopeInterface::SCOPE_STORE) {
-            $scope = ScopeInterface::SCOPE_STORES;
-        }
+        $connect = $this->configResource->getConnection();
+        $scope = $this->normalizeScope($scope);
+        $scopeId = $this->getIdByScope($scope, $scopeCode);
 
-        return $scope;
+        $select = $connect->select()->from(['main_table' => $this->configResource->getMainTable()], 'COUNT(*)')
+            ->where('main_table.path = ?', $path)
+            ->where('main_table.scope = ?', $scope)
+            ->where('main_table.scope_id = ?', $scopeId);
+
+        return (bool)$connect->fetchOne($select);
     }
 }

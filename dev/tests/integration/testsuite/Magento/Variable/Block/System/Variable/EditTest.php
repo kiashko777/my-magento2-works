@@ -3,12 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Variable\Block\System\Variable;
+
+use Magento\Framework\App\RequestInterface;
+use Magento\Framework\Registry;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use Magento\Variable\Model\Variable;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class EditTest extends \PHPUnit\Framework\TestCase
+class EditTest extends TestCase
 {
     /**
      * @magentoAppIsolation enabled
@@ -22,18 +31,18 @@ class EditTest extends \PHPUnit\Framework\TestCase
             'html_value' => '<b>Test Variable 1 HTML Value</b>',
             'plain_value' => 'Test Variable 1 plain Value',
         ];
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $variable = $objectManager->create(\Magento\Variable\Model\Variable::class)->setData($data)->save();
+        /** @var $objectManager ObjectManager */
+        $objectManager = Bootstrap::getObjectManager();
+        $variable = $objectManager->create(Variable::class)->setData($data)->save();
 
-        $objectManager->get(\Magento\Framework\Registry::class)->register('current_variable', $variable);
+        $objectManager->get(Registry::class)->register('current_variable', $variable);
         $objectManager->get(
-            \Magento\Framework\App\RequestInterface::class
+            RequestInterface::class
         )->setParam('variable_id', $variable->getId());
         $block = $objectManager->get(
-            \Magento\Framework\View\LayoutInterface::class
+            LayoutInterface::class
         )->createBlock(
-            \Magento\Variable\Block\System\Variable\Edit::class,
+            Edit::class,
             'variable'
         );
         $this->assertArrayHasKey('variable-delete_button', $block->getLayout()->getAllBlocks());

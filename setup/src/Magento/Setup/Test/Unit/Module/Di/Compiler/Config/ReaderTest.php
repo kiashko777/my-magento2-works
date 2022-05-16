@@ -56,32 +56,6 @@ class ReaderTest extends TestCase
      */
     protected $typeReader;
 
-    protected function setUp(): void
-    {
-        $this->diContainerConfig =
-            $this->getMockForAbstractClass(ConfigInterface::class);
-        $this->configLoader =
-            $this->createMock(ConfigLoader::class);
-
-        $this->argumentsResolverFactory =
-            $this->createMock(ArgumentsResolverFactory::class);
-        $this->argumentsResolver = $this->createMock(ArgumentsResolver::class);
-        $this->argumentsResolverFactory->expects($this->any())
-            ->method('create')
-            ->willReturn($this->argumentsResolver);
-        $this->classReaderDecorator =
-            $this->createMock(ClassReaderDecorator::class);
-        $this->typeReader = $this->createMock(Type::class);
-
-        $this->model = new Reader(
-            $this->diContainerConfig,
-            $this->configLoader,
-            $this->argumentsResolverFactory,
-            $this->classReaderDecorator,
-            $this->typeReader
-        );
-    }
-
     public function testGenerateCachePerScopeGlobal()
     {
         $definitionCollection = $this->getDefinitionsCollection();
@@ -132,22 +106,6 @@ class ReaderTest extends TestCase
     }
 
     /**
-     * @return array
-     */
-    private function getExpectedGlobalConfig()
-    {
-        return [
-            'arguments' => [
-                'ConcreteType1' => ['resolved_argument1', 'resolved_argument2'],
-                'ConcreteType2' => ['resolved_argument1', 'resolved_argument2'],
-                'virtualType1' => ['resolved_argument1', 'resolved_argument2']
-            ],
-            'preferences' => $this->getPreferences(),
-            'instanceTypes' => $this->getVirtualTypes(),
-        ];
-    }
-
-    /**
      * @return Collection
      */
     private function getDefinitionsCollection()
@@ -180,16 +138,23 @@ class ReaderTest extends TestCase
     }
 
     /**
+     * @param Collection $definitionCollection
+     * @param array $virtualTypes
      * @return array
      */
-    private function getPreferencesMap()
+    private function getResolvedVirtualConstructorArgumentsMap(Collection $definitionCollection, array $virtualTypes)
     {
-        return [
-            ['ConcreteType1', 'ConcreteType1'],
-            ['ConcreteType2', 'ConcreteType2'],
-            ['Interface1', 'ConcreteType1'],
-            ['ThirdPartyInterface', 'ConcreteType2']
-        ];
+        $getResolvedConstructorArgumentsMap = [];
+        foreach ($virtualTypes as $virtualType => $concreteType) {
+            $getResolvedConstructorArgumentsMap[] = [
+                $virtualType,
+                $definitionCollection->getInstanceArguments($concreteType),
+                $this->getResolvedArguments(
+                    $definitionCollection->getInstanceArguments($concreteType)
+                )
+            ];
+        }
+        return $getResolvedConstructorArgumentsMap;
     }
 
     /**
@@ -221,22 +186,57 @@ class ReaderTest extends TestCase
     }
 
     /**
-     * @param Collection $definitionCollection
-     * @param array $virtualTypes
      * @return array
      */
-    private function getResolvedVirtualConstructorArgumentsMap(Collection $definitionCollection, array $virtualTypes)
+    private function getPreferencesMap()
     {
-        $getResolvedConstructorArgumentsMap = [];
-        foreach ($virtualTypes as $virtualType => $concreteType) {
-            $getResolvedConstructorArgumentsMap[] = [
-                $virtualType,
-                $definitionCollection->getInstanceArguments($concreteType),
-                $this->getResolvedArguments(
-                    $definitionCollection->getInstanceArguments($concreteType)
-                )
-            ];
-        }
-        return $getResolvedConstructorArgumentsMap;
+        return [
+            ['ConcreteType1', 'ConcreteType1'],
+            ['ConcreteType2', 'ConcreteType2'],
+            ['Interface1', 'ConcreteType1'],
+            ['ThirdPartyInterface', 'ConcreteType2']
+        ];
+    }
+
+    /**
+     * @return array
+     */
+    private function getExpectedGlobalConfig()
+    {
+        return [
+            'arguments' => [
+                'ConcreteType1' => ['resolved_argument1', 'resolved_argument2'],
+                'ConcreteType2' => ['resolved_argument1', 'resolved_argument2'],
+                'virtualType1' => ['resolved_argument1', 'resolved_argument2']
+            ],
+            'preferences' => $this->getPreferences(),
+            'instanceTypes' => $this->getVirtualTypes(),
+        ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->diContainerConfig =
+            $this->getMockForAbstractClass(ConfigInterface::class);
+        $this->configLoader =
+            $this->createMock(ConfigLoader::class);
+
+        $this->argumentsResolverFactory =
+            $this->createMock(ArgumentsResolverFactory::class);
+        $this->argumentsResolver = $this->createMock(ArgumentsResolver::class);
+        $this->argumentsResolverFactory->expects($this->any())
+            ->method('create')
+            ->willReturn($this->argumentsResolver);
+        $this->classReaderDecorator =
+            $this->createMock(ClassReaderDecorator::class);
+        $this->typeReader = $this->createMock(Type::class);
+
+        $this->model = new Reader(
+            $this->diContainerConfig,
+            $this->configLoader,
+            $this->argumentsResolverFactory,
+            $this->classReaderDecorator,
+            $this->typeReader
+        );
     }
 }

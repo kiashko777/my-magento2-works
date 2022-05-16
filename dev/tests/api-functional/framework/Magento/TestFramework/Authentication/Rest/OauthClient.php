@@ -5,14 +5,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Authentication\Rest;
 
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Authentication\Rest\OauthClient\Signature;
 use Magento\TestFramework\Helper\Bootstrap;
 use OAuth\Common\Consumer\Credentials;
+use OAuth\Common\Exception\Exception;
 use OAuth\Common\Http\Client\ClientInterface;
 use OAuth\Common\Http\Exception\TokenResponseException;
 use OAuth\Common\Http\Uri\Uri;
 use OAuth\Common\Http\Uri\UriInterface;
+use OAuth\Common\Storage\Memory;
 use OAuth\Common\Storage\TokenStorageInterface;
 use OAuth\OAuth1\Service\AbstractService;
 use OAuth\OAuth1\Signature\SignatureInterface;
@@ -33,21 +38,22 @@ class OauthClient extends AbstractService
     protected $_oauthVerifier = null;
 
     public function __construct(
-        Credentials $credentials,
-        ClientInterface $httpClient = null,
+        Credentials           $credentials,
+        ClientInterface       $httpClient = null,
         TokenStorageInterface $storage = null,
-        SignatureInterface $signature = null,
-        UriInterface $baseApiUri = null
-    ) {
+        SignatureInterface    $signature = null,
+        UriInterface          $baseApiUri = null
+    )
+    {
         if (!isset($httpClient)) {
-            $httpClient = new \Magento\TestFramework\Authentication\Rest\CurlClient();
+            $httpClient = new CurlClient();
             $httpClient->setTimeout(self::DEFAULT_TIMEOUT);
         }
         if (!isset($storage)) {
-            $storage = new \OAuth\Common\Storage\Memory();
+            $storage = new Memory();
         }
         if (!isset($signature)) {
-            $signature = new \Magento\TestFramework\Authentication\Rest\OauthClient\Signature($credentials);
+            $signature = new Signature($credentials);
         }
         parent::__construct($credentials, $httpClient, $storage, $signature, $baseApiUri);
     }
@@ -67,7 +73,7 @@ class OauthClient extends AbstractService
      */
     public function getAuthorizationEndpoint()
     {
-        throw new \OAuth\Common\Exception\Exception(
+        throw new Exception(
             'Magento REST API is 2-legged. Current operation is not available.'
         );
     }
@@ -83,91 +89,10 @@ class OauthClient extends AbstractService
     }
 
     /**
-     * Returns the TestModule1 Rest API endpoint.
-     *
-     * @return UriInterface
-     */
-    public function getTestApiEndpoint()
-    {
-        $defaultStoreCode = Bootstrap::getObjectManager()->get(\Magento\Store\Model\StoreManagerInterface::class)
-            ->getStore()->getCode();
-        return new Uri(TESTS_BASE_URL . '/rest/' . $defaultStoreCode . '/V1/testmodule1');
-    }
-
-    /**
-     * Parses the access token response and returns a TokenInterface.
-     *
-     * @return TokenInterface
-     * @param string $responseBody
-     */
-    protected function parseAccessTokenResponse($responseBody)
-    {
-        return $this->_parseToken($responseBody);
-    }
-
-    /**
-     * Parses the request token response and returns a TokenInterface.
-     *
-     * @return TokenInterface
-     * @param string $responseBody
-     * @throws TokenResponseException
-     */
-    protected function parseRequestTokenResponse($responseBody)
-    {
-        $data = $this->_parseResponseBody($responseBody);
-        if (isset($data['oauth_verifier'])) {
-            $this->_oauthVerifier = $data['oauth_verifier'];
-        }
-        return $this->_parseToken($responseBody);
-    }
-
-    /**
-     * Parse response body and create oAuth token object based on parameters provided.
-     *
-     * @param string $responseBody
-     * @return StdOAuth1Token
-     * @throws TokenResponseException
-     */
-    protected function _parseToken($responseBody)
-    {
-        $data = $this->_parseResponseBody($responseBody);
-        $token = new StdOAuth1Token();
-        $token->setRequestToken($data['oauth_token']);
-        $token->setRequestTokenSecret($data['oauth_token_secret']);
-        $token->setAccessToken($data['oauth_token']);
-        $token->setAccessTokenSecret($data['oauth_token_secret']);
-        $token->setEndOfLife(StdOAuth1Token::EOL_NEVER_EXPIRES);
-        unset($data['oauth_token'], $data['oauth_token_secret']);
-        $token->setExtraParams($data);
-        return $token;
-    }
-
-    /**
-     * Parse response body and return data in array.
-     *
-     * @param string $responseBody
-     * @return array
-     * @throws \OAuth\Common\Http\Exception\TokenResponseException
-     */
-    protected function _parseResponseBody($responseBody)
-    {
-        if (!is_string($responseBody)) {
-            throw new TokenResponseException("Response body is expected to be a string.");
-        }
-        parse_str($responseBody, $data);
-        if (null === $data || !is_array($data)) {
-            throw new TokenResponseException('Unable to parse response.');
-        } elseif (isset($data['error'])) {
-            throw new TokenResponseException("Error occurred: '{$data['error']}'");
-        }
-        return $data;
-    }
-
-    /**
      * Retrieve oAuth verifier that was obtained during request token request.
      *
      * @return string
-     * @throws \OAuth\Common\Http\Exception\TokenResponseException
+     * @throws TokenResponseException
      */
     public function getOauthVerifier()
     {
@@ -178,11 +103,33 @@ class OauthClient extends AbstractService
     }
 
     /**
+     * Builds the oAuth authorization header for an authenticated API request
+     *
+     * @param UriInterface $uri the uri the request is headed
+     * @param TokenInterface $token
+     * @param string $tokenSecret used to verify the passed token
+     * @param array $bodyParams
+     * @param string $method HTTP method to use
+     * @return array
+     */
+    public function buildOauthAuthorizationHeader($uri, $token, $tokenSecret, $bodyParams, $method = 'GET')
+    {
+        $uri = new Uri($uri);
+        $tokenObj = new StdOAuth1Token();
+        $tokenObj->setAccessToken($token);
+        $tokenObj->setAccessTokenSecret($tokenSecret);
+        $tokenObj->setEndOfLife(StdOAuth1Token::EOL_NEVER_EXPIRES);
+        return [
+            'Authorization: ' . $this->buildAuthorizationHeaderForAPIRequest($method, $uri, $tokenObj, $bodyParams)
+        ];
+    }
+
+    /**
      * @override to fix since parent implementation from lib not sending the oauth_verifier when requesting access token
      * Builds the authorization header for an authenticated API request
      * @param string $method
      * @param UriInterface $uri the uri the request is headed
-     * @param \OAuth\OAuth1\Token\TokenInterface $token
+     * @param TokenInterface $token
      * @param $bodyParams array
      * @return string
      */
@@ -191,7 +138,8 @@ class OauthClient extends AbstractService
         UriInterface $uri,
         TokenInterface $token,
         $bodyParams = null
-    ) {
+    )
+    {
         $this->signature->setTokenSecret($token->getAccessTokenSecret());
         $parameters = $this->getBasicAuthorizationHeaderInfo();
         if (isset($parameters['oauth_callback'])) {
@@ -211,28 +159,6 @@ class OauthClient extends AbstractService
         }
 
         return $authorizationHeader;
-    }
-
-    /**
-     * Builds the oAuth authorization header for an authenticated API request
-     *
-     * @param UriInterface $uri the uri the request is headed
-     * @param \OAuth\OAuth1\Token\TokenInterface $token
-     * @param string $tokenSecret used to verify the passed token
-     * @param array $bodyParams
-     * @param string $method HTTP method to use
-     * @return array
-     */
-    public function buildOauthAuthorizationHeader($uri, $token, $tokenSecret, $bodyParams, $method = 'GET')
-    {
-        $uri = new Uri($uri);
-        $tokenObj = new StdOAuth1Token();
-        $tokenObj->setAccessToken($token);
-        $tokenObj->setAccessTokenSecret($tokenSecret);
-        $tokenObj->setEndOfLife(StdOAuth1Token::EOL_NEVER_EXPIRES);
-        return [
-            'Authorization: ' . $this->buildAuthorizationHeaderForAPIRequest($method, $uri, $tokenObj, $bodyParams)
-        ];
     }
 
     /**
@@ -277,5 +203,86 @@ class OauthClient extends AbstractService
         $responseBody = $this->httpClient->retrieveResponse($this->getTestApiEndpoint(), [], $headers, $method);
 
         return json_decode($responseBody);
+    }
+
+    /**
+     * Returns the TestModule1 Rest API endpoint.
+     *
+     * @return UriInterface
+     */
+    public function getTestApiEndpoint()
+    {
+        $defaultStoreCode = Bootstrap::getObjectManager()->get(StoreManagerInterface::class)
+            ->getStore()->getCode();
+        return new Uri(TESTS_BASE_URL . '/rest/' . $defaultStoreCode . '/V1/testmodule1');
+    }
+
+    /**
+     * Parses the access token response and returns a TokenInterface.
+     *
+     * @param string $responseBody
+     * @return TokenInterface
+     */
+    protected function parseAccessTokenResponse($responseBody)
+    {
+        return $this->_parseToken($responseBody);
+    }
+
+    /**
+     * Parse response body and create oAuth token object based on parameters provided.
+     *
+     * @param string $responseBody
+     * @return StdOAuth1Token
+     * @throws TokenResponseException
+     */
+    protected function _parseToken($responseBody)
+    {
+        $data = $this->_parseResponseBody($responseBody);
+        $token = new StdOAuth1Token();
+        $token->setRequestToken($data['oauth_token']);
+        $token->setRequestTokenSecret($data['oauth_token_secret']);
+        $token->setAccessToken($data['oauth_token']);
+        $token->setAccessTokenSecret($data['oauth_token_secret']);
+        $token->setEndOfLife(StdOAuth1Token::EOL_NEVER_EXPIRES);
+        unset($data['oauth_token'], $data['oauth_token_secret']);
+        $token->setExtraParams($data);
+        return $token;
+    }
+
+    /**
+     * Parse response body and return data in array.
+     *
+     * @param string $responseBody
+     * @return array
+     * @throws TokenResponseException
+     */
+    protected function _parseResponseBody($responseBody)
+    {
+        if (!is_string($responseBody)) {
+            throw new TokenResponseException("Response body is expected to be a string.");
+        }
+        parse_str($responseBody, $data);
+        if (null === $data || !is_array($data)) {
+            throw new TokenResponseException('Unable to parse response.');
+        } elseif (isset($data['error'])) {
+            throw new TokenResponseException("Error occurred: '{$data['error']}'");
+        }
+        return $data;
+    }
+
+    /**
+     * Parses the request token response and returns a TokenInterface.
+     *
+     * @param string $responseBody
+     * @return TokenInterface
+     * @throws TokenResponseException
+     */
+    protected function parseRequestTokenResponse($responseBody)
+    {
+        $data = $this->_parseResponseBody($responseBody);
+        if (isset($data['oauth_verifier'])) {
+            $this->_oauthVerifier = $data['oauth_verifier'];
+        }
+        return $this->_parseToken($responseBody);
     }
 }

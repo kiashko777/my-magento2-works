@@ -3,18 +3,20 @@ declare(strict_types=1);
 
 namespace Devall\Customform\Controller\Adminhtml\Customform;
 
+use Devall\Customform\Model\ResourceModel\Customform\CollectionFactory;
+use Exception;
+use Magento\Backend\App\Action;
+use Magento\Backend\App\Action\Context;
 use Magento\Backend\Model\View\Result\Redirect;
 use Magento\Framework\App\Action\HttpPostActionInterface;
 use Magento\Framework\Controller\ResultFactory;
-use Magento\Backend\App\Action\Context;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Ui\Component\MassAction\Filter;
-use Devall\Customform\Model\ResourceModel\Customform\CollectionFactory;
 
 /**
  * Class MassDisable
  */
-class MassDisable extends \Magento\Backend\App\Action implements HttpPostActionInterface
+class MassDisable extends Action implements HttpPostActionInterface
 {
     /**
      * Authorization level of a basic admin session
@@ -49,7 +51,7 @@ class MassDisable extends \Magento\Backend\App\Action implements HttpPostActionI
      * Execute action
      *
      * @return Redirect
-     * @throws LocalizedException|\Exception
+     * @throws LocalizedException|Exception
      */
     public function execute()
     {

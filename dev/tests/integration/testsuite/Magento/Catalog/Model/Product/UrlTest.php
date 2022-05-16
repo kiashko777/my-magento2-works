@@ -3,10 +3,22 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Model\Product;
 
-use Magento\UrlRewrite\Service\V1\Data\UrlRewrite;
+use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\CategoryRepository;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\ProductRepository;
+use Magento\CatalogUrlRewrite\Model\ProductUrlPathGenerator;
 use Magento\CatalogUrlRewrite\Model\ProductUrlRewriteGenerator;
+use Magento\Framework\Registry;
+use Magento\Store\Model\Store;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\UrlRewrite\Model\UrlFinderInterface;
+use Magento\UrlRewrite\Model\UrlPersistInterface;
+use Magento\UrlRewrite\Service\V1\Data\UrlRewrite;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\Catalog\Model\Products\Url.
@@ -15,32 +27,22 @@ use Magento\CatalogUrlRewrite\Model\ProductUrlRewriteGenerator;
  * @magentoAppArea frontend
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class UrlTest extends \PHPUnit\Framework\TestCase
+class UrlTest extends TestCase
 {
     /**
-     * @var \Magento\Catalog\Model\Product\Url
+     * @var Url
      */
     protected $_model;
 
     /**
-     * @var \Magento\CatalogUrlRewrite\Model\ProductUrlPathGenerator
+     * @var ProductUrlPathGenerator
      */
     protected $urlPathGenerator;
 
-    protected function setUp(): void
-    {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\Product\Url::class
-        );
-        $this->urlPathGenerator = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\CatalogUrlRewrite\Model\ProductUrlPathGenerator::class
-        );
-    }
-
     public function testGetUrlInStore()
     {
-        $repository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\ProductRepository::class
+        $repository = Bootstrap::getObjectManager()->create(
+            ProductRepository::class
         );
         $product = $repository->get('simple');
         $this->assertStringEndsWith('simple-product.html', $this->_model->getUrlInStore($product));
@@ -59,14 +61,14 @@ class UrlTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetUrlInStoreWithSecondStore($storeCode, $expectedProductUrl)
     {
-        $repository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\ProductRepository::class
+        $repository = Bootstrap::getObjectManager()->create(
+            ProductRepository::class
         );
-        /** @var \Magento\Store\Model\Store $store */
-        $store = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Store\Model\Store::class);
+        /** @var Store $store */
+        $store = Bootstrap::getObjectManager()
+            ->create(Store::class);
         $store->load($storeCode, 'code');
-        /** @var \Magento\Store\Model\Store $store */
+        /** @var Store $store */
 
         $product = $repository->get('simple');
 
@@ -82,8 +84,8 @@ class UrlTest extends \PHPUnit\Framework\TestCase
     public function getUrlsWithSecondStoreProvider()
     {
         return [
-           'case1' => ['fixturestore', 'http://sample-second.com/index.php/simple-product-one.html'],
-           'case2' => ['default', 'http://sample.com/index.php/simple-product-one.html']
+            'case1' => ['fixturestore', 'http://sample-second.com/index.php/simple-product-one.html'],
+            'case2' => ['default', 'http://sample.com/index.php/simple-product-one.html']
         ];
     }
 
@@ -92,8 +94,8 @@ class UrlTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetProductUrl()
     {
-        $repository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\ProductRepository::class
+        $repository = Bootstrap::getObjectManager()->create(
+            ProductRepository::class
         );
         $product = $repository->get('simple');
         $this->assertStringEndsWith('simple-product.html', $this->_model->getProductUrl($product));
@@ -106,15 +108,15 @@ class UrlTest extends \PHPUnit\Framework\TestCase
 
     public function testGetUrlPath()
     {
-        /** @var $product \Magento\Catalog\Model\Product */
-        $product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\Product::class
+        /** @var $product Product */
+        $product = Bootstrap::getObjectManager()->create(
+            Product::class
         );
         $product->setUrlPath('product.html');
 
-        /** @var $category \Magento\Catalog\Model\Category */
-        $category = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\Category::class,
+        /** @var $category Category */
+        $category = Bootstrap::getObjectManager()->create(
+            Category::class,
             ['data' => ['url_path' => 'category', 'entity_id' => 5, 'path_ids' => [2, 3, 5]]]
         );
         $category->setOrigData();
@@ -129,14 +131,14 @@ class UrlTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetUrl()
     {
-        $repository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\ProductRepository::class
+        $repository = Bootstrap::getObjectManager()->create(
+            ProductRepository::class
         );
         $product = $repository->get('simple');
         $this->assertStringEndsWith('simple-product.html', $this->_model->getUrl($product));
 
-        $product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\Product::class
+        $product = Bootstrap::getObjectManager()->create(
+            Product::class
         );
         $product->setId(100);
         $this->assertStringContainsString('catalog/product/view/id/100/', $this->_model->getUrl($product));
@@ -150,20 +152,20 @@ class UrlTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetProductUrlWithRearrangedUrlRewrites()
     {
-        $productRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\ProductRepository::class
+        $productRepository = Bootstrap::getObjectManager()->create(
+            ProductRepository::class
         );
-        $categoryRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\CategoryRepository::class
+        $categoryRepository = Bootstrap::getObjectManager()->create(
+            CategoryRepository::class
         );
-        $registry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\Registry::class
+        $registry = Bootstrap::getObjectManager()->get(
+            Registry::class
         );
-        $urlFinder = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\UrlRewrite\Model\UrlFinderInterface::class
+        $urlFinder = Bootstrap::getObjectManager()->create(
+            UrlFinderInterface::class
         );
-        $urlPersist = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\UrlRewrite\Model\UrlPersistInterface::class
+        $urlPersist = Bootstrap::getObjectManager()->create(
+            UrlPersistInterface::class
         );
 
         $product = $productRepository->get('simple');
@@ -185,5 +187,15 @@ class UrlTest extends \PHPUnit\Framework\TestCase
         }
         $urlPersist->replace($rewrites);
         $this->assertStringNotContainsString($category->getUrlPath(), $this->_model->getProductUrl($product));
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Url::class
+        );
+        $this->urlPathGenerator = Bootstrap::getObjectManager()->create(
+            ProductUrlPathGenerator::class
+        );
     }
 }

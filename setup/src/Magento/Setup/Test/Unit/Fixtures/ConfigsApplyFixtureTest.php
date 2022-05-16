@@ -31,13 +31,6 @@ class ConfigsApplyFixtureTest extends TestCase
      */
     private $model;
 
-    protected function setUp(): void
-    {
-        $this->fixtureModelMock = $this->createMock(FixtureModel::class);
-
-        $this->model = new ConfigsApplyFixture($this->fixtureModelMock);
-    }
-
     public function testExecute()
     {
         $cacheMock = $this->createMock(Cache::class);
@@ -99,5 +92,12 @@ class ConfigsApplyFixtureTest extends TestCase
     public function testIntroduceParamLabels()
     {
         $this->assertSame([], $this->model->introduceParamLabels());
+    }
+
+    protected function setUp(): void
+    {
+        $this->fixtureModelMock = $this->createMock(FixtureModel::class);
+
+        $this->model = new ConfigsApplyFixture($this->fixtureModelMock);
     }
 }

@@ -33,9 +33,10 @@ class DeleteConfigurableProduct
      */
     public function __construct(
         ProductRepositoryInterface $productRepository,
-        ProductResource $productResource,
-        Registry $registry
-    ) {
+        ProductResource            $productResource,
+        Registry                   $registry
+    )
+    {
         $this->productRepository = $productRepository;
         $this->productResource = $productResource;
         $this->registry = $registry;

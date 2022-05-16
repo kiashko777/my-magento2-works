@@ -3,34 +3,32 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Model\ResourceModel\Report\Invoiced\Collection;
+
+use IntlDateFormatter;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Stdlib\DateTime\DateTime;
+use Magento\Framework\Stdlib\DateTime\DateTimeFactory;
+use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
+use Magento\Reports\Model\Item;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Integration tests for invoices reports collection which is used to obtain invoice reports by invoice date.
  */
-class InvoicedTest extends \PHPUnit\Framework\TestCase
+class InvoicedTest extends TestCase
 {
     /**
-     * @var \Magento\Sales\Model\ResourceModel\Report\Invoiced\Collection\Invoiced
+     * @var Invoiced
      */
     private $collection;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-
-        $this->collection = $this->objectManager->create(
-            \Magento\Sales\Model\ResourceModel\Report\Invoiced\Collection\Invoiced::class
-        );
-        $this->collection->setPeriod('day')
-            ->setDateRange(null, null)
-            ->addStoreFilter([1]);
-    }
 
     /**
      * @magentoDataFixture Magento/Sales/_files/invoice.php
@@ -47,15 +45,15 @@ class InvoicedTest extends \PHPUnit\Framework\TestCase
         $invoiceCreatedAt = $order->getInvoiceCollection()
             ->getFirstItem()
             ->getCreatedAt();
-        /** @var \Magento\Framework\Stdlib\DateTime\DateTime $dateTime */
-        $dateTime = $this->objectManager->create(\Magento\Framework\Stdlib\DateTime\DateTimeFactory::class)
+        /** @var DateTime $dateTime */
+        $dateTime = $this->objectManager->create(DateTimeFactory::class)
             ->create();
-        /** @var \Magento\Framework\Stdlib\DateTime\TimezoneInterface $timezone */
-        $timezone = $this->objectManager->create(\Magento\Framework\Stdlib\DateTime\TimezoneInterface::class);
+        /** @var TimezoneInterface $timezone */
+        $timezone = $this->objectManager->create(TimezoneInterface::class);
         $invoiceCreatedAt = $timezone->formatDateTime(
             $invoiceCreatedAt,
-            \IntlDateFormatter::SHORT,
-            \IntlDateFormatter::NONE,
+            IntlDateFormatter::SHORT,
+            IntlDateFormatter::NONE,
             null,
             null,
             'yyyy-MM-dd'
@@ -70,7 +68,7 @@ class InvoicedTest extends \PHPUnit\Framework\TestCase
             ],
         ];
         $actualResult = [];
-        /** @var \Magento\Reports\Model\Item $reportItem */
+        /** @var Item $reportItem */
         foreach ($this->collection->getItems() as $reportItem) {
             $actualResult[] = [
                 'orders_count' => $reportItem->getData('orders_count'),
@@ -79,5 +77,17 @@ class InvoicedTest extends \PHPUnit\Framework\TestCase
             ];
         }
         $this->assertEquals($expectedResult, $actualResult);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->collection = $this->objectManager->create(
+            Invoiced::class
+        );
+        $this->collection->setPeriod('day')
+            ->setDateRange(null, null)
+            ->addStoreFilter([1]);
     }
 }

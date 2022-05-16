@@ -3,8 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module;
 
+use Magento\Framework\Module\Setup\Context;
 use Magento\Setup\Model\ObjectManagerProvider;
 
 /**
@@ -36,6 +38,6 @@ class DataSetupFactory
     public function create()
     {
         $objectManager = $this->objectManagerProvider->get();
-        return new DataSetup($objectManager->get(\Magento\Framework\Module\Setup\Context::class));
+        return new DataSetup($objectManager->get(Context::class));
     }
 }

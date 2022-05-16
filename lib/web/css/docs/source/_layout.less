@@ -10,15 +10,19 @@
 header.header {
     background-color: rgba(255, 0, 0, .2);
 }
+
 .column.main {
     background-color: rgba(255, 255, 0, .2);
 }
+
 .column.left {
     background-color: rgba(0, 255, 255, .2);
 }
+
 .column.right {
     background-color: rgba(0, 0, 255, .2);
 }
+
 footer.footer {
     background-color: rgba(0, 0, 0, .2);
 }
@@ -242,6 +246,7 @@ footer.footer {
 
 .columns {
     #lib-layout-columns();
+
     > .column {
         &:extend(.add-box-sizing all);
         .lib-css(padding-bottom, @indent__xl);
@@ -311,9 +316,11 @@ footer.footer {
     .column.main {
         .lib-layout-column(3, 2, 60%);
     }
+
     .column.left {
         .lib-layout-column(3, 1, 20%);
     }
+
     .column.right {
         .lib-layout-column(3, 3, 20%);
     }
@@ -323,9 +330,11 @@ footer.footer {
     .column.main {
         .lib-layout-column(3, 1, 60%);
     }
+
     .column.left {
         .lib-layout-column(3, 2, 20%);
     }
+
     .column.right {
         .lib-layout-column(3, 3, 20%);
     }

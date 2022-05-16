@@ -32,7 +32,7 @@ if ($storeId) {
 }
 
 Resolver::getInstance()->requireDataFixture('Magento/Store/_files/second_store_rollback.php');
-$reflectionClass = new \ReflectionClass(ResourceCurrency::class);
+$reflectionClass = new ReflectionClass(ResourceCurrency::class);
 $staticProperty = $reflectionClass->getProperty('_rateCache');
 $staticProperty->setAccessible(true);
 $staticProperty->setValue(null);

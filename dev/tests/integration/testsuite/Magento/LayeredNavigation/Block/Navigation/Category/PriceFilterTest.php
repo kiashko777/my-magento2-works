@@ -7,12 +7,12 @@ declare(strict_types=1);
 
 namespace Magento\LayeredNavigation\Block\Navigation\Category;
 
+use Magento\Catalog\Model\Layer\Filter\AbstractFilter;
+use Magento\Catalog\Model\Layer\Filter\Item;
 use Magento\Catalog\Model\Layer\Resolver;
 use Magento\Framework\App\Config\MutableScopeConfigInterface;
 use Magento\Framework\App\ScopeInterface;
 use Magento\LayeredNavigation\Block\Navigation\AbstractFiltersTest;
-use Magento\Catalog\Model\Layer\Filter\AbstractFilter;
-use Magento\Catalog\Model\Layer\Filter\Item;
 use Magento\Store\Model\ScopeInterface as StoreScope;
 
 /**
@@ -28,15 +28,6 @@ class PriceFilterTest extends AbstractFiltersTest
      * @var MutableScopeConfigInterface
      */
     private $scopeConfig;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->scopeConfig = $this->objectManager->get(MutableScopeConfigInterface::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Catalog/_files/category_with_three_products.php
@@ -55,6 +46,19 @@ class PriceFilterTest extends AbstractFiltersTest
             $expectation,
             'Category 999'
         );
+    }
+
+    /**
+     * Updates price filter store configuration.
+     *
+     * @param array $config
+     * @return void
+     */
+    protected function applyCatalogConfig(array $config): void
+    {
+        foreach ($config as $path => $value) {
+            $this->scopeConfig->setValue($path, $value, StoreScope::SCOPE_STORE, ScopeInterface::SCOPE_DEFAULT);
+        }
     }
 
     /**
@@ -215,17 +219,18 @@ class PriceFilterTest extends AbstractFiltersTest
     /**
      * @inheritdoc
      */
-    protected function getLayerType(): string
+    protected function setUp(): void
     {
-        return Resolver::CATALOG_LAYER_CATEGORY;
+        parent::setUp();
+        $this->scopeConfig = $this->objectManager->get(MutableScopeConfigInterface::class);
     }
 
     /**
      * @inheritdoc
      */
-    protected function getAttributeCode(): string
+    protected function getLayerType(): string
     {
-        return 'price';
+        return Resolver::CATALOG_LAYER_CATEGORY;
     }
 
     /**
@@ -247,19 +252,6 @@ class PriceFilterTest extends AbstractFiltersTest
     }
 
     /**
-     * Updates price filter store configuration.
-     *
-     * @param array $config
-     * @return void
-     */
-    protected function applyCatalogConfig(array $config): void
-    {
-        foreach ($config as $path => $value) {
-            $this->scopeConfig->setValue($path, $value, StoreScope::SCOPE_STORE, ScopeInterface::SCOPE_DEFAULT);
-        }
-    }
-
-    /**
      * @inheritdoc
      */
     protected function assertActiveFilter(array $expectation, Item $currentFilter): void
@@ -270,5 +262,13 @@ class PriceFilterTest extends AbstractFiltersTest
             $this->getAttributeCode(),
             $currentFilter->getFilter()->getData('attribute_model')->getAttributeCode()
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function getAttributeCode(): string
+    {
+        return 'price';
     }
 }

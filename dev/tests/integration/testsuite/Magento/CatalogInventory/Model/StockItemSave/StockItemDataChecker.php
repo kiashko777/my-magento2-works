@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogInventory\Model\StockItemSave;
 
 use Magento\Catalog\Api\Data\ProductInterfaceFactory;
@@ -13,6 +14,7 @@ use Magento\CatalogInventory\Api\StockItemCriteriaInterfaceFactory;
 use Magento\CatalogInventory\Api\StockItemRepositoryInterface;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\EntityManager\HydratorInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
 use PHPUnit\Framework\Assert;
 
 class StockItemDataChecker
@@ -56,13 +58,14 @@ class StockItemDataChecker
      * @param SearchCriteriaBuilder $searchCriteriaBuilder
      */
     public function __construct(
-        HydratorInterface $hydrator,
-        StockItemRepositoryInterface $stockItemRepository,
+        HydratorInterface                 $hydrator,
+        StockItemRepositoryInterface      $stockItemRepository,
         StockItemCriteriaInterfaceFactory $stockItemCriteriaFactory,
-        ProductRepositoryInterface $productRepository,
-        ProductInterfaceFactory $productFactory,
-        SearchCriteriaBuilder $searchCriteriaBuilder
-    ) {
+        ProductRepositoryInterface        $productRepository,
+        ProductInterfaceFactory           $productFactory,
+        SearchCriteriaBuilder             $searchCriteriaBuilder
+    )
+    {
         $this->hydrator = $hydrator;
         $this->stockItemRepository = $stockItemRepository;
         $this->stockItemCriteriaFactory = $stockItemCriteriaFactory;
@@ -74,7 +77,7 @@ class StockItemDataChecker
     /**
      * @param $sku
      * @param array $expectedData
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @throws NoSuchEntityException
      */
     public function checkStockItemData($sku, array $expectedData)
     {

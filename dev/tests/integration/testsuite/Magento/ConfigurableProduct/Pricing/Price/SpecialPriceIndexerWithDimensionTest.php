@@ -14,13 +14,14 @@ use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\ResourceModel\Product\Collection as ProductCollection;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoDbIsolation disabled
  * @group indexer_dimension
  * @magentoIndexerDimensionMode catalog_product_price website_and_customer_group
  */
-class SpecialPriceIndexerWithDimensionTest extends \PHPUnit\Framework\TestCase
+class SpecialPriceIndexerWithDimensionTest extends TestCase
 {
     /**
      * @var ProductRepositoryInterface
@@ -36,16 +37,6 @@ class SpecialPriceIndexerWithDimensionTest extends \PHPUnit\Framework\TestCase
      * @var Processor
      */
     private $indexerProcessor;
-
-    /**
-     * Set up
-     */
-    protected function setUp(): void
-    {
-        $this->productRepository = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class);
-        $this->productCollectionFactory = Bootstrap::getObjectManager()->get(CollectionFactory::class);
-        $this->indexerProcessor = Bootstrap::getObjectManager()->get(Processor::class);
-    }
 
     /**
      * Use collection to check data in index
@@ -108,5 +99,15 @@ class SpecialPriceIndexerWithDimensionTest extends \PHPUnit\Framework\TestCase
         /** @var Product $item */
         $item = $collection->getFirstItem();
         self::assertEquals($specialPrice, $item->getData('min_price'));
+    }
+
+    /**
+     * Set up
+     */
+    protected function setUp(): void
+    {
+        $this->productRepository = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class);
+        $this->productCollectionFactory = Bootstrap::getObjectManager()->get(CollectionFactory::class);
+        $this->indexerProcessor = Bootstrap::getObjectManager()->get(Processor::class);
     }
 }

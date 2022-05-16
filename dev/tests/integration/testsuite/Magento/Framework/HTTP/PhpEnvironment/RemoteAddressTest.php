@@ -3,23 +3,27 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\HTTP\PhpEnvironment;
 
-class RemoteAddressTest extends \PHPUnit\Framework\TestCase
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class RemoteAddressTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\HTTP\PhpEnvironment\RemoteAddress
+     * @var RemoteAddress
      */
     protected $_helper;
-
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->_helper = $objectManager->get(\Magento\Framework\HTTP\PhpEnvironment\RemoteAddress::class);
-    }
 
     public function testGetRemoteAddress()
     {
         $this->assertFalse($this->_helper->getRemoteAddress());
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->_helper = $objectManager->get(RemoteAddress::class);
     }
 }

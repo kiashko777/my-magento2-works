@@ -4,17 +4,23 @@
  * See COPYING.txt for license details.
  */
 
-/** @var \Magento\Framework\ObjectManagerInterface $objectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+/** @var ObjectManagerInterface $objectManager */
 
-/** @var \Magento\Framework\Registry $registry */
-$registry = $objectManager->get(\Magento\Framework\Registry::class);
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Registry;
+use Magento\Store\Model\Store;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
+
+/** @var Registry $registry */
+$registry = $objectManager->get(Registry::class);
 
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
-/** @var \Magento\Store\Model\Store $store */
-$store = $objectManager->create(\Magento\Store\Model\Store::class);
+/** @var Store $store */
+$store = $objectManager->create(Store::class);
 $storeCode = 'fixturestore';
 $store->load($storeCode);
 if ($store->getId()) {

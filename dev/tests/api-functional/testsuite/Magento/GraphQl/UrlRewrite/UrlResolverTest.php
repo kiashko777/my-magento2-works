@@ -24,11 +24,6 @@ class UrlResolverTest extends GraphQlAbstract
     /** @var ObjectManager */
     private $objectManager;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
-
     /**
      * Test for custom type which point to the invalid product/category/cms page.
      *
@@ -103,6 +98,33 @@ QUERY;
         // rolling back changes
         $urlRewrite->setRequestPath($requestPath);
         $urlRewriteResourceModel->save($urlRewrite);
+    }
+
+    /**
+     * Return UrlRewrite model instance by request_path
+     *
+     * @param string $requestPath
+     * @param int $storeId
+     * @return UrlRewriteModel
+     */
+    private function getUrlRewriteModelByRequestPath(string $requestPath, int $storeId): UrlRewriteModel
+    {
+        /** @var  UrlFinderInterface $urlFinder */
+        $urlFinder = $this->objectManager->get(UrlFinderInterface::class);
+
+        /** @var UrlRewriteService $urlRewriteService */
+        $urlRewriteService = $urlFinder->findOneByData(
+            [
+                'request_path' => $requestPath,
+                'store_id' => $storeId
+            ]
+        );
+
+        /** @var UrlRewriteModel $urlRewrite */
+        $urlRewrite = $this->objectManager->create(UrlRewriteModel::class);
+        $urlRewrite->load($urlRewriteService->getUrlRewriteId());
+
+        return $urlRewrite;
     }
 
     public function urlRewriteEntitiesDataProvider(): array
@@ -200,31 +222,9 @@ QUERY;
         $this->assertNull($apiResponse['urlResolver']);
     }
 
-    /**
-     * Return UrlRewrite model instance by request_path
-     *
-     * @param string $requestPath
-     * @param int $storeId
-     * @return UrlRewriteModel
-     */
-    private function getUrlRewriteModelByRequestPath(string $requestPath, int $storeId): UrlRewriteModel
+    protected function setUp(): void
     {
-        /** @var  UrlFinderInterface $urlFinder */
-        $urlFinder = $this->objectManager->get(UrlFinderInterface::class);
-
-        /** @var UrlRewriteService $urlRewriteService */
-        $urlRewriteService = $urlFinder->findOneByData(
-            [
-                'request_path' => $requestPath,
-                'store_id' => $storeId
-            ]
-        );
-
-        /** @var UrlRewriteModel $urlRewrite */
-        $urlRewrite = $this->objectManager->create(UrlRewriteModel::class);
-        $urlRewrite->load($urlRewriteService->getUrlRewriteId());
-
-        return $urlRewrite;
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 
 }

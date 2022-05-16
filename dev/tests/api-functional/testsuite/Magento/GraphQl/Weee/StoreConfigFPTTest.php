@@ -12,8 +12,8 @@ use Magento\Framework\App\Config\Storage\WriterInterface;
 use Magento\Framework\ObjectManager\ObjectManager;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
-use Magento\Weee\Model\Tax as WeeeDisplayConfig;
 use Magento\Weee\Model\Config;
+use Magento\Weee\Model\Tax as WeeeDisplayConfig;
 
 /**
  * Test for storeConfig FPT config values
@@ -22,14 +22,6 @@ class StoreConfigFPTTest extends GraphQlAbstract
 {
     /** @var ObjectManager $objectManager */
     private $objectManager;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
 
     /**
      * FPT All Display settings
@@ -42,7 +34,7 @@ class StoreConfigFPTTest extends GraphQlAbstract
      */
     public function testSameFPTDisplaySettings(array $weeTaxSettings, $displayValue)
     {
-       /** @var WriterInterface $configWriter */
+        /** @var WriterInterface $configWriter */
         $configWriter = $this->objectManager->get(WriterInterface::class);
 
         foreach ($weeTaxSettings as $path => $value) {
@@ -64,6 +56,24 @@ class StoreConfigFPTTest extends GraphQlAbstract
         $this->assertEquals($displayValue, $result['storeConfig']['product_fixed_product_tax_display_setting']);
         $this->assertEquals($displayValue, $result['storeConfig']['category_fixed_product_tax_display_setting']);
         $this->assertEquals($displayValue, $result['storeConfig']['sales_fixed_product_tax_display_setting']);
+    }
+
+    /**
+     * Get GraphQl query to fetch storeConfig and FPT serttings
+     *
+     * @return string
+     */
+    private function getStoreConfigQuery(): string
+    {
+        return <<<QUERY
+{
+    storeConfig {
+          product_fixed_product_tax_display_setting
+          category_fixed_product_tax_display_setting
+          sales_fixed_product_tax_display_setting
+    }
+}
+QUERY;
     }
 
     /**
@@ -185,20 +195,10 @@ class StoreConfigFPTTest extends GraphQlAbstract
     }
 
     /**
-     * Get GraphQl query to fetch storeConfig and FPT serttings
-     *
-     * @return string
+     * @inheritdoc
      */
-    private function getStoreConfigQuery(): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-{
-    storeConfig {
-          product_fixed_product_tax_display_setting
-          category_fixed_product_tax_display_setting
-          sales_fixed_product_tax_display_setting
-    }
-}
-QUERY;
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

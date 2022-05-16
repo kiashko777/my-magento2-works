@@ -7,9 +7,10 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl;
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
-use Magento\Catalog\Api\ProductRepositoryInterface;
 
 class VariablesSupportQueryTest extends GraphQlAbstract
 {
@@ -17,11 +18,6 @@ class VariablesSupportQueryTest extends GraphQlAbstract
      * @var ProductRepositoryInterface
      */
     private $productRepository;
-
-    protected function setUp(): void
-    {
-        $this->productRepository = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class);
-    }
 
     /**
      * @magentoApiDataFixture Magento/Catalog/_files/products_list.php
@@ -46,7 +42,7 @@ query GetProductsQuery($pageSize: Int, $filterInput: ProductAttributeFilterInput
           amount {
             value
             currency
-          }          
+          }
         }
       }
     }
@@ -65,7 +61,7 @@ QUERY;
         ];
 
         $response = $this->graphQlQuery($query, $variables);
-        /** @var \Magento\Catalog\Model\Product $product */
+        /** @var Product $product */
         $product = $this->productRepository->get($productSku, false, null, true);
 
         self::assertArrayHasKey('products', $response);
@@ -77,5 +73,10 @@ QUERY;
             $minPrice,
             $response['products']['items'][0]['price']['minimalPrice']['amount']['value']
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->productRepository = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class);
     }
 }

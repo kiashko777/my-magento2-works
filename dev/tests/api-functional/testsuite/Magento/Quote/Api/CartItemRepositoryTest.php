@@ -4,11 +4,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Quote\Api;
 
 use Magento\Catalog\Model\CustomOptions\CustomOptionProcessor;
+use Magento\Catalog\Model\Product;
 use Magento\Framework\Webapi\Rest\Request;
+use Magento\Quote\Api\Data\CartItemInterface;
 use Magento\Quote\Model\Quote;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 class CartItemRepositoryTest extends WebapiAbstract
@@ -18,28 +23,23 @@ class CartItemRepositoryTest extends WebapiAbstract
     const RESOURCE_PATH = '/V1/carts/';
 
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoApiDataFixture Magento/Checkout/_files/quote_with_items_and_custom_options_saved.php
      */
     public function testGetList()
     {
-        /** @var Quote  $quote */
+        /** @var Quote $quote */
         $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_item_with_items_and_custom_options', 'reserved_order_id');
         $cartId = $quote->getId();
         $output = [];
         $customOptionProcessor = $this->objectManager->get(CustomOptionProcessor::class);
 
-        /** @var  \Magento\Quote\Api\Data\CartItemInterface $item */
+        /** @var  CartItemInterface $item */
         foreach ($quote->getAllItems() as $item) {
             $customOptionProcessor->processOptions($item);
             $data = [
@@ -83,16 +83,16 @@ class CartItemRepositoryTest extends WebapiAbstract
      */
     public function testAddItem()
     {
-        /** @var  \Magento\Catalog\Model\Product $product */
-        $product = $this->objectManager->create(\Magento\Catalog\Model\Product::class)->load(2);
+        /** @var  Product $product */
+        $product = $this->objectManager->create(Product::class)->load(2);
         $productSku = $product->getSku();
-        /** @var Quote  $quote */
+        /** @var Quote $quote */
         $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_1', 'reserved_order_id');
         $cartId = $quote->getId();
         $serviceInfo = [
             'rest' => [
-                'resourcePath' => self::RESOURCE_PATH .  $cartId . '/items',
+                'resourcePath' => self::RESOURCE_PATH . $cartId . '/items',
                 'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
@@ -119,11 +119,11 @@ class CartItemRepositoryTest extends WebapiAbstract
      */
     public function testRemoveItem()
     {
-        /** @var Quote  $quote */
+        /** @var Quote $quote */
         $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_item_with_items', 'reserved_order_id');
         $cartId = $quote->getId();
-        $product = $this->objectManager->create(\Magento\Catalog\Model\Product::class);
+        $product = $this->objectManager->create(Product::class);
         $productId = $product->getIdBySku('simple_one');
         $product->load($productId);
         $itemId = $quote->getItemByProduct($product)->getId();
@@ -154,17 +154,17 @@ class CartItemRepositoryTest extends WebapiAbstract
      */
     public function testUpdateItem()
     {
-        /** @var Quote  $quote */
+        /** @var Quote $quote */
         $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_item_with_items', 'reserved_order_id');
         $cartId = $quote->getId();
-        $product = $this->objectManager->create(\Magento\Catalog\Model\Product::class);
+        $product = $this->objectManager->create(Product::class);
         $productId = $product->getIdBySku('simple_one');
         $product->load($productId);
         $itemId = $quote->getItemByProduct($product)->getId();
         $serviceInfo = [
             'rest' => [
-                'resourcePath' => self::RESOURCE_PATH .  $cartId . '/items/' . $itemId,
+                'resourcePath' => self::RESOURCE_PATH . $cartId . '/items/' . $itemId,
                 'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
@@ -197,5 +197,10 @@ class CartItemRepositoryTest extends WebapiAbstract
         $item = $quote->getItemByProduct($product);
         $this->assertEquals(5, $item->getQty());
         $this->assertEquals($itemId, $item->getItemId());
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

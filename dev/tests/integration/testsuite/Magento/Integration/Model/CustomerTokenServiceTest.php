@@ -7,14 +7,16 @@
 namespace Magento\Integration\Model;
 
 use Magento\Customer\Api\AccountManagementInterface;
+use Magento\Framework\Exception\AuthenticationException;
 use Magento\Framework\Exception\InputException;
 use Magento\Integration\Model\Oauth\Token as TokenModel;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\Integration\Model\CustomerTokenService.
  */
-class CustomerTokenServiceTest extends \PHPUnit\Framework\TestCase
+class CustomerTokenServiceTest extends TestCase
 {
     /**
      * @var CustomerTokenServiceInterface
@@ -30,20 +32,6 @@ class CustomerTokenServiceTest extends \PHPUnit\Framework\TestCase
      * @var TokenModel
      */
     private $tokenModel;
-
-    /**
-     * Setup CustomerTokenService
-     */
-    protected function setUp(): void
-    {
-        $this->tokenService = Bootstrap::getObjectManager()->get(
-            \Magento\Integration\Model\CustomerTokenService::class
-        );
-        $this->accountManagement = Bootstrap::getObjectManager()->get(
-            \Magento\Customer\Api\AccountManagementInterface::class
-        );
-        $this->tokenModel = Bootstrap::getObjectManager()->get(\Magento\Integration\Model\Oauth\Token::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
@@ -72,10 +60,24 @@ class CustomerTokenServiceTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Assert for presence of Input exception messages
+     *
+     * @param InputException $e
+     */
+    private function assertInputExceptionMessages($e)
+    {
+        $this->assertEquals('One or more input exceptions have occurred.', $e->getMessage());
+        $errors = $e->getErrors();
+        $this->assertCount(2, $errors);
+        $this->assertEquals('"username" is required. Enter and try again.', $errors[0]->getLogMessage());
+        $this->assertEquals('"password" is required. Enter and try again.', $errors[1]->getLogMessage());
+    }
+
+    /**
      */
     public function testCreateCustomerAccessTokenInvalidCustomer()
     {
-        $this->expectException(\Magento\Framework\Exception\AuthenticationException::class);
+        $this->expectException(AuthenticationException::class);
 
         $customerUserName = 'invalid';
         $password = 'invalid';
@@ -101,16 +103,16 @@ class CustomerTokenServiceTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Assert for presence of Input exception messages
-     *
-     * @param InputException $e
+     * Setup CustomerTokenService
      */
-    private function assertInputExceptionMessages($e)
+    protected function setUp(): void
     {
-        $this->assertEquals('One or more input exceptions have occurred.', $e->getMessage());
-        $errors = $e->getErrors();
-        $this->assertCount(2, $errors);
-        $this->assertEquals('"username" is required. Enter and try again.', $errors[0]->getLogMessage());
-        $this->assertEquals('"password" is required. Enter and try again.', $errors[1]->getLogMessage());
+        $this->tokenService = Bootstrap::getObjectManager()->get(
+            CustomerTokenService::class
+        );
+        $this->accountManagement = Bootstrap::getObjectManager()->get(
+            AccountManagementInterface::class
+        );
+        $this->tokenModel = Bootstrap::getObjectManager()->get(TokenModel::class);
     }
 }

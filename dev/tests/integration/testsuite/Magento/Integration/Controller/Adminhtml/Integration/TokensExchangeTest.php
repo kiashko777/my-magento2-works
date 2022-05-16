@@ -26,16 +26,6 @@ class TokensExchangeTest extends AbstractBackendController
     private $integrationService;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->integrationService = $this->_objectManager->get(IntegrationServiceInterface::class);
-    }
-
-    /**
      * Activate integration
      *
      * @magentoDataFixture Magento/Integration/_files/integration_all_data.php
@@ -54,5 +44,15 @@ class TokensExchangeTest extends AbstractBackendController
             'Please setup or sign in into your 3rd party account to complete setup of this integration.',
             $this->getResponse()->getBody()
         );
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->integrationService = $this->_objectManager->get(IntegrationServiceInterface::class);
     }
 }

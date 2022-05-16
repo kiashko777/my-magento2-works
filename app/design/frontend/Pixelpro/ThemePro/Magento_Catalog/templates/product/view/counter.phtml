@@ -6,15 +6,20 @@
 /**
  * Products viewed counter template
  *
- * @var $block \Magento\Catalog\Block\Ui\ProductViewCounter
+ * @var $block ProductViewCounter
  */
+
+use Magento\Catalog\Block\Ui\ProductViewCounter;
+
 ?>
 <script type="text/x-magento-init">
     {
         "*": {
                 "Magento_Catalog/js/product/view/provider": {
-                    "data": <?= /* @noEscape */ $block->getCurrentProductData() ?>
+                    "data": <?= /* @noEscape */
+    $block->getCurrentProductData() ?>
             }
         }
     }
+
 </script>

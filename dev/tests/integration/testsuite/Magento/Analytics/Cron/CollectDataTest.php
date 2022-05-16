@@ -33,29 +33,6 @@ class CollectDataTest extends TestCase
     private $mediaDirectory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->collectDataService = $this->objectManager->get(CollectData::class);
-        $this->mediaDirectory = $this->objectManager->get(Filesystem::class)->getDirectoryWrite(DirectoryList::MEDIA);
-        $this->removeAnalyticsDirectory();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->removeAnalyticsDirectory();
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoConfigFixture current_store analytics/subscription/enabled 1
      * @magentoConfigFixture default/analytics/general/token 123
      *
@@ -77,6 +54,19 @@ class CollectDataTest extends TestCase
     }
 
     /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->collectDataService = $this->objectManager->get(CollectData::class);
+        $this->mediaDirectory = $this->objectManager->get(Filesystem::class)->getDirectoryWrite(DirectoryList::MEDIA);
+        $this->removeAnalyticsDirectory();
+    }
+
+    /**
      * Remove Analytics directory
      *
      * @return void
@@ -87,5 +77,15 @@ class CollectDataTest extends TestCase
         if ($this->mediaDirectory->isDirectory($directoryToRemove)) {
             $this->mediaDirectory->delete($directoryToRemove);
         }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->removeAnalyticsDirectory();
+
+        parent::tearDown();
     }
 }

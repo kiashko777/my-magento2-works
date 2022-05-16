@@ -3,10 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestModuleJoinDirectives\Model;
 
-use Magento\TestModuleJoinDirectives\Api\TestRepositoryInterface;
 use Magento\Framework\Api\ExtensionAttribute\JoinProcessorInterface;
+use Magento\Framework\Api\SearchCriteriaInterface;
+use Magento\Quote\Api\Data\CartSearchResultsInterfaceFactory;
+use Magento\Quote\Model\ResourceModel\Quote\CollectionFactory;
+use Magento\TestModuleJoinDirectives\Api\TestRepositoryInterface;
 
 /**
  * Model TestRepository
@@ -14,12 +18,12 @@ use Magento\Framework\Api\ExtensionAttribute\JoinProcessorInterface;
 class TestRepository implements TestRepositoryInterface
 {
     /**
-     * @var \Magento\Quote\Model\ResourceModel\Quote\CollectionFactory
+     * @var CollectionFactory
      */
     private $quoteCollectionFactory;
 
     /**
-     * @var \Magento\Quote\Api\Data\CartSearchResultsInterfaceFactory
+     * @var CartSearchResultsInterfaceFactory
      */
     private $searchResultsDataFactory;
 
@@ -29,15 +33,16 @@ class TestRepository implements TestRepositoryInterface
     private $extensionAttributesJoinProcessor;
 
     /**
-     * @param \Magento\Quote\Model\ResourceModel\Quote\CollectionFactory $quoteCollectionFactory
-     * @param \Magento\Quote\Api\Data\CartSearchResultsInterfaceFactory $searchResultsDataFactory
+     * @param CollectionFactory $quoteCollectionFactory
+     * @param CartSearchResultsInterfaceFactory $searchResultsDataFactory
      * @param JoinProcessorInterface $extensionAttributesJoinProcessor
      */
     public function __construct(
-        \Magento\Quote\Model\ResourceModel\Quote\CollectionFactory $quoteCollectionFactory,
-        \Magento\Quote\Api\Data\CartSearchResultsInterfaceFactory $searchResultsDataFactory,
-        JoinProcessorInterface $extensionAttributesJoinProcessor
-    ) {
+        CollectionFactory $quoteCollectionFactory,
+        CartSearchResultsInterfaceFactory  $searchResultsDataFactory,
+        JoinProcessorInterface                                     $extensionAttributesJoinProcessor
+    )
+    {
         $this->quoteCollectionFactory = $quoteCollectionFactory;
         $this->searchResultsDataFactory = $searchResultsDataFactory;
         $this->extensionAttributesJoinProcessor = $extensionAttributesJoinProcessor;
@@ -46,7 +51,7 @@ class TestRepository implements TestRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function getList(\Magento\Framework\Api\SearchCriteriaInterface $searchCriteria)
+    public function getList(SearchCriteriaInterface $searchCriteria)
     {
         $quoteCollection = $this->quoteCollectionFactory->create();
         $this->extensionAttributesJoinProcessor->process($quoteCollection);

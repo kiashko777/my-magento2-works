@@ -5,16 +5,19 @@
  */
 declare(strict_types=1);
 
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Store\Model\Website;
-use Magento\Store\Model\Store;
 use Magento\CatalogSearch\Model\Indexer\Fulltext as FulltextIndex;
+use Magento\Config\Model\ResourceModel\Config;
 use Magento\Framework\App\Config\ReinitableConfigInterface;
+use Magento\Framework\Indexer\IndexerRegistry;
 use Magento\Store\Model\Group;
+use Magento\Store\Model\ScopeInterface;
+use Magento\Store\Model\Store;
+use Magento\Store\Model\Website;
+use Magento\TestFramework\Helper\Bootstrap;
 
 $objectManager = Bootstrap::getObjectManager();
 //Creating second website with a store.
-/** @var $website \Magento\Store\Model\Website */
+/** @var $website Website */
 $website = $objectManager->create(Website::class);
 $website->load('test', 'code');
 
@@ -57,25 +60,25 @@ if (!$store->getId()) {
 }
 
 //Setting up allowed countries
-$configResource = $objectManager->get(\Magento\Config\Model\ResourceModel\Config::class);
+$configResource = $objectManager->get(Config::class);
 //Allowed countries for default website.
 $configResource->saveConfig(
     'general/country/allow',
     'FR',
-    \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITES,
+    ScopeInterface::SCOPE_WEBSITES,
     1
 );
 //Allowed countries for second website
 $configResource->saveConfig(
     'general/country/allow',
     'ES,US,UK,DE',
-    \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITES,
+    ScopeInterface::SCOPE_WEBSITES,
     $websiteId
 );
 
 /* Refresh CatalogSearch index */
-/** @var \Magento\Framework\Indexer\IndexerRegistry $indexerRegistry */
-$indexerRegistry = $objectManager->create(\Magento\Framework\Indexer\IndexerRegistry::class);
+/** @var IndexerRegistry $indexerRegistry */
+$indexerRegistry = $objectManager->create(IndexerRegistry::class);
 $indexerRegistry->get(FulltextIndex::INDEXER_ID)->reindexAll();
 //Clear config cache.
 $objectManager->get(ReinitableConfigInterface::class)->reinit();

@@ -49,18 +49,6 @@ class CustomerPluginTest extends WebapiAbstract
     private $isAssistanceEnabled;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->dataObjectProcessor = $objectManager->get(DataObjectProcessor::class);
-        $this->customerRepository = $objectManager->get(CustomerRepositoryInterface::class);
-        $this->customerRegistry = $objectManager->get(CustomerRegistry::class);
-        $this->isAssistanceEnabled = $objectManager->get(GetLoginAsCustomerAssistanceAllowed::class);
-    }
-
-    /**
      * Check that 'assistance_allowed' set as expected.
      *
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
@@ -94,6 +82,40 @@ class CustomerPluginTest extends WebapiAbstract
         $existingCustomerDataObject = $this->getCustomerData($customerId);
         $this->assertEquals($updatedLastname, $existingCustomerDataObject->getLastname());
         $this->assertEquals($expected, $this->isAssistanceEnabled->execute($customerId));
+    }
+
+    /**
+     * Retrieve customer data by Id.
+     *
+     * @param int $customerId
+     * @return Customer
+     */
+    private function getCustomerData(int $customerId): Customer
+    {
+        $customerData = $this->customerRepository->getById($customerId);
+        $this->customerRegistry->remove($customerId);
+
+        return $customerData;
+    }
+
+    /**
+     * @param int $customerId
+     * @param string $operation
+     * @return array
+     */
+    private function getServiceInfo(int $customerId, string $operation): array
+    {
+        return [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH . '/' . $customerId,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . $operation,
+            ],
+        ];
     }
 
     /**
@@ -138,40 +160,6 @@ class CustomerPluginTest extends WebapiAbstract
     }
 
     /**
-     * @param int $customerId
-     * @param string $operation
-     * @return array
-     */
-    private function getServiceInfo(int $customerId, string $operation): array
-    {
-        return [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . '/' . $customerId,
-                'httpMethod' => Request::HTTP_METHOD_PUT,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . $operation,
-            ],
-        ];
-    }
-
-    /**
-     * Retrieve customer data by Id.
-     *
-     * @param int $customerId
-     * @return Customer
-     */
-    private function getCustomerData(int $customerId): Customer
-    {
-        $customerData = $this->customerRepository->getById($customerId);
-        $this->customerRegistry->remove($customerId);
-
-        return $customerData;
-    }
-
-    /**
      * @return array
      */
     public function assistanceStatesDataProvider(): array
@@ -180,6 +168,18 @@ class CustomerPluginTest extends WebapiAbstract
             'Assistance Allowed' => [IsAssistanceEnabledInterface::ALLOWED, true],
             'Assistance Denied' => [IsAssistanceEnabledInterface::DENIED, false],
         ];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->dataObjectProcessor = $objectManager->get(DataObjectProcessor::class);
+        $this->customerRepository = $objectManager->get(CustomerRepositoryInterface::class);
+        $this->customerRegistry = $objectManager->get(CustomerRegistry::class);
+        $this->isAssistanceEnabled = $objectManager->get(GetLoginAsCustomerAssistanceAllowed::class);
     }
 
     /**

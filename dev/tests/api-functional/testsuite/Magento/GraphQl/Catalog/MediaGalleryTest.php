@@ -39,6 +39,23 @@ QUERY;
     }
 
     /**
+     * @param string $url
+     * @return bool
+     */
+    private function checkImageExists(string $url): bool
+    {
+        // phpcs:disable Magento2.Functions.DiscouragedFunction
+        $connection = curl_init($url);
+        curl_setopt($connection, CURLOPT_HEADER, true);
+        curl_setopt($connection, CURLOPT_NOBODY, true);
+        curl_setopt($connection, CURLOPT_RETURNTRANSFER, 1);
+        curl_exec($connection);
+        $responseStatus = curl_getinfo($connection, CURLINFO_HTTP_CODE);
+        // phpcs:enable Magento2.Functions.DiscouragedFunction
+        return $responseStatus === 200;
+    }
+
+    /**
      * Test for get product image placeholder
      *
      * @magentoApiDataFixture Magento/Catalog/_files/product_simple.php
@@ -209,22 +226,5 @@ QUERY;
             'magento_image.jpg',
             $response['products']['items'][0]['media_gallery_entries'][0]['file']
         );
-    }
-
-    /**
-     * @param string $url
-     * @return bool
-     */
-    private function checkImageExists(string $url): bool
-    {
-        // phpcs:disable Magento2.Functions.DiscouragedFunction
-        $connection = curl_init($url);
-        curl_setopt($connection, CURLOPT_HEADER, true);
-        curl_setopt($connection, CURLOPT_NOBODY, true);
-        curl_setopt($connection, CURLOPT_RETURNTRANSFER, 1);
-        curl_exec($connection);
-        $responseStatus = curl_getinfo($connection, CURLINFO_HTTP_CODE);
-        // phpcs:enable Magento2.Functions.DiscouragedFunction
-        return $responseStatus === 200;
     }
 }

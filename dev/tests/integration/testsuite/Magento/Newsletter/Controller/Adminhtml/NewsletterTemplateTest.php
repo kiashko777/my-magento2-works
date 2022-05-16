@@ -3,57 +3,29 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Newsletter\Controller\Adminhtml;
+
+use Laminas\Http\Request;
+use Magento\Backend\Model\Session;
+use Magento\Framework\Data\Form\FormKey;
+use Magento\Framework\Message\MessageInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class NewsletterTemplateTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class NewsletterTemplateTest extends AbstractBackendController
 {
-    /**
-     * @var string
-     */
-    private $formKey;
-
     /**
      * @var \Magento\Newsletter\Model\Template
      */
     protected $model;
-
     /**
-     * @inheritDoc
+     * @var string
      */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $formKey = $this->_objectManager->get(\Magento\Framework\Data\Form\FormKey::class);
-        $this->formKey = $formKey->getFormKey();
-        $post = [
-            'code' => 'test data',
-            'subject' => 'test data2',
-            'sender_email' => 'sender@email.com',
-            'sender_name' => 'Test Sender Name',
-            'text' => 'Template Content',
-            'form_key' => $this->formKey,
-        ];
-        $this->getRequest()->setPostValue($post)->setMethod(\Laminas\Http\Request::METHOD_POST);
-        $this->model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Newsletter\Model\Template::class
-        );
-    }
-
-    /**
-     * @inheritDoc
-     */
-    protected function tearDown(): void
-    {
-        /**
-         * Unset messages
-         */
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Backend\Model\Session::class)
-            ->destroy();
-        $this->model = null;
-    }
+    private $formKey;
 
     /**
      * @magentoAppIsolation enabled
@@ -69,7 +41,7 @@ class NewsletterTemplateTest extends \Magento\TestFramework\TestCase\AbstractBac
         /**
          * Check that errors was generated and set to session
          */
-        $this->assertSessionMessages($this->isEmpty(), \Magento\Framework\Message\MessageInterface::TYPE_ERROR);
+        $this->assertSessionMessages($this->isEmpty(), MessageInterface::TYPE_ERROR);
 
         $this->model->load($this->getRequest()->getPostValue('code'), 'template_code');
 
@@ -80,7 +52,7 @@ class NewsletterTemplateTest extends \Magento\TestFramework\TestCase\AbstractBac
          */
         $this->assertSessionMessages(
             $this->equalTo(['The newsletter template has been saved.']),
-            \Magento\Framework\Message\MessageInterface::TYPE_SUCCESS
+            MessageInterface::TYPE_SUCCESS
         );
     }
 
@@ -105,7 +77,7 @@ class NewsletterTemplateTest extends \Magento\TestFramework\TestCase\AbstractBac
         /**
          * Check that errors was generated and set to session
          */
-        $this->assertSessionMessages($this->isEmpty(), \Magento\Framework\Message\MessageInterface::TYPE_ERROR);
+        $this->assertSessionMessages($this->isEmpty(), MessageInterface::TYPE_ERROR);
 
         $this->model->load($this->getRequest()->getPostValue('code'), 'template_code');
 
@@ -116,7 +88,7 @@ class NewsletterTemplateTest extends \Magento\TestFramework\TestCase\AbstractBac
          */
         $this->assertSessionMessages(
             $this->equalTo(['The newsletter template has been saved.']),
-            \Magento\Framework\Message\MessageInterface::TYPE_SUCCESS
+            MessageInterface::TYPE_SUCCESS
         );
     }
 
@@ -135,14 +107,14 @@ class NewsletterTemplateTest extends \Magento\TestFramework\TestCase\AbstractBac
         /**
          * Check that errors was generated and set to session
          */
-        $this->assertSessionMessages($this->isEmpty(), \Magento\Framework\Message\MessageInterface::TYPE_ERROR);
+        $this->assertSessionMessages($this->isEmpty(), MessageInterface::TYPE_ERROR);
 
         /**
          * Check that success message is set
          */
         $this->assertSessionMessages(
             $this->equalTo(['The newsletter template has been deleted.']),
-            \Magento\Framework\Message\MessageInterface::TYPE_SUCCESS
+            MessageInterface::TYPE_SUCCESS
         );
     }
 
@@ -155,9 +127,44 @@ class NewsletterTemplateTest extends \Magento\TestFramework\TestCase\AbstractBac
         // Loading by code, since ID will vary. template_code is not actually used to load anywhere else.
         $this->model->load('some_unique_code', 'template_code');
 
-        $this->getRequest()->setMethod(\Laminas\Http\Request::METHOD_GET)->setParam('id', $this->model->getId());
+        $this->getRequest()->setMethod(Request::METHOD_GET)->setParam('id', $this->model->getId());
         $this->dispatch('backend/newsletter/template/save');
 
         $this->assertEquals(404, $this->getResponse()->getStatusCode());
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $formKey = $this->_objectManager->get(FormKey::class);
+        $this->formKey = $formKey->getFormKey();
+        $post = [
+            'code' => 'test data',
+            'subject' => 'test data2',
+            'sender_email' => 'sender@email.com',
+            'sender_name' => 'Test Sender Name',
+            'text' => 'Template Content',
+            'form_key' => $this->formKey,
+        ];
+        $this->getRequest()->setPostValue($post)->setMethod(Request::METHOD_POST);
+        $this->model = Bootstrap::getObjectManager()->create(
+            \Magento\Newsletter\Model\Template::class
+        );
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function tearDown(): void
+    {
+        /**
+         * Unset messages
+         */
+        Bootstrap::getObjectManager()->get(Session::class)
+            ->destroy();
+        $this->model = null;
     }
 }

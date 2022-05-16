@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestModuleMysqlMq\Model;
 
 class DataObjectRepository
@@ -14,10 +15,11 @@ class DataObjectRepository
      * @return null
      */
     public function delayedOperation(
-        \Magento\TestModuleMysqlMq\Model\DataObject $dataObject,
-        $requiredParam,
-        $optionalParam = null
-    ) {
+        DataObject $dataObject,
+                   $requiredParam,
+                   $optionalParam = null
+    )
+    {
         $output = "Processed '{$dataObject->getEntityId()}'; "
             . "Required param '{$requiredParam}'; Optional param '{$optionalParam}'\n";
         file_put_contents($dataObject->getOutputPath(), $output);

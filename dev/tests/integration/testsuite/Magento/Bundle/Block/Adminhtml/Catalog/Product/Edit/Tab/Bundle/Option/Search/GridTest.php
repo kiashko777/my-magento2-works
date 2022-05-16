@@ -3,24 +3,31 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Bundle\Block\Adminhtml\Catalog\Product\Edit\Tab\Bundle\Option\Search;
 
-class GridTest extends \PHPUnit\Framework\TestCase
+use Magento\Backend\App\Area\FrontNameResolver;
+use Magento\Framework\View\Layout;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class GridTest extends TestCase
 {
     /**
      * @magentoAppIsolation enabled
      */
     public function testToHtmlHasOnClick()
     {
-        \Magento\TestFramework\Helper\Bootstrap::getInstance()
-            ->loadArea(\Magento\Backend\App\Area\FrontNameResolver::AREA_CODE);
-        /** @var $layout \Magento\Framework\View\LayoutInterface */
-        $layout = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\View\Layout::class,
-            ['area' => \Magento\Backend\App\Area\FrontNameResolver::AREA_CODE]
+        Bootstrap::getInstance()
+            ->loadArea(FrontNameResolver::AREA_CODE);
+        /** @var $layout LayoutInterface */
+        $layout = Bootstrap::getObjectManager()->create(
+            Layout::class,
+            ['area' => FrontNameResolver::AREA_CODE]
         );
         $block = $layout->createBlock(
-            \Magento\Bundle\Block\Adminhtml\Catalog\Product\Edit\Tab\Bundle\Option\Search\Grid::class,
+            Grid::class,
             'block'
         );
         $block->setId('temp_id');

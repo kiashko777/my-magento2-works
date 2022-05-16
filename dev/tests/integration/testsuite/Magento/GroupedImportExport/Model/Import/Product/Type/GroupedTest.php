@@ -54,15 +54,6 @@ class GroupedTest extends TestCase
     private $optionSkuList = ['Simple for Grouped 1', 'Simple for Grouped 2'];
 
     /**
-     * @ingeritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->model = $this->objectManager->create(ProductImport::class);
-    }
-
-    /**
      * @magentoAppArea Adminhtml
      * @magentoDbIsolation enabled
      * @magentoAppIsolation enabled
@@ -88,6 +79,30 @@ class GroupedTest extends TestCase
         foreach ($childProductCollection as $childProduct) {
             $this->assertContains($childProduct->getSku(), $this->optionSkuList);
         }
+    }
+
+    /**
+     * Perform products import.
+     *
+     * @param string $pathToFile
+     * @throws LocalizedException
+     */
+    private function import(string $pathToFile): void
+    {
+        $filesystem = $this->objectManager->create(Filesystem::class);
+        $directory = $filesystem->getDirectoryWrite(DirectoryList::ROOT);
+        $source = $this->objectManager->create(Csv::class, ['file' => $pathToFile, 'directory' => $directory]);
+        $errors = $this->model->setSource(
+            $source
+        )->setParameters(
+            [
+                'behavior' => Import::BEHAVIOR_APPEND,
+                'entity' => 'catalog_product',
+            ]
+        )->validateData();
+
+        $this->assertTrue($errors->getErrorsCount() == 0);
+        $this->model->importData();
     }
 
     /**
@@ -132,28 +147,12 @@ class GroupedTest extends TestCase
         return reset($items);
     }
 
-
     /**
-     * Perform products import.
-     *
-     * @param string $pathToFile
-     * @throws LocalizedException
+     * @ingeritdoc
      */
-    private function import(string $pathToFile): void
+    protected function setUp(): void
     {
-        $filesystem = $this->objectManager->create(Filesystem::class);
-        $directory = $filesystem->getDirectoryWrite(DirectoryList::ROOT);
-        $source = $this->objectManager->create(Csv::class, ['file' => $pathToFile, 'directory' => $directory]);
-        $errors = $this->model->setSource(
-            $source
-        )->setParameters(
-            [
-                'behavior' => Import::BEHAVIOR_APPEND,
-                'entity' => 'catalog_product',
-            ]
-        )->validateData();
-
-        $this->assertTrue($errors->getErrorsCount() == 0);
-        $this->model->importData();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->model = $this->objectManager->create(ProductImport::class);
     }
 }

@@ -8,15 +8,18 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Model\Product\Type;
 
+use Magento\Catalog\Api\Data\ProductCustomOptionInterface;
+use Magento\Catalog\Model\Indexer\Product\Price\PriceTableResolver;
 use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Option;
 use Magento\Catalog\Model\ProductRepository;
+use Magento\Customer\Model\Indexer\CustomerGroupDimensionProvider;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\DataObject;
-use Magento\Catalog\Model\Indexer\Product\Price\PriceTableResolver;
 use Magento\Framework\Indexer\DimensionFactory;
 use Magento\Store\Model\Indexer\WebsiteDimensionProvider;
-use Magento\Customer\Model\Indexer\CustomerGroupDimensionProvider;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoDbIsolation disabled
@@ -24,22 +27,12 @@ use Magento\TestFramework\Helper\Bootstrap;
  * @group indexer_dimension
  * @magentoDataFixture Magento/Catalog/_files/product_simple.php
  */
-class PriceWithDimensionTest extends \PHPUnit\Framework\TestCase
+class PriceWithDimensionTest extends TestCase
 {
     /**
-     * @var \Magento\Catalog\Model\Product\Type\Price
+     * @var Price
      */
     protected $_model;
-
-    /**
-     * Set up
-     */
-    protected function setUp(): void
-    {
-        $this->_model = Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\Product\Type\Price::class
-        );
-    }
 
     /**
      * Get price from indexer
@@ -109,6 +102,34 @@ class PriceWithDimensionTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Build buy request based on product custom options
+     *
+     * @param Product $product
+     * @return DataObject
+     */
+    private function prepareBuyRequest(Product $product)
+    {
+        $options = [];
+        /** @var $option Option */
+        foreach ($product->getOptions() as $option) {
+            switch ($option->getGroupByType()) {
+                case ProductCustomOptionInterface::OPTION_GROUP_DATE:
+                    $value = ['year' => 2013, 'month' => 8, 'day' => 9, 'hour' => 13, 'minute' => 35];
+                    break;
+                case ProductCustomOptionInterface::OPTION_GROUP_SELECT:
+                    $value = key($option->getValues());
+                    break;
+                default:
+                    $value = 'test';
+                    break;
+            }
+            $options[$option->getId()] = $value;
+        }
+
+        return new DataObject(['qty' => 1, 'options' => $options]);
+    }
+
+    /**
      * Get formatted price
      */
     public function testGetFormatedPrice()
@@ -154,30 +175,12 @@ class PriceWithDimensionTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Build buy request based on product custom options
-     *
-     * @param Product $product
-     * @return DataObject
+     * Set up
      */
-    private function prepareBuyRequest(Product $product)
+    protected function setUp(): void
     {
-        $options = [];
-        /** @var $option \Magento\Catalog\Model\Product\Option */
-        foreach ($product->getOptions() as $option) {
-            switch ($option->getGroupByType()) {
-                case \Magento\Catalog\Api\Data\ProductCustomOptionInterface::OPTION_GROUP_DATE:
-                    $value = ['year' => 2013, 'month' => 8, 'day' => 9, 'hour' => 13, 'minute' => 35];
-                    break;
-                case \Magento\Catalog\Api\Data\ProductCustomOptionInterface::OPTION_GROUP_SELECT:
-                    $value = key($option->getValues());
-                    break;
-                default:
-                    $value = 'test';
-                    break;
-            }
-            $options[$option->getId()] = $value;
-        }
-
-        return new DataObject(['qty' => 1, 'options' => $options]);
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Price::class
+        );
     }
 }

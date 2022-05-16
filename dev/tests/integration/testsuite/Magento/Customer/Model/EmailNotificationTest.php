@@ -58,46 +58,6 @@ class EmailNotificationTest extends TestCase
     private $templateCollectionFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->moduleManager = $this->objectManager->get(Manager::class);
-        //This check is needed because Magento_Customer independent of Magento_Email
-        if (!$this->moduleManager->isEnabled('Magento_Email')) {
-            $this->markTestSkipped('Magento_Email module disabled.');
-        }
-        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
-        $this->emailNotification = $this->objectManager->get(EmailNotificationInterface::class);
-        $this->transportBuilder = $this->objectManager->get(TransportBuilderMock::class);
-        $this->templateResource = $this->objectManager->get(TemplateResource::class);
-        $this->templateFactory = $this->objectManager->get(TemplateFactory::class);
-        $this->mutableScopeConfig = $this->objectManager->get(MutableScopeConfigInterface::class);
-        $this->templateCollectionFactory = $this->objectManager->get(CollectionFactory::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        if ($this->moduleManager->isEnabled('Magento_Email')) {
-            $this->mutableScopeConfig->clean();
-            $collection = $this->templateCollectionFactory->create();
-            $template = $collection->addFieldToFilter('template_code', 'customer_password_email_template')
-                ->getFirstItem();
-            if ($template->getId()) {
-                $this->templateResource->delete($template);
-            }
-        }
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
      *
      * @return void
@@ -109,6 +69,56 @@ class EmailNotificationTest extends TestCase
         $this->emailNotification->credentialsChanged($customer, $customer->getEmail(), true);
         $expectedSender = ['name' => 'CustomerSupport', 'email' => 'support@example.com'];
         $this->assertMessage($expectedSender);
+    }
+
+    /**
+     * Set email template config.
+     *
+     * @param string $configPath
+     * @return void
+     */
+    private function setEmailTemplateConfig(string $configPath): void
+    {
+        $template = $this->templateFactory->create();
+        $template->setTemplateCode('customer_password_email_template')
+            ->setTemplateText(file_get_contents(__DIR__ . '/../_files/customer_password_email_template.html'))
+            ->setTemplateType(Template::TYPE_HTML);
+        $this->templateResource->save($template);
+        $this->mutableScopeConfig->setValue($configPath, $template->getId(), ScopeInterface::SCOPE_STORE, 'default');
+    }
+
+    /**
+     * Assert message.
+     *
+     * @param array $expectedSender
+     * @return void
+     */
+    private function assertMessage(array $expectedSender): void
+    {
+        $message = $this->transportBuilder->getSentMessage();
+        $this->assertNotNull($message);
+        $this->assertMessageSender($message, $expectedSender);
+        $this->assertStringContainsString(
+            'Text specially for check in test.',
+            $message->getBody()->getParts()[0]->getRawContent(),
+            'Expected text wasn\'t found in message.'
+        );
+    }
+
+    /**
+     * Assert message sender.
+     *
+     * @param MessageInterface $message
+     * @param array $expectedSender
+     * @return void
+     */
+    private function assertMessageSender(MessageInterface $message, array $expectedSender): void
+    {
+        $messageFrom = $message->getFrom();
+        $this->assertNotNull($messageFrom);
+        $messageFrom = current($messageFrom);
+        $this->assertEquals($expectedSender['name'], $messageFrom->getName());
+        $this->assertEquals($expectedSender['email'], $messageFrom->getEmail());
     }
 
     /**
@@ -172,52 +182,42 @@ class EmailNotificationTest extends TestCase
     }
 
     /**
-     * Assert message.
-     *
-     * @param array $expectedSender
-     * @return void
+     * @inheritdoc
      */
-    private function assertMessage(array $expectedSender): void
+    protected function setUp(): void
     {
-        $message = $this->transportBuilder->getSentMessage();
-        $this->assertNotNull($message);
-        $this->assertMessageSender($message, $expectedSender);
-        $this->assertStringContainsString(
-            'Text specially for check in test.',
-            $message->getBody()->getParts()[0]->getRawContent(),
-            'Expected text wasn\'t found in message.'
-        );
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->moduleManager = $this->objectManager->get(Manager::class);
+        //This check is needed because Magento_Customer independent of Magento_Email
+        if (!$this->moduleManager->isEnabled('Magento_Email')) {
+            $this->markTestSkipped('Magento_Email module disabled.');
+        }
+        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
+        $this->emailNotification = $this->objectManager->get(EmailNotificationInterface::class);
+        $this->transportBuilder = $this->objectManager->get(TransportBuilderMock::class);
+        $this->templateResource = $this->objectManager->get(TemplateResource::class);
+        $this->templateFactory = $this->objectManager->get(TemplateFactory::class);
+        $this->mutableScopeConfig = $this->objectManager->get(MutableScopeConfigInterface::class);
+        $this->templateCollectionFactory = $this->objectManager->get(CollectionFactory::class);
     }
 
     /**
-     * Assert message sender.
-     *
-     * @param MessageInterface $message
-     * @param array $expectedSender
-     * @return void
+     * @inheritdoc
      */
-    private function assertMessageSender(MessageInterface $message, array $expectedSender): void
+    protected function tearDown(): void
     {
-        $messageFrom = $message->getFrom();
-        $this->assertNotNull($messageFrom);
-        $messageFrom = current($messageFrom);
-        $this->assertEquals($expectedSender['name'], $messageFrom->getName());
-        $this->assertEquals($expectedSender['email'], $messageFrom->getEmail());
-    }
+        if ($this->moduleManager->isEnabled('Magento_Email')) {
+            $this->mutableScopeConfig->clean();
+            $collection = $this->templateCollectionFactory->create();
+            $template = $collection->addFieldToFilter('template_code', 'customer_password_email_template')
+                ->getFirstItem();
+            if ($template->getId()) {
+                $this->templateResource->delete($template);
+            }
+        }
 
-    /**
-     * Set email template config.
-     *
-     * @param string $configPath
-     * @return void
-     */
-    private function setEmailTemplateConfig(string $configPath): void
-    {
-        $template = $this->templateFactory->create();
-        $template->setTemplateCode('customer_password_email_template')
-            ->setTemplateText(file_get_contents(__DIR__ . '/../_files/customer_password_email_template.html'))
-            ->setTemplateType(Template::TYPE_HTML);
-        $this->templateResource->save($template);
-        $this->mutableScopeConfig->setValue($configPath, $template->getId(), ScopeInterface::SCOPE_STORE, 'default');
+        parent::tearDown();
     }
 }

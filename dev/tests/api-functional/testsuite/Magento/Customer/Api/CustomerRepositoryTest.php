@@ -6,11 +6,12 @@
 
 namespace Magento\Customer\Api;
 
+use Exception;
 use Magento\Customer\Api\Data\AddressInterface as Address;
+use Magento\Customer\Api\Data\CustomerInterface as Customer;
 use Magento\Customer\Api\Data\CustomerInterfaceFactory;
 use Magento\Customer\Model\CustomerRegistry;
 use Magento\Framework\Api\DataObjectHelper;
-use Magento\Customer\Api\Data\CustomerInterface as Customer;
 use Magento\Framework\Api\FilterBuilder;
 use Magento\Framework\Api\Search\FilterGroupBuilder;
 use Magento\Framework\Api\SearchCriteriaBuilder;
@@ -19,8 +20,8 @@ use Magento\Framework\Api\SortOrder;
 use Magento\Framework\Api\SortOrderBuilder;
 use Magento\Framework\Exception\InputException;
 use Magento\Framework\Exception\LocalizedException;
-use Magento\Framework\Reflection\DataObjectProcessor;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Reflection\DataObjectProcessor;
 use Magento\Framework\Webapi\Exception as HTTPExceptionCodes;
 use Magento\Framework\Webapi\Rest\Request;
 use Magento\Integration\Api\CustomerTokenServiceInterface;
@@ -30,6 +31,8 @@ use Magento\Integration\Model\Integration;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Helper\Customer as CustomerHelper;
 use Magento\TestFramework\TestCase\WebapiAbstract;
+use SoapFault;
+use Throwable;
 
 /**
  * Test for \Magento\Customer\Api\CustomerRepositoryInterface.
@@ -60,17 +63,17 @@ class CustomerRepositoryTest extends WebapiAbstract
     private $customerDataFactory;
 
     /**
-     * @var \Magento\Framework\Api\SearchCriteriaBuilder
+     * @var SearchCriteriaBuilder
      */
     private $searchCriteriaBuilder;
 
     /**
-     * @var \Magento\Framework\Api\SortOrderBuilder
+     * @var SortOrderBuilder
      */
     private $sortOrderBuilder;
 
     /**
-     * @var \Magento\Framework\Api\Search\FilterGroupBuilder
+     * @var FilterGroupBuilder
      */
     private $filterGroupBuilder;
 
@@ -90,54 +93,9 @@ class CustomerRepositoryTest extends WebapiAbstract
     private $currentCustomerId;
 
     /**
-     * @var \Magento\Framework\Reflection\DataObjectProcessor
+     * @var DataObjectProcessor
      */
     private $dataObjectProcessor;
-
-    /**
-     * Execute per test initialization.
-     */
-    protected function setUp(): void
-    {
-        $this->customerRegistry = Bootstrap::getObjectManager()->get(CustomerRegistry::class);
-
-        $this->customerRepository = Bootstrap::getObjectManager()->get(
-            CustomerRepositoryInterface::class,
-            ['customerRegistry' => $this->customerRegistry]
-        );
-        $this->dataObjectHelper = Bootstrap::getObjectManager()->create(DataObjectHelper::class);
-        $this->customerDataFactory = Bootstrap::getObjectManager()->create(CustomerInterfaceFactory::class);
-        $this->searchCriteriaBuilder = Bootstrap::getObjectManager()->create(SearchCriteriaBuilder::class);
-        $this->sortOrderBuilder = Bootstrap::getObjectManager()->create(SortOrderBuilder::class);
-        $this->filterGroupBuilder = Bootstrap::getObjectManager()->create(FilterGroupBuilder::class);
-        $this->customerHelper = new CustomerHelper();
-
-        $this->dataObjectProcessor = Bootstrap::getObjectManager()->create(DataObjectProcessor::class);
-    }
-
-    protected function tearDown(): void
-    {
-        if (!empty($this->currentCustomerId)) {
-            foreach ($this->currentCustomerId as $customerId) {
-                $serviceInfo = [
-                    'rest' => [
-                        'resourcePath' => self::RESOURCE_PATH . '/' . $customerId,
-                        'httpMethod' => Request::HTTP_METHOD_DELETE,
-                    ],
-                    'soap' => [
-                        'service' => self::SERVICE_NAME,
-                        'serviceVersion' => self::SERVICE_VERSION,
-                        'operation' => self::SERVICE_NAME . 'DeleteById',
-                    ],
-                ];
-
-                $response = $this->_webApiCall($serviceInfo, ['customerId' => $customerId]);
-
-                $this->assertTrue($response);
-            }
-        }
-        $this->customerRepository = null;
-    }
 
     /**
      * Validate update by invalid customer.
@@ -145,16 +103,16 @@ class CustomerRepositoryTest extends WebapiAbstract
      */
     public function testInvalidCustomerUpdate()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
 
         //Create first customer and retrieve customer token.
         $firstCustomerData = $this->_createCustomer();
 
         // get customer ID token
-        /** @var \Magento\Integration\Api\CustomerTokenServiceInterface $customerTokenService */
+        /** @var CustomerTokenServiceInterface $customerTokenService */
         //$customerTokenService = $this->objectManager->create(CustomerTokenServiceInterface::class);
         $customerTokenService = Bootstrap::getObjectManager()->create(
-            \Magento\Integration\Api\CustomerTokenServiceInterface::class
+            CustomerTokenServiceInterface::class
         );
         $token = $customerTokenService->createCustomerAccessToken(
             $firstCustomerData[Customer::EMAIL],
@@ -196,28 +154,27 @@ class CustomerRepositoryTest extends WebapiAbstract
     }
 
     /**
-     * Create Integration and return token.
-     *
-     * @param string $name
-     * @param array $resource
-     * @return string
+     * @param array|null $additionalData
+     * @return array|bool|float|int|string
      */
-    private function createIntegrationToken(string $name, array $resource): string
+    protected function _createCustomer(?array $additionalData = [])
     {
-        /** @var IntegrationServiceInterface $integrationService */
-        $integrationService = Bootstrap::getObjectManager()->get(IntegrationServiceInterface::class);
-        $oauthService = Bootstrap::getObjectManager()->get(OauthServiceInterface::class);
-        /** @var Integration $integration */
-        $integration = $integrationService->create(
-            [
-                'name' => $name,
-                'resource' => $resource,
-            ]
-        );
-        /** @var OauthServiceInterface $oauthService */
-        $oauthService->createAccessToken($integration->getConsumerId());
+        $customerData = $this->customerHelper->createSampleCustomer($additionalData);
+        $this->currentCustomerId[] = $customerData['id'];
+        return $customerData;
+    }
 
-        return $integrationService->get($integration->getId())->getToken();
+    /**
+     * Retrieve customer data by Id
+     *
+     * @param int $customerId
+     * @return Customer
+     */
+    private function getCustomerData($customerId): Customer
+    {
+        $customerData = $this->customerRepository->getById($customerId);
+        $this->customerRegistry->remove($customerId);
+        return $customerData;
     }
 
     public function testDeleteCustomer()
@@ -282,8 +239,8 @@ class CustomerRepositoryTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, ['customerId' => $customerData['id']]);
             $this->fail("Expected exception is not thrown.");
-        } catch (\SoapFault $e) {
-        } catch (\Exception $e) {
+        } catch (SoapFault $e) {
+        } catch (Exception $e) {
             $expectedMessage = 'The consumer isn\'t authorized to access %resources.';
             $errorObj = $this->processRestExceptionResult($e);
             $this->assertEquals($expectedMessage, $errorObj['message']);
@@ -293,6 +250,31 @@ class CustomerRepositoryTest extends WebapiAbstract
         /** @var Customer $data */
         $data = $this->getCustomerData($customerData[Customer::ID]);
         $this->assertNotNull($data->getId());
+    }
+
+    /**
+     * Create Integration and return token.
+     *
+     * @param string $name
+     * @param array $resource
+     * @return string
+     */
+    private function createIntegrationToken(string $name, array $resource): string
+    {
+        /** @var IntegrationServiceInterface $integrationService */
+        $integrationService = Bootstrap::getObjectManager()->get(IntegrationServiceInterface::class);
+        $oauthService = Bootstrap::getObjectManager()->get(OauthServiceInterface::class);
+        /** @var Integration $integration */
+        $integration = $integrationService->create(
+            [
+                'name' => $name,
+                'resource' => $resource,
+            ]
+        );
+        /** @var OauthServiceInterface $oauthService */
+        $oauthService->createAccessToken($integration->getConsumerId());
+
+        return $integrationService->get($integration->getId())->getToken();
     }
 
     /**
@@ -321,13 +303,13 @@ class CustomerRepositoryTest extends WebapiAbstract
             $this->_webApiCall($serviceInfo, ['customerId' => $invalidId]);
 
             $this->fail("Expected exception");
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString(
                 $expectedMessage,
                 $e->getMessage(),
                 "SoapFault does not contain expected message."
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $errorObj = $this->processRestExceptionResult($e);
             $this->assertEquals($expectedMessage, $errorObj['message']);
             $this->assertEquals(['fieldName' => 'customerId', 'fieldValue' => $invalidId], $errorObj['parameters']);
@@ -412,7 +394,7 @@ class CustomerRepositoryTest extends WebapiAbstract
         try {
             $response = $this->_webApiCall($serviceInfo, $requestData);
             $this->assertEquals($customerData['website_id'], $response['website_id']);
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString('"Associate to Website" is a required value.', $e->getMessage());
         }
     }
@@ -460,13 +442,13 @@ class CustomerRepositoryTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, $requestData);
             $this->fail("Expected exception.");
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString(
                 $expectedMessage,
                 $e->getMessage(),
                 "SoapFault does not contain expected message."
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $errorObj = $this->processRestExceptionResult($e);
             $this->assertEquals($expectedMessage, $errorObj['message']);
             $this->assertEquals(['fieldName' => 'customerId', 'fieldValue' => -1], $errorObj['parameters']);
@@ -508,9 +490,9 @@ class CustomerRepositoryTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, $requestData);
             $this->fail('Expected exception was not raised');
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString($expectedMessage, $e->getMessage());
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $errorObj = $this->processRestExceptionResult($e);
             $this->assertEquals(HTTPExceptionCodes::HTTP_BAD_REQUEST, $e->getCode());
             $this->assertEquals($expectedMessage, $errorObj['message']);
@@ -548,9 +530,9 @@ class CustomerRepositoryTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, $requestData);
             $this->fail('Expected exception was not raised');
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString($expectedMessage, $e->getMessage());
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $errorObj = $this->processRestExceptionResult($e);
             $this->assertEquals(HTTPExceptionCodes::HTTP_BAD_REQUEST, $e->getCode());
             $this->assertEquals($expectedMessage, $errorObj['message']);
@@ -588,7 +570,7 @@ class CustomerRepositoryTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, $requestData);
             $this->fail('Expected exception did not occur.');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             if (TESTS_WEB_API_ADAPTER == self::ADAPTER_SOAP) {
                 $expectedException = new InputException();
                 $expectedException->addError(
@@ -746,7 +728,7 @@ class CustomerRepositoryTest extends WebapiAbstract
         ];
         try {
             $this->_webApiCall($serviceInfo);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->assertEquals(HTTPExceptionCodes::HTTP_BAD_REQUEST, $e->getCode());
             $exceptionData = $this->processRestExceptionResult($e);
             $expectedExceptionData = [
@@ -779,7 +761,7 @@ class CustomerRepositoryTest extends WebapiAbstract
         $this->searchCriteriaBuilder->addFilters([$filter1, $filter2]);
         $this->searchCriteriaBuilder->addFilters([$filter3]);
 
-        /**@var \Magento\Framework\Api\SortOrderBuilder $sortOrderBuilder */
+        /**@var SortOrderBuilder $sortOrderBuilder */
         $sortOrderBuilder = Bootstrap::getObjectManager()->create(
             SortOrderBuilder::class
         );
@@ -922,7 +904,7 @@ class CustomerRepositoryTest extends WebapiAbstract
     {
         $customerData1 = $this->_createCustomer();
 
-        /** @var \Magento\Framework\Api\FilterBuilder $builder */
+        /** @var FilterBuilder $builder */
         $builder = Bootstrap::getObjectManager()->create(FilterBuilder::class);
         $filter1 = $builder->setField(Customer::EMAIL)
             ->setValue($customerData1[Customer::EMAIL])
@@ -1012,7 +994,7 @@ class CustomerRepositoryTest extends WebapiAbstract
 
         try {
             $customerTokenService->revokeCustomerAccessToken($customerData[Customer::ID]);
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             $this->assertInstanceOf(LocalizedException::class, $exception);
             $this->assertEquals('This customer has no tokens.', $exception->getMessage());
         }
@@ -1021,42 +1003,18 @@ class CustomerRepositoryTest extends WebapiAbstract
 
         try {
             $this->_webApiCall($serviceInfo, ['customerId' => $customerData[Customer::ID]]);
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString(
                 $expectedMessage,
                 $e->getMessage(),
                 'SoapFault does not contain expected message.'
             );
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $errorObj = $this->processRestExceptionResult($e);
             $this->assertEquals($expectedMessage, $errorObj['message']);
             $this->assertEquals(['resources' => 'self'], $errorObj['parameters']);
             $this->assertEquals(HTTPExceptionCodes::HTTP_UNAUTHORIZED, $e->getCode());
         }
-    }
-
-    /**
-     * Retrieve customer data by Id
-     *
-     * @param int $customerId
-     * @return Customer
-     */
-    private function getCustomerData($customerId): Customer
-    {
-        $customerData = $this->customerRepository->getById($customerId);
-        $this->customerRegistry->remove($customerId);
-        return $customerData;
-    }
-
-    /**
-     * @param array|null $additionalData
-     * @return array|bool|float|int|string
-     */
-    protected function _createCustomer(?array $additionalData = [])
-    {
-        $customerData = $this->customerHelper->createSampleCustomer($additionalData);
-        $this->currentCustomerId[] = $customerData['id'];
-        return $customerData;
     }
 
     /**
@@ -1094,9 +1052,9 @@ class CustomerRepositoryTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, $requestData);
             $this->fail('Expected exception was not raised');
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString($expectedMessage, $e->getMessage());
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $errorObj = $this->processRestExceptionResult($e);
             $this->assertEquals(HTTPExceptionCodes::HTTP_BAD_REQUEST, $e->getCode());
             $this->assertEquals($expectedMessage, $errorObj['message']);
@@ -1257,5 +1215,50 @@ class CustomerRepositoryTest extends WebapiAbstract
                 'X Æ A-12 Musk',
             ],
         ];
+    }
+
+    /**
+     * Execute per test initialization.
+     */
+    protected function setUp(): void
+    {
+        $this->customerRegistry = Bootstrap::getObjectManager()->get(CustomerRegistry::class);
+
+        $this->customerRepository = Bootstrap::getObjectManager()->get(
+            CustomerRepositoryInterface::class,
+            ['customerRegistry' => $this->customerRegistry]
+        );
+        $this->dataObjectHelper = Bootstrap::getObjectManager()->create(DataObjectHelper::class);
+        $this->customerDataFactory = Bootstrap::getObjectManager()->create(CustomerInterfaceFactory::class);
+        $this->searchCriteriaBuilder = Bootstrap::getObjectManager()->create(SearchCriteriaBuilder::class);
+        $this->sortOrderBuilder = Bootstrap::getObjectManager()->create(SortOrderBuilder::class);
+        $this->filterGroupBuilder = Bootstrap::getObjectManager()->create(FilterGroupBuilder::class);
+        $this->customerHelper = new CustomerHelper();
+
+        $this->dataObjectProcessor = Bootstrap::getObjectManager()->create(DataObjectProcessor::class);
+    }
+
+    protected function tearDown(): void
+    {
+        if (!empty($this->currentCustomerId)) {
+            foreach ($this->currentCustomerId as $customerId) {
+                $serviceInfo = [
+                    'rest' => [
+                        'resourcePath' => self::RESOURCE_PATH . '/' . $customerId,
+                        'httpMethod' => Request::HTTP_METHOD_DELETE,
+                    ],
+                    'soap' => [
+                        'service' => self::SERVICE_NAME,
+                        'serviceVersion' => self::SERVICE_VERSION,
+                        'operation' => self::SERVICE_NAME . 'DeleteById',
+                    ],
+                ];
+
+                $response = $this->_webApiCall($serviceInfo, ['customerId' => $customerId]);
+
+                $this->assertTrue($response);
+            }
+        }
+        $this->customerRepository = null;
     }
 }

@@ -25,15 +25,6 @@ class ClassReaderDecoratorTest extends TestCase
      */
     private $classReaderMock;
 
-    protected function setUp(): void
-    {
-        $this->classReaderMock = $this->getMockBuilder(ClassReader::class)
-            ->disableOriginalConstructor()
-            ->setMethods([])
-            ->getMock();
-        $this->model = new ClassReaderDecorator($this->classReaderMock);
-    }
-
     /**
      * @param $expectation
      * @param $className
@@ -75,5 +66,14 @@ class ClassReaderDecoratorTest extends TestCase
             ->with('Child_Class_Name')
             ->willReturn($stringArray);
         $this->assertEquals($stringArray, $this->model->getParents('Child_Class_Name'));
+    }
+
+    protected function setUp(): void
+    {
+        $this->classReaderMock = $this->getMockBuilder(ClassReader::class)
+            ->disableOriginalConstructor()
+            ->setMethods([])
+            ->getMock();
+        $this->model = new ClassReaderDecorator($this->classReaderMock);
     }
 }

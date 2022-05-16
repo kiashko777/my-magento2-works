@@ -6,7 +6,14 @@
 
 namespace Magento\CatalogRule\Model\Indexer;
 
+use DateTime;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\ProductRepository;
+use Magento\Catalog\Model\ResourceModel\Product\Collection;
+use Magento\CatalogRule\Model\ResourceModel\Rule;
+use Magento\Framework\Registry;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppIsolation enabled
@@ -14,50 +21,22 @@ use Magento\TestFramework\Helper\Bootstrap;
  * @magentoDataFixture Magento/CatalogRule/_files/two_rules.php
  * @magentoDataFixture Magento/Catalog/_files/product_simple.php
  */
-class BatchIndexTest extends \PHPUnit\Framework\TestCase
+class BatchIndexTest extends TestCase
 {
     /**
-     * @var \Magento\Catalog\Model\ProductRepository
+     * @var ProductRepository
      */
     protected $productRepository;
 
     /**
-     * @var \Magento\Catalog\Model\Product
+     * @var Product
      */
     protected $product;
 
     /**
-     * @var \Magento\CatalogRule\Model\ResourceModel\Rule
+     * @var Rule
      */
     protected $resourceRule;
-
-    protected function setUp(): void
-    {
-        $this->resourceRule = Bootstrap::getObjectManager()->get(\Magento\CatalogRule\Model\ResourceModel\Rule::class);
-        $this->product = Bootstrap::getObjectManager()->get(\Magento\Catalog\Model\Product::class);
-        $this->productRepository = Bootstrap::getObjectManager()->get(\Magento\Catalog\Model\ProductRepository::class);
-    }
-
-    protected function tearDown(): void
-    {
-        /** @var \Magento\Framework\Registry $registry */
-        $registry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\Registry::class);
-
-        $registry->unregister('isSecureArea');
-        $registry->register('isSecureArea', true);
-
-        /** @var \Magento\Catalog\Model\ResourceModel\Product\Collection $productCollection */
-        $productCollection = Bootstrap::getObjectManager()->get(
-            \Magento\Catalog\Model\ResourceModel\Product\Collection::class
-        );
-        $productCollection->delete();
-
-        $registry->unregister('isSecureArea');
-        $registry->register('isSecureArea', false);
-
-        parent::tearDown();
-    }
 
     /**
      * @magentoDbIsolation disabled
@@ -75,7 +54,7 @@ class BatchIndexTest extends \PHPUnit\Framework\TestCase
          * @var IndexBuilder $indexerBuilder
          */
         $indexerBuilder = Bootstrap::getObjectManager()->create(
-            \Magento\CatalogRule\Model\Indexer\IndexBuilder::class,
+            IndexBuilder::class,
             ['batchCount' => $batchCount]
         );
 
@@ -85,7 +64,7 @@ class BatchIndexTest extends \PHPUnit\Framework\TestCase
             foreach ($productIds as $productId) {
                 $this->assertEquals(
                     $expectedPrice,
-                    $this->resourceRule->getRulePrice(new \DateTime(), 1, $customerGroupId, $productId)
+                    $this->resourceRule->getRulePrice(new DateTime(), 1, $customerGroupId, $productId)
                 );
             }
         }
@@ -136,5 +115,33 @@ class BatchIndexTest extends \PHPUnit\Framework\TestCase
             [10, 500, 473],
             [11, 760, 720],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->resourceRule = Bootstrap::getObjectManager()->get(Rule::class);
+        $this->product = Bootstrap::getObjectManager()->get(Product::class);
+        $this->productRepository = Bootstrap::getObjectManager()->get(ProductRepository::class);
+    }
+
+    protected function tearDown(): void
+    {
+        /** @var Registry $registry */
+        $registry = Bootstrap::getObjectManager()
+            ->get(Registry::class);
+
+        $registry->unregister('isSecureArea');
+        $registry->register('isSecureArea', true);
+
+        /** @var Collection $productCollection */
+        $productCollection = Bootstrap::getObjectManager()->get(
+            Collection::class
+        );
+        $productCollection->delete();
+
+        $registry->unregister('isSecureArea');
+        $registry->register('isSecureArea', false);
+
+        parent::tearDown();
     }
 }

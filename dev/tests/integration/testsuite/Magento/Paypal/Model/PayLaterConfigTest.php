@@ -19,7 +19,7 @@ class PayLaterConfigTest extends TestCase
     /**
      * @dataProvider getStyleDataProvider
      * @magentoAppIsolation enabled
-     * @covers \Magento\Paypal\Model\PayLaterConfig::getSectionConfig()
+     * @covers       \Magento\Paypal\Model\PayLaterConfig::getSectionConfig()
      */
     public function testGetStyleConfig($systemConfig, $expectedConfig)
     {
@@ -28,6 +28,21 @@ class PayLaterConfigTest extends TestCase
         /** @var PayLaterConfig $config */
         $config = Bootstrap::getObjectManager()->get(PayLaterConfig::class);
         $this->assertEquals($expectedConfig, $config->getSectionConfig('test1', PayLaterConfig::CONFIG_KEY_STYLE));
+    }
+
+    /**
+     * Set system configuration value for test
+     *
+     * @param $config
+     */
+    private function setConfig($config)
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var $scopeConfig MutableScopeConfig */
+        $scopeConfig = $objectManager->get(MutableScopeConfigInterface::class);
+        foreach ($config as $path => $value) {
+            $scopeConfig->setValue($path, $value, ScopeInterface::SCOPE_STORE);
+        }
     }
 
     /**
@@ -42,7 +57,7 @@ class PayLaterConfigTest extends TestCase
                     'payment/paypal_paylater/test1page_ratio' => '20x1',
                     'payment/paypal_paylater/test1page_color' => 'blue'
                 ],
-                 'expectedConfig' => [
+                'expectedConfig' => [
                     'data-pp-style-layout' => 'flex',
                     'data-pp-style-logo-type' => null,
                     'data-pp-style-logo-position' => null,
@@ -77,7 +92,7 @@ class PayLaterConfigTest extends TestCase
     /**
      * @dataProvider getPositionDataProvider
      * @magentoAppIsolation enabled
-     * @covers \Magento\Paypal\Model\PayLaterConfig::getSectionConfig()
+     * @covers       \Magento\Paypal\Model\PayLaterConfig::getSectionConfig()
      */
     public function testGetPositionConfig($systemConfig, $expectedConfig)
     {
@@ -122,9 +137,9 @@ class PayLaterConfigTest extends TestCase
     public function testIsEnabled($systemConfig, $expected)
     {
         $systemConfig = array_replace([
-                'payment/paypal_paylater/experience_active' => 1,
-                'payment/paypal_paylater/enabled' => 1,
-                'payment/paypal_paylater/test1page_display' => 1
+            'payment/paypal_paylater/experience_active' => 1,
+            'payment/paypal_paylater/enabled' => 1,
+            'payment/paypal_paylater/test1page_display' => 1
         ], $systemConfig);
 
         $this->setConfig($systemConfig);
@@ -226,20 +241,5 @@ class PayLaterConfigTest extends TestCase
                 false
             ],
         ];
-    }
-
-    /**
-     * Set system configuration value for test
-     *
-     * @param $config
-     */
-    private function setConfig($config)
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        /** @var $scopeConfig MutableScopeConfig */
-        $scopeConfig = $objectManager->get(MutableScopeConfigInterface::class);
-        foreach ($config as $path => $value) {
-            $scopeConfig->setValue($path, $value, ScopeInterface::SCOPE_STORE);
-        }
     }
 }

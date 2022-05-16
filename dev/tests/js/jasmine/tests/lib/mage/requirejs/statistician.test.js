@@ -10,12 +10,12 @@ define([
 ], function (statistician, _) {
     'use strict';
 
-    var keysOf          = Object.keys.bind(Object),
-        stringify       = JSON.stringify.bind(JSON),
-        get             = localStorage.getItem.bind(localStorage),
-        set             = localStorage.setItem.bind(localStorage),
-        clear           = localStorage.removeItem.bind(localStorage),
-        moduleSample    = 'define([], function(){ \'use strict\'; return true; });',
+    var keysOf = Object.keys.bind(Object),
+        stringify = JSON.stringify.bind(JSON),
+        get = localStorage.getItem.bind(localStorage),
+        set = localStorage.setItem.bind(localStorage),
+        clear = localStorage.removeItem.bind(localStorage),
+        moduleSample = 'define([], function(){ \'use strict\'; return true; });',
         firstBundle,
         secondBundle;
 

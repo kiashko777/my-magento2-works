@@ -30,18 +30,6 @@ class ConfigTest extends TestCase
      */
     protected $config;
 
-    protected function setUp(): void
-    {
-        $this->moduleFirst = $this->createMock(Module::class);
-        $this->moduleSecond = $this->createMock(Module::class);
-
-        $objectManagerHelper = new ObjectManager($this);
-        $this->config = $objectManagerHelper->getObject(
-            Config::class,
-            ['modules' => [$this->moduleFirst, $this->moduleSecond]]
-        );
-    }
-
     public function testGetDependenciesCount()
     {
         $this->moduleFirst->expects($this->once())->method('getHardDependenciesCount')->willReturn(1);
@@ -73,5 +61,17 @@ class ConfigTest extends TestCase
         $this->moduleSecond->expects($this->once())->method('getSoftDependenciesCount')->willReturn(3);
 
         $this->assertEquals(4, $this->config->getSoftDependenciesCount());
+    }
+
+    protected function setUp(): void
+    {
+        $this->moduleFirst = $this->createMock(Module::class);
+        $this->moduleSecond = $this->createMock(Module::class);
+
+        $objectManagerHelper = new ObjectManager($this);
+        $this->config = $objectManagerHelper->getObject(
+            Config::class,
+            ['modules' => [$this->moduleFirst, $this->moduleSecond]]
+        );
     }
 }

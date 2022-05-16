@@ -17,7 +17,8 @@ define([
                 get: function () {
                     return ko.observable();
                 },
-                set: function () {}
+                set: function () {
+                }
             }
         },
         cache;
@@ -34,7 +35,8 @@ define([
         try {
             injector.clean();
             injector.remove();
-        } catch (e) {}
+        } catch (e) {
+        }
     });
 
     describe('Magento_Checkout/js/model/cart/cache', function () {

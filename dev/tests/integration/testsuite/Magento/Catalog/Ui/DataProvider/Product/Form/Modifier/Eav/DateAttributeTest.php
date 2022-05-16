@@ -30,6 +30,26 @@ class DateAttributeTest extends AbstractEavTest
     }
 
     /**
+     * @return array
+     */
+    private function getAttributeMeta(): array
+    {
+        return [
+            'dataType' => 'date',
+            'formElement' => 'date',
+            'visible' => '1',
+            'required' => '0',
+            'label' => 'Date Attribute',
+            'code' => 'date_attribute',
+            'source' => 'product-details',
+            'scopeLabel' => '[GLOBAL]',
+            'globalScope' => true,
+            'sortOrder' => '__placeholder__',
+            'componentType' => 'field'
+        ];
+    }
+
+    /**
      * @magentoDataFixture Magento/Catalog/_files/product_date_attribute.php
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
      * @return void
@@ -57,25 +77,5 @@ class DateAttributeTest extends AbstractEavTest
             'date_attribute'
         );
         $this->callModifyMetaAndAssert($this->getNewProduct(), $expectedMeta);
-    }
-
-    /**
-     * @return array
-     */
-    private function getAttributeMeta(): array
-    {
-        return [
-            'dataType' => 'date',
-            'formElement' => 'date',
-            'visible' => '1',
-            'required' => '0',
-            'label' => 'Date Attribute',
-            'code' => 'date_attribute',
-            'source' => 'product-details',
-            'scopeLabel' => '[GLOBAL]',
-            'globalScope' => true,
-            'sortOrder' => '__placeholder__',
-            'componentType' => 'field'
-        ];
     }
 }

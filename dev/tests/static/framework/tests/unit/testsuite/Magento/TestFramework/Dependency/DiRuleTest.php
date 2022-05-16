@@ -3,11 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Dependency;
 
 use Magento\TestFramework\Dependency\VirtualType\VirtualTypeMapper;
+use PHPUnit\Framework\TestCase;
 
-class DiRuleTest extends \PHPUnit\Framework\TestCase
+class DiRuleTest extends TestCase
 {
     /**
      * @param string $module
@@ -18,11 +20,11 @@ class DiRuleTest extends \PHPUnit\Framework\TestCase
     public function testGetDependencyInfo($module, $contents, array $expected)
     {
         $diRule = new DiRule(new VirtualTypeMapper([
-                    'scope' => [
-                        'someVirtualType1' => 'Magento\AnotherModule\Some\Class1',
-                        'someVirtualType2' => 'Magento\AnotherModule\Some\Class2'
-                    ]
-                ]));
+            'scope' => [
+                'someVirtualType1' => 'Magento\AnotherModule\Some\Class1',
+                'someVirtualType2' => 'Magento\AnotherModule\Some\Class2'
+            ]
+        ]));
         $file = '/some/path/scope/di.xml';
         static::assertEquals($expected, $diRule->getDependencyInfo($module, null, $file, $contents));
     }

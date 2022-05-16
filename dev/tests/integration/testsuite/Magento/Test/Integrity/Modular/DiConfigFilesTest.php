@@ -3,14 +3,26 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Modular;
 
+use DOMDocument;
+use Exception;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Config\FileIteratorFactory;
+use Magento\Framework\Config\FileResolverInterface;
+use Magento\Framework\Config\ValidationStateInterface;
+use Magento\Framework\Filesystem;
+use Magento\Framework\Module\Dir\Reader;
+use Magento\Framework\ObjectManager\Config\Reader\Dom;
+use Magento\Framework\ObjectManager\Config\SchemaLocator;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class DiConfigFilesTest extends \PHPUnit\Framework\TestCase
+class DiConfigFilesTest extends TestCase
 {
     /**
      * Primary DI configs from app/etc
@@ -30,47 +42,20 @@ class DiConfigFilesTest extends \PHPUnit\Framework\TestCase
      */
     protected static $_moduleAreaFiles = [];
 
-    protected function _prepareFiles()
-    {
-        //init primary configs
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var $filesystem \Magento\Framework\Filesystem */
-        $filesystem = $objectManager->get(\Magento\Framework\Filesystem::class);
-        $configDirectory = $filesystem->getDirectoryRead(DirectoryList::CONFIG);
-        $fileIteratorFactory = $objectManager->get(\Magento\Framework\Config\FileIteratorFactory::class);
-        $search = [];
-        foreach ($configDirectory->search('{*/di.xml,di.xml}') as $path) {
-            $search[] = $configDirectory->getAbsolutePath($path);
-        }
-        self::$_primaryFiles = $fileIteratorFactory->create($search);
-        //init module global configs
-        /** @var $modulesReader \Magento\Framework\Module\Dir\Reader */
-        $modulesReader = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\Module\Dir\Reader::class);
-        self::$_moduleGlobalFiles = $modulesReader->getConfigurationFiles('di.xml');
-
-        //init module area configs
-        $areas = ['Adminhtml', 'frontend'];
-        foreach ($areas as $area) {
-            $moduleAreaFiles = $modulesReader->getConfigurationFiles($area . '/di.xml');
-            self::$_moduleAreaFiles[$area] = $moduleAreaFiles;
-        }
-    }
-
     /**
      * @param string $filePath
      * @param string $xml
-     * @throws \Exception
+     * @throws Exception
      * @dataProvider linearFilesProvider
      */
     public function testDiConfigFileWithoutMerging($filePath, $xml)
     {
-        /** @var \Magento\Framework\ObjectManager\Config\SchemaLocator $schemaLocator */
-        $schemaLocator = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\ObjectManager\Config\SchemaLocator::class
+        /** @var SchemaLocator $schemaLocator */
+        $schemaLocator = Bootstrap::getObjectManager()->get(
+            SchemaLocator::class
         );
 
-        $dom = new \DOMDocument();
+        $dom = new DOMDocument();
         $dom->loadXML($xml);
 
         libxml_use_internal_errors(true);
@@ -105,6 +90,33 @@ class DiConfigFilesTest extends \PHPUnit\Framework\TestCase
         return $output;
     }
 
+    protected function _prepareFiles()
+    {
+        //init primary configs
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var $filesystem Filesystem */
+        $filesystem = $objectManager->get(Filesystem::class);
+        $configDirectory = $filesystem->getDirectoryRead(DirectoryList::CONFIG);
+        $fileIteratorFactory = $objectManager->get(FileIteratorFactory::class);
+        $search = [];
+        foreach ($configDirectory->search('{*/di.xml,di.xml}') as $path) {
+            $search[] = $configDirectory->getAbsolutePath($path);
+        }
+        self::$_primaryFiles = $fileIteratorFactory->create($search);
+        //init module global configs
+        /** @var $modulesReader Reader */
+        $modulesReader = Bootstrap::getObjectManager()
+            ->get(Reader::class);
+        self::$_moduleGlobalFiles = $modulesReader->getConfigurationFiles('di.xml');
+
+        //init module area configs
+        $areas = ['Adminhtml', 'frontend'];
+        foreach ($areas as $area) {
+            $moduleAreaFiles = $modulesReader->getConfigurationFiles($area . '/di.xml');
+            self::$_moduleAreaFiles[$area] = $moduleAreaFiles;
+        }
+    }
+
     /**
      * @param array $files
      * @dataProvider mixedFilesProvider
@@ -112,22 +124,22 @@ class DiConfigFilesTest extends \PHPUnit\Framework\TestCase
     public function testMergedDiConfig(array $files)
     {
         $mapperMock = $this->createMock(\Magento\Framework\ObjectManager\Config\Mapper\Dom::class);
-        $fileResolverMock = $this->getMockBuilder(\Magento\Framework\Config\FileResolverInterface::class)
+        $fileResolverMock = $this->getMockBuilder(FileResolverInterface::class)
             ->setMethods(['read'])
             ->getMockForAbstractClass();
         $fileResolverMock->expects($this->any())->method('read')->willReturn($files);
         $validationStateMock = $this->createPartialMock(
-            \Magento\Framework\Config\ValidationStateInterface::class,
+            ValidationStateInterface::class,
             ['isValidationRequired']
         );
         $validationStateMock->expects($this->any())->method('isValidationRequired')->willReturn(true);
 
-        /** @var \Magento\Framework\ObjectManager\Config\SchemaLocator $schemaLocator */
-        $schemaLocator = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\ObjectManager\Config\SchemaLocator::class
+        /** @var SchemaLocator $schemaLocator */
+        $schemaLocator = Bootstrap::getObjectManager()->get(
+            SchemaLocator::class
         );
 
-        new \Magento\Framework\ObjectManager\Config\Reader\Dom(
+        new Dom(
             $fileResolverMock,
             $mapperMock,
             $schemaLocator,

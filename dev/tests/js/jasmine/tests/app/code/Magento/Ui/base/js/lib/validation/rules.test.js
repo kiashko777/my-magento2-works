@@ -13,28 +13,28 @@ define([
         describe('"range-words" method', function () {
             it('Check on empty value', function () {
                 var value = '',
-                    params = [1,3];
+                    params = [1, 3];
 
                 expect(rules['range-words'].handler(value, params)).toBe(true);
             });
 
             it('Check on redundant words', function () {
                 var value = 'a b c d',
-                    params = [1,3];
+                    params = [1, 3];
 
                 expect(rules['range-words'].handler(value, params)).toBe(false);
             });
 
             it('Check with three words', function () {
                 var value = 'a b c',
-                    params = [1,3];
+                    params = [1, 3];
 
                 expect(rules['range-words'].handler(value, params)).toBe(true);
             });
 
             it('Check with one word', function () {
                 var value = 'a',
-                    params = [1,3];
+                    params = [1, 3];
 
                 expect(rules['range-words'].handler(value, params)).toBe(true);
             });

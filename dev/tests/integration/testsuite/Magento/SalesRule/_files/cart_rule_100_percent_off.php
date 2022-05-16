@@ -5,26 +5,32 @@
  */
 declare(strict_types=1);
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-/** @var Magento\Framework\Registry $registry */
-$registry = $objectManager->get(\Magento\Framework\Registry::class);
+use Magento\Customer\Model\GroupManagement;
+use Magento\Framework\Registry;
+use Magento\SalesRule\Model\Rule;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var \Magento\SalesRule\Model\Rule $salesRule */
-$salesRule = $objectManager->create(\Magento\SalesRule\Model\Rule::class);
+$objectManager = Bootstrap::getObjectManager();
+/** @var Magento\Framework\Registry $registry */
+$registry = $objectManager->get(Registry::class);
+
+/** @var Rule $salesRule */
+$salesRule = $objectManager->create(Rule::class);
 $salesRule->setData(
     [
         'name' => '100% Off for all orders',
         'is_active' => 1,
-        'customer_group_ids' => [\Magento\Customer\Model\GroupManagement::NOT_LOGGED_IN_ID],
-        'coupon_type' => \Magento\SalesRule\Model\Rule::COUPON_TYPE_NO_COUPON,
+        'customer_group_ids' => [GroupManagement::NOT_LOGGED_IN_ID],
+        'coupon_type' => Rule::COUPON_TYPE_NO_COUPON,
         'conditions' => [],
         'simple_action' => 'by_percent',
         'discount_amount' => 100,
         'discount_step' => 0,
         'stop_rules_processing' => 1,
         'website_ids' => [
-            \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-                \Magento\Store\Model\StoreManagerInterface::class
+            Bootstrap::getObjectManager()->get(
+                StoreManagerInterface::class
             )->getWebsite()->getId(),
         ],
         'discount_qty' => 0,

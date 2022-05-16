@@ -3,17 +3,26 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity;
 
+use Exception;
+use Laminas\Code\Scanner\ClassScanner;
 use Magento\Framework\App\Utility\Files;
+use Magento\Setup\Module\Di\Code\Reader\FileScanner;
+use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionException;
+use ReflectionMethod;
 use ReflectionParameter;
+use SimpleXMLElement;
+use function class_exists;
+use function file_get_contents;
 
 /**
  * Tests @api annotated code integrity
  */
-class PublicCodeTest extends \PHPUnit\Framework\TestCase
+class PublicCodeTest extends TestCase
 {
     /**
      * List of simple return types that are used in docblocks.
@@ -29,6 +38,37 @@ class PublicCodeTest extends \PHPUnit\Framework\TestCase
      * @var string[]|null
      */
     private $blockWhitelist;
+
+    /**
+     * Since blocks can be referenced from templates, they should be stable not to break theme customizations.
+     * So all blocks should be @param $layoutFile
+     * @throws ReflectionException
+     * @dataProvider layoutFilesDataProvider
+     * @api annotated. This test checks that all blocks declared in layout files are public
+     *
+     */
+    public function testAllBlocksReferencedInLayoutArePublic($layoutFile)
+    {
+        $nonPublishedBlocks = [];
+        $xml = simplexml_load_file($layoutFile);
+        $elements = $xml->xpath('//block | //referenceBlock') ?: [];
+        /** @var $node SimpleXMLElement */
+        foreach ($elements as $node) {
+            $class = (string)$node['class'];
+            if ($class && class_exists($class) && !in_array($class, $this->getWhitelist())) {
+                $reflection = (new ReflectionClass($class));
+                if (strpos($reflection->getDocComment(), '@api') === false) {
+                    $nonPublishedBlocks[] = $class;
+                }
+            }
+        }
+        if (count($nonPublishedBlocks)) {
+            $this->fail(
+                "Layout file '$layoutFile' uses following blocks that are not marked with @api annotation:\n"
+                . implode(",\n", array_unique($nonPublishedBlocks))
+            );
+        }
+    }
 
     /**
      * Return whitelist class names
@@ -53,41 +93,10 @@ class PublicCodeTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Since blocks can be referenced from templates, they should be stable not to break theme customizations.
-     * So all blocks should be @api annotated. This test checks that all blocks declared in layout files are public
-     *
-     * @param $layoutFile
-     * @throws \ReflectionException
-     * @dataProvider layoutFilesDataProvider
-     */
-    public function testAllBlocksReferencedInLayoutArePublic($layoutFile)
-    {
-        $nonPublishedBlocks = [];
-        $xml = simplexml_load_file($layoutFile);
-        $elements = $xml->xpath('//block | //referenceBlock') ?: [];
-        /** @var $node \SimpleXMLElement */
-        foreach ($elements as $node) {
-            $class = (string) $node['class'];
-            if ($class && \class_exists($class) && !in_array($class, $this->getWhitelist())) {
-                $reflection = (new \ReflectionClass($class));
-                if (strpos($reflection->getDocComment(), '@api') === false) {
-                    $nonPublishedBlocks[] = $class;
-                }
-            }
-        }
-        if (count($nonPublishedBlocks)) {
-            $this->fail(
-                "Layout file '$layoutFile' uses following blocks that are not marked with @api annotation:\n"
-                . implode(",\n", array_unique($nonPublishedBlocks))
-            );
-        }
-    }
-
-    /**
      * Find all layout update files in magento modules and themes.
      *
      * @return array
-     * @throws \Exception
+     * @throws Exception
      */
     public function layoutFilesDataProvider()
     {
@@ -95,22 +104,22 @@ class PublicCodeTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * We want to avoid situation when a type is marked public (@api annotated) but one of its methods
+     * We want to avoid situation when a type is marked public (@param string $class
+     * @throws ReflectionException
+     * @dataProvider publicPHPTypesDataProvider
+     * @api annotated) but one of its methods
      * returns or accepts the value of non-public type.
      * This test walks through all public PHP types and makes sure that all their method arguments
      * and return values are public types.
      *
-     * @param string $class
-     * @throws \ReflectionException
-     * @dataProvider publicPHPTypesDataProvider
      */
     public function testAllPHPClassesReferencedFromPublicClassesArePublic($class)
     {
         $nonPublishedClasses = [];
-        $reflection = new \ReflectionClass($class);
-        $filter = \ReflectionMethod::IS_PUBLIC;
+        $reflection = new ReflectionClass($class);
+        $filter = ReflectionMethod::IS_PUBLIC;
         if ($reflection->isAbstract()) {
-            $filter = $filter | \ReflectionMethod::IS_PROTECTED;
+            $filter = $filter | ReflectionMethod::IS_PROTECTED;
         }
         $methods = $reflection->getMethods($filter);
         foreach ($methods as $method) {
@@ -140,50 +149,67 @@ class PublicCodeTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Retrieve list of all interfaces and classes in Magento codebase that are marked with @api annotation.
+     * Check if all method parameters are public
+     * @param string $class
+     * @param ReflectionMethod $method
+     * @param array $nonPublishedClasses
      * @return array
-     * @throws \Exception
      */
-    public function publicPHPTypesDataProvider()
+    private function checkParameters($class, ReflectionMethod $method, array $nonPublishedClasses)
     {
-        $files = Files::init()->getPhpFiles(Files::INCLUDE_LIBS | Files::INCLUDE_APP_CODE);
-        $result = [];
-        foreach ($files as $file) {
-            $fileContents = \file_get_contents($file);
-            if (strpos($fileContents, '@api') !== false) {
-                foreach ($this->getDeclaredClassesAndInterfaces($file) as $class) {
-                    if (!in_array($class->getName(), $this->getWhitelist())
-                        && (class_exists($class->getName()) || interface_exists($class->getName()))
-                    ) {
-                        $result[$class->getName()] = [$class->getName()];
-                    }
+        /* Ignoring docblocks for argument types */
+        foreach ($method->getParameters() as $parameter) {
+            if ($parameter->hasType()
+                && !$parameter->getType()->isBuiltin()
+                && !$this->isGenerated($parameter->getType()->getName())
+            ) {
+                $parameterClass = $this->getParameterClass($parameter);
+                /*
+                 * We don't want to check integrity of @api coverage of classes
+                 * that belong to different vendors, because it is too complicated.
+                 * Example:
+                 *  If Magento class references non-@api annotated class from Zend,
+                 *  we don't want to fail test, because Zend is considered public by default,
+                 *  and we don't care if Zend classes are @api-annotated
+                 */
+                if ($parameterClass && !$parameterClass->isInternal()
+                    && $this->areClassesFromSameVendor($parameterClass->getName(), $class)
+                    && !$this->isPublished($parameterClass)
+                ) {
+                    $nonPublishedClasses[$parameterClass->getName()] = $parameterClass->getName();
                 }
             }
         }
-        return $result;
+        return $nonPublishedClasses;
     }
 
     /**
-     * Retrieve list of classes and interfaces declared in the file
+     * Check if the class belongs to the list of classes generated by Magento on demand.
      *
-     * @param string $file
-     * @return \Laminas\Code\Scanner\ClassScanner[]
-     */
-    private function getDeclaredClassesAndInterfaces($file)
-    {
-        $fileScanner = new \Magento\Setup\Module\Di\Code\Reader\FileScanner($file);
-        return $fileScanner->getClasses();
-    }
-
-    /**
-     * Check if a class is @api annotated
-     *
-     * @param \ReflectionClass $class
+     * We don't need to check @param string $className
      * @return bool
+     * @api annotation coverage for generated classes
+     *
      */
-    private function isPublished(\ReflectionClass $class)
+    private function isGenerated($className)
     {
-        return strpos($class->getDocComment(), '@api') !== false;
+        return substr($className, -18) === 'ExtensionInterface' || substr($className, -7) === 'Factory';
+    }
+
+    /**
+     * Get class by reflection parameter
+     *
+     * @param ReflectionParameter $reflectionParameter
+     * @return ReflectionClass|null
+     * @throws ReflectionException
+     */
+    private function getParameterClass(ReflectionParameter $reflectionParameter): ?ReflectionClass
+    {
+        $parameterType = $reflectionParameter->getType();
+
+        return $parameterType && !$parameterType->isBuiltin()
+            ? new ReflectionClass($parameterType->getName())
+            : null;
     }
 
     /**
@@ -203,16 +229,14 @@ class PublicCodeTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Check if the class belongs to the list of classes generated by Magento on demand.
-     *
-     * We don't need to check @api annotation coverage for generated classes
-     *
-     * @param string $className
+     * Check if a class is @param ReflectionClass $class
      * @return bool
+     * @api annotated
+     *
      */
-    private function isGenerated($className)
+    private function isPublished(ReflectionClass $class)
     {
-        return substr($className, -18) === 'ExtensionInterface' || substr($className, -7) === 'Factory';
+        return strpos($class->getDocComment(), '@api') !== false;
     }
 
     /**
@@ -251,9 +275,9 @@ class PublicCodeTest extends \PHPUnit\Framework\TestCase
         foreach ($returnTypes as $returnType) {
             if (!in_array($returnType, $this->simpleReturnTypes)
                 && !$this->isGenerated($returnType)
-                && \class_exists($returnType)
+                && class_exists($returnType)
             ) {
-                $returnTypeReflection = new \ReflectionClass($returnType);
+                $returnTypeReflection = new ReflectionClass($returnType);
                 if (!$returnTypeReflection->isInternal()
                     && $this->areClassesFromSameVendor($returnType, $class)
                     && !$this->isPublished($returnTypeReflection)
@@ -266,53 +290,38 @@ class PublicCodeTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Check if all method parameters are public
-     * @param string $class
-     * @param \ReflectionMethod $method
-     * @param array $nonPublishedClasses
-     * @return array
+     * Retrieve list of all interfaces and classes in Magento codebase that are marked with @return array
+     * @throws Exception
+     * @api annotation.
      */
-    private function checkParameters($class, \ReflectionMethod $method, array $nonPublishedClasses)
+    public function publicPHPTypesDataProvider()
     {
-        /* Ignoring docblocks for argument types */
-        foreach ($method->getParameters() as $parameter) {
-            if ($parameter->hasType()
-                && !$parameter->getType()->isBuiltin()
-                && !$this->isGenerated($parameter->getType()->getName())
-            ) {
-                $parameterClass = $this->getParameterClass($parameter);
-                /*
-                 * We don't want to check integrity of @api coverage of classes
-                 * that belong to different vendors, because it is too complicated.
-                 * Example:
-                 *  If Magento class references non-@api annotated class from Zend,
-                 *  we don't want to fail test, because Zend is considered public by default,
-                 *  and we don't care if Zend classes are @api-annotated
-                 */
-                if ($parameterClass && !$parameterClass->isInternal()
-                    && $this->areClassesFromSameVendor($parameterClass->getName(), $class)
-                    && !$this->isPublished($parameterClass)
-                ) {
-                    $nonPublishedClasses[$parameterClass->getName()] = $parameterClass->getName();
+        $files = Files::init()->getPhpFiles(Files::INCLUDE_LIBS | Files::INCLUDE_APP_CODE);
+        $result = [];
+        foreach ($files as $file) {
+            $fileContents = file_get_contents($file);
+            if (strpos($fileContents, '@api') !== false) {
+                foreach ($this->getDeclaredClassesAndInterfaces($file) as $class) {
+                    if (!in_array($class->getName(), $this->getWhitelist())
+                        && (class_exists($class->getName()) || interface_exists($class->getName()))
+                    ) {
+                        $result[$class->getName()] = [$class->getName()];
+                    }
                 }
             }
         }
-        return $nonPublishedClasses;
+        return $result;
     }
 
     /**
-     * Get class by reflection parameter
+     * Retrieve list of classes and interfaces declared in the file
      *
-     * @param ReflectionParameter $reflectionParameter
-     * @return ReflectionClass|null
-     * @throws ReflectionException
+     * @param string $file
+     * @return ClassScanner[]
      */
-    private function getParameterClass(ReflectionParameter $reflectionParameter): ?ReflectionClass
+    private function getDeclaredClassesAndInterfaces($file)
     {
-        $parameterType = $reflectionParameter->getType();
-
-        return $parameterType && !$parameterType->isBuiltin()
-            ? new ReflectionClass($parameterType->getName())
-            : null;
+        $fileScanner = new FileScanner($file);
+        return $fileScanner->getClasses();
     }
 }

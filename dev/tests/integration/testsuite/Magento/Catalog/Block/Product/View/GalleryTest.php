@@ -16,13 +16,14 @@ use Magento\Framework\View\LayoutInterface;
 use Magento\Store\Api\StoreRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Provide tests for displaying images on product page.
  *
  * @magentoAppArea frontend
  */
-class GalleryTest extends \PHPUnit\Framework\TestCase
+class GalleryTest extends TestCase
 {
     /**
      * @var ObjectManager
@@ -97,19 +98,6 @@ class GalleryTest extends \PHPUnit\Framework\TestCase
     ];
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
-        $this->productResource = $this->objectManager->get(ProductResource::class);
-        $this->storeRepository = $this->objectManager->create(StoreRepositoryInterface::class);
-        $this->serializer = $this->objectManager->get(Json::class);
-        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Gallery::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
      * @magentoDbIsolation enabled
      * @return void
@@ -119,6 +107,36 @@ class GalleryTest extends \PHPUnit\Framework\TestCase
         $this->block->setData('product', $this->getProduct());
         $result = $this->serializer->unserialize($this->block->getGalleryImagesJson());
         $this->assertImages(reset($result), $this->placeholderExpectation);
+    }
+
+    /**
+     * Returns current product.
+     *
+     * @param int|null $storeId
+     * @return ProductInterface
+     */
+    private function getProduct(?int $storeId = null): ProductInterface
+    {
+        return $this->productRepository->get('simple', false, $storeId, true);
+    }
+
+    /**
+     * Asserts gallery image data.
+     *
+     * @param array $image
+     * @param array $expectedImage
+     * @return void
+     */
+    private function assertImages(array $image, array $expectedImage): void
+    {
+        $this->assertStringEndsWith($expectedImage['thumb'], $image['thumb']);
+        $this->assertStringEndsWith($expectedImage['img'], $image['img']);
+        $this->assertStringEndsWith($expectedImage['full'], $image['full']);
+        $this->assertEquals($expectedImage['caption'], $image['caption']);
+        $this->assertEquals($expectedImage['position'], $image['position']);
+        $this->assertEquals($expectedImage['isMain'], $image['isMain']);
+        $this->assertEquals($expectedImage['type'], $image['type']);
+        $this->assertEquals($expectedImage['videoUrl'], $image['videoUrl']);
     }
 
     /**
@@ -150,6 +168,41 @@ class GalleryTest extends \PHPUnit\Framework\TestCase
         $this->block->setData('product', $this->getProduct());
         $firstImage = $this->serializer->unserialize($this->block->getGalleryImagesJson());
         $this->assertImages(reset($firstImage), $expectation);
+    }
+
+    /**
+     * Updates product gallery images and saves product.
+     *
+     * @param ProductInterface $product
+     * @param array $images
+     * @param int|null $storeId
+     * @return void
+     */
+    private function setGalleryImages(ProductInterface $product, array $images, int $storeId = null): void
+    {
+        $product->setImage(null);
+        foreach ($images as $file => $data) {
+            $mediaGalleryData = $product->getData('media_gallery');
+            foreach ($mediaGalleryData['images'] as &$image) {
+                if ($image['file'] == $file) {
+                    foreach ($data as $key => $value) {
+                        $image[$key] = $value;
+                    }
+                }
+            }
+
+            $product->setData('media_gallery', $mediaGalleryData);
+
+            if (!empty($data['main'])) {
+                $product->setImage($file);
+            }
+        }
+
+        if ($storeId) {
+            $product->setStoreId($storeId);
+        }
+
+        $this->productResource->save($product);
     }
 
     /**
@@ -260,7 +313,8 @@ class GalleryTest extends \PHPUnit\Framework\TestCase
     public function testGetGalleryImagesJsonWithImageOptimizationParametersInUrl(
         array $images,
         array $expectation
-    ): void {
+    ): void
+    {
         $product = $this->getProduct();
         $this->setGalleryImages($product, $images);
         $this->block->setData('product', $this->getProduct());
@@ -408,10 +462,11 @@ class GalleryTest extends \PHPUnit\Framework\TestCase
      */
     public function testImagesPositionStoreView(
         string $addFromStore,
-        array $newImages,
+        array  $newImages,
         string $viewFromStore,
-        array $expectedImages
-    ): void {
+        array  $expectedImages
+    ): void
+    {
         $storeId = (int)$this->storeRepository->get($addFromStore)->getId();
         $product = $this->getProduct($storeId);
         $images = $product->getData('media_gallery')['images'];
@@ -495,67 +550,15 @@ class GalleryTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Updates product gallery images and saves product.
-     *
-     * @param ProductInterface $product
-     * @param array $images
-     * @param int|null $storeId
-     * @return void
+     * @inheritdoc
      */
-    private function setGalleryImages(ProductInterface $product, array $images, int $storeId = null): void
+    protected function setUp(): void
     {
-        $product->setImage(null);
-        foreach ($images as $file => $data) {
-            $mediaGalleryData = $product->getData('media_gallery');
-            foreach ($mediaGalleryData['images'] as &$image) {
-                if ($image['file'] == $file) {
-                    foreach ($data as $key => $value) {
-                        $image[$key] = $value;
-                    }
-                }
-            }
-
-            $product->setData('media_gallery', $mediaGalleryData);
-
-            if (!empty($data['main'])) {
-                $product->setImage($file);
-            }
-        }
-
-        if ($storeId) {
-            $product->setStoreId($storeId);
-        }
-
-        $this->productResource->save($product);
-    }
-
-    /**
-     * Returns current product.
-     *
-     * @param int|null $storeId
-     * @return ProductInterface
-     */
-    private function getProduct(?int $storeId = null): ProductInterface
-    {
-        return $this->productRepository->get('simple', false, $storeId, true);
-    }
-
-    /**
-     * Asserts gallery image data.
-     *
-     * @param array $image
-     * @param array $expectedImage
-     * @return void
-     */
-    private function assertImages(array $image, array $expectedImage): void
-    {
-        $this->assertStringEndsWith($expectedImage['thumb'], $image['thumb']);
-        $this->assertStringEndsWith($expectedImage['img'], $image['img']);
-        $this->assertStringEndsWith($expectedImage['full'], $image['full']);
-        $this->assertEquals($expectedImage['caption'], $image['caption']);
-        $this->assertEquals($expectedImage['position'], $image['position']);
-        $this->assertEquals($expectedImage['isMain'], $image['isMain']);
-        $this->assertEquals($expectedImage['type'], $image['type']);
-        $this->assertEquals($expectedImage['videoUrl'], $image['videoUrl']);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+        $this->productResource = $this->objectManager->get(ProductResource::class);
+        $this->storeRepository = $this->objectManager->create(StoreRepositoryInterface::class);
+        $this->serializer = $this->objectManager->get(Json::class);
+        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Gallery::class);
     }
 }

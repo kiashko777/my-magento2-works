@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Quote\Customer;
 
+use Exception;
 use Magento\GraphQl\Quote\GetMaskedQuoteIdByReservedOrderId;
 use Magento\Integration\Api\CustomerTokenServiceInterface;
 use Magento\OfflinePayments\Model\Purchaseorder;
@@ -27,16 +28,6 @@ class SetPurchaseOrderPaymentMethodOnCartTest extends GraphQlAbstract
      * @var CustomerTokenServiceInterface
      */
     private $customerTokenService;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-    }
 
     /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
@@ -83,6 +74,18 @@ QUERY;
             $purchaseOrderNumber,
             $response['setPaymentMethodOnCart']['cart']['selected_payment_method']['purchase_order_number']
         );
+    }
+
+    /**
+     * @param string $username
+     * @param string $password
+     * @return array
+     */
+    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
+        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
+        return $headerMap;
     }
 
     /**
@@ -142,7 +145,7 @@ QUERY;
      */
     public function testSetDisabledPurchaseOrderPaymentMethodOnCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The requested Payment Method is not available.');
 
         $methodCode = Purchaseorder::PAYMENT_METHOD_PURCHASEORDER_CODE;
@@ -171,14 +174,12 @@ QUERY;
     }
 
     /**
-     * @param string $username
-     * @param string $password
-     * @return array
+     * @inheritdoc
      */
-    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
+    protected function setUp(): void
     {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
-        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
-        return $headerMap;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
     }
 }

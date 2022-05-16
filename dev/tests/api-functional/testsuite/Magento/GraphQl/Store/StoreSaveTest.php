@@ -7,7 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Store;
 
-use Magento\TestFramework\Helper\Bootstrap;
+use Exception;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
 
 /**
@@ -33,51 +33,10 @@ class StoreSaveTest extends GraphQlAbstract
     }
 
     /**
-     * Test product in store.
-     *
-     * @param string $storeCodeFromFixture
-     * @throws \Exception
-     */
-    private function assertProduct(string $storeCodeFromFixture)
-    {
-        $productSku = 'simple333';
-        $productNameInFixtureStore = 'Simple Products Three';
-
-        $productsQuery = <<<QUERY
-{
-  products(filter: { sku: { eq: "%s" } }, sort: { name: ASC }) {
-    items {
-      id
-      sku
-      name
-    }
-  }
-}
-QUERY;
-        $headerMap = ['Store' => $storeCodeFromFixture];
-        $response = $this->graphQlQuery(
-            sprintf($productsQuery, $productSku),
-            [],
-            '',
-            $headerMap
-        );
-        $this->assertCount(
-            1,
-            $response['products']['items'],
-            sprintf('Products with sku "%s" not found in store "%s"', $productSku, $storeCodeFromFixture)
-        );
-        $this->assertEquals(
-            $productNameInFixtureStore,
-            $response['products']['items'][0]['name'],
-            'Products name in fixture store is invalid.'
-        );
-    }
-
-    /**
      * Test category in store.
      *
      * @param string $storeCodeFromFixture
-     * @throws \Exception
+     * @throws Exception
      */
     private function assertCategory(string $storeCodeFromFixture)
     {
@@ -111,6 +70,47 @@ QUERY;
             $categoryName,
             $response['categoryList'][0]['name'],
             'Category name in fixture store is invalid.'
+        );
+    }
+
+    /**
+     * Test product in store.
+     *
+     * @param string $storeCodeFromFixture
+     * @throws Exception
+     */
+    private function assertProduct(string $storeCodeFromFixture)
+    {
+        $productSku = 'simple333';
+        $productNameInFixtureStore = 'Simple Products Three';
+
+        $productsQuery = <<<QUERY
+{
+  products(filter: { sku: { eq: "%s" } }, sort: { name: ASC }) {
+    items {
+      id
+      sku
+      name
+    }
+  }
+}
+QUERY;
+        $headerMap = ['Store' => $storeCodeFromFixture];
+        $response = $this->graphQlQuery(
+            sprintf($productsQuery, $productSku),
+            [],
+            '',
+            $headerMap
+        );
+        $this->assertCount(
+            1,
+            $response['products']['items'],
+            sprintf('Products with sku "%s" not found in store "%s"', $productSku, $storeCodeFromFixture)
+        );
+        $this->assertEquals(
+            $productNameInFixtureStore,
+            $response['products']['items'][0]['name'],
+            'Products name in fixture store is invalid.'
         );
     }
 }

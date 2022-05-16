@@ -3,32 +3,37 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Message;
+
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * \Magento\Framework\Message\CollectionFactory test case
  */
-class CollectionFactoryTest extends \PHPUnit\Framework\TestCase
+class CollectionFactoryTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Message\CollectionFactory
+     * @var CollectionFactory
      */
     protected $model;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->model = $this->objectManager->create(\Magento\Framework\Message\CollectionFactory::class);
-    }
 
     public function testCreate()
     {
         $message = $this->model->create();
-        $this->assertInstanceOf(\Magento\Framework\Message\Collection::class, $message);
+        $this->assertInstanceOf(Collection::class, $message);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->model = $this->objectManager->create(CollectionFactory::class);
     }
 }

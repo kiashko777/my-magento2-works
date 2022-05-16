@@ -23,15 +23,6 @@ class ExtractAssetsFromContentTest extends TestCase
     private $extractAssetsFromContent;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->extractAssetsFromContent = Bootstrap::getObjectManager()
-            ->get(ExtractAssetsFromContentInterface::class);
-    }
-
-    /**
      * Assing assets to content, retrieve the data, then unassign assets from content
      *
      * @magentoDataFixture Magento/MediaGallery/_files/media_asset.php
@@ -100,5 +91,14 @@ class ExtractAssetsFromContentTest extends TestCase
                 []
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->extractAssetsFromContent = Bootstrap::getObjectManager()
+            ->get(ExtractAssetsFromContentInterface::class);
     }
 }

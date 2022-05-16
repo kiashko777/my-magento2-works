@@ -29,17 +29,6 @@ class EditTest extends AbstractBackendController
     private $storeManager;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->categoryCollectionFactory = $this->_objectManager->get(CollectionFactory::class);
-        $this->storeManager = $this->_objectManager->get(StoreManagerInterface::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/second_root_category.php
      *
      * @return void
@@ -70,5 +59,16 @@ class EditTest extends AbstractBackendController
             ->getFirstItem();
 
         return $category->getId();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->categoryCollectionFactory = $this->_objectManager->get(CollectionFactory::class);
+        $this->storeManager = $this->_objectManager->get(StoreManagerInterface::class);
     }
 }

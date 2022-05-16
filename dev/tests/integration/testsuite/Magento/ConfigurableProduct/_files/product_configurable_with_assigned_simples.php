@@ -62,7 +62,7 @@ foreach ($options as $option) {
         ->setVisibility(Visibility::VISIBILITY_NOT_VISIBLE)
         ->setStatus(Status::STATUS_ENABLED)
         ->setStockData(
-            ['use_config_manage_stock' => 1,'qty' => $productNumber * 100, 'is_qty_decimal' => 0, 'is_in_stock' => 1]
+            ['use_config_manage_stock' => 1, 'qty' => $productNumber * 100, 'is_qty_decimal' => 0, 'is_in_stock' => 1]
         );
     $childProduct = $productRepository->save($childProduct);
 

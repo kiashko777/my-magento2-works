@@ -3,8 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Service\V1;
 
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Status\History;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 class OrderCommentsListTest extends WebapiAbstract
@@ -19,17 +24,17 @@ class OrderCommentsListTest extends WebapiAbstract
     public function testOrderCommentsList()
     {
         $comment = 'Test comment';
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
 
-        /** @var \Magento\Sales\Model\Order $order */
-        $order = $objectManager->get(\Magento\Sales\Model\Order::class)->loadByIncrementId('100000001');
+        /** @var Order $order */
+        $order = $objectManager->get(Order::class)->loadByIncrementId('100000001');
         $history = $order->addStatusHistoryComment($comment, $order->getStatus());
         $history->save();
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/orders/' . $order->getId() . '/comments',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -40,7 +45,7 @@ class OrderCommentsListTest extends WebapiAbstract
         $requestData = ['id' => $order->getId()];
         $result = $this->_webApiCall($serviceInfo, $requestData);
         foreach ($result['items'] as $history) {
-            $orderHistoryStatus = $objectManager->get(\Magento\Sales\Model\Order\Status\History::class)
+            $orderHistoryStatus = $objectManager->get(History::class)
                 ->load($history['entity_id']);
             $this->assertEquals($orderHistoryStatus->getComment(), $history['comment']);
             $this->assertEquals($orderHistoryStatus->getStatus(), $history['status']);

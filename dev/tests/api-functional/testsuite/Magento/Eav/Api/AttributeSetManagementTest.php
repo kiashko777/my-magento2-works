@@ -6,9 +6,15 @@
 
 namespace Magento\Eav\Api;
 
+use Exception;
+use Magento\Eav\Model\Config;
+use Magento\Eav\Model\Entity\Attribute\Set;
+use Magento\Eav\Model\Entity\Type;
+use Magento\Framework\Webapi\Exception as HTTPExceptionCodes;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
-use Magento\Framework\Webapi\Exception as HTTPExceptionCodes;
+use SoapFault;
 
 class AttributeSetManagementTest extends WebapiAbstract
 {
@@ -16,21 +22,6 @@ class AttributeSetManagementTest extends WebapiAbstract
      * @var array
      */
     private $createServiceInfo;
-
-    protected function setUp(): void
-    {
-        $this->createServiceInfo = [
-            'rest' => [
-                'resourcePath' => '/V1/eav/attribute-sets',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
-            ],
-            'soap' => [
-                'service' => 'eavAttributeSetManagementV1',
-                'serviceVersion' => 'V1',
-                'operation' => 'eavAttributeSetManagementV1Create',
-            ],
-        ];
-    }
 
     public function testCreate()
     {
@@ -62,10 +53,44 @@ class AttributeSetManagementTest extends WebapiAbstract
     }
 
     /**
+     * Retrieve entity type based on given code.
+     *
+     * @param string $entityTypeCode
+     * @return Type|null
+     */
+    protected function getEntityTypeByCode($entityTypeCode)
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var Type $entityType */
+        $entityType = $objectManager->create(Config::class)
+            ->getEntityType($entityTypeCode);
+        return $entityType;
+    }
+
+    /**
+     * Retrieve attribute set based on given name.
+     * This utility methods assumes that there is only one attribute set with given name,
+     *
+     * @param string $attributeSetName
+     * @return Set|null
+     */
+    protected function getAttributeSetByName($attributeSetName)
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var Set $attributeSet */
+        $attributeSet = $objectManager->create(Set::class)
+            ->load($attributeSetName, 'attribute_set_name');
+        if ($attributeSet->getId() === null) {
+            return null;
+        }
+        return $attributeSet;
+    }
+
+    /**
      */
     public function testCreateThrowsExceptionIfGivenAttributeSetAlreadyHasId()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Invalid value');
 
         $entityTypeCode = 'catalog_product';
@@ -88,7 +113,7 @@ class AttributeSetManagementTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfGivenSkeletonIdIsInvalid()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Invalid value');
 
         $entityTypeCode = 'catalog_product';
@@ -109,7 +134,7 @@ class AttributeSetManagementTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfGivenSkeletonAttributeSetDoesNotExist()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('No such entity');
 
         $attributeSetName = 'new_attribute_set';
@@ -130,7 +155,7 @@ class AttributeSetManagementTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfGivenEntityTypeDoesNotExist()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Invalid entity_type specified: invalid_entity_type');
 
         $entityTypeCode = 'catalog_product';
@@ -152,7 +177,7 @@ class AttributeSetManagementTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfAttributeSetNameIsEmpty()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The attribute set name is empty. Enter the name and try again.');
 
         $entityTypeCode = 'catalog_product';
@@ -189,13 +214,13 @@ class AttributeSetManagementTest extends WebapiAbstract
         try {
             $this->_webApiCall($this->createServiceInfo, $arguments);
             $this->fail("Expected exception");
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString(
                 $expectedMessage,
                 $e->getMessage(),
                 "SoapFault does not contain expected message."
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $errorObj = $this->processRestExceptionResult($e);
             $this->assertEquals(
                 $expectedMessage,
@@ -205,37 +230,18 @@ class AttributeSetManagementTest extends WebapiAbstract
         }
     }
 
-    /**
-     * Retrieve attribute set based on given name.
-     * This utility methods assumes that there is only one attribute set with given name,
-     *
-     * @param string $attributeSetName
-     * @return \Magento\Eav\Model\Entity\Attribute\Set|null
-     */
-    protected function getAttributeSetByName($attributeSetName)
+    protected function setUp(): void
     {
-        $objectManager = Bootstrap::getObjectManager();
-        /** @var \Magento\Eav\Model\Entity\Attribute\Set $attributeSet */
-        $attributeSet = $objectManager->create(\Magento\Eav\Model\Entity\Attribute\Set::class)
-            ->load($attributeSetName, 'attribute_set_name');
-        if ($attributeSet->getId() === null) {
-            return null;
-        }
-        return $attributeSet;
-    }
-
-    /**
-     * Retrieve entity type based on given code.
-     *
-     * @param string $entityTypeCode
-     * @return \Magento\Eav\Model\Entity\Type|null
-     */
-    protected function getEntityTypeByCode($entityTypeCode)
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var \Magento\Eav\Model\Entity\Type $entityType */
-        $entityType = $objectManager->create(\Magento\Eav\Model\Config::class)
-            ->getEntityType($entityTypeCode);
-        return $entityType;
+        $this->createServiceInfo = [
+            'rest' => [
+                'resourcePath' => '/V1/eav/attribute-sets',
+                'httpMethod' => Request::HTTP_METHOD_POST,
+            ],
+            'soap' => [
+                'service' => 'eavAttributeSetManagementV1',
+                'serviceVersion' => 'V1',
+                'operation' => 'eavAttributeSetManagementV1Create',
+            ],
+        ];
     }
 }

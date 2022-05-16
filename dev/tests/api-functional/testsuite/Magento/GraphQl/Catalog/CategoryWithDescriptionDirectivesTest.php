@@ -10,6 +10,7 @@ namespace Magento\GraphQl\Catalog;
 use Magento\Catalog\Api\CategoryRepositoryInterface;
 use Magento\Catalog\Api\Data\CategoryInterface;
 use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
 
@@ -19,17 +20,9 @@ use Magento\TestFramework\TestCase\GraphQlAbstract;
 class CategoryWithDescriptionDirectivesTest extends GraphQlAbstract
 {
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     private $objectManager;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoApiDataFixture Magento/Catalog/_files/category.php
@@ -64,5 +57,13 @@ QUERY;
 
         self::assertStringNotContainsString('media url', $response['category']['description']);
         self::assertStringContainsString($storeBaseUrl, $response['category']['description']);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

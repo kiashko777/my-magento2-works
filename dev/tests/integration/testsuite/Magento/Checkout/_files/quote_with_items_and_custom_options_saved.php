@@ -4,14 +4,17 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Catalog\Api\Data\ProductCustomOptionInterface;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product\Option;
 use Magento\Catalog\Model\Product\Option\Type\File\ValidatorFile;
 use Magento\Framework\DataObject;
+use Magento\Quote\Model\QuoteFactory;
 use Magento\Quote\Model\QuoteIdMask;
 use Magento\Quote\Model\QuoteIdMaskFactory;
 use Magento\Quote\Model\QuoteRepository;
-use Magento\TestFramework\Catalog\Model\Product\Option\Type\File\ValidatorFileMock;
-use Magento\Quote\Model\QuoteFactory;
 use Magento\Quote\Model\ResourceModel\Quote as QuoteResource;
+use Magento\TestFramework\Catalog\Model\Product\Option\Type\File\ValidatorFileMock;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
@@ -25,21 +28,21 @@ $quoteFactory = $objectManager->get(QuoteFactory::class);
 $quoteResource = $objectManager->get(QuoteResource::class);
 $quote = $quoteFactory->create();
 $quoteResource->load($quote, 'test_order_1', 'reserved_order_id');
-/** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-$productRepository = $objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+/** @var ProductRepositoryInterface $productRepository */
+$productRepository = $objectManager->create(ProductRepositoryInterface::class);
 $product = $productRepository->get('simple');
 
 $options = [];
-/** @var $option \Magento\Catalog\Model\Product\Option */
+/** @var $option Option */
 foreach ($product->getOptions() as $option) {
     switch ($option->getGroupByType()) {
-        case \Magento\Catalog\Api\Data\ProductCustomOptionInterface::OPTION_GROUP_DATE:
+        case ProductCustomOptionInterface::OPTION_GROUP_DATE:
             $value = ['year' => 2013, 'month' => 8, 'day' => 9, 'hour' => 13, 'minute' => 35];
             break;
-        case \Magento\Catalog\Api\Data\ProductCustomOptionInterface::OPTION_GROUP_SELECT:
+        case ProductCustomOptionInterface::OPTION_GROUP_SELECT:
             $value = key($option->getValues());
             break;
-        case \Magento\Catalog\Api\Data\ProductCustomOptionInterface::OPTION_GROUP_FILE:
+        case ProductCustomOptionInterface::OPTION_GROUP_FILE:
             $value = 'test.jpg';
             break;
         default:

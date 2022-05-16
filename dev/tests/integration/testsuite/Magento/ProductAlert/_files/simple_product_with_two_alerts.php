@@ -39,7 +39,7 @@ $priceAlert->setCustomerId(
 )->setProductId(
     $product->getId()
 )->setPrice(
-    $product->getPrice()+1
+    $product->getPrice() + 1
 )->setWebsiteId(
     $baseWebsiteId
 );

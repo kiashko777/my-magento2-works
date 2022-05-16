@@ -26,25 +26,6 @@ class GraphQlDependencyTest extends TestCase
     private $dependencyProvider;
 
     /**
-     * Sets up data
-     *
-     * @throws InspectionException
-     */
-    protected function setUp(): void
-    {
-        $root = BP;
-        $rootJson = $this->readJsonFile($root . '/composer.json', true);
-        if (preg_match('/magento\/project-*/', $rootJson['name']) == 1) {
-            // The Dependency test is skipped for vendor/magento build
-            self::markTestSkipped(
-                'MAGETWO-43654: The build is running from vendor/magento. DependencyTest is skipped.'
-            );
-        }
-        $objectManager = ObjectManager::getInstance();
-        $this->dependencyProvider = $objectManager->create(GraphQlSchemaDependencyProvider::class);
-    }
-
-    /**
      * @throws LocalizedException
      */
     public function testUndeclaredDependencies()
@@ -91,6 +72,17 @@ class GraphQlDependencyTest extends TestCase
     }
 
     /**
+     * Retrieve error message for dependency.
+     *
+     * @param string $id
+     * @return string
+     */
+    private function getErrorMessage(string $id): string
+    {
+        return sprintf('%s has undeclared dependency on one of the following modules:', $id);
+    }
+
+    /**
      * Convert file list to data provider structure.
      *
      * @param string[] $files
@@ -107,14 +99,22 @@ class GraphQlDependencyTest extends TestCase
     }
 
     /**
-     * Retrieve error message for dependency.
+     * Sets up data
      *
-     * @param string $id
-     * @return string
+     * @throws InspectionException
      */
-    private function getErrorMessage(string $id): string
+    protected function setUp(): void
     {
-        return sprintf('%s has undeclared dependency on one of the following modules:', $id);
+        $root = BP;
+        $rootJson = $this->readJsonFile($root . '/composer.json', true);
+        if (preg_match('/magento\/project-*/', $rootJson['name']) == 1) {
+            // The Dependency test is skipped for vendor/magento build
+            self::markTestSkipped(
+                'MAGETWO-43654: The build is running from vendor/magento. DependencyTest is skipped.'
+            );
+        }
+        $objectManager = ObjectManager::getInstance();
+        $this->dependencyProvider = $objectManager->create(GraphQlSchemaDependencyProvider::class);
     }
 
     /**

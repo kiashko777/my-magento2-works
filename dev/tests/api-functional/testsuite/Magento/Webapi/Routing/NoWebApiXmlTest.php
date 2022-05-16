@@ -3,12 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Webapi\Routing;
+
+use Magento\Framework\Webapi\Rest\Request;
 
 /**
  * Class to test routing with a service that has no webapi.xml
  */
-class NoWebApiXmlTest extends \Magento\Webapi\Routing\BaseService
+class NoWebApiXmlTest extends BaseService
 {
     /**
      * @var string
@@ -20,12 +23,6 @@ class NoWebApiXmlTest extends \Magento\Webapi\Routing\BaseService
      */
     private $_restResourcePath;
 
-    protected function setUp(): void
-    {
-        $this->_version = 'V1';
-        $this->_restResourcePath = "/{$this->_version}/testModule2NoWebApiXml/";
-    }
-
     /**
      *  Test get item
      */
@@ -36,7 +33,7 @@ class NoWebApiXmlTest extends \Magento\Webapi\Routing\BaseService
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => $this->_restResourcePath . $itemId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
         ];
         $requestData = ['id' => $itemId];
@@ -52,7 +49,7 @@ class NoWebApiXmlTest extends \Magento\Webapi\Routing\BaseService
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => $this->_restResourcePath,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET
+                'httpMethod' => Request::HTTP_METHOD_GET
             ],
         ];
         $this->_assertNoRestRouteException($serviceInfo);
@@ -68,7 +65,7 @@ class NoWebApiXmlTest extends \Magento\Webapi\Routing\BaseService
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => $this->_restResourcePath,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST
+                'httpMethod' => Request::HTTP_METHOD_POST
             ],
         ];
         $requestData = ['name' => $createdItemName];
@@ -85,7 +82,7 @@ class NoWebApiXmlTest extends \Magento\Webapi\Routing\BaseService
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => $this->_restResourcePath . $itemId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
         ];
         $requestData = ['id' => $itemId];
@@ -102,10 +99,16 @@ class NoWebApiXmlTest extends \Magento\Webapi\Routing\BaseService
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => $this->_restResourcePath . $itemId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
             ],
         ];
         $requestData = ['id' => $itemId];
         $this->_assertNoRestRouteException($serviceInfo, $requestData);
+    }
+
+    protected function setUp(): void
+    {
+        $this->_version = 'V1';
+        $this->_restResourcePath = "/{$this->_version}/testModule2NoWebApiXml/";
     }
 }

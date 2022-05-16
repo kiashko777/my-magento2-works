@@ -6,15 +6,15 @@
 
 declare(strict_types=1);
 
-use Magento\Authorization\Model\RoleFactory;
-use Magento\Authorization\Model\Role;
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\User\Model\User;
-use Magento\Authorization\Model\RulesFactory;
-use Magento\Authorization\Model\Rules;
 use Magento\Authorization\Model\ResourceModel\Role as RoleResource;
 use Magento\Authorization\Model\ResourceModel\Rules as RulesResource;
+use Magento\Authorization\Model\Role;
+use Magento\Authorization\Model\RoleFactory;
+use Magento\Authorization\Model\Rules;
+use Magento\Authorization\Model\RulesFactory;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\User\Model\ResourceModel\User as UserResource;
+use Magento\User\Model\User;
 
 //Deleting the user and the role.
 /** @var User $user */

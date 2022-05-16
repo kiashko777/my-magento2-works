@@ -39,7 +39,8 @@ define(['squire', 'ko'], function (Squire, ko) {
         try {
             injector.clean();
             injector.remove();
-        } catch (e) {}
+        } catch (e) {
+        }
     });
 
     describe('Magento_Tax/js/view/checkout/summary/grand-total', function () {

@@ -3,9 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\I18n\Parser;
 
 use Magento\Setup\Module\I18n;
+use Magento\Setup\Module\I18n\Context;
+use Magento\Setup\Module\I18n\Dictionary\Phrase;
 
 /**
  * Contextual Parser
@@ -15,7 +18,7 @@ class Contextual extends AbstractParser
     /**
      * Context
      *
-     * @var \Magento\Setup\Module\I18n\Context
+     * @var Context
      */
     protected $_context;
 
@@ -24,9 +27,9 @@ class Contextual extends AbstractParser
      *
      * @param I18n\FilesCollector $filesCollector
      * @param I18n\Factory $factory
-     * @param I18n\Context $context
+     * @param Context $context
      */
-    public function __construct(I18n\FilesCollector $filesCollector, I18n\Factory $factory, I18n\Context $context)
+    public function __construct(I18n\FilesCollector $filesCollector, I18n\Factory $factory, Context $context)
     {
         $this->_context = $context;
 
@@ -63,10 +66,10 @@ class Contextual extends AbstractParser
      */
     protected function _addPhrase($phraseData, $contextType, $contextValue)
     {
-        $phraseKey = $contextType . $contextValue. stripslashes($phraseData['phrase']);
+        $phraseKey = $contextType . $contextValue . stripslashes($phraseData['phrase']);
 
         if (isset($this->_phrases[$phraseKey])) {
-            /** @var \Magento\Setup\Module\I18n\Dictionary\Phrase $phrase */
+            /** @var Phrase $phrase */
             $phrase = $this->_phrases[$phraseKey];
             $phrase->addContextValue($contextValue);
         } else {

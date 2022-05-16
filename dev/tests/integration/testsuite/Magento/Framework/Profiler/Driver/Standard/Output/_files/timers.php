@@ -5,7 +5,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-$timer = new \Magento\Framework\Profiler\Driver\Standard\Stat();
+
+use Magento\Framework\Profiler\Driver\Standard\Stat;
+
+$timer = new Stat();
 $timer->start('root', 0.01, 50000, 1000);
 
 $timer->start('root->init', 0.02, 55000, 1400);

@@ -3,23 +3,29 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Customer\Block\Widget;
+
+use Magento\Customer\Model\Attribute;
+use Magento\Eav\Model\Config;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\Customer\Block\Widget\Taxvat
  *
  * @magentoAppArea frontend
  */
-class TelephoneTest extends \PHPUnit\Framework\TestCase
+class TelephoneTest extends TestCase
 {
     /**
      * @magentoAppIsolation enabled
      */
     public function testToHtml()
     {
-        /** @var \Magento\Customer\Block\Widget\Telephone $block */
-        $block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Block\Widget\Telephone::class
+        /** @var Telephone $block */
+        $block = Bootstrap::getObjectManager()->create(
+            Telephone::class
         );
 
         $this->assertStringContainsString('title="Phone&#x20;Number"', $block->toHtml());
@@ -32,16 +38,16 @@ class TelephoneTest extends \PHPUnit\Framework\TestCase
      */
     public function testToHtmlRequired()
     {
-        /** @var \Magento\Customer\Model\Attribute $model */
-        $model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Model\Attribute::class
+        /** @var Attribute $model */
+        $model = Bootstrap::getObjectManager()->create(
+            Attribute::class
         );
         $model->loadByCode('customer_address', 'telephone')->setIsRequired(false);
         $model->save();
 
-        /** @var \Magento\Customer\Block\Widget\Telephone $block */
-        $block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Block\Widget\Telephone::class
+        /** @var Telephone $block */
+        $block = Bootstrap::getObjectManager()->create(
+            Telephone::class
         );
 
         $this->assertStringContainsString('title="Phone&#x20;Number"', $block->toHtml());
@@ -50,8 +56,8 @@ class TelephoneTest extends \PHPUnit\Framework\TestCase
 
     protected function tearDown(): void
     {
-        /** @var \Magento\Eav\Model\Config $eavConfig */
-        $eavConfig = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Eav\Model\Config::class);
+        /** @var Config $eavConfig */
+        $eavConfig = Bootstrap::getObjectManager()->get(Config::class);
         $eavConfig->clear();
     }
 }

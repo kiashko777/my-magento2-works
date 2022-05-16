@@ -7,7 +7,10 @@
 /**
  * Helper with routines to work with Magento config
  */
+
 namespace Magento\TestFramework\Helper;
+
+use Magento\Framework\Module\ModuleListInterface;
 
 class Config
 {
@@ -18,9 +21,9 @@ class Config
      */
     public function getEnabledModules()
     {
-        /** @var \Magento\Framework\Module\ModuleListInterface $moduleList */
-        $moduleList = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\Module\ModuleListInterface::class
+        /** @var ModuleListInterface $moduleList */
+        $moduleList = Bootstrap::getObjectManager()->get(
+            ModuleListInterface::class
         );
         return $moduleList->getNames();
     }

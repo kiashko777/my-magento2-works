@@ -33,16 +33,20 @@ define([
             it('Check returned value if method called with object argument', function () {
                 var arg = {
                     /** Stub */
-                    initContainer: function () {},
+                    initContainer: function () {
+                    },
 
                     /** Stub */
-                    on: function () {},
+                    on: function () {
+                    },
 
                     /** Stub */
-                    active: function () {},
+                    active: function () {
+                    },
 
                     /** Stub */
-                    activate: function () {}
+                    activate: function () {
+                    }
                 };
 
                 expect(obj.initElement(arg)).toBeDefined();
@@ -50,16 +54,20 @@ define([
             it('Check returned value type if method called with object argument', function () {
                 var arg = {
                         /** Stub */
-                        initContainer: function () {},
+                        initContainer: function () {
+                        },
 
                         /** Stub */
-                        on: function () {},
+                        on: function () {
+                        },
 
                         /** Stub */
-                        active: function () {},
+                        active: function () {
+                        },
 
                         /** Stub */
-                        activate: function () {}
+                        activate: function () {
+                        }
                     },
                     type = typeof obj.initElement(arg);
 
@@ -78,16 +86,20 @@ define([
             it('Check returned value if method called with object argument', function () {
                 var arg = {
                     /** Stub */
-                    initContainer: function () {},
+                    initContainer: function () {
+                    },
 
                     /** Stub */
-                    on: function () {},
+                    on: function () {
+                    },
 
                     /** Stub */
-                    active: function () {},
+                    active: function () {
+                    },
 
                     /** Stub */
-                    activate: function () {}
+                    activate: function () {
+                    }
                 };
 
                 expect(obj.initActivation(arg)).toBeDefined();
@@ -95,16 +107,20 @@ define([
             it('Check returned value type if method called with object argument', function () {
                 var arg = {
                         /** Stub */
-                        initContainer: function () {},
+                        initContainer: function () {
+                        },
 
                         /** Stub */
-                        on: function () {},
+                        on: function () {
+                        },
 
                         /** Stub */
-                        active: function () {},
+                        active: function () {
+                        },
 
                         /** Stub */
-                        activate: function () {}
+                        activate: function () {
+                        }
                     },
                     type = typeof obj.initActivation(arg);
 
@@ -123,16 +139,20 @@ define([
             it('Check called "argument.delegate" inner validate method', function () {
                 var arg = {
                     /** Stub */
-                    initContainer: function () {},
+                    initContainer: function () {
+                    },
 
                     /** Stub */
-                    on: function () {},
+                    on: function () {
+                    },
 
                     /** Stub */
-                    active: function () {},
+                    active: function () {
+                    },
 
                     /** Stub */
-                    activate: function () {},
+                    activate: function () {
+                    },
                     delegate: jasmine.createSpy()
                 };
 

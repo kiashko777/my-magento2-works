@@ -9,6 +9,7 @@ namespace Magento\CatalogImportExport\Model\Import\ProductTest;
 
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\ResourceModel\Product as ProductResource;
+use Magento\Catalog\Model\ResourceModel\Product\Collection;
 use Magento\CatalogImportExport\Model\Import\Product as ImportProduct;
 use Magento\CatalogImportExport\Model\Import\ProductTestBase;
 use Magento\Framework\App\Filesystem\DirectoryList;
@@ -33,19 +34,19 @@ class ProductValidationTest extends ProductTestBase
      */
     public function testValidateInvalidMultiselectValues()
     {
-        $filesystem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\Filesystem::class
+        $filesystem = BootstrapHelper::getObjectManager()->create(
+            Filesystem::class
         );
         $directory = $filesystem->getDirectoryWrite(DirectoryList::ROOT);
         $source = $this->objectManager->create(
-            \Magento\ImportExport\Model\Import\Source\Csv::class,
+            Csv::class,
             [
                 'file' => __DIR__ . '/../_files/products_with_invalid_multiselect_values.csv',
                 'directory' => $directory
             ]
         );
         $errors = $this->_model->setParameters(
-            ['behavior' => \Magento\ImportExport\Model\Import::BEHAVIOR_APPEND, 'entity' => 'catalog_product']
+            ['behavior' => Import::BEHAVIOR_APPEND, 'entity' => 'catalog_product']
         )->setSource(
             $source
         )->validateData();
@@ -180,12 +181,12 @@ class ProductValidationTest extends ProductTestBase
      */
     public function testValidateData()
     {
-        $filesystem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Framework\Filesystem::class);
+        $filesystem = BootstrapHelper::getObjectManager()
+            ->create(Filesystem::class);
         $directory = $filesystem->getDirectoryWrite(DirectoryList::ROOT);
 
         $source = $this->objectManager->create(
-            \Magento\ImportExport\Model\Import\Source\Csv::class,
+            Csv::class,
             [
                 'file' => __DIR__ . '/../_files/products_to_import.csv',
                 'directory' => $directory
@@ -193,7 +194,7 @@ class ProductValidationTest extends ProductTestBase
         );
 
         $errors = $this->_model->setParameters(
-            ['behavior' => \Magento\ImportExport\Model\Import::BEHAVIOR_APPEND, 'entity' => 'catalog_product']
+            ['behavior' => Import::BEHAVIOR_APPEND, 'entity' => 'catalog_product']
         )->setSource($source)->validateData();
 
         $this->assertTrue($errors->getErrorsCount() == 0);
@@ -213,9 +214,10 @@ class ProductValidationTest extends ProductTestBase
      */
     public function testProductLinksWithEmptyValue(
         string $pathToFile,
-        bool $expectedResultCrossell,
-        bool $expectedResultUpsell
-    ): void {
+        bool   $expectedResultCrossell,
+        bool   $expectedResultUpsell
+    ): void
+    {
         $filesystem = BootstrapHelper::getObjectManager()->create(Filesystem::class);
 
         $directory = $filesystem->getDirectoryWrite(DirectoryList::ROOT);
@@ -241,7 +243,7 @@ class ProductValidationTest extends ProductTestBase
         $objectManager = BootstrapHelper::getObjectManager();
         $resource = $objectManager->get(ProductResource::class);
         $productId = $resource->getIdBySku('simple');
-        /** @var \Magento\Catalog\Model\Product $product */
+        /** @var Product $product */
         $product = BootstrapHelper::getObjectManager()->create(Product::class);
         $product->load($productId);
 
@@ -300,12 +302,12 @@ class ProductValidationTest extends ProductTestBase
     {
         // import data from CSV file
         $pathToFile = __DIR__ . '/../_files/products_to_import_invalid_attribute_set.csv';
-        $filesystem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\Filesystem::class
+        $filesystem = BootstrapHelper::getObjectManager()->create(
+            Filesystem::class
         );
         $directory = $filesystem->getDirectoryWrite(DirectoryList::ROOT);
         $source = $this->objectManager->create(
-            \Magento\ImportExport\Model\Import\Source\Csv::class,
+            Csv::class,
             [
                 'file' => $pathToFile,
                 'directory' => $directory
@@ -313,7 +315,7 @@ class ProductValidationTest extends ProductTestBase
         );
         $errors = $this->_model->setParameters(
             [
-                'behavior' => \Magento\ImportExport\Model\Import::BEHAVIOR_APPEND,
+                'behavior' => Import::BEHAVIOR_APPEND,
                 Import::FIELD_NAME_VALIDATION_STRATEGY => null,
                 'entity' => 'catalog_product'
             ]
@@ -328,12 +330,12 @@ class ProductValidationTest extends ProductTestBase
         );
         $this->_model->importData();
 
-        $productCollection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\ResourceModel\Product\Collection::class
+        $productCollection = BootstrapHelper::getObjectManager()->create(
+            Collection::class
         );
 
         $products = [];
-        /** @var $product \Magento\Catalog\Model\Product */
+        /** @var $product Product */
         foreach ($productCollection as $product) {
             $products[$product->getSku()] = $product;
         }
@@ -349,13 +351,13 @@ class ProductValidationTest extends ProductTestBase
     {
         // import data from CSV file
         $pathToFile = __DIR__ . '/../_files/product_to_import_invalid_weight.csv';
-        $filesystem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\Filesystem::class
+        $filesystem = BootstrapHelper::getObjectManager()->create(
+            Filesystem::class
         );
 
         $directory = $filesystem->getDirectoryWrite(DirectoryList::ROOT);
         $source = $this->objectManager->create(
-            \Magento\ImportExport\Model\Import\Source\Csv::class,
+            Csv::class,
             [
                 'file' => $pathToFile,
                 'directory' => $directory
@@ -364,7 +366,7 @@ class ProductValidationTest extends ProductTestBase
         $errors = $this->_model->setSource(
             $source
         )->setParameters(
-            ['behavior' => \Magento\ImportExport\Model\Import::BEHAVIOR_APPEND]
+            ['behavior' => Import::BEHAVIOR_APPEND]
         )->validateData();
 
         $this->assertTrue($errors->getErrorsCount() == 1);

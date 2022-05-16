@@ -3,12 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\ConfigurableProduct\Model\ResourceModel\Product;
 
-use Magento\Catalog\Model\ResourceModel\Product\Relation;
-use Magento\Framework\ObjectManagerInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\ResourceModel\Product\Relation;
 use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
 
@@ -38,17 +39,6 @@ class RelationTest extends TestCase
      * @var SearchCriteriaBuilder
      */
     private $searchCriteriaBuilder;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->model = $this->objectManager->get(Relation::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
-    }
 
     /**
      * Tests that getRelationsByChildren will return parent products entity ids of child products entity ids.
@@ -121,5 +111,16 @@ class RelationTest extends TestCase
         ksort($array, SORT_NUMERIC);
 
         return $array;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->model = $this->objectManager->get(Relation::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
     }
 }

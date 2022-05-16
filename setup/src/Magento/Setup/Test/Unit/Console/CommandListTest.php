@@ -24,17 +24,17 @@ class CommandListTest extends TestCase
      */
     private $serviceManager;
 
-    protected function setUp(): void
-    {
-        $this->serviceManager = $this->createMock(ServiceManager::class);
-        $this->commandList = new CommandList($this->serviceManager);
-    }
-
     public function testGetCommands()
     {
         $this->serviceManager->expects($this->atLeastOnce())
             ->method('get');
 
         $this->commandList->getCommands();
+    }
+
+    protected function setUp(): void
+    {
+        $this->serviceManager = $this->createMock(ServiceManager::class);
+        $this->commandList = new CommandList($this->serviceManager);
     }
 }

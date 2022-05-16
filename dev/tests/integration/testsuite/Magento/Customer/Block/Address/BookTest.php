@@ -6,51 +6,28 @@
 
 namespace Magento\Customer\Block\Address;
 
+use Magento\Customer\Api\AddressRepositoryInterface;
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Api\Data\AddressInterface;
+use Magento\Customer\Helper\Session\CurrentCustomer;
+use Magento\Customer\Model\CustomerRegistry;
+use Magento\Framework\View\Element\BlockInterface;
+use Magento\Framework\View\LayoutInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
-class BookTest extends \PHPUnit\Framework\TestCase
+class BookTest extends TestCase
 {
     /**
-     * @var \Magento\Customer\Block\Address\Book
+     * @var Book
      */
     protected $_block;
 
     /**
-     * @var \Magento\Customer\Helper\Session\CurrentCustomer
+     * @var CurrentCustomer
      */
     protected $currentCustomer;
-
-    protected function setUp(): void
-    {
-        /** @var \PHPUnit\Framework\MockObject\MockObject $blockMock */
-        $blockMock = $this->getMockBuilder(
-            \Magento\Framework\View\Element\BlockInterface::class
-        )->disableOriginalConstructor()->setMethods(
-            ['setTitle', 'toHtml']
-        )->getMock();
-        $blockMock->expects($this->any())->method('setTitle');
-
-        $this->currentCustomer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Customer\Helper\Session\CurrentCustomer::class);
-        /** @var \Magento\Framework\View\LayoutInterface $layout */
-        $layout = Bootstrap::getObjectManager()->get(\Magento\Framework\View\LayoutInterface::class);
-        $layout->setBlock('head', $blockMock);
-        $this->_block = $layout
-            ->createBlock(
-                \Magento\Customer\Block\Address\Book::class,
-                '',
-                ['currentCustomer' => $this->currentCustomer]
-            );
-    }
-
-    protected function tearDown(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var \Magento\Customer\Model\CustomerRegistry $customerRegistry */
-        $customerRegistry = $objectManager->get(\Magento\Customer\Model\CustomerRegistry::class);
-        // Cleanup customer from registry
-        $customerRegistry->remove(1);
-    }
 
     public function testGetAddressEditUrl()
     {
@@ -91,7 +68,7 @@ class BookTest extends \PHPUnit\Framework\TestCase
         $this->assertNotNull($this->_block->getAdditionalAddresses());
         $this->assertCount(1, $this->_block->getAdditionalAddresses());
         $this->assertInstanceOf(
-            \Magento\Customer\Api\Data\AddressInterface::class,
+            AddressInterface::class,
             $this->_block->getAdditionalAddresses()[0]
         );
         $this->assertEquals(2, $this->_block->getAdditionalAddresses()[0]->getId());
@@ -125,7 +102,7 @@ class BookTest extends \PHPUnit\Framework\TestCase
         $expected = "John Smith<br />\nCompanyName<br />\nGreen str, 67<br />\n\n\n\nCityM,  Alabama, 75477<br />" .
             "\nUnited States<br />\nT: <a href=\"tel:3468676\">3468676</a>\n\n";
         $address = Bootstrap::getObjectManager()->get(
-            \Magento\Customer\Api\AddressRepositoryInterface::class
+            AddressRepositoryInterface::class
         )->getById(1);
         $html = $this->_block->getAddressHtml($address);
         $this->assertEquals($expected, $html);
@@ -144,7 +121,7 @@ class BookTest extends \PHPUnit\Framework\TestCase
     {
         /** @var CustomerRepositoryInterface $customerRepository */
         $customerRepository = Bootstrap::getObjectManager()->get(
-            \Magento\Customer\Api\CustomerRepositoryInterface::class
+            CustomerRepositoryInterface::class
         );
         $customer = $customerRepository->getById(1);
 
@@ -202,7 +179,39 @@ class BookTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetAddressById()
     {
-        $this->assertInstanceOf(\Magento\Customer\Api\Data\AddressInterface::class, $this->_block->getAddressById(1));
+        $this->assertInstanceOf(AddressInterface::class, $this->_block->getAddressById(1));
         $this->assertNull($this->_block->getAddressById(5));
+    }
+
+    protected function setUp(): void
+    {
+        /** @var MockObject $blockMock */
+        $blockMock = $this->getMockBuilder(
+            BlockInterface::class
+        )->disableOriginalConstructor()->setMethods(
+            ['setTitle', 'toHtml']
+        )->getMock();
+        $blockMock->expects($this->any())->method('setTitle');
+
+        $this->currentCustomer = Bootstrap::getObjectManager()
+            ->get(CurrentCustomer::class);
+        /** @var LayoutInterface $layout */
+        $layout = Bootstrap::getObjectManager()->get(LayoutInterface::class);
+        $layout->setBlock('head', $blockMock);
+        $this->_block = $layout
+            ->createBlock(
+                Book::class,
+                '',
+                ['currentCustomer' => $this->currentCustomer]
+            );
+    }
+
+    protected function tearDown(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var CustomerRegistry $customerRegistry */
+        $customerRegistry = $objectManager->get(CustomerRegistry::class);
+        // Cleanup customer from registry
+        $customerRegistry->remove(1);
     }
 }

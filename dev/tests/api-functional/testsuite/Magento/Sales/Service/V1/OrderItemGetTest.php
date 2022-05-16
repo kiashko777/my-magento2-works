@@ -3,8 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Service\V1;
 
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Item;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 class OrderItemGetTest extends WebapiAbstract
@@ -17,30 +23,25 @@ class OrderItemGetTest extends WebapiAbstract
     const ORDER_INCREMENT_ID = '100000001';
 
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoApiDataFixture Magento/Sales/_files/order.php
      */
     public function testGet()
     {
-        /** @var \Magento\Sales\Model\Order $order */
-        $order = $this->objectManager->create(\Magento\Sales\Model\Order::class);
+        /** @var Order $order */
+        $order = $this->objectManager->create(Order::class);
         $order->loadByIncrementId(self::ORDER_INCREMENT_ID);
-        /** @var \Magento\Sales\Model\Order\Item $orderItem */
+        /** @var Item $orderItem */
         $orderItem = current($order->getItems());
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/' . $orderItem->getId(),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -64,11 +65,11 @@ class OrderItemGetTest extends WebapiAbstract
     }
 
     /**
-     * @param \Magento\Sales\Model\Order\Item $orderItem
+     * @param Item $orderItem
      * @param array $response
      * @return void
      */
-    protected function assertOrderItem(\Magento\Sales\Model\Order\Item $orderItem, array $response)
+    protected function assertOrderItem(Item $orderItem, array $response)
     {
         $this->assertEquals($orderItem->getId(), $response['item_id']);
         $this->assertEquals($orderItem->getOrderId(), $response['order_id']);
@@ -83,16 +84,16 @@ class OrderItemGetTest extends WebapiAbstract
      */
     public function testGetOrderWithDiscount()
     {
-        /** @var \Magento\Sales\Model\Order $order */
-        $order = $this->objectManager->create(\Magento\Sales\Model\Order::class);
+        /** @var Order $order */
+        $order = $this->objectManager->create(Order::class);
         $order->loadByIncrementId(self::ORDER_INCREMENT_ID);
-        /** @var \Magento\Sales\Model\Order\Item $orderItem */
+        /** @var Item $orderItem */
         $orderItem = current($order->getItems());
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/' . $orderItem->getId(),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -108,5 +109,10 @@ class OrderItemGetTest extends WebapiAbstract
         $this->assertEquals(8.00, $response['base_row_total']);
         $this->assertEquals(9.00, $response['row_total_incl_tax']);
         $this->assertEquals(9.00, $response['base_row_total_incl_tax']);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

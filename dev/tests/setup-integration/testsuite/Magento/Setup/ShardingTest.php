@@ -11,9 +11,9 @@ use Magento\Framework\App\ResourceConnection;
 use Magento\TestFramework\Deploy\CliCommand;
 use Magento\TestFramework\Deploy\DescribeTable;
 use Magento\TestFramework\Deploy\ShardingConfig;
+use Magento\TestFramework\Deploy\TestModuleManager;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\SetupTestCase;
-use Magento\TestFramework\Deploy\TestModuleManager;
 
 /**
  * The purpose of this test is verifying declarative installation works with different shard.
@@ -49,17 +49,6 @@ class ShardingTest extends SetupTestCase
      * @var ShardingConfig
      */
     private $shardingConfig;
-
-    protected function setUp(): void
-    {
-        $objectManager= Bootstrap::getObjectManager();
-        $this->cliCommand = $objectManager->get(CliCommand::class);
-        $this->resourceConnection = $objectManager->get(ResourceConnection::class);
-        $this->deploymentConfig = $objectManager->get(DeploymentConfig::class);
-        $this->describeTable = $objectManager->get(DescribeTable::class);
-        $this->moduleManager = $objectManager->get(TestModuleManager::class);
-        $this->shardingConfig = $objectManager->get(ShardingConfig::class);
-    }
 
     /**
      * @moduleName Magento_TestSetupDeclarationModule2
@@ -100,5 +89,16 @@ class ShardingTest extends SetupTestCase
         self::assertCount(1, $shard1);
         self::assertCount(1, $shard2);
         self::assertEquals($this->getData(), array_replace($default, $shard1, $shard2));
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->cliCommand = $objectManager->get(CliCommand::class);
+        $this->resourceConnection = $objectManager->get(ResourceConnection::class);
+        $this->deploymentConfig = $objectManager->get(DeploymentConfig::class);
+        $this->describeTable = $objectManager->get(DescribeTable::class);
+        $this->moduleManager = $objectManager->get(TestModuleManager::class);
+        $this->shardingConfig = $objectManager->get(ShardingConfig::class);
     }
 }

@@ -38,19 +38,6 @@ class TotalsTest extends TestCase
     private $orderFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->block = $this->layout->createBlock(Totals::class, 'block');
-        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
-    }
-
-    /**
      * @magentoAppIsolation enabled
      *
      * @return void
@@ -127,5 +114,18 @@ class TotalsTest extends TestCase
             ),
             sprintf($message, __('Grand Total'), $order->getGrandTotal())
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->block = $this->layout->createBlock(Totals::class, 'block');
+        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
     }
 }

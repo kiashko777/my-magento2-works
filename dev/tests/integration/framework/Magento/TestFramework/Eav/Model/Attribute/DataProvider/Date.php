@@ -45,6 +45,14 @@ class Date extends AbstractBaseAttributeData
     /**
      * @inheritdoc
      */
+    protected function getFrontendInput(): string
+    {
+        return 'date';
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function getAttributeDataWithCheckArray(): array
     {
         return array_replace_recursive(
@@ -102,9 +110,24 @@ class Date extends AbstractBaseAttributeData
     /**
      * @inheritdoc
      */
-    protected function getFrontendInput(): string
+    protected function getUpdateExpectedData(): array
     {
-        return 'date';
+        $updatePostData = $this->getUpdatePostData();
+        unset($updatePostData['default_value_date']);
+        return array_merge(
+            $updatePostData,
+            [
+                'frontend_label' => 'Date Attribute Update',
+                'attribute_code' => 'date_attribute',
+                'default_value' => '2019-12-29 00:00:00',
+                'frontend_class' => null,
+                'is_filterable' => '0',
+                'is_filterable_in_search' => '0',
+                'position' => '0',
+                'is_user_defined' => '1',
+                'backend_type' => 'datetime',
+            ]
+        );
     }
 
     /**
@@ -134,28 +157,5 @@ class Date extends AbstractBaseAttributeData
             'used_in_product_listing' => '0',
             'used_for_sort_by' => '1',
         ];
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function getUpdateExpectedData(): array
-    {
-        $updatePostData = $this->getUpdatePostData();
-        unset($updatePostData['default_value_date']);
-        return array_merge(
-            $updatePostData,
-            [
-                'frontend_label' => 'Date Attribute Update',
-                'attribute_code' => 'date_attribute',
-                'default_value' => '2019-12-29 00:00:00',
-                'frontend_class' => null,
-                'is_filterable' => '0',
-                'is_filterable_in_search' => '0',
-                'position' => '0',
-                'is_user_defined' => '1',
-                'backend_type' => 'datetime',
-            ]
-        );
     }
 }

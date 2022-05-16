@@ -3,10 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module;
 
-use Magento\Framework\Setup\SchemaSetupInterface;
 use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\Setup\SchemaSetupInterface;
 
 /**
  * @api
@@ -27,16 +28,17 @@ class Setup extends \Magento\Framework\Module\Setup implements SchemaSetupInterf
         $fields,
         $indexType = '',
         $connectionName = ResourceConnection::DEFAULT_CONNECTION
-    ) {
+    )
+    {
         return $this->getConnection($connectionName)->getIndexName($this->getTable($tableName), $fields, $indexType);
     }
 
     /**
      * Retrieve 32bit UNIQUE HASH for a Table foreign key
      *
-     * @param string $priTableName  the target table name
+     * @param string $priTableName the target table name
      * @param string $priColumnName the target table column name
-     * @param string $refTableName  the reference table name
+     * @param string $refTableName the reference table name
      * @param string $refColumnName the reference table column name
      * @param string $connectionName
      * @return string
@@ -47,7 +49,8 @@ class Setup extends \Magento\Framework\Module\Setup implements SchemaSetupInterf
         $refTableName,
         $refColumnName,
         $connectionName = ResourceConnection::DEFAULT_CONNECTION
-    ) {
+    )
+    {
         return $this->getConnection($connectionName)->getForeignKeyName(
             $this->getTable($priTableName),
             $priColumnName,

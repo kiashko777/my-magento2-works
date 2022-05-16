@@ -56,21 +56,6 @@ class ConfigOptionsListTest extends TestCase
      */
     private $driverOptionsMock;
 
-    protected function setUp(): void
-    {
-        $this->generator = $this->createMock(ConfigGenerator::class);
-        $this->deploymentConfig = $this->createMock(DeploymentConfig::class);
-        $this->dbValidator = $this->createMock(DbValidator::class);
-        $this->encryptionKeyValidator = $this->createMock(KeyValidator::class);
-        $this->driverOptionsMock = $this->createMock(DriverOptions::class);
-        $this->object = new ConfigOptionsList(
-            $this->generator,
-            $this->dbValidator,
-            $this->encryptionKeyValidator,
-            $this->driverOptionsMock
-        );
-    }
-
     public function testGetOptions()
     {
         $options = $this->object->getOptions();
@@ -147,6 +132,21 @@ class ConfigOptionsListTest extends TestCase
         $this->assertEquals([], $this->object->validate($options, $this->deploymentConfig));
     }
 
+    private function prepareValidationMocks()
+    {
+        $configDataMock = $this->getMockBuilder(ConfigData::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->dbValidator->expects($this->once())->method('checkDatabaseTablePrefix')->willReturn($configDataMock);
+        $this->dbValidator->expects($this->once())
+            ->method('checkDatabaseConnectionWithDriverOptions')
+            ->willReturn($configDataMock);
+        $this->dbValidator
+            ->expects($this->once())
+            ->method('checkDatabaseConnectionWithDriverOptions')
+            ->willReturn($configDataMock);
+    }
+
     public function testValidateInvalidSessionHandler()
     {
         $invalidSaveHandler = 'clay-tablet';
@@ -180,21 +180,6 @@ class ConfigOptionsListTest extends TestCase
             ['Invalid encryption key. Encryption key must be 32 character string without any white space.'],
             $this->object->validate($options, $this->deploymentConfig)
         );
-    }
-
-    private function prepareValidationMocks()
-    {
-        $configDataMock = $this->getMockBuilder(ConfigData::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $this->dbValidator->expects($this->once())->method('checkDatabaseTablePrefix')->willReturn($configDataMock);
-        $this->dbValidator->expects($this->once())
-            ->method('checkDatabaseConnectionWithDriverOptions')
-            ->willReturn($configDataMock);
-        $this->dbValidator
-            ->expects($this->once())
-            ->method('checkDatabaseConnectionWithDriverOptions')
-            ->willReturn($configDataMock);
     }
 
     /**
@@ -232,5 +217,20 @@ class ConfigOptionsListTest extends TestCase
             ['website.com/m2ce:9000', true],
             ['website.com+:9000', true],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->generator = $this->createMock(ConfigGenerator::class);
+        $this->deploymentConfig = $this->createMock(DeploymentConfig::class);
+        $this->dbValidator = $this->createMock(DbValidator::class);
+        $this->encryptionKeyValidator = $this->createMock(KeyValidator::class);
+        $this->driverOptionsMock = $this->createMock(DriverOptions::class);
+        $this->object = new ConfigOptionsList(
+            $this->generator,
+            $this->dbValidator,
+            $this->encryptionKeyValidator,
+            $this->driverOptionsMock
+        );
     }
 }

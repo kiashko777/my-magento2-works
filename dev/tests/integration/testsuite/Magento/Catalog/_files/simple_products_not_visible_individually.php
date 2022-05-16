@@ -5,8 +5,14 @@
  */
 declare(strict_types=1);
 
-/** @var $product \Magento\Catalog\Model\Product */
-$product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Product::class);
+/** @var $product Product */
+
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$product = Bootstrap::getObjectManager()->create(Product::class);
 $product->isObjectNew(true);
 $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setId(67)
@@ -23,8 +29,8 @@ $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setMetaTitle('meta title product Not visible')
     ->setMetaKeyword('meta keyword')
     ->setMetaDescription('meta description')
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_NOT_VISIBLE)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_NOT_VISIBLE)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setWebsiteIds([1])
     ->setCategoryIds([300])
     ->setStockData(['use_config_manage_stock' => 1, 'qty' => 30, 'is_qty_decimal' => 0, 'is_in_stock' => 1])

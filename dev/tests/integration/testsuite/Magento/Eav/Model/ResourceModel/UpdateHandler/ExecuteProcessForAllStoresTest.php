@@ -6,6 +6,7 @@
 
 namespace Magento\Eav\Model\ResourceModel\UpdateHandler;
 
+use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Model\Product;
 use Magento\Eav\Model\ResourceModel\UpdateHandler;
 use Magento\Eav\Model\ResourceModel\UpdateHandlerAbstract;
@@ -18,7 +19,7 @@ use Magento\TestFramework\Helper\Bootstrap;
 class ExecuteProcessForAllStoresTest extends UpdateHandlerAbstract
 {
     /**
-     * @covers \Magento\Eav\Model\ResourceModel\UpdateHandler::execute
+     * @covers       \Magento\Eav\Model\ResourceModel\UpdateHandler::execute
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
      * @dataProvider getAllStoresDataProvider
      * @param $code
@@ -43,7 +44,7 @@ class ExecuteProcessForAllStoresTest extends UpdateHandlerAbstract
 
         $updateHandler = Bootstrap::getObjectManager()->create(UpdateHandler::class);
         $entityData = array_merge($entity->getData(), [$code => $newValue]);
-        $updateHandler->execute(\Magento\Catalog\Api\Data\ProductInterface::class, $entityData);
+        $updateHandler->execute(ProductInterface::class, $entityData);
 
         $resultEntity = Bootstrap::getObjectManager()->create(Product::class);
         $resultEntity->setStoreId(0);

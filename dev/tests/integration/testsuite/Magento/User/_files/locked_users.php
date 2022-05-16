@@ -4,6 +4,9 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\TestFramework\Bootstrap;
+use Magento\User\Model\ResourceModel\User;
+
 $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
 
 /**
@@ -16,7 +19,7 @@ $model = $objectManager->create(\Magento\User\Model\User::class);
 $model->setFirstname("John")
     ->setLastname("Doe")
     ->setUsername('adminUser1')
-    ->setPassword(\Magento\TestFramework\Bootstrap::ADMIN_PASSWORD)
+    ->setPassword(Bootstrap::ADMIN_PASSWORD)
     ->setEmail('adminUser1@example.com')
     ->setRoleType('G')
     ->setResourceId('Magento_Adminhtml::all')
@@ -32,7 +35,7 @@ $model = $objectManager->create(\Magento\User\Model\User::class);
 $model->setFirstname("John")
     ->setLastname("Doe")
     ->setUsername('adminUser2')
-    ->setPassword(\Magento\TestFramework\Bootstrap::ADMIN_PASSWORD)
+    ->setPassword(Bootstrap::ADMIN_PASSWORD)
     ->setEmail('adminUser2@example.com')
     ->setRoleType('G')
     ->setResourceId('Magento_Adminhtml::all')
@@ -46,6 +49,6 @@ $userIds[] = $model->getDataByKey('user_id');
 $defaultAdminUserId = 1;
 $lockLifetime = 86400;
 
-/** @var $modelLockedUsers \Magento\User\Model\ResourceModel\User */
-$modelLockedUsers = $objectManager->create(\Magento\User\Model\ResourceModel\User::class);
+/** @var $modelLockedUsers User */
+$modelLockedUsers = $objectManager->create(User::class);
 $modelLockedUsers->lock($userIds, $defaultAdminUserId, $lockLifetime);

@@ -8,6 +8,7 @@ namespace Magento\Setup\Model\FixtureGenerator;
 
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\DB\Profiler;
+use Zend_Db_Profiler;
 
 /**
  * Collect insert queries for quick entity generation
@@ -25,7 +26,7 @@ class SqlCollector
     private $sql = [];
 
     /**
-     * @var \Zend_Db_Profiler
+     * @var Zend_Db_Profiler
      */
     private $profiler;
 
@@ -35,60 +36,6 @@ class SqlCollector
     public function __construct(ResourceConnection $resourceConnection)
     {
         $this->resourceConnection = $resourceConnection;
-    }
-
-    /**
-     * @param string $sql
-     * @param array $bind
-     * @return void
-     */
-    private function addSql($sql, $bind)
-    {
-        preg_match('~(?:INSERT|REPLACE)\s+(?:IGNORE)?\s*INTO `(.*)` \((.*)\) VALUES (\(.*\))+~', $sql, $queryMatches);
-        if ($queryMatches) {
-            $table = $queryMatches[1];
-            $fields = preg_replace('~[\s+`]+~', '', $queryMatches[2]);
-            $fields = $fields ? explode(',', $fields) : [];
-            $sqlBindGroupAmount = count(explode('), (', $queryMatches[3]));
-            preg_match(' ~\((.*?)\)~', $queryMatches[3], $sqlBind);
-            $sqlBind = preg_replace(['~,\s*~', '~\'~'], [',', ''], $sqlBind[1]);
-            $sqlBind = $sqlBind ? explode(',', $sqlBind) : [];
-            $binds = [];
-
-            // process multi queries
-            if ($sqlBindGroupAmount > 1) {
-                $valuesCount = count($bind)/$sqlBindGroupAmount;
-                for ($i = 0; $i < $sqlBindGroupAmount; $i++) {
-                    $binds[] = array_combine(
-                        $fields,
-                        $this->handleBindValues($sqlBind, $bind, $i * $valuesCount)
-                    );
-                }
-            } else {
-                $sqlBind = $this->handleBindValues($sqlBind, $bind);
-                $binds[] = array_combine($fields, $sqlBind);
-            }
-            $this->sql[] = [$binds, $table];
-        }
-    }
-
-    /**
-     * @param array $sqlBind
-     * @param array $bind
-     * @param int $bindPosition
-     * @return array
-     */
-    private function handleBindValues(array $sqlBind, array $bind, $bindPosition = 0)
-    {
-        $bind = array_values($bind);
-        foreach ($sqlBind as $i => $fieldValue) {
-            if ($fieldValue === '?') {
-                $sqlBind[$i] = $bind[$bindPosition];
-                $bindPosition++;
-            }
-        }
-
-        return $sqlBind;
     }
 
     /**
@@ -109,6 +56,18 @@ class SqlCollector
         $this->sql = [];
         $this->getProfiler()->clear();
         $this->getProfiler()->setEnabled(true);
+    }
+
+    /**
+     * @return Zend_Db_Profiler
+     */
+    private function getProfiler()
+    {
+        if ($this->profiler === null) {
+            $this->profiler = $this->resourceConnection->getConnection()->getProfiler();
+        }
+
+        return $this->profiler;
     }
 
     /**
@@ -141,14 +100,56 @@ class SqlCollector
     }
 
     /**
-     * @return \Zend_Db_Profiler
+     * @param string $sql
+     * @param array $bind
+     * @return void
      */
-    private function getProfiler()
+    private function addSql($sql, $bind)
     {
-        if ($this->profiler === null) {
-            $this->profiler = $this->resourceConnection->getConnection()->getProfiler();
+        preg_match('~(?:INSERT|REPLACE)\s+(?:IGNORE)?\s*INTO `(.*)` \((.*)\) VALUES (\(.*\))+~', $sql, $queryMatches);
+        if ($queryMatches) {
+            $table = $queryMatches[1];
+            $fields = preg_replace('~[\s+`]+~', '', $queryMatches[2]);
+            $fields = $fields ? explode(',', $fields) : [];
+            $sqlBindGroupAmount = count(explode('), (', $queryMatches[3]));
+            preg_match(' ~\((.*?)\)~', $queryMatches[3], $sqlBind);
+            $sqlBind = preg_replace(['~,\s*~', '~\'~'], [',', ''], $sqlBind[1]);
+            $sqlBind = $sqlBind ? explode(',', $sqlBind) : [];
+            $binds = [];
+
+            // process multi queries
+            if ($sqlBindGroupAmount > 1) {
+                $valuesCount = count($bind) / $sqlBindGroupAmount;
+                for ($i = 0; $i < $sqlBindGroupAmount; $i++) {
+                    $binds[] = array_combine(
+                        $fields,
+                        $this->handleBindValues($sqlBind, $bind, $i * $valuesCount)
+                    );
+                }
+            } else {
+                $sqlBind = $this->handleBindValues($sqlBind, $bind);
+                $binds[] = array_combine($fields, $sqlBind);
+            }
+            $this->sql[] = [$binds, $table];
+        }
+    }
+
+    /**
+     * @param array $sqlBind
+     * @param array $bind
+     * @param int $bindPosition
+     * @return array
+     */
+    private function handleBindValues(array $sqlBind, array $bind, $bindPosition = 0)
+    {
+        $bind = array_values($bind);
+        foreach ($sqlBind as $i => $fieldValue) {
+            if ($fieldValue === '?') {
+                $sqlBind[$i] = $bind[$bindPosition];
+                $bindPosition++;
+            }
         }
 
-        return $this->profiler;
+        return $sqlBind;
     }
 }

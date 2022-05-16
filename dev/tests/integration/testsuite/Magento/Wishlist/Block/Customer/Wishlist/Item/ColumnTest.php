@@ -17,6 +17,7 @@ use Magento\TestFramework\Helper\Xpath;
 use Magento\TestFramework\Wishlist\Model\GetWishlistByCustomerId;
 use Magento\Wishlist\Block\Customer\Wishlist\Items;
 use PHPUnit\Framework\TestCase;
+use StdClass;
 
 /**
  * Test wish list item column.
@@ -43,36 +44,13 @@ class ColumnTest extends TestCase
     private $getWishlistItemsByCustomerId;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->customerSession = $this->objectManager->get(Session::class);
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->block = $this->layout->addBlock(Column::class, 'test');
-        $this->layout->addBlock(Text::class, 'child', 'test');
-        $this->getWishlistItemsByCustomerId = $this->objectManager->get(GetWishlistByCustomerId::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->customerSession->setCustomerId(null);
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoAppIsolation enabled
      *
      * @return void
      */
     public function testToHtml(): void
     {
-        $item = new \StdClass();
+        $item = new StdClass();
         $this->block->setItem($item);
         $this->block->toHtml();
         $this->assertSame($item, $this->layout->getBlock('child')->getItem());
@@ -128,5 +106,28 @@ class ColumnTest extends TestCase
         $page->getLayout()->generateXml();
 
         return $page->getLayout()->getBlock('customer.wishlist.items');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->customerSession = $this->objectManager->get(Session::class);
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->block = $this->layout->addBlock(Column::class, 'test');
+        $this->layout->addBlock(Text::class, 'child', 'test');
+        $this->getWishlistItemsByCustomerId = $this->objectManager->get(GetWishlistByCustomerId::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->customerSession->setCustomerId(null);
+
+        parent::tearDown();
     }
 }

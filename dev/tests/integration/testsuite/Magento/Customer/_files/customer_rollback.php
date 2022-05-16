@@ -4,16 +4,19 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Customer\Model\Customer;
+use Magento\Framework\Registry;
 use Magento\Integration\Model\Oauth\Token\RequestThrottler;
+use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var \Magento\Framework\Registry $registry */
-$registry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
+/** @var Registry $registry */
+$registry = Bootstrap::getObjectManager()->get(Registry::class);
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
-/** @var $customer \Magento\Customer\Model\Customer*/
-$customer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Customer::class
+/** @var $customer Customer */
+$customer = Bootstrap::getObjectManager()->create(
+    Customer::class
 );
 $customer->load(1);
 if ($customer->getId()) {
@@ -25,5 +28,5 @@ $registry->register('isSecureArea', false);
 
 /* Unlock account if it was locked for tokens retrieval */
 /** @var RequestThrottler $throttler */
-$throttler = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(RequestThrottler::class);
+$throttler = Bootstrap::getObjectManager()->create(RequestThrottler::class);
 $throttler->resetAuthenticationFailuresCount('customer@example.com', RequestThrottler::USER_TYPE_CUSTOMER);

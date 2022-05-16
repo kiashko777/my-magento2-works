@@ -3,28 +3,32 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Review\Model\Review;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/product_simple.php');
 
-$review = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Review\Model\Review::class,
+$review = Bootstrap::getObjectManager()->create(
+    Review::class,
     ['data' => ['nickname' => 'Nickname', 'title' => 'Review Summary', 'detail' => 'Review text']]
 );
 $review->setEntityId(
-    $review->getEntityIdByCode(\Magento\Review\Model\Review::ENTITY_PRODUCT_CODE)
+    $review->getEntityIdByCode(Review::ENTITY_PRODUCT_CODE)
 )->setEntityPkValue(
     1
 )->setStatusId(
-    \Magento\Review\Model\Review::STATUS_PENDING
+    Review::STATUS_PENDING
 )->setStoreId(
-    \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-        \Magento\Store\Model\StoreManagerInterface::class
+    Bootstrap::getObjectManager()->get(
+        StoreManagerInterface::class
     )->getStore()->getId()
 )->setStores(
     [
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Store\Model\StoreManagerInterface::class
+        Bootstrap::getObjectManager()->get(
+            StoreManagerInterface::class
         )->getStore()->getId()
     ]
 )->save();
@@ -35,24 +39,24 @@ $review->setEntityId(
  */
 sleep(1);
 
-$review = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Review\Model\Review::class,
+$review = Bootstrap::getObjectManager()->create(
+    Review::class,
     ['data' => ['nickname' => 'Nickname', 'title' => '2 filter first review', 'detail' => 'Review text']]
 );
 $review->setEntityId(
-    $review->getEntityIdByCode(\Magento\Review\Model\Review::ENTITY_PRODUCT_CODE)
+    $review->getEntityIdByCode(Review::ENTITY_PRODUCT_CODE)
 )->setEntityPkValue(
     1
 )->setStatusId(
-    \Magento\Review\Model\Review::STATUS_APPROVED
+    Review::STATUS_APPROVED
 )->setStoreId(
-    \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-        \Magento\Store\Model\StoreManagerInterface::class
+    Bootstrap::getObjectManager()->get(
+        StoreManagerInterface::class
     )->getStore()->getId()
 )->setStores(
     [
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Store\Model\StoreManagerInterface::class
+        Bootstrap::getObjectManager()->get(
+            StoreManagerInterface::class
         )->getStore()->getId()
     ]
 )->save();
@@ -63,24 +67,24 @@ $review->setEntityId(
  */
 sleep(1);
 
-$review = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Review\Model\Review::class,
+$review = Bootstrap::getObjectManager()->create(
+    Review::class,
     ['data' => ['nickname' => 'Nickname', 'title' => '1 filter second review', 'detail' => 'Review text']]
 );
 $review->setEntityId(
-    $review->getEntityIdByCode(\Magento\Review\Model\Review::ENTITY_PRODUCT_CODE)
+    $review->getEntityIdByCode(Review::ENTITY_PRODUCT_CODE)
 )->setEntityPkValue(
     1
 )->setStatusId(
-    \Magento\Review\Model\Review::STATUS_APPROVED
+    Review::STATUS_APPROVED
 )->setStoreId(
-    \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-        \Magento\Store\Model\StoreManagerInterface::class
+    Bootstrap::getObjectManager()->get(
+        StoreManagerInterface::class
     )->getStore()->getId()
 )->setStores(
     [
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Store\Model\StoreManagerInterface::class
+        Bootstrap::getObjectManager()->get(
+            StoreManagerInterface::class
         )->getStore()->getId()
     ]
 )->save();

@@ -9,27 +9,33 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\AsynchronousOperations\Model;
 
+use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Catalog\Model\ResourceModel\Product\Collection;
 use Magento\Framework\Exception\BulkException;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Phrase;
 use Magento\Framework\Registry;
 use Magento\Framework\Webapi\Exception;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Catalog\Api\Data\ProductInterface;
-use Magento\TestFramework\MessageQueue\PublisherConsumerController;
 use Magento\TestFramework\MessageQueue\EnvironmentPreconditionException;
 use Magento\TestFramework\MessageQueue\PreconditionFailedException;
-use Magento\Catalog\Model\ResourceModel\Product\Collection;
-use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\MessageQueue\PublisherConsumerController;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  *
  * @magentoDbIsolation disabled
  */
-class MassScheduleTest extends \PHPUnit\Framework\TestCase
+class MassScheduleTest extends TestCase
 {
     /**
      * @var string[]
@@ -74,32 +80,6 @@ class MassScheduleTest extends \PHPUnit\Framework\TestCase
      */
     private $registry;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->massSchedule = $this->objectManager->create(MassSchedule::class);
-        $this->logFilePath = TESTS_TEMP_DIR . "/MessageQueueTestLog.txt";
-        $this->collection = $this->objectManager->create(Collection::class);
-        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
-        /** @var PublisherConsumerController publisherConsumerController */
-        $this->publisherConsumerController = $this->objectManager->create(PublisherConsumerController::class, [
-            'consumers' => $this->consumers,
-            'logFilePath' => $this->logFilePath,
-            'appInitParams' => \Magento\TestFramework\Helper\Bootstrap::getInstance()->getAppInitParams()
-        ]);
-
-        try {
-            $this->publisherConsumerController->initialize();
-        } catch (EnvironmentPreconditionException $e) {
-            $this->markTestSkipped($e->getMessage());
-        } catch (PreconditionFailedException $e) {
-            $this->fail($e->getMessage());
-        }
-
-        parent::setUp();
-    }
-
     /**
      * @dataProvider productDataProvider
      * @param ProductInterface[] $products
@@ -143,14 +123,6 @@ class MassScheduleTest extends \PHPUnit\Framework\TestCase
 
         //assert number of products sent to queue
         $this->assertCount(count($this->skus), $result->getRequestItems());
-    }
-
-    protected function tearDown(): void
-    {
-        $this->publisherConsumerController->stopConsumers();
-        $this->clearProducts();
-
-        parent::tearDown();
     }
 
     private function clearProducts()
@@ -206,7 +178,7 @@ class MassScheduleTest extends \PHPUnit\Framework\TestCase
             $this->assertCount(1, $e->getErrors());
 
             $errors = $e->getErrors();
-            $this->assertInstanceOf(\Magento\Framework\Exception\LocalizedException::class, $errors[0]);
+            $this->assertInstanceOf(LocalizedException::class, $errors[0]);
 
             $this->assertEquals("Error processing 1 element of input data", $errors[0]->getMessage());
 
@@ -247,27 +219,6 @@ class MassScheduleTest extends \PHPUnit\Framework\TestCase
         }
     }
 
-    private function getProduct()
-    {
-        /** @var $product \Magento\Catalog\Model\Product */
-        $product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(ProductInterface::class);
-        $product
-            ->setTypeId('simple')
-            ->setAttributeSetId(4)
-            ->setWebsiteIds([1])
-            ->setName('Simple Products 1')
-            ->setSku('unique-simple-product1')
-            ->setPrice(10)
-            ->setMetaTitle('meta title')
-            ->setMetaKeyword('meta keyword')
-            ->setMetaDescription('meta description')
-            ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-            ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
-            ->setStockData(['use_config_manage_stock' => 0]);
-        return $product;
-    }
-
     public function productDataProvider()
     {
         return [
@@ -291,6 +242,27 @@ class MassScheduleTest extends \PHPUnit\Framework\TestCase
         ];
     }
 
+    private function getProduct()
+    {
+        /** @var $product Product */
+        $product = Bootstrap::getObjectManager()
+            ->create(ProductInterface::class);
+        $product
+            ->setTypeId('simple')
+            ->setAttributeSetId(4)
+            ->setWebsiteIds([1])
+            ->setName('Simple Products 1')
+            ->setSku('unique-simple-product1')
+            ->setPrice(10)
+            ->setMetaTitle('meta title')
+            ->setMetaKeyword('meta keyword')
+            ->setMetaDescription('meta description')
+            ->setVisibility(Visibility::VISIBILITY_BOTH)
+            ->setStatus(Status::STATUS_ENABLED)
+            ->setStockData(['use_config_manage_stock' => 0]);
+        return $product;
+    }
+
     public function productExceptionDataProvider()
     {
         return [
@@ -304,5 +276,39 @@ class MassScheduleTest extends \PHPUnit\Framework\TestCase
                 ]
             ],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->massSchedule = $this->objectManager->create(MassSchedule::class);
+        $this->logFilePath = TESTS_TEMP_DIR . "/MessageQueueTestLog.txt";
+        $this->collection = $this->objectManager->create(Collection::class);
+        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+        /** @var PublisherConsumerController publisherConsumerController */
+        $this->publisherConsumerController = $this->objectManager->create(PublisherConsumerController::class, [
+            'consumers' => $this->consumers,
+            'logFilePath' => $this->logFilePath,
+            'appInitParams' => Bootstrap::getInstance()->getAppInitParams()
+        ]);
+
+        try {
+            $this->publisherConsumerController->initialize();
+        } catch (EnvironmentPreconditionException $e) {
+            $this->markTestSkipped($e->getMessage());
+        } catch (PreconditionFailedException $e) {
+            $this->fail($e->getMessage());
+        }
+
+        parent::setUp();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->publisherConsumerController->stopConsumers();
+        $this->clearProducts();
+
+        parent::tearDown();
     }
 }

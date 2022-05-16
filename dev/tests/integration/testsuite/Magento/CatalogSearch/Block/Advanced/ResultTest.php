@@ -3,27 +3,28 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogSearch\Block\Advanced;
 
-class ResultTest extends \PHPUnit\Framework\TestCase
+use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\Layer\Resolver;
+use Magento\CatalogSearch\Model\ResourceModel\Advanced\Collection;
+use Magento\Framework\View\Element\Text;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class ResultTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\View\LayoutInterface
+     * @var LayoutInterface
      */
     protected $_layout;
 
     /**
-     * @var \Magento\CatalogSearch\Block\Advanced\Result
+     * @var Result
      */
     protected $_block;
-
-    protected function setUp(): void
-    {
-        $this->_layout = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\View\LayoutInterface::class
-        );
-        $this->_block = $this->_layout->createBlock(\Magento\CatalogSearch\Block\Advanced\Result::class, 'block');
-    }
 
     /**
      * @magentoAppIsolation enabled
@@ -35,19 +36,19 @@ class ResultTest extends \PHPUnit\Framework\TestCase
             'position' => 'Label Position',
             'option3' => 'Label Option 2',
         ];
-        /** @var \Magento\Catalog\Model\Category $category */
-        $category = $this->createPartialMock(\Magento\Catalog\Model\Category::class, ['getAvailableSortByOptions']);
+        /** @var Category $category */
+        $category = $this->createPartialMock(Category::class, ['getAvailableSortByOptions']);
         $category->expects($this->atLeastOnce())
             ->method('getAvailableSortByOptions')
             ->willReturn($sortOptions);
         $category->setId(100500); // Any id - just for layer navigation
-        /** @var \Magento\Catalog\Model\Layer\Resolver $resolver */
-        $resolver = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Catalog\Model\Layer\Resolver::class);
+        /** @var Resolver $resolver */
+        $resolver = Bootstrap::getObjectManager()
+            ->get(Resolver::class);
         $resolver->get()->setCurrentCategory($category);
 
         $childBlock = $this->_layout->addBlock(
-            \Magento\Framework\View\Element\Text::class,
+            Text::class,
             'search_result_list',
             'block'
         );
@@ -63,9 +64,9 @@ class ResultTest extends \PHPUnit\Framework\TestCase
      */
     public function testSetListModes()
     {
-        /** @var $childBlock \Magento\Framework\View\Element\Text */
+        /** @var $childBlock Text */
         $childBlock = $this->_layout->addBlock(
-            \Magento\Framework\View\Element\Text::class,
+            Text::class,
             'search_result_list',
             'block'
         );
@@ -76,17 +77,25 @@ class ResultTest extends \PHPUnit\Framework\TestCase
 
     public function testSetListCollection()
     {
-        /** @var $childBlock \Magento\Framework\View\Element\Text */
+        /** @var $childBlock Text */
         $childBlock = $this->_layout->addBlock(
-            \Magento\Framework\View\Element\Text::class,
+            Text::class,
             'search_result_list',
             'block'
         );
         $this->assertEmpty($childBlock->getCollection());
         $this->_block->setListCollection();
         $this->assertInstanceOf(
-            \Magento\CatalogSearch\Model\ResourceModel\Advanced\Collection::class,
+            Collection::class,
             $childBlock->getCollection()
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->_layout = Bootstrap::getObjectManager()->create(
+            LayoutInterface::class
+        );
+        $this->_block = $this->_layout->createBlock(Result::class, 'block');
     }
 }

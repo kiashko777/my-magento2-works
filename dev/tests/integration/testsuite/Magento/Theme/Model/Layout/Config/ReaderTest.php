@@ -5,32 +5,23 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Theme\Model\Layout\Config;
 
-class ReaderTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\App\Cache;
+use Magento\Framework\Config\FileResolverInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class ReaderTest extends TestCase
 {
     /**
-     * @var \Magento\Theme\Model\Layout\Config\Reader
+     * @var Reader
      */
     protected $_model;
 
-    /** @var  \Magento\Framework\Config\FileResolverInterface/PHPUnit\Framework\MockObject_MockObject */
+    /** @var  FileResolverInterface/PHPUnit\Framework\MockObject_MockObject */
     protected $_fileResolverMock;
-
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var $cache \Magento\Framework\App\Cache */
-        $cache = $objectManager->create(\Magento\Framework\App\Cache::class);
-        $cache->clean();
-        $this->_fileResolverMock = $this->getMockBuilder(
-            \Magento\Framework\Config\FileResolverInterface::class
-        )->disableOriginalConstructor()->getMock();
-        $this->_model = $objectManager->create(
-            \Magento\Theme\Model\Layout\Config\Reader::class,
-            ['fileResolver' => $this->_fileResolverMock]
-        );
-    }
 
     public function testRead()
     {
@@ -74,5 +65,20 @@ class ReaderTest extends \PHPUnit\Framework\TestCase
             ],
         ];
         $this->assertEquals($expected, $result);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var $cache Cache */
+        $cache = $objectManager->create(Cache::class);
+        $cache->clean();
+        $this->_fileResolverMock = $this->getMockBuilder(
+            FileResolverInterface::class
+        )->disableOriginalConstructor()->getMock();
+        $this->_model = $objectManager->create(
+            Reader::class,
+            ['fileResolver' => $this->_fileResolverMock]
+        );
     }
 }

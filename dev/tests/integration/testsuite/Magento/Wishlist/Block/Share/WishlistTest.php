@@ -6,29 +6,28 @@
 
 namespace Magento\Wishlist\Block\Share;
 
-class WishlistTest extends \PHPUnit\Framework\TestCase
+use Magento\Customer\Api\Data\CustomerInterface;
+use Magento\Customer\Model\Session;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
+
+class WishlistTest extends TestCase
 {
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     protected $_objectManager;
 
     /**
-     * @var \Magento\Wishlist\Block\Share\Wishlist
+     * @var Wishlist
      */
     protected $_block;
 
     /**
-     * @var \Magento\Customer\Model\Session
+     * @var Session
      */
     protected $_customerSession;
-
-    protected function setUp(): void
-    {
-        $this->_objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->_customerSession = $this->_objectManager->get(\Magento\Customer\Model\Session::class);
-        $this->_block = $this->_objectManager->create(\Magento\Wishlist\Block\Share\Wishlist::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
@@ -39,7 +38,7 @@ class WishlistTest extends \PHPUnit\Framework\TestCase
         $this->_customerSession->loginById(1);
         $expectedCustomer = $this->_customerSession->getCustomerDataObject();
         $actualCustomer = $this->_block->getWishlistCustomer();
-        $this->assertInstanceOf(\Magento\Customer\Api\Data\CustomerInterface::class, $actualCustomer);
+        $this->assertInstanceOf(CustomerInterface::class, $actualCustomer);
         $this->assertEquals((int)$expectedCustomer->getId(), (int)$actualCustomer->getId());
         $this->assertEquals((int)$expectedCustomer->getWebsiteId(), (int)$actualCustomer->getWebsiteId());
         $this->assertEquals((int)$expectedCustomer->getStoreId(), (int)$actualCustomer->getStoreId());
@@ -51,5 +50,12 @@ class WishlistTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($expectedCustomer->getEmail(), $actualCustomer->getEmail());
         $this->assertEquals((int)$expectedCustomer->getDefaultBilling(), (int)$actualCustomer->getDefaultBilling());
         $this->assertEquals((int)$expectedCustomer->getDefaultShipping(), (int)$actualCustomer->getDefaultShipping());
+    }
+
+    protected function setUp(): void
+    {
+        $this->_objectManager = Bootstrap::getObjectManager();
+        $this->_customerSession = $this->_objectManager->get(Session::class);
+        $this->_block = $this->_objectManager->create(Wishlist::class);
     }
 }

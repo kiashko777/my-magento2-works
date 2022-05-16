@@ -66,33 +66,6 @@ class SynchronizePersistentOnLoginObserverTest extends TestCase
     private $customerSession;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->persistentSessionHelper = $this->objectManager->get(PersistentSessionHelper::class);
-        $this->model = $this->objectManager->get(SynchronizePersistentOnLoginObserver::class);
-        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
-        $this->persistentSessionFactory = $this->objectManager->get(SessionFactory::class);
-        $this->cookieManager = $this->objectManager->get(CookieManagerInterface::class);
-        $this->customerSession = $this->objectManager->get(CustomerSession::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->persistentSessionHelper->setRememberMeChecked(null);
-        $this->customerSession->logout();
-
-        parent::tearDown();
-    }
-
-    /**
      * Test that persistent session is created on customer login
      *
      * @return void
@@ -157,5 +130,32 @@ class SynchronizePersistentOnLoginObserverTest extends TestCase
         $session = $this->persistentSessionFactory->create()->setLoadExpired()->loadByCustomerId($customer->getId());
         $this->assertNull($session->getId());
         $this->assertNull($this->cookieManager->getCookie(Session::COOKIE_NAME));
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->persistentSessionHelper = $this->objectManager->get(PersistentSessionHelper::class);
+        $this->model = $this->objectManager->get(SynchronizePersistentOnLoginObserver::class);
+        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
+        $this->persistentSessionFactory = $this->objectManager->get(SessionFactory::class);
+        $this->cookieManager = $this->objectManager->get(CookieManagerInterface::class);
+        $this->customerSession = $this->objectManager->get(CustomerSession::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->persistentSessionHelper->setRememberMeChecked(null);
+        $this->customerSession->logout();
+
+        parent::tearDown();
     }
 }

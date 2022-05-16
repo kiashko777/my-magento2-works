@@ -8,10 +8,21 @@ namespace Magento\CustomerImportExport\Model\Import;
 
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Api\Data\CustomerInterface;
+use Magento\Customer\Model\Indexer\Processor;
+use Magento\Customer\Model\ResourceModel\Customer\Collection;
+use Magento\Framework\App\Area;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
-use Magento\ImportExport\Model\Import;
+use Magento\Framework\Filesystem;
+use Magento\Framework\Filesystem\Directory\Write;
 use Magento\Framework\Indexer\StateInterface;
+use Magento\ImportExport\Model\Import;
+use Magento\ImportExport\Model\Import\Source\Csv;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
 
 /**
  * Test for class \Magento\CustomerImportExport\Model\Import\Customer which covers validation logic
@@ -19,12 +30,12 @@ use Magento\Framework\Indexer\StateInterface;
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  */
-class CustomerTest extends \PHPUnit\Framework\TestCase
+class CustomerTest extends TestCase
 {
     /**
      * Model object which used for tests
      *
-     * @var Customer|\PHPUnit\Framework\MockObject\MockObject
+     * @var Customer|MockObject
      */
     protected $_model;
 
@@ -36,49 +47,14 @@ class CustomerTest extends \PHPUnit\Framework\TestCase
     protected $_customerData;
 
     /**
-     * @var \Magento\Framework\Filesystem\Directory\Write
+     * @var Write
      */
     protected $directoryWrite;
 
     /**
-     * @var \Magento\Customer\Model\Indexer\Processor
+     * @var Processor
      */
     private $indexerProcessor;
-
-    /**
-     * Create all necessary data for tests
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\CustomerImportExport\Model\Import\Customer::class);
-        $this->_model->setParameters(['behavior' => Import::BEHAVIOR_ADD_UPDATE]);
-        $this->indexerProcessor = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Customer\Model\Indexer\Processor::class);
-
-        $propertyAccessor = new \ReflectionProperty($this->_model, 'errorMessageTemplates');
-        $propertyAccessor->setAccessible(true);
-        $propertyAccessor->setValue($this->_model, []);
-
-        $this->_customerData = [
-            'firstname' => 'Firstname',
-            'lastname' => 'Lastname',
-            'group_id' => 1,
-            Customer::COLUMN_EMAIL => 'customer@example.com',
-            Customer::COLUMN_WEBSITE => 'base',
-            Customer::COLUMN_STORE => 'default',
-            'store_id' => 1,
-            'website_id' => 1,
-            'password' => 'password',
-        ];
-
-        $filesystem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Framework\Filesystem::class);
-        $this->directoryWrite = $filesystem
-            ->getDirectoryWrite(DirectoryList::ROOT);
-    }
 
     /**
      * Test importData() method
@@ -91,16 +67,16 @@ class CustomerTest extends \PHPUnit\Framework\TestCase
         // 1 of this customers is already exist, but its first and last name were changed in file
         $expectAddedCustomers = 5;
 
-        $source = new \Magento\ImportExport\Model\Import\Source\Csv(
+        $source = new Csv(
             __DIR__ . '/_files/customers_with_gender_to_import.csv',
             $this->directoryWrite
         );
 
         $existingCustomer = $this->getCustomer('CharlesTAlston@teleworm.us', 1);
 
-        /** @var $customersCollection \Magento\Customer\Model\ResourceModel\Customer\Collection */
-        $customersCollection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Model\ResourceModel\Customer\Collection::class
+        /** @var $customersCollection Collection */
+        $customersCollection = Bootstrap::getObjectManager()->create(
+            Collection::class
         );
         $customersCollection->addAttributeToSelect('firstname', 'inner')->addAttributeToSelect('lastname', 'inner');
 
@@ -150,6 +126,23 @@ class CustomerTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Gets customer entity.
+     *
+     * @param string $email
+     * @param int $websiteId
+     * @return CustomerInterface
+     * @throws NoSuchEntityException
+     * @throws LocalizedException
+     */
+    private function getCustomer(string $email, int $websiteId): CustomerInterface
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var CustomerRepositoryInterface $repository */
+        $repository = $objectManager->get(CustomerRepositoryInterface::class);
+        return $repository->get($email, $websiteId);
+    }
+
+    /**
      * Tests importData() method.
      *
      * @magentoDataFixture Magento/Customer/_files/import_export/customer.php
@@ -158,20 +151,20 @@ class CustomerTest extends \PHPUnit\Framework\TestCase
      */
     public function testImportDataWithOneAdditionalColumn(): void
     {
-        $source = new \Magento\ImportExport\Model\Import\Source\Csv(
+        $source = new Csv(
             __DIR__ . '/_files/customer_to_import_with_one_additional_column.csv',
             $this->directoryWrite
         );
 
-        $existingCustomer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+        $existingCustomer = Bootstrap::getObjectManager()->create(
             \Magento\Customer\Model\Customer::class
         );
         $existingCustomer->setWebsiteId(1);
         $existingCustomer = $existingCustomer->loadByEmail('CharlesTAlston@teleworm.us');
 
-        /** @var $customersCollection \Magento\Customer\Model\ResourceModel\Customer\Collection */
-        $customersCollection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Model\ResourceModel\Customer\Collection::class
+        /** @var $customersCollection Collection */
+        $customersCollection = Bootstrap::getObjectManager()->create(
+            Collection::class
         );
         $customersCollection->resetData();
         $customersCollection->clear();
@@ -232,16 +225,16 @@ class CustomerTest extends \PHPUnit\Framework\TestCase
      */
     public function testDeleteData()
     {
-        \Magento\TestFramework\Helper\Bootstrap::getInstance()
-            ->loadArea(\Magento\Framework\App\Area::AREA_FRONTEND);
-        $source = new \Magento\ImportExport\Model\Import\Source\Csv(
+        Bootstrap::getInstance()
+            ->loadArea(Area::AREA_FRONTEND);
+        $source = new Csv(
             __DIR__ . '/_files/customers_to_delete.csv',
             $this->directoryWrite
         );
 
-        /** @var $customerCollection \Magento\Customer\Model\ResourceModel\Customer\Collection */
-        $customerCollection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Model\ResourceModel\Customer\Collection::class
+        /** @var $customerCollection Collection */
+        $customerCollection = Bootstrap::getObjectManager()->create(
+            Collection::class
         );
         $this->assertEquals(3, $customerCollection->count(), 'Count of existing customers are invalid');
 
@@ -386,6 +379,23 @@ class CustomerTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Import using given file and behavior
+     *
+     * @param string $file
+     * @param string $behavior
+     */
+    private function doImport(string $file, string $behavior): void
+    {
+        $source = new Csv($file, $this->directoryWrite);
+        $this->_model
+            ->setParameters(['behavior' => $behavior])
+            ->setSource($source)
+            ->validateData()
+            ->hasToBeTerminated();
+        $this->_model->importData();
+    }
+
+    /**
      * Test customer indexer gets invalidated after import when Update on Schedule mode is set
      *
      * @magentoDbIsolation enabled
@@ -403,36 +413,37 @@ class CustomerTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Gets customer entity.
-     *
-     * @param string $email
-     * @param int $websiteId
-     * @return CustomerInterface
-     * @throws NoSuchEntityException
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * Create all necessary data for tests
      */
-    private function getCustomer(string $email, int $websiteId): CustomerInterface
+    protected function setUp(): void
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var CustomerRepositoryInterface $repository */
-        $repository = $objectManager->get(CustomerRepositoryInterface::class);
-        return $repository->get($email, $websiteId);
-    }
+        parent::setUp();
 
-    /**
-     * Import using given file and behavior
-     *
-     * @param string $file
-     * @param string $behavior
-     */
-    private function doImport(string $file, string $behavior): void
-    {
-        $source = new \Magento\ImportExport\Model\Import\Source\Csv($file, $this->directoryWrite);
-        $this->_model
-            ->setParameters(['behavior' => $behavior])
-            ->setSource($source)
-            ->validateData()
-            ->hasToBeTerminated();
-        $this->_model->importData();
+        $this->_model = Bootstrap::getObjectManager()
+            ->create(Customer::class);
+        $this->_model->setParameters(['behavior' => Import::BEHAVIOR_ADD_UPDATE]);
+        $this->indexerProcessor = Bootstrap::getObjectManager()
+            ->create(Processor::class);
+
+        $propertyAccessor = new ReflectionProperty($this->_model, 'errorMessageTemplates');
+        $propertyAccessor->setAccessible(true);
+        $propertyAccessor->setValue($this->_model, []);
+
+        $this->_customerData = [
+            'firstname' => 'Firstname',
+            'lastname' => 'Lastname',
+            'group_id' => 1,
+            Customer::COLUMN_EMAIL => 'customer@example.com',
+            Customer::COLUMN_WEBSITE => 'base',
+            Customer::COLUMN_STORE => 'default',
+            'store_id' => 1,
+            'website_id' => 1,
+            'password' => 'password',
+        ];
+
+        $filesystem = Bootstrap::getObjectManager()
+            ->create(Filesystem::class);
+        $this->directoryWrite = $filesystem
+            ->getDirectoryWrite(DirectoryList::ROOT);
     }
 }

@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Model\Order\Address;
 
 use Magento\Config\Model\ResourceModel\Config as ConfigResourceModel;
@@ -40,17 +41,6 @@ class RendererTest extends TestCase
      * @var Config
      */
     private $config;
-
-    /**
-     * Set up
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->orderAddressRenderer = $this->objectManager->get(OrderAddressRenderer::class);
-        $this->configResourceModel = $this->objectManager->get(ConfigResourceModel::class);
-        $this->config = $this->objectManager->get(Config::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Sales/_files/order_fixture_store.php
@@ -133,5 +123,16 @@ class RendererTest extends TestCase
             'United States',
             $this->orderAddressRenderer->format($address, 'html')
         );
+    }
+
+    /**
+     * Set up
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->orderAddressRenderer = $this->objectManager->get(OrderAddressRenderer::class);
+        $this->configResourceModel = $this->objectManager->get(ConfigResourceModel::class);
+        $this->config = $this->objectManager->get(Config::class);
     }
 }

@@ -5,7 +5,8 @@
  * See COPYING.txt for license details.
  */
 -->
-<requests xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Search/etc/search_request_merged.xsd">
+<requests xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="urn:magento:framework:Search/etc/search_request_merged.xsd">
     <request query="one_match" index="catalogsearch_fulltext">
         <dimensions>
             <dimension name="scope" value="default"/>
@@ -51,7 +52,7 @@
                     <range from="18" to=""/>
                 </ranges>
             </bucket>
-            <bucket xsi:type="dynamicBucket" method="manual" name="dynamic_price" field="price" />
+            <bucket xsi:type="dynamicBucket" method="manual" name="dynamic_price" field="price"/>
         </aggregations>
         <from>0</from>
         <size>10</size>
@@ -89,7 +90,7 @@
                 <filterReference clause="must" ref="pid"/>
             </query>
             <query xsi:type="filteredQuery" name="filtered_query_rm">
-                <queryReference clause= "must" ref="fulltext_search_query_rm"/>
+                <queryReference clause="must" ref="fulltext_search_query_rm"/>
             </query>
             <query xsi:type="filteredQuery" name="filtered_query_filter_rm">
                 <filterReference clause="must" ref="bool_filter_rm"/>
@@ -316,7 +317,8 @@
             <filter xsi:type="boolFilter" name="filter">
                 <filterReference clause="must" ref="price_filter"/>
             </filter>
-            <filter name="price_filter" xsi:type="rangeFilter" field="price" from="$request.from_price$" to="$request.to_price$"/>
+            <filter name="price_filter" xsi:type="rangeFilter" field="price" from="$request.from_price$"
+                    to="$request.to_price$"/>
         </filters>
         <from>0</from>
         <size>10</size>
@@ -348,8 +350,10 @@
         <filters>
             <filter xsi:type="termFilter" name="category_filter" field="category_ids" value="$category_ids$"/>
             <filter xsi:type="rangeFilter" name="price_filter" field="price" from="$price.from$" to="$price.to$"/>
-            <filter xsi:type="termFilter" name="select_attribute_filter" field="select_attribute" value="$select_attribute$"/>
-            <filter xsi:type="termFilter" name="multiselect_attribute_filter" field="multiselect_attribute" value="$multiselect_attribute$"/>
+            <filter xsi:type="termFilter" name="select_attribute_filter" field="select_attribute"
+                    value="$select_attribute$"/>
+            <filter xsi:type="termFilter" name="multiselect_attribute_filter" field="multiselect_attribute"
+                    value="$multiselect_attribute$"/>
         </filters>
         <aggregations>
             <bucket name="price_bucket" field="price" xsi:type="dynamicBucket" method="$price_dynamic_algorithm$">
@@ -404,7 +408,8 @@
             </query>
         </queries>
         <filters>
-            <filter xsi:type="termFilter" name="test_configurable_filter" field="test_configurable" value="$test_configurable$"/>
+            <filter xsi:type="termFilter" name="test_configurable_filter" field="test_configurable"
+                    value="$test_configurable$"/>
             <filter xsi:type="termFilter" name="visibility_filter" field="visibility" value="$visibility$"/>
         </filters>
         <aggregations/>

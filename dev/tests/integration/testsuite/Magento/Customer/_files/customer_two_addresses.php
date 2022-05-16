@@ -6,16 +6,18 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Customer\Model\Address;
 use Magento\Customer\Model\CustomerRegistry;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Customer/_files/customer_address.php');
 
-/** @var \Magento\Customer\Model\Address $customerAddress */
-$customerAddress = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->create(\Magento\Customer\Model\Address::class);
+/** @var Address $customerAddress */
+$customerAddress = Bootstrap::getObjectManager()
+    ->create(Address::class);
 /** @var CustomerRegistry $customerRegistry */
-$customerRegistry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
+$customerRegistry = Bootstrap::getObjectManager()
     ->get(CustomerRegistry::class);
 $customerAddress->isObjectNew(true);
 $customerAddress->setData(

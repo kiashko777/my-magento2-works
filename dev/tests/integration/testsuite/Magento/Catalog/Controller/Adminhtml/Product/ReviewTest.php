@@ -3,24 +3,30 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Controller\Adminhtml\Product;
+
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Review\Model\Review;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class ReviewTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class ReviewTest extends AbstractBackendController
 {
     /**
      * @magentoDataFixture Magento/Review/_files/review_xss.php
      */
     public function testEditActionProductNameXss()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $productRepository = $objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+        $objectManager = Bootstrap::getObjectManager();
+        $productRepository = $objectManager->create(ProductRepositoryInterface::class);
         $product = $productRepository->get('product-with-xss');
 
-        $reviewId = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Review\Model\Review::class
+        $reviewId = Bootstrap::getObjectManager()->create(
+            Review::class
         )->load(
             $product->getId(),
             'entity_pk_value'

@@ -7,16 +7,17 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Controller\Adminhtml\Product;
 
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Framework\ObjectManagerInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\ResourceModel\Product as ProductResource;
+use Magento\Catalog\Model\ResourceModel\Product\Gallery;
 use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Framework\Exception\NoSuchEntityException;
-use Magento\Store\Model\Store;
-use Magento\Catalog\Model\ResourceModel\Product as ProductResource;
 use Magento\Framework\Message\MessageInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Store\Model\Store;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\AbstractBackendController;
-use Magento\Catalog\Model\ResourceModel\Product\Gallery;
+use ReflectionObject;
 
 /**
  * Test for mass product deleting.
@@ -27,14 +28,12 @@ use Magento\Catalog\Model\ResourceModel\Product\Gallery;
  */
 class MassDeleteTest extends AbstractBackendController
 {
+    /** @var ProductRepositoryInterface */
+    protected $productRepository;
     /**
      * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    /** @var ProductRepositoryInterface */
-    protected $productRepository;
-
     /**
      * @var ProductResource
      */
@@ -51,21 +50,6 @@ class MassDeleteTest extends AbstractBackendController
     private $mediaAttributeId;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
-        $this->productResource = $this->objectManager->create(ProductResource::class);
-        $this->galleryResource = $this->objectManager->create(Gallery::class);
-        $this->mediaAttributeId = (int)$this->productResource->getAttribute('media_gallery')->getAttributeId();
-        $this->productRepository->cleanCache();
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/multiple_products.php
      *
      * @return void
@@ -75,6 +59,34 @@ class MassDeleteTest extends AbstractBackendController
         $productIds = [10, 11, 12];
         $this->dispatchMassDeleteAction($productIds);
         $this->assertSuccessfulDeleteProducts(count($productIds));
+    }
+
+    /**
+     * Dispatch mass delete action.
+     *
+     * @param array $productIds
+     * @return void
+     */
+    protected function dispatchMassDeleteAction(array $productIds = []): void
+    {
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
+        $this->getRequest()->setParams(['selected' => $productIds, 'namespace' => 'product_listing']);
+        $this->dispatch('backend/catalog/product/massDelete/');
+    }
+
+    /**
+     * Assert successful delete products.
+     *
+     * @param int $productCount
+     * @return void
+     */
+    protected function assertSuccessfulDeleteProducts(int $productCount): void
+    {
+        $this->assertSessionMessages(
+            $this->equalTo([(string)__('A total of %1 record(s) have been deleted.', $productCount)]),
+            MessageInterface::TYPE_SUCCESS
+        );
+        $this->assertRedirect($this->stringContains('backend/catalog/product/index'));
     }
 
     /**
@@ -125,31 +137,18 @@ class MassDeleteTest extends AbstractBackendController
     }
 
     /**
-     * Assert successful delete products.
-     *
-     * @param int $productCount
-     * @return void
+     * @inheritdoc
      */
-    protected function assertSuccessfulDeleteProducts(int $productCount): void
+    protected function setUp(): void
     {
-        $this->assertSessionMessages(
-            $this->equalTo([(string)__('A total of %1 record(s) have been deleted.', $productCount)]),
-            MessageInterface::TYPE_SUCCESS
-        );
-        $this->assertRedirect($this->stringContains('backend/catalog/product/index'));
-    }
+        parent::setUp();
 
-    /**
-     * Dispatch mass delete action.
-     *
-     * @param array $productIds
-     * @return void
-     */
-    protected function dispatchMassDeleteAction(array $productIds = []): void
-    {
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
-        $this->getRequest()->setParams(['selected' => $productIds, 'namespace' => 'product_listing']);
-        $this->dispatch('backend/catalog/product/massDelete/');
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
+        $this->productResource = $this->objectManager->create(ProductResource::class);
+        $this->galleryResource = $this->objectManager->create(Gallery::class);
+        $this->mediaAttributeId = (int)$this->productResource->getAttribute('media_gallery')->getAttributeId();
+        $this->productRepository->cleanCache();
     }
 
     /**
@@ -158,7 +157,7 @@ class MassDeleteTest extends AbstractBackendController
     protected function tearDown(): void
     {
         parent::tearDown();
-        $reflection = new \ReflectionObject($this);
+        $reflection = new ReflectionObject($this);
         foreach ($reflection->getProperties() as $property) {
             if (!$property->isStatic() && 0 !== strpos($property->getDeclaringClass()->getName(), 'PHPUnit')) {
                 $property->setAccessible(true);

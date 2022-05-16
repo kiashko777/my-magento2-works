@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace Magento\Setup\Model;
 
+use Magento\Setup\Exception;
+
 /**
  * Creates instance of Magento\Setup\Model\SearchConfig class
  */
@@ -29,7 +31,7 @@ class SearchConfigFactory
      * Create SearchConfig instance
      *
      * @return SearchConfig
-     * @throws \Magento\Setup\Exception
+     * @throws Exception
      */
     public function create(): SearchConfig
     {

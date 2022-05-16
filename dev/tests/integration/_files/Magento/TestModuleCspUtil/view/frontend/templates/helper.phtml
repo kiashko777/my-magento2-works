@@ -4,9 +4,14 @@
  * See COPYING.txt for license details.
  */
 
-/** @var \Magento\Csp\Api\InlineUtilInterface $csp */
+/** @var InlineUtilInterface $csp */
+
+use Magento\Csp\Api\InlineUtilInterface;
+
 ?>
 <h1>Hello there!</h1>
-<?= /* @noEscape */ $csp->renderTag('script', ['src' => 'http://my.magento.com/static/script.js']); ?>
-<?= /* @noEscape */ $csp->renderTag('script', [], "\n    let myVar = 1;\n") ?>
+<?= /* @noEscape */
+$csp->renderTag('script', ['src' => 'http://my.magento.com/static/script.js']); ?>
+<?= /* @noEscape */
+$csp->renderTag('script', [], "\n    let myVar = 1;\n") ?>
 

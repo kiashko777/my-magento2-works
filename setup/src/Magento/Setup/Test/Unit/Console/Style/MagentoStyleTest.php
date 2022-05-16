@@ -40,16 +40,6 @@ class MagentoStyleTest extends TestCase
     private $testOutput;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $input = new ArrayInput(['name' => 'foo'], new InputDefinition([new InputArgument('name')]));
-        $this->testOutput = new TestOutput();
-        $this->magentoStyle = new MagentoStyle($input, $this->testOutput);
-    }
-
-    /**
      * Test style decorator will output block with correct style.
      *
      * @return void
@@ -314,5 +304,15 @@ class MagentoStyleTest extends TestCase
         $expected = ' 0/2 [>                           ]   0%' . PHP_EOL .
             ' 3/3 [============================] 100%' . PHP_EOL . PHP_EOL;
         $this->assertEquals($expected, $this->testOutput->output, 'Progress does not match output');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $input = new ArrayInput(['name' => 'foo'], new InputDefinition([new InputArgument('name')]));
+        $this->testOutput = new TestOutput();
+        $this->magentoStyle = new MagentoStyle($input, $this->testOutput);
     }
 }

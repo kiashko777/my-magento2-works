@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Quote\Customer;
 
+use Exception;
+use Magento\Framework\Exception\AuthenticationException;
 use Magento\GraphQl\Quote\GetMaskedQuoteIdByReservedOrderId;
 use Magento\Integration\Api\CustomerTokenServiceInterface;
 use Magento\TestFramework\Helper\Bootstrap;
@@ -53,6 +55,36 @@ class GetSelectedPaymentMethodTest extends GraphQlAbstract
     }
 
     /**
+     * @param string $maskedQuoteId
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId): string
+    {
+        return <<<QUERY
+{
+  cart(cart_id:"$maskedQuoteId") {
+    selected_payment_method {
+      code
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
+     * @param string $username
+     * @param string $password
+     * @return array
+     * @throws AuthenticationException
+     */
+    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
+        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
+        return $headerMap;
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
      * @magentoConfigFixture default_store payment/banktransfer/active 1
@@ -81,7 +113,7 @@ class GetSelectedPaymentMethodTest extends GraphQlAbstract
      */
     public function testGetSelectedPaymentMethodFromNonExistentCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
 
         $maskedQuoteId = 'non_existent_masked_id';
         $query = $this->getQuery($maskedQuoteId);
@@ -140,35 +172,5 @@ class GetSelectedPaymentMethodTest extends GraphQlAbstract
         $objectManager = Bootstrap::getObjectManager();
         $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
         $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-    }
-
-    /**
-     * @param string $maskedQuoteId
-     * @return string
-     */
-    private function getQuery(string $maskedQuoteId): string
-    {
-        return <<<QUERY
-{
-  cart(cart_id:"$maskedQuoteId") {
-    selected_payment_method {
-      code
-    }
-  }
-}
-QUERY;
-    }
-
-    /**
-     * @param string $username
-     * @param string $password
-     * @return array
-     * @throws \Magento\Framework\Exception\AuthenticationException
-     */
-    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
-    {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
-        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
-        return $headerMap;
     }
 }

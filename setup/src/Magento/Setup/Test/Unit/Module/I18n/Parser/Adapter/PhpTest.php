@@ -10,12 +10,13 @@ namespace Magento\Setup\Test\Unit\Module\I18n\Parser\Adapter;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
 use Magento\Setup\Module\I18n\Parser\Adapter\Php;
 use Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer\PhraseCollector;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class PhpTest extends TestCase
 {
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject|
+     * @var MockObject|
      * \Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer\PhraseCollector
      */
     protected $_phraseCollectorMock;
@@ -24,18 +25,6 @@ class PhpTest extends TestCase
      * @var Php
      */
     protected $_adapter;
-
-    protected function setUp(): void
-    {
-        $this->_phraseCollectorMock =
-            $this->createMock(PhraseCollector::class);
-
-        $objectManagerHelper = new ObjectManager($this);
-        $this->_adapter = $objectManagerHelper->getObject(
-            Php::class,
-            ['phraseCollector' => $this->_phraseCollectorMock]
-        );
-    }
 
     public function testParse()
     {
@@ -52,5 +41,17 @@ class PhpTest extends TestCase
 
         $this->_adapter->parse('file1');
         $this->assertEquals($expectedResult, $this->_adapter->getPhrases());
+    }
+
+    protected function setUp(): void
+    {
+        $this->_phraseCollectorMock =
+            $this->createMock(PhraseCollector::class);
+
+        $objectManagerHelper = new ObjectManager($this);
+        $this->_adapter = $objectManagerHelper->getObject(
+            Php::class,
+            ['phraseCollector' => $this->_phraseCollectorMock]
+        );
     }
 }

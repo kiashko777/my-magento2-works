@@ -7,14 +7,16 @@ declare(strict_types=1);
 
 namespace Magento\Test\Legacy;
 
+use Magento\Framework\App\Utility\AggregateInvoker;
 use Magento\Framework\App\Utility\Files;
 use Magento\Framework\Component\ComponentRegistrar;
 use Magento\TestFramework\Utility\FunctionDetector;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Tests to detect unsecure functions usage
  */
-class UnsecureFunctionsUsageTest extends \PHPUnit\Framework\TestCase
+class UnsecureFunctionsUsageTest extends TestCase
 {
     /**
      * Php unsecure functions
@@ -93,7 +95,7 @@ class UnsecureFunctionsUsageTest extends \PHPUnit\Framework\TestCase
      */
     public function testUnsecureFunctionsUsage()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $functionDetector = new FunctionDetector();
         $invoker(
             function ($fileFullPath) use ($functionDetector) {
@@ -111,6 +113,31 @@ class UnsecureFunctionsUsageTest extends \PHPUnit\Framework\TestCase
             },
             $this->getFilesToVerify()
         );
+    }
+
+    /**
+     * Get functions for the given file
+     *
+     * @param string $fileFullPath
+     * @return array
+     */
+    private function getFunctions($fileFullPath)
+    {
+        $fileExtension = pathinfo($fileFullPath, PATHINFO_EXTENSION);
+        $functions = [];
+        if ($fileExtension == 'php') {
+            $functions = self::$phpUnsecureFunctions;
+        } elseif ($fileExtension == 'js') {
+            $functions = self::$jsUnsecureFunctions;
+        } elseif ($fileExtension == 'phtml') {
+            $functions = array_merge_recursive(self::$phpUnsecureFunctions, self::$jsUnsecureFunctions);
+        }
+        foreach ($functions as $function => $functionRules) {
+            if (in_array($fileFullPath, $functionRules['exclude'])) {
+                unset($functions[$function]);
+            }
+        }
+        return $functions;
     }
 
     /**
@@ -194,30 +221,5 @@ class UnsecureFunctionsUsageTest extends \PHPUnit\Framework\TestCase
             }
         );
         return $filesToVerify;
-    }
-
-    /**
-     * Get functions for the given file
-     *
-     * @param string $fileFullPath
-     * @return array
-     */
-    private function getFunctions($fileFullPath)
-    {
-        $fileExtension = pathinfo($fileFullPath, PATHINFO_EXTENSION);
-        $functions = [];
-        if ($fileExtension == 'php') {
-            $functions = self::$phpUnsecureFunctions;
-        } elseif ($fileExtension == 'js') {
-            $functions = self::$jsUnsecureFunctions;
-        } elseif ($fileExtension == 'phtml') {
-            $functions = array_merge_recursive(self::$phpUnsecureFunctions, self::$jsUnsecureFunctions);
-        }
-        foreach ($functions as $function => $functionRules) {
-            if (in_array($fileFullPath, $functionRules['exclude'])) {
-                unset($functions[$function]);
-            }
-        }
-        return $functions;
     }
 }

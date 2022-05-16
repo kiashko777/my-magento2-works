@@ -3,18 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Payment\Model;
 
-use Magento\Sales\Model\Order;
 use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\Quote\Payment;
+use Magento\Sales\Model\Order;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class PaymentInfoTest extends \PHPUnit\Framework\TestCase
+class PaymentInfoTest extends TestCase
 {
     /**
      * @var ObjectManager
@@ -29,17 +32,6 @@ class PaymentInfoTest extends \PHPUnit\Framework\TestCase
     /** @var Quote */
     protected $_quote;
 
-    protected function setUp(): void
-    {
-        $this->_objectManager = Bootstrap::getObjectManager();
-        $this->_order = $this->_objectManager->create(
-            Order::class
-        );
-        $this->_quote = $this->_objectManager->create(
-            Quote::class
-        );
-    }
-
     /**
      * @magentoDbIsolation enabled
      * @magentoAppIsolation enabled
@@ -53,11 +45,22 @@ class PaymentInfoTest extends \PHPUnit\Framework\TestCase
         $paymentOrder->unsAdditionalInformation('testing');
 
         $quote = $this->_quote->load('reserved_order_id', 'reserved_order_id');
-        /** @var \Magento\Quote\Model\Quote\Payment $paymentQuote */
+        /** @var Payment $paymentQuote */
         $paymentQuote = $quote->getPayment();
         $paymentQuote->unsAdditionalInformation('testing');
 
         $this->assertFalse($paymentOrder->hasAdditionalInformation('testing'));
         $this->assertFalse($paymentQuote->hasAdditionalInformation('testing'));
+    }
+
+    protected function setUp(): void
+    {
+        $this->_objectManager = Bootstrap::getObjectManager();
+        $this->_order = $this->_objectManager->create(
+            Order::class
+        );
+        $this->_quote = $this->_objectManager->create(
+            Quote::class
+        );
     }
 }

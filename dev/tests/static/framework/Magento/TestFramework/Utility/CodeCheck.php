@@ -6,6 +6,8 @@
 
 namespace Magento\TestFramework\Utility;
 
+use Exception;
+
 /**
  * Searches for usage of classes, namespaces, functions, etc in PHP files
  */
@@ -26,6 +28,23 @@ class CodeCheck
     }
 
     /**
+     * Check if content matches the regexp
+     *
+     * @param string $regexp
+     * @param string $content
+     * @return bool True if the content matches the regexp
+     * @throws Exception
+     */
+    protected static function _isRegexpMatched($regexp, $content)
+    {
+        $result = preg_match($regexp, $content);
+        if ($result === false) {
+            throw new Exception('An error occurred when matching regexp "' . $regexp . '""');
+        }
+        return 1 === $result;
+    }
+
+    /**
      * Check if the namespace is used in the content
      *
      * @param string $namespace
@@ -35,7 +54,7 @@ class CodeCheck
     public static function isNamespaceUsed($namespace, $content)
     {
         return self::_isRegexpMatched('/namespace\s+' . preg_quote($namespace, '/') . ';/S', $content)
-        || self::_isRegexpMatched('/[^a-zA-Z\d_]' . preg_quote($namespace . '\\', '/') . '/S', $content);
+            || self::_isRegexpMatched('/[^a-zA-Z\d_]' . preg_quote($namespace . '\\', '/') . '/S', $content);
     }
 
     /**
@@ -73,34 +92,11 @@ class CodeCheck
         }
         if (self::isClassOrInterface($content, $class) || self::isDirectDescendant($content, $class)) {
             return self::_isRegexpMatched('/this->' . $quotedMethod . '\s*\(/iS', $content)
-            || self::_isRegexpMatched(
-                '/(self|static|parent)::\s*' . $quotedMethod . '\s*\(/iS',
-                $content
-            );
+                || self::_isRegexpMatched(
+                    '/(self|static|parent)::\s*' . $quotedMethod . '\s*\(/iS',
+                    $content
+                );
         }
-    }
-
-    /**
-     * Check if methods or functions are used in the content
-     *
-     * If class context is specified, only the class and its descendants will be checked.
-     *
-     * @param string $property
-     * @param string $content
-     * @param string $class
-     * @return bool
-     */
-    public static function isPropertyUsed($property, $content, $class = null)
-    {
-        if ($class) {
-            if (!self::isClassOrInterface($content, $class) && !self::isDirectDescendant($content, $class)) {
-                return false;
-            }
-        }
-        return self::_isRegexpMatched(
-            '/[^a-z\d_]' . preg_quote($property, '/') . '[^a-z\d_]/iS',
-            $content
-        );
     }
 
     /**
@@ -132,19 +128,25 @@ class CodeCheck
     }
 
     /**
-     * Check if content matches the regexp
+     * Check if methods or functions are used in the content
      *
-     * @param string $regexp
+     * If class context is specified, only the class and its descendants will be checked.
+     *
+     * @param string $property
      * @param string $content
-     * @throws \Exception
-     * @return bool True if the content matches the regexp
+     * @param string $class
+     * @return bool
      */
-    protected static function _isRegexpMatched($regexp, $content)
+    public static function isPropertyUsed($property, $content, $class = null)
     {
-        $result = preg_match($regexp, $content);
-        if ($result === false) {
-            throw new \Exception('An error occurred when matching regexp "' . $regexp . '""');
+        if ($class) {
+            if (!self::isClassOrInterface($content, $class) && !self::isDirectDescendant($content, $class)) {
+                return false;
+            }
         }
-        return 1 === $result;
+        return self::_isRegexpMatched(
+            '/[^a-z\d_]' . preg_quote($property, '/') . '[^a-z\d_]/iS',
+            $content
+        );
     }
 }

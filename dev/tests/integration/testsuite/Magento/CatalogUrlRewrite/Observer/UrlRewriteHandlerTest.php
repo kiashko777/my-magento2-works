@@ -38,16 +38,6 @@ class UrlRewriteHandlerTest extends TestCase
     private $objectManager;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->handler = $this->objectManager->create(UrlRewriteHandler::class);
-    }
-
-    /**
      * Checks category URLs rewrites generation with enabled `Use Categories Path for Products URLs` option and
      * store's specific product URL key.
      *
@@ -87,6 +77,26 @@ class UrlRewriteHandlerTest extends TestCase
     }
 
     /**
+     * Gets category by name.
+     *
+     * @param string $name
+     * @return CategoryInterface
+     */
+    private function getCategory(string $name): CategoryInterface
+    {
+        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
+        $searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
+        $searchCriteria = $searchCriteriaBuilder->addFilter('name', $name)
+            ->create();
+        /** @var CategoryListInterface $repository */
+        $repository = $this->objectManager->get(CategoryListInterface::class);
+        $items = $repository->getList($searchCriteria)
+            ->getItems();
+
+        return array_pop($items);
+    }
+
+    /**
      * @magentoDataFixture Magento/CatalogUrlRewrite/_files/category_with_products.php
      */
     public function testGenerateProductUrlRewrites2()
@@ -117,22 +127,12 @@ class UrlRewriteHandlerTest extends TestCase
     }
 
     /**
-     * Gets category by name.
-     *
-     * @param string $name
-     * @return CategoryInterface
+     * @inheritdoc
      */
-    private function getCategory(string $name): CategoryInterface
+    protected function setUp(): void
     {
-        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
-        $searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
-        $searchCriteria = $searchCriteriaBuilder->addFilter('name', $name)
-            ->create();
-        /** @var CategoryListInterface $repository */
-        $repository = $this->objectManager->get(CategoryListInterface::class);
-        $items = $repository->getList($searchCriteria)
-            ->getItems();
-
-        return array_pop($items);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->handler = $this->objectManager->create(UrlRewriteHandler::class);
     }
 }

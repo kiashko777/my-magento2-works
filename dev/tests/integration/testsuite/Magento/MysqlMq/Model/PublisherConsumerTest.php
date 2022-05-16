@@ -10,6 +10,8 @@ namespace Magento\MysqlMq\Model;
 use Magento\Framework\MessageQueue\UseCase\QueueTestCaseAbstract;
 use Magento\MysqlMq\Model\ResourceModel\MessageCollection;
 use Magento\MysqlMq\Model\ResourceModel\MessageStatusCollection;
+use Magento\TestModuleMysqlMq\Model\DataObject;
+use Magento\TestModuleMysqlMq\Model\DataObjectFactory;
 
 /**
  * Test for MySQL publisher class.
@@ -36,9 +38,9 @@ class PublisherConsumerTest extends QueueTestCaseAbstract
      */
     public function testPublishConsumeFlow()
     {
-        /** @var \Magento\TestModuleMysqlMq\Model\DataObjectFactory $objectFactory */
-        $objectFactory = $this->objectManager->create(\Magento\TestModuleMysqlMq\Model\DataObjectFactory::class);
-        /** @var \Magento\TestModuleMysqlMq\Model\DataObject $object */
+        /** @var DataObjectFactory $objectFactory */
+        $objectFactory = $this->objectManager->create(DataObjectFactory::class);
+        /** @var DataObject $object */
         $object = $objectFactory->create();
         $object->setOutputPath($this->logFilePath);
         file_put_contents($this->logFilePath, '');
@@ -76,9 +78,9 @@ class PublisherConsumerTest extends QueueTestCaseAbstract
     public function testPublishAndConsumeSchemaDefinedByMethod()
     {
         $topic = 'test.schema.defined.by.method';
-        /** @var \Magento\TestModuleMysqlMq\Model\DataObjectFactory $objectFactory */
-        $objectFactory = $this->objectManager->create(\Magento\TestModuleMysqlMq\Model\DataObjectFactory::class);
-        /** @var \Magento\TestModuleMysqlMq\Model\DataObject $object */
+        /** @var DataObjectFactory $objectFactory */
+        $objectFactory = $this->objectManager->create(DataObjectFactory::class);
+        /** @var DataObject $object */
         $object = $objectFactory->create();
         $id = 33;
         $object->setName('Object name ' . $id)->setEntityId($id);
@@ -101,9 +103,9 @@ class PublisherConsumerTest extends QueueTestCaseAbstract
     public function testConsumeWithException()
     {
         $topic = 'demo.exception';
-        /** @var \Magento\TestModuleMysqlMq\Model\DataObjectFactory $objectFactory */
-        $objectFactory = $this->objectManager->create(\Magento\TestModuleMysqlMq\Model\DataObjectFactory::class);
-        /** @var \Magento\TestModuleMysqlMq\Model\DataObject $object */
+        /** @var DataObjectFactory $objectFactory */
+        $objectFactory = $this->objectManager->create(DataObjectFactory::class);
+        /** @var DataObject $object */
         $object = $objectFactory->create();
         $id = 99;
 
@@ -121,7 +123,7 @@ class PublisherConsumerTest extends QueueTestCaseAbstract
      * @param string $topic
      * @return Message
      */
-    private function getTopicLatestMessage(string $topic) : Message
+    private function getTopicLatestMessage(string $topic): Message
     {
         // Assert message status is error
         $messageCollection = $this->objectManager->create(MessageCollection::class);

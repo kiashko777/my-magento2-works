@@ -7,14 +7,15 @@ declare(strict_types=1);
 
 namespace Magento\Sales\Block\Order\PrintOrder;
 
+use IntlDateFormatter;
 use Magento\Directory\Model\CountryFactory;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Registry;
 use Magento\Framework\View\Element\Text;
 use Magento\Framework\View\LayoutInterface;
 use Magento\Framework\View\Result\PageFactory;
-use Magento\Sales\Api\Data\CreditmemoInterfaceFactory;
 use Magento\Sales\Api\Data\CreditmemoInterface;
+use Magento\Sales\Api\Data\CreditmemoInterfaceFactory;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Api\Data\OrderInterfaceFactory;
 use Magento\Sales\Api\Data\OrderPaymentInterfaceFactory;
@@ -56,34 +57,6 @@ class CreditmemoTest extends TestCase
     private $orderPaymentFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
-        $this->creditmemoFactory = $this->objectManager->get(CreditmemoInterfaceFactory::class);
-        $this->pageFactory = $this->objectManager->get(PageFactory::class);
-        $this->countryFactory = $this->objectManager->get(CountryFactory::class);
-        $this->orderPaymentFactory = $this->objectManager->create(OrderPaymentInterfaceFactory::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->registry->unregister('current_order');
-        $this->registry->unregister('current_creditmemo');
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoAppIsolation enabled
      *
      * @return void
@@ -105,6 +78,18 @@ class CreditmemoTest extends TestCase
         $actualHtml = $block->getTotalsHtml($creditmemo);
         $this->assertSame($creditmemo, $childBlock->getCreditmemo());
         $this->assertEquals($expectedHtml, $actualHtml);
+    }
+
+    /**
+     * Register order in registry.
+     *
+     * @param OrderInterface $order
+     * @return void
+     */
+    private function registerOrder(OrderInterface $order): void
+    {
+        $this->registry->unregister('current_order');
+        $this->registry->register('current_order', $order);
     }
 
     /**
@@ -135,33 +120,34 @@ class CreditmemoTest extends TestCase
     }
 
     /**
-     * @magentoDataFixture Magento/Sales/_files/refunds_for_items.php
+     * Register creditmemo in registry.
      *
+     * @param CreditmemoInterface $creditmemo
      * @return void
      */
-    public function testOrderInformation(): void
+    private function registerCreditmemo(CreditmemoInterface $creditmemo): void
     {
-        $order = $this->orderFactory->create()->loadByIncrementId('100000555');
-        $this->registerOrder($order);
-        $block = $this->layout->createBlock(Creditmemo::class);
-        $orderDate = $block->formatDate($order->getCreatedAt(), \IntlDateFormatter::LONG);
-        $templates = [
-            'Order status' => [
-                'template' => 'Magento_Sales::order/order_status.phtml',
-                'expected_data' => (string)__($order->getStatusLabel()),
-            ],
-            'Order date' => [
-                'template' => 'Magento_Sales::order/order_date.phtml',
-                'expected_data' => (string)__('Order Date: %1', $orderDate),
-            ],
-        ];
-        foreach ($templates as $key => $data) {
-            $this->assertStringContainsString(
-                $data['expected_data'],
-                strip_tags($block->setTemplate($data['template'])->toHtml()),
-                sprintf('%s wasn\'t found.', $key)
-            );
-        }
+        $this->registry->unregister('current_creditmemo');
+        $this->registry->register('current_creditmemo', $creditmemo);
+    }
+
+    /**
+     * Render print creditmemo block.
+     *
+     * @return string
+     */
+    private function renderPrintCreditmemoBlock(): string
+    {
+        $page = $this->pageFactory->create();
+        $page->addHandle([
+            'default',
+            'sales_order_printcreditmemo',
+        ]);
+        $page->getLayout()->generateXml();
+        $printCreditmemoBlock = $page->getLayout()->getBlock('sales.order.print.creditmemo');
+        $this->assertNotFalse($printCreditmemoBlock);
+
+        return $printCreditmemoBlock->toHtml();
     }
 
     /**
@@ -226,45 +212,60 @@ class CreditmemoTest extends TestCase
     }
 
     /**
-     * Register order in registry.
+     * @magentoDataFixture Magento/Sales/_files/refunds_for_items.php
      *
-     * @param OrderInterface $order
      * @return void
      */
-    private function registerOrder(OrderInterface $order): void
+    public function testOrderInformation(): void
+    {
+        $order = $this->orderFactory->create()->loadByIncrementId('100000555');
+        $this->registerOrder($order);
+        $block = $this->layout->createBlock(Creditmemo::class);
+        $orderDate = $block->formatDate($order->getCreatedAt(), IntlDateFormatter::LONG);
+        $templates = [
+            'Order status' => [
+                'template' => 'Magento_Sales::order/order_status.phtml',
+                'expected_data' => (string)__($order->getStatusLabel()),
+            ],
+            'Order date' => [
+                'template' => 'Magento_Sales::order/order_date.phtml',
+                'expected_data' => (string)__('Order Date: %1', $orderDate),
+            ],
+        ];
+        foreach ($templates as $key => $data) {
+            $this->assertStringContainsString(
+                $data['expected_data'],
+                strip_tags($block->setTemplate($data['template'])->toHtml()),
+                sprintf('%s wasn\'t found.', $key)
+            );
+        }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
+        $this->creditmemoFactory = $this->objectManager->get(CreditmemoInterfaceFactory::class);
+        $this->pageFactory = $this->objectManager->get(PageFactory::class);
+        $this->countryFactory = $this->objectManager->get(CountryFactory::class);
+        $this->orderPaymentFactory = $this->objectManager->create(OrderPaymentInterfaceFactory::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
     {
         $this->registry->unregister('current_order');
-        $this->registry->register('current_order', $order);
-    }
-
-    /**
-     * Register creditmemo in registry.
-     *
-     * @param CreditmemoInterface $creditmemo
-     * @return void
-     */
-    private function registerCreditmemo(CreditmemoInterface $creditmemo): void
-    {
         $this->registry->unregister('current_creditmemo');
-        $this->registry->register('current_creditmemo', $creditmemo);
-    }
 
-    /**
-     * Render print creditmemo block.
-     *
-     * @return string
-     */
-    private function renderPrintCreditmemoBlock(): string
-    {
-        $page = $this->pageFactory->create();
-        $page->addHandle([
-            'default',
-            'sales_order_printcreditmemo',
-        ]);
-        $page->getLayout()->generateXml();
-        $printCreditmemoBlock = $page->getLayout()->getBlock('sales.order.print.creditmemo');
-        $this->assertNotFalse($printCreditmemoBlock);
-
-        return $printCreditmemoBlock->toHtml();
+        parent::tearDown();
     }
 }

@@ -5,12 +5,17 @@
  */
 declare(strict_types=1);
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-$eavSetupFactory = $objectManager->create(\Magento\Eav\Setup\EavSetupFactory::class);
-/** @var \Magento\Eav\Setup\EavSetup $eavSetup */
+use Magento\Catalog\Model\Product;
+use Magento\Eav\Setup\EavSetup;
+use Magento\Eav\Setup\EavSetupFactory;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
+$eavSetupFactory = $objectManager->create(EavSetupFactory::class);
+/** @var EavSetup $eavSetup */
 $eavSetup = $eavSetupFactory->create();
 $eavSetup->updateAttribute(
-    \Magento\Catalog\Model\Product::ENTITY,
+    Product::ENTITY,
     'quantity_and_stock_status',
     [
         'is_used_in_grid' => 0,

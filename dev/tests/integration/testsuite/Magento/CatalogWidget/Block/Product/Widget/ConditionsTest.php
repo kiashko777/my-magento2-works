@@ -6,43 +6,42 @@
 
 namespace Magento\CatalogWidget\Block\Product\Widget;
 
+use Magento\Framework\Data\Form;
+use Magento\Framework\Data\Form\Element\Fieldset;
+use Magento\Framework\Data\Form\Element\Text;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
 /**
  * Test for \Magento\CatalogWidget\Block\Products\Widget\Conditions
  */
-class ConditionsTest extends \PHPUnit\Framework\TestCase
+class ConditionsTest extends TestCase
 {
     /**
-     * @var \Magento\CatalogWidget\Block\Product\Widget\Conditions
+     * @var Conditions
      */
     protected $block;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->block = $this->objectManager->create(
-            \Magento\CatalogWidget\Block\Product\Widget\Conditions::class
-        )->setArea('Adminhtml');
-    }
-
     public function testRender()
     {
-        $form = $this->objectManager->create(\Magento\Framework\Data\Form::class);
+        $form = $this->objectManager->create(Form::class);
 
-        /** @var \Magento\Framework\Data\Form\Element\Fieldset $container */
-        $container = $this->objectManager->create(\Magento\Framework\Data\Form\Element\Fieldset::class);
+        /** @var Fieldset $container */
+        $container = $this->objectManager->create(Fieldset::class);
         $container->setForm($form);
         $container->setData([
             'html_id' => 'options_fieldset67a77e971a7c331b6eaefcaf2f596097',
             'type' => 'fieldset',
         ]);
 
-        /** @var \Magento\Framework\Data\Form\Element\Text $element */
-        $element = $this->objectManager->create(\Magento\Framework\Data\Form\Element\Text::class);
+        /** @var Text $element */
+        $element = $this->objectManager->create(Text::class);
         $data = [
             'name' => 'parameters[condition]',
             'label' => 'Conditions',
@@ -74,5 +73,13 @@ class ConditionsTest extends \PHPUnit\Framework\TestCase
         $this->assertStringContainsString('window.options_fieldset67a77e971a7c331b6eaefcaf2f596097', $result);
         /* Assert HTML contains required JS code */
         $this->assertStringContainsString("VarienRulesForm('options_fieldset67a77e971a7c331b6eaefcaf2f596097", $result);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->block = $this->objectManager->create(
+            Conditions::class
+        )->setArea('Adminhtml');
     }
 }

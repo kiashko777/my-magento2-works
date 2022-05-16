@@ -6,34 +6,43 @@
 
 // Copy images to tmp media path
 
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Media\Config;
+use Magento\Catalog\Model\Product\Visibility;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Filesystem;
+use Magento\Framework\Filesystem\Directory\WriteInterface;
+use Magento\Framework\View\DesignInterface;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 
 $objectManager->get(
-    \Magento\Framework\View\DesignInterface::class
+    DesignInterface::class
 )->setArea(
     'frontend'
 )->setDefaultDesignTheme();
 
-/** @var \Magento\Catalog\Model\Product\Media\Config $config */
-$config = $objectManager->get(\Magento\Catalog\Model\Product\Media\Config::class);
-/** @var \Magento\Framework\Filesystem\Directory\WriteInterface $mediaDirectory */
-$mediaDirectory = $objectManager->get(\Magento\Framework\Filesystem::class)
+/** @var Config $config */
+$config = $objectManager->get(Config::class);
+/** @var WriteInterface $mediaDirectory */
+$mediaDirectory = $objectManager->get(Filesystem::class)
     ->getDirectoryWrite(DirectoryList::MEDIA);
 
 $baseTmpMediaPath = $config->getBaseTmpMediaPath();
 $mediaDirectory->create($baseTmpMediaPath);
 $mediaDirectory->getDriver()->filePutContents($mediaDirectory->getAbsolutePath($baseTmpMediaPath . '/product_image.png'), file_get_contents(__DIR__ . '/product_image.png'));
 
-/** @var $productOne \Magento\Catalog\Model\Product */
-$productOne = $objectManager->create(\Magento\Catalog\Model\Product::class);
+/** @var $productOne Product */
+$productOne = $objectManager->create(Product::class);
 $productOne->setTypeId(
     \Magento\Catalog\Model\Product\Type::TYPE_SIMPLE
 )->setAttributeSetId(
     4
 )->setWebsiteIds(
-    [$objectManager->get(\Magento\Store\Model\StoreManagerInterface::class)->getStore()->getWebsiteId()]
+    [$objectManager->get(StoreManagerInterface::class)->getStore()->getWebsiteId()]
 )->setSku(
     'simple_product_1'
 )->setName(
@@ -48,10 +57,10 @@ $productOne->setTypeId(
     2
 )->setStockData(
     [
-        'use_config_manage_stock'   => 1,
-        'qty'                       => 99,
-        'is_qty_decimal'            => 0,
-        'is_in_stock'               => 1,
+        'use_config_manage_stock' => 1,
+        'qty' => 99,
+        'is_qty_decimal' => 0,
+        'is_in_stock' => 1,
     ]
 )->setMetaTitle(
     'Simple Products 1 Meta Title'
@@ -60,9 +69,9 @@ $productOne->setTypeId(
 )->setMetaDescription(
     'Simple Products 1 Meta Description'
 )->setVisibility(
-    \Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH
+    Visibility::VISIBILITY_BOTH
 )->setStatus(
-    \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED
+    Status::STATUS_ENABLED
 )->addImageToMediaGallery(
     $baseTmpMediaPath . '/product_image.png',
     null,
@@ -70,14 +79,14 @@ $productOne->setTypeId(
     false
 )->save();
 
-/** @var $productTwo \Magento\Catalog\Model\Product */
-$productTwo = $objectManager->create(\Magento\Catalog\Model\Product::class);
+/** @var $productTwo Product */
+$productTwo = $objectManager->create(Product::class);
 $productTwo->setTypeId(
     \Magento\Catalog\Model\Product\Type::TYPE_SIMPLE
 )->setAttributeSetId(
     4
 )->setWebsiteIds(
-    [$objectManager->get(\Magento\Store\Model\StoreManagerInterface::class)->getStore()->getWebsiteId()]
+    [$objectManager->get(StoreManagerInterface::class)->getStore()->getWebsiteId()]
 )->setSku(
     'simple_product_2'
 )->setName(
@@ -93,7 +102,7 @@ $productTwo->setTypeId(
 )->setStockData(
     ['use_config_manage_stock' => 1, 'qty' => 24, 'is_in_stock' => 1]
 )->setVisibility(
-    \Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH
+    Visibility::VISIBILITY_BOTH
 )->setStatus(
-    \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED
+    Status::STATUS_ENABLED
 )->save();

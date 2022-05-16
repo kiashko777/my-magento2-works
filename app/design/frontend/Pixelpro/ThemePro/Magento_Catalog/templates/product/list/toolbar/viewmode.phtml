@@ -3,27 +3,30 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Catalog\Block\Product\ProductList\Toolbar;
+
 ?>
 <?php
 /**
  * Products list toolbar
  *
- * @var $block \Magento\Catalog\Block\Product\ProductList\Toolbar
+ * @var $block Toolbar
  */
 ?>
-<?php if ($block->isEnabledViewSwitcher()) :?>
+<?php if ($block->isEnabledViewSwitcher()) : ?>
     <div class="modes">
         <?php $_modes = $block->getModes(); ?>
-        <?php if ($_modes && count($_modes) > 1) :?>
+        <?php if ($_modes && count($_modes) > 1) : ?>
             <strong class="modes-label" id="modes-label"><?= $block->escapeHtml(__('View as')) ?></strong>
-            <?php foreach ($block->getModes() as $_code => $_label) :?>
-                <?php if ($block->isModeActive($_code)) :?>
+            <?php foreach ($block->getModes() as $_code => $_label) : ?>
+                <?php if ($block->isModeActive($_code)) : ?>
                     <strong title="<?= $block->escapeHtmlAttr($_label) ?>"
                             class="modes-mode active mode-<?= $block->escapeHtmlAttr(strtolower($_code)) ?>"
                             data-value="<?= $block->escapeHtmlAttr(strtolower($_code)) ?>">
                         <span><?= $block->escapeHtml($_label) ?></span>
                     </strong>
-                <?php else :?>
+                <?php else : ?>
                     <a class="modes-mode mode-<?= $block->escapeHtmlAttr(strtolower($_code)) ?>"
                        title="<?= $block->escapeHtmlAttr($_label) ?>"
                        href="#"

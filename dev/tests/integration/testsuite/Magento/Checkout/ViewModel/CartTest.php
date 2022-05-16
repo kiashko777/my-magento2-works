@@ -42,17 +42,6 @@ class CartTest extends TestCase
     private $storeManager;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = $this->objectManager = Bootstrap::getObjectManager();
-        $this->cart = $objectManager->get(Cart::class);
-        $this->mutableScopeConfig = $objectManager->get(MutableScopeConfigInterface::class);
-        $this->storeManager = $objectManager->get(StoreManagerInterface::class);
-    }
-
-    /**
      * @magentoAppArea frontend
      * @magentoDataFixture Magento/Store/_files/second_website_with_two_stores.php
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
@@ -121,5 +110,16 @@ class CartTest extends TestCase
             $scope,
             $scopeCode
         );
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = $this->objectManager = Bootstrap::getObjectManager();
+        $this->cart = $objectManager->get(Cart::class);
+        $this->mutableScopeConfig = $objectManager->get(MutableScopeConfigInterface::class);
+        $this->storeManager = $objectManager->get(StoreManagerInterface::class);
     }
 }

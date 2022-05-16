@@ -3,11 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Dependency\Report\Circular;
 
 use Magento\Setup\Module\Dependency\Circular;
 use Magento\Setup\Module\Dependency\ParserInterface;
 use Magento\Setup\Module\Dependency\Report\Builder\AbstractBuilder;
+use Magento\Setup\Module\Dependency\Report\Circular\Data\Config;
 use Magento\Setup\Module\Dependency\Report\WriterInterface;
 
 /**
@@ -18,22 +20,23 @@ class Builder extends AbstractBuilder
     /**
      * Circular dependencies builder
      *
-     * @var \Magento\Setup\Module\Dependency\Circular
+     * @var Circular
      */
     protected $circularBuilder;
 
     /**
      * Builder constructor
      *
-     * @param \Magento\Setup\Module\Dependency\ParserInterface $dependenciesParser
-     * @param \Magento\Setup\Module\Dependency\Report\WriterInterface $reportWriter
-     * @param \Magento\Setup\Module\Dependency\Circular $circularBuilder
+     * @param ParserInterface $dependenciesParser
+     * @param WriterInterface $reportWriter
+     * @param Circular $circularBuilder
      */
     public function __construct(
         ParserInterface $dependenciesParser,
         WriterInterface $reportWriter,
-        Circular $circularBuilder
-    ) {
+        Circular        $circularBuilder
+    )
+    {
         parent::__construct($dependenciesParser, $reportWriter);
 
         $this->circularBuilder = $circularBuilder;
@@ -43,7 +46,7 @@ class Builder extends AbstractBuilder
      * Template method. Prepare data for writer step
      *
      * @param array $modulesData
-     * @return \Magento\Setup\Module\Dependency\Report\Circular\Data\Config
+     * @return Config
      */
     protected function buildData($modulesData)
     {

@@ -47,7 +47,7 @@ $bundleProduct->setTypeId(Type::TYPE_BUNDLE)
     ->setPrice(10.0)
     ->setShipmentType(AbstractType::SHIPMENT_TOGETHER);
 
-$bundleOptionsData =  [
+$bundleOptionsData = [
     [
         'title' => 'Checkbox Options',
         'default_title' => 'Checkbox Options',
@@ -56,7 +56,7 @@ $bundleOptionsData =  [
         'delete' => '',
     ],
 ];
-$bundleSelectionsData =  [
+$bundleSelectionsData = [
     [
         'sku' => $product->getSku(),
         'selection_qty' => 1,

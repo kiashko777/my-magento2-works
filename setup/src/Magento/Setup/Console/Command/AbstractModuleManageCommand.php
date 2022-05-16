@@ -3,16 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Console\Command;
 
-use Magento\Framework\Code\GeneratedFiles;
-use Magento\Setup\Model\ObjectManagerProvider;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Input\InputOption;
+use LogicException;
 use Magento\Framework\App\DeploymentConfig;
-use Magento\Framework\Module\Status;
+use Magento\Framework\Code\GeneratedFiles;
 use Magento\Framework\Console\Cli;
+use Magento\Framework\Module\FullModuleList;
+use Magento\Framework\Module\Status;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\OutputInterface;
 
 abstract class AbstractModuleManageCommand extends AbstractModuleCommand
 {
@@ -54,6 +56,13 @@ abstract class AbstractModuleManageCommand extends AbstractModuleCommand
     }
 
     /**
+     * Is it "enable" or "disable" command
+     *
+     * @return bool
+     */
+    abstract protected function isEnable();
+
+    /**
      * {@inheritdoc}
      */
     protected function isModuleRequired()
@@ -68,8 +77,8 @@ abstract class AbstractModuleManageCommand extends AbstractModuleCommand
     {
         $isEnable = $this->isEnable();
         if ($input->getOption(self::INPUT_KEY_ALL)) {
-            /** @var \Magento\Framework\Module\FullModuleList $fullModulesList */
-            $fullModulesList = $this->objectManager->get(\Magento\Framework\Module\FullModuleList::class);
+            /** @var FullModuleList $fullModulesList */
+            $fullModulesList = $this->objectManager->get(FullModuleList::class);
             $modules = $fullModulesList->getNames();
         } else {
             $modules = $input->getArgument(self::INPUT_KEY_MODULES);
@@ -82,7 +91,7 @@ abstract class AbstractModuleManageCommand extends AbstractModuleCommand
         }
         try {
             $modulesToChange = $this->getStatus()->getModulesToChange($isEnable, $modules);
-        } catch (\LogicException $e) {
+        } catch (LogicException $e) {
             $output->writeln('<error>' . $e->getMessage() . '</error>');
             // we must have an exit code higher than zero to indicate something was wrong
             return Cli::RETURN_FAILURE;
@@ -116,6 +125,32 @@ abstract class AbstractModuleManageCommand extends AbstractModuleCommand
     }
 
     /**
+     * Validate list of modules and return error messages
+     *
+     * @param string[] $modules
+     * @return string[]
+     */
+    protected function validate(array $modules)
+    {
+        $messages = [];
+        if (empty($modules)) {
+            $messages[] = '<error>No modules specified. Specify a space-separated list of modules' .
+                ' or use the --all option</error>';
+        }
+        return $messages;
+    }
+
+    /**
+     * Get module status
+     *
+     * @return Status
+     */
+    private function getStatus()
+    {
+        return $this->objectManager->get(Status::class);
+    }
+
+    /**
      * Enable/disable modules
      *
      * @param bool $isEnable
@@ -142,39 +177,6 @@ abstract class AbstractModuleManageCommand extends AbstractModuleCommand
             $output->writeln('');
         }
     }
-
-    /**
-     * Get module status
-     *
-     * @return Status
-     */
-    private function getStatus()
-    {
-        return $this->objectManager->get(Status::class);
-    }
-
-    /**
-     * Validate list of modules and return error messages
-     *
-     * @param string[] $modules
-     * @return string[]
-     */
-    protected function validate(array $modules)
-    {
-        $messages = [];
-        if (empty($modules)) {
-            $messages[] = '<error>No modules specified. Specify a space-separated list of modules' .
-                ' or use the --all option</error>';
-        }
-        return $messages;
-    }
-
-    /**
-     * Is it "enable" or "disable" command
-     *
-     * @return bool
-     */
-    abstract protected function isEnable();
 
     /**
      * Get deployment config

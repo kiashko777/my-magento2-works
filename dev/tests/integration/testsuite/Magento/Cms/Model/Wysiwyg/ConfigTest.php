@@ -3,29 +3,23 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Cms\Model\Wysiwyg;
 
+use Magento\Framework\DataObject;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestModuleWysiwygConfig\Model\Config as TestModuleWysiwygConfig;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class ConfigTest extends \PHPUnit\Framework\TestCase
+class ConfigTest extends TestCase
 {
     /**
-     * @var \Magento\Cms\Model\Wysiwyg\Config
+     * @var Config
      */
     private $model;
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->model = $objectManager->create(\Magento\Cms\Model\Wysiwyg\Config::class);
-    }
 
     /**
      * Tests that config returns valid config array in it
@@ -35,7 +29,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
     public function testGetConfig()
     {
         $config = $this->model->getConfig();
-        $this->assertInstanceOf(\Magento\Framework\DataObject::class, $config);
+        $this->assertInstanceOf(DataObject::class, $config);
     }
 
     /**
@@ -68,9 +62,9 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
     public function testTestModuleEnabledModuleIsAbleToModifyConfig()
     {
         $objectManager = Bootstrap::getObjectManager();
-        $compositeConfigProvider = $objectManager->create(\Magento\Cms\Model\Wysiwyg\CompositeConfigProvider::class);
+        $compositeConfigProvider = $objectManager->create(CompositeConfigProvider::class);
         $model = $objectManager->create(
-            \Magento\Cms\Model\Wysiwyg\Config::class,
+            Config::class,
             ['configProvider' => $compositeConfigProvider]
         );
         $config = $model->getConfig();
@@ -85,5 +79,14 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
             $config['tinymce4']['toolbar'],
             'Failed to address that the custom test module removes "charmap" button from the toolbar'
         );
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->model = $objectManager->create(Config::class);
     }
 }

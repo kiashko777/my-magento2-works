@@ -3,8 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Dependency\Parser;
 
+use InvalidArgumentException;
 use Magento\Setup\Module\Dependency\ParserInterface;
 
 /**
@@ -31,9 +33,9 @@ class Code implements ParserInterface
         $this->declaredNamespaces = $options['declared_namespaces'];
 
         $pattern = '#\b((?<module>(' . implode(
-            '[\\\\]|',
-            $this->declaredNamespaces
-        ) . '[\\\\])[a-zA-Z0-9]+)[a-zA-Z0-9_\\\\]*)\b#';
+                '[\\\\]|',
+                $this->declaredNamespaces
+            ) . '[\\\\])[a-zA-Z0-9]+)[a-zA-Z0-9_\\\\]*)\b#';
 
         $modules = [];
         foreach ($options['files_for_parse'] as $file) {
@@ -70,26 +72,26 @@ class Code implements ParserInterface
      *
      * @param array $options
      * @return void
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     protected function checkOptions($options)
     {
         if (!isset(
-            $options['files_for_parse']
-        ) || !is_array(
-            $options['files_for_parse']
-        ) || !$options['files_for_parse']
+                $options['files_for_parse']
+            ) || !is_array(
+                $options['files_for_parse']
+            ) || !$options['files_for_parse']
         ) {
-            throw new \InvalidArgumentException('Parse error: Option "files_for_parse" is wrong.');
+            throw new InvalidArgumentException('Parse error: Option "files_for_parse" is wrong.');
         }
 
         if (!isset(
-            $options['declared_namespaces']
-        ) || !is_array(
-            $options['declared_namespaces']
-        ) || !$options['declared_namespaces']
+                $options['declared_namespaces']
+            ) || !is_array(
+                $options['declared_namespaces']
+            ) || !$options['declared_namespaces']
         ) {
-            throw new \InvalidArgumentException('Parse error: Option "declared_namespaces" is wrong.');
+            throw new InvalidArgumentException('Parse error: Option "declared_namespaces" is wrong.');
         }
     }
 

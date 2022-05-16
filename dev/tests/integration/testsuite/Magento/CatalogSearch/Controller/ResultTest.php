@@ -3,14 +3,27 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogSearch\Controller;
+
+use Magento\Framework\App\Cache\StateInterface;
+use Magento\Framework\App\Config\MutableScopeConfigInterface;
+use Magento\Framework\App\MutableScopeConfig;
+use Magento\Framework\Escaper;
+use Magento\Framework\Locale\ResolverInterface;
+use Magento\PageCache\Model\Cache\Type;
+use Magento\Search\Model\PopularSearchTerms;
+use Magento\Search\Model\Query;
+use Magento\Store\Model\ScopeInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractController;
 
 /**
  * @magentoDbIsolation enabled
  * @magentoAppIsolation enabled
  * @magentoDataFixture Magento/CatalogSearch/_files/full_reindex.php
  */
-class ResultTest extends \Magento\TestFramework\TestCase\AbstractController
+class ResultTest extends AbstractController
 {
     /**
      * @magentoDataFixture Magento/CatalogSearch/_files/query.php
@@ -18,8 +31,8 @@ class ResultTest extends \Magento\TestFramework\TestCase\AbstractController
     public function testIndexActionTranslation()
     {
         $this->markTestSkipped('MAGETWO-44910');
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $objectManager->get(\Magento\Framework\Locale\ResolverInterface::class)->setLocale('de_DE');
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->get(ResolverInterface::class)->setLocale('de_DE');
 
         $this->getRequest()->setParam('q', 'query_text');
         $this->dispatch('catalogsearch/result');
@@ -37,8 +50,8 @@ class ResultTest extends \Magento\TestFramework\TestCase\AbstractController
      */
     public function testIndexActionXSSQueryVerification()
     {
-        $escaper = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\Escaper::class);
+        $escaper = Bootstrap::getObjectManager()
+            ->get(Escaper::class);
         $this->getRequest()->setParam('q', '<script>alert(1)</script>');
         $this->dispatch('catalogsearch/result');
 
@@ -75,10 +88,10 @@ class ResultTest extends \Magento\TestFramework\TestCase\AbstractController
      */
     public function testPopularity()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
 
-        /** @var $query \Magento\Search\Model\Query */
-        $query = $objectManager->create(\Magento\Search\Model\Query::class);
+        /** @var $query Query */
+        $query = $objectManager->create(Query::class);
         $query->loadByQueryText('query_text');
         $this->assertEquals(1, $query->getPopularity());
 
@@ -99,10 +112,10 @@ class ResultTest extends \Magento\TestFramework\TestCase\AbstractController
     public function testPopularSearch()
     {
         $this->cacheAndPopularitySetup();
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
 
-        /** @var $query \Magento\Search\Model\Query */
-        $query = $objectManager->create(\Magento\Search\Model\Query::class);
+        /** @var $query Query */
+        $query = $objectManager->create(Query::class);
         $query->loadByQueryText('popular_query_text');
         $this->assertEquals(100, $query->getPopularity());
 
@@ -116,6 +129,26 @@ class ResultTest extends \Magento\TestFramework\TestCase\AbstractController
         $this->assertEquals(100, $query->getPopularity());
     }
 
+    private function cacheAndPopularitySetup()
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var $scopeConfig MutableScopeConfig */
+        $scopeConfig = $objectManager->get(MutableScopeConfigInterface::class);
+        $scopeConfig->setValue(
+            PopularSearchTerms::XML_PATH_MAX_COUNT_CACHEABLE_SEARCH_TERMS,
+            1,
+            ScopeInterface::SCOPE_STORE
+        );
+
+        /** @var $cacheState StateInterface */
+        $cacheState = $objectManager->get(StateInterface::class);
+        $cacheState->setEnabled(Type::TYPE_IDENTIFIER, true);
+
+        /** @var $fpc Type */
+        $fpc = $objectManager->get(Type::class);
+        $fpc->clean();
+    }
+
     /**
      * @magentoDataFixture Magento/CatalogSearch/_files/popular_query.php
      * @magentoDataFixture Magento/CatalogSearch/_files/query.php
@@ -123,10 +156,10 @@ class ResultTest extends \Magento\TestFramework\TestCase\AbstractController
     public function testPopularSearchWithAdditionalRequestParameters()
     {
         $this->cacheAndPopularitySetup();
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
 
-        /** @var $query \Magento\Search\Model\Query */
-        $query = $objectManager->create(\Magento\Search\Model\Query::class);
+        /** @var $query Query */
+        $query = $objectManager->create(Query::class);
         $query->loadByQueryText('popular_query_text');
         $this->assertEquals(100, $query->getPopularity());
 
@@ -147,10 +180,10 @@ class ResultTest extends \Magento\TestFramework\TestCase\AbstractController
     public function testNotPopularSearch()
     {
         $this->cacheAndPopularitySetup();
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
 
-        /** @var $query \Magento\Search\Model\Query */
-        $query = $objectManager->create(\Magento\Search\Model\Query::class);
+        /** @var $query Query */
+        $query = $objectManager->create(Query::class);
         $query->loadByQueryText('query_text');
         $this->assertEquals(1, $query->getPopularity());
 
@@ -162,25 +195,5 @@ class ResultTest extends \Magento\TestFramework\TestCase\AbstractController
 
         $query->loadByQueryText('query_text');
         $this->assertEquals(2, $query->getPopularity());
-    }
-
-    private function cacheAndPopularitySetup()
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var $scopeConfig \Magento\Framework\App\MutableScopeConfig */
-        $scopeConfig = $objectManager->get(\Magento\Framework\App\Config\MutableScopeConfigInterface::class);
-        $scopeConfig->setValue(
-            \Magento\Search\Model\PopularSearchTerms::XML_PATH_MAX_COUNT_CACHEABLE_SEARCH_TERMS,
-            1,
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE
-        );
-
-        /** @var $cacheState \Magento\Framework\App\Cache\StateInterface */
-        $cacheState = $objectManager->get(\Magento\Framework\App\Cache\StateInterface::class);
-        $cacheState->setEnabled(\Magento\PageCache\Model\Cache\Type::TYPE_IDENTIFIER, true);
-
-        /** @var $fpc \Magento\PageCache\Model\Cache\Type */
-        $fpc = $objectManager->get(\Magento\PageCache\Model\Cache\Type::class);
-        $fpc->clean();
     }
 }

@@ -6,11 +6,11 @@
 'use strict';
 
 var themes = require('../tools/files-router').get('themes'),
-    _      = require('underscore');
+    _ = require('underscore');
 
 var themeOptions = {};
 
-_.each(themes, function(theme, name) {
+_.each(themes, function (theme, name) {
     themeOptions[name] = {
         "force": true,
         "files": [
@@ -19,9 +19,9 @@ _.each(themes, function(theme, name) {
                 "dot": true,
                 "src": [
                     "<%= path.tmp %>/cache/**/*",
-                    "<%= combo.autopath(\""+name+"\", path.pub ) %>**/*",
-                    "<%= combo.autopath(\""+name+"\", path.tmpLess) %>**/*",
-                    "<%= combo.autopath(\""+name+"\", path.tmpSource) %>**/*",
+                    "<%= combo.autopath(\"" + name + "\", path.pub ) %>**/*",
+                    "<%= combo.autopath(\"" + name + "\", path.tmpLess) %>**/*",
+                    "<%= combo.autopath(\"" + name + "\", path.tmpSource) %>**/*",
                     "<%= path.deployedVersion %>"
                 ]
             }

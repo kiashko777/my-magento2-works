@@ -7,7 +7,11 @@
 /**
  * Finder for a list of preconfigured words
  */
+
 namespace Magento\TestFramework\Inspection;
+
+use Magento\Framework\Component\ComponentRegistrar;
+use SimpleXMLElement;
 
 class WordsFinder
 {
@@ -82,7 +86,7 @@ class WordsFinder
     /**
      * Component Registrar
      *
-     * @var \Magento\Framework\Component\ComponentRegistrar
+     * @var ComponentRegistrar
      */
     protected $componentRegistrar;
 
@@ -96,14 +100,14 @@ class WordsFinder
     /**
      * @param string|array $configFiles
      * @param string $baseDir
-     * @param \Magento\Framework\Component\ComponentRegistrar $componentRegistrar
+     * @param ComponentRegistrar $componentRegistrar
      * @param bool $isCopyrightChecked
-     * @throws \Magento\TestFramework\Inspection\Exception
+     * @throws Exception
      */
     public function __construct($configFiles, $baseDir, $componentRegistrar, $isCopyrightChecked = false)
     {
         if (!is_dir($baseDir)) {
-            throw new \Magento\TestFramework\Inspection\Exception("Base directory {$baseDir} does not exist");
+            throw new Exception("Base directory {$baseDir} does not exist");
         }
         $this->_baseDir = str_replace('\\', '/', realpath($baseDir));
         $this->componentRegistrar = $componentRegistrar;
@@ -126,7 +130,7 @@ class WordsFinder
 
         // Final verifications
         if (!$this->_words) {
-            throw new \Magento\TestFramework\Inspection\Exception('No words to check');
+            throw new Exception('No words to check');
         }
 
         $this->isCopyrightChecked = $isCopyrightChecked;
@@ -136,53 +140,32 @@ class WordsFinder
      * Load configuration from file, adding words and whitelisted entries to main config
      *
      * @param string $configFile
-     * @throws \Magento\TestFramework\Inspection\Exception
+     * @throws Exception
      */
     protected function _loadConfig($configFile)
     {
         if (!file_exists($configFile)) {
-            throw new \Magento\TestFramework\Inspection\Exception("Configuration file {$configFile} does not exist");
+            throw new Exception("Configuration file {$configFile} does not exist");
         }
         try {
-            $xml = new \SimpleXMLElement(file_get_contents($configFile));
+            $xml = new SimpleXMLElement(file_get_contents($configFile));
         } catch (\Exception $e) {
-            throw new \Magento\TestFramework\Inspection\Exception($e->getMessage(), $e->getCode(), $e);
+            throw new Exception($e->getMessage(), $e->getCode(), $e);
         }
 
         $this->_extractWords($xml)->_extractWhitelist($xml);
     }
 
     /**
-     * Extract words from configuration xml
-     *
-     * @param \SimpleXMLElement $configXml
-     * @return \Magento\TestFramework\Inspection\WordsFinder
-     * @throws \Magento\TestFramework\Inspection\Exception
-     */
-    protected function _extractWords(\SimpleXMLElement $configXml)
-    {
-        $words = [];
-        $nodes = $configXml->xpath('//config/words/word');
-        foreach ($nodes as $node) {
-            $words[] = (string)$node;
-        }
-        $words = array_filter($words);
-
-        $words = array_merge($this->_words, $words);
-        $this->_words = array_unique($words);
-        return $this;
-    }
-
-    /**
      * Extract whitelisted entries and words from configuration xml
      *
-     * @param \SimpleXMLElement $configXml
-     * @return \Magento\TestFramework\Inspection\WordsFinder
-     * @throws \Magento\TestFramework\Inspection\Exception
+     * @param SimpleXMLElement $configXml
+     * @return WordsFinder
+     * @throws Exception
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
      */
-    protected function _extractWhitelist(\SimpleXMLElement $configXml)
+    protected function _extractWhitelist(SimpleXMLElement $configXml)
     {
         // Load whitelist entries
         $whitelist = [];
@@ -191,7 +174,7 @@ class WordsFinder
         foreach ($nodes as $node) {
             $path = $node->xpath('path');
             if (!$path) {
-                throw new \Magento\TestFramework\Inspection\Exception(
+                throw new Exception(
                     'A "path" must be defined for the whitelisted item'
                 );
             }
@@ -248,6 +231,27 @@ class WordsFinder
     }
 
     /**
+     * Extract words from configuration xml
+     *
+     * @param SimpleXMLElement $configXml
+     * @return WordsFinder
+     * @throws Exception
+     */
+    protected function _extractWords(SimpleXMLElement $configXml)
+    {
+        $words = [];
+        $nodes = $configXml->xpath('//config/words/word');
+        foreach ($nodes as $node) {
+            $words[] = (string)$node;
+        }
+        $words = array_filter($words);
+
+        $words = array_merge($this->_words, $words);
+        $this->_words = array_unique($words);
+        return $this;
+    }
+
+    /**
      * Normalize whitelist paths, so that they containt only native directory separators
      */
     protected function _normalizeWhitelistPaths()
@@ -264,7 +268,7 @@ class WordsFinder
      * Checks the file content and name against the list of words. Do not check content of binary files.
      * Exclude whitelisted entries.
      *
-     * @param  string $file
+     * @param string $file
      * @return array Words, found
      */
     public function findWords($file)
@@ -280,7 +284,7 @@ class WordsFinder
     /**
      * Checks the file content and name against the list of words. Do not check content of binary files.
      *
-     * @param  string $file
+     * @param string $file
      * @return array
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
@@ -304,12 +308,37 @@ class WordsFinder
         }
         if ($contents && $this->isCopyrightChecked && !$this->isCopyrightCheckSkipped($file)
             && (($copyrightStringPosition = mb_strpos($contents, $this->copyrightString)) === false
-            || ($copyingStringPosition = strpos($contents, $this->copyingString)) === false
-            || $copyingStringPosition - $copyrightStringPosition - mb_strlen($this->copyrightString) > 10)
+                || ($copyingStringPosition = strpos($contents, $this->copyingString)) === false
+                || $copyingStringPosition - $copyrightStringPosition - mb_strlen($this->copyrightString) > 10)
         ) {
             $foundWords[] = 'Copyright string is missing';
         }
         return $foundWords;
+    }
+
+    /**
+     * Check, whether file is a binary one
+     *
+     * @param string $file
+     * @return bool
+     */
+    protected function _isBinaryFile($file)
+    {
+        return in_array(pathinfo($file, PATHINFO_EXTENSION), $this->_binaryExtensions);
+    }
+
+    /**
+     * Return the path for words search
+     *
+     * @param string $file
+     * @return string
+     */
+    protected function getSearchablePath($file)
+    {
+        if (strpos($file, $this->_baseDir) === false) {
+            return $file;
+        }
+        return substr($file, strlen($this->_baseDir) + 1);
     }
 
     /**
@@ -330,21 +359,10 @@ class WordsFinder
     }
 
     /**
-     * Check, whether file is a binary one
-     *
-     * @param string $file
-     * @return bool
-     */
-    protected function _isBinaryFile($file)
-    {
-        return in_array(pathinfo($file, PATHINFO_EXTENSION), $this->_binaryExtensions);
-    }
-
-    /**
      * Removes whitelisted words from array of found words
      *
-     * @param  string $path
-     * @param  array $foundWords
+     * @param string $path
+     * @param array $foundWords
      * @return array
      */
     protected function _removeWhitelistedWords($path, $foundWords)
@@ -362,19 +380,5 @@ class WordsFinder
             $foundWords = array_diff($foundWords, $whitelistWords);
         }
         return $foundWords;
-    }
-
-    /**
-     * Return the path for words search
-     *
-     * @param string $file
-     * @return string
-     */
-    protected function getSearchablePath($file)
-    {
-        if (strpos($file, $this->_baseDir) === false) {
-            return $file;
-        }
-        return substr($file, strlen($this->_baseDir) + 1);
     }
 }

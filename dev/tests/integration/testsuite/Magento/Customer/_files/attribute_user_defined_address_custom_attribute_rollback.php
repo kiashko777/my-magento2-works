@@ -6,7 +6,10 @@
  */
 
 /** @var \Magento\Customer\Model\Attribute $attributeModel */
-$attributeModel = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+
+use Magento\TestFramework\Helper\Bootstrap;
+
+$attributeModel = Bootstrap::getObjectManager()->create(
     \Magento\Customer\Model\Attribute::class
 );
 $attributeModel->load('custom_attribute1', 'attribute_code')->delete();

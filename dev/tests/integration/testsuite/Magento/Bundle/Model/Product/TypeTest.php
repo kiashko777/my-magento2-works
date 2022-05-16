@@ -6,46 +6,45 @@
 
 namespace Magento\Bundle\Model\Product;
 
+use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\DB\Adapter\AdapterInterface;
+use Magento\Framework\Indexer\IndexerInterface;
+use Magento\Framework\Indexer\IndexerRegistry;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
 /**
  * Test class for \Magento\Bundle\Model\Products\Type (bundle product type)
  */
-class TypeTest extends \PHPUnit\Framework\TestCase
+class TypeTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
 
     /**
      * Full reindex
      *
-     * @var \Magento\Framework\Indexer\IndexerInterface
+     * @var IndexerInterface
      */
     protected $indexer;
 
     /**
-     * @var \Magento\Framework\App\ResourceConnection
+     * @var ResourceConnection
      */
     protected $resource;
 
     /**
      * Connection adapter
      *
-     * @var \Magento\Framework\DB\Adapter\AdapterInterface
+     * @var AdapterInterface
      */
     protected $connectionMock;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-
-        /** @var \Magento\Framework\Indexer\IndexerRegistry $indexerRegistry */
-        $indexerRegistry = $this->objectManager->create(\Magento\Framework\Indexer\IndexerRegistry::class);
-        $this->indexer =  $indexerRegistry->get('catalogsearch_fulltext');
-
-        $this->resource = $this->objectManager->get(\Magento\Framework\App\ResourceConnection::class);
-        $this->connectionMock = $this->resource->getConnection();
-    }
 
     /**
      * @magentoDataFixture Magento/Bundle/_files/product.php
@@ -54,11 +53,11 @@ class TypeTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetSearchableData()
     {
-        $productRepository = $this->objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
-        /** @var \Magento\Catalog\Model\Product $bundleProduct */
+        $productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+        /** @var Product $bundleProduct */
         $bundleProduct = $productRepository->get('bundle-product');
         $bundleType = $bundleProduct->getTypeInstance();
-        /** @var \Magento\Bundle\Model\Product\Type $bundleType */
+        /** @var Type $bundleType */
         $searchableData = $bundleType->getSearchableData($bundleProduct);
 
         $this->assertCount(1, $searchableData);
@@ -72,11 +71,11 @@ class TypeTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetOptionsCollection()
     {
-        $productRepository = $this->objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
-        /** @var \Magento\Catalog\Model\Product $bundleProduct */
+        $productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+        /** @var Product $bundleProduct */
         $bundleProduct = $productRepository->get('bundle-product');
         $bundleType = $bundleProduct->getTypeInstance();
-        /** @var \Magento\Bundle\Model\Product\Type $bundleType */
+        /** @var Type $bundleType */
         $options = $bundleType->getOptionsCollection($bundleProduct);
         $this->assertCount(5, $options->getItems());
     }
@@ -88,16 +87,28 @@ class TypeTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetParentIdsByChild()
     {
-        $productRepository = $this->objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
-        /** @var \Magento\Catalog\Api\Data\ProductInterface $bundleProduct */
+        $productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+        /** @var ProductInterface $bundleProduct */
         $bundleProduct = $productRepository->get('bundle-product');
-        /** @var \Magento\Catalog\Api\Data\ProductInterface $simpleProduct */
+        /** @var ProductInterface $simpleProduct */
         $simpleProduct = $productRepository->get('simple');
 
-        /** @var \Magento\Bundle\Model\Product\Type $bundleType */
+        /** @var Type $bundleType */
         $bundleType = $bundleProduct->getTypeInstance();
         $parentIds = $bundleType->getParentIdsByChild($simpleProduct->getId());
         $this->assertNotEmpty($parentIds);
         $this->assertEquals($bundleProduct->getId(), $parentIds[0]);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        /** @var IndexerRegistry $indexerRegistry */
+        $indexerRegistry = $this->objectManager->create(IndexerRegistry::class);
+        $this->indexer = $indexerRegistry->get('catalogsearch_fulltext');
+
+        $this->resource = $this->objectManager->get(ResourceConnection::class);
+        $this->connectionMock = $this->resource->getConnection();
     }
 }

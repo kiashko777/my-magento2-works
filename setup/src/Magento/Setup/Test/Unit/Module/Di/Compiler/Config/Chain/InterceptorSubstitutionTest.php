@@ -27,35 +27,43 @@ class InterceptorSubstitutionTest extends TestCase
         $this->assertEquals($this->getOutputConfig(), $modifier->modify($this->getInputConfig()));
     }
 
-    public function testModifyPreferences()
+    /**
+     * Output config
+     *
+     * @return array
+     */
+    private function getOutputConfig()
     {
-        $inputConfig = [
+        return [
             'arguments' => [
-                'ClassReplaced' => [],
-                'ClassReplacement' => [],
-                'ClassReplaced\Interceptor' => [],
-                'ClassReplacement\Interceptor' => []
+                'Class\Interceptor' => [
+                    'argument_type' => ['_i_' => 'Class\Dependency'],
+                    'argument_not_shared' => ['_ins_' => 'Class\Dependency'],
+                    'array_configured' => [
+                        'argument_type' => ['_i_' => 'Class\Dependency'],
+                        'argument_not_shared' => ['_ins_' => 'Class\Dependency'],
+                        'array' => [
+                            'argument_type' => ['_i_' => 'Class\Dependency'],
+                            'argument_not_shared' => ['_ins_' => 'Class\DependencyIntercepted'],
+                        ]
+                    ]
+                ],
+                'virtualType' => [
+                    'argument_type' => ['_i_' => 'Class\DependencyIntercepted'],
+                    'argument_not_shared' => ['_ins_' => 'Class\Dependency'],
+                    'array_configured' => ['banana']
+                ],
+                'Class\DependencyIntercepted\Interceptor' => []
             ],
             'preferences' => [
-                'ClassReplaced' => 'ClassReplacement'
+                'ClassInterface' => 'Class\Interceptor',
+                'Class' => 'Class\Interceptor',
+                'Class\DependencyIntercepted' => 'Class\DependencyIntercepted\Interceptor'
             ],
-            'instanceTypes' => []
+            'instanceTypes' => [
+                'virtualType' => 'Class\Interceptor',
+            ]
         ];
-
-        $outputConfig = [
-            'arguments' => [
-                'ClassReplaced\Interceptor' => [],
-                'ClassReplacement\Interceptor' => []
-            ],
-            'preferences' => [
-                'ClassReplaced' => 'ClassReplacement\Interceptor',
-                'ClassReplacement' => 'ClassReplacement\Interceptor'
-            ],
-            'instanceTypes' => []
-        ];
-
-        $modifier = new InterceptorSubstitution();
-        $this->assertEquals($outputConfig, $modifier->modify($inputConfig));
     }
 
     /**
@@ -102,42 +110,34 @@ class InterceptorSubstitutionTest extends TestCase
         ];
     }
 
-    /**
-     * Output config
-     *
-     * @return array
-     */
-    private function getOutputConfig()
+    public function testModifyPreferences()
     {
-        return [
+        $inputConfig = [
             'arguments' => [
-                'Class\Interceptor' => [
-                    'argument_type' => ['_i_' => 'Class\Dependency'],
-                    'argument_not_shared' => ['_ins_' => 'Class\Dependency'],
-                    'array_configured' => [
-                        'argument_type' => ['_i_' => 'Class\Dependency'],
-                        'argument_not_shared' => ['_ins_' => 'Class\Dependency'],
-                        'array' => [
-                            'argument_type' => ['_i_' => 'Class\Dependency'],
-                            'argument_not_shared' => ['_ins_' => 'Class\DependencyIntercepted'],
-                        ]
-                    ]
-                ],
-                'virtualType' => [
-                    'argument_type' => ['_i_' => 'Class\DependencyIntercepted'],
-                    'argument_not_shared' => ['_ins_' => 'Class\Dependency'],
-                    'array_configured' => ['banana']
-                ],
-                'Class\DependencyIntercepted\Interceptor' => []
+                'ClassReplaced' => [],
+                'ClassReplacement' => [],
+                'ClassReplaced\Interceptor' => [],
+                'ClassReplacement\Interceptor' => []
             ],
             'preferences' => [
-                'ClassInterface' => 'Class\Interceptor',
-                'Class' => 'Class\Interceptor',
-                'Class\DependencyIntercepted' => 'Class\DependencyIntercepted\Interceptor'
+                'ClassReplaced' => 'ClassReplacement'
             ],
-            'instanceTypes' => [
-                'virtualType' => 'Class\Interceptor',
-            ]
+            'instanceTypes' => []
         ];
+
+        $outputConfig = [
+            'arguments' => [
+                'ClassReplaced\Interceptor' => [],
+                'ClassReplacement\Interceptor' => []
+            ],
+            'preferences' => [
+                'ClassReplaced' => 'ClassReplacement\Interceptor',
+                'ClassReplacement' => 'ClassReplacement\Interceptor'
+            ],
+            'instanceTypes' => []
+        ];
+
+        $modifier = new InterceptorSubstitution();
+        $this->assertEquals($outputConfig, $modifier->modify($inputConfig));
     }
 }

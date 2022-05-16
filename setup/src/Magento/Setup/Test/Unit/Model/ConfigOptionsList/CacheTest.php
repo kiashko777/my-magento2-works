@@ -8,17 +8,19 @@ declare(strict_types=1);
 namespace Magento\Setup\Test\Unit\Model\ConfigOptionsList;
 
 use Magento\Framework\App\DeploymentConfig;
+use Magento\Framework\Cache\Backend\Redis;
 use Magento\Framework\Setup\Option\FlagConfigOption;
 use Magento\Framework\Setup\Option\SelectConfigOption;
 use Magento\Framework\Setup\Option\TextConfigOption;
 use Magento\Setup\Model\ConfigOptionsList\Cache as CacheConfigOptionsList;
 use Magento\Setup\Validator\RedisConnectionValidator;
 use PHPUnit\Framework\TestCase;
+use function hash;
 
 class CacheTest extends TestCase
 {
     /**
-     * @var \Magento\Setup\Model\ConfigOptionsList\Cache
+     * @var CacheConfigOptionsList
      */
     private $configOptionsList;
 
@@ -31,17 +33,6 @@ class CacheTest extends TestCase
      * @var DeploymentConfig
      */
     private $deploymentConfigMock;
-
-    /**
-     * Tests setup
-     */
-    protected function setUp(): void
-    {
-        $this->validatorMock = $this->createMock(RedisConnectionValidator::class);
-        $this->deploymentConfigMock = $this->createMock(DeploymentConfig::class);
-
-        $this->configOptionsList = new CacheConfigOptionsList($this->validatorMock);
-    }
 
     /**
      * testGetOptions
@@ -99,7 +90,7 @@ class CacheTest extends TestCase
             'cache' => [
                 'frontend' => [
                     'default' => [
-                        'backend' => \Magento\Framework\Cache\Backend\Redis::class,
+                        'backend' => Redis::class,
                         'backend_options' => [
                             'server' => '',
                             'port' => '',
@@ -122,6 +113,16 @@ class CacheTest extends TestCase
     }
 
     /**
+     * The default ID prefix, based on installation directory
+     *
+     * @return string
+     */
+    private function expectedIdPrefix(): string
+    {
+        return substr(hash('sha256', dirname(__DIR__, 8)), 0, 3) . '_';
+    }
+
+    /**
      * testCreateConfigWithRedisConfig
      */
     public function testCreateConfigWithRedisConfig()
@@ -130,7 +131,7 @@ class CacheTest extends TestCase
             'cache' => [
                 'frontend' => [
                     'default' => [
-                        'backend' => \Magento\Framework\Cache\Backend\Redis::class,
+                        'backend' => Redis::class,
                         'backend_options' => [
                             'server' => 'localhost',
                             'port' => '1234',
@@ -242,12 +243,13 @@ class CacheTest extends TestCase
     }
 
     /**
-     * The default ID prefix, based on installation directory
-     *
-     * @return string
+     * Tests setup
      */
-    private function expectedIdPrefix(): string
+    protected function setUp(): void
     {
-        return substr(\hash('sha256', dirname(__DIR__, 8)), 0, 3) . '_';
+        $this->validatorMock = $this->createMock(RedisConnectionValidator::class);
+        $this->deploymentConfigMock = $this->createMock(DeploymentConfig::class);
+
+        $this->configOptionsList = new CacheConfigOptionsList($this->validatorMock);
     }
 }

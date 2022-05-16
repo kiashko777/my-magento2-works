@@ -4,14 +4,20 @@
  * See COPYING.txt for license details.
  */
 
-$registry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
+use Magento\Catalog\Model\Product;
+use Magento\Framework\Registry;
+use Magento\GiftMessage\Model\Message;
+use Magento\Quote\Model\Quote;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$registry = Bootstrap::getObjectManager()->get(Registry::class);
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-$quote = $objectManager->create(\Magento\Quote\Model\Quote::class);
+$objectManager = Bootstrap::getObjectManager();
+$quote = $objectManager->create(Quote::class);
 $quote->load('test_order_item_with_message', 'reserved_order_id');
-$message = $objectManager->create(\Magento\GiftMessage\Model\Message::class);
-$product = $objectManager->create(\Magento\Catalog\Model\Product::class);
+$message = $objectManager->create(Message::class);
+$product = $objectManager->create(Product::class);
 foreach ($quote->getAllItems() as $item) {
     $message->load($item->getGiftMessageId());
     $message->delete();

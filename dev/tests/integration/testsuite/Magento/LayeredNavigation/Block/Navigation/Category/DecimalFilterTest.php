@@ -7,11 +7,10 @@ declare(strict_types=1);
 
 namespace Magento\LayeredNavigation\Block\Navigation\Category;
 
-use Magento\Catalog\Model\Layer\Resolver;
-use Magento\LayeredNavigation\Block\Navigation\AbstractFiltersTest;
 use Magento\Catalog\Model\Layer\Filter\AbstractFilter;
 use Magento\Catalog\Model\Layer\Filter\Item;
-use Magento\Store\Model\Store;
+use Magento\Catalog\Model\Layer\Resolver;
+use Magento\LayeredNavigation\Block\Navigation\AbstractFiltersTest;
 
 /**
  * Provides tests for custom price filter in navigation block on category page.
@@ -34,41 +33,6 @@ class DecimalFilterTest extends AbstractFiltersTest
     public function testGetFiltersWithCustomAttribute(array $products, array $attributeData, array $expectation): void
     {
         $this->getCategoryFiltersAndAssert($products, $attributeData, $expectation, 'Category 999');
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function getLayerType(): string
-    {
-        return Resolver::CATALOG_LAYER_CATEGORY;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function getAttributeCode(): string
-    {
-        return 'decimal_attribute';
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function prepareFilterItems(AbstractFilter $filter): array
-    {
-        $items = [];
-        /** @var Item $item */
-        foreach ($filter->getItems() as $item) {
-            $item = [
-                'label' => __($item->getData('label'))->render(),
-                'value' => $item->getData('value'),
-                'count' => $item->getData('count'),
-            ];
-            $items[] = $item;
-        }
-
-        return $items;
     }
 
     /**
@@ -105,5 +69,40 @@ class DecimalFilterTest extends AbstractFiltersTest
                 ],
             ],*/
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function getLayerType(): string
+    {
+        return Resolver::CATALOG_LAYER_CATEGORY;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function getAttributeCode(): string
+    {
+        return 'decimal_attribute';
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function prepareFilterItems(AbstractFilter $filter): array
+    {
+        $items = [];
+        /** @var Item $item */
+        foreach ($filter->getItems() as $item) {
+            $item = [
+                'label' => __($item->getData('label'))->render(),
+                'value' => $item->getData('value'),
+                'count' => $item->getData('count'),
+            ];
+            $items[] = $item;
+        }
+
+        return $items;
     }
 }

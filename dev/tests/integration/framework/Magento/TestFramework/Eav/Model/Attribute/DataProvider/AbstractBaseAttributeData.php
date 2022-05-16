@@ -7,8 +7,8 @@ declare(strict_types=1);
 
 namespace Magento\TestFramework\Eav\Model\Attribute\DataProvider;
 
-use Magento\Store\Model\Store;
 use Magento\Eav\Model\Entity\Attribute\ScopedAttributeInterface;
+use Magento\Store\Model\Store;
 
 /**
  * Base POST data for create attribute.
@@ -55,54 +55,11 @@ abstract class AbstractBaseAttributeData
     }
 
     /**
-     * Return create product attribute data set.
+     * Return attribute frontend input.
      *
-     * @return array
+     * @return string
      */
-    public function getAttributeData(): array
-    {
-        return [
-            "{$this->getFrontendInput()}_with_required_fields" => [
-                $this->defaultAttributePostData,
-            ],
-            "{$this->getFrontendInput()}_with_store_view_scope" => [
-                $this->defaultAttributePostData,
-            ],
-            "{$this->getFrontendInput()}_with_global_scope" => [
-                array_merge($this->defaultAttributePostData, ['is_global' => ScopedAttributeInterface::SCOPE_GLOBAL]),
-            ],
-            "{$this->getFrontendInput()}_with_website_scope" => [
-                array_merge($this->defaultAttributePostData, ['is_global' => ScopedAttributeInterface::SCOPE_WEBSITE]),
-            ],
-            "{$this->getFrontendInput()}_with_attribute_code" => [
-                array_merge($this->defaultAttributePostData, ['attribute_code' => 'test_custom_attribute_code']),
-            ],
-            "{$this->getFrontendInput()}_with_default_value" => [
-                array_merge($this->defaultAttributePostData, ['default_value_text' => 'Default attribute value']),
-            ],
-            "{$this->getFrontendInput()}_without_default_value" => [
-                $this->defaultAttributePostData,
-            ],
-            "{$this->getFrontendInput()}_with_unique_value" => [
-                array_merge($this->defaultAttributePostData, ['is_unique' => '1']),
-            ],
-            "{$this->getFrontendInput()}_without_unique_value" => [
-                $this->defaultAttributePostData,
-            ],
-            "{$this->getFrontendInput()}_with_enabled_add_to_column_options" => [
-                array_merge($this->defaultAttributePostData, ['is_used_in_grid' => '1']),
-            ],
-            "{$this->getFrontendInput()}_without_enabled_add_to_column_options" => [
-                array_merge($this->defaultAttributePostData, ['is_used_in_grid' => '0']),
-            ],
-            "{$this->getFrontendInput()}_with_enabled_use_in_filter_options" => [
-                $this->defaultAttributePostData,
-            ],
-            "{$this->getFrontendInput()}_without_enabled_use_in_filter_options" => [
-                array_merge($this->defaultAttributePostData, ['is_filterable_in_grid' => '0']),
-            ],
-        ];
-    }
+    abstract protected function getFrontendInput(): string;
 
     /**
      * Return create product attribute data set with error message.
@@ -217,6 +174,56 @@ abstract class AbstractBaseAttributeData
     }
 
     /**
+     * Return create product attribute data set.
+     *
+     * @return array
+     */
+    public function getAttributeData(): array
+    {
+        return [
+            "{$this->getFrontendInput()}_with_required_fields" => [
+                $this->defaultAttributePostData,
+            ],
+            "{$this->getFrontendInput()}_with_store_view_scope" => [
+                $this->defaultAttributePostData,
+            ],
+            "{$this->getFrontendInput()}_with_global_scope" => [
+                array_merge($this->defaultAttributePostData, ['is_global' => ScopedAttributeInterface::SCOPE_GLOBAL]),
+            ],
+            "{$this->getFrontendInput()}_with_website_scope" => [
+                array_merge($this->defaultAttributePostData, ['is_global' => ScopedAttributeInterface::SCOPE_WEBSITE]),
+            ],
+            "{$this->getFrontendInput()}_with_attribute_code" => [
+                array_merge($this->defaultAttributePostData, ['attribute_code' => 'test_custom_attribute_code']),
+            ],
+            "{$this->getFrontendInput()}_with_default_value" => [
+                array_merge($this->defaultAttributePostData, ['default_value_text' => 'Default attribute value']),
+            ],
+            "{$this->getFrontendInput()}_without_default_value" => [
+                $this->defaultAttributePostData,
+            ],
+            "{$this->getFrontendInput()}_with_unique_value" => [
+                array_merge($this->defaultAttributePostData, ['is_unique' => '1']),
+            ],
+            "{$this->getFrontendInput()}_without_unique_value" => [
+                $this->defaultAttributePostData,
+            ],
+            "{$this->getFrontendInput()}_with_enabled_add_to_column_options" => [
+                array_merge($this->defaultAttributePostData, ['is_used_in_grid' => '1']),
+            ],
+            "{$this->getFrontendInput()}_without_enabled_add_to_column_options" => [
+                array_merge($this->defaultAttributePostData, ['is_used_in_grid' => '0']),
+            ],
+            "{$this->getFrontendInput()}_with_enabled_use_in_filter_options" => [
+                $this->defaultAttributePostData,
+            ],
+            "{$this->getFrontendInput()}_without_enabled_use_in_filter_options" => [
+                array_merge($this->defaultAttributePostData, ['is_filterable_in_grid' => '0']),
+            ],
+        ];
+    }
+
+    /**
      * Return product attribute data set for update attribute.
      *
      * @return array
@@ -267,6 +274,20 @@ abstract class AbstractBaseAttributeData
             ],
         ];
     }
+
+    /**
+     * Return post data for attribute update.
+     *
+     * @return array
+     */
+    abstract protected function getUpdatePostData(): array;
+
+    /**
+     * Return expected data for attribute update.
+     *
+     * @return array
+     */
+    abstract protected function getUpdateExpectedData(): array;
 
     /**
      * Return product attribute data set with error message for update attribute.
@@ -364,25 +385,4 @@ abstract class AbstractBaseAttributeData
             ],
         ];
     }
-
-    /**
-     * Return attribute frontend input.
-     *
-     * @return string
-     */
-    abstract protected function getFrontendInput(): string;
-
-    /**
-     * Return post data for attribute update.
-     *
-     * @return array
-     */
-    abstract protected function getUpdatePostData(): array;
-
-    /**
-     * Return expected data for attribute update.
-     *
-     * @return array
-     */
-    abstract protected function getUpdateExpectedData(): array;
 }

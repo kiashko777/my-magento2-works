@@ -5,16 +5,20 @@
  */
 
 // refresh report statistics
-/** @var \Magento\Sales\Model\ResourceModel\Report\Refunded $reportResource */
-$reportResource = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Sales\Model\ResourceModel\Report\Refunded::class
+/** @var Refunded $reportResource */
+
+use Magento\Sales\Model\ResourceModel\Report\Refunded;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$reportResource = Bootstrap::getObjectManager()->create(
+    Refunded::class
 );
 $reportResource->beginTransaction();
 // prevent table truncation by incrementing the transaction nesting level counter
 try {
     $reportResource->aggregate();
     $reportResource->commit();
-} catch (\Exception $e) {
+} catch (Exception $e) {
     $reportResource->rollBack();
     throw $e;
 }

@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\NewRelicReporting\Model\Module;
 
 use Magento\TestFramework\Helper\Bootstrap;
@@ -19,14 +20,6 @@ class CollectTest extends TestCase
     private $collect;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->collect = Bootstrap::getObjectManager()->create(Collect::class);
-    }
-
-    /**
      * @return void
      */
     public function testReport()
@@ -34,5 +27,13 @@ class CollectTest extends TestCase
         $this->collect->getModuleData();
         $moduleData = $this->collect->getModuleData();
         $this->assertEmpty($moduleData['changes']);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->collect = Bootstrap::getObjectManager()->create(Collect::class);
     }
 }

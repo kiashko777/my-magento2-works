@@ -3,13 +3,25 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Backend\App;
+
+use Magento\AdminNotification\Model\Inbox;
+use Magento\Backend\App\Area\FrontNameResolver;
+use Magento\Backend\Model\UrlInterface;
+use Magento\Framework\Acl;
+use Magento\Framework\Acl\Builder;
+use Magento\Framework\Config\ScopeInterface;
+use Magento\Framework\Data\Form\FormKey;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * Test class for \Magento\Backend\App\AbstractAction.
  * @magentoAppArea Adminhtml
  */
-class AbstractActionTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class AbstractActionTest extends AbstractBackendController
 {
     /**
      * Check redirection to startup page for logged user
@@ -19,15 +31,15 @@ class AbstractActionTest extends \Magento\TestFramework\TestCase\AbstractBackend
     public function testPreDispatchWithEmptyUrlRedirectsToStartupPage()
     {
         $this->markTestSkipped('Session destruction doesn\'t work');
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\Config\ScopeInterface::class
+        Bootstrap::getObjectManager()->get(
+            ScopeInterface::class
         )->setCurrentScope(
-            \Magento\Backend\App\Area\FrontNameResolver::AREA_CODE
+            FrontNameResolver::AREA_CODE
         );
         $this->dispatch('backend');
-        /** @var $backendUrlModel \Magento\Backend\Model\UrlInterface */
-        $backendUrlModel = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Backend\Model\UrlInterface::class
+        /** @var $backendUrlModel UrlInterface */
+        $backendUrlModel = Bootstrap::getObjectManager()->get(
+            UrlInterface::class
         );
         $url = $backendUrlModel->getStartupPageUrl();
         $expected = $backendUrlModel->getUrl($url);
@@ -46,8 +58,8 @@ class AbstractActionTest extends \Magento\TestFramework\TestCase\AbstractBackend
          */
         $this->_auth->logout();
 
-        /** @var \Magento\Framework\Data\Form\FormKey $formKey */
-        $formKey = $this->_objectManager->get(\Magento\Framework\Data\Form\FormKey::class);
+        /** @var FormKey $formKey */
+        $formKey = $this->_objectManager->get(FormKey::class);
         $postLogin = [
             'login' => [
                 'username' => \Magento\TestFramework\Bootstrap::ADMIN_NAME,
@@ -73,9 +85,9 @@ class AbstractActionTest extends \Magento\TestFramework\TestCase\AbstractBackend
      */
     public function testAclInNodes($blockName, $resource, $isLimitedAccess)
     {
-        /** @var $noticeInbox \Magento\AdminNotification\Model\Inbox */
-        $noticeInbox = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\AdminNotification\Model\Inbox::class
+        /** @var $noticeInbox Inbox */
+        $noticeInbox = Bootstrap::getObjectManager()->create(
+            Inbox::class
         );
         if (!$noticeInbox->loadLatestNotice()->getId()) {
             $noticeInbox->addCritical('Test notice', 'Test description');
@@ -86,9 +98,9 @@ class AbstractActionTest extends \Magento\TestFramework\TestCase\AbstractBackend
             \Magento\TestFramework\Bootstrap::ADMIN_PASSWORD
         );
 
-        /** @var $acl \Magento\Framework\Acl */
-        $acl = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\Acl\Builder::class)
+        /** @var $acl Acl */
+        $acl = Bootstrap::getObjectManager()
+            ->get(Builder::class)
             ->getAcl();
         if ($isLimitedAccess) {
             $acl->deny(null, $resource);
@@ -96,8 +108,8 @@ class AbstractActionTest extends \Magento\TestFramework\TestCase\AbstractBackend
 
         $this->dispatch('backend/admin/dashboard');
 
-        $layout = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
+        $layout = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
         );
         $actualBlocks = $layout->getAllBlocks();
 

@@ -8,12 +8,13 @@ declare(strict_types=1);
 
 namespace Magento\SomeModule\Api\Data;
 
+use Magento\Eav\Api\Data\AttributeExtensionInterface;
 use Magento\Framework\Api\CustomAttributesDataInterface;
 
 interface SomeInterface extends CustomAttributesDataInterface
 {
     /**
-     * @return \Magento\Eav\Api\Data\AttributeExtensionInterface|null
+     * @return AttributeExtensionInterface|null
      */
     public function getExtensionAttributes();
 }

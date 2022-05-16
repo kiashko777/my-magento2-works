@@ -3,16 +3,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogUrlRewrite\Plugin\Catalog\Block\Adminhtml\Category\Tab;
 
 use Magento\Catalog\Model\Category\DataProvider;
 use Magento\Eav\Model\Config as EavConfig;
+use Magento\Eav\Model\Entity\Type;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class AttributesTest extends \PHPUnit\Framework\TestCase
+class AttributesTest extends TestCase
 {
     /**
      * @var DataProvider
@@ -20,9 +23,25 @@ class AttributesTest extends \PHPUnit\Framework\TestCase
     private $dataProvider;
 
     /**
-     * @var \Magento\Eav\Model\Entity\Type
+     * @var Type
      */
     private $entityType;
+
+    /**
+     * test \Magento\CatalogUrlRewrite\Plugin\Catalog\Block\Adminhtml\Category\Tab\Attributes::afterGetAttributesMeta
+     * @return void
+     */
+    public function testGetAttributesMeta()
+    {
+        $meta = $this->dataProvider->getMeta();
+        $this->assertArrayHasKey('url_key', $meta['search_engine_optimization']['children']);
+        $urlKeyData = $meta['search_engine_optimization']['children']['url_key']['arguments']['data']['config'];
+        $this->assertEquals('text', $urlKeyData['dataType']);
+        $this->assertEquals('input', $urlKeyData['formElement']);
+        $this->assertTrue($urlKeyData['visible']);
+        $this->assertFalse($urlKeyData['required']);
+        $this->assertEquals('[STORE VIEW]', $urlKeyData['scopeLabel']);
+    }
 
     /**
      * {@inheritDoc}
@@ -41,21 +60,5 @@ class AttributesTest extends \PHPUnit\Framework\TestCase
         );
 
         $this->entityType = $objectManager->create(EavConfig::class)->getEntityType('catalog_category');
-    }
-
-    /**
-     * test \Magento\CatalogUrlRewrite\Plugin\Catalog\Block\Adminhtml\Category\Tab\Attributes::afterGetAttributesMeta
-     * @return void
-     */
-    public function testGetAttributesMeta()
-    {
-        $meta = $this->dataProvider->getMeta();
-        $this->assertArrayHasKey('url_key', $meta['search_engine_optimization']['children']);
-        $urlKeyData = $meta['search_engine_optimization']['children']['url_key']['arguments']['data']['config'];
-        $this->assertEquals('text', $urlKeyData['dataType']);
-        $this->assertEquals('input', $urlKeyData['formElement']);
-        $this->assertTrue($urlKeyData['visible']);
-        $this->assertFalse($urlKeyData['required']);
-        $this->assertEquals('[STORE VIEW]', $urlKeyData['scopeLabel']);
     }
 }

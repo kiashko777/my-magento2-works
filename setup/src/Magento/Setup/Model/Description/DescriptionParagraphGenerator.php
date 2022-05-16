@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Model\Description;
 
 /**
@@ -11,7 +12,7 @@ namespace Magento\Setup\Model\Description;
 class DescriptionParagraphGenerator
 {
     /**
-     * @var \Magento\Setup\Model\Description\DescriptionSentenceGenerator
+     * @var DescriptionSentenceGenerator
      */
     private $sentenceGenerator;
 
@@ -21,13 +22,14 @@ class DescriptionParagraphGenerator
     private $paragraphConfig;
 
     /**
-     * @param \Magento\Setup\Model\Description\DescriptionSentenceGenerator $sentenceGenerator
+     * @param DescriptionSentenceGenerator $sentenceGenerator
      * @param array $paragraphConfig
      */
     public function __construct(
-        \Magento\Setup\Model\Description\DescriptionSentenceGenerator $sentenceGenerator,
-        array $paragraphConfig
-    ) {
+        DescriptionSentenceGenerator $sentenceGenerator,
+        array                        $paragraphConfig
+    )
+    {
         $this->sentenceGenerator = $sentenceGenerator;
         $this->paragraphConfig = $paragraphConfig;
     }

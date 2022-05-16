@@ -15,8 +15,8 @@ use Magento\Customer\Model\CustomerRegistry;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Integration\Api\AdminTokenServiceInterface;
 use Magento\Integration\Api\CustomerTokenServiceInterface;
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Bootstrap as TestBootstrap;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
 
 /**
@@ -50,20 +50,6 @@ class GetCustomerTest extends GraphQlAbstract
     private $objectManager;
 
     /**
-     * @inheridoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->customerTokenService = $this->objectManager->get(CustomerTokenServiceInterface::class);
-        $this->customerRegistry = $this->objectManager->get(CustomerRegistry::class);
-        $this->customerAuthUpdate = $this->objectManager->get(CustomerAuthUpdate::class);
-        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      */
     public function testGetCustomer()
@@ -92,6 +78,18 @@ QUERY;
         $this->assertEquals('John', $response['customer']['firstname']);
         $this->assertEquals('Smith', $response['customer']['lastname']);
         $this->assertEquals($currentEmail, $response['customer']['email']);
+    }
+
+    /**
+     * @param string $email
+     * @param string $password
+     * @return array
+     */
+    private function getCustomerAuthHeaders(string $email, string $password): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($email, $password);
+
+        return ['Authorization' => 'Bearer ' . $customerToken];
     }
 
     /**
@@ -175,6 +173,17 @@ QUERY;
     }
 
     /**
+     * @param int $customerId
+     * @return void
+     */
+    private function lockCustomer(int $customerId): void
+    {
+        $customerSecure = $this->customerRegistry->retrieveSecureData($customerId);
+        $customerSecure->setLockExpires('2030-12-31 00:00:00');
+        $this->customerAuthUpdate->saveAuth($customerId);
+    }
+
+    /**
      * @magentoConfigFixture customer/create_account/confirm 1
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      *
@@ -202,25 +211,16 @@ QUERY;
     }
 
     /**
-     * @param string $email
-     * @param string $password
-     * @return array
+     * @inheridoc
      */
-    private function getCustomerAuthHeaders(string $email, string $password): array
+    protected function setUp(): void
     {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($email, $password);
+        parent::setUp();
 
-        return ['Authorization' => 'Bearer ' . $customerToken];
-    }
-
-    /**
-     * @param int $customerId
-     * @return void
-     */
-    private function lockCustomer(int $customerId): void
-    {
-        $customerSecure = $this->customerRegistry->retrieveSecureData($customerId);
-        $customerSecure->setLockExpires('2030-12-31 00:00:00');
-        $this->customerAuthUpdate->saveAuth($customerId);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->customerTokenService = $this->objectManager->get(CustomerTokenServiceInterface::class);
+        $this->customerRegistry = $this->objectManager->get(CustomerRegistry::class);
+        $this->customerAuthUpdate = $this->objectManager->get(CustomerAuthUpdate::class);
+        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
     }
 }

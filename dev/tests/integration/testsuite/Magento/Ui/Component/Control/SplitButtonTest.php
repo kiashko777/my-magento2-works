@@ -26,29 +26,6 @@ class SplitButtonTest extends TestCase
     private $layout;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->layout = $objectManager->get(LayoutInterface::class);
-    }
-
-    /**
-     * Create the block.
-     *
-     * @return SplitButton
-     */
-    private function createBlock(): SplitButton
-    {
-        /** @var SplitButton $block */
-        $block = $this->layout->createBlock(SplitButton::class, 'button_block');
-        $block->setLayout($this->layout);
-
-        return $block;
-    }
-
-    /**
      * Test resulting button HTML.
      *
      * @return void
@@ -88,5 +65,28 @@ class SplitButtonTest extends TestCase
         $this->assertMatchesRegularExpression('/\<script.*?\>.*?' . preg_quote($onclick) . '.*?\<\/script\>/ims', $html);
         $this->assertStringContainsString('width', $html);
         $this->assertStringContainsString('100px', $html);
+    }
+
+    /**
+     * Create the block.
+     *
+     * @return SplitButton
+     */
+    private function createBlock(): SplitButton
+    {
+        /** @var SplitButton $block */
+        $block = $this->layout->createBlock(SplitButton::class, 'button_block');
+        $block->setLayout($this->layout);
+
+        return $block;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->layout = $objectManager->get(LayoutInterface::class);
     }
 }

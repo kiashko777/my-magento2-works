@@ -9,13 +9,14 @@ declare(strict_types=1);
 namespace Magento\Cms\Model\Page;
 
 use Magento\Cms\Model\Page;
-use Magento\Cms\Model\PageFactory;
 use Magento\Cms\Model\Page\CustomLayout\Data\CustomLayoutSelected;
+use Magento\Cms\Model\PageFactory;
+use Magento\Framework\View\Model\Layout\Merge;
+use Magento\Framework\View\Model\Layout\MergeFactory;
+use Magento\Framework\View\Result\PageFactory as PageResultFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
-use Magento\Framework\View\Result\PageFactory as PageResultFactory;
-use Magento\Framework\View\Model\Layout\MergeFactory;
-use Magento\Framework\View\Model\Layout\Merge;
+use Throwable;
 
 /**
  * Test the manager.
@@ -48,6 +49,33 @@ class CustomLayoutManagerTest extends TestCase
     private $identityMap;
 
     /**
+     * Test updating a page's custom layout.
+     *
+     * @magentoDataFixture Magento/Cms/_files/pages.php
+     * @return void
+     * @throws Throwable
+     */
+    public function testCustomLayoutUpdate(): void
+    {
+        /** @var Page $page */
+        $page = $this->pageFactory->create(['customLayoutRepository' => $this->repo]);
+        $page->load('page100', 'identifier');
+        $pageId = (int)$page->getId();
+        $this->identityMap->add($page);
+        //Set file ID
+        $this->repo->save(new CustomLayoutSelected($pageId, 'select2'));
+
+        //Test handles
+        $result = $this->resultFactory->create();
+        $this->manager->applyUpdate($result, $this->repo->getFor($pageId));
+        $this->identityMap->remove((int)$page->getId());
+        $this->assertContains(
+            'cms_page_view_selectable_page100_select2',
+            $result->getLayout()->getUpdate()->getHandles()
+        );
+    }
+
+    /**
      * @inheritDoc
      */
     protected function setUp(): void
@@ -74,32 +102,5 @@ class CustomLayoutManagerTest extends TestCase
         );
         $this->pageFactory = $objectManager->get(PageFactory::class);
         $this->identityMap = $objectManager->get(IdentityMap::class);
-    }
-
-    /**
-     * Test updating a page's custom layout.
-     *
-     * @magentoDataFixture Magento/Cms/_files/pages.php
-     * @throws \Throwable
-     * @return void
-     */
-    public function testCustomLayoutUpdate(): void
-    {
-        /** @var Page $page */
-        $page = $this->pageFactory->create(['customLayoutRepository' => $this->repo]);
-        $page->load('page100', 'identifier');
-        $pageId = (int)$page->getId();
-        $this->identityMap->add($page);
-        //Set file ID
-        $this->repo->save(new CustomLayoutSelected($pageId, 'select2'));
-
-        //Test handles
-        $result = $this->resultFactory->create();
-        $this->manager->applyUpdate($result, $this->repo->getFor($pageId));
-        $this->identityMap->remove((int)$page->getId());
-        $this->assertContains(
-            'cms_page_view_selectable_page100_select2',
-            $result->getLayout()->getUpdate()->getHandles()
-        );
     }
 }

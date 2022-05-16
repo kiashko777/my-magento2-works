@@ -13,40 +13,29 @@ use Magento\Quote\Model\Quote\Address\RateResult\Error;
 use Magento\Quote\Model\Quote\Address\RateResult\Method;
 use Magento\Shipping\Model\Rate\Result;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Abstract class for testing shipping carriers.
  */
-abstract class CollectRatesAbstract extends \PHPUnit\Framework\TestCase
+abstract class CollectRatesAbstract extends TestCase
 {
-    /**
-     * @var ObjectManagerInterface
-     */
-    private $objectManager;
-
     /**
      * @var Shipping
      */
     protected $shipping;
-
     /**
      * @var string
      */
     protected $carrier = '';
-
     /**
      * @var string
      */
     protected $errorMessage = '';
-
     /**
-     * @inheritdoc
+     * @var ObjectManagerInterface
      */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->shipping = $this->objectManager->get(Shipping::class);
-    }
+    private $objectManager;
 
     /**
      * Tests that an error message is displayed when the shipping method is enabled and not applicable.
@@ -60,19 +49,6 @@ abstract class CollectRatesAbstract extends \PHPUnit\Framework\TestCase
 
         static::assertEquals($this->carrier, $rate->getData('carrier'));
         static::assertEquals($this->errorMessage, $rate->getData('error_message'));
-    }
-
-    /**
-     * Tests that shipping rates don't return when the shipping method is disabled and not applicable.
-     *
-     * @return void
-     */
-    public function testCollectRatesWhenShippingCarrierIsNotAvailableAndNotApplicable()
-    {
-        $result = $this->shipping->collectRatesByAddress($this->getAddress(), $this->carrier);
-        $rate = $this->getRate($result->getResult());
-
-        static::assertNull($rate);
     }
 
     /**
@@ -114,5 +90,27 @@ abstract class CollectRatesAbstract extends \PHPUnit\Framework\TestCase
         $rates = $result->getAllRates();
 
         return array_pop($rates);
+    }
+
+    /**
+     * Tests that shipping rates don't return when the shipping method is disabled and not applicable.
+     *
+     * @return void
+     */
+    public function testCollectRatesWhenShippingCarrierIsNotAvailableAndNotApplicable()
+    {
+        $result = $this->shipping->collectRatesByAddress($this->getAddress(), $this->carrier);
+        $rate = $this->getRate($result->getResult());
+
+        static::assertNull($rate);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->shipping = $this->objectManager->get(Shipping::class);
     }
 }

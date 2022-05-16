@@ -3,16 +3,22 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Legacy\Magento\Framework\ObjectManager;
 
-class DiConfigTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\App\Utility\AggregateInvoker;
+use Magento\Framework\App\Utility\Files;
+use Magento\Framework\Console\CommandList;
+use PHPUnit\Framework\TestCase;
+
+class DiConfigTest extends TestCase
 {
     public function testObsoleteDiFormat()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
             [$this, 'assertObsoleteFormat'],
-            \Magento\Framework\App\Utility\Files::init()->getDiConfigs(true)
+            Files::init()->getDiConfigs(true)
         );
     }
 
@@ -53,10 +59,10 @@ class DiConfigTest extends \PHPUnit\Framework\TestCase
 
     public function testCommandListClassIsNotDirectlyConfigured()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
             [$this, 'assertCommandListClassIsNotDirectlyConfigured'],
-            \Magento\Framework\App\Utility\Files::init()->getDiConfigs(true)
+            Files::init()->getDiConfigs(true)
         );
     }
 
@@ -70,7 +76,7 @@ class DiConfigTest extends \PHPUnit\Framework\TestCase
         $xml = simplexml_load_file($file);
         foreach ($xml->xpath('//type') as $type) {
             $this->assertNotContains(
-                \Magento\Framework\Console\CommandList::class,
+                CommandList::class,
                 $type->attributes(),
                 'Use \Magento\Framework\Console\CommandListInterface instead of \Magento\Framework\Console\CommandList'
             );

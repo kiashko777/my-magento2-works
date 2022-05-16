@@ -61,13 +61,17 @@
 <div>{{trans "foo %bar" bar="something"}}</div>
 <div>{{trans "foo %bar" bar="something" bad="$bad.bad()" something=$undeclared.var.error}}</div>
 <div>{{something "
-    <blah>foo %bar</blah>blah
+    <blah>foo %bar</blah>
+    blah
     " bar="something"
-}}</div>
+    }}
+</div>
 <div>{{something "
-    <blah>foo %bar</blah>blah
+    <blah>foo %bar</blah>
+    blah
     " bar="something" bad=$bad.multiline()
-}}</div>
+    }}
+</div>
 
 {{if foo.goodif}}
 <div>{{var foo.goodif2}}</div>
@@ -113,5 +117,5 @@
 {{/for}}
 
 {{depend iusefilterslater}}
-    {{var iusefilterslater|raw}}
+{{var iusefilterslater|raw}}
 {{/depend}}

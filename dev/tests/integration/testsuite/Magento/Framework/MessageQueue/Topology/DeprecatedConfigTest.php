@@ -3,31 +3,30 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\MessageQueue\Topology;
 
 use Magento\Framework\MessageQueue\Topology\Config\ExchangeConfigItem\Binding\Iterator as BindingIterator;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test access to topology configuration declared in deprecated queue.xml configs using Topology\ConfigInterface.
  *
  * @magentoCache config disabled
  */
-class DeprecatedConfigTest extends \PHPUnit\Framework\TestCase
+class DeprecatedConfigTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
-
     public function testGetTopology()
     {
-        /** @var \Magento\Framework\MessageQueue\Topology\ConfigInterface $config */
-        $config = $this->objectManager->create(\Magento\Framework\MessageQueue\Topology\ConfigInterface::class);
+        /** @var ConfigInterface $config */
+        $config = $this->objectManager->create(ConfigInterface::class);
         $topology = $config->getExchange('deprecatedExchange', 'db');
         $this->assertEquals('deprecatedExchange', $topology->getName());
         $this->assertEquals('topic', $topology->getType());
@@ -60,8 +59,8 @@ class DeprecatedConfigTest extends \PHPUnit\Framework\TestCase
 
     public function testGetTopologyOverlapWithQueueConfig()
     {
-        /** @var \Magento\Framework\MessageQueue\Topology\ConfigInterface $config */
-        $config = $this->objectManager->create(\Magento\Framework\MessageQueue\Topology\ConfigInterface::class);
+        /** @var ConfigInterface $config */
+        $config = $this->objectManager->create(ConfigInterface::class);
         $topology = $config->getExchange('overlappingDeprecatedExchange', 'amqp');
         $this->assertEquals('overlappingDeprecatedExchange', $topology->getName());
         $this->assertEquals('topic', $topology->getType());
@@ -113,5 +112,10 @@ class DeprecatedConfigTest extends \PHPUnit\Framework\TestCase
         $arguments = $binding->getArguments();
         $this->assertIsArray($arguments);
         $this->assertCount(0, $arguments);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

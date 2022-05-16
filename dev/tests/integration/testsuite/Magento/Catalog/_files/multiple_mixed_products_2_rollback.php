@@ -3,31 +3,37 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\CatalogInventory\Model\Stock\Status;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/multiple_products_rollback.php');
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 
-/** @var \Magento\Framework\Registry $registry */
-$registry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
+/** @var Registry $registry */
+$registry = Bootstrap::getObjectManager()->get(Registry::class);
 
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
-/** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-$productRepository = $objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+/** @var ProductRepositoryInterface $productRepository */
+$productRepository = $objectManager->create(ProductRepositoryInterface::class);
 
 foreach (['simple_31', 'simple_32', 'configurable', 'simple_41', 'simple_42', 'configurable_12345'] as $sku) {
     try {
         $product = $productRepository->get($sku, false, null, true);
 
-        $stockStatus = $objectManager->create(\Magento\CatalogInventory\Model\Stock\Status::class);
+        $stockStatus = $objectManager->create(Status::class);
         $stockStatus->load($product->getEntityId(), 'product_id');
         $stockStatus->delete();
 
         $productRepository->delete($product);
-    } catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+    } catch (NoSuchEntityException $e) {
         //Products already removed
     }
 }

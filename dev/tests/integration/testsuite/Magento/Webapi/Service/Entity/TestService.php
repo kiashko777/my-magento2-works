@@ -3,7 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Webapi\Service\Entity;
+
+use Magento\Framework\Webapi\Test\Unit\ServiceInputProcessor\AssociativeArray;
+use Magento\Framework\Webapi\Test\Unit\ServiceInputProcessor\DataArray;
+use Magento\Framework\Webapi\Test\Unit\ServiceInputProcessor\Nested;
+use Magento\Framework\Webapi\Test\Unit\ServiceInputProcessor\Simple;
+use Magento\Framework\Webapi\Test\Unit\ServiceInputProcessor\SimpleArray;
 
 class TestService
 {
@@ -18,8 +25,8 @@ class TestService
     }
 
     /**
-     * @param \Magento\Framework\Webapi\Test\Unit\ServiceInputProcessor\Nested $nested
-     * @return \Magento\Framework\Webapi\Test\Unit\ServiceInputProcessor\Nested
+     * @param Nested $nested
+     * @return Nested
      */
     public function nestedData(Nested $nested)
     {
@@ -45,8 +52,8 @@ class TestService
     }
 
     /**
-     * @param \Magento\Framework\Webapi\Test\Unit\ServiceInputProcessor\Simple[] $dataObjects
-     * @return \Magento\Framework\Webapi\Test\Unit\ServiceInputProcessor\Simple[]
+     * @param Simple[] $dataObjects
+     * @return Simple[]
      */
     public function dataArray(array $dataObjects)
     {
@@ -54,8 +61,8 @@ class TestService
     }
 
     /**
-     * @param \Magento\Framework\Webapi\Test\Unit\ServiceInputProcessor\SimpleArray $arrayData
-     * @return \Magento\Framework\Webapi\Test\Unit\ServiceInputProcessor\SimpleArray
+     * @param SimpleArray $arrayData
+     * @return SimpleArray
      */
     public function nestedSimpleArray(SimpleArray $arrayData)
     {
@@ -63,8 +70,8 @@ class TestService
     }
 
     /**
-     * @param \Magento\Framework\Webapi\Test\Unit\ServiceInputProcessor\AssociativeArray $associativeArrayData
-     * @return \Magento\Framework\Webapi\Test\Unit\ServiceInputProcessor\AssociativeArray
+     * @param AssociativeArray $associativeArrayData
+     * @return AssociativeArray
      */
     public function nestedAssociativeArray(AssociativeArray $associativeArrayData)
     {
@@ -72,8 +79,8 @@ class TestService
     }
 
     /**
-     * @param \Magento\Framework\Webapi\Test\Unit\ServiceInputProcessor\DataArray $dataObjects
-     * @return \Magento\Framework\Webapi\Test\Unit\ServiceInputProcessor\DataArray
+     * @param DataArray $dataObjects
+     * @return DataArray
      */
     public function nestedDataArray(DataArray $dataObjects)
     {

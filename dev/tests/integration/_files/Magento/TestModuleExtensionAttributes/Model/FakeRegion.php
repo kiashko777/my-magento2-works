@@ -9,6 +9,7 @@ declare(strict_types=1);
 namespace Magento\TestModuleExtensionAttributes\Model;
 
 use Magento\Framework\Model\AbstractExtensibleModel;
+use Magento\TestModuleExtensionAttributes\Api\Data\FakeRegionExtensionInterface;
 use Magento\TestModuleExtensionAttributes\Api\Data\FakeRegionInterface;
 
 class FakeRegion extends AbstractExtensibleModel implements FakeRegionInterface
@@ -46,7 +47,7 @@ class FakeRegion extends AbstractExtensibleModel implements FakeRegionInterface
     /**
      * {@inheritdoc}
      *
-     * @return \Magento\TestModuleExtensionAttributes\Api\Data\FakeRegionExtensionInterface|null
+     * @return FakeRegionExtensionInterface|null
      */
     public function getExtensionAttributes()
     {
@@ -56,12 +57,13 @@ class FakeRegion extends AbstractExtensibleModel implements FakeRegionInterface
     /**
      * {@inheritdoc}
      *
-     * @param \Magento\TestModuleExtensionAttributes\Api\Data\FakeRegionExtensionInterface $extensionAttributes
+     * @param FakeRegionExtensionInterface $extensionAttributes
      * @return $this
      */
     public function setExtensionAttributes(
-        \Magento\TestModuleExtensionAttributes\Api\Data\FakeRegionExtensionInterface $extensionAttributes
-    ) {
+        FakeRegionExtensionInterface $extensionAttributes
+    )
+    {
         return $this->_setExtensionAttributes($extensionAttributes);
     }
 }

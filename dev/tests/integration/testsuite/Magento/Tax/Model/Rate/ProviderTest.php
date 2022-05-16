@@ -3,19 +3,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Tax\Model\Rate;
 
+use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Tax\Model\Calculation\Rate;
-use Magento\Tax\Model\Rate\Provider;
 use Magento\Tax\Model\ResourceModel\Calculation\Rate\Collection;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Framework\Api\SearchCriteriaBuilder;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class ProviderTest provides coverage
  * of Tax Rate model options provider.
  */
-class ProviderTest extends \PHPUnit\Framework\TestCase
+class ProviderTest extends TestCase
 {
     /**
      * Test of requesting tax rates by search criteria.
@@ -45,7 +46,7 @@ class ProviderTest extends \PHPUnit\Framework\TestCase
         $provider = $objectManager->get(Provider::class);
 
         /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
-        $searchCriteriaBuilder =  $objectManager->create(SearchCriteriaBuilder::class);
+        $searchCriteriaBuilder = $objectManager->create(SearchCriteriaBuilder::class);
         $searchCriteriaBuilder->setPageSize($optionsCount);
         $searchCriteriaBuilder->setCurrentPage(1);
 

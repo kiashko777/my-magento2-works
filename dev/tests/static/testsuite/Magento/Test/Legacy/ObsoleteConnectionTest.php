@@ -3,15 +3,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Legacy;
 
+use Magento\Framework\App\Utility\AggregateInvoker;
+use Magento\Framework\App\Utility\Files;
 use Magento\Framework\Component\ComponentRegistrar;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Temporary test
  * Test verifies obsolete usages in modules that were refactored to work with getConnection.
  */
-class ObsoleteConnectionTest extends \PHPUnit\Framework\TestCase
+class ObsoleteConnectionTest extends TestCase
 {
     /**
      * @var array
@@ -33,34 +37,12 @@ class ObsoleteConnectionTest extends \PHPUnit\Framework\TestCase
      */
     protected $appPath;
 
-    protected function setUp(): void
-    {
-        $this->obsoleteMethods = [
-            '_getReadConnection',
-            '_getWriteConnection',
-            '_getReadAdapter',
-            '_getWriteAdapter',
-            'getReadConnection',
-            'getWriteConnection',
-            'getReadAdapter',
-            'getWriteAdapter',
-        ];
-
-        $this->obsoleteRegexp = [
-          //  'getConnection\\(\'\\w*_*(read|write)',
-            '\\$_?(read|write)(Connection|Adapter)',
-            '\\$write([A-Z]\\w*|\\s)',
-        ];
-
-        $this->filesBlackList = $this->getBlackList();
-    }
-
     /**
      * Test verify that obsolete regexps do not appear in refactored folders
      */
     public function testObsoleteRegexp()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
             function ($file) {
                 $content = file_get_contents($file);
@@ -69,28 +51,6 @@ class ObsoleteConnectionTest extends \PHPUnit\Framework\TestCase
                         0,
                         preg_match('/' . $regexp . '/iS', $content),
                         "File: $file\nContains obsolete regexp: $regexp. "
-                    );
-                }
-            },
-            $this->modulesFilesDataProvider()
-        );
-    }
-
-    /**
-     * Test verify that obsolete methods do not appear in refactored folders
-     */
-    public function testObsoleteResponseMethods()
-    {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
-        $invoker(
-            function ($file) {
-                $content = file_get_contents($file);
-                foreach ($this->obsoleteMethods as $method) {
-                    $quotedMethod = preg_quote($method, '/');
-                    $this->assertSame(
-                        0,
-                        preg_match('/(?<=[a-z\\d_:]|->|function\\s)' . $quotedMethod . '\\s*\\(/iS', $content),
-                        "File: $file\nContains obsolete method: $method . "
                     );
                 }
             },
@@ -109,7 +69,7 @@ class ObsoleteConnectionTest extends \PHPUnit\Framework\TestCase
         $componentRegistrar = new ComponentRegistrar();
         foreach ($this->getFilesData('whitelist/refactored_modules*') as $refactoredModule) {
             if ($componentRegistrar->getPath(ComponentRegistrar::MODULE, $refactoredModule)) {
-                $files = \Magento\Framework\App\Utility\Files::init()->getFiles(
+                $files = Files::init()->getFiles(
                     [$componentRegistrar->getPath(ComponentRegistrar::MODULE, $refactoredModule)],
                     '*.php'
                 );
@@ -119,7 +79,51 @@ class ObsoleteConnectionTest extends \PHPUnit\Framework\TestCase
 
         $result = array_map('realpath', $filesList);
         $result = array_diff($result, $this->filesBlackList);
-        return \Magento\Framework\App\Utility\Files::composeDataSets($result);
+        return Files::composeDataSets($result);
+    }
+
+    /**
+     * Test verify that obsolete methods do not appear in refactored folders
+     */
+    public function testObsoleteResponseMethods()
+    {
+        $invoker = new AggregateInvoker($this);
+        $invoker(
+            function ($file) {
+                $content = file_get_contents($file);
+                foreach ($this->obsoleteMethods as $method) {
+                    $quotedMethod = preg_quote($method, '/');
+                    $this->assertSame(
+                        0,
+                        preg_match('/(?<=[a-z\\d_:]|->|function\\s)' . $quotedMethod . '\\s*\\(/iS', $content),
+                        "File: $file\nContains obsolete method: $method . "
+                    );
+                }
+            },
+            $this->modulesFilesDataProvider()
+        );
+    }
+
+    protected function setUp(): void
+    {
+        $this->obsoleteMethods = [
+            '_getReadConnection',
+            '_getWriteConnection',
+            '_getReadAdapter',
+            '_getWriteAdapter',
+            'getReadConnection',
+            'getWriteConnection',
+            'getReadAdapter',
+            'getWriteAdapter',
+        ];
+
+        $this->obsoleteRegexp = [
+            //  'getConnection\\(\'\\w*_*(read|write)',
+            '\\$_?(read|write)(Connection|Adapter)',
+            '\\$write([A-Z]\\w*|\\s)',
+        ];
+
+        $this->filesBlackList = $this->getBlackList();
     }
 
     /**

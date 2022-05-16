@@ -43,18 +43,6 @@ class CreateProductReviewsTest extends GraphQlAbstract
     private $registry;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-        $this->customerRepository = $objectManager->get(CustomerRepositoryInterface::class);
-        $this->reviewCollectionFactory = $objectManager->get(ReviewCollectionFactory::class);
-        $this->registry = $objectManager->get(Registry::class);
-    }
-
-    /**
      * Test adding a product review as guest and logged in customer
      *
      * @param string $customerName
@@ -102,65 +90,6 @@ class CreateProductReviewsTest extends GraphQlAbstract
     }
 
     /**
-     * @magentoConfigFixture default_store catalog/review/allow_guest 0
-     */
-    public function testAddProductReviewGuestIsNotAllowed()
-    {
-        $productSku = 'simple_product';
-        $customerName = 'John Doe';
-        $query = $this->getQuery($productSku, $customerName);
-        self::expectExceptionMessage('Guest customers aren\'t allowed to add product reviews.');
-        $this->graphQlMutation($query);
-    }
-
-    /**
-     * Removing the recently added product reviews
-     */
-    public function tearDown(): void
-    {
-        $this->registry->unregister('isSecureArea');
-        $this->registry->register('isSecureArea', true);
-        $productId = 1;
-        /** @var Collection $reviewsCollection */
-        $reviewsCollection = $this->reviewCollectionFactory->create();
-        $reviewsCollection->addEntityFilter(Review::ENTITY_PRODUCT_CODE, $productId);
-        /** @var Review $review */
-        foreach ($reviewsCollection as $review) {
-            $review->delete();
-        }
-        $this->registry->unregister('isSecureArea');
-        $this->registry->register('isSecureArea', false);
-
-        parent::tearDown();
-    }
-
-    /**
-     * @return array
-     */
-    public function customerDataProvider(): array
-    {
-        return [
-            'Guest Customer' => ['John Doe', true],
-            'Logged In Customer' => ['John', false],
-        ];
-    }
-
-    /**
-     * @param string $username
-     * @param string $password
-     *
-     * @return array
-     *
-     * @throws AuthenticationException
-     */
-    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
-    {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
-
-        return ['Authorization' => 'Bearer ' . $customerToken];
-    }
-
-    /**
      * Get mutation query
      *
      * @param string $sku
@@ -205,5 +134,76 @@ mutation {
   }
 }
 QUERY;
+    }
+
+    /**
+     * @param string $username
+     * @param string $password
+     *
+     * @return array
+     *
+     * @throws AuthenticationException
+     */
+    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
+
+        return ['Authorization' => 'Bearer ' . $customerToken];
+    }
+
+    /**
+     * @magentoConfigFixture default_store catalog/review/allow_guest 0
+     */
+    public function testAddProductReviewGuestIsNotAllowed()
+    {
+        $productSku = 'simple_product';
+        $customerName = 'John Doe';
+        $query = $this->getQuery($productSku, $customerName);
+        self::expectExceptionMessage('Guest customers aren\'t allowed to add product reviews.');
+        $this->graphQlMutation($query);
+    }
+
+    /**
+     * Removing the recently added product reviews
+     */
+    public function tearDown(): void
+    {
+        $this->registry->unregister('isSecureArea');
+        $this->registry->register('isSecureArea', true);
+        $productId = 1;
+        /** @var Collection $reviewsCollection */
+        $reviewsCollection = $this->reviewCollectionFactory->create();
+        $reviewsCollection->addEntityFilter(Review::ENTITY_PRODUCT_CODE, $productId);
+        /** @var Review $review */
+        foreach ($reviewsCollection as $review) {
+            $review->delete();
+        }
+        $this->registry->unregister('isSecureArea');
+        $this->registry->register('isSecureArea', false);
+
+        parent::tearDown();
+    }
+
+    /**
+     * @return array
+     */
+    public function customerDataProvider(): array
+    {
+        return [
+            'Guest Customer' => ['John Doe', true],
+            'Logged In Customer' => ['John', false],
+        ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
+        $this->customerRepository = $objectManager->get(CustomerRepositoryInterface::class);
+        $this->reviewCollectionFactory = $objectManager->get(ReviewCollectionFactory::class);
+        $this->registry = $objectManager->get(Registry::class);
     }
 }

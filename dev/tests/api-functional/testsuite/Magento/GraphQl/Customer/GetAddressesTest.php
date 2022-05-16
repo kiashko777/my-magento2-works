@@ -11,10 +11,10 @@ use Exception;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Api\Data\AddressInterface;
 use Magento\Customer\Api\Data\CustomerInterface;
+use Magento\Integration\Api\CustomerTokenServiceInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
-use Magento\Integration\Api\CustomerTokenServiceInterface;
 
 /**
  * Test for customer address retrieval.
@@ -31,13 +31,6 @@ class GetAddressesTest extends GraphQlAbstract
      */
     private $lockCustomer;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
-        $this->lockCustomer = Bootstrap::getObjectManager()->get(LockCustomer::class);
-    }
     /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      * @magentoApiDataFixture Magento/Customer/_files/customer_two_addresses.php
@@ -66,38 +59,30 @@ class GetAddressesTest extends GraphQlAbstract
     }
 
     /**
-     * @magentoApiDataFixture Magento/Customer/_files/customer.php
-     * @magentoApiDataFixture Magento/Customer/_files/customer_address.php
+     * @return string
      */
-    public function testGetCustomerAddressIfAccountIsLocked()
+    private function getQuery(): string
     {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('GraphQL response contains errors: The account is locked.');
-
-        $query = $this->getQuery();
-
-        $userName = 'customer@example.com';
-        $password = 'password';
-        $this->lockCustomer->execute(1);
-
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($userName, $password);
-        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
-
-        $this->graphQlQuery($query, [], '', $headerMap);
+        $query
+            = <<<QUERY
+{
+  customer {
+    id
+    addresses {
+      id
+      customer_id
+      region_id
+      country_id
+      telephone
+      postcode
+      city
+      firstname
+      lastname
     }
-
-    /**
-     * @magentoApiDataFixture Magento/Customer/_files/customer.php
-     * @magentoApiDataFixture Magento/Customer/_files/customer_address.php
-     */
-    public function testGetCustomerAddressIfUserIsNotAuthorized()
-    {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('GraphQL response contains errors: The current customer isn\'t authorized.');
-
-        $query = $this->getQuery();
-
-        $this->graphQlQuery($query);
+   }
+}
+QUERY;
+        return $query;
     }
 
     /**
@@ -128,29 +113,45 @@ class GetAddressesTest extends GraphQlAbstract
     }
 
     /**
-     * @return string
+     * @magentoApiDataFixture Magento/Customer/_files/customer.php
+     * @magentoApiDataFixture Magento/Customer/_files/customer_address.php
      */
-    private function getQuery(): string
+    public function testGetCustomerAddressIfAccountIsLocked()
     {
-        $query
-            = <<<QUERY
-{
-  customer {
-    id
-    addresses {
-      id
-      customer_id
-      region_id
-      country_id
-      telephone
-      postcode
-      city      
-      firstname
-      lastname
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('GraphQL response contains errors: The account is locked.');
+
+        $query = $this->getQuery();
+
+        $userName = 'customer@example.com';
+        $password = 'password';
+        $this->lockCustomer->execute(1);
+
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($userName, $password);
+        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
+
+        $this->graphQlQuery($query, [], '', $headerMap);
     }
-   }
-}
-QUERY;
-        return $query;
+
+    /**
+     * @magentoApiDataFixture Magento/Customer/_files/customer.php
+     * @magentoApiDataFixture Magento/Customer/_files/customer_address.php
+     */
+    public function testGetCustomerAddressIfUserIsNotAuthorized()
+    {
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('GraphQL response contains errors: The current customer isn\'t authorized.');
+
+        $query = $this->getQuery();
+
+        $this->graphQlQuery($query);
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
+        $this->lockCustomer = Bootstrap::getObjectManager()->get(LockCustomer::class);
     }
 }

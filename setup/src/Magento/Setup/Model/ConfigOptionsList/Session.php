@@ -6,11 +6,11 @@
 
 namespace Magento\Setup\Model\ConfigOptionsList;
 
-use Magento\Framework\Setup\ConfigOptionsListInterface;
-use Magento\Framework\Config\ConfigOptionsListConstants;
 use Magento\Framework\App\DeploymentConfig;
+use Magento\Framework\Config\ConfigOptionsListConstants;
 use Magento\Framework\Config\Data\ConfigData;
 use Magento\Framework\Config\File\ConfigFilePool;
+use Magento\Framework\Setup\ConfigOptionsListInterface;
 use Magento\Framework\Setup\Option\SelectConfigOption;
 use Magento\Framework\Setup\Option\TextConfigOption;
 
@@ -289,6 +289,34 @@ class Session implements ConfigOptionsListInterface
     }
 
     /**
+     * Get the default value for input key
+     *
+     * @param string $inputKey
+     * @return string
+     */
+    private function getDefaultConfigValue($inputKey)
+    {
+        if (isset($this->defaultConfigValues[$inputKey])) {
+            return $this->defaultConfigValues[$inputKey];
+        } else {
+            return '';
+        }
+    }
+
+    /**
+     * Format the description for compression lib option
+     *
+     * @return string
+     */
+    private function getCompressionLibDescription()
+    {
+        $default = $this->getDefaultConfigValue(self::INPUT_KEY_SESSION_REDIS_COMPRESSION_LIBRARY);
+        $otherLibs = array_diff($this->validCompressionLibraries, [$default]);
+
+        return 'Redis compression library. Values: ' . $default . ' (default), ' . implode(', ', $otherLibs);
+    }
+
+    /**
      * @inheritdoc
      */
     public function createConfig(array $options, DeploymentConfig $deploymentConfig)
@@ -314,6 +342,22 @@ class Session implements ConfigOptionsListInterface
             if (isset($options[$inputKey])) {
                 $configData->set($configPath, $options[$inputKey]);
             }
+        }
+
+        return $configData;
+    }
+
+    /**
+     * Set the session Redis config based on defaults
+     *
+     * @param DeploymentConfig $deploymentConfig
+     * @param ConfigData $configData
+     * @return ConfigData
+     */
+    private function setDefaultRedisConfig(DeploymentConfig $deploymentConfig, ConfigData $configData)
+    {
+        foreach ($this->redisInputKeyToConfigPathMap as $inputKey => $configPath) {
+            $configData->set($configPath, $deploymentConfig->get($configPath, $this->getDefaultConfigValue($inputKey)));
         }
 
         return $configData;
@@ -346,49 +390,5 @@ class Session implements ConfigOptionsListInterface
         }
 
         return $errors;
-    }
-
-    /**
-     * Set the session Redis config based on defaults
-     *
-     * @param DeploymentConfig $deploymentConfig
-     * @param ConfigData $configData
-     * @return ConfigData
-     */
-    private function setDefaultRedisConfig(DeploymentConfig $deploymentConfig, ConfigData $configData)
-    {
-        foreach ($this->redisInputKeyToConfigPathMap as $inputKey => $configPath) {
-            $configData->set($configPath, $deploymentConfig->get($configPath, $this->getDefaultConfigValue($inputKey)));
-        }
-
-        return $configData;
-    }
-
-    /**
-     * Get the default value for input key
-     *
-     * @param string $inputKey
-     * @return string
-     */
-    private function getDefaultConfigValue($inputKey)
-    {
-        if (isset($this->defaultConfigValues[$inputKey])) {
-            return $this->defaultConfigValues[$inputKey];
-        } else {
-            return '';
-        }
-    }
-
-    /**
-     * Format the description for compression lib option
-     *
-     * @return string
-     */
-    private function getCompressionLibDescription()
-    {
-        $default = $this->getDefaultConfigValue(self::INPUT_KEY_SESSION_REDIS_COMPRESSION_LIBRARY);
-        $otherLibs = array_diff($this->validCompressionLibraries, [$default]);
-
-        return 'Redis compression library. Values: ' . $default . ' (default), ' . implode(', ', $otherLibs);
     }
 }

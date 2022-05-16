@@ -26,6 +26,14 @@ class ClassesScannerTest extends TestCase
 
     private $generation;
 
+    public function testGetList()
+    {
+        $pathToScan = str_replace('\\', '/', realpath(__DIR__ . '/../../') . '/_files/app/code/Magento/SomeModule');
+        $actual = $this->model->getList($pathToScan);
+        $this->assertIsArray($actual);
+        $this->assertCount(6, $actual);
+    }
+
     protected function setUp(): void
     {
         $this->generation = realpath(__DIR__ . '/../../_files/var/generation');
@@ -36,13 +44,5 @@ class ClassesScannerTest extends TestCase
             )->getMock();
         $mock->method('getPath')->willReturn($this->generation);
         $this->model = new ClassesScanner([], $mock);
-    }
-
-    public function testGetList()
-    {
-        $pathToScan = str_replace('\\', '/', realpath(__DIR__ . '/../../') . '/_files/app/code/Magento/SomeModule');
-        $actual = $this->model->getList($pathToScan);
-        $this->assertIsArray($actual);
-        $this->assertCount(6, $actual);
     }
 }

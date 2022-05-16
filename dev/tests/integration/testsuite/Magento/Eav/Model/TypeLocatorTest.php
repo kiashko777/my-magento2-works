@@ -6,19 +6,19 @@
 
 namespace Magento\Eav\Model;
 
+use Magento\CatalogInventory\Api\Data\StockItemInterface;
+use Magento\Customer\Api\Data\AddressInterface;
+use Magento\Customer\Api\Data\RegionInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+use ReflectionObject;
 
-class TypeLocatorTest extends \PHPUnit\Framework\TestCase
+class TypeLocatorTest extends TestCase
 {
     /**
      * @var TypeLocator
      */
     private $attributeTypeLocator;
-
-    protected function setUp(): void
-    {
-        $this->attributeTypeLocator = Bootstrap::getObjectManager()->get(TypeLocator::class);
-    }
 
     /**
      * @param string $entityType
@@ -28,7 +28,8 @@ class TypeLocatorTest extends \PHPUnit\Framework\TestCase
     public function testGetType(
         $entityType,
         array $attributeList
-    ) {
+    )
+    {
         foreach ($attributeList as $attributeCode => $expectedType) {
             $this->assertEquals(
                 $expectedType,
@@ -89,7 +90,7 @@ class TypeLocatorTest extends \PHPUnit\Framework\TestCase
                     'created_at' => 'string',
                     'updated_at' => 'string',
                     'country_of_manufacture' => 'string',
-                    'quantity_and_stock_status' => \Magento\CatalogInventory\Api\Data\StockItemInterface::class . '[]',
+                    'quantity_and_stock_status' => StockItemInterface::class . '[]',
                     'custom_layout' => 'string',
                     'url_key' => 'string',
                     'url_path' => 'string',
@@ -109,7 +110,7 @@ class TypeLocatorTest extends \PHPUnit\Framework\TestCase
                     'tax_class_id' => 'int'
                 ]
             ],
-            'customer'=> [
+            'customer' => [
                 'customer',
                 [
                     'confirmation' => 'string',
@@ -126,8 +127,8 @@ class TypeLocatorTest extends \PHPUnit\Framework\TestCase
                     'suffix' => 'string',
                     'email' => 'string',
                     'password_hash' => 'string',
-                    'default_billing' => \Magento\Customer\Api\Data\AddressInterface::class,
-                    'default_shipping' => \Magento\Customer\Api\Data\AddressInterface::class,
+                    'default_billing' => AddressInterface::class,
+                    'default_shipping' => AddressInterface::class,
                     'updated_at' => 'string',
                     'dob' => 'string',
                     'taxvat' => 'string',
@@ -151,7 +152,7 @@ class TypeLocatorTest extends \PHPUnit\Framework\TestCase
                     'street' => 'string',
                     'city' => 'string',
                     'country_id' => 'string',
-                    'region' => \Magento\Customer\Api\Data\RegionInterface::class,
+                    'region' => RegionInterface::class,
                     'region_id' => 'string',
                     'postcode' => 'string',
                     'telephone' => 'string',
@@ -205,13 +206,18 @@ class TypeLocatorTest extends \PHPUnit\Framework\TestCase
         ];
     }
 
+    protected function setUp(): void
+    {
+        $this->attributeTypeLocator = Bootstrap::getObjectManager()->get(TypeLocator::class);
+    }
+
     /**
      * @inheritDoc
      */
     protected function tearDown(): void
     {
         parent::tearDown();
-        $reflection = new \ReflectionObject($this);
+        $reflection = new ReflectionObject($this);
         foreach ($reflection->getProperties() as $property) {
             if (!$property->isStatic() && 0 !== strpos($property->getDeclaringClass()->getName(), 'PHPUnit')) {
                 $property->setAccessible(true);

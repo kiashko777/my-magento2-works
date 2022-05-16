@@ -3,12 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity;
+
+use PHPUnit\Framework\TestCase;
 
 /**
  * A test that enforces composer.lock is up to date with composer.json
  */
-class ComposerLockTest extends \PHPUnit\Framework\TestCase
+class ComposerLockTest extends TestCase
 {
     /**
      * @return string
@@ -21,6 +24,14 @@ class ComposerLockTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * @param string $lockFilePath
+     */
+    private function assertLockFileExists($lockFilePath)
+    {
+        $this->assertFileExists($lockFilePath, 'composer.lock file does not exist');
+    }
+
+    /**
      * @depends testLockFileExists
      * @param string $lockFilePath
      * @return string
@@ -29,6 +40,16 @@ class ComposerLockTest extends \PHPUnit\Framework\TestCase
     {
         $this->assertLockFileReadable($lockFilePath);
         return $lockFilePath;
+    }
+
+    /**
+     * @param string $lockFilePath
+     */
+    private function assertLockFileReadable($lockFilePath)
+    {
+        if (!is_readable($lockFilePath)) {
+            $this->fail('composer.lock file is not readable');
+        }
     }
 
     /**
@@ -44,6 +65,14 @@ class ComposerLockTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * @param string $lockFileContent
+     */
+    private function assertLockFileContainsValidJson($lockFileContent)
+    {
+        $this->assertJson($lockFileContent, 'composer.lock file does not contains valid json');
+    }
+
+    /**
      * @depends testLockFileContainsJson
      * @param string $lockFileContent
      */
@@ -52,32 +81,6 @@ class ComposerLockTest extends \PHPUnit\Framework\TestCase
         $lockData = json_decode($lockFileContent, true);
         $composerFilePath = BP . '/composer.json';
         $this->assertLockDataRelevantToComposerFile($lockData, $composerFilePath);
-    }
-
-    /**
-     * @param string $lockFilePath
-     */
-    private function assertLockFileExists($lockFilePath)
-    {
-        $this->assertFileExists($lockFilePath, 'composer.lock file does not exist');
-    }
-
-    /**
-     * @param string $lockFilePath
-     */
-    private function assertLockFileReadable($lockFilePath)
-    {
-        if (!is_readable($lockFilePath)) {
-            $this->fail('composer.lock file is not readable');
-        }
-    }
-
-    /**
-     * @param string $lockFileContent
-     */
-    private function assertLockFileContainsValidJson($lockFileContent)
-    {
-        $this->assertJson($lockFileContent, 'composer.lock file does not contains valid json');
     }
 
     /**

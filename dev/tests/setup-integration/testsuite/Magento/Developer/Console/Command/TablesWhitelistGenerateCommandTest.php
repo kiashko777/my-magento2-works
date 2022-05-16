@@ -7,11 +7,17 @@ declare(strict_types=1);
 
 namespace Magento\Developer\Console\Command;
 
-use Symfony\Component\Console\Tester\CommandTester;
-use Magento\TestFramework\TestCase\SetupTestCase;
+use Exception;
+use Magento\Framework\Component\ComponentRegistrar;
 use Magento\Framework\Console\Cli;
+use Magento\Framework\Module\Dir;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Setup\Declaration\Schema\Diff\Diff;
 use Magento\TestFramework\Deploy\CliCommand;
 use Magento\TestFramework\Deploy\TestModuleManager;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\SetupTestCase;
+use Symfony\Component\Console\Tester\CommandTester;
 
 /**
  * The purpose of this test is to verify the declaration:generate:whitelist command.
@@ -24,17 +30,17 @@ class TablesWhitelistGenerateCommandTest extends SetupTestCase
     private $tester;
 
     /**
-     * @var \Magento\Developer\Console\Command\TablesWhitelistGenerateCommand
+     * @var TablesWhitelistGenerateCommand
      */
     private $command;
 
     /**
-     * @var \Magento\Framework\Component\ComponentRegistrar
+     * @var ComponentRegistrar
      */
     private $componentRegistrar;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
@@ -49,28 +55,11 @@ class TablesWhitelistGenerateCommandTest extends SetupTestCase
     private $moduleManager;
 
     /**
-     * {@inheritdoc}
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->command = $this->objectManager->create(
-            \Magento\Developer\Console\Command\TablesWhitelistGenerateCommand::class
-        );
-        $this->componentRegistrar = $this->objectManager->create(
-            \Magento\Framework\Component\ComponentRegistrar::class
-        );
-        $this->cliCommand = $this->objectManager->get(CliCommand::class);
-        $this->tester = new CommandTester($this->command);
-        $this->moduleManager = $this->objectManager->get(TestModuleManager::class);
-    }
-
-    /**
      * Execute generate command for whitelist.
      *
      * @moduleName Magento_TestSetupDeclarationModule1
      * @moduleName Magento_TestSetupDeclarationModule8
-     * @throws \Exception
+     * @throws Exception
      */
     public function testExecute()
     {
@@ -102,9 +91,9 @@ class TablesWhitelistGenerateCommandTest extends SetupTestCase
         $modulePath = $this->componentRegistrar->getPath('module', $moduleName);
         $whiteListFileName = $modulePath
             . DIRECTORY_SEPARATOR
-            . \Magento\Framework\Module\Dir::MODULE_ETC_DIR
+            . Dir::MODULE_ETC_DIR
             . DIRECTORY_SEPARATOR
-            . \Magento\Framework\Setup\Declaration\Schema\Diff\Diff::GENERATED_WHITELIST_FILE_NAME;
+            . Diff::GENERATED_WHITELIST_FILE_NAME;
 
         //run bin/magento declaration:generate:whitelist Magento_TestSetupDeclarationModule1 command.
         $this->tester->execute(['--module-name' => $moduleName], ['interactive' => false]);
@@ -128,5 +117,22 @@ class TablesWhitelistGenerateCommandTest extends SetupTestCase
             )
         );
         $this->assertEquals($expectedWhitelistContent, $whitelistFileContent);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->command = $this->objectManager->create(
+            TablesWhitelistGenerateCommand::class
+        );
+        $this->componentRegistrar = $this->objectManager->create(
+            ComponentRegistrar::class
+        );
+        $this->cliCommand = $this->objectManager->get(CliCommand::class);
+        $this->tester = new CommandTester($this->command);
+        $this->moduleManager = $this->objectManager->get(TestModuleManager::class);
     }
 }

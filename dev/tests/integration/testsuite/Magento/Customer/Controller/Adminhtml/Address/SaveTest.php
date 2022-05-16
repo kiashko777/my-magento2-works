@@ -7,15 +7,20 @@ declare(strict_types=1);
 
 namespace Magento\Customer\Controller\Adminhtml\Address;
 
+use Magento\Backend\Model\Session;
 use Magento\Customer\Api\AccountManagementInterface;
 use Magento\Customer\Api\CustomerRepositoryInterface;
-use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Customer\Model\CustomerRegistry;
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\Message\MessageInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class SaveTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class SaveTest extends AbstractBackendController
 {
     /** @var CustomerRepositoryInterface */
     private $customerRepository;
@@ -23,43 +28,11 @@ class SaveTest extends \Magento\TestFramework\TestCase\AbstractBackendController
     /** @var AccountManagementInterface */
     private $accountManagement;
 
-    /** @var \Magento\TestFramework\ObjectManager */
+    /** @var ObjectManager */
     private $objectManager;
 
-    /** @var \Magento\Customer\Controller\Adminhtml\Address\Save */
+    /** @var Save */
     private $customerAddress;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->customerRepository = Bootstrap::getObjectManager()->get(
-            \Magento\Customer\Api\CustomerRepositoryInterface::class
-        );
-        $this->accountManagement = Bootstrap::getObjectManager()->get(
-            \Magento\Customer\Api\AccountManagementInterface::class
-        );
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->customerAddress = $this->objectManager->get(\Magento\Customer\Controller\Adminhtml\Address\Save::class);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    protected function tearDown(): void
-    {
-        /**
-         * Unset customer data
-         */
-        Bootstrap::getObjectManager()->get(\Magento\Backend\Model\Session::class)->setCustomerData(null);
-
-        /**
-         * Unset messages
-         */
-        Bootstrap::getObjectManager()->get(\Magento\Backend\Model\Session::class)->getMessages(true);
-    }
 
     /**
      * @magentoDataFixture Magento/Customer/_files/customer_no_address.php
@@ -83,14 +56,14 @@ class SaveTest extends \Magento\TestFramework\TestCase\AbstractBackendController
         ];
         $this->getRequest()->setPostValue($post)->setMethod(HttpRequest::METHOD_POST);
 
-        $this->objectManager->get(\Magento\Backend\Model\Session::class)->setCustomerFormData($post);
+        $this->objectManager->get(Session::class)->setCustomerFormData($post);
 
         $this->customerAddress->execute();
 
-        $this->assertSessionMessages($this->isEmpty(), \Magento\Framework\Message\MessageInterface::TYPE_ERROR);
+        $this->assertSessionMessages($this->isEmpty(), MessageInterface::TYPE_ERROR);
 
         /** Check that customer data were cleaned after it was saved successfully*/
-        $this->assertEmpty($this->objectManager->get(\Magento\Backend\Model\Session::class)->getCustomerData());
+        $this->assertEmpty($this->objectManager->get(Session::class)->getCustomerData());
 
         $customer = $this->customerRepository->getById($customerId);
 
@@ -125,23 +98,23 @@ class SaveTest extends \Magento\TestFramework\TestCase\AbstractBackendController
         ];
         $this->getRequest()->setPostValue($post)->setMethod(HttpRequest::METHOD_POST);
 
-        $this->objectManager->get(\Magento\Backend\Model\Session::class)->setCustomerFormData($post);
+        $this->objectManager->get(Session::class)->setCustomerFormData($post);
 
         $this->customerAddress->execute();
         /**
          * Check that errors was generated and set to session
          */
-        $this->assertSessionMessages($this->isEmpty(), \Magento\Framework\Message\MessageInterface::TYPE_ERROR);
+        $this->assertSessionMessages($this->isEmpty(), MessageInterface::TYPE_ERROR);
 
         /**
          * Check that customer data were cleaned after it was saved successfully
          */
-        $this->assertEmpty($this->objectManager->get(\Magento\Backend\Model\Session::class)->getCustomerData());
+        $this->assertEmpty($this->objectManager->get(Session::class)->getCustomerData());
 
         /**
          * Remove stored customer from registry
          */
-        $this->objectManager->get(\Magento\Customer\Model\CustomerRegistry::class)->remove($customerId);
+        $this->objectManager->get(CustomerRegistry::class)->remove($customerId);
         $customer = $this->customerRepository->get('customer5@example.com');
         $this->assertEquals('Firstname', $customer->getFirstname());
         $addresses = $customer->getAddresses();
@@ -173,23 +146,55 @@ class SaveTest extends \Magento\TestFramework\TestCase\AbstractBackendController
         ];
         $this->getRequest()->setPostValue($post)->setMethod(HttpRequest::METHOD_POST);
 
-        $this->objectManager->get(\Magento\Backend\Model\Session::class)->setCustomerFormData($post);
+        $this->objectManager->get(Session::class)->setCustomerFormData($post);
 
         $this->customerAddress->execute();
         /**
          * Check that errors was generated and set to session
          */
-        $this->assertSessionMessages($this->isEmpty(), \Magento\Framework\Message\MessageInterface::TYPE_ERROR);
+        $this->assertSessionMessages($this->isEmpty(), MessageInterface::TYPE_ERROR);
 
         /**
          * Check that customer data were cleaned after it was saved successfully
          */
-        $this->assertEmpty($this->objectManager->get(\Magento\Backend\Model\Session::class)->getCustomerData());
+        $this->assertEmpty($this->objectManager->get(Session::class)->getCustomerData());
 
         $customer = $this->customerRepository->getById($customerId);
 
         $this->assertEquals('test firstname', $customer->getFirstname());
         $addresses = $customer->getAddresses();
         $this->assertCount(4, $addresses);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->customerRepository = Bootstrap::getObjectManager()->get(
+            CustomerRepositoryInterface::class
+        );
+        $this->accountManagement = Bootstrap::getObjectManager()->get(
+            AccountManagementInterface::class
+        );
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->customerAddress = $this->objectManager->get(Save::class);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function tearDown(): void
+    {
+        /**
+         * Unset customer data
+         */
+        Bootstrap::getObjectManager()->get(Session::class)->setCustomerData(null);
+
+        /**
+         * Unset messages
+         */
+        Bootstrap::getObjectManager()->get(Session::class)->getMessages(true);
     }
 }

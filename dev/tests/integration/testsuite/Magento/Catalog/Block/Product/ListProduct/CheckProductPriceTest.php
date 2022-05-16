@@ -45,18 +45,6 @@ class CheckProductPriceTest extends TestCase
     private $customerSession;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->pageFactory = $this->objectManager->get(PageFactory::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->customerSession = $this->objectManager->create(Session::class);
-        parent::setUp();
-    }
-
-    /**
      * Assert that product price without additional price configurations will render as expected.
      *
      * @magentoDataFixture Magento/Catalog/_files/product_simple_tax_none.php
@@ -67,6 +55,56 @@ class CheckProductPriceTest extends TestCase
     {
         $priceHtml = $this->getProductPriceHtml('simple-product-tax-none');
         $this->assertFinalPrice($priceHtml, 205.00);
+    }
+
+    /**
+     * Return html of product price without new line characters.
+     *
+     * @param string $sku
+     * @return string
+     */
+    private function getProductPriceHtml(string $sku): string
+    {
+        $product = $this->productRepository->get($sku, false, null, true);
+
+        return preg_replace('/[\n\r]/', '', $this->getListProductBlock()->getProductPrice($product));
+    }
+
+    /**
+     * Get list product block from layout.
+     *
+     * @return ListProduct
+     */
+    private function getListProductBlock(): ListProduct
+    {
+        $page = $this->pageFactory->create();
+        $page->addHandle([
+            'default',
+            'catalog_category_view',
+        ]);
+        $page->getLayout()->generateXml();
+        /** @var Template $categoryProductsBlock */
+        $categoryProductsBlock = $page->getLayout()->getBlock('category.products');
+
+        return $categoryProductsBlock->getChildBlock('product_list');
+    }
+
+    /**
+     * Assert that price html contain expected final price amount.
+     *
+     * @param string $priceHtml
+     * @param float $expectedPrice
+     * @return void
+     */
+    private function assertFinalPrice(string $priceHtml, float $expectedPrice): void
+    {
+        $this->assertMatchesRegularExpression(
+            sprintf(
+                '/data-price-type="finalPrice".*<span class="price">\$%01.2f<\/span><\/span>/',
+                $expectedPrice
+            ),
+            $priceHtml
+        );
     }
 
     /**
@@ -84,6 +122,22 @@ class CheckProductPriceTest extends TestCase
     }
 
     /**
+     * Assert that price html contain "Regular price" label and expected price amount.
+     *
+     * @param string $priceHtml
+     * @param float $expectedPrice
+     * @return void
+     */
+    private function assertRegularPrice(string $priceHtml, float $expectedPrice): void
+    {
+        $regex = '<span class="price-label">Regular Price<\/span> {1,}<span.*data-price-amount="%s".*>\$%01.2f<\/span>';
+        $this->assertMatchesRegularExpression(
+            sprintf("/{$regex}/", round($expectedPrice, 2), $expectedPrice),
+            $priceHtml
+        );
+    }
+
+    /**
      * Assert that product with fixed tier price is renders correctly.
      *
      * @magentoDataFixture Magento/Catalog/_files/product_simple_with_fixed_tier_price.php
@@ -95,6 +149,25 @@ class CheckProductPriceTest extends TestCase
         $priceHtml = $this->getProductPriceHtml('simple-product-tax-none');
         $this->assertFinalPrice($priceHtml, 205.00);
         $this->assertAsLowAsPrice($priceHtml, 40.00);
+    }
+
+    /**
+     * Assert that price html contain "As low as" label and expected price amount.
+     *
+     * @param string $priceHtml
+     * @param float $expectedPrice
+     * @return void
+     */
+    private function assertAsLowAsPrice(string $priceHtml, float $expectedPrice): void
+    {
+        $this->assertMatchesRegularExpression(
+            sprintf(
+                '/<span class="price-label">As low as<\/span> {1,}<span.*data-price-amount="%s".*>\$%01.2f<\/span>/',
+                round($expectedPrice, 2),
+                $expectedPrice
+            ),
+            $priceHtml
+        );
     }
 
     /**
@@ -224,87 +297,14 @@ class CheckProductPriceTest extends TestCase
     }
 
     /**
-     * Assert that price html contain "As low as" label and expected price amount.
-     *
-     * @param string $priceHtml
-     * @param float $expectedPrice
-     * @return void
+     * @inheritdoc
      */
-    private function assertAsLowAsPrice(string $priceHtml, float $expectedPrice): void
+    protected function setUp(): void
     {
-        $this->assertMatchesRegularExpression(
-            sprintf(
-                '/<span class="price-label">As low as<\/span> {1,}<span.*data-price-amount="%s".*>\$%01.2f<\/span>/',
-                round($expectedPrice, 2),
-                $expectedPrice
-            ),
-            $priceHtml
-        );
-    }
-
-    /**
-     * Assert that price html contain expected final price amount.
-     *
-     * @param string $priceHtml
-     * @param float $expectedPrice
-     * @return void
-     */
-    private function assertFinalPrice(string $priceHtml, float $expectedPrice): void
-    {
-        $this->assertMatchesRegularExpression(
-            sprintf(
-                '/data-price-type="finalPrice".*<span class="price">\$%01.2f<\/span><\/span>/',
-                $expectedPrice
-            ),
-            $priceHtml
-        );
-    }
-
-    /**
-     * Assert that price html contain "Regular price" label and expected price amount.
-     *
-     * @param string $priceHtml
-     * @param float $expectedPrice
-     * @return void
-     */
-    private function assertRegularPrice(string $priceHtml, float $expectedPrice): void
-    {
-        $regex = '<span class="price-label">Regular Price<\/span> {1,}<span.*data-price-amount="%s".*>\$%01.2f<\/span>';
-        $this->assertMatchesRegularExpression(
-            sprintf("/{$regex}/", round($expectedPrice, 2), $expectedPrice),
-            $priceHtml
-        );
-    }
-
-    /**
-     * Return html of product price without new line characters.
-     *
-     * @param string $sku
-     * @return string
-     */
-    private function getProductPriceHtml(string $sku): string
-    {
-        $product = $this->productRepository->get($sku, false, null, true);
-
-        return preg_replace('/[\n\r]/', '', $this->getListProductBlock()->getProductPrice($product));
-    }
-
-    /**
-     * Get list product block from layout.
-     *
-     * @return ListProduct
-     */
-    private function getListProductBlock(): ListProduct
-    {
-        $page = $this->pageFactory->create();
-        $page->addHandle([
-            'default',
-            'catalog_category_view',
-        ]);
-        $page->getLayout()->generateXml();
-        /** @var Template $categoryProductsBlock */
-        $categoryProductsBlock = $page->getLayout()->getBlock('category.products');
-
-        return $categoryProductsBlock->getChildBlock('product_list');
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->pageFactory = $this->objectManager->get(PageFactory::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->customerSession = $this->objectManager->create(Session::class);
+        parent::setUp();
     }
 }

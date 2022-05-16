@@ -19,13 +19,11 @@ use Magento\Swatches\Model\Swatch;
  */
 class EavVariationsFixture extends Fixture
 {
+    const ATTRIBUTE_SET_ID = 4;
     /**
      * @var int
      */
     protected $priority = 40;
-
-    const ATTRIBUTE_SET_ID = 4;
-
     /**
      * @var Config
      */
@@ -61,13 +59,14 @@ class EavVariationsFixture extends Fixture
      * @param AttributeFactory $attributeFactory
      */
     public function __construct(
-        FixtureModel $fixtureModel,
-        Config $eavConfig,
-        CacheInterface $cache,
-        StoreManager $storeManager,
-        Set $attributeSet,
+        FixtureModel     $fixtureModel,
+        Config           $eavConfig,
+        CacheInterface   $cache,
+        StoreManager     $storeManager,
+        Set              $attributeSet,
         AttributeFactory $attributeFactory
-    ) {
+    )
+    {
         parent::__construct($fixtureModel);
         $this->eavConfig = $eavConfig;
         $this->cache = $cache;
@@ -93,19 +92,13 @@ class EavVariationsFixture extends Fixture
     }
 
     /**
-     * @inheritDoc
+     * Get attribute code
+     *
+     * @return string
      */
-    public function getActionTitle()
+    private function getAttributeCode()
     {
-        return 'Generating configurable EAV variations';
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function introduceParamLabels()
-    {
-        return [];
+        return 'configurable_variation';
     }
 
     /**
@@ -196,12 +189,18 @@ class EavVariationsFixture extends Fixture
     }
 
     /**
-     * Get attribute code
-     *
-     * @return string
+     * @inheritDoc
      */
-    private function getAttributeCode()
+    public function getActionTitle()
     {
-        return 'configurable_variation';
+        return 'Generating configurable EAV variations';
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function introduceParamLabels()
+    {
+        return [];
     }
 }

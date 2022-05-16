@@ -8,13 +8,13 @@ declare(strict_types=1);
 
 namespace Magento\GroupedProduct\Model\ProductLink;
 
-use Magento\Catalog\Model\Product\Type;
 use Magento\Catalog\Model\ProductLink\Data\ListCriteria;
 use Magento\Catalog\Model\ProductLink\ProductLinkQuery;
 use Magento\Catalog\Model\ProductRepository;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
+use Throwable;
 
 /**
  * Test grouped links.
@@ -37,24 +37,11 @@ class GroupedProductLinkQueryTest extends TestCase
     private $criteriaBuilder;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $objectManager = Bootstrap::getObjectManager();
-        $this->query = $objectManager->get(ProductLinkQuery::class);
-        $this->productRepo = $objectManager->get(ProductRepository::class);
-        $this->criteriaBuilder = $objectManager->get(SearchCriteriaBuilder::class);
-    }
-
-    /**
      * Test getting links for a list of products.
      *
      * @magentoDataFixture Magento/GroupedProduct/_files/product_grouped.php
      * @return void
-     * @throws \Throwable
+     * @throws Throwable
      */
     public function testSearch(): void
     {
@@ -82,5 +69,18 @@ class GroupedProductLinkQueryTest extends TestCase
         //2nd criteria
         $this->assertEmpty($result[1]->getError());
         $this->assertEmpty($result[1]->getResult());
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $objectManager = Bootstrap::getObjectManager();
+        $this->query = $objectManager->get(ProductLinkQuery::class);
+        $this->productRepo = $objectManager->get(ProductRepository::class);
+        $this->criteriaBuilder = $objectManager->get(SearchCriteriaBuilder::class);
     }
 }

@@ -7,6 +7,8 @@
 
 namespace Magento\Bundle\Api;
 
+use Magento\Bundle\Model\Product\Type;
+use Magento\Catalog\Model\Product;
 use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
@@ -50,6 +52,26 @@ class ProductLinkManagementTest extends WebapiAbstract
     }
 
     /**
+     * @param string $productSku
+     * @return string
+     */
+    protected function getChildren($productSku)
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH . '/' . $productSku . '/children',
+                'httpMethod' => Request::HTTP_METHOD_GET,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'getChildren',
+            ],
+        ];
+        return $this->_webApiCall($serviceInfo, ['productSku' => $productSku]);
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Bundle/_files/product.php
      */
     public function testRemoveChild()
@@ -59,6 +81,34 @@ class ProductLinkManagementTest extends WebapiAbstract
         $optionIds = $this->getProductOptions(3);
         $optionId = array_shift($optionIds);
         $this->assertTrue($this->removeChild($productSku, $optionId, $childSku));
+    }
+
+    protected function getProductOptions($productId)
+    {
+        /** @var Product $product */
+        $product = Bootstrap::getObjectManager()->get(Product::class);
+        $product->load($productId);
+        /** @var  Type $type */
+        $type = Bootstrap::getObjectManager()->get(Type::class);
+        return $type->getOptionsIds($product);
+    }
+
+    protected function removeChild($productSku, $optionId, $childSku)
+    {
+        $resourcePath = self::RESOURCE_PATH . '/%s/options/%s/children/%s';
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => sprintf($resourcePath, $productSku, $optionId, $childSku),
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'removeChild',
+            ],
+        ];
+        $requestData = ['sku' => $productSku, 'optionId' => $optionId, 'childSku' => $childSku];
+        return $this->_webApiCall($serviceInfo, $requestData);
     }
 
     /**
@@ -85,6 +135,36 @@ class ProductLinkManagementTest extends WebapiAbstract
 
         $childId = $this->addChild($productSku, $optionId, $linkedProduct);
         $this->assertGreaterThan(0, $childId);
+    }
+
+    /**
+     * @param string $productSku
+     * @param int $optionId
+     * @param array $linkedProduct
+     * @return string
+     */
+    private function addChild($productSku, $optionId, $linkedProduct)
+    {
+        $resourcePath = self::RESOURCE_PATH . '/:sku/links/:optionId';
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => str_replace(
+                    [':sku', ':optionId'],
+                    [$productSku, $optionId],
+                    $resourcePath
+                ),
+                'httpMethod' => Request::HTTP_METHOD_POST,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'AddChildByProductSku',
+            ],
+        ];
+        return $this->_webApiCall(
+            $serviceInfo,
+            ['sku' => $productSku, 'optionId' => $optionId, 'linkedProduct' => $linkedProduct]
+        );
     }
 
     /**
@@ -120,6 +200,52 @@ class ProductLinkManagementTest extends WebapiAbstract
 
         $this->addChild($productSku, $optionId, $linkedProduct);
         self::assertTrue($this->isProductInStock($productSku));
+    }
+
+    /**
+     * Check product stock status.
+     *
+     * @param string $productSku
+     * @return bool
+     */
+    private function isProductInStock(string $productSku): bool
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => '/V1/stockStatuses/' . $productSku,
+                'httpMethod' => Request::HTTP_METHOD_GET,
+            ],
+            'soap' => [
+                'service' => 'catalogInventoryStockRegistryV1',
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => 'catalogInventoryStockRegistryV1getStockStatusBySku',
+            ],
+        ];
+        $result = $this->_webApiCall($serviceInfo, ['productSku' => $productSku]);
+
+        return (bool)$result['stock_status'];
+    }
+
+    /**
+     * Add option to bundle product.
+     *
+     * @param array $option
+     * @return int
+     */
+    private function addOption(array $option): int
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => '/V1/bundle-products/options/add',
+                'httpMethod' => Request::HTTP_METHOD_POST,
+            ],
+            'soap' => [
+                'service' => 'bundleProductOptionManagementV1',
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => 'bundleProductOptionManagementV1Save',
+            ],
+        ];
+        return $this->_webApiCall($serviceInfo, ['option' => $option]);
     }
 
     /**
@@ -187,129 +313,5 @@ class ProductLinkManagementTest extends WebapiAbstract
             $serviceInfo,
             ['sku' => $productSku, 'linkedProduct' => $linkedProduct]
         );
-    }
-
-    /**
-     * @param string $productSku
-     * @param int $optionId
-     * @param array $linkedProduct
-     * @return string
-     */
-    private function addChild($productSku, $optionId, $linkedProduct)
-    {
-        $resourcePath = self::RESOURCE_PATH . '/:sku/links/:optionId';
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => str_replace(
-                    [':sku', ':optionId'],
-                    [$productSku, $optionId],
-                    $resourcePath
-                ),
-                'httpMethod' => Request::HTTP_METHOD_POST,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'AddChildByProductSku',
-            ],
-        ];
-        return $this->_webApiCall(
-            $serviceInfo,
-            ['sku' => $productSku, 'optionId' => $optionId, 'linkedProduct' => $linkedProduct]
-        );
-    }
-
-    protected function getProductOptions($productId)
-    {
-        /** @var \Magento\Catalog\Model\Product $product */
-        $product = Bootstrap::getObjectManager()->get(\Magento\Catalog\Model\Product::class);
-        $product->load($productId);
-        /** @var  \Magento\Bundle\Model\Product\Type $type */
-        $type = Bootstrap::getObjectManager()->get(\Magento\Bundle\Model\Product\Type::class);
-        return $type->getOptionsIds($product);
-    }
-
-    protected function removeChild($productSku, $optionId, $childSku)
-    {
-        $resourcePath = self::RESOURCE_PATH . '/%s/options/%s/children/%s';
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => sprintf($resourcePath, $productSku, $optionId, $childSku),
-                'httpMethod' => Request::HTTP_METHOD_DELETE,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'removeChild',
-            ],
-        ];
-        $requestData = ['sku' => $productSku, 'optionId' => $optionId, 'childSku' => $childSku];
-        return $this->_webApiCall($serviceInfo, $requestData);
-    }
-
-    /**
-     * @param string $productSku
-     * @return string
-     */
-    protected function getChildren($productSku)
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . '/' . $productSku . '/children',
-                'httpMethod' => Request::HTTP_METHOD_GET,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'getChildren',
-            ],
-        ];
-        return $this->_webApiCall($serviceInfo, ['productSku' => $productSku]);
-    }
-
-    /**
-     * Check product stock status.
-     *
-     * @param string $productSku
-     * @return bool
-     */
-    private function isProductInStock(string $productSku): bool
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => '/V1/stockStatuses/' . $productSku,
-                'httpMethod' => Request::HTTP_METHOD_GET,
-            ],
-            'soap' => [
-                'service' => 'catalogInventoryStockRegistryV1',
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => 'catalogInventoryStockRegistryV1getStockStatusBySku',
-            ],
-        ];
-        $result = $this->_webApiCall($serviceInfo, ['productSku' => $productSku]);
-
-        return (bool)$result['stock_status'];
-    }
-
-    /**
-     * Add option to bundle product.
-     *
-     * @param array $option
-     * @return int
-     */
-    private function addOption(array $option): int
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => '/V1/bundle-products/options/add',
-                'httpMethod' => Request::HTTP_METHOD_POST,
-            ],
-            'soap' => [
-                'service' => 'bundleProductOptionManagementV1',
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => 'bundleProductOptionManagementV1Save',
-            ],
-        ];
-        return $this->_webApiCall($serviceInfo, ['option' => $option]);
     }
 }

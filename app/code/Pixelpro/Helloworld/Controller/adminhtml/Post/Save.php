@@ -2,10 +2,14 @@
 
 namespace Pixelpro\Helloworld\Controller\adminhtml\Post;
 
+use Ashsmith\Blog\Model\Post;
+use Exception;
 use Magento\Backend\App\Action;
-use Magento\TestFramework\ErrorLog\Logger;
+use Magento\Backend\Model\View\Result\Redirect;
+use Magento\Framework\Exception\LocalizedException;
+use RuntimeException;
 
-class Save extends \Magento\Backend\App\Action
+class Save extends Action
 {
     /**
      * @param Action\Context $context
@@ -18,10 +22,10 @@ class Save extends \Magento\Backend\App\Action
     public function execute()
     {
         $data = $this->getRequest()->getPostValue();
-        /** @var \Magento\Backend\Model\View\Result\Redirect $resultRedirect */
+        /** @var Redirect $resultRedirect */
         $resultRedirect = $this->resultRedirectFactory->create();
         if ($data) {
-            /** @var \Ashsmith\Blog\Model\Post $model */
+            /** @var Post $model */
             $model = $this->_objectManager->create('Pixelpro\Helloworld\Model\Post');
             $model->setData($data);
             $this->_eventManager->dispatch(
@@ -34,11 +38,11 @@ class Save extends \Magento\Backend\App\Action
                 $this->_objectManager->get('Magento\Backend\Model\Session')->setFormData(false);
 
                 return $resultRedirect->setPath('*/*/');
-            } catch (\Magento\Framework\Exception\LocalizedException $e) {
+            } catch (LocalizedException $e) {
                 $this->messageManager->addError($e->getMessage());
-            } catch (\RuntimeException $e) {
+            } catch (RuntimeException $e) {
                 $this->messageManager->addError($e->getMessage());
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->messageManager->addException($e, __('Something went wrong while saving the post.'));
             }
             $this->_getSession()->setFormData($data);

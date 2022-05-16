@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Integrity\Library\PhpParser;
 
 /**
@@ -58,10 +59,10 @@ class Throws implements ParserInterface, DependenciesCollectorInterface
             if ($this->tokens->getTokenCodeByKey($throw + 2) == T_NEW) {
                 $step = 4;
                 while ($this->tokens->getTokenCodeByKey(
-                    $throw + $step
-                ) == T_STRING || $this->tokens->getTokenCodeByKey(
-                    $throw + $step
-                ) == T_NS_SEPARATOR) {
+                        $throw + $step
+                    ) == T_STRING || $this->tokens->getTokenCodeByKey(
+                        $throw + $step
+                    ) == T_NS_SEPARATOR) {
                     $class .= trim($this->tokens->getTokenValueByKey($throw + $step));
                     $step++;
                 }

@@ -5,34 +5,60 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Magento\Widget;
 
-class WidgetConfigTest extends \PHPUnit\Framework\TestCase
-{
-    /** @var \Magento\Framework\Config\Dom\UrnResolver */
-    protected $urnResolver;
+use DOMDocument;
+use Magento\Framework\App\Utility\AggregateInvoker;
+use Magento\Framework\App\Utility\Files;
+use Magento\Framework\Config\Dom;
+use Magento\Framework\Config\Dom\UrnResolver;
+use PHPUnit\Framework\TestCase;
 
-    protected function setUp(): void
-    {
-        $this->urnResolver = new \Magento\Framework\Config\Dom\UrnResolver();
-    }
+class WidgetConfigTest extends TestCase
+{
+    /** @var UrnResolver */
+    protected $urnResolver;
 
     public function testXmlFiles()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
-            /**
-             * @param string $configFile
-             */
+        /**
+         * @param string $configFile
+         */
             function ($configFile) {
                 $schema = $this->urnResolver->getRealPath('urn:magento:module:Magento_Widget:etc/widget.xsd');
                 $this->_validateFileExpectSuccess($configFile, $schema);
             },
             array_merge(
-                \Magento\Framework\App\Utility\Files::init()->getConfigFiles('widget.xml'),
-                \Magento\Framework\App\Utility\Files::init()->getLayoutConfigFiles('widget.xml')
+                Files::init()->getConfigFiles('widget.xml'),
+                Files::init()->getLayoutConfigFiles('widget.xml')
             )
         );
+    }
+
+    /**
+     * Run schema validation against a known bad xml file with a provided schema.
+     *
+     * This helper expects the validation to fail and will fail a test if no errors are found.
+     *
+     * @param $xmlFile string a known bad xml file.
+     * @param $schemaFile string schema that should find errors in the known bad xml file.
+     */
+    protected function _validateFileExpectSuccess($xmlFile, $schemaFile)
+    {
+        $dom = new DOMDocument();
+        $dom->loadXML(file_get_contents($xmlFile));
+        $errors = Dom::validateDomDocument($dom, $schemaFile);
+        if ($errors) {
+            $this->fail(
+                'There is a problem with the schema.  A known good XML file failed validation: ' . PHP_EOL . implode(
+                    PHP_EOL . PHP_EOL,
+                    $errors
+                )
+            );
+        }
     }
 
     public function testSchemaUsingValidXml()
@@ -52,6 +78,24 @@ class WidgetConfigTest extends \PHPUnit\Framework\TestCase
         $this->_validateFileExpectFailure($xmlFile, $schema);
     }
 
+    /**
+     * Run schema validation against an xml file with a provided schema.
+     *
+     * This helper expects the validation to pass and will fail a test if any errors are found.
+     *
+     * @param $xmlFile string a known good xml file.
+     * @param $schemaFile string schema that should find no errors in the known good xml file.
+     */
+    protected function _validateFileExpectFailure($xmlFile, $schemaFile)
+    {
+        $dom = new DOMDocument();
+        $dom->loadXML(file_get_contents($xmlFile));
+        $errors = Dom::validateDomDocument($dom, $schemaFile);
+        if (!$errors) {
+            $this->fail('There is a problem with the schema.  A known bad XML file passed validation');
+        }
+    }
+
     public function testFileSchemaUsingXml()
     {
         $xmlFile = __DIR__ . '/_files/widget_file.xml';
@@ -69,44 +113,8 @@ class WidgetConfigTest extends \PHPUnit\Framework\TestCase
         $this->_validateFileExpectFailure($xmlFile, $schema);
     }
 
-    /**
-     * Run schema validation against an xml file with a provided schema.
-     *
-     * This helper expects the validation to pass and will fail a test if any errors are found.
-     *
-     * @param $xmlFile string a known good xml file.
-     * @param $schemaFile string schema that should find no errors in the known good xml file.
-     */
-    protected function _validateFileExpectFailure($xmlFile, $schemaFile)
+    protected function setUp(): void
     {
-        $dom = new \DOMDocument();
-        $dom->loadXML(file_get_contents($xmlFile));
-        $errors = \Magento\Framework\Config\Dom::validateDomDocument($dom, $schemaFile);
-        if (!$errors) {
-            $this->fail('There is a problem with the schema.  A known bad XML file passed validation');
-        }
-    }
-
-    /**
-     * Run schema validation against a known bad xml file with a provided schema.
-     *
-     * This helper expects the validation to fail and will fail a test if no errors are found.
-     *
-     * @param $xmlFile string a known bad xml file.
-     * @param $schemaFile string schema that should find errors in the known bad xml file.
-     */
-    protected function _validateFileExpectSuccess($xmlFile, $schemaFile)
-    {
-        $dom = new \DOMDocument();
-        $dom->loadXML(file_get_contents($xmlFile));
-        $errors = \Magento\Framework\Config\Dom::validateDomDocument($dom, $schemaFile);
-        if ($errors) {
-            $this->fail(
-                'There is a problem with the schema.  A known good XML file failed validation: ' . PHP_EOL . implode(
-                    PHP_EOL . PHP_EOL,
-                    $errors
-                )
-            );
-        }
+        $this->urnResolver = new UrnResolver();
     }
 }

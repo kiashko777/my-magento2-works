@@ -29,16 +29,6 @@ class SetShippingMethodsOnCartTest extends GraphQlAbstract
     private $customerTokenService;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-    }
-
-    /**
      * @magentoConfigFixture default_store carriers/freeshipping/active 1
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
@@ -96,6 +86,65 @@ class SetShippingMethodsOnCartTest extends GraphQlAbstract
         self::assertEquals(10, $amount['value']);
         self::assertArrayHasKey('currency', $amount);
         self::assertEquals('USD', $amount['currency']);
+    }
+
+    /**
+     * @param string $maskedQuoteId
+     * @param string $shippingMethodCode
+     * @param string $shippingCarrierCode
+     * @return string
+     */
+    private function getQuery(
+        string $maskedQuoteId,
+        string $shippingMethodCode,
+        string $shippingCarrierCode
+    ): string
+    {
+        return <<<QUERY
+mutation {
+  setShippingMethodsOnCart(input:
+    {
+      cart_id: "$maskedQuoteId",
+      shipping_methods: [{
+        carrier_code: "$shippingCarrierCode"
+        method_code: "$shippingMethodCode"
+      }]
+    }) {
+    cart {
+      shipping_addresses {
+        selected_shipping_method {
+          carrier_code
+          method_code
+          carrier_title
+          method_title
+          amount {
+            value
+            currency
+          }
+        }
+        available_shipping_methods {
+          amount{
+            value
+          }
+          carrier_code
+        }
+      }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
+     * @param string $username
+     * @param string $password
+     * @return array
+     */
+    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
+        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
+        return $headerMap;
     }
 
     /**
@@ -241,7 +290,7 @@ QUERY;
      */
     public function testSetMultipleShippingMethods()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('You cannot specify multiple shipping methods.');
 
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
@@ -285,7 +334,7 @@ QUERY;
      */
     public function testSetShippingMethodToGuestCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
 
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
         $carrierCode = 'flatrate';
@@ -313,7 +362,7 @@ QUERY;
      */
     public function testSetShippingMethodToAnotherCustomerCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
 
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
         $carrierCode = 'flatrate';
@@ -331,52 +380,6 @@ QUERY;
     }
 
     /**
-     * @param string $maskedQuoteId
-     * @param string $shippingMethodCode
-     * @param string $shippingCarrierCode
-     * @return string
-     */
-    private function getQuery(
-        string $maskedQuoteId,
-        string $shippingMethodCode,
-        string $shippingCarrierCode
-    ): string {
-        return <<<QUERY
-mutation {
-  setShippingMethodsOnCart(input:
-    {
-      cart_id: "$maskedQuoteId",
-      shipping_methods: [{
-        carrier_code: "$shippingCarrierCode"
-        method_code: "$shippingMethodCode"
-      }]
-    }) {
-    cart {
-      shipping_addresses {
-        selected_shipping_method {
-          carrier_code
-          method_code
-          carrier_title
-          method_title
-          amount {
-            value
-            currency
-          }
-        }
-        available_shipping_methods {
-          amount{
-            value
-          }
-          carrier_code
-        }
-      }
-    }
-  }
-}
-QUERY;
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      * @magentoApiDataFixture Magento/GraphQl/Quote/_files/customer/create_empty_cart.php
      * @magentoApiDataFixture Magento/GraphQl/Quote/_files/set_new_shipping_address.php
@@ -384,7 +387,7 @@ QUERY;
      */
     public function testSetShippingMethodOnAnEmptyCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The shipping method can\'t be set for an empty cart. Add an item to cart and try again.');
 
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
@@ -400,14 +403,12 @@ QUERY;
     }
 
     /**
-     * @param string $username
-     * @param string $password
-     * @return array
+     * @inheritdoc
      */
-    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
+    protected function setUp(): void
     {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
-        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
-        return $headerMap;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
     }
 }

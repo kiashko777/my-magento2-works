@@ -18,52 +18,53 @@ define([
         injector.mock(mocks);
         injector.require(['Magento_Catalog/js/product/list/columns/image', 'knockoutjs/knockout-es5'],
             function (Constr) {
-            obj = new Constr({
-                sortable: true,
-                sorting: false,
-                headerTmpl: 'header',
-                bodyTmpl: 'body',
+                obj = new Constr({
+                    sortable: true,
+                    sorting: false,
+                    headerTmpl: 'header',
+                    bodyTmpl: 'body',
 
-                /** Stub */
-                source: function () {
-                    return {
-                        column: {
-                            image: 'image'
-                        }
-                    };
-                }
+                    /** Stub */
+                    source: function () {
+                        return {
+                            column: {
+                                image: 'image'
+                            }
+                        };
+                    }
+                });
+                done();
             });
-            done();
-        });
     });
 
     afterEach(function () {
         try {
             injector.clean();
             injector.remove();
-        } catch (e) {}
+        } catch (e) {
+        }
     });
 
     describe('Magento_Catalog/js/product/list/columns/image', function () {
         var image = {
-            url: 'url',
-            width: 100,
-            height: 100,
-            'resized_width': 200
-        },
-        code = 'code',
-        row = {
-            images: [
-                {
-                    label: 'first',
-                    code: code
-                },
-                {
-                    label: 'second',
-                    code: code
-                }
-            ]
-        };
+                url: 'url',
+                width: 100,
+                height: 100,
+                'resized_width': 200
+            },
+            code = 'code',
+            row = {
+                images: [
+                    {
+                        label: 'first',
+                        code: code
+                    },
+                    {
+                        label: 'second',
+                        code: code
+                    }
+                ]
+            };
 
         beforeEach(function () {
             obj.source = jasmine.createSpy().and.returnValue({

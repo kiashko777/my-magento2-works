@@ -22,16 +22,16 @@ class ArrayScannerTest extends TestCase
      */
     protected $_testDir;
 
-    protected function setUp(): void
-    {
-        $this->_model = new ArrayScanner();
-        $this->_testDir = str_replace('\\', '/', realpath(__DIR__ . '/../../') . '/_files');
-    }
-
     public function testCollectEntities()
     {
         $actual = $this->_model->collectEntities([$this->_testDir . '/additional.php']);
         $expected = ['Some_Model_Proxy', 'Some_Model_EntityFactory'];
         $this->assertEquals($expected, $actual);
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = new ArrayScanner();
+        $this->_testDir = str_replace('\\', '/', realpath(__DIR__ . '/../../') . '/_files');
     }
 }

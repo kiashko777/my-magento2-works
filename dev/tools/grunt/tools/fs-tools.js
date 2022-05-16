@@ -27,7 +27,7 @@ module.exports = {
         console.log('Collect data from ' + filePath + ': Start!');
 
         return glob.sync(filePath, {
-            symlinks:  true
+            symlinks: true
         });
     },
 

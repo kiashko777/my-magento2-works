@@ -7,10 +7,10 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\CatalogCustomer;
 
-use Magento\TestFramework\TestCase\GraphQlAbstract;
 use Magento\Store\Api\StoreRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
+use Magento\TestFramework\TestCase\GraphQlAbstract;
 
 class SpecialPriceTest extends GraphQlAbstract
 {
@@ -18,11 +18,6 @@ class SpecialPriceTest extends GraphQlAbstract
      * @var ObjectManager
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoApiDataFixture Magento/Catalog/_files/product_special_price.php
@@ -36,6 +31,25 @@ class SpecialPriceTest extends GraphQlAbstract
 
         $specialPrice = (float)$response['products']['items'][0]['special_price'];
         $this->assertEquals(5.99, $specialPrice);
+    }
+
+    /**
+     * Get a query which user filter for product sku and returns special_price
+     *
+     * @param string $productSku
+     * @return string
+     */
+    private function getProductSearchQuery(string $productSku): string
+    {
+        return <<<QUERY
+{
+  products(filter: {sku: {eq: "{$productSku}"}}) {
+    items {
+      special_price
+    }
+  }
+}
+QUERY;
     }
 
     /**
@@ -63,25 +77,6 @@ class SpecialPriceTest extends GraphQlAbstract
     }
 
     /**
-     * Get a query which user filter for product sku and returns special_price
-     *
-     * @param string $productSku
-     * @return string
-     */
-    private function getProductSearchQuery(string $productSku): string
-    {
-        return <<<QUERY
-{
-  products(filter: {sku: {eq: "{$productSku}"}}) {
-    items {
-      special_price
-    }
-  }
-}
-QUERY;
-    }
-
-    /**
      * Get array that would be used in request header
      *
      * @param string $storeViewCode
@@ -90,5 +85,10 @@ QUERY;
     private function getHeaderStore(string $storeViewCode): array
     {
         return ['Store' => $storeViewCode];
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

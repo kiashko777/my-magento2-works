@@ -15,6 +15,7 @@ use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Cms\Model\CustomLayoutManager;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
+use Throwable;
 
 /**
  * Test pages data provider.
@@ -53,24 +54,6 @@ class DataProviderTest extends TestCase
      * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->objectManager->configure([
-            'preferences' => [CustomLayoutManagerInterface::class => CustomLayoutManager::class]
-        ]);
-        $this->repo = $this->objectManager->get(GetPageByIdentifierInterface::class);
-        $this->filesFaker = $this->objectManager->get(CustomLayoutManager::class);
-        $this->request = $this->objectManager->get(HttpRequest::class);
-        $this->provider = $this->objectManager->create(
-            DataProvider::class,
-            array_merge($this->providerData, ['customLayoutManager' => $this->filesFaker])
-        );
-    }
 
     /**
      * Check that custom layout date is handled properly.
@@ -118,7 +101,7 @@ class DataProviderTest extends TestCase
      * Check that proper meta for custom layout field is returned.
      *
      * @return void
-     * @throws \Throwable
+     * @throws Throwable
      * @magentoDataFixture Magento/Cms/_files/pages_with_layout_xml.php
      */
     public function testCustomLayoutMeta(): void
@@ -172,5 +155,23 @@ class DataProviderTest extends TestCase
         sort($expectedList);
         sort($metaList);
         $this->assertEquals($expectedList, $metaList);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->objectManager->configure([
+            'preferences' => [CustomLayoutManagerInterface::class => CustomLayoutManager::class]
+        ]);
+        $this->repo = $this->objectManager->get(GetPageByIdentifierInterface::class);
+        $this->filesFaker = $this->objectManager->get(CustomLayoutManager::class);
+        $this->request = $this->objectManager->get(HttpRequest::class);
+        $this->provider = $this->objectManager->create(
+            DataProvider::class,
+            array_merge($this->providerData, ['customLayoutManager' => $this->filesFaker])
+        );
     }
 }

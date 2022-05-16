@@ -46,35 +46,6 @@ class CompilerPreparationTest extends TestCase
     private $generationDirectoryAccessMock;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->serviceManagerMock = $this->getMockBuilder(ServiceManager::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $this->inputMock = $this->getMockBuilder(ArgvInput::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $this->filesystemDriverMock = $this->getMockBuilder(File::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $this->generationDirectoryAccessMock = $this->getMockBuilder(GenerationDirectoryAccess::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $this->model = (new ObjectManager($this))->getObject(
-            CompilerPreparation::class,
-            [
-                'serviceManager' => $this->serviceManagerMock,
-                'input' => $this->inputMock,
-                'filesystemDriver' => $this->filesystemDriverMock,
-                'generationDirectoryAccess' => $this->generationDirectoryAccessMock,
-            ]
-        );
-    }
-
-    /**
      * @dataProvider commandNameDataProvider
      * @param $commandName
      * @param $isCompileCommand
@@ -226,5 +197,34 @@ class CompilerPreparationTest extends TestCase
             ->willReturn(true);
 
         $this->model->handleCompilerEnvironment();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->serviceManagerMock = $this->getMockBuilder(ServiceManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->inputMock = $this->getMockBuilder(ArgvInput::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->filesystemDriverMock = $this->getMockBuilder(File::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->generationDirectoryAccessMock = $this->getMockBuilder(GenerationDirectoryAccess::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->model = (new ObjectManager($this))->getObject(
+            CompilerPreparation::class,
+            [
+                'serviceManager' => $this->serviceManagerMock,
+                'input' => $this->inputMock,
+                'filesystemDriver' => $this->filesystemDriverMock,
+                'generationDirectoryAccess' => $this->generationDirectoryAccessMock,
+            ]
+        );
     }
 }

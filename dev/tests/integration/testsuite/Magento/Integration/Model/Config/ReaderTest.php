@@ -4,31 +4,25 @@
  * See COPYING.txt for license details.
  *
  */
+
 namespace Magento\Integration\Model\Config;
 
+use Magento\Framework\Config\FileResolverInterface;
 use Magento\Integration\Model\Config\Reader as ConfigReader;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Integration config reader test.
  */
-class ReaderTest extends \PHPUnit\Framework\TestCase
+class ReaderTest extends TestCase
 {
-    /** @var \PHPUnit\Framework\MockObject\MockObject */
+    /** @var MockObject */
     protected $_fileResolverMock;
 
     /** @var ConfigReader */
     protected $_configReader;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->_fileResolverMock = $this->createMock(\Magento\Framework\Config\FileResolverInterface::class);
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->_configReader = $objectManager->create(
-            \Magento\Integration\Model\Config\Reader::class,
-            ['fileResolver' => $this->_fileResolverMock]
-        );
-    }
 
     public function testRead()
     {
@@ -40,5 +34,16 @@ class ReaderTest extends \PHPUnit\Framework\TestCase
 
         $expectedResult = require __DIR__ . '/_files/integration.php';
         $this->assertEquals($expectedResult, $this->_configReader->read(), 'Error happened during config reading.');
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->_fileResolverMock = $this->createMock(FileResolverInterface::class);
+        $objectManager = Bootstrap::getObjectManager();
+        $this->_configReader = $objectManager->create(
+            Reader::class,
+            ['fileResolver' => $this->_fileResolverMock]
+        );
     }
 }

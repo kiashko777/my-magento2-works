@@ -17,11 +17,6 @@ class HeaderMixinTest extends TestCase
      */
     private $mixin;
 
-    protected function setUp(): void
-    {
-        $this->mixin = new HeaderMixin();
-    }
-
     /**
      * @dataProvider getTestData
      */
@@ -50,5 +45,10 @@ class HeaderMixinTest extends TestCase
                 . 'Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
             ]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->mixin = new HeaderMixin();
     }
 }

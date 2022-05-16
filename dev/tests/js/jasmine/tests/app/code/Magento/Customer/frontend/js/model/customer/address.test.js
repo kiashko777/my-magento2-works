@@ -21,11 +21,11 @@ define([
 
         it('Check on empty object.', function () {
             var addressData = {
-                region: {}
-            },
-            expected = {
-                customAttributes: []
-            };
+                    region: {}
+                },
+                expected = {
+                    customAttributes: []
+                };
 
             expect(JSON.stringify(customerAddress(addressData))).toEqual(JSON.stringify(expected));
         });

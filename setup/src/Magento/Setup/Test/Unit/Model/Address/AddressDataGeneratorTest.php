@@ -24,11 +24,6 @@ class AddressDataGeneratorTest extends TestCase
      */
     private $addressGenerator;
 
-    protected function setUp(): void
-    {
-        $this->addressGenerator = new AddressDataGenerator();
-    }
-
     public function testPostcode()
     {
         // phpcs:ignore
@@ -49,5 +44,10 @@ class AddressDataGeneratorTest extends TestCase
         foreach ($this->addressStructure as $addressField) {
             $this->assertArrayHasKey($addressField, $address);
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->addressGenerator = new AddressDataGenerator();
     }
 }

@@ -48,7 +48,8 @@ define(['squire'], function (Squire) {
         try {
             injector.clean();
             injector.remove();
-        } catch (e) {}
+        } catch (e) {
+        }
     });
 
     describe('Magento_Customer/js/view/authentication-popup', function () {

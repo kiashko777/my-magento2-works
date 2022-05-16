@@ -4,16 +4,29 @@
  * See COPYING.txt for license details.
  */
 
-\Magento\TestFramework\Helper\Bootstrap::getInstance()->loadArea('Adminhtml');
-\Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-    \Magento\Framework\App\Config\MutableScopeConfigInterface::class
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Framework\App\Config\MutableScopeConfigInterface;
+use Magento\Paypal\Model\Config;
+use Magento\Quote\Api\CartManagementInterface;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\Quote\Address;
+use Magento\Sales\Model\Order\Payment;
+use Magento\Store\Model\ScopeInterface;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+
+Bootstrap::getInstance()->loadArea('Adminhtml');
+Bootstrap::getObjectManager()->get(
+    MutableScopeConfigInterface::class
 )->setValue(
     'carriers/flatrate/active',
     1,
-    \Magento\Store\Model\ScopeInterface::SCOPE_STORE
+    ScopeInterface::SCOPE_STORE
 );
-/** @var $product \Magento\Catalog\Model\Product */
-$product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Product::class);
+/** @var $product Product */
+$product = Bootstrap::getObjectManager()->create(Product::class);
 $product->setTypeId(
     'simple'
 )->setId(
@@ -29,9 +42,9 @@ $product->setTypeId(
 )->setStockData(
     ['use_config_manage_stock' => 1, 'qty' => 100, 'is_qty_decimal' => 0, 'is_in_stock' => 100]
 )->setVisibility(
-    \Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH
+    Visibility::VISIBILITY_BOTH
 )->setStatus(
-    \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED
+    Status::STATUS_ENABLED
 )->save();
 $product->load(1);
 
@@ -66,8 +79,8 @@ $billingData = [
     'use_for_shipping' => '1',
 ];
 
-$billingAddress = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Quote\Model\Quote\Address::class,
+$billingAddress = Bootstrap::getObjectManager()->create(
+    Address::class,
     ['data' => $billingData]
 );
 $billingAddress->setAddressType('billing');
@@ -77,13 +90,13 @@ $shippingAddress->setId(null)->setAddressType('shipping');
 $shippingAddress->setShippingMethod('flatrate_flatrate');
 $shippingAddress->setCollectShippingRates(true);
 
-/** @var $quote \Magento\Quote\Model\Quote */
-$quote = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Quote\Model\Quote::class);
+/** @var $quote Quote */
+$quote = Bootstrap::getObjectManager()->create(Quote::class);
 $quote->setCustomerIsGuest(
     true
 )->setStoreId(
-    \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-        \Magento\Store\Model\StoreManagerInterface::class
+    Bootstrap::getObjectManager()->get(
+        StoreManagerInterface::class
     )->getStore()->getId()
 )->setReservedOrderId(
     'test02'
@@ -99,14 +112,14 @@ $quote->getShippingAddress()->setShippingMethod('flatrate_flatrate');
 $quote->getShippingAddress()->setCollectShippingRates(true);
 $quote->collectTotals()->save();
 
-$payment = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Sales\Model\Order\Payment::class
+$payment = Bootstrap::getObjectManager()->create(
+    Payment::class
 );
-$payment->setMethod(\Magento\Paypal\Model\Config::METHOD_WPS_EXPRESS);
+$payment->setMethod(Config::METHOD_WPS_EXPRESS);
 
-$quote->getPayment()->setMethod(\Magento\Paypal\Model\Config::METHOD_WPS_EXPRESS)->save();
+$quote->getPayment()->setMethod(Config::METHOD_WPS_EXPRESS)->save();
 
-/** @var $service \Magento\Quote\Api\CartManagementInterface */
-$service = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->create(\Magento\Quote\Api\CartManagementInterface::class);
+/** @var $service CartManagementInterface */
+$service = Bootstrap::getObjectManager()
+    ->create(CartManagementInterface::class);
 $order = $service->submit($quote, ['increment_id' => '100000001']);

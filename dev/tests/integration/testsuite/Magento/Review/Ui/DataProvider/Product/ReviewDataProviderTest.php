@@ -8,11 +8,11 @@ declare(strict_types=1);
 
 namespace Magento\Review\Ui\DataProvider\Product;
 
+use Magento\Framework\Api\Filter;
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
-use Magento\Framework\Api\Filter;
 
 /**
  * Test for \Magento\Review\Ui\DataProvider\Products\ReviewDataProvider.
@@ -32,14 +32,6 @@ class ReviewDataProviderTest extends TestCase
      * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
 
     /**
      * Sorting dataProvider test
@@ -134,5 +126,13 @@ class ReviewDataProviderTest extends TestCase
         $result = $dataProvider->getData();
 
         $this->assertEquals($this->getItemsField($result, 'title'), [$searchTitle]);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

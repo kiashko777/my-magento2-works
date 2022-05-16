@@ -6,7 +6,9 @@
 
 namespace Magento\Setup;
 
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Setup\Declaration\Schema\Declaration\ReaderComposite;
+use Magento\Framework\Setup\Declaration\Schema\FileSystem\XmlReader;
 use Magento\TestFramework\Deploy\TestModuleManager;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\SetupTestCase;
@@ -17,7 +19,7 @@ use Magento\TestFramework\TestCase\SetupTestCase;
 class SchemaReaderTest extends SetupTestCase
 {
     /**
-     * @var  \Magento\Framework\Setup\Declaration\Schema\FileSystem\XmlReader
+     * @var  XmlReader
      */
     private $reader;
 
@@ -25,13 +27,6 @@ class SchemaReaderTest extends SetupTestCase
      * @var  TestModuleManager
      */
     private $moduleManager;
-
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->reader = $objectManager->get(ReaderComposite::class);
-        $this->moduleManager = $objectManager->get(TestModuleManager::class);
-    }
 
     /**
      * @moduleName Magento_TestSetupDeclarationModule1
@@ -45,9 +40,21 @@ class SchemaReaderTest extends SetupTestCase
     }
 
     /**
+     * @moduleName Magento_TestSetupDeclarationModule1
+     */
+    public function testFailOnInvalidColumnDeclaration()
+    {
+        $this->expectException(LocalizedException::class);
+        $this->expectExceptionMessageMatches('/The attribute \'scale\' is not allowed./');
+
+        $this->updateRevisionTo('fail_on_column_declaration');
+        $this->reader->read('all');
+    }
+
+    /**
      * Helper method. Decrease number of params
      *
-     * @param  string $revisionName
+     * @param string $revisionName
      * @return void
      */
     private function updateRevisionTo($revisionName)
@@ -62,18 +69,6 @@ class SchemaReaderTest extends SetupTestCase
 
     /**
      * @moduleName Magento_TestSetupDeclarationModule1
-     */
-    public function testFailOnInvalidColumnDeclaration()
-    {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
-        $this->expectExceptionMessageMatches('/The attribute \'scale\' is not allowed./');
-
-        $this->updateRevisionTo('fail_on_column_declaration');
-        $this->reader->read('all');
-    }
-
-    /**
-     * @moduleName Magento_TestSetupDeclarationModule1
      * @dataProviderFromFile Magento/TestSetupDeclarationModule1/fixture/foreign_key_interpreter_result.php
      */
     public function testForeignKeyInterpreter()
@@ -82,5 +77,12 @@ class SchemaReaderTest extends SetupTestCase
         $schema = $this->reader->read('all');
         unset($schema['table']['patch_list']);
         self::assertEquals($this->getData(), $schema);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->reader = $objectManager->get(ReaderComposite::class);
+        $this->moduleManager = $objectManager->get(TestModuleManager::class);
     }
 }

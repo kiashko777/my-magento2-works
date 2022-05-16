@@ -4,13 +4,32 @@
  * See COPYING.txt for license details.
  */
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Magento\CatalogImportExport\Model\Export;
 
+use Exception;
+use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Api\ProductAttributeRepositoryInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product\Action;
+use Magento\Catalog\Model\ResourceModel\Product\Collection;
 use Magento\Catalog\Observer\SwitchPriceAttributeScopeOnConfigChange;
+use Magento\Eav\Model\Config;
 use Magento\Framework\App\Config\ReinitableConfigInterface;
+use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Event\Observer;
+use Magento\Framework\Filesystem;
+use Magento\Framework\Filesystem\Directory\Write;
+use Magento\Framework\Filesystem\Directory\WriteInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\ImportExport\Model\Export;
+use Magento\ImportExport\Model\Export\Adapter\Csv;
+use Magento\Store\Api\WebsiteRepositoryInterface;
+use Magento\Store\Model\Store;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 
 /**
  * @magentoDataFixtureBeforeTransaction Magento/Catalog/_files/enable_reindex_schedule.php
@@ -19,28 +38,8 @@ use Magento\Framework\App\Config\ReinitableConfigInterface;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class ProductTest extends \PHPUnit\Framework\TestCase
+class ProductTest extends TestCase
 {
-    /**
-     * @var \Magento\CatalogImportExport\Model\Export\Product
-     */
-    protected $model;
-
-    /**
-     * @var \Magento\Framework\ObjectManagerInterface
-     */
-    protected $objectManager;
-
-    /**
-     * @var \Magento\Framework\Filesystem
-     */
-    protected $fileSystem;
-
-    /**
-     * @var ProductRepositoryInterface
-     */
-    private $productRepository;
-
     /**
      * Stock item attributes which must be exported
      *
@@ -68,18 +67,22 @@ class ProductTest extends \PHPUnit\Framework\TestCase
         'enable_qty_increments',
         'is_decimal_divided'
     ];
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->fileSystem = $this->objectManager->get(\Magento\Framework\Filesystem::class);
-        $this->model = $this->objectManager->create(
-            \Magento\CatalogImportExport\Model\Export\Product::class
-        );
-        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
-    }
+    /**
+     * @var Product
+     */
+    protected $model;
+    /**
+     * @var ObjectManagerInterface
+     */
+    protected $objectManager;
+    /**
+     * @var Filesystem
+     */
+    protected $fileSystem;
+    /**
+     * @var ProductRepositoryInterface
+     */
+    private $productRepository;
 
     /**
      * @magentoDataFixture Magento/CatalogImportExport/_files/product_export_data.php
@@ -91,7 +94,7 @@ class ProductTest extends \PHPUnit\Framework\TestCase
     {
         $this->model->setWriter(
             $this->objectManager->create(
-                \Magento\ImportExport\Model\Export\Adapter\Csv::class
+                Csv::class
             )
         );
         $exportData = $this->model->export();
@@ -121,25 +124,25 @@ class ProductTest extends \PHPUnit\Framework\TestCase
      */
     public function testExportWithJsonAndMarkupTextAttribute(string $attributeData, string $expectedResult): void
     {
-        /** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $productRepository = $objectManager->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+        /** @var ProductRepositoryInterface $productRepository */
+        $objectManager = Bootstrap::getObjectManager();
+        $productRepository = $objectManager->get(ProductRepositoryInterface::class);
         $product = $productRepository->get('simple2');
 
-        /** @var \Magento\Eav\Model\Config $eavConfig */
-        $eavConfig = $objectManager->get(\Magento\Eav\Model\Config::class);
+        /** @var Config $eavConfig */
+        $eavConfig = $objectManager->get(Config::class);
         $eavConfig->clear();
         $attribute = $eavConfig->getAttribute(\Magento\Catalog\Model\Product::ENTITY, 'text_attribute');
         $attribute->setDefaultValue($attributeData);
-        /** @var \Magento\Catalog\Api\ProductAttributeRepositoryInterface $productAttributeRepository */
-        $productAttributeRepository = $objectManager->get(\Magento\Catalog\Api\ProductAttributeRepositoryInterface::class);
+        /** @var ProductAttributeRepositoryInterface $productAttributeRepository */
+        $productAttributeRepository = $objectManager->get(ProductAttributeRepositoryInterface::class);
         $productAttributeRepository->save($attribute);
         $product->setCustomAttribute('text_attribute', $attribute->getDefaultValue());
         $productRepository->save($product);
 
         $this->model->setWriter(
             $this->objectManager->create(
-                \Magento\ImportExport\Model\Export\Adapter\Csv::class
+                Csv::class
             )
         );
         $exportData = $this->model->export();
@@ -176,7 +179,7 @@ class ProductTest extends \PHPUnit\Framework\TestCase
     {
         $this->model->setWriter(
             $this->objectManager->create(
-                \Magento\ImportExport\Model\Export\Adapter\Csv::class
+                Csv::class
             )
         );
         $exportData = $this->model->export();
@@ -193,8 +196,8 @@ class ProductTest extends \PHPUnit\Framework\TestCase
     public function testExportWithProductLinks(): void
     {
         $this->model->setWriter(
-            \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-                \Magento\ImportExport\Model\Export\Adapter\Csv::class
+            Bootstrap::getObjectManager()->create(
+                Csv::class
             )
         );
         $this->assertNotEmpty($this->model->export());
@@ -215,7 +218,7 @@ class ProductTest extends \PHPUnit\Framework\TestCase
         $this->markTestSkipped('Test needs to be skipped.');
         $fileWrite = $this->createMock(\Magento\Framework\Filesystem\File\Write::class);
         $directoryMock = $this->createPartialMock(
-            \Magento\Framework\Filesystem\Directory\Write::class,
+            Write::class,
             ['getParentDirectory', 'isWritable', 'isFile', 'readFile', 'openFile']
         );
         $directoryMock->expects($this->any())->method('getParentDirectory')->willReturn('some#path');
@@ -230,10 +233,10 @@ class ProductTest extends \PHPUnit\Framework\TestCase
         );
         $directoryMock->expects($this->once())->method('openFile')->willReturn($fileWrite);
 
-        $filesystemMock = $this->createPartialMock(\Magento\Framework\Filesystem::class, ['getDirectoryWrite']);
+        $filesystemMock = $this->createPartialMock(Filesystem::class, ['getDirectoryWrite']);
         $filesystemMock->expects($this->once())->method('getDirectoryWrite')->willReturn($directoryMock);
 
-        $exportAdapter = new \Magento\ImportExport\Model\Export\Adapter\Csv($filesystemMock);
+        $exportAdapter = new Csv($filesystemMock);
 
         $this->model->setWriter($exportAdapter)->export();
     }
@@ -282,37 +285,37 @@ class ProductTest extends \PHPUnit\Framework\TestCase
     public function testExceptionInGetExportData(): void
     {
         $this->markTestSkipped('Test needs to be skipped.');
-        $exception = new \Exception('Error');
+        $exception = new Exception('Error');
 
         $rowCustomizerMock =
-            $this->getMockBuilder(\Magento\CatalogImportExport\Model\Export\RowCustomizerInterface::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+            $this->getMockBuilder(RowCustomizerInterface::class)
+                ->disableOriginalConstructor()
+                ->getMock();
 
-        $loggerMock = $this->getMockBuilder(\Psr\Log\LoggerInterface::class)->getMock();
+        $loggerMock = $this->getMockBuilder(LoggerInterface::class)->getMock();
 
         $directoryMock = $this->createPartialMock(
-            \Magento\Framework\Filesystem\Directory\Write::class,
+            Write::class,
             ['getParentDirectory', 'isWritable']
         );
         $directoryMock->expects($this->any())->method('getParentDirectory')->willReturn('some#path');
         $directoryMock->expects($this->any())->method('isWritable')->willReturn(true);
 
-        $filesystemMock = $this->createPartialMock(\Magento\Framework\Filesystem::class, ['getDirectoryWrite']);
+        $filesystemMock = $this->createPartialMock(Filesystem::class, ['getDirectoryWrite']);
         $filesystemMock->expects($this->once())->method('getDirectoryWrite')->willReturn($directoryMock);
 
-        $exportAdapter = new \Magento\ImportExport\Model\Export\Adapter\Csv($filesystemMock);
+        $exportAdapter = new Csv($filesystemMock);
 
         $rowCustomizerMock->expects($this->once())->method('prepareData')->willThrowException($exception);
         $loggerMock->expects($this->once())->method('critical')->with($exception);
 
-        $collection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\ResourceModel\Product\Collection::class
+        $collection = Bootstrap::getObjectManager()->create(
+            Collection::class
         );
 
-        /** @var \Magento\CatalogImportExport\Model\Export\Product $model */
-        $model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\CatalogImportExport\Model\Export\Product::class,
+        /** @var Product $model */
+        $model = Bootstrap::getObjectManager()->create(
+            Product::class,
             [
                 'rowCustomizer' => $rowCustomizerMock,
                 'logger' => $loggerMock,
@@ -335,13 +338,13 @@ class ProductTest extends \PHPUnit\Framework\TestCase
     {
         $this->model->setParameters(
             [
-                \Magento\ImportExport\Model\Export::FIELDS_ENCLOSURE => 1
+                Export::FIELDS_ENCLOSURE => 1
             ]
         );
 
         $this->model->setWriter(
             $this->objectManager->create(
-                \Magento\ImportExport\Model\Export\Adapter\Csv::class
+                Csv::class
             )
         );
         $exportData = $this->model->export();
@@ -363,13 +366,13 @@ class ProductTest extends \PHPUnit\Framework\TestCase
     {
         $this->model->setWriter(
             $this->objectManager->create(
-                \Magento\ImportExport\Model\Export\Adapter\Csv::class
+                Csv::class
             )
         );
 
         $this->model->setParameters(
             [
-                \Magento\ImportExport\Model\Export::FILTER_ELEMENT_GROUP => [
+                Export::FILTER_ELEMENT_GROUP => [
                     'category_ids' => '2,13'
                 ]
             ]
@@ -394,7 +397,7 @@ class ProductTest extends \PHPUnit\Framework\TestCase
     {
         $this->model->setWriter(
             $this->objectManager->create(
-                \Magento\ImportExport\Model\Export\Adapter\Csv::class
+                Csv::class
             )
         );
 
@@ -410,20 +413,20 @@ class ProductTest extends \PHPUnit\Framework\TestCase
      */
     public function testExportWithMedia(): void
     {
-        /** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-        $productRepository = $this->objectManager->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
         $product = $productRepository->get('simple', 1);
         $mediaGallery = $product->getData('media_gallery');
         $image = array_shift($mediaGallery['images']);
         $this->model->setWriter(
             $this->objectManager->create(
-                \Magento\ImportExport\Model\Export\Adapter\Csv::class
+                Csv::class
             )
         );
         $exportData = $this->model->export();
-        /** @var $varDirectory \Magento\Framework\Filesystem\Directory\WriteInterface */
-        $varDirectory = $this->objectManager->get(\Magento\Framework\Filesystem::class)
-            ->getDirectoryWrite(\Magento\Framework\App\Filesystem\DirectoryList::VAR_DIR);
+        /** @var $varDirectory WriteInterface */
+        $varDirectory = $this->objectManager->get(Filesystem::class)
+            ->getDirectoryWrite(DirectoryList::VAR_DIR);
         $varDirectory->writeFile('test_product_with_image.csv', $exportData);
         /** @var \Magento\Framework\File\Csv $csv */
         $csv = $this->objectManager->get(\Magento\Framework\File\Csv::class);
@@ -444,11 +447,11 @@ class ProductTest extends \PHPUnit\Framework\TestCase
     {
         $storeCode = 'default';
         $expectedData = [];
-        /** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-        $productRepository = $this->objectManager->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
-        $store = $this->objectManager->create(\Magento\Store\Model\Store::class);
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $store = $this->objectManager->create(Store::class);
         $store->load('default', 'code');
-        /** @var \Magento\Catalog\Api\Data\ProductInterface $product */
+        /** @var ProductInterface $product */
         $product = $productRepository->get('simple', 1, $store->getStoreId());
         $newCustomOptions = [];
         foreach ($product->getOptions() as $customOption) {
@@ -472,12 +475,12 @@ class ProductTest extends \PHPUnit\Framework\TestCase
         $product->setOptions($newCustomOptions);
         $productRepository->save($product);
         $this->model->setWriter(
-            $this->objectManager->create(\Magento\ImportExport\Model\Export\Adapter\Csv::class)
+            $this->objectManager->create(Csv::class)
         );
         $exportData = $this->model->export();
-        /** @var $varDirectory \Magento\Framework\Filesystem\Directory\WriteInterface */
-        $varDirectory = $this->objectManager->get(\Magento\Framework\Filesystem::class)
-            ->getDirectoryWrite(\Magento\Framework\App\Filesystem\DirectoryList::VAR_DIR);
+        /** @var $varDirectory WriteInterface */
+        $varDirectory = $this->objectManager->get(Filesystem::class)
+            ->getDirectoryWrite(DirectoryList::VAR_DIR);
         $varDirectory->writeFile('test_product_with_custom_options_and_second_store.csv', $exportData);
         /** @var \Magento\Framework\File\Csv $csv */
         $csv = $this->objectManager->get(\Magento\Framework\File\Csv::class);
@@ -498,35 +501,6 @@ class ProductTest extends \PHPUnit\Framework\TestCase
         }
 
         self::assertSame($expectedData, $customOptionData);
-    }
-
-    /**
-     * Check that no duplicate entities when multiple custom options used
-     *
-     * @magentoDataFixture Magento/Catalog/_files/product_simple_with_options.php
-     *
-     * @return void
-     */
-    public function testExportWithMultipleOptions(): void
-    {
-        $expectedCount = 1;
-        $resultsFilename = 'export_results.csv';
-        $this->model->setWriter(
-            $this->objectManager->create(
-                \Magento\ImportExport\Model\Export\Adapter\Csv::class
-            )
-        );
-        $exportData = $this->model->export();
-
-        $varDirectory = $this->objectManager->get(\Magento\Framework\Filesystem::class)
-            ->getDirectoryWrite(\Magento\Framework\App\Filesystem\DirectoryList::VAR_DIR);
-        $varDirectory->writeFile($resultsFilename, $exportData);
-        /** @var \Magento\Framework\File\Csv $csv */
-        $csv = $this->objectManager->get(\Magento\Framework\File\Csv::class);
-        $data = $csv->getData($varDirectory->getAbsolutePath($resultsFilename));
-        $actualCount = count($data) - 1;
-
-        $this->assertSame($expectedCount, $actualCount);
     }
 
     /**
@@ -561,6 +535,35 @@ class ProductTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Check that no duplicate entities when multiple custom options used
+     *
+     * @magentoDataFixture Magento/Catalog/_files/product_simple_with_options.php
+     *
+     * @return void
+     */
+    public function testExportWithMultipleOptions(): void
+    {
+        $expectedCount = 1;
+        $resultsFilename = 'export_results.csv';
+        $this->model->setWriter(
+            $this->objectManager->create(
+                Csv::class
+            )
+        );
+        $exportData = $this->model->export();
+
+        $varDirectory = $this->objectManager->get(Filesystem::class)
+            ->getDirectoryWrite(DirectoryList::VAR_DIR);
+        $varDirectory->writeFile($resultsFilename, $exportData);
+        /** @var \Magento\Framework\File\Csv $csv */
+        $csv = $this->objectManager->get(\Magento\Framework\File\Csv::class);
+        $data = $csv->getData($varDirectory->getAbsolutePath($resultsFilename));
+        $actualCount = count($data) - 1;
+
+        $this->assertSame($expectedCount, $actualCount);
+    }
+
+    /**
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
      * @magentoDataFixture Magento/Store/_files/second_website_with_two_stores.php
      * @magentoConfigFixture current_store catalog/price/scope 1
@@ -579,27 +582,27 @@ class ProductTest extends \PHPUnit\Framework\TestCase
             $secondStoreCode => 9.99
         ];
 
-        /** @var \Magento\Store\Model\Store $store */
-        $store = $this->objectManager->create(\Magento\Store\Model\Store::class);
+        /** @var Store $store */
+        $store = $this->objectManager->create(Store::class);
         $reinitiableConfig = $this->objectManager->get(ReinitableConfigInterface::class);
-        $observer = $this->objectManager->get(\Magento\Framework\Event\Observer::class);
+        $observer = $this->objectManager->get(Observer::class);
         $switchPriceScope = $this->objectManager->get(SwitchPriceAttributeScopeOnConfigChange::class);
-        /** @var \Magento\Catalog\Model\Product\Action $productAction */
-        $productAction = $this->objectManager->create(\Magento\Catalog\Model\Product\Action::class);
+        /** @var Action $productAction */
+        $productAction = $this->objectManager->create(Action::class);
         /** @var \Magento\Framework\File\Csv $csv */
         $csv = $this->objectManager->get(\Magento\Framework\File\Csv::class);
-        /** @var $varDirectory \Magento\Framework\Filesystem\Directory\WriteInterface */
-        $varDirectory = $this->objectManager->get(\Magento\Framework\Filesystem::class)
-            ->getDirectoryWrite(\Magento\Framework\App\Filesystem\DirectoryList::VAR_DIR);
+        /** @var $varDirectory WriteInterface */
+        $varDirectory = $this->objectManager->get(Filesystem::class)
+            ->getDirectoryWrite(DirectoryList::VAR_DIR);
         $secondStore = $store->load($secondStoreCode);
 
         $this->model->setWriter(
             $this->objectManager->create(
-                \Magento\ImportExport\Model\Export\Adapter\Csv::class
+                Csv::class
             )
         );
 
-        $reinitiableConfig->setValue('catalog/price/scope', \Magento\Store\Model\Store::PRICE_SCOPE_WEBSITE);
+        $reinitiableConfig->setValue('catalog/price/scope', Store::PRICE_SCOPE_WEBSITE);
         $switchPriceScope->execute($observer);
 
         $product = $this->productRepository->get('simple');
@@ -624,7 +627,7 @@ class ProductTest extends \PHPUnit\Framework\TestCase
 
         self::assertSame($expectedData, $pricesData);
 
-        $reinitiableConfig->setValue('catalog/price/scope', \Magento\Store\Model\Store::PRICE_SCOPE_GLOBAL);
+        $reinitiableConfig->setValue('catalog/price/scope', Store::PRICE_SCOPE_GLOBAL);
         $switchPriceScope->execute($observer);
     }
 
@@ -641,9 +644,10 @@ class ProductTest extends \PHPUnit\Framework\TestCase
      */
     public function testFilterByQuantityAndStockStatus(
         string $value,
-        array $productsIncluded,
-        array $productsNotIncluded
-    ): void {
+        array  $productsIncluded,
+        array  $productsNotIncluded
+    ): void
+    {
         $exportData = $this->doExport(['quantity_and_stock_status' => $value]);
         foreach ($productsIncluded as $productName) {
             $this->assertStringContainsString($productName, $exportData);
@@ -652,6 +656,28 @@ class ProductTest extends \PHPUnit\Framework\TestCase
             $this->assertStringNotContainsString($productName, $exportData);
         }
     }
+
+    /**
+     * Perform export
+     *
+     * @param array $filters
+     * @return string
+     */
+    private function doExport(array $filters = []): string
+    {
+        $this->model->setWriter(
+            $this->objectManager->create(
+                Csv::class
+            )
+        );
+        $this->model->setParameters(
+            [
+                Export::FILTER_ELEMENT_GROUP => $filters
+            ]
+        );
+        return $this->model->export();
+    }
+
     /**
      * @return array
      */
@@ -702,7 +728,7 @@ class ProductTest extends \PHPUnit\Framework\TestCase
      */
     public function testExportProductWithRestrictedWebsite(): void
     {
-        $websiteRepository = $this->objectManager->get(\Magento\Store\Api\WebsiteRepositoryInterface::class);
+        $websiteRepository = $this->objectManager->get(WebsiteRepositoryInterface::class);
         $website = $websiteRepository->get('second_website');
 
         $exportData = $this->doExport(['website_id' => $website->getId()]);
@@ -711,24 +737,15 @@ class ProductTest extends \PHPUnit\Framework\TestCase
         $this->assertStringNotContainsString('"Virtual Products With Custom Options"', $exportData);
     }
 
-    /**
-     * Perform export
-     *
-     * @param array $filters
-     * @return string
-     */
-    private function doExport(array $filters = []): string
+    protected function setUp(): void
     {
-        $this->model->setWriter(
-            $this->objectManager->create(
-                \Magento\ImportExport\Model\Export\Adapter\Csv::class
-            )
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->fileSystem = $this->objectManager->get(Filesystem::class);
+        $this->model = $this->objectManager->create(
+            Product::class
         );
-        $this->model->setParameters(
-            [
-                \Magento\ImportExport\Model\Export::FILTER_ELEMENT_GROUP => $filters
-            ]
-        );
-        return $this->model->export();
+        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
     }
 }

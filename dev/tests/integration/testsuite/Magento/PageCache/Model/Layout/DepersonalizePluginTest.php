@@ -37,24 +37,6 @@ class DepersonalizePluginTest extends TestCase
     private $cache;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->messageSession = Bootstrap::getObjectManager()->get(Session::class);
-        $this->layout = Bootstrap::getObjectManager()->get(LayoutFactory::class)->create();
-        $this->cache = Bootstrap::getObjectManager()->get(LayoutCache::class);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    protected function tearDown(): void
-    {
-        $this->messageSession->clearStorage();
-    }
-
-    /**
      * @magentoCache full_page enabled
      * @dataProvider afterGenerateElementsDataProvider
      *
@@ -96,5 +78,23 @@ class DepersonalizePluginTest extends TestCase
                 'expectedResult' => ['some_data' => 1],
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->messageSession = Bootstrap::getObjectManager()->get(Session::class);
+        $this->layout = Bootstrap::getObjectManager()->get(LayoutFactory::class)->create();
+        $this->cache = Bootstrap::getObjectManager()->get(LayoutCache::class);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function tearDown(): void
+    {
+        $this->messageSession->clearStorage();
     }
 }

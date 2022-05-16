@@ -5,34 +5,46 @@
  */
 declare(strict_types=1);
 
-/** @var $objectManager \Magento\TestFramework\ObjectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+/** @var $objectManager ObjectManager */
+
+use Magento\Customer\Model\Group;
+use Magento\Framework\Exception\CouldNotDeleteException;
+use Magento\Tax\Model\Calculation\Rate;
+use Magento\Tax\Model\Calculation\RateFactory;
+use Magento\Tax\Model\Calculation\RateRepository;
+use Magento\Tax\Model\Calculation\Rule;
+use Magento\Tax\Model\ClassModel;
+use Magento\Tax\Model\ResourceModel\TaxClass;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+
+$objectManager = Bootstrap::getObjectManager();
 
 $taxRuleResource = $objectManager->get(\Magento\Tax\Model\ResourceModel\Calculation\Rule::class);
-$taxRule = $objectManager->create(\Magento\Tax\Model\Calculation\Rule::class);
+$taxRule = $objectManager->create(Rule::class);
 $taxRuleResource->load($taxRule, 'Test Rule', 'code');
 $taxRuleResource->delete($taxRule);
 
-/** @var \Magento\Tax\Model\ResourceModel\TaxClass $resourceModel */
-$resourceModel = $objectManager->get(\Magento\Tax\Model\ResourceModel\TaxClass::class);
+/** @var TaxClass $resourceModel */
+$resourceModel = $objectManager->get(TaxClass::class);
 
-$customerGroup = $objectManager->create(\Magento\Customer\Model\Group::class)
+$customerGroup = $objectManager->create(Group::class)
     ->load('custom_group', 'customer_group_code');
 $customerGroup->setTaxClassId(3)->save();
 
 try {
-    /** @var \Magento\Tax\Model\ClassModel $taxClassEntity */
-    $taxClassEntity = $objectManager->create(\Magento\Tax\Model\ClassModel::class);
+    /** @var ClassModel $taxClassEntity */
+    $taxClassEntity = $objectManager->create(ClassModel::class);
     $resourceModel->load($taxClassEntity, 'CustomerTaxClass', 'class_name');
     $resourceModel->delete($taxClassEntity);
-} catch (\Magento\Framework\Exception\CouldNotDeleteException $couldNotDeleteException) {
+} catch (CouldNotDeleteException $couldNotDeleteException) {
     // It's okay if the entity already wiped from the database
 }
 
-/** @var \Magento\Tax\Model\Calculation\Rate $rate */
-$rate = $objectManager->get(\Magento\Tax\Model\Calculation\RateFactory::class)->create();
-/** @var \Magento\Tax\Model\Calculation\RateRepository $rateRepository */
-$rateRepository = $objectManager->get(\Magento\Tax\Model\Calculation\RateRepository::class);
+/** @var Rate $rate */
+$rate = $objectManager->get(RateFactory::class)->create();
+/** @var RateRepository $rateRepository */
+$rateRepository = $objectManager->get(RateRepository::class);
 $rate->loadByCode('US-AL-*-Rate-1');
 if ($rate->getId()) {
     $rateRepository->delete($rate);

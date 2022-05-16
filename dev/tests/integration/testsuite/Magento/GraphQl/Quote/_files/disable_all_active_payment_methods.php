@@ -16,11 +16,12 @@ declare(strict_types=1);
 
 use Magento\Config\Model\Config;
 use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Payment\Api\PaymentMethodListInterface;
 use Magento\Store\Model\Store;
 use Magento\TestFramework\Helper\Bootstrap;
 
 $objectManager = Bootstrap::getObjectManager();
-$paymentMethodList = $objectManager->get(\Magento\Payment\Api\PaymentMethodListInterface::class);
+$paymentMethodList = $objectManager->get(PaymentMethodListInterface::class);
 $rollbackConfigKey = 'test/payment/disabled_payment_methods';
 $configData = [];
 $disabledPaymentMethods = [];

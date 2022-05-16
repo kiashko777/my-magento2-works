@@ -21,16 +21,6 @@ class ReplaceFixtureTest extends AbstractOverridesTest
     private $fixtureCallStorage;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->fixtureCallStorage = $this->objectManager->get(FixtureCallStorage::class);
-    }
-
-    /**
      * Checks that fixture can be replaced in global node
      *
      * @magentoDataFixtureBeforeTransaction Magento/TestModuleOverrideConfig/_files/fixture2_first_module.php
@@ -41,5 +31,15 @@ class ReplaceFixtureTest extends AbstractOverridesTest
     {
         $this->assertEquals(0, $this->fixtureCallStorage->getFixturesCount('fixture2_first_module.php'));
         $this->assertEquals(1, $this->fixtureCallStorage->getFixturesCount('fixture3_first_module.php'));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->fixtureCallStorage = $this->objectManager->get(FixtureCallStorage::class);
     }
 }

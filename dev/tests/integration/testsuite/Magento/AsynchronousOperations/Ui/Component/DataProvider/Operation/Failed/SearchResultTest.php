@@ -3,14 +3,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\AsynchronousOperations\Ui\Component\DataProvider\Operation\Failed;
 
+use Magento\Framework\App\RequestInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class SearchResultTest
  */
-class SearchResultTest extends \PHPUnit\Framework\TestCase
+class SearchResultTest extends TestCase
 {
     /**
      * @magentoDataFixture Magento/AsynchronousOperations/_files/bulk.php
@@ -20,7 +23,7 @@ class SearchResultTest extends \PHPUnit\Framework\TestCase
     public function testGetItems()
     {
         $objectManager = Bootstrap::getObjectManager();
-        $request = $objectManager->get(\Magento\Framework\App\RequestInterface::class);
+        $request = $objectManager->get(RequestInterface::class);
         $requestData = [
             'uuid' => 'bulk-uuid-5',
         ];
@@ -29,7 +32,7 @@ class SearchResultTest extends \PHPUnit\Framework\TestCase
 
         /** @var \Magento\AsynchronousOperations\Ui\Component\DataProvider\SearchResult $searchResult */
         $searchResult = $objectManager->create(
-            \Magento\AsynchronousOperations\Ui\Component\DataProvider\Operation\Failed\SearchResult::class
+            SearchResult::class
         );
         $this->assertEquals(1, $searchResult->getTotalCount());
         $expected = $searchResult->getItems();

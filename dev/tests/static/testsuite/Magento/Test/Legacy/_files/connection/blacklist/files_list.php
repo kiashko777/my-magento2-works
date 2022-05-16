@@ -11,8 +11,8 @@ return [
     ['Magento_AdvancedPricingImportExport', 'Test/Unit/Model/Export/AdvancedPricingTest.php'],
     ['Magento_AdvancedPricingImportExport', 'Model/Export/AdvancedPricing.php'],
     ['Magento_CatalogImportExport', 'Test/Unit/Model/Export/ProductTest.php'],
-    ['Magento_CatalogImportExport' , 'Model/Export/Products.php'],
+    ['Magento_CatalogImportExport', 'Model/Export/Products.php'],
     ['Magento_EncryptionKey', 'Controller/Adminhtml/Crypt/Key/index.php'],
     ['Magento_EncryptionKey', 'Model/Resource/Key/Change.php'],
-  //example  ['Magento_Backend', 'Model/View.php'],
+    //example  ['Magento_Backend', 'Model/View.php'],
 ];

@@ -6,6 +6,7 @@
 
 namespace Magento\ConfigurableProduct\Api;
 
+use Exception;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Entity\Attribute;
@@ -17,6 +18,7 @@ use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
+use SoapFault;
 
 /**
  * Class ProductRepositoryTest for testing ConfigurableProduct integration
@@ -50,37 +52,38 @@ class ProductRepositoryTest extends WebapiAbstract
     private $productRepository;
 
     /**
-     * @inheritdoc
+     * @magentoApiDataFixture Magento/ConfigurableProduct/_files/product_configurable.php
      */
-    protected function setUp(): void
+    public function testCreateConfigurableProduct()
     {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->eavConfig = $this->objectManager->get(Config::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-    }
+        $productId1 = 10;
+        $productId2 = 20;
+        $label = "color";
 
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->deleteProductBySku(self::CONFIGURABLE_PRODUCT_SKU);
-        parent::tearDown();
-    }
-
-    /**
-     * Retrieve configurable attribute options
-     *
-     * @return array
-     */
-    protected function getConfigurableAttributeOptions()
-    {
-        /** @var Collection $optionCollection */
-        $optionCollection = $this->objectManager->create(
-            Collection::class
+        $response = $this->createConfigurableProduct();
+        $this->assertEquals(self::CONFIGURABLE_PRODUCT_SKU, $response[ProductInterface::SKU]);
+        $this->assertTrue(
+            isset($response[ExtensibleDataInterface::EXTENSION_ATTRIBUTES_KEY]["configurable_product_options"])
         );
-        $options = $optionCollection->setAttributeFilter($this->configurableAttribute->getId())->getData();
-        return $options;
+        $resultConfigurableProductOptions
+            = $response[ExtensibleDataInterface::EXTENSION_ATTRIBUTES_KEY]["configurable_product_options"];
+        $this->assertCount(1, $resultConfigurableProductOptions);
+        $this->assertTrue(isset($resultConfigurableProductOptions[0]['label']));
+        $this->assertTrue(isset($resultConfigurableProductOptions[0]['id']));
+        $this->assertEquals($label, $resultConfigurableProductOptions[0]['label']);
+        $this->assertTrue(
+            isset($resultConfigurableProductOptions[0]['values'])
+        );
+        $this->assertCount(2, $resultConfigurableProductOptions[0]['values']);
+
+        $this->assertTrue(
+            isset($response[ExtensibleDataInterface::EXTENSION_ATTRIBUTES_KEY]["configurable_product_links"])
+        );
+        $resultConfigurableProductLinks
+            = $response[ExtensibleDataInterface::EXTENSION_ATTRIBUTES_KEY]["configurable_product_links"];
+        $this->assertCount(2, $resultConfigurableProductLinks);
+
+        $this->assertEquals([$productId1, $productId2], $resultConfigurableProductLinks);
     }
 
     /**
@@ -140,38 +143,42 @@ class ProductRepositoryTest extends WebapiAbstract
     }
 
     /**
-     * @magentoApiDataFixture Magento/ConfigurableProduct/_files/product_configurable.php
+     * Retrieve configurable attribute options
+     *
+     * @return array
      */
-    public function testCreateConfigurableProduct()
+    protected function getConfigurableAttributeOptions()
     {
-        $productId1 = 10;
-        $productId2 = 20;
-        $label = "color";
-
-        $response = $this->createConfigurableProduct();
-        $this->assertEquals(self::CONFIGURABLE_PRODUCT_SKU, $response[ProductInterface::SKU]);
-        $this->assertTrue(
-            isset($response[ExtensibleDataInterface::EXTENSION_ATTRIBUTES_KEY]["configurable_product_options"])
+        /** @var Collection $optionCollection */
+        $optionCollection = $this->objectManager->create(
+            Collection::class
         );
-        $resultConfigurableProductOptions
-            = $response[ExtensibleDataInterface::EXTENSION_ATTRIBUTES_KEY]["configurable_product_options"];
-        $this->assertCount(1, $resultConfigurableProductOptions);
-        $this->assertTrue(isset($resultConfigurableProductOptions[0]['label']));
-        $this->assertTrue(isset($resultConfigurableProductOptions[0]['id']));
-        $this->assertEquals($label, $resultConfigurableProductOptions[0]['label']);
-        $this->assertTrue(
-            isset($resultConfigurableProductOptions[0]['values'])
-        );
-        $this->assertCount(2, $resultConfigurableProductOptions[0]['values']);
+        $options = $optionCollection->setAttributeFilter($this->configurableAttribute->getId())->getData();
+        return $options;
+    }
 
-        $this->assertTrue(
-            isset($response[ExtensibleDataInterface::EXTENSION_ATTRIBUTES_KEY]["configurable_product_links"])
-        );
-        $resultConfigurableProductLinks
-            = $response[ExtensibleDataInterface::EXTENSION_ATTRIBUTES_KEY]["configurable_product_links"];
-        $this->assertCount(2, $resultConfigurableProductLinks);
-
-        $this->assertEquals([$productId1, $productId2], $resultConfigurableProductLinks);
+    /**
+     * Create product
+     *
+     * @param array $product
+     * @return array the created product data
+     */
+    protected function createProduct($product)
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH,
+                'httpMethod' => Request::HTTP_METHOD_POST,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'Save',
+            ],
+        ];
+        $requestData = ['product' => $product];
+        $response = $this->_webApiCall($serviceInfo, $requestData);
+        return $response;
     }
 
     /**
@@ -186,6 +193,45 @@ class ProductRepositoryTest extends WebapiAbstract
         $configurableAttribute->save();
         $response = $this->createConfigurableProductWithRequiredAttribute();
         $this->assertEquals(self::CONFIGURABLE_PRODUCT_SKU, $response[ProductInterface::SKU]);
+    }
+
+    /**
+     * Create configurable product with required attribute by web api.
+     *
+     * @return array
+     */
+    private function createConfigurableProductWithRequiredAttribute(): array
+    {
+        $this->configurableAttribute = $this->eavConfig->getAttribute('catalog_product', 'test_configurable');
+        $options = $this->getConfigurableAttributeOptions();
+        $configurableProductOptions = [
+            [
+                "attribute_id" => $this->configurableAttribute->getId(),
+                "label" => 'color',
+                "position" => 0,
+                "values" => [
+                    [
+                        "value_index" => $options[0]['option_id'],
+                    ],
+                    [
+                        "value_index" => $options[1]['option_id'],
+                    ],
+                ],
+            ],
+        ];
+        $product = [
+            "sku" => self::CONFIGURABLE_PRODUCT_SKU,
+            "name" => self::CONFIGURABLE_PRODUCT_SKU,
+            "type_id" => "configurable",
+            "price" => 50,
+            'attribute_set_id' => 4,
+            "extension_attributes" => [
+                "configurable_product_options" => $configurableProductOptions,
+                "configurable_product_links" => [10, 20],
+            ],
+        ];
+
+        return $this->createProduct($product);
     }
 
     /**
@@ -274,6 +320,41 @@ class ProductRepositoryTest extends WebapiAbstract
         $this->assertCount(0, $resultConfigurableProductLinks);
 
         $this->assertEquals([], $resultConfigurableProductLinks);
+    }
+
+    /**
+     * Save product
+     *
+     * @param array $product
+     * @return array the created product data
+     */
+    protected function saveProduct($product)
+    {
+        if (isset($product['custom_attributes'])) {
+            $count = count($product['custom_attributes']);
+            for ($i = 0; $i < $count; $i++) {
+                if ($product['custom_attributes'][$i]['attribute_code'] == 'category_ids'
+                    && !is_array($product['custom_attributes'][$i]['value'])
+                ) {
+                    $product['custom_attributes'][$i]['value'] = [""];
+                }
+            }
+        }
+        $resourcePath = self::RESOURCE_PATH . '/' . $product['sku'];
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => $resourcePath,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'Save',
+            ],
+        ];
+        $requestData = ['product' => $product];
+        $response = $this->_webApiCall($serviceInfo, $requestData);
+        return $response;
     }
 
     /**
@@ -387,13 +468,13 @@ class ProductRepositoryTest extends WebapiAbstract
         try {
             $this->saveProduct($response);
             $this->fail("Expected exception");
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString(
                 $expectedMessage,
                 $e->getMessage(),
                 "SoapFault does not contain expected message."
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $errorObj = $this->processRestExceptionResult($e);
             $this->assertEquals($expectedMessage, $errorObj['message']);
         }
@@ -431,49 +512,16 @@ class ProductRepositoryTest extends WebapiAbstract
         try {
             $this->saveProduct($response);
             $this->fail("Expected exception");
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString(
                 $expectedMessage,
                 $e->getMessage(),
                 "SoapFault does not contain expected message."
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $errorObj = $this->processRestExceptionResult($e);
             $this->assertEquals($expectedMessage, $errorObj['message']);
             $this->assertEquals(['0' => 20, '1' => 10], $errorObj['parameters']);
-        }
-    }
-
-    /**
-     * @magentoApiDataFixture Magento/ConfigurableProduct/_files/product_configurable.php
-     */
-    public function testUpdateConfigurableProductLinksWithWithoutVariationAttributes()
-    {
-        $productId1 = 99;
-        $productId2 = 88;
-
-        $response = $this->createConfigurableProduct();
-
-        /** delete all variation attribute */
-        $response[ExtensibleDataInterface::EXTENSION_ATTRIBUTES_KEY]['configurable_product_options'] = [];
-        $response[ExtensibleDataInterface::EXTENSION_ATTRIBUTES_KEY]['configurable_product_links'] = [
-            $productId1,
-            $productId2,
-        ];
-
-        $expectedMessage = 'The product that was requested doesn\'t exist. Verify the product and try again.';
-        try {
-            $this->saveProduct($response);
-            $this->fail("Expected exception");
-        } catch (\SoapFault $e) {
-            $this->assertStringContainsString(
-                $expectedMessage,
-                $e->getMessage(),
-                "SoapFault does not contain expected message."
-            );
-        } catch (\Exception $e) {
-            $errorObj = $this->processRestExceptionResult($e);
-            $this->assertEquals($expectedMessage, $errorObj['message']);
         }
     }
 
@@ -504,27 +552,55 @@ class ProductRepositoryTest extends WebapiAbstract
     }
 
     /**
-     * Create product
-     *
-     * @param array $product
-     * @return array the created product data
+     * @magentoApiDataFixture Magento/ConfigurableProduct/_files/product_configurable.php
      */
-    protected function createProduct($product)
+    public function testUpdateConfigurableProductLinksWithWithoutVariationAttributes()
     {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => Request::HTTP_METHOD_POST,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'Save',
-            ],
+        $productId1 = 99;
+        $productId2 = 88;
+
+        $response = $this->createConfigurableProduct();
+
+        /** delete all variation attribute */
+        $response[ExtensibleDataInterface::EXTENSION_ATTRIBUTES_KEY]['configurable_product_options'] = [];
+        $response[ExtensibleDataInterface::EXTENSION_ATTRIBUTES_KEY]['configurable_product_links'] = [
+            $productId1,
+            $productId2,
         ];
-        $requestData = ['product' => $product];
-        $response = $this->_webApiCall($serviceInfo, $requestData);
-        return $response;
+
+        $expectedMessage = 'The product that was requested doesn\'t exist. Verify the product and try again.';
+        try {
+            $this->saveProduct($response);
+            $this->fail("Expected exception");
+        } catch (SoapFault $e) {
+            $this->assertStringContainsString(
+                $expectedMessage,
+                $e->getMessage(),
+                "SoapFault does not contain expected message."
+            );
+        } catch (Exception $e) {
+            $errorObj = $this->processRestExceptionResult($e);
+            $this->assertEquals($expectedMessage, $errorObj['message']);
+        }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->eavConfig = $this->objectManager->get(Config::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->deleteProductBySku(self::CONFIGURABLE_PRODUCT_SKU);
+        parent::tearDown();
     }
 
     /**
@@ -550,79 +626,5 @@ class ProductRepositoryTest extends WebapiAbstract
         $requestData = ["sku" => $productSku];
         $response = $this->_webApiCall($serviceInfo, $requestData);
         return $response;
-    }
-
-    /**
-     * Save product
-     *
-     * @param array $product
-     * @return array the created product data
-     */
-    protected function saveProduct($product)
-    {
-        if (isset($product['custom_attributes'])) {
-            $count = count($product['custom_attributes']);
-            for ($i = 0; $i < $count; $i++) {
-                if ($product['custom_attributes'][$i]['attribute_code'] == 'category_ids'
-                    && !is_array($product['custom_attributes'][$i]['value'])
-                ) {
-                    $product['custom_attributes'][$i]['value'] = [""];
-                }
-            }
-        }
-        $resourcePath = self::RESOURCE_PATH . '/' . $product['sku'];
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => $resourcePath,
-                'httpMethod' => Request::HTTP_METHOD_PUT,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'Save',
-            ],
-        ];
-        $requestData = ['product' => $product];
-        $response = $this->_webApiCall($serviceInfo, $requestData);
-        return $response;
-    }
-
-    /**
-     * Create configurable product with required attribute by web api.
-     *
-     * @return array
-     */
-    private function createConfigurableProductWithRequiredAttribute(): array
-    {
-        $this->configurableAttribute = $this->eavConfig->getAttribute('catalog_product', 'test_configurable');
-        $options = $this->getConfigurableAttributeOptions();
-        $configurableProductOptions = [
-            [
-                "attribute_id" => $this->configurableAttribute->getId(),
-                "label" => 'color',
-                "position" => 0,
-                "values" => [
-                    [
-                        "value_index" => $options[0]['option_id'],
-                    ],
-                    [
-                        "value_index" => $options[1]['option_id'],
-                    ],
-                ],
-            ],
-        ];
-        $product = [
-            "sku" => self::CONFIGURABLE_PRODUCT_SKU,
-            "name" => self::CONFIGURABLE_PRODUCT_SKU,
-            "type_id" => "configurable",
-            "price" => 50,
-            'attribute_set_id' => 4,
-            "extension_attributes" => [
-                "configurable_product_options" => $configurableProductOptions,
-                "configurable_product_links" => [10, 20],
-            ],
-        ];
-
-        return $this->createProduct($product);
     }
 }

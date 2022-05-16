@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Model\Description;
 
 /**
@@ -11,12 +12,12 @@ namespace Magento\Setup\Model\Description;
 class DescriptionGenerator
 {
     /**
-     * @var \Magento\Setup\Model\Description\DescriptionParagraphGenerator
+     * @var DescriptionParagraphGenerator
      */
     private $paragraphGenerator;
 
     /**
-     * @var \Magento\Setup\Model\Description\MixinManager
+     * @var MixinManager
      */
     private $mixinManager;
 
@@ -26,15 +27,16 @@ class DescriptionGenerator
     private $descriptionConfig;
 
     /**
-     * @param \Magento\Setup\Model\Description\DescriptionParagraphGenerator $paragraphGenerator
-     * @param \Magento\Setup\Model\Description\MixinManager $mixinManager
+     * @param DescriptionParagraphGenerator $paragraphGenerator
+     * @param MixinManager $mixinManager
      * @param array $descriptionConfig
      */
     public function __construct(
-        \Magento\Setup\Model\Description\DescriptionParagraphGenerator $paragraphGenerator,
-        \Magento\Setup\Model\Description\MixinManager $mixinManager,
-        array $descriptionConfig
-    ) {
+        DescriptionParagraphGenerator $paragraphGenerator,
+        MixinManager                  $mixinManager,
+        array                         $descriptionConfig
+    )
+    {
         $this->paragraphGenerator = $paragraphGenerator;
         $this->mixinManager = $mixinManager;
         $this->descriptionConfig = $descriptionConfig;

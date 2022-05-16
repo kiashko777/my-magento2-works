@@ -5,15 +5,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Bootstrap;
 
 use Magento\TestFramework\Annotation\ApiConfigFixture;
+use Magento\TestFramework\Annotation\ApiDataFixture;
 use Magento\TestFramework\Annotation\ConfigFixture;
+use Magento\TestFramework\Application;
 
 /**
  * @inheritdoc
  */
-class WebapiDocBlock extends \Magento\TestFramework\Bootstrap\DocBlock
+class WebapiDocBlock extends DocBlock
 {
     /**
      * Get list of subscribers.
@@ -21,10 +24,10 @@ class WebapiDocBlock extends \Magento\TestFramework\Bootstrap\DocBlock
      * In addition, register magentoApiDataFixture and magentoConfigFixture
      * annotation processors
      *
-     * @param \Magento\TestFramework\Application $application
+     * @param Application $application
      * @return array
      */
-    protected function _getSubscribers(\Magento\TestFramework\Application $application)
+    protected function _getSubscribers(Application $application)
     {
         $subscribers = parent::_getSubscribers($application);
         foreach ($subscribers as $key => $subscriber) {
@@ -32,7 +35,7 @@ class WebapiDocBlock extends \Magento\TestFramework\Bootstrap\DocBlock
                 unset($subscribers[$key]);
             }
         }
-        $subscribers[] = new \Magento\TestFramework\Annotation\ApiDataFixture();
+        $subscribers[] = new ApiDataFixture();
         $subscribers[] = new ApiConfigFixture();
 
         return $subscribers;

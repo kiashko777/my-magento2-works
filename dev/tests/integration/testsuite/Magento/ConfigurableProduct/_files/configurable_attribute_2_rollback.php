@@ -4,20 +4,27 @@
  * See COPYING.txt for license details.
  */
 
-/** @var \Magento\Framework\Registry $registry */
-$registry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
+/** @var Registry $registry */
+
+use Magento\Catalog\Model\ResourceModel\Product\Collection;
+use Magento\Eav\Model\Config;
+use Magento\Eav\Model\Entity\Attribute\AbstractAttribute;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$registry = Bootstrap::getObjectManager()->get(Registry::class);
 
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
-$productCollection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->get(\Magento\Catalog\Model\ResourceModel\Product\Collection::class);
+$productCollection = Bootstrap::getObjectManager()
+    ->get(Collection::class);
 foreach ($productCollection as $product) {
     $product->delete();
 }
 
-$eavConfig = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Eav\Model\Config::class);
+$eavConfig = Bootstrap::getObjectManager()->get(Config::class);
 $attribute = $eavConfig->getAttribute('catalog_product', 'test_configurable_2');
-if ($attribute instanceof \Magento\Eav\Model\Entity\Attribute\AbstractAttribute
+if ($attribute instanceof AbstractAttribute
     && $attribute->getId()
 ) {
     $attribute->delete();

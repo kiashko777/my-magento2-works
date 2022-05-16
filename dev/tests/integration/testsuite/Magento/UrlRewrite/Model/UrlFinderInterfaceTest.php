@@ -9,24 +9,17 @@ namespace Magento\UrlRewrite\Model;
 
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\UrlRewrite\Service\V1\Data\UrlRewrite;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoDataFixture Magento/UrlRewrite/_files/url_rewrites.php
  */
-class UrlFinderInterfaceTest extends \PHPUnit\Framework\TestCase
+class UrlFinderInterfaceTest extends TestCase
 {
     /**
      * @var UrlFinderInterface
      */
     private $urlFinder;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->urlFinder = Bootstrap::getObjectManager()->create(UrlFinderInterface::class);
-    }
 
     /**
      * @dataProvider findOneDataProvider
@@ -67,5 +60,13 @@ class UrlFinderInterfaceTest extends \PHPUnit\Framework\TestCase
             ['السلسلة', 'test_page1', 0],
             [urlencode('السلسلة'), 'test_page1', 0],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->urlFinder = Bootstrap::getObjectManager()->create(UrlFinderInterface::class);
     }
 }

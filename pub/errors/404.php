@@ -4,9 +4,11 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Framework\Error\ProcessorFactory;
+
 require_once 'processorFactory.php';
 
-$processorFactory = new \Magento\Framework\Error\ProcessorFactory();
+$processorFactory = new ProcessorFactory();
 $processor = $processorFactory->createProcessor();
 $response = $processor->process404();
 $response->sendResponse();

@@ -5,7 +5,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Helper;
+
+use Magento\Eav\Model\Entity\Store;
+use Magento\Eav\Model\Entity\Type;
+use Magento\Store\Model\StoreManagerInterface;
 
 class Eav
 {
@@ -17,18 +22,18 @@ class Eav
      */
     public static function setIncrementIdPrefix($entityType, $prefix)
     {
-        $website = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Store\Model\StoreManagerInterface::class
+        $website = Bootstrap::getObjectManager()->get(
+            StoreManagerInterface::class
         )->getWebsite();
         $storeId = $website->getDefaultStore()->getId();
-        $entityTypeModel = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Eav\Model\Entity\Type::class
+        $entityTypeModel = Bootstrap::getObjectManager()->create(
+            Type::class
         )->loadByCode(
             $entityType
         );
-        /** @var \Magento\Eav\Model\Entity\Store $entityStore */
-        $entityStore = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Eav\Model\Entity\Store::class
+        /** @var Store $entityStore */
+        $entityStore = Bootstrap::getObjectManager()->create(
+            Store::class
         )->loadByEntityStore(
             $entityTypeModel->getId(),
             $storeId

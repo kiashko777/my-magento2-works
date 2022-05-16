@@ -19,12 +19,6 @@ class DictionaryTest extends TestCase
      */
     protected $_dictionary;
 
-    protected function setUp(): void
-    {
-        $objectManagerHelper = new ObjectManager($this);
-        $this->_dictionary = $objectManagerHelper->getObject(Dictionary::class);
-    }
-
     public function testPhraseCollecting()
     {
         $phraseFirstMock = $this->createMock(Phrase::class);
@@ -50,5 +44,11 @@ class DictionaryTest extends TestCase
         $this->_dictionary->addPhrase($phraseThirdMock);
 
         $this->assertEquals([[$phraseFirstMock, $phraseSecondMock]], $this->_dictionary->getDuplicates());
+    }
+
+    protected function setUp(): void
+    {
+        $objectManagerHelper = new ObjectManager($this);
+        $this->_dictionary = $objectManagerHelper->getObject(Dictionary::class);
     }
 }

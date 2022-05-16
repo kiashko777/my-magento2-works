@@ -6,7 +6,14 @@
 
 namespace Magento\Quote\Api;
 
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\Quote\Api\Data\AddressInterface;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\Quote\Address;
+use Magento\Quote\Model\QuoteIdMask;
+use Magento\Quote\Model\QuoteIdMaskFactory;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 class GuestBillingAddressManagementTest extends WebapiAbstract
@@ -16,32 +23,19 @@ class GuestBillingAddressManagementTest extends WebapiAbstract
     const RESOURCE_PATH = '/V1/guest-carts/';
 
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
-
-    protected function getQuoteMaskedId($quoteId)
-    {
-        /** @var \Magento\Quote\Model\QuoteIdMask $quoteIdMask */
-        $quoteIdMask = $this->objectManager->create(\Magento\Quote\Model\QuoteIdMaskFactory::class)->create();
-        $quoteIdMask->load($quoteId, 'quote_id');
-        return $quoteIdMask->getMaskedId();
-    }
 
     /**
      * @magentoApiDataFixture Magento/Checkout/_files/quote_with_address_saved.php
      */
     public function testGetAddress()
     {
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_1', 'reserved_order_id');
 
-        /** @var \Magento\Quote\Model\Quote\Address $address */
+        /** @var Address $address */
         $address = $quote->getBillingAddress();
 
         $data = [
@@ -69,7 +63,7 @@ class GuestBillingAddressManagementTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $cartId . '/billing-address',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -86,14 +80,22 @@ class GuestBillingAddressManagementTest extends WebapiAbstract
         $this->assertEquals($data, $response);
     }
 
+    protected function getQuoteMaskedId($quoteId)
+    {
+        /** @var QuoteIdMask $quoteIdMask */
+        $quoteIdMask = $this->objectManager->create(QuoteIdMaskFactory::class)->create();
+        $quoteIdMask->load($quoteId, 'quote_id');
+        return $quoteIdMask->getMaskedId();
+    }
+
     /**
      * @magentoApiDataFixture Magento/Checkout/_files/quote_with_address_saved.php
      * @dataProvider setAddressDataProvider
      */
     public function testSetAddress($useForShipping)
     {
-        /** @var \Magento\Quote\Model\Quote $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_1', 'reserved_order_id');
 
         $cartId = $this->getQuoteMaskedId($quote->getId());
@@ -101,7 +103,7 @@ class GuestBillingAddressManagementTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $cartId . '/billing-address',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -134,11 +136,11 @@ class GuestBillingAddressManagementTest extends WebapiAbstract
         $addressId = $this->_webApiCall($serviceInfo, $requestData);
 
         //reset $quote to reload data
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_1', 'reserved_order_id');
         $address = $quote->getBillingAddress();
         $address->getRegionCode();
-        $savedData  = $address->getData();
+        $savedData = $address->getData();
         $this->assertEquals($addressId, $savedData['address_id']);
         //custom checks for street, region and address_type
         foreach ($addressData['street'] as $streetLine) {
@@ -173,5 +175,10 @@ class GuestBillingAddressManagementTest extends WebapiAbstract
             [true],
             [false]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

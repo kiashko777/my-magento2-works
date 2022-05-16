@@ -6,31 +6,30 @@
 
 namespace Magento\CatalogInventory\Model\ResourceModel\Indexer\Stock;
 
+use Magento\Catalog\Model\ProductRepository;
+use Magento\CatalogInventory\Api\StockConfigurationInterface;
+use Magento\CatalogInventory\Api\StockStatusCriteriaInterfaceFactory;
+use Magento\CatalogInventory\Api\StockStatusRepositoryInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Store\Api\WebsiteRepositoryInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
 /**
  * Class DefaultStockTest
  * @magentoAppArea Adminhtml
  */
-class DefaultStockTest extends \PHPUnit\Framework\TestCase
+class DefaultStockTest extends TestCase
 {
     /**
-     * @var \Magento\CatalogInventory\Model\ResourceModel\Indexer\Stock\DefaultStock
+     * @var DefaultStock
      */
     private $indexer;
 
     /**
-     * @var \Magento\CatalogInventory\Api\StockConfigurationInterface
+     * @var StockConfigurationInterface
      */
     private $stockConfiguration;
-
-    protected function setUp(): void
-    {
-        $this->indexer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\CatalogInventory\Model\ResourceModel\Indexer\Stock\DefaultStock::class
-        );
-        $this->stockConfiguration = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\CatalogInventory\Api\StockConfigurationInterface::class
-        );
-    }
 
     /**
      * @magentoDataFixture Magento/Store/_files/website.php
@@ -38,27 +37,27 @@ class DefaultStockTest extends \PHPUnit\Framework\TestCase
      *
      * @magentoDbIsolation disabled
      *
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @throws NoSuchEntityException
      */
     public function testReindexEntity()
     {
-        /** @var \Magento\Catalog\Model\ProductRepository $productRepository */
-        $productRepository = $this->getObject(\Magento\Catalog\Model\ProductRepository::class);
-        /** @var \Magento\Store\Api\WebsiteRepositoryInterface $websiteRepository */
+        /** @var ProductRepository $productRepository */
+        $productRepository = $this->getObject(ProductRepository::class);
+        /** @var WebsiteRepositoryInterface $websiteRepository */
         $websiteRepository = $this->getObject(
-            \Magento\Store\Api\WebsiteRepositoryInterface::class
+            WebsiteRepositoryInterface::class
         );
         $product = $productRepository->get('simple');
         $testWebsite = $websiteRepository->get('test');
         $product->setWebsiteIds([1, $testWebsite->getId()])->save();
 
-        /** @var \Magento\CatalogInventory\Api\StockStatusCriteriaInterfaceFactory $criteriaFactory */
+        /** @var StockStatusCriteriaInterfaceFactory $criteriaFactory */
         $criteriaFactory = $this->getObject(
-            \Magento\CatalogInventory\Api\StockStatusCriteriaInterfaceFactory::class
+            StockStatusCriteriaInterfaceFactory::class
         );
-        /** @var \Magento\CatalogInventory\Api\StockStatusRepositoryInterface $stockStatusRepository */
+        /** @var StockStatusRepositoryInterface $stockStatusRepository */
         $stockStatusRepository = $this->getObject(
-            \Magento\CatalogInventory\Api\StockStatusRepositoryInterface::class
+            StockStatusRepositoryInterface::class
         );
         $criteria = $criteriaFactory->create();
         $criteria->setProductsFilter([$product->getId()]);
@@ -69,8 +68,18 @@ class DefaultStockTest extends \PHPUnit\Framework\TestCase
 
     private function getObject($class)
     {
-        return \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+        return Bootstrap::getObjectManager()->create(
             $class
+        );
+    }
+
+    protected function setUp(): void
+    {
+        $this->indexer = Bootstrap::getObjectManager()->get(
+            DefaultStock::class
+        );
+        $this->stockConfiguration = Bootstrap::getObjectManager()->get(
+            StockConfigurationInterface::class
         );
     }
 }

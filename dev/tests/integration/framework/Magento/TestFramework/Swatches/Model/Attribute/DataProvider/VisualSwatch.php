@@ -8,8 +8,8 @@ declare(strict_types=1);
 namespace Magento\TestFramework\Swatches\Model\Attribute\DataProvider;
 
 use Magento\Eav\Model\Entity\Attribute\ScopedAttributeInterface;
-use Magento\Swatches\Model\Swatch;
 use Magento\Store\Model\Store;
+use Magento\Swatches\Model\Swatch;
 
 /**
  * Products attribute data for attribute with input type visual swatch.
@@ -90,6 +90,14 @@ class VisualSwatch extends AbstractSwatchAttributeData
                 ],
             ]
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function getFrontendInput(): string
+    {
+        return Swatch::SWATCH_TYPE_VISUAL_ATTRIBUTE_FRONTEND_INPUT;
     }
 
     /**
@@ -221,9 +229,22 @@ class VisualSwatch extends AbstractSwatchAttributeData
     /**
      * @inheritdoc
      */
-    protected function getFrontendInput(): string
+    protected function getUpdateExpectedData(): array
     {
-        return Swatch::SWATCH_TYPE_VISUAL_ATTRIBUTE_FRONTEND_INPUT;
+        $updatePostData = $this->getUpdatePostData();
+        return array_merge(
+            $updatePostData,
+            [
+                'frontend_label' => 'Visual swatch attribute Update',
+                'frontend_input' => 'select',
+                'attribute_code' => 'visual_swatch_attribute',
+                'default_value' => null,
+                'frontend_class' => null,
+                'is_html_allowed_on_front' => '1',
+                'is_user_defined' => '1',
+                'backend_type' => 'int',
+            ]
+        );
     }
 
     /**
@@ -256,26 +277,5 @@ class VisualSwatch extends AbstractSwatchAttributeData
             'used_in_product_listing' => '0',
             'used_for_sort_by' => '1',
         ];
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function getUpdateExpectedData(): array
-    {
-        $updatePostData = $this->getUpdatePostData();
-        return array_merge(
-            $updatePostData,
-            [
-                'frontend_label' => 'Visual swatch attribute Update',
-                'frontend_input' => 'select',
-                'attribute_code' => 'visual_swatch_attribute',
-                'default_value' => null,
-                'frontend_class' => null,
-                'is_html_allowed_on_front' => '1',
-                'is_user_defined' => '1',
-                'backend_type' => 'int',
-            ]
-        );
     }
 }

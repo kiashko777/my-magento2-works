@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Quote;
 
+use Exception;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
 
@@ -30,19 +31,6 @@ class AddSimpleProductToCartEndToEndTest extends GraphQlAbstract
      * @var GetCartItemOptionsFromUID
      */
     private $getCartItemOptionsFromUID;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->getCartItemOptionsFromUID = $objectManager->get(GetCartItemOptionsFromUID::class);
-        $this->getCustomOptionsWithIDV2ForQueryBySku = $objectManager->get(
-            GetCustomOptionsWithUIDForQueryBySku::class
-        );
-    }
 
     /**
      * Test adding a simple product to the shopping cart with all supported
@@ -80,7 +68,7 @@ class AddSimpleProductToCartEndToEndTest extends GraphQlAbstract
      *
      * @param string $sku
      * @return array
-     * @throws \Exception
+     * @throws Exception
      */
     private function getProductOptionsViaQuery(string $sku): array
     {
@@ -220,10 +208,11 @@ QUERY;
      */
     private function getAddToCartMutation(
         string $maskedQuoteId,
-        int $qty,
+        int    $qty,
         string $sku,
         string $customizableOptions
-    ): string {
+    ): string
+    {
         return <<<MUTATION
 mutation {
     addProductsToCart(
@@ -256,5 +245,18 @@ mutation {
     }
 }
 MUTATION;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->getCartItemOptionsFromUID = $objectManager->get(GetCartItemOptionsFromUID::class);
+        $this->getCustomOptionsWithIDV2ForQueryBySku = $objectManager->get(
+            GetCustomOptionsWithUIDForQueryBySku::class
+        );
     }
 }

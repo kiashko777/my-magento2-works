@@ -3,28 +3,26 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Newsletter\Model;
 
+use Magento\Framework\App\Config\MutableScopeConfigInterface;
+use Magento\Framework\App\State;
 use Magento\Framework\App\TemplateTypesInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Theme\Model\View\Design;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoDataFixture Magento/Store/_files/core_fixturestore.php
  */
-class TemplateTest extends \PHPUnit\Framework\TestCase
+class TemplateTest extends TestCase
 {
     /**
-     * @var \Magento\Newsletter\Model\Template
+     * @var Template
      */
     protected $_model = null;
-
-    protected function setUp(): void
-    {
-        $this->_model = Bootstrap::getObjectManager()->create(
-            \Magento\Newsletter\Model\Template::class
-        );
-    }
 
     /**
      * This test expects next themes for areas:
@@ -40,9 +38,9 @@ class TemplateTest extends \PHPUnit\Framework\TestCase
         $this->_model->setTemplateText('{{view url="Magento_Theme::favicon.ico"}}');
         if ($store != 'default') {
             Bootstrap::getObjectManager()->get(
-                \Magento\Framework\App\Config\MutableScopeConfigInterface::class
+                MutableScopeConfigInterface::class
             )->setValue(
-                \Magento\Theme\Model\View\Design::XML_PATH_THEME_ID,
+                Design::XML_PATH_THEME_ID,
                 $design,
                 'store',
                 $store
@@ -50,7 +48,7 @@ class TemplateTest extends \PHPUnit\Framework\TestCase
         }
         $this->_model->emulateDesign($store, 'frontend');
         $processedTemplate = Bootstrap::getObjectManager()->get(
-            \Magento\Framework\App\State::class
+            State::class
         )->emulateAreaCode(
             'frontend',
             [$this->_model, 'getProcessedTemplate']
@@ -83,7 +81,7 @@ class TemplateTest extends \PHPUnit\Framework\TestCase
         $this->_model->setTemplateText('{{view url="Magento_Theme::favicon.ico"}}');
         $this->_model->emulateDesign('default', $area);
         $processedTemplate = Bootstrap::getObjectManager()->get(
-            \Magento\Framework\App\State::class
+            State::class
         )->emulateAreaCode(
             $area,
             [$this->_model, 'getProcessedTemplate']
@@ -161,12 +159,12 @@ class TemplateTest extends \PHPUnit\Framework\TestCase
         $template->save();
 
         // Store the ID of the newly created template in the system config so that this template will be loaded
-        $objectManager->get(\Magento\Framework\App\Config\MutableScopeConfigInterface::class)
+        $objectManager->get(MutableScopeConfigInterface::class)
             ->setValue('foobar', $template->getId(), ScopeInterface::SCOPE_STORE, 'default');
 
         $this->_model->emulateDesign('default', 'frontend');
         $processedTemplate = Bootstrap::getObjectManager()->get(
-            \Magento\Framework\App\State::class
+            State::class
         )->emulateAreaCode(
             'frontend',
             [$this->_model, 'getProcessedTemplate']
@@ -198,16 +196,23 @@ class TemplateTest extends \PHPUnit\Framework\TestCase
         $template->save();
 
         // Store the ID of the newly created template in the system config so that this template will be loaded
-        $objectManager->get(\Magento\Framework\App\Config\MutableScopeConfigInterface::class)
+        $objectManager->get(MutableScopeConfigInterface::class)
             ->setValue('foobar', $template->getId(), ScopeInterface::SCOPE_STORE, 'default');
 
         $this->_model->emulateDesign('default', 'frontend');
         $processedTemplate = Bootstrap::getObjectManager()->get(
-            \Magento\Framework\App\State::class
+            State::class
         )->emulateAreaCode(
             'frontend',
             [$this->_model, 'getProcessedTemplate']
         );
         self::assertEquals('1 - some_unique_code -  - some_unique_code', $processedTemplate);
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Template::class
+        );
     }
 }

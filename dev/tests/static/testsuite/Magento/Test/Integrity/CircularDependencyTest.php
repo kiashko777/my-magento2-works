@@ -5,12 +5,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity;
 
 use Magento\Framework\App\Utility\Files;
 use Magento\Setup\Module\Dependency\Circular;
+use PHPUnit\Framework\TestCase;
+use SimpleXMLElement;
 
-class CircularDependencyTest extends \PHPUnit\Framework\TestCase
+class CircularDependencyTest extends TestCase
 {
     /**
      * Modules dependencies map
@@ -25,6 +28,25 @@ class CircularDependencyTest extends \PHPUnit\Framework\TestCase
      * @var array
      */
     protected $circularModuleDependencies = [];
+
+    /**
+     * Check Magento modules structure for circular dependencies
+     */
+    public function testCircularDependencies()
+    {
+        $this->markTestSkipped('Skipped before circular dependencies will be fixed MAGETWO-10938');
+        if ($this->circularModuleDependencies) {
+            $result = '';
+            foreach ($this->circularModuleDependencies as $module => $chains) {
+                $result .= $module . ' dependencies:' . PHP_EOL;
+                foreach ($chains as $chain) {
+                    $result .= 'Chain : ' . implode('->', $chain) . PHP_EOL;
+                }
+                $result .= PHP_EOL;
+            }
+            $this->fail('Circular dependencies:' . PHP_EOL . $result);
+        }
+    }
 
     protected function setUp(): void
     {
@@ -45,8 +67,8 @@ class CircularDependencyTest extends \PHPUnit\Framework\TestCase
             $config = simplexml_load_file($configFile);
             $result = $config->xpath("/config/module/depends/module") ?: [];
             foreach ($result as $node) {
-                /** @var \SimpleXMLElement $node */
-                $this->moduleDependencies[$moduleName][] = (string) $node['name'];
+                /** @var SimpleXMLElement $node */
+                $this->moduleDependencies[$moduleName][] = (string)$node['name'];
             }
         }
     }
@@ -57,24 +79,5 @@ class CircularDependencyTest extends \PHPUnit\Framework\TestCase
     protected function buildCircularModulesDependencies()
     {
         $this->circularModuleDependencies = (new Circular())->buildCircularDependencies($this->moduleDependencies);
-    }
-
-    /**
-     * Check Magento modules structure for circular dependencies
-     */
-    public function testCircularDependencies()
-    {
-        $this->markTestSkipped('Skipped before circular dependencies will be fixed MAGETWO-10938');
-        if ($this->circularModuleDependencies) {
-            $result = '';
-            foreach ($this->circularModuleDependencies as $module => $chains) {
-                $result .= $module . ' dependencies:' . PHP_EOL;
-                foreach ($chains as $chain) {
-                    $result .= 'Chain : ' . implode('->', $chain) . PHP_EOL;
-                }
-                $result .= PHP_EOL;
-            }
-            $this->fail('Circular dependencies:' . PHP_EOL . $result);
-        }
     }
 }

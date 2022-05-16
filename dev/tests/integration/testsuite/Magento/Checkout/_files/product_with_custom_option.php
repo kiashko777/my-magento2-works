@@ -4,15 +4,20 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Catalog\Api\Data\ProductCustomOptionInterface;
+use Magento\Catalog\Api\Data\ProductCustomOptionInterfaceFactory;
+use Magento\Catalog\Model\Product;
+use Magento\Framework\DataObject;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Checkout/_files/simple_product.php');
 
-/** @var $product \Magento\Catalog\Model\Product */
-$product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Product::class);
+/** @var $product Product */
+$product = Bootstrap::getObjectManager()->create(Product::class);
 $product->load(1);
 
-/** @var $product \Magento\Catalog\Model\Product */
+/** @var $product Product */
 $product->setCanSaveCustomOptions(
     true
 )->setHasOptions(
@@ -37,11 +42,11 @@ $oldOptions = [
 
 $customOptions = [];
 
-/** @var \Magento\Catalog\Api\Data\ProductCustomOptionInterfaceFactory $customOptionFactory */
-$customOptionFactory = $objectManager->create(\Magento\Catalog\Api\Data\ProductCustomOptionInterfaceFactory::class);
+/** @var ProductCustomOptionInterfaceFactory $customOptionFactory */
+$customOptionFactory = $objectManager->create(ProductCustomOptionInterfaceFactory::class);
 
 foreach ($oldOptions as $option) {
-    /** @var \Magento\Catalog\Api\Data\ProductCustomOptionInterface $customOption */
+    /** @var ProductCustomOptionInterface $customOption */
     $customOption = $customOptionFactory->create(['data' => $option]);
     $customOption->setProductSku($product->getSku());
 
@@ -50,11 +55,11 @@ foreach ($oldOptions as $option) {
 
 $product->setOptions($customOptions)->save();
 
-/** @var $product \Magento\Catalog\Model\Product */
-$product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Product::class);
+/** @var $product Product */
+$product = Bootstrap::getObjectManager()->create(Product::class);
 $product->load(1);
 $optionId = $product->getOptions()[0]->getOptionId();
 
-$requestInfo = new \Magento\Framework\DataObject(['qty' => 1, 'options' => [$optionId => 'test']]);
+$requestInfo = new DataObject(['qty' => 1, 'options' => [$optionId => 'test']]);
 
 Resolver::getInstance()->requireDataFixture('Magento/Checkout/_files/cart.php');

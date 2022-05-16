@@ -3,49 +3,33 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Model;
 
-class AbstractTest extends \PHPUnit\Framework\TestCase
+use Magento\Catalog\Model\AbstractModel\Stub;
+use Magento\Catalog\Model\ResourceModel\Collection\AbstractCollection;
+use Magento\Catalog\Model\ResourceModel\Product\Collection;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
+
+class AbstractTest extends TestCase
 {
     /**
      * Stub class name for class under test
      */
     const STUB_CLASS = 'Magento_Catalog_Model_AbstractModel_Stub';
-
-    /**
-     * @var \Magento\Catalog\Model\AbstractModel
-     */
-    protected $_model;
-
     /**
      * Flag is stub class was created
      *
      * @var bool
      */
     protected static $_isStubClass = false;
-
-    protected function setUp(): void
-    {
-        if (!self::$_isStubClass) {
-            $this->getMockForAbstractClass(
-                \Magento\Catalog\Model\AbstractModel\Stub::class,
-                [],
-                self::STUB_CLASS,
-                false
-            );
-            self::$_isStubClass = true;
-        }
-
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(self::STUB_CLASS);
-
-        $resourceProperty = new \ReflectionProperty(get_class($this->_model), '_resourceName');
-        $resourceProperty->setAccessible(true);
-        $resourceProperty->setValue($this->_model, \Magento\Catalog\Model\ResourceModel\Product::class);
-
-        $collectionProperty = new \ReflectionProperty(get_class($this->_model), '_collectionName');
-        $collectionProperty->setAccessible(true);
-        $collectionProperty->setValue($this->_model, \Magento\Catalog\Model\ResourceModel\Product\Collection::class);
-    }
+    /**
+     * @var AbstractModel
+     */
+    protected $_model;
 
     /**
      * @covers \Magento\Catalog\Model\AbstractModel::lockAttribute
@@ -118,7 +102,7 @@ class AbstractTest extends \PHPUnit\Framework\TestCase
         $this->_model->setStoreId(99);
         $collection = $this->_model->getResourceCollection();
         $this->assertInstanceOf(
-            \Magento\Catalog\Model\ResourceModel\Collection\AbstractCollection::class,
+            AbstractCollection::class,
             $collection
         );
         $this->assertEquals(99, $collection->getStoreId());
@@ -143,8 +127,8 @@ class AbstractTest extends \PHPUnit\Framework\TestCase
         $store = $this->_model->getStore();
         $this->assertSame(
             $store,
-            \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-                \Magento\Store\Model\StoreManagerInterface::class
+            Bootstrap::getObjectManager()->get(
+                StoreManagerInterface::class
             )->getStore()
         );
     }
@@ -152,8 +136,8 @@ class AbstractTest extends \PHPUnit\Framework\TestCase
     public function testGetWebsiteStoreIds()
     {
         $ids = $this->_model->getWebsiteStoreIds();
-        $storeId = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Store\Model\StoreManagerInterface::class
+        $storeId = Bootstrap::getObjectManager()->get(
+            StoreManagerInterface::class
         )->getStore()->getId();
         $this->assertEquals([$storeId => $storeId], $ids);
     }
@@ -192,5 +176,28 @@ class AbstractTest extends \PHPUnit\Framework\TestCase
         $this->assertFalse($this->_model->isReadonly());
         $this->_model->setIsReadonly(true);
         $this->assertTrue($this->_model->isReadonly());
+    }
+
+    protected function setUp(): void
+    {
+        if (!self::$_isStubClass) {
+            $this->getMockForAbstractClass(
+                Stub::class,
+                [],
+                self::STUB_CLASS,
+                false
+            );
+            self::$_isStubClass = true;
+        }
+
+        $this->_model = Bootstrap::getObjectManager()->create(self::STUB_CLASS);
+
+        $resourceProperty = new ReflectionProperty(get_class($this->_model), '_resourceName');
+        $resourceProperty->setAccessible(true);
+        $resourceProperty->setValue($this->_model, \Magento\Catalog\Model\ResourceModel\Product::class);
+
+        $collectionProperty = new ReflectionProperty(get_class($this->_model), '_collectionName');
+        $collectionProperty->setAccessible(true);
+        $collectionProperty->setValue($this->_model, Collection::class);
     }
 }

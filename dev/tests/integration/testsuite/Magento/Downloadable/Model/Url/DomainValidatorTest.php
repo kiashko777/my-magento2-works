@@ -3,16 +3,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Downloadable\Model\Url;
 
 use Magento\Downloadable\Model\DomainManager;
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Framework\App\DeploymentConfig;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for Magento\Downloadable\Model\Url\DomainValidator
  */
-class DomainValidatorTest extends \PHPUnit\Framework\TestCase
+class DomainValidatorTest extends TestCase
 {
     /**
      * @var DomainValidator
@@ -20,29 +23,9 @@ class DomainValidatorTest extends \PHPUnit\Framework\TestCase
     private $model;
 
     /**
-     * @var DeploymentConfig|\PHPUnit\Framework\MockObject\MockObject
+     * @var DeploymentConfig|MockObject
      */
     private $deploymentConfig;
-
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-
-        $this->deploymentConfig = $this->createPartialMock(
-            DeploymentConfig::class,
-            ['get']
-        );
-
-        $domainManager = $objectManager->create(
-            DomainManager::class,
-            ['deploymentConfig' => $this->deploymentConfig]
-        );
-
-        $this->model = $objectManager->create(
-            DomainValidator::class,
-            ['domainManager' => $domainManager]
-        );
-    }
 
     /**
      * @param string $urlInput
@@ -94,5 +77,25 @@ class DomainValidatorTest extends \PHPUnit\Framework\TestCase
             ['http://127.0.0.1', ['127.0.0.1'], false],
             ['http://[::1]', ['::1'], false],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+
+        $this->deploymentConfig = $this->createPartialMock(
+            DeploymentConfig::class,
+            ['get']
+        );
+
+        $domainManager = $objectManager->create(
+            DomainManager::class,
+            ['deploymentConfig' => $this->deploymentConfig]
+        );
+
+        $this->model = $objectManager->create(
+            DomainValidator::class,
+            ['domainManager' => $domainManager]
+        );
     }
 }

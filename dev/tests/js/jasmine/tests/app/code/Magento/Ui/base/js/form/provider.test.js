@@ -21,13 +21,16 @@ define([
 
         registry.set('provName', {
             /** Stub */
-            on: function () {},
+            on: function () {
+            },
 
             /** Stub */
-            get: function () {},
+            get: function () {
+            },
 
             /** Stub */
-            set: function () {}
+            set: function () {
+            }
         });
 
         describe('"initialize" method', function () {

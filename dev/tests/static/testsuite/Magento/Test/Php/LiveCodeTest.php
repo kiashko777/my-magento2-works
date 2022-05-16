@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Test\Php;
 
+use Exception;
 use Magento\Framework\App\Utility\Files;
 use Magento\TestFramework\CodingStandard\Tool\CodeMessDetector;
 use Magento\TestFramework\CodingStandard\Tool\CodeSniffer;
@@ -17,11 +18,12 @@ use Magento\TestFramework\CodingStandard\Tool\PhpStan;
 use Magento\TestFramework\Utility\AddedFiles;
 use Magento\TestFramework\Utility\FilesSearch;
 use PHPMD\TextUI\Command;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Set of tests for static code analysis, e.g. code style, code complexity, copy paste detecting, etc.
  */
-class LiveCodeTest extends \PHPUnit\Framework\TestCase
+class LiveCodeTest extends TestCase
 {
     /**
      * @var string
@@ -48,23 +50,68 @@ class LiveCodeTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Returns base folder for suite scope
-     *
-     * @return string
+     * Test code quality using phpcs
      */
-    private static function getBaseFilesFolder()
+    public function testCodeStyle()
     {
-        return __DIR__;
+        $reportFile = self::$reportDir . '/phpcs_report.txt';
+        if (!file_exists($reportFile)) {
+            touch($reportFile);
+        }
+        $codeSniffer = new CodeSniffer('Magento', $reportFile, new Wrapper());
+        $fileList = $this->isFullScan() ? $this->getFullWhitelist() : self::getWhitelist(['php', 'phtml']);
+        $ignoreList = Files::init()->readLists(__DIR__ . '/_files/phpcs/ignorelist/*.txt');
+        if ($ignoreList) {
+            $ignoreListPattern = sprintf('#(%s)#i', implode('|', $ignoreList));
+            $fileList = array_filter(
+                $fileList,
+                function ($path) use ($ignoreListPattern) {
+                    return !preg_match($ignoreListPattern, $path);
+                }
+            );
+        }
+
+        $result = $codeSniffer->run($fileList);
+        $report = file_get_contents($reportFile);
+        $this->assertEquals(
+            0,
+            $result,
+            "PHP Code Sniffer detected {$result} violation(s): " . PHP_EOL . $report
+        );
     }
 
     /**
-     * Returns base directory for whitelisted files
+     * Returns whether a full scan was requested.
      *
-     * @return string
+     * This can be set in the `phpunit.xml` used to run these test cases, by setting the constant
+     * `TESTCODESTYLE_IS_FULL_SCAN` to `1`, e.g.:
+     * ```xml
+     * <php>
+     *     <!-- TESTCODESTYLE_IS_FULL_SCAN - specify if full scan should be performed for test code style test -->
+     *     <const name="TESTCODESTYLE_IS_FULL_SCAN" value="0"/>
+     * </php>
+     * ```
+     *
+     * @return bool
      */
-    private static function getChangedFilesBaseDir()
+    private function isFullScan(): bool
     {
-        return __DIR__ . '/..';
+        return defined('TESTCODESTYLE_IS_FULL_SCAN') && TESTCODESTYLE_IS_FULL_SCAN === '1';
+    }
+
+    /**
+     * Retrieves full list of codebase paths without any files/folders filtered out
+     *
+     * @return array
+     */
+    private function getFullWhitelist()
+    {
+        try {
+            return Files::init()->readLists(__DIR__ . '/_files/whitelist/common.txt');
+        } catch (Exception $e) {
+            // nothing is whitelisted
+            return [];
+        }
     }
 
     /**
@@ -81,7 +128,8 @@ class LiveCodeTest extends \PHPUnit\Framework\TestCase
         $changedFilesBaseDir = '',
         $baseFilesFolder = '',
         $whitelistFile = '/_files/whitelist/common.txt'
-    ) {
+    )
+    {
         $changedFiles = self::getChangedFilesList($changedFilesBaseDir);
         if (empty($changedFiles)) {
             return [];
@@ -90,7 +138,7 @@ class LiveCodeTest extends \PHPUnit\Framework\TestCase
         $globPatternsFolder = ('' !== $baseFilesFolder) ? $baseFilesFolder : self::getBaseFilesFolder();
         try {
             $directoriesToCheck = Files::init()->readLists($globPatternsFolder . $whitelistFile);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // no directories matched white list
             return [];
         }
@@ -128,6 +176,26 @@ class LiveCodeTest extends \PHPUnit\Framework\TestCase
                 return $changedFiles;
             }
         );
+    }
+
+    /**
+     * Returns base directory for whitelisted files
+     *
+     * @return string
+     */
+    private static function getChangedFilesBaseDir()
+    {
+        return __DIR__ . '/..';
+    }
+
+    /**
+     * Returns base folder for suite scope
+     *
+     * @return string
+     */
+    private static function getBaseFilesFolder()
+    {
+        return __DIR__;
     }
 
     /**
@@ -191,108 +259,6 @@ class LiveCodeTest extends \PHPUnit\Framework\TestCase
         );
 
         return $filtered;
-    }
-
-    /**
-     * Retrieves full list of codebase paths without any files/folders filtered out
-     *
-     * @return array
-     */
-    private function getFullWhitelist()
-    {
-        try {
-            return Files::init()->readLists(__DIR__ . '/_files/whitelist/common.txt');
-        } catch (\Exception $e) {
-            // nothing is whitelisted
-            return [];
-        }
-    }
-
-    /**
-     * Retrieves the lowest and highest PHP version specified in <kbd>composer.json</var> of project.
-     *
-     * @return array
-     */
-    private function getTargetPhpVersions(): array
-    {
-        $composerJson = json_decode(file_get_contents(BP . '/composer.json'), true);
-        $versionsRange = [];
-
-        if (isset($composerJson['require']['php'])) {
-            $versions = explode('||', $composerJson['require']['php']);
-
-            //normalize version constraints
-            foreach ($versions as $key => $version) {
-                $version = ltrim($version, '^~');
-                $version = str_replace('*', '999', $version);
-
-                $versions[$key] = $version;
-            }
-
-            //sort versions
-            usort($versions, 'version_compare');
-
-            $versionsRange[] = array_shift($versions);
-            if (!empty($versions)) {
-                $versionsRange[] = array_pop($versions);
-            }
-            foreach ($versionsRange as $key => $version) {
-                $versionParts  = explode('.', $versionsRange[$key]);
-                $versionsRange[$key] = sprintf('%s.%s', $versionParts[0], $versionParts[1] ?? '0');
-            }
-        }
-
-        return $versionsRange;
-    }
-
-    /**
-     * Returns whether a full scan was requested.
-     *
-     * This can be set in the `phpunit.xml` used to run these test cases, by setting the constant
-     * `TESTCODESTYLE_IS_FULL_SCAN` to `1`, e.g.:
-     * ```xml
-     * <php>
-     *     <!-- TESTCODESTYLE_IS_FULL_SCAN - specify if full scan should be performed for test code style test -->
-     *     <const name="TESTCODESTYLE_IS_FULL_SCAN" value="0"/>
-     * </php>
-     * ```
-     *
-     * @return bool
-     */
-    private function isFullScan(): bool
-    {
-        return defined('TESTCODESTYLE_IS_FULL_SCAN') && TESTCODESTYLE_IS_FULL_SCAN === '1';
-    }
-
-    /**
-     * Test code quality using phpcs
-     */
-    public function testCodeStyle()
-    {
-        $reportFile = self::$reportDir . '/phpcs_report.txt';
-        if (!file_exists($reportFile)) {
-            touch($reportFile);
-        }
-        $codeSniffer = new CodeSniffer('Magento', $reportFile, new Wrapper());
-        $fileList = $this->isFullScan() ? $this->getFullWhitelist() : self::getWhitelist(['php', 'phtml']);
-        $ignoreList = Files::init()->readLists(__DIR__ . '/_files/phpcs/ignorelist/*.txt');
-        if ($ignoreList) {
-            $ignoreListPattern = sprintf('#(%s)#i', implode('|', $ignoreList));
-            $fileList = array_filter(
-                $fileList,
-                function ($path) use ($ignoreListPattern) {
-                    return !preg_match($ignoreListPattern, $path);
-                }
-            );
-        }
-
-        $result = $codeSniffer->run($fileList);
-        $report = file_get_contents($reportFile);
-        $this->assertEquals(
-            0,
-            $result,
-            "PHP Code Sniffer detected {$result} violation(s): " . PHP_EOL . $report
-        );
     }
 
     /**
@@ -378,7 +344,7 @@ class LiveCodeTest extends \PHPUnit\Framework\TestCase
             $blackList = Files::init()->readLists(
                 self::getBaseFilesFolder() . '/_files/blacklist/strict_type.txt'
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // nothing matched black list
             $blackList = [];
         }
@@ -412,8 +378,8 @@ class LiveCodeTest extends \PHPUnit\Framework\TestCase
     {
         $targetVersions = $this->getTargetPhpVersions();
         $this->assertNotEmpty($targetVersions, 'No supported versions information in composer.json');
-        $reportFile    = self::$reportDir . '/phpcompatibility_report.txt';
-        $rulesetDir    = __DIR__ . '/_files/PHPCompatibilityMagento';
+        $reportFile = self::$reportDir . '/phpcompatibility_report.txt';
+        $rulesetDir = __DIR__ . '/_files/PHPCompatibilityMagento';
 
         if (!file_exists($reportFile)) {
             touch($reportFile);
@@ -439,9 +405,46 @@ class LiveCodeTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Retrieves the lowest and highest PHP version specified in <kbd>composer.json</var> of project.
+     *
+     * @return array
+     */
+    private function getTargetPhpVersions(): array
+    {
+        $composerJson = json_decode(file_get_contents(BP . '/composer.json'), true);
+        $versionsRange = [];
+
+        if (isset($composerJson['require']['php'])) {
+            $versions = explode('||', $composerJson['require']['php']);
+
+            //normalize version constraints
+            foreach ($versions as $key => $version) {
+                $version = ltrim($version, '^~');
+                $version = str_replace('*', '999', $version);
+
+                $versions[$key] = $version;
+            }
+
+            //sort versions
+            usort($versions, 'version_compare');
+
+            $versionsRange[] = array_shift($versions);
+            if (!empty($versions)) {
+                $versionsRange[] = array_pop($versions);
+            }
+            foreach ($versionsRange as $key => $version) {
+                $versionParts = explode('.', $versionsRange[$key]);
+                $versionsRange[$key] = sprintf('%s.%s', $versionParts[0], $versionParts[1] ?? '0');
+            }
+        }
+
+        return $versionsRange;
+    }
+
+    /**
      * Test code quality using PHPStan
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function testPhpStan()
     {
@@ -478,7 +481,7 @@ class LiveCodeTest extends \PHPUnit\Framework\TestCase
      */
     public function testFixtureReuse()
     {
-        $changedFiles =  self::getWhitelist(['php']);
+        $changedFiles = self::getWhitelist(['php']);
         $toBeTestedFiles = self::filterFiles($changedFiles, ['php'], []);
 
         $filesWithIncorrectReuse = [];

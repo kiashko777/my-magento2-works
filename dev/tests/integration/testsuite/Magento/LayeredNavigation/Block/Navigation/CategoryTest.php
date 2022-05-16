@@ -61,20 +61,6 @@ class CategoryTest extends TestCase
     private $storeManager;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->categoryCollectionFactory = $this->objectManager->create(CollectionFactory::class);
-        $this->categoryResource = $this->objectManager->get(CategoryResource::class);
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->navigationBlock = $this->objectManager->create(Category::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-        parent::setUp();
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/category.php
      * @return void
      */
@@ -83,6 +69,45 @@ class CategoryTest extends TestCase
         $this->prepareNavigationBlock('Category 1');
         $this->assertFalse($this->navigationBlock->canShowBlock());
         $this->assertCount(0, $this->navigationBlock->getLayer()->getProductCollection()->getItems());
+    }
+
+    /**
+     * Inits navigation block.
+     *
+     * @param string $categoryName
+     * @param int $storeId
+     * @return void
+     */
+    private function prepareNavigationBlock(
+        string $categoryName,
+        int    $storeId = Store::DEFAULT_STORE_ID
+    ): void
+    {
+        $category = $this->loadCategory($categoryName, $storeId);
+        $this->navigationBlock->getLayer()->setCurrentCategory($category);
+        $this->navigationBlock->setLayout($this->layout);
+    }
+
+    /**
+     * Loads category by id.
+     *
+     * @param string $categoryName
+     * @param int $storeId
+     * @return CategoryInterface
+     */
+    private function loadCategory(string $categoryName, int $storeId): CategoryInterface
+    {
+        /** @var Collection $categoryCollection */
+        $categoryCollection = $this->categoryCollectionFactory->create();
+        /** @var CategoryInterface $category */
+        $category = $categoryCollection->setStoreId($storeId)
+            ->addAttributeToSelect('display_mode', 'left')
+            ->addAttributeToFilter(CategoryInterface::KEY_NAME, $categoryName)
+            ->setPageSize(1)
+            ->getFirstItem();
+        $category->setStoreId($storeId);
+
+        return $category;
     }
 
     /**
@@ -111,6 +136,28 @@ class CategoryTest extends TestCase
     }
 
     /**
+     * Updates category display mode.
+     *
+     * @param string $categoryName
+     * @param string $displayMode
+     * @param int $storeId
+     * @return void
+     */
+    private function updateCategoryDisplayMode(
+        string $categoryName,
+        string $displayMode,
+        int    $storeId = Store::DEFAULT_STORE_ID
+    ): void
+    {
+        $category = $this->loadCategory($categoryName, $storeId);
+        $category->setData('display_mode', $displayMode);
+
+        if ($category->dataHasChangedFor('display_mode')) {
+            $this->categoryResource->save($category);
+        }
+    }
+
+    /**
      * @return array
      */
     public function canShowBlockWithDisplayModeDataProvider(): array
@@ -134,8 +181,9 @@ class CategoryTest extends TestCase
     public function testCanShowBlockWithDisplayModeOnStoreView(
         string $defaultMode,
         string $storeMode,
-        bool $canShow
-    ): void {
+        bool   $canShow
+    ): void
+    {
         $secondStoreId = (int)$this->storeManager->getStore('fixture_second_store')->getId();
         $this->updateCategoryDisplayMode('Category 999', $defaultMode);
         $this->updateCategoryDisplayMode('Category 999', $storeMode, $secondStoreId);
@@ -168,61 +216,16 @@ class CategoryTest extends TestCase
     }
 
     /**
-     * Inits navigation block.
-     *
-     * @param string $categoryName
-     * @param int $storeId
-     * @return void
+     * @inheritdoc
      */
-    private function prepareNavigationBlock(
-        string $categoryName,
-        int $storeId = Store::DEFAULT_STORE_ID
-    ): void {
-        $category = $this->loadCategory($categoryName, $storeId);
-        $this->navigationBlock->getLayer()->setCurrentCategory($category);
-        $this->navigationBlock->setLayout($this->layout);
-    }
-
-    /**
-     * Loads category by id.
-     *
-     * @param string $categoryName
-     * @param int $storeId
-     * @return CategoryInterface
-     */
-    private function loadCategory(string $categoryName, int $storeId): CategoryInterface
+    protected function setUp(): void
     {
-        /** @var Collection $categoryCollection */
-        $categoryCollection = $this->categoryCollectionFactory->create();
-        /** @var CategoryInterface $category */
-        $category = $categoryCollection->setStoreId($storeId)
-            ->addAttributeToSelect('display_mode', 'left')
-            ->addAttributeToFilter(CategoryInterface::KEY_NAME, $categoryName)
-            ->setPageSize(1)
-            ->getFirstItem();
-        $category->setStoreId($storeId);
-
-        return $category;
-    }
-
-    /**
-     * Updates category display mode.
-     *
-     * @param string $categoryName
-     * @param string $displayMode
-     * @param int $storeId
-     * @return void
-     */
-    private function updateCategoryDisplayMode(
-        string $categoryName,
-        string $displayMode,
-        int $storeId = Store::DEFAULT_STORE_ID
-    ): void {
-        $category = $this->loadCategory($categoryName, $storeId);
-        $category->setData('display_mode', $displayMode);
-
-        if ($category->dataHasChangedFor('display_mode')) {
-            $this->categoryResource->save($category);
-        }
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->categoryCollectionFactory = $this->objectManager->create(CollectionFactory::class);
+        $this->categoryResource = $this->objectManager->get(CategoryResource::class);
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->navigationBlock = $this->objectManager->create(Category::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
+        parent::setUp();
     }
 }

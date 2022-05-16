@@ -6,8 +6,8 @@
 
 use Magento\Catalog\Model\ResourceModel\Eav\Attribute;
 use Magento\Eav\Model\Entity\Attribute\Set;
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
 
 $objectManager = Bootstrap::getObjectManager();
 $registry = $objectManager->get(Registry::class);

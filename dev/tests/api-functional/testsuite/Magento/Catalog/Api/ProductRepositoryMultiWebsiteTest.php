@@ -8,14 +8,14 @@ declare(strict_types=1);
 namespace Magento\Catalog\Api;
 
 use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Model\Attribute\ScopeOverriddenValue;
+use Magento\Catalog\Model\Product;
 use Magento\Eav\Model\Entity\Attribute\ScopedAttributeInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\Store\Model\Store;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
-use Magento\Catalog\Model\Attribute\ScopeOverriddenValue;
-use Magento\Catalog\Model\Product;
-use Magento\Framework\Webapi\Rest\Request;
-use Magento\Framework\ObjectManagerInterface;
 
 /**
  * Test for \Magento\Catalog\Api\ProductRepositoryInterface
@@ -39,97 +39,6 @@ class ProductRepositoryMultiWebsiteTest extends WebapiAbstract
      * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
-
-    /**
-     * @inheritDoc
-     */
-    protected function tearDown(): void
-    {
-        parent::tearDown();
-        $this->deleteFixtureProducts();
-    }
-
-    /**
-     * Save Products
-     *
-     * @param array $product
-     * @param string|null $storeCode
-     * @param string|null $token
-     * @return mixed
-     */
-    private function saveProduct(array $product, ?string $storeCode = null, ?string $token = null)
-    {
-        if (isset($product['custom_attributes'])) {
-            foreach ($product['custom_attributes'] as &$attribute) {
-                if ($attribute['attribute_code'] == 'category_ids'
-                    && !is_array($attribute['value'])
-                ) {
-                    $attribute['value'] = [""];
-                }
-            }
-        }
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => Request::HTTP_METHOD_POST,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'Save',
-            ],
-        ];
-        if ($token) {
-            $serviceInfo['rest']['token'] = $serviceInfo['soap']['token'] = $token;
-        }
-        $requestData = ['product' => $product];
-
-        return $this->_webApiCall($serviceInfo, $requestData, null, $storeCode);
-    }
-
-    /**
-     * Delete Products
-     *
-     * @param string $sku
-     * @return boolean
-     */
-    private function deleteProduct(string $sku) : bool
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . '/' . $sku,
-                'httpMethod' => Request::HTTP_METHOD_DELETE,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'DeleteById',
-            ],
-        ];
-
-        return (TESTS_WEB_API_ADAPTER == self::ADAPTER_SOAP) ?
-            $this->_webApiCall($serviceInfo, ['sku' => $sku]) : $this->_webApiCall($serviceInfo);
-    }
-
-    /**
-     * @return void
-     */
-    private function deleteFixtureProducts(): void
-    {
-        foreach ($this->fixtureProducts as $sku) {
-            $this->deleteProduct($sku);
-        }
-        $this->fixtureProducts = [];
-    }
 
     /**
      * Test that updating some values for product for specified store won't uncheck 'use default values'
@@ -196,6 +105,44 @@ class ProductRepositoryMultiWebsiteTest extends WebapiAbstract
     }
 
     /**
+     * Save Products
+     *
+     * @param array $product
+     * @param string|null $storeCode
+     * @param string|null $token
+     * @return mixed
+     */
+    private function saveProduct(array $product, ?string $storeCode = null, ?string $token = null)
+    {
+        if (isset($product['custom_attributes'])) {
+            foreach ($product['custom_attributes'] as &$attribute) {
+                if ($attribute['attribute_code'] == 'category_ids'
+                    && !is_array($attribute['value'])
+                ) {
+                    $attribute['value'] = [""];
+                }
+            }
+        }
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH,
+                'httpMethod' => Request::HTTP_METHOD_POST,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'Save',
+            ],
+        ];
+        if ($token) {
+            $serviceInfo['rest']['token'] = $serviceInfo['soap']['token'] = $token;
+        }
+        $requestData = ['product' => $product];
+
+        return $this->_webApiCall($serviceInfo, $requestData, null, $storeCode);
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Store/_files/second_website_with_two_stores.php
      * @magentoApiDataFixture Magento/Catalog/_files/product_text_attribute.php
      * @magentoApiDataFixture Magento/Catalog/_files/product_varchar_attribute.php
@@ -208,7 +155,7 @@ class ProductRepositoryMultiWebsiteTest extends WebapiAbstract
         );
         $sku = 'api_test_update_product';
         $store = $this->objectManager->get(Store::class);
-        $storeId = (int) $store->load('fixture_third_store', 'code')->getId();
+        $storeId = (int)$store->load('fixture_third_store', 'code')->getId();
         $this->updateAttribute('varchar_attribute', ['is_global' => ScopedAttributeInterface::SCOPE_STORE]);
         $this->updateAttribute('text_attribute', ['is_global' => ScopedAttributeInterface::SCOPE_STORE]);
         $request1 = [
@@ -330,6 +277,21 @@ class ProductRepositoryMultiWebsiteTest extends WebapiAbstract
     }
 
     /**
+     * Update attribute
+     *
+     * @param string $code
+     * @param array $data
+     * @return void
+     */
+    private function updateAttribute(string $code, array $data): void
+    {
+        $attributeRepository = $this->objectManager->create(ProductAttributeRepositoryInterface::class);
+        $attribute = $attributeRepository->get($code);
+        $attribute->addData($data);
+        $attributeRepository->save($attribute);
+    }
+
+    /**
      * @param array $expected
      * @param array $actual
      */
@@ -368,17 +330,55 @@ class ProductRepositoryMultiWebsiteTest extends WebapiAbstract
     }
 
     /**
-     * Update attribute
-     *
-     * @param string $code
-     * @param array $data
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->objectManager = Bootstrap::getObjectManager();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+        $this->deleteFixtureProducts();
+    }
+
+    /**
      * @return void
      */
-    private function updateAttribute(string $code, array $data): void
+    private function deleteFixtureProducts(): void
     {
-        $attributeRepository = $this->objectManager->create(ProductAttributeRepositoryInterface::class);
-        $attribute = $attributeRepository->get($code);
-        $attribute->addData($data);
-        $attributeRepository->save($attribute);
+        foreach ($this->fixtureProducts as $sku) {
+            $this->deleteProduct($sku);
+        }
+        $this->fixtureProducts = [];
+    }
+
+    /**
+     * Delete Products
+     *
+     * @param string $sku
+     * @return boolean
+     */
+    private function deleteProduct(string $sku): bool
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH . '/' . $sku,
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'DeleteById',
+            ],
+        ];
+
+        return (TESTS_WEB_API_ADAPTER == self::ADAPTER_SOAP) ?
+            $this->_webApiCall($serviceInfo, ['sku' => $sku]) : $this->_webApiCall($serviceInfo);
     }
 }

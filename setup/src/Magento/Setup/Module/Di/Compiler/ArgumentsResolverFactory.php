@@ -7,33 +7,37 @@
 
 namespace Magento\Setup\Module\Di\Compiler;
 
+use Magento\Framework\ObjectManager\ConfigInterface;
+use Magento\Framework\ObjectManagerInterface;
+
 class ArgumentsResolverFactory
 {
     /**
      * Object Manager instance
      *
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $_objectManager;
 
     /**
      * Factory constructor
      *
-     * @param \Magento\Framework\ObjectManagerInterface $objectManager
+     * @param ObjectManagerInterface $objectManager
      */
     public function __construct(
-        \Magento\Framework\ObjectManagerInterface $objectManager
-    ) {
+        ObjectManagerInterface $objectManager
+    )
+    {
         $this->_objectManager = $objectManager;
     }
 
     /**
      * Create class instance with config
      *
-     * @param \Magento\Framework\ObjectManager\ConfigInterface $diContainerConfig
-     * @return \Magento\Setup\Module\Di\Compiler\ArgumentsResolver
+     * @param ConfigInterface $diContainerConfig
+     * @return ArgumentsResolver
      */
-    public function create(\Magento\Framework\ObjectManager\ConfigInterface $diContainerConfig)
+    public function create(ConfigInterface $diContainerConfig)
     {
         return new ArgumentsResolver($diContainerConfig);
     }

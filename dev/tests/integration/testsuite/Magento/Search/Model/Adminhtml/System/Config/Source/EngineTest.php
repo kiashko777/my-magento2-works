@@ -3,25 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Search\Model\Adminhtml\System\Config\Source;
+
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class EngineTest extends \PHPUnit\Framework\TestCase
+class EngineTest extends TestCase
 {
     /**
-     * @var \Magento\Search\Model\Adminhtml\System\Config\Source\Engine
+     * @var Engine
      */
     protected $_model;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Search\Model\Adminhtml\System\Config\Source\Engine::class
-        );
-    }
 
     public function testToOptionArray()
     {
@@ -32,5 +28,13 @@ class EngineTest extends \PHPUnit\Framework\TestCase
             $this->assertArrayHasKey('label', $option);
             $this->assertArrayHasKey('value', $option);
         }
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Engine::class
+        );
     }
 }

@@ -39,6 +39,20 @@ class GridTest extends TestCase
     private $getQuoteByReservedOrderId;
 
     /**
+     * @magentoDataFixture Magento/Checkout/_files/quote_with_customer_without_address.php
+     *
+     * @return void
+     */
+    public function testGetItems(): void
+    {
+        $quote = $this->getQuoteByReservedOrderId->execute('test_order_with_customer_without_address');
+        $this->session->setQuoteId($quote->getId());
+        $items = $this->block->getItems();
+        $this->assertCount(1, $items);
+        $this->assertEquals('simple2', reset($items)->getSku());
+    }
+
+    /**
      * @inheritdoc
      */
     protected function setUp(): void
@@ -51,19 +65,5 @@ class GridTest extends TestCase
         $this->layout = $this->objectManager->get(LayoutInterface::class);
         $this->block = $this->layout->createBlock(Grid::class);
         $this->layout->createBlock(Items::class)->setChild('items_grid', $this->block);
-    }
-
-    /**
-     * @magentoDataFixture Magento/Checkout/_files/quote_with_customer_without_address.php
-     *
-     * @return void
-     */
-    public function testGetItems(): void
-    {
-        $quote = $this->getQuoteByReservedOrderId->execute('test_order_with_customer_without_address');
-        $this->session->setQuoteId($quote->getId());
-        $items = $this->block->getItems();
-        $this->assertCount(1, $items);
-        $this->assertEquals('simple2', reset($items)->getSku());
     }
 }

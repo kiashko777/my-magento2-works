@@ -4,21 +4,29 @@
  * See COPYING.txt for license details.
  */
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\Customer\Model\GroupManagement;
+use Magento\Framework\Registry;
+use Magento\SalesRule\Model\Rule;
+use Magento\SalesRule\Model\Rule\Condition\Combine;
+use Magento\SalesRule\Model\RuleFactory;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 
-$salesRuleFactory = $objectManager->create(\Magento\SalesRule\Model\RuleFactory::class);
-/** @var \Magento\SalesRule\Model\Rule $salesRule */
+$objectManager = Bootstrap::getObjectManager();
+
+$salesRuleFactory = $objectManager->create(RuleFactory::class);
+/** @var Rule $salesRule */
 $salesRule = $salesRuleFactory->create();
 $row =
     [
         'name' => 'Free shipping if item price >10',
         'is_active' => 1,
-        'customer_group_ids' => [\Magento\Customer\Model\GroupManagement::NOT_LOGGED_IN_ID],
-        'coupon_type' => \Magento\SalesRule\Model\Rule::COUPON_TYPE_NO_COUPON,
+        'customer_group_ids' => [GroupManagement::NOT_LOGGED_IN_ID],
+        'coupon_type' => Rule::COUPON_TYPE_NO_COUPON,
         'conditions' => [
             1 =>
                 [
-                    'type' => \Magento\SalesRule\Model\Rule\Condition\Combine::class,
+                    'type' => Combine::class,
                     'attribute' => null,
                     'operator' => null,
                     'value' => '1',
@@ -60,15 +68,15 @@ $row =
         'simple_free_shipping' => 1,
 
         'website_ids' => [
-            \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-                \Magento\Store\Model\StoreManagerInterface::class
+            Bootstrap::getObjectManager()->get(
+                StoreManagerInterface::class
             )->getWebsite()->getId()
         ]
     ];
 $salesRule->loadPost($row);
 $salesRule->save();
 /** @var Magento\Framework\Registry $registry */
-$registry = $objectManager->get(\Magento\Framework\Registry::class);
+$registry = $objectManager->get(Registry::class);
 
 $registry->unregister('cart_rule_free_shipping');
 $registry->register('cart_rule_free_shipping', $salesRule);

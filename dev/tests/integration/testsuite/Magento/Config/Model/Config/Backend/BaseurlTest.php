@@ -3,12 +3,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Config\Model\Config\Backend;
+
+use Magento\Framework\Exception\LocalizedException;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class BaseurlTest extends \PHPUnit\Framework\TestCase
+class BaseurlTest extends TestCase
 {
     /**
      * @param string $path
@@ -18,9 +23,9 @@ class BaseurlTest extends \PHPUnit\Framework\TestCase
      */
     public function testValidation($path, $value)
     {
-        /** @var $model \Magento\Config\Model\Config\Backend\Baseurl */
-        $model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Config\Model\Config\Backend\Baseurl::class
+        /** @var $model Baseurl */
+        $model = Bootstrap::getObjectManager()->create(
+            Baseurl::class
         );
         $model->setPath($path)->setValue($value)->save();
         $this->assertNotEmpty((int)$model->getId());
@@ -78,11 +83,11 @@ class BaseurlTest extends \PHPUnit\Framework\TestCase
      */
     public function testValidationException($path, $value)
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
 
-        /** @var $model \Magento\Config\Model\Config\Backend\Baseurl */
-        $model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Config\Model\Config\Backend\Baseurl::class
+        /** @var $model Baseurl */
+        $model = Bootstrap::getObjectManager()->create(
+            Baseurl::class
         );
         $model->setPath($path)->setValue($value)->save();
     }

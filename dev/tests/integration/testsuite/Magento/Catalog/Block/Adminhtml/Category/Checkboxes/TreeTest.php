@@ -38,17 +38,6 @@ class TreeTest extends TestCase
     private $defaultCategoryHelper;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Tree::class);
-        $this->json = $this->objectManager->get(SerializerInterface::class);
-        $this->defaultCategoryHelper = $this->objectManager->get(DefaultCategory::class);
-    }
-
-    /**
      * @return void
      */
     public function testSetGetCategoryIds(): void
@@ -88,5 +77,16 @@ class TreeTest extends TestCase
         $this->assertNotEmpty($item);
         $this->assertStringContainsString('Default Category', $item['text']);
         $this->assertTrue($item['checked']);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Tree::class);
+        $this->json = $this->objectManager->get(SerializerInterface::class);
+        $this->defaultCategoryHelper = $this->objectManager->get(DefaultCategory::class);
     }
 }

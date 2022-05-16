@@ -6,12 +6,18 @@
 
 namespace Magento\Customer\Api;
 
+use Exception;
 use Magento\Customer\Api\Data\CustomerInterface;
 use Magento\Customer\Model\CustomerRegistry;
+use Magento\Framework\Reflection\DataObjectProcessor;
+use Magento\Framework\Registry;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\Integration\Api\CustomerTokenServiceInterface;
 use Magento\Integration\Model\Oauth\Token as TokenModel;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Helper\Customer as CustomerHelper;
+use Magento\TestFramework\TestCase\WebapiAbstract;
+use Throwable;
 
 /**
  * Class AccountManagementMeTest
@@ -20,7 +26,7 @@ use Magento\TestFramework\Helper\Customer as CustomerHelper;
  * @magentoApiDataFixture Magento/Customer/_files/customer.php
  * @magentoApiDataFixture Magento/Customer/_files/customer_two_addresses.php
  */
-class AccountManagementMeTest extends \Magento\TestFramework\TestCase\WebapiAbstract
+class AccountManagementMeTest extends WebapiAbstract
 {
     const RESOURCE_PATH = '/V1/customers/me';
     const RESOURCE_PATH_CUSTOMER_TOKEN = "/V1/integration/customer/token";
@@ -59,7 +65,7 @@ class AccountManagementMeTest extends \Magento\TestFramework\TestCase\WebapiAbst
     private $customerData;
 
     /**
-     * @var \Magento\Framework\Reflection\DataObjectProcessor
+     * @var DataObjectProcessor
      */
     private $dataObjectProcessor;
 
@@ -68,64 +74,18 @@ class AccountManagementMeTest extends \Magento\TestFramework\TestCase\WebapiAbst
      */
     private $tokenService;
 
-    /**
-     * Execute per test initialization.
-     */
-    protected function setUp(): void
-    {
-        $this->customerRegistry = Bootstrap::getObjectManager()->get(
-            \Magento\Customer\Model\CustomerRegistry::class
-        );
-
-        $this->customerRepository = Bootstrap::getObjectManager()->get(
-            \Magento\Customer\Api\CustomerRepositoryInterface::class,
-            ['customerRegistry' => $this->customerRegistry]
-        );
-
-        $this->customerAccountManagement = Bootstrap::getObjectManager()
-            ->get(\Magento\Customer\Api\AccountManagementInterface::class);
-
-        $this->customerHelper = new CustomerHelper();
-        $this->customerData = $this->customerHelper->createSampleCustomer();
-        $this->tokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
-
-        // get token
-        $this->resetTokenForCustomerSampleData();
-
-        $this->dataObjectProcessor = Bootstrap::getObjectManager()->create(
-            \Magento\Framework\Reflection\DataObjectProcessor::class
-        );
-    }
-
-    /**
-     * Ensure that fixture customer and his addresses are deleted.
-     */
-    protected function tearDown(): void
-    {
-        $this->customerRepository = null;
-
-        /** @var \Magento\Framework\Registry $registry */
-        $registry = Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
-        $registry->unregister('isSecureArea');
-        $registry->register('isSecureArea', true);
-
-        $registry->unregister('isSecureArea');
-        $registry->register('isSecureArea', false);
-        parent::tearDown();
-    }
-
     public function testChangePassword()
     {
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/password',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
                 'token' => $this->token,
             ],
             'soap' => [
                 'service' => self::ACCOUNT_SERVICE,
                 'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::ACCOUNT_SERVICE .'ChangePasswordById',
+                'operation' => self::ACCOUNT_SERVICE . 'ChangePasswordById',
                 'token' => $this->token
             ]
         ];
@@ -147,7 +107,7 @@ class AccountManagementMeTest extends \Magento\TestFramework\TestCase\WebapiAbst
 
         $updatedCustomerData = $this->dataObjectProcessor->buildOutputDataArray(
             $customerData,
-            \Magento\Customer\Api\Data\CustomerInterface::class
+            CustomerInterface::class
         );
         $updatedCustomerData[CustomerInterface::LASTNAME] = $lastName . 'Updated';
         $updatedCustomerData[CustomerInterface::ID] = 25;
@@ -155,13 +115,13 @@ class AccountManagementMeTest extends \Magento\TestFramework\TestCase\WebapiAbst
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
                 'token' => $this->token,
             ],
             'soap' => [
                 'service' => self::REPO_SERVICE,
                 'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::REPO_SERVICE .'SaveSelf',
+                'operation' => self::REPO_SERVICE . 'SaveSelf',
                 'token' => $this->token
             ]
         ];
@@ -174,13 +134,26 @@ class AccountManagementMeTest extends \Magento\TestFramework\TestCase\WebapiAbst
         $this->assertEquals($lastName . "Updated", $customerData->getLastname());
     }
 
+    /**
+     * Return the customer details.
+     *
+     * @param int $customerId
+     * @return CustomerInterface
+     */
+    protected function _getCustomerData($customerId)
+    {
+        $data = $this->customerRepository->getById($customerId);
+        $this->customerRegistry->remove($customerId);
+        return $data;
+    }
+
     public function testGetCustomerData()
     {
         //Get expected details from the Service directly
         $customerData = $this->_getCustomerData($this->customerData[CustomerInterface::ID]);
         $expectedCustomerDetails = $this->dataObjectProcessor->buildOutputDataArray(
             $customerData,
-            \Magento\Customer\Api\Data\CustomerInterface::class
+            CustomerInterface::class
         );
         $expectedCustomerDetails['addresses'][0]['id'] =
             (int)$expectedCustomerDetails['addresses'][0]['id'];
@@ -191,13 +164,13 @@ class AccountManagementMeTest extends \Magento\TestFramework\TestCase\WebapiAbst
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
                 'token' => $this->token,
             ],
             'soap' => [
                 'service' => self::REPO_SERVICE,
                 'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::REPO_SERVICE .'GetSelf',
+                'operation' => self::REPO_SERVICE . 'GetSelf',
                 'token' => $this->token
             ]
         ];
@@ -218,13 +191,13 @@ class AccountManagementMeTest extends \Magento\TestFramework\TestCase\WebapiAbst
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/activate',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
                 'token' => $this->token,
             ],
             'soap' => [
                 'service' => self::ACCOUNT_SERVICE,
                 'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::ACCOUNT_SERVICE .'ActivateById',
+                'operation' => self::ACCOUNT_SERVICE . 'ActivateById',
                 'token' => $this->token
             ]
         ];
@@ -240,22 +213,9 @@ class AccountManagementMeTest extends \Magento\TestFramework\TestCase\WebapiAbst
                 $this->customerData[CustomerInterface::ID],
                 $customerResponseData[CustomerInterface::ID]
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->fail('Customer is not activated.');
         }
-    }
-
-    /**
-     * Return the customer details.
-     *
-     * @param int $customerId
-     * @return \Magento\Customer\Api\Data\CustomerInterface
-     */
-    protected function _getCustomerData($customerId)
-    {
-        $data = $this->customerRepository->getById($customerId);
-        $this->customerRegistry->remove($customerId);
-        return $data;
     }
 
     public function testGetDefaultBillingAddress()
@@ -266,13 +226,13 @@ class AccountManagementMeTest extends \Magento\TestFramework\TestCase\WebapiAbst
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => "/V1/customers/me/billingAddress",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
                 'token' => $this->token,
             ],
             'soap' => [
                 'service' => self::ACCOUNT_SERVICE,
                 'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::ACCOUNT_SERVICE .'GetMyDefaultBillingAddress',
+                'operation' => self::ACCOUNT_SERVICE . 'GetMyDefaultBillingAddress',
                 'token' => $this->token
             ]
         ];
@@ -285,31 +245,12 @@ class AccountManagementMeTest extends \Magento\TestFramework\TestCase\WebapiAbst
         );
     }
 
-    public function testGetDefaultShippingAddress()
+    /**
+     * Sets the test's access token for the customer fixture
+     */
+    protected function resetTokenForCustomerFixture()
     {
-        $this->resetTokenForCustomerFixture();
-
-        $fixtureCustomerId = 1;
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => "/V1/customers/me/shippingAddress",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
-                'token' => $this->token,
-            ],
-            'soap' => [
-                'service' => self::ACCOUNT_SERVICE,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::ACCOUNT_SERVICE .'GetMyDefaultShippingAddress',
-                'token' => $this->token
-            ]
-        ];
-        $requestData = ['customerId' => $fixtureCustomerId];
-        $addressData = $this->_webApiCall($serviceInfo, $requestData);
-        $this->assertEquals(
-            $this->getFirstFixtureAddressData(),
-            $addressData,
-            "Default shipping address data is invalid."
-        );
+        $this->resetTokenForCustomer('customer@example.com', 'password');
     }
 
     /**
@@ -337,36 +278,84 @@ class AccountManagementMeTest extends \Magento\TestFramework\TestCase\WebapiAbst
         ];
     }
 
-    /**
-     * Retrieve data of the second fixture address.
-     *
-     * @return array
-     */
-    protected function getSecondFixtureAddressData()
+    public function testGetDefaultShippingAddress()
     {
-        return [
-            'firstname' => 'John',
-            'lastname' => 'Smith',
-            'city' => 'CityX',
-            'country_id' => 'US',
-            'postcode' => '47676',
-            'telephone' => '3234676',
-            'street' => ['Black str, 48'],
-            'id' => 2,
-            'default_billing' => false,
-            'default_shipping' => false,
-            'customer_id' => '1',
-            'region' => ['region' => 'Alabama', 'region_id' => 1, 'region_code' => 'AL'],
-            'region_id' => 1,
+        $this->resetTokenForCustomerFixture();
+
+        $fixtureCustomerId = 1;
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => "/V1/customers/me/shippingAddress",
+                'httpMethod' => Request::HTTP_METHOD_GET,
+                'token' => $this->token,
+            ],
+            'soap' => [
+                'service' => self::ACCOUNT_SERVICE,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::ACCOUNT_SERVICE . 'GetMyDefaultShippingAddress',
+                'token' => $this->token
+            ]
         ];
+        $requestData = ['customerId' => $fixtureCustomerId];
+        $addressData = $this->_webApiCall($serviceInfo, $requestData);
+        $this->assertEquals(
+            $this->getFirstFixtureAddressData(),
+            $addressData,
+            "Default shipping address data is invalid."
+        );
     }
 
     /**
-     * Sets the test's access token for the customer fixture
+     * @magentoApiDataFixture Magento/Customer/_files/customer_one_address.php
      */
-    protected function resetTokenForCustomerFixture()
+    public function testGetOtherCustomerInfo()
     {
-        $this->resetTokenForCustomer('customer@example.com', 'password');
+        $this->_markTestAsRestOnly();
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => "/V1/customers/me?customerId=1",
+                'httpMethod' => Request::HTTP_METHOD_PUT,
+                'token' => $this->token,
+            ]
+        ];
+        $requestData = ['customer' => ["id" => "-1", "Id" => "1"]];
+        try {
+            $this->_webApiCall($serviceInfo, $requestData);
+        } catch (Throwable $exception) {
+            if ($restResponse = json_decode($exception->getMessage(), true)) {
+                $exceptionMessage = $restResponse['message'];
+            }
+        }
+        $this->assertEquals('The customer email is missing. Enter and try again.', $exceptionMessage);
+    }
+
+    /**
+     * Execute per test initialization.
+     */
+    protected function setUp(): void
+    {
+        $this->customerRegistry = Bootstrap::getObjectManager()->get(
+            CustomerRegistry::class
+        );
+
+        $this->customerRepository = Bootstrap::getObjectManager()->get(
+            CustomerRepositoryInterface::class,
+            ['customerRegistry' => $this->customerRegistry]
+        );
+
+        $this->customerAccountManagement = Bootstrap::getObjectManager()
+            ->get(AccountManagementInterface::class);
+
+        $this->customerHelper = new CustomerHelper();
+        $this->customerData = $this->customerHelper->createSampleCustomer();
+        $this->tokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
+
+        // get token
+        $this->resetTokenForCustomerSampleData();
+
+        $this->dataObjectProcessor = Bootstrap::getObjectManager()->create(
+            DataObjectProcessor::class
+        );
     }
 
     /**
@@ -390,26 +379,43 @@ class AccountManagementMeTest extends \Magento\TestFramework\TestCase\WebapiAbst
     }
 
     /**
-     * @magentoApiDataFixture Magento/Customer/_files/customer_one_address.php
+     * Ensure that fixture customer and his addresses are deleted.
      */
-    public function testGetOtherCustomerInfo()
+    protected function tearDown(): void
     {
-        $this->_markTestAsRestOnly();
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => "/V1/customers/me?customerId=1",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
-                'token' => $this->token,
-            ]
+        $this->customerRepository = null;
+
+        /** @var Registry $registry */
+        $registry = Bootstrap::getObjectManager()->get(Registry::class);
+        $registry->unregister('isSecureArea');
+        $registry->register('isSecureArea', true);
+
+        $registry->unregister('isSecureArea');
+        $registry->register('isSecureArea', false);
+        parent::tearDown();
+    }
+
+    /**
+     * Retrieve data of the second fixture address.
+     *
+     * @return array
+     */
+    protected function getSecondFixtureAddressData()
+    {
+        return [
+            'firstname' => 'John',
+            'lastname' => 'Smith',
+            'city' => 'CityX',
+            'country_id' => 'US',
+            'postcode' => '47676',
+            'telephone' => '3234676',
+            'street' => ['Black str, 48'],
+            'id' => 2,
+            'default_billing' => false,
+            'default_shipping' => false,
+            'customer_id' => '1',
+            'region' => ['region' => 'Alabama', 'region_id' => 1, 'region_code' => 'AL'],
+            'region_id' => 1,
         ];
-        $requestData = ['customer' => ["id" => "-1", "Id" => "1"]];
-        try {
-            $this->_webApiCall($serviceInfo, $requestData);
-        } catch (\Throwable $exception) {
-            if ($restResponse = json_decode($exception->getMessage(), true)) {
-                $exceptionMessage = $restResponse['message'];
-            }
-        }
-        $this->assertEquals('The customer email is missing. Enter and try again.', $exceptionMessage);
     }
 }

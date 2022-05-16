@@ -53,35 +53,6 @@ class CartTest extends TestCase
     private $quoteRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->cartFactory = $this->objectManager->get(CartFactory::class);
-        $this->productFactory = $this->objectManager->get(ProductInterfaceFactory::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->executeInStoreContext = $this->objectManager->get(ExecuteInStoreContext::class);
-        $this->checkoutSession = $this->objectManager->get(CheckoutSessionFactory::class)->create();
-        $this->quoteRepository = $this->objectManager->get(CartRepositoryInterface::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        if ($this->quote instanceof CartInterface) {
-            $this->quoteRepository->delete($this->quote);
-        }
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Checkout/_files/set_product_min_in_cart.php
      * @magentoAppIsolation enabled
      *
@@ -161,5 +132,34 @@ class CartTest extends TestCase
         $message = __('We found an invalid request for adding product to quote.');
         $this->expectExceptionObject(new LocalizedException($message));
         $this->cartFactory->create()->addProduct($product->getId(), '');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->cartFactory = $this->objectManager->get(CartFactory::class);
+        $this->productFactory = $this->objectManager->get(ProductInterfaceFactory::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->executeInStoreContext = $this->objectManager->get(ExecuteInStoreContext::class);
+        $this->checkoutSession = $this->objectManager->get(CheckoutSessionFactory::class)->create();
+        $this->quoteRepository = $this->objectManager->get(CartRepositoryInterface::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        if ($this->quote instanceof CartInterface) {
+            $this->quoteRepository->delete($this->quote);
+        }
+
+        parent::tearDown();
     }
 }

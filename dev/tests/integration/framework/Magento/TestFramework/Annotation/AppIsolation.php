@@ -7,6 +7,7 @@
 /**
  * Implementation of the @magentoAppIsolation DocBlock annotation - isolation of global application objects in memory
  */
+
 namespace Magento\TestFramework\Annotation;
 
 use Magento\Framework\Exception\LocalizedException;
@@ -44,6 +45,15 @@ class AppIsolation
     }
 
     /**
+     * Isolate application before running test case
+     */
+    public function startTestSuite()
+    {
+        $this->serverGlobalBackup = $_SERVER;
+        $this->_isolateApp();
+    }
+
+    /**
      * Isolate global application objects
      */
     protected function _isolateApp()
@@ -55,15 +65,6 @@ class AppIsolation
             session_write_close();
             $this->hasNonIsolatedTests = false;
         }
-    }
-
-    /**
-     * Isolate application before running test case
-     */
-    public function startTestSuite()
-    {
-        $this->serverGlobalBackup = $_SERVER;
-        $this->_isolateApp();
     }
 
     /**

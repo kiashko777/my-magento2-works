@@ -5,6 +5,7 @@
  */
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\TestFramework\Eav\Model\GetAttributeSetByName;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
@@ -22,5 +23,5 @@ try {
     $product = $productRepository->get('simple', true, null, true);
     $product->setAttributeSetId($attributeSet->getId());
     $productRepository->save($product);
-} catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+} catch (NoSuchEntityException $e) {
 }

@@ -5,6 +5,8 @@
  */
 declare(strict_types=1);
 
+use Magento\Catalog\Setup\CategorySetup;
+use Magento\Eav\Model\Entity\Attribute\Backend\ArrayBackend;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 
@@ -31,8 +33,8 @@ foreach ($option['value'] as $value => $labels) {
     $option['value'][$value] = $labels;
 }
 
-/** @var \Magento\Catalog\Setup\CategorySetup $installer */
-$installer = $objectManager->create(\Magento\Catalog\Setup\CategorySetup::class);
+/** @var CategorySetup $installer */
+$installer = $objectManager->create(CategorySetup::class);
 
 /** @var \Magento\Catalog\Model\ResourceModel\Eav\Attribute $attribute */
 $selectAttribute = $objectManager->create(\Magento\Catalog\Model\ResourceModel\Eav\Attribute::class);
@@ -57,7 +59,7 @@ $selectAttribute->setData(
         'used_for_sort_by' => 0,
         'frontend_label' => ['Select Attribute'],
         'backend_type' => 'varchar',
-        'backend_model' => \Magento\Eav\Model\Entity\Attribute\Backend\ArrayBackend::class,
+        'backend_model' => ArrayBackend::class,
         'option' => $option,
     ]
 );

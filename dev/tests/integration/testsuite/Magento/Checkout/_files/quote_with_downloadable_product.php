@@ -4,19 +4,28 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Checkout\Model\Cart;
+use Magento\Checkout\Model\Session;
+use Magento\Downloadable\Model\Link;
+use Magento\Downloadable\Model\ResourceModel\Link\Collection;
+use Magento\Framework\DataObject;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Downloadable/_files/product_downloadable.php');
 
-/** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-$productRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
-/** @var $product \Magento\Catalog\Model\Product */
+/** @var ProductRepositoryInterface $productRepository */
+$productRepository = Bootstrap::getObjectManager()
+    ->create(ProductRepositoryInterface::class);
+/** @var $product Product */
 $product = $productRepository->get('downloadable-product');
 
-/** @var $linkCollection \Magento\Downloadable\Model\ResourceModel\Link\Collection */
-$linkCollection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Downloadable\Model\Link::class
+/** @var $linkCollection Collection */
+$linkCollection = Bootstrap::getObjectManager()->create(
+    Link::class
 )->getCollection()->addProductToFilter(
     $product->getId()
 )->addTitleToResult(
@@ -25,16 +34,16 @@ $linkCollection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->c
     $product->getStore()->getWebsiteId()
 );
 
-/** @var $link \Magento\Downloadable\Model\Link */
+/** @var $link Link */
 $link = $linkCollection->getFirstItem();
 
-$requestInfo = new \Magento\Framework\DataObject(['qty' => 1, 'links' => [$link->getId()]]);
+$requestInfo = new DataObject(['qty' => 1, 'links' => [$link->getId()]]);
 
-/** @var $cart \Magento\Checkout\Model\Cart */
-$cart = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Checkout\Model\Cart::class);
+/** @var $cart Cart */
+$cart = Bootstrap::getObjectManager()->create(Cart::class);
 $cart->addProduct($product, $requestInfo);
 $cart->save();
 
-/** @var $objectManager \Magento\TestFramework\ObjectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-$objectManager->removeSharedInstance(\Magento\Checkout\Model\Session::class);
+/** @var $objectManager ObjectManager */
+$objectManager = Bootstrap::getObjectManager();
+$objectManager->removeSharedInstance(Session::class);

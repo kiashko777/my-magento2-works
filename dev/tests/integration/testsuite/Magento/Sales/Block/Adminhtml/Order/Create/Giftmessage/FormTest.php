@@ -6,10 +6,15 @@
 
 namespace Magento\Sales\Block\Adminhtml\Order\Create\Giftmessage;
 
+use Magento\Backend\Model\Session\Quote;
+use Magento\Framework\DataObject;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
 /**
  * @magentoAppArea Adminhtml
  */
-class FormTest extends \PHPUnit\Framework\TestCase
+class FormTest extends TestCase
 {
     /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
@@ -18,14 +23,14 @@ class FormTest extends \PHPUnit\Framework\TestCase
     public function testGetDefaultSenderWithCurrentCustomer()
     {
         /** Preconditions */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
         $fixtureCustomerId = 1;
-        /** @var \Magento\Backend\Model\Session\Quote $backendQuoteSession */
-        $backendQuoteSession = $objectManager->get(\Magento\Backend\Model\Session\Quote::class);
+        /** @var Quote $backendQuoteSession */
+        $backendQuoteSession = $objectManager->get(Quote::class);
         $backendQuoteSession->setCustomerId($fixtureCustomerId);
-        /** @var \Magento\Sales\Block\Adminhtml\Order\Create\Giftmessage\Form $block */
-        $block = $objectManager->create(\Magento\Sales\Block\Adminhtml\Order\Create\Giftmessage\Form::class);
-        $block->setEntity(new \Magento\Framework\DataObject());
+        /** @var Form $block */
+        $block = $objectManager->create(Form::class);
+        $block->setEntity(new DataObject());
 
         /** SUT execution and assertions */
         $this->assertEquals('John Smith', $block->getDefaultSender(), 'Sender name is invalid.');

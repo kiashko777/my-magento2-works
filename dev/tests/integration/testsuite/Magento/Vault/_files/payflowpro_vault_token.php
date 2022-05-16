@@ -5,13 +5,13 @@
  */
 
 use Magento\Config\Model\Config;
+use Magento\Customer\Model\CustomerRegistry;
 use Magento\Framework\Encryption\EncryptorInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 use Magento\Vault\Model\AccountPaymentTokenFactory;
 use Magento\Vault\Model\PaymentToken;
 use Magento\Vault\Model\PaymentTokenRepository;
-use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
-use Magento\Customer\Model\CustomerRegistry;
 
 Resolver::getInstance()->requireDataFixture('Magento/Customer/_files/customer.php');
 

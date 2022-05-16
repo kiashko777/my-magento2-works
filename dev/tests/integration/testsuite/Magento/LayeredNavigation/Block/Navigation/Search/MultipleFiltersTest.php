@@ -7,9 +7,9 @@ declare(strict_types=1);
 
 namespace Magento\LayeredNavigation\Block\Navigation\Search;
 
+use Magento\Catalog\Model\Layer\Filter\AbstractFilter;
 use Magento\Catalog\Model\Layer\Resolver;
 use Magento\LayeredNavigation\Block\Navigation\Category\MultipleFiltersTest as CategoryFilterTest;
-use Magento\Catalog\Model\Layer\Filter\AbstractFilter;
 
 /**
  * Provides tests for multiple custom select filters in navigation block on search page.
@@ -34,7 +34,8 @@ class MultipleFiltersTest extends CategoryFilterTest
         array $products,
         array $filters,
         array $expectedProducts
-    ): void {
+    ): void
+    {
         $this->updateAttributesAndProducts(
             $products,
             ['is_filterable' => AbstractFilter::ATTRIBUTE_OPTIONS_ONLY_WITH_RESULTS, 'is_filterable_in_search' => 1]

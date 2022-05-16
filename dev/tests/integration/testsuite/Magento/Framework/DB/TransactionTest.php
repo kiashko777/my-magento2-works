@@ -3,25 +3,22 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\DB;
 
+use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Flag;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class TransactionTest extends \PHPUnit\Framework\TestCase
+class TransactionTest extends TestCase
 {
     protected $objectManager;
 
     /**
-     * @var \Magento\Framework\DB\Transaction
+     * @var Transaction
      */
     protected $_model;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->_model = $this->objectManager
-            ->create(\Magento\Framework\DB\Transaction::class);
-    }
 
     /**
      * @magentoAppArea Adminhtml
@@ -52,8 +49,8 @@ class TransactionTest extends \PHPUnit\Framework\TestCase
      */
     public function testTransactionLevelDbIsolationDisable()
     {
-        $resourceConnection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\App\ResourceConnection::class);
+        $resourceConnection = Bootstrap::getObjectManager()
+            ->get(ResourceConnection::class);
         $this->assertEquals(0, $resourceConnection->getConnection('default')->getTransactionLevel());
     }
 
@@ -62,8 +59,8 @@ class TransactionTest extends \PHPUnit\Framework\TestCase
      */
     public function testTransactionLevelDbIsolationEnabled()
     {
-        $resourceConnection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\App\ResourceConnection::class);
+        $resourceConnection = Bootstrap::getObjectManager()
+            ->get(ResourceConnection::class);
         $this->assertEquals(1, $resourceConnection->getConnection('default')->getTransactionLevel());
     }
 
@@ -72,8 +69,15 @@ class TransactionTest extends \PHPUnit\Framework\TestCase
      */
     public function testTransactionLevelDbIsolationDefault()
     {
-        $resourceConnection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\App\ResourceConnection::class);
+        $resourceConnection = Bootstrap::getObjectManager()
+            ->get(ResourceConnection::class);
         $this->assertEquals(1, $resourceConnection->getConnection('default')->getTransactionLevel());
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->_model = $this->objectManager
+            ->create(Transaction::class);
     }
 }

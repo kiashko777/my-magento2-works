@@ -7,9 +7,16 @@
 /**
  * Test class for \Magento\TestFramework\Workaround\Cleanup\TestCaseProperties.
  */
+
 namespace Magento\Test\Workaround\Cleanup;
 
-class TestCasePropertiesTest extends \PHPUnit\Framework\TestCase
+use Magento\Test\Workaround\Cleanup\TestCasePropertiesTest\DummyTestCase;
+use Magento\TestFramework\Workaround\Cleanup\TestCaseProperties;
+use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\TestSuite;
+use ReflectionClass;
+
+class TestCasePropertiesTest extends TestCase
 {
     /**
      * @var array
@@ -29,16 +36,16 @@ class TestCasePropertiesTest extends \PHPUnit\Framework\TestCase
 
     public function testEndTestSuiteDestruct()
     {
-        $phpUnitTestSuite = new \PHPUnit\Framework\TestSuite();
+        $phpUnitTestSuite = new TestSuite();
         $phpUnitTestSuite->addTestFile(__DIR__ . '/TestCasePropertiesTest/DummyTestCase.php');
         // Because addTestFile() adds classes from file to tests array, use first testsuite
-        /** @var $testSuite \PHPUnit\Framework\TestSuite */
+        /** @var $testSuite TestSuite */
         $testSuite = $phpUnitTestSuite->testAt(0);
         $testSuite->run();
-        /** @var $testClass \Magento\Test\Workaround\Cleanup\TestCasePropertiesTest\DummyTestCase */
+        /** @var $testClass DummyTestCase */
         $testClass = $testSuite->testAt(0);
 
-        $reflectionClass = new \ReflectionClass($testClass);
+        $reflectionClass = new ReflectionClass($testClass);
         $classProperties = $reflectionClass->getProperties();
         $fixturePropertiesNames = array_keys($this->_fixtureProperties);
         foreach ($classProperties as $property) {
@@ -49,7 +56,7 @@ class TestCasePropertiesTest extends \PHPUnit\Framework\TestCase
             }
         }
 
-        $clearProperties = new \Magento\TestFramework\Workaround\Cleanup\TestCaseProperties();
+        $clearProperties = new TestCaseProperties();
         $clearProperties->endTestSuite($testSuite);
 
         foreach ($classProperties as $property) {

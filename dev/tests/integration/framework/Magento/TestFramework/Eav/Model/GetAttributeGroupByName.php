@@ -31,9 +31,10 @@ class GetAttributeGroupByName
      * @param AttributeGroupRepositoryInterface $attributeGroupRepository
      */
     public function __construct(
-        SearchCriteriaBuilder $searchCriteriaBuilder,
+        SearchCriteriaBuilder             $searchCriteriaBuilder,
         AttributeGroupRepositoryInterface $attributeGroupRepository
-    ) {
+    )
+    {
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
         $this->groupRepository = $attributeGroupRepository;
     }
@@ -47,7 +48,7 @@ class GetAttributeGroupByName
      */
     public function execute(int $setId, string $groupName): ?AttributeGroupInterface
     {
-        $searchCriteria =  $this->searchCriteriaBuilder->addFilter(
+        $searchCriteria = $this->searchCriteriaBuilder->addFilter(
             AttributeGroupInterface::GROUP_NAME,
             $groupName
         )->addFilter(

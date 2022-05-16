@@ -5,13 +5,16 @@
  */
 declare(strict_types=1);
 
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
+use Magento\Wishlist\Model\Wishlist;
 
-/** @var \Magento\Framework\ObjectManagerInterface $objectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+/** @var ObjectManagerInterface $objectManager */
+$objectManager = Bootstrap::getObjectManager();
 
-/** @var \Magento\Wishlist\Model\Wishlist $wishlist */
-$wishlist = $objectManager->create(\Magento\Wishlist\Model\Wishlist::class);
+/** @var Wishlist $wishlist */
+$wishlist = $objectManager->create(Wishlist::class);
 $wishlist->loadByCustomerId(1);
 $wishlist->delete();
 $wishlist->loadByCustomerId(2);

@@ -87,37 +87,6 @@ class SaveTest extends AbstractBackendController
     private $json;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->logger = $this->_objectManager->get(LoggerInterface::class);
-        $this->syslogHandler = $this->_objectManager->create(
-            Syslog::class,
-            [
-                'filePath' => Bootstrap::getInstance()->getAppTempDir(),
-            ]
-        );
-        $this->attributeManagement = $this->_objectManager->get(AttributeManagementInterface::class);
-        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
-        $this->attributeRepository = $this->_objectManager->get(Repository::class);
-        $this->dataObjectHelper = $this->_objectManager->get(DataObjectHelper::class);
-        $this->attributeSetRepository = $this->_objectManager->get(AttributeSetRepositoryInterface::class);
-        $this->eavConfig = $this->_objectManager->get(Config::class);
-        $this->json = $this->_objectManager->get(Json::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->attributeRepository->get('country_of_manufacture')->setIsUserDefined(false);
-        parent::tearDown();
-    }
-
-    /**
      * Test that new attribute set based on default attribute set will be successfully created.
      *
      * @magentoDbIsolation enabled
@@ -130,6 +99,100 @@ class SaveTest extends AbstractBackendController
             'Attribute set name for test',
             $this->getCatalogProductDefaultAttributeSetId()
         );
+    }
+
+    /**
+     * Create attribute set by skeleton attribute set id and assert that attribute set
+     * created successfully and attributes from skeleton attribute set and created attribute set are equals.
+     *
+     * @param string $attributeSetName
+     * @param int $skeletonAttributeSetId
+     * @return void
+     */
+    private function createAttributeSetBySkeletonAndAssert(
+        string $attributeSetName,
+        int    $skeletonAttributeSetId
+    ): void
+    {
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
+        $this->getRequest()->setPostValue(
+            [
+                'attribute_set_name' => $attributeSetName,
+                'gotoEdit' => '1',
+                'skeleton_set' => $skeletonAttributeSetId,
+            ]
+        );
+        $this->dispatch('backend/catalog/product_set/save/');
+        $this->assertSessionMessages(
+            $this->equalTo([(string)__('You saved the attribute set.')]),
+            MessageInterface::TYPE_SUCCESS
+        );
+        $createdAttributeSet = $this->getAttributeSetByName($attributeSetName);
+        $existAttributeSet = $this->attributeSetRepository->get($skeletonAttributeSetId);
+
+        $this->assertNotNull($createdAttributeSet);
+        $this->assertEquals($attributeSetName, $createdAttributeSet->getAttributeSetName());
+
+        $this->assertAttributeSetsAttributesAreEquals($createdAttributeSet, $existAttributeSet);
+    }
+
+    /**
+     * Search and return attribute set by name.
+     *
+     * @param string $attributeSetName
+     * @return AttributeSetInterface|null
+     */
+    private function getAttributeSetByName(string $attributeSetName): ?AttributeSetInterface
+    {
+        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
+        $searchCriteriaBuilder = $this->_objectManager->get(SearchCriteriaBuilder::class);
+        $searchCriteriaBuilder->addFilter('attribute_set_name', $attributeSetName);
+        $result = $this->attributeSetRepository->getList($searchCriteriaBuilder->create());
+
+        $items = $result->getItems();
+
+        return array_pop($items);
+    }
+
+    /**
+     * Assert that both attribute sets contains identical attributes by attribute ids.
+     *
+     * @param AttributeSetInterface $createdAttributeSet
+     * @param AttributeSetInterface $existAttributeSet
+     * @return void
+     */
+    private function assertAttributeSetsAttributesAreEquals(
+        AttributeSetInterface $createdAttributeSet,
+        AttributeSetInterface $existAttributeSet
+    ): void
+    {
+        $expectedAttributeIds = array_keys(
+            $this->attributeManagement->getAttributes(
+                ProductAttributeInterface::ENTITY_TYPE_CODE,
+                $existAttributeSet->getAttributeSetId()
+            )
+        );
+        sort($expectedAttributeIds);
+        $actualAttributeIds = array_keys(
+            $this->attributeManagement->getAttributes(
+                ProductAttributeInterface::ENTITY_TYPE_CODE,
+                $createdAttributeSet->getAttributeSetId()
+            )
+        );
+        sort($actualAttributeIds);
+        $this->assertSame($expectedAttributeIds, $actualAttributeIds);
+    }
+
+    /**
+     * Retrieve default catalog product attribute set ID.
+     *
+     * @return int
+     */
+    private function getCatalogProductDefaultAttributeSetId(): int
+    {
+        return (int)$this->eavConfig
+            ->getEntityType(ProductAttributeInterface::ENTITY_TYPE_CODE)
+            ->getDefaultAttributeSetId();
     }
 
     /**
@@ -246,6 +309,19 @@ class SaveTest extends AbstractBackendController
     }
 
     /**
+     * Remove system.log file
+     *
+     * @return void
+     */
+    private function removeSyslog(): void
+    {
+        $this->syslogHandler->close();
+        if (file_exists($this->getSyslogPath())) {
+            unlink($this->getSyslogPath());
+        }
+    }
+
+    /**
      * Retrieve system.log file path.
      *
      * @return string
@@ -264,107 +340,33 @@ class SaveTest extends AbstractBackendController
     }
 
     /**
-     * Remove system.log file
-     *
-     * @return void
+     * @inheritDoc
      */
-    private function removeSyslog(): void
+    protected function setUp(): void
     {
-        $this->syslogHandler->close();
-        if (file_exists($this->getSyslogPath())) {
-            unlink($this->getSyslogPath());
-        }
-    }
-
-    /**
-     * Search and return attribute set by name.
-     *
-     * @param string $attributeSetName
-     * @return AttributeSetInterface|null
-     */
-    private function getAttributeSetByName(string $attributeSetName): ?AttributeSetInterface
-    {
-        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
-        $searchCriteriaBuilder = $this->_objectManager->get(SearchCriteriaBuilder::class);
-        $searchCriteriaBuilder->addFilter('attribute_set_name', $attributeSetName);
-        $result = $this->attributeSetRepository->getList($searchCriteriaBuilder->create());
-
-        $items = $result->getItems();
-
-        return array_pop($items);
-    }
-
-    /**
-     * Create attribute set by skeleton attribute set id and assert that attribute set
-     * created successfully and attributes from skeleton attribute set and created attribute set are equals.
-     *
-     * @param string $attributeSetName
-     * @param int $skeletonAttributeSetId
-     * @return void
-     */
-    private function createAttributeSetBySkeletonAndAssert(
-        string $attributeSetName,
-        int $skeletonAttributeSetId
-    ): void {
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
-        $this->getRequest()->setPostValue(
+        parent::setUp();
+        $this->logger = $this->_objectManager->get(LoggerInterface::class);
+        $this->syslogHandler = $this->_objectManager->create(
+            Syslog::class,
             [
-                'attribute_set_name' => $attributeSetName,
-                'gotoEdit' => '1',
-                'skeleton_set' => $skeletonAttributeSetId,
+                'filePath' => Bootstrap::getInstance()->getAppTempDir(),
             ]
         );
-        $this->dispatch('backend/catalog/product_set/save/');
-        $this->assertSessionMessages(
-            $this->equalTo([(string)__('You saved the attribute set.')]),
-            MessageInterface::TYPE_SUCCESS
-        );
-        $createdAttributeSet = $this->getAttributeSetByName($attributeSetName);
-        $existAttributeSet = $this->attributeSetRepository->get($skeletonAttributeSetId);
-
-        $this->assertNotNull($createdAttributeSet);
-        $this->assertEquals($attributeSetName, $createdAttributeSet->getAttributeSetName());
-
-        $this->assertAttributeSetsAttributesAreEquals($createdAttributeSet, $existAttributeSet);
+        $this->attributeManagement = $this->_objectManager->get(AttributeManagementInterface::class);
+        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
+        $this->attributeRepository = $this->_objectManager->get(Repository::class);
+        $this->dataObjectHelper = $this->_objectManager->get(DataObjectHelper::class);
+        $this->attributeSetRepository = $this->_objectManager->get(AttributeSetRepositoryInterface::class);
+        $this->eavConfig = $this->_objectManager->get(Config::class);
+        $this->json = $this->_objectManager->get(Json::class);
     }
 
     /**
-     * Assert that both attribute sets contains identical attributes by attribute ids.
-     *
-     * @param AttributeSetInterface $createdAttributeSet
-     * @param AttributeSetInterface $existAttributeSet
-     * @return void
+     * @inheritdoc
      */
-    private function assertAttributeSetsAttributesAreEquals(
-        AttributeSetInterface $createdAttributeSet,
-        AttributeSetInterface $existAttributeSet
-    ): void {
-        $expectedAttributeIds = array_keys(
-            $this->attributeManagement->getAttributes(
-                ProductAttributeInterface::ENTITY_TYPE_CODE,
-                $existAttributeSet->getAttributeSetId()
-            )
-        );
-        sort($expectedAttributeIds);
-        $actualAttributeIds = array_keys(
-            $this->attributeManagement->getAttributes(
-                ProductAttributeInterface::ENTITY_TYPE_CODE,
-                $createdAttributeSet->getAttributeSetId()
-            )
-        );
-        sort($actualAttributeIds);
-        $this->assertSame($expectedAttributeIds, $actualAttributeIds);
-    }
-
-    /**
-     * Retrieve default catalog product attribute set ID.
-     *
-     * @return int
-     */
-    private function getCatalogProductDefaultAttributeSetId(): int
+    protected function tearDown(): void
     {
-        return (int)$this->eavConfig
-            ->getEntityType(ProductAttributeInterface::ENTITY_TYPE_CODE)
-            ->getDefaultAttributeSetId();
+        $this->attributeRepository->get('country_of_manufacture')->setIsUserDefined(false);
+        parent::tearDown();
     }
 }

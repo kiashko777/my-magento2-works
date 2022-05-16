@@ -25,7 +25,8 @@ define(['squire'], function (Squire) {
                         }];
                     };
 
-                    observable.subscribe = function () {};
+                    observable.subscribe = function () {
+                    };
 
                     return observable;
                 }
@@ -72,7 +73,8 @@ define(['squire'], function (Squire) {
         try {
             injector.clean();
             injector.remove();
-        } catch (e) {}
+        } catch (e) {
+        }
     });
 
     describe('Magento_Checkout/js/view/summary/cart-items', function () {
@@ -97,10 +99,10 @@ define(['squire'], function (Squire) {
         describe('"setItems" method', function () {
             it('Check for return value.', function () {
                 var items = [{
-                    itemId: 1
-                }, {
-                    itemId: 2
-                }],
+                        itemId: 1
+                    }, {
+                        itemId: 2
+                    }],
                     expectedResult = JSON.stringify([{
                         itemId: 2
                     }]);

@@ -4,15 +4,16 @@
  * See COPYING.txt for license details.
  */
 
-use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\Order;
-use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\Store\Model\Store;
 use Magento\Sales\Model\Order\Address as OrderAddress;
 use Magento\Sales\Model\Order\Item as OrderItem;
 use Magento\Sales\Model\Order\Payment;
+use Magento\Store\Model\Store;
 use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Sales/_files/default_rollback.php');
@@ -20,13 +21,13 @@ Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/product_simp
 Resolver::getInstance()->requireDataFixture('Magento/Customer/_files/customer.php');
 Resolver::getInstance()->requireDataFixture('Magento/Store/_files/second_store.php');
 
-/** @var \Magento\Catalog\Model\Product $product */
+/** @var Product $product */
 
 $addressData = include __DIR__ . '/address_data.php';
 
 $objectManager = Bootstrap::getObjectManager();
 $productRepository = $objectManager->get(ProductRepositoryInterface::class);
-/** @var Magento\Catalog\Model\Product  $product */
+/** @var Magento\Catalog\Model\Product $product */
 $product = $productRepository->get('simple');
 
 $secondStore = Bootstrap::getObjectManager()

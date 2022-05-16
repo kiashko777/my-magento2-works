@@ -60,35 +60,6 @@ class InitialConfigSourceTest extends TestCase
     private $storeManager;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->reader = $objectManager->get(FileReader::class);
-        $this->writer = $objectManager->get(Writer::class);
-        $this->filesystem = $objectManager->get(Filesystem::class);
-        $this->configFilePool = $objectManager->get(ConfigFilePool::class);
-        $this->storeManager = $objectManager->get(StoreManagerInterface::class);
-        $this->config = $this->loadConfig();
-        $this->envConfig = $this->loadEnvConfig();
-        $this->loadDumpConfig();
-        $this->storeManager->reinitStores();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->clearConfig(ConfigFilePool::APP_CONFIG);
-        $this->clearConfig(ConfigFilePool::APP_ENV);
-        $this->writer->saveConfig([ConfigFilePool::APP_CONFIG => $this->config]);
-        $this->writer->saveConfig([ConfigFilePool::APP_ENV => $this->envConfig]);
-        $this->storeManager->reinitStores();
-    }
-
-    /**
      * Test that initial scopes config are loaded if database is available
      *
      * @param array $websites
@@ -133,17 +104,37 @@ class InitialConfigSourceTest extends TestCase
         ];
     }
 
-    private function clearConfig(string $type): void
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
     {
-        $this->filesystem
-            ->getDirectoryWrite(DirectoryList::CONFIG)
-            ->writeFile(
-                $this->configFilePool->getPath($type),
-                "<?" . "php\n return [];\n"
-            );
-        /** @var DeploymentConfig $config */
-        $config = Bootstrap::getObjectManager()->get(DeploymentConfig::class);
-        $config->resetData();
+        $objectManager = Bootstrap::getObjectManager();
+        $this->reader = $objectManager->get(FileReader::class);
+        $this->writer = $objectManager->get(Writer::class);
+        $this->filesystem = $objectManager->get(Filesystem::class);
+        $this->configFilePool = $objectManager->get(ConfigFilePool::class);
+        $this->storeManager = $objectManager->get(StoreManagerInterface::class);
+        $this->config = $this->loadConfig();
+        $this->envConfig = $this->loadEnvConfig();
+        $this->loadDumpConfig();
+        $this->storeManager->reinitStores();
+    }
+
+    /**
+     * @return array
+     */
+    private function loadConfig(): array
+    {
+        return $this->reader->load(ConfigFilePool::APP_CONFIG);
+    }
+
+    /**
+     * @return array
+     */
+    private function loadEnvConfig(): array
+    {
+        return $this->reader->load(ConfigFilePool::APP_ENV);
     }
 
     /**
@@ -167,18 +158,27 @@ class InitialConfigSourceTest extends TestCase
     }
 
     /**
-     * @return array
+     * @inheritdoc
      */
-    private function loadConfig(): array
+    protected function tearDown(): void
     {
-        return $this->reader->load(ConfigFilePool::APP_CONFIG);
+        $this->clearConfig(ConfigFilePool::APP_CONFIG);
+        $this->clearConfig(ConfigFilePool::APP_ENV);
+        $this->writer->saveConfig([ConfigFilePool::APP_CONFIG => $this->config]);
+        $this->writer->saveConfig([ConfigFilePool::APP_ENV => $this->envConfig]);
+        $this->storeManager->reinitStores();
     }
 
-    /**
-     * @return array
-     */
-    private function loadEnvConfig(): array
+    private function clearConfig(string $type): void
     {
-        return $this->reader->load(ConfigFilePool::APP_ENV);
+        $this->filesystem
+            ->getDirectoryWrite(DirectoryList::CONFIG)
+            ->writeFile(
+                $this->configFilePool->getPath($type),
+                "<?" . "php\n return [];\n"
+            );
+        /** @var DeploymentConfig $config */
+        $config = Bootstrap::getObjectManager()->get(DeploymentConfig::class);
+        $config->resetData();
     }
 }

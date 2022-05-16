@@ -3,11 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Session\SaveHandler;
 
 use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\DataObject;
+use Magento\Framework\DB\Adapter\AdapterInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 
-class DbTableTest extends \PHPUnit\Framework\TestCase
+class DbTableTest extends TestCase
 {
     /**
      * Test session ID
@@ -52,21 +59,21 @@ class DbTableTest extends \PHPUnit\Framework\TestCase
     protected $_sessionData;
 
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     protected $_objectManager;
 
     /**
      * Model under test
      *
-     * @var \Magento\Framework\Session\SaveHandler\DbTable
+     * @var DbTable
      */
     protected $_model;
 
     /**
      * Write connection adapter
      *
-     * @var \Magento\Framework\DB\Adapter\AdapterInterface
+     * @var AdapterInterface
      */
     protected $_connection;
 
@@ -80,29 +87,9 @@ class DbTableTest extends \PHPUnit\Framework\TestCase
     /**
      * @return void
      */
-    protected function setUp(): void
-    {
-        $this->_objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->_model = $this->_objectManager->get(\Magento\Framework\Session\SaveHandler\DbTable::class);
-
-        /** @var $resource \Magento\Framework\App\ResourceConnection */
-        $resource = $this->_objectManager->get(\Magento\Framework\App\ResourceConnection::class);
-        $this->_connection = $resource->getConnection();
-        $this->_sessionTable = $resource->getTableName('session');
-
-        // session stores serialized objects with protected properties
-        // we need to test this case to ensure that DB adapter successfully processes "\0" symbols in serialized data
-        foreach ($this->_sourceData as $key => $data) {
-            $this->_sessionData[$key] = new \Magento\Framework\DataObject($data);
-        }
-    }
-
-    /**
-     * @return void
-     */
     public function testCheckConnection()
     {
-        $method = new \ReflectionMethod(\Magento\Framework\Session\SaveHandler\DbTable::class, 'checkConnection');
+        $method = new ReflectionMethod(DbTable::class, 'checkConnection');
         $method->setAccessible(true);
         $this->assertNull($method->invoke($this->_model));
     }
@@ -211,5 +198,25 @@ class DbTableTest extends \PHPUnit\Framework\TestCase
         // We have to use unserialize here.
         // phpcs:ignore Magento2.Security.InsecureFunction
         $this->assertEquals($this->_sourceData[self::SESSION_NEW], unserialize($sessionData));
+    }
+
+    /**
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        $this->_objectManager = Bootstrap::getObjectManager();
+        $this->_model = $this->_objectManager->get(DbTable::class);
+
+        /** @var $resource ResourceConnection */
+        $resource = $this->_objectManager->get(ResourceConnection::class);
+        $this->_connection = $resource->getConnection();
+        $this->_sessionTable = $resource->getTableName('session');
+
+        // session stores serialized objects with protected properties
+        // we need to test this case to ensure that DB adapter successfully processes "\0" symbols in serialized data
+        foreach ($this->_sourceData as $key => $data) {
+            $this->_sessionData[$key] = new DataObject($data);
+        }
     }
 }

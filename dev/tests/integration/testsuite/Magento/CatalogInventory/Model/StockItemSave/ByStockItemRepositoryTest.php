@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogInventory\Model\StockItemSave;
 
 use Magento\Catalog\Api\Data\ProductInterface;
@@ -11,8 +12,9 @@ use Magento\CatalogInventory\Api\Data\StockItemInterface;
 use Magento\CatalogInventory\Api\StockItemRepositoryInterface;
 use Magento\Framework\Api\DataObjectHelper;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class ByStockItemRepositoryTest extends \PHPUnit\Framework\TestCase
+class ByStockItemRepositoryTest extends TestCase
 {
     /**
      * @var ProductRepositoryInterface
@@ -43,15 +45,6 @@ class ByStockItemRepositoryTest extends \PHPUnit\Framework\TestCase
         StockItemInterface::IS_IN_STOCK => false,
     ];
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
-        $this->stockItemRepository = $objectManager->get(StockItemRepositoryInterface::class);
-        $this->dataObjectHelper = $objectManager->get(DataObjectHelper::class);
-        $this->stockItemDataChecker = $objectManager->get(StockItemDataChecker::class);
-    }
-
     /**
      * Test stock item saving via stock item repository
      *
@@ -71,5 +64,14 @@ class ByStockItemRepositoryTest extends \PHPUnit\Framework\TestCase
         $this->stockItemRepository->save($stockItem);
 
         $this->stockItemDataChecker->checkStockItemData('simple', $this->stockItemData);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
+        $this->stockItemRepository = $objectManager->get(StockItemRepositoryInterface::class);
+        $this->dataObjectHelper = $objectManager->get(DataObjectHelper::class);
+        $this->stockItemDataChecker = $objectManager->get(StockItemDataChecker::class);
     }
 }

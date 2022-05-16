@@ -3,7 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework;
+
+use Exception;
 
 /**
  * Provides access to the application for the tests
@@ -17,7 +20,7 @@ class WebApiApplication extends Application
      */
     public function run()
     {
-        throw new \Exception(
+        throw new Exception(
             "Can't start application: purpose of Web API Application is to use classes and models from the application"
             . " and don't run it"
         );

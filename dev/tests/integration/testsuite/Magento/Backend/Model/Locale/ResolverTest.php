@@ -3,28 +3,26 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Backend\Model\Locale;
 
+use Magento\Backend\Model\Session;
+use Magento\Framework\App\RequestInterface;
+use Magento\Framework\DataObject;
 use Magento\Framework\Locale\Resolver;
+use Magento\Framework\Locale\ResolverInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class ResolverTest extends \PHPUnit\Framework\TestCase
+class ResolverTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Locale\ResolverInterface
+     * @var ResolverInterface
      */
     protected $_model;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->_model = Bootstrap::getObjectManager()->create(
-            \Magento\Backend\Model\Locale\Resolver::class
-        );
-    }
 
     /**
      * @covers \Magento\Backend\Model\Locale\Resolver::setLocale
@@ -35,11 +33,24 @@ class ResolverTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Check set locale
+     *
+     * @param string $localeCodeToCheck
+     * @return void
+     */
+    protected function _checkSetLocale($localeCodeToCheck)
+    {
+        $this->_model->setLocale();
+        $localeCode = $this->_model->getLocale();
+        $this->assertEquals($localeCode, $localeCodeToCheck);
+    }
+
+    /**
      * @covers \Magento\Backend\Model\Locale\Resolver::setLocale
      */
     public function testSetLocaleWithBaseInterfaceLocale()
     {
-        $user = new \Magento\Framework\DataObject();
+        $user = new DataObject();
         $session = Bootstrap::getObjectManager()->get(
             \Magento\Backend\Model\Auth\Session::class
         );
@@ -58,7 +69,7 @@ class ResolverTest extends \PHPUnit\Framework\TestCase
     public function testSetLocaleWithSessionLocale()
     {
         Bootstrap::getObjectManager()->get(
-            \Magento\Backend\Model\Session::class
+            Session::class
         )->setSessionLocale(
             'es_ES'
         );
@@ -71,7 +82,7 @@ class ResolverTest extends \PHPUnit\Framework\TestCase
     public function testSetLocaleWithRequestLocale()
     {
         $request = Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\App\RequestInterface::class);
+            ->get(RequestInterface::class);
         $request->setPostValue(['locale' => 'de_DE']);
         $this->_checkSetLocale('de_DE');
     }
@@ -87,10 +98,11 @@ class ResolverTest extends \PHPUnit\Framework\TestCase
     public function testSetLocaleWithParameter(
         ?string $localeParam,
         ?string $localeRequestParam,
-        string $localeExpected
-    ) {
+        string  $localeExpected
+    )
+    {
         $request = Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\App\RequestInterface::class);
+            ->get(RequestInterface::class);
         $request->setPostValue(['locale' => $localeRequestParam]);
         $this->_model->setLocale($localeParam);
         $this->assertEquals($localeExpected, $this->_model->getLocale());
@@ -108,16 +120,11 @@ class ResolverTest extends \PHPUnit\Framework\TestCase
         ];
     }
 
-    /**
-     * Check set locale
-     *
-     * @param string $localeCodeToCheck
-     * @return void
-     */
-    protected function _checkSetLocale($localeCodeToCheck)
+    protected function setUp(): void
     {
-        $this->_model->setLocale();
-        $localeCode = $this->_model->getLocale();
-        $this->assertEquals($localeCode, $localeCodeToCheck);
+        parent::setUp();
+        $this->_model = Bootstrap::getObjectManager()->create(
+            \Magento\Backend\Model\Locale\Resolver::class
+        );
     }
 }

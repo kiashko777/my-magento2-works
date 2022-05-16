@@ -6,9 +6,9 @@
 
 declare(strict_types=1);
 
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Directory\Model\Region as RegionModel;
 use Magento\Directory\Model\ResourceModel\Region as RegionResource;
+use Magento\TestFramework\Helper\Bootstrap;
 
 $objectManager = Bootstrap::getObjectManager();
 

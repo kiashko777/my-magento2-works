@@ -9,14 +9,18 @@ declare(strict_types=1);
 namespace Magento\Catalog\Ui\DataProvider\Product\Form\Modifier;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Attribute\Backend\AbstractLayoutUpdate;
 use Magento\Catalog\Model\Locator\LocatorInterface;
+use Magento\Catalog\Model\Product\Attribute\Backend\LayoutUpdate as LayoutUpdateAttribute;
+use Magento\Catalog\Model\Product\Attribute\LayoutUpdateManager;
+use Magento\Catalog\Ui\DataProvider\Product\Form\Modifier\Eav as EavModifier;
 use Magento\Store\Api\Data\StoreInterface;
 use Magento\TestFramework\Catalog\Model\ProductLayoutUpdateManager;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Ui\DataProvider\Mapper\FormElement;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Magento\Catalog\Model\Product\Attribute\Backend\LayoutUpdate as LayoutUpdateAttribute;
-use Magento\Catalog\Ui\DataProvider\Product\Form\Modifier\Eav as EavModifier;
+use Throwable;
 
 /**
  * Test the modifier.
@@ -54,50 +58,11 @@ class LayoutUpdateTest extends TestCase
     private $fakeFiles;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        Bootstrap::getObjectManager()->configure([
-            'preferences' => [
-                \Magento\Catalog\Model\Product\Attribute\LayoutUpdateManager::class =>
-                    \Magento\TestFramework\Catalog\Model\ProductLayoutUpdateManager::class
-            ]
-        ]);
-        $this->locator = $this->getMockForAbstractClass(LocatorInterface::class);
-        $store = Bootstrap::getObjectManager()->create(StoreInterface::class);
-        $this->locator->method('getStore')->willReturn($store);
-        $this->modifier = Bootstrap::getObjectManager()->create(LayoutUpdate::class, ['locator' => $this->locator]);
-        $this->repo = Bootstrap::getObjectManager()->create(ProductRepositoryInterface::class);
-        $this->eavModifier = Bootstrap::getObjectManager()->create(
-            EavModifier::class,
-            [
-                'locator' => $this->locator,
-                'formElementMapper' => Bootstrap::getObjectManager()->create(
-                    \Magento\Ui\DataProvider\Mapper\FormElement::class,
-                    [
-                        'mappings' => [
-                            "text" => "input",
-                            "hidden" => "input",
-                            "boolean" => "checkbox",
-                            "media_image" => "image",
-                            "price" => "input",
-                            "weight" => "input",
-                            "gallery" => "image"
-                        ]
-                    ]
-                )
-            ]
-        );
-        $this->fakeFiles = Bootstrap::getObjectManager()->get(ProductLayoutUpdateManager::class);
-    }
-
-    /**
      * Test that data is being modified accordingly.
      *
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
      * @return void
-     * @throws \Throwable
+     * @throws Throwable
      */
     public function testModifyData(): void
     {
@@ -110,6 +75,59 @@ class LayoutUpdateTest extends TestCase
             LayoutUpdateAttribute::VALUE_USE_UPDATE_XML,
             $data[$product->getId()]['product']['custom_layout_update_file']
         );
+    }
+
+    /**
+     * Check that entity specific options are returned.
+     *
+     * @return void
+     * @throws Throwable
+     * @magentoDataFixture Magento/Catalog/_files/product_simple.php
+     */
+    public function testEntitySpecificData(): void
+    {
+        //Testing a category without layout xml
+        $product = $this->repo->get('simple');
+        $this->locator->method('getProduct')->willReturn($product);
+        $this->fakeFiles->setFakeFiles((int)$product->getId(), ['testOne', 'test_two']);
+
+        $meta = $this->eavModifier->modifyMeta([]);
+        $list = $this->extractCustomLayoutOptions($meta);
+        $expectedList = [
+            [
+                'label' => 'No update',
+                'value' => AbstractLayoutUpdate::VALUE_NO_UPDATE,
+                '__disableTmpl' => true
+            ],
+            ['label' => 'testOne', 'value' => 'testOne', '__disableTmpl' => true],
+            ['label' => 'test_two', 'value' => 'test_two', '__disableTmpl' => true]
+        ];
+        sort($expectedList);
+        sort($list);
+        $this->assertEquals($expectedList, $list);
+
+        //Products with old layout xml
+        $product->setCustomAttribute('custom_layout_update', 'test');
+        $this->fakeFiles->setFakeFiles((int)$product->getId(), ['test3']);
+
+        $meta = $this->eavModifier->modifyMeta([]);
+        $list = $this->extractCustomLayoutOptions($meta);
+        $expectedList = [
+            [
+                'label' => 'No update',
+                'value' => AbstractLayoutUpdate::VALUE_NO_UPDATE,
+                '__disableTmpl' => true
+            ],
+            [
+                'label' => 'Use existing',
+                'value' => LayoutUpdateAttribute::VALUE_USE_UPDATE_XML,
+                '__disableTmpl' => true
+            ],
+            ['label' => 'test3', 'value' => 'test3', '__disableTmpl' => true],
+        ];
+        sort($expectedList);
+        sort($list);
+        $this->assertEquals($expectedList, $list);
     }
 
     /**
@@ -139,55 +157,41 @@ class LayoutUpdateTest extends TestCase
     }
 
     /**
-     * Check that entity specific options are returned.
-     *
-     * @return void
-     * @throws \Throwable
-     * @magentoDataFixture Magento/Catalog/_files/product_simple.php
+     * @inheritDoc
      */
-    public function testEntitySpecificData(): void
+    protected function setUp(): void
     {
-        //Testing a category without layout xml
-        $product = $this->repo->get('simple');
-        $this->locator->method('getProduct')->willReturn($product);
-        $this->fakeFiles->setFakeFiles((int)$product->getId(), ['testOne', 'test_two']);
-
-        $meta = $this->eavModifier->modifyMeta([]);
-        $list = $this->extractCustomLayoutOptions($meta);
-        $expectedList = [
+        Bootstrap::getObjectManager()->configure([
+            'preferences' => [
+                LayoutUpdateManager::class =>
+                    ProductLayoutUpdateManager::class
+            ]
+        ]);
+        $this->locator = $this->getMockForAbstractClass(LocatorInterface::class);
+        $store = Bootstrap::getObjectManager()->create(StoreInterface::class);
+        $this->locator->method('getStore')->willReturn($store);
+        $this->modifier = Bootstrap::getObjectManager()->create(LayoutUpdate::class, ['locator' => $this->locator]);
+        $this->repo = Bootstrap::getObjectManager()->create(ProductRepositoryInterface::class);
+        $this->eavModifier = Bootstrap::getObjectManager()->create(
+            EavModifier::class,
             [
-                'label' => 'No update',
-                'value' => \Magento\Catalog\Model\Attribute\Backend\AbstractLayoutUpdate::VALUE_NO_UPDATE,
-                '__disableTmpl' => true
-            ],
-            ['label' => 'testOne', 'value' => 'testOne', '__disableTmpl' => true],
-            ['label' => 'test_two', 'value' => 'test_two', '__disableTmpl' => true]
-        ];
-        sort($expectedList);
-        sort($list);
-        $this->assertEquals($expectedList, $list);
-
-        //Products with old layout xml
-        $product->setCustomAttribute('custom_layout_update', 'test');
-        $this->fakeFiles->setFakeFiles((int)$product->getId(), ['test3']);
-
-        $meta = $this->eavModifier->modifyMeta([]);
-        $list = $this->extractCustomLayoutOptions($meta);
-        $expectedList = [
-            [
-                'label' => 'No update',
-                'value' => \Magento\Catalog\Model\Attribute\Backend\AbstractLayoutUpdate::VALUE_NO_UPDATE,
-                '__disableTmpl' => true
-            ],
-            [
-                'label' => 'Use existing',
-                'value' => LayoutUpdateAttribute::VALUE_USE_UPDATE_XML,
-                '__disableTmpl' => true
-            ],
-            ['label' => 'test3', 'value' => 'test3', '__disableTmpl' => true],
-        ];
-        sort($expectedList);
-        sort($list);
-        $this->assertEquals($expectedList, $list);
+                'locator' => $this->locator,
+                'formElementMapper' => Bootstrap::getObjectManager()->create(
+                    FormElement::class,
+                    [
+                        'mappings' => [
+                            "text" => "input",
+                            "hidden" => "input",
+                            "boolean" => "checkbox",
+                            "media_image" => "image",
+                            "price" => "input",
+                            "weight" => "input",
+                            "gallery" => "image"
+                        ]
+                    ]
+                )
+            ]
+        );
+        $this->fakeFiles = Bootstrap::getObjectManager()->get(ProductLayoutUpdateManager::class);
     }
 }

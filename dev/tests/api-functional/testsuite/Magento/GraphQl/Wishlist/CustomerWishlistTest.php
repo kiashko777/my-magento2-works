@@ -7,11 +7,14 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Wishlist;
 
+use Exception;
+use Magento\Framework\Exception\AuthenticationException;
 use Magento\Integration\Api\CustomerTokenServiceInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
 use Magento\Wishlist\Model\Item;
 use Magento\Wishlist\Model\ResourceModel\Wishlist\CollectionFactory;
+use Magento\Wishlist\Model\Wishlist;
 
 class CustomerWishlistTest extends GraphQlAbstract
 {
@@ -25,19 +28,13 @@ class CustomerWishlistTest extends GraphQlAbstract
      */
     private $wishlistCollectionFactory;
 
-    protected function setUp(): void
-    {
-        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
-        $this->wishlistCollectionFactory = Bootstrap::getObjectManager()->get(CollectionFactory::class);
-    }
-
     /**
      * @magentoConfigFixture default_store wishlist/general/active 1
      * @magentoApiDataFixture Magento/Wishlist/_files/wishlist.php
      */
     public function testCustomerWishlist(): void
     {
-        /** @var \Magento\Wishlist\Model\Wishlist $wishlist */
+        /** @var Wishlist $wishlist */
         $collection = $this->wishlistCollectionFactory->create()->filterByCustomerId(1);
 
         /** @var Item $wishlistItem */
@@ -75,6 +72,18 @@ QUERY;
     }
 
     /**
+     * @param string $email
+     * @param string $password
+     * @return array
+     * @throws AuthenticationException
+     */
+    private function getCustomerAuthHeaders(string $email, string $password): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($email, $password);
+        return ['Authorization' => 'Bearer ' . $customerToken];
+    }
+
+    /**
      * @magentoConfigFixture default_store wishlist/general/active 1
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      */
@@ -106,7 +115,7 @@ QUERY;
      */
     public function testGuestCannotGetWishlist()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The current customer isn\'t authorized.');
 
         $query =
@@ -274,7 +283,7 @@ QUERY;
      */
     public function testCustomerCannotGetWishlistWhenDisabled()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The wishlist configuration is currently disabled.');
 
         $query =
@@ -297,15 +306,9 @@ QUERY;
         );
     }
 
-    /**
-     * @param string $email
-     * @param string $password
-     * @return array
-     * @throws \Magento\Framework\Exception\AuthenticationException
-     */
-    private function getCustomerAuthHeaders(string $email, string $password): array
+    protected function setUp(): void
     {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($email, $password);
-        return ['Authorization' => 'Bearer ' . $customerToken];
+        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
+        $this->wishlistCollectionFactory = Bootstrap::getObjectManager()->get(CollectionFactory::class);
     }
 }

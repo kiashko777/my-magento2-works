@@ -7,15 +7,20 @@
  */
 declare(strict_types=1);
 
-/** @var \Magento\Store\Model\Store $store */
-$store = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Store\Model\Store::class);
+/** @var Store $store */
+
+use Magento\Store\Model\Store;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$store = Bootstrap::getObjectManager()->create(Store::class);
 if (!$store->load('inactive_store', 'code')->getId()) {
-    $websiteId = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-        \Magento\Store\Model\StoreManagerInterface::class
+    $websiteId = Bootstrap::getObjectManager()->get(
+        StoreManagerInterface::class
     )->getWebsite()
         ->getId();
-    $groupId = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-        \Magento\Store\Model\StoreManagerInterface::class
+    $groupId = Bootstrap::getObjectManager()->get(
+        StoreManagerInterface::class
     )->getWebsite()->getDefaultGroupId();
     $store->setCode(
         'inactive_store'

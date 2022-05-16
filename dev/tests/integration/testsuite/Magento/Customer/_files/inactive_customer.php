@@ -3,8 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-$customer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Customer::class
+
+use Magento\Customer\Model\Customer;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$customer = Bootstrap::getObjectManager()->create(
+    Customer::class
 );
 $customer->setWebsiteId(
     1

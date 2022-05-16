@@ -7,10 +7,15 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\UrlRewrite;
 
+use Exception;
 use Magento\Catalog\Api\CategoryRepositoryInterface;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Cms\Api\Data\PageInterface;
+use Magento\Cms\Model\Page;
+use Magento\CmsUrlRewrite\Model\CmsPageUrlPathGenerator;
 use Magento\Framework\Exception\AlreadyExistsException;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
@@ -26,14 +31,6 @@ class RouteTest extends GraphQlAbstract
 {
     /** @var ObjectManager */
     private $objectManager;
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
 
     /**
      * Tests if target_path(relative_url) is resolved for Products entity
@@ -53,6 +50,109 @@ class RouteTest extends GraphQlAbstract
         $this->assertEquals($expectedUrls->getRequestPath(), $response['route']['relative_url']);
         $this->assertEquals($expectedUrls->getRedirectType(), $response['route']['redirect_code']);
         $this->assertEquals(strtoupper($expectedUrls->getEntityType()), $response['route']['type']);
+    }
+
+    /**
+     * @param string $urlKey
+     * @return array
+     * @throws Exception
+     */
+    public function getRouteQueryResponse(string $urlKey): array
+    {
+        $routeQuery
+            = <<<QUERY
+{
+  route(url:"{$urlKey}")
+  {
+    __typename
+    ...on SimpleProduct {
+      name
+      sku
+      relative_url
+      redirect_code
+      type
+    }
+    ...on CategoryTree {
+        name
+        uid
+        relative_url
+        redirect_code
+        type
+    }
+    ...on CmsPage {
+    	title
+        url_key
+        page_layout
+        content
+        content_heading
+        relative_url
+        redirect_code
+        type
+    }
+  }
+}
+QUERY;
+        return $this->graphQlQuery($routeQuery);
+    }
+
+    /**
+     * @param string $productSku
+     * @return string
+     * @throws Exception
+     */
+    public function getProductUrlKey(string $productSku): string
+    {
+        $query
+            = <<<QUERY
+{
+    products(filter: {sku: {eq: "{$productSku}"}})
+    {
+        items {
+               url_key
+               url_suffix
+            }
+    }
+}
+QUERY;
+        $response = $this->graphQlQuery($query);
+        return $response['products']['items'][0]['url_key'] . $response['products']['items'][0]['url_suffix'];
+    }
+
+    /**
+     * @param ProductInterface $product
+     * @param array $response
+     */
+    private function productTestAssertion(ProductInterface $product, array $response)
+    {
+        $this->assertArrayHasKey('route', $response);
+        $this->assertEquals($product->getName(), $response['route']['name']);
+        $this->assertEquals($product->getSku(), $response['route']['sku']);
+    }
+
+    /**
+     * @param $productSku
+     * @return UrlRewriteService
+     * @throws NoSuchEntityException
+     */
+    private function getProductUrlRewriteData($productSku): UrlRewriteService
+    {
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $product = $productRepository->get($productSku, false, null, true);
+        $storeId = $product->getStoreId();
+
+        $urlPath = $this->getProductUrlKey($productSku);
+
+        /** @var  UrlFinderInterface $urlFinder */
+        $urlFinder = $this->objectManager->get(UrlFinderInterface::class);
+        /** @var UrlRewriteService $actualUrls */
+        $actualUrls = $urlFinder->findOneByData(
+            [
+                'request_path' => $urlPath,
+                'store_id' => $storeId
+            ]
+        );
+        return $actualUrls;
     }
 
     /**
@@ -183,15 +283,15 @@ QUERY;
      */
     public function testCMSPageUrlResolver()
     {
-        /** @var \Magento\Cms\Model\Page $page */
-        $page = $this->objectManager->get(\Magento\Cms\Model\Page::class);
+        /** @var Page $page */
+        $page = $this->objectManager->get(Page::class);
         $page->load('page100');
         $cmsPageData = $page->getData();
 
-        /** @var \Magento\CmsUrlRewrite\Model\CmsPageUrlPathGenerator $urlPathGenerator */
-        $urlPathGenerator = $this->objectManager->get(\Magento\CmsUrlRewrite\Model\CmsPageUrlPathGenerator::class);
+        /** @var CmsPageUrlPathGenerator $urlPathGenerator */
+        $urlPathGenerator = $this->objectManager->get(CmsPageUrlPathGenerator::class);
 
-        /** @param \Magento\Cms\Api\Data\PageInterface $page */
+        /** @param PageInterface $page */
         $targetPath = $urlPathGenerator->getCanonicalUrlPath($page);
 
         $response = $this->getRouteQueryResponse($targetPath);
@@ -207,109 +307,6 @@ QUERY;
         $this->assertEquals($urlPath, $response['route']['relative_url']);
         $this->assertEquals(0, $response['route']['redirect_code']);
         $this->assertEquals('CMS_PAGE', $response['route']['type']);
-    }
-
-    /**
-     * @param string $urlKey
-     * @return array
-     * @throws \Exception
-     */
-    public function getRouteQueryResponse(string $urlKey): array
-    {
-        $routeQuery
-            = <<<QUERY
-{
-  route(url:"{$urlKey}")
-  {
-    __typename
-    ...on SimpleProduct {
-      name
-      sku
-      relative_url
-      redirect_code
-      type
-    }
-    ...on CategoryTree {
-        name
-        uid
-        relative_url
-        redirect_code
-        type
-    }
-    ...on CmsPage {
-    	title
-        url_key
-        page_layout
-        content
-        content_heading
-        relative_url
-        redirect_code
-        type
-    }
-  }
-}
-QUERY;
-        return $this->graphQlQuery($routeQuery);
-    }
-
-    /**
-     * @param string $productSku
-     * @return string
-     * @throws \Exception
-     */
-    public function getProductUrlKey(string $productSku): string
-    {
-        $query
-            = <<<QUERY
-{
-    products(filter: {sku: {eq: "{$productSku}"}})
-    {
-        items {
-               url_key
-               url_suffix
-            }
-    }
-}
-QUERY;
-        $response = $this->graphQlQuery($query);
-        return $response['products']['items'][0]['url_key'] . $response['products']['items'][0]['url_suffix'];
-    }
-
-    /**
-     * @param ProductInterface $product
-     * @param array $response
-     */
-    private function productTestAssertion(ProductInterface $product, array $response)
-    {
-        $this->assertArrayHasKey('route', $response);
-        $this->assertEquals($product->getName(), $response['route']['name']);
-        $this->assertEquals($product->getSku(), $response['route']['sku']);
-    }
-
-    /**
-     * @param $productSku
-     * @return UrlRewriteService
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
-     */
-    private function getProductUrlRewriteData($productSku): UrlRewriteService
-    {
-        /** @var ProductRepositoryInterface $productRepository */
-        $productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $product = $productRepository->get($productSku, false, null, true);
-        $storeId = $product->getStoreId();
-
-        $urlPath = $this->getProductUrlKey($productSku);
-
-        /** @var  UrlFinderInterface $urlFinder */
-        $urlFinder = $this->objectManager->get(UrlFinderInterface::class);
-        /** @var UrlRewriteService $actualUrls */
-        $actualUrls = $urlFinder->findOneByData(
-            [
-                'request_path' => $urlPath,
-                'store_id' => $storeId
-            ]
-        );
-        return $actualUrls;
     }
 
     /**
@@ -382,6 +379,33 @@ QUERY;
         // rolling back changes
         $urlRewrite->setRequestPath($requestPath);
         $urlRewriteResourceModel->save($urlRewrite);
+    }
+
+    /**
+     * Return UrlRewrite model instance by request_path
+     *
+     * @param string $requestPath
+     * @param int $storeId
+     * @return UrlRewriteModel
+     */
+    private function getUrlRewriteModelByRequestPath(string $requestPath, int $storeId): UrlRewriteModel
+    {
+        /** @var  UrlFinderInterface $urlFinder */
+        $urlFinder = $this->objectManager->get(UrlFinderInterface::class);
+
+        /** @var UrlRewriteService $urlRewriteService */
+        $urlRewriteService = $urlFinder->findOneByData(
+            [
+                'request_path' => $requestPath,
+                'store_id' => $storeId
+            ]
+        );
+
+        /** @var UrlRewriteModel $urlRewrite */
+        $urlRewrite = $this->objectManager->create(UrlRewriteModel::class);
+        $urlRewrite->load($urlRewriteService->getUrlRewriteId());
+
+        return $urlRewrite;
     }
 
     public function urlRewriteEntitiesDataProvider(): array
@@ -478,29 +502,10 @@ QUERY;
     }
 
     /**
-     * Return UrlRewrite model instance by request_path
-     *
-     * @param string $requestPath
-     * @param int $storeId
-     * @return UrlRewriteModel
+     * {@inheritdoc}
      */
-    private function getUrlRewriteModelByRequestPath(string $requestPath, int $storeId): UrlRewriteModel
+    protected function setUp(): void
     {
-        /** @var  UrlFinderInterface $urlFinder */
-        $urlFinder = $this->objectManager->get(UrlFinderInterface::class);
-
-        /** @var UrlRewriteService $urlRewriteService */
-        $urlRewriteService = $urlFinder->findOneByData(
-            [
-                'request_path' => $requestPath,
-                'store_id' => $storeId
-            ]
-        );
-
-        /** @var UrlRewriteModel $urlRewrite */
-        $urlRewrite = $this->objectManager->create(UrlRewriteModel::class);
-        $urlRewrite->load($urlRewriteService->getUrlRewriteId());
-
-        return $urlRewrite;
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

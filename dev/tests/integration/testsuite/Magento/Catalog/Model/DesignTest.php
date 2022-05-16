@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Model;
 
+use DateTime;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\TranslateInterface;
@@ -32,15 +33,6 @@ class DesignTest extends TestCase
      * @var ProductRepositoryInterface
      */
     private $productRepository;
-
-    /**
-     * @inheriDoc
-     */
-    protected function setUp(): void
-    {
-        $this->model = Bootstrap::getObjectManager()->create(Design::class);
-        $this->productRepository = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class);
-    }
 
     /**
      * @dataProvider getThemeModel
@@ -69,7 +61,8 @@ class DesignTest extends TestCase
     public function testGetDesignSettingsForProductWithScheduleDesign(
         array $designSettings,
         array $expectedSetting
-    ): void {
+    ): void
+    {
         $product = $this->productRepository->get('simple_with_custom_design', false, null, true);
         $this->applyScheduleDesignUpdate($product, $designSettings);
         $settings = $this->model->getDesignSettings($product);
@@ -78,11 +71,26 @@ class DesignTest extends TestCase
     }
 
     /**
+     * Apply provided setting to product scheduled design update.
+     *
+     * @param ProductInterface $product
+     * @param array $designSettings
+     * @return void
+     */
+    private function applyScheduleDesignUpdate(ProductInterface $product, array $designSettings): void
+    {
+        $product->setCustomLayout($designSettings['custom_layout']);
+        $product->setCustomDesign($designSettings['custom_design']);
+        $product->setCustomDesignFrom($designSettings['custom_design_from']);
+        $product->setCustomDesignTo($designSettings['custom_design_to']);
+    }
+
+    /**
      * @return array[]
      */
     public function getDesignSettingsForProductWithScheduleDesignTest(): array
     {
-        $datetime = new \DateTime();
+        $datetime = new DateTime();
         $datetime->modify('-10 day');
         $fromApplied = $datetime->format('Y-m-d');
         $datetime->modify('+20 day');
@@ -175,17 +183,11 @@ class DesignTest extends TestCase
     }
 
     /**
-     * Apply provided setting to product scheduled design update.
-     *
-     * @param ProductInterface $product
-     * @param array $designSettings
-     * @return void
+     * @inheriDoc
      */
-    private function applyScheduleDesignUpdate(ProductInterface $product, array $designSettings): void
+    protected function setUp(): void
     {
-        $product->setCustomLayout($designSettings['custom_layout']);
-        $product->setCustomDesign($designSettings['custom_design']);
-        $product->setCustomDesignFrom($designSettings['custom_design_from']);
-        $product->setCustomDesignTo($designSettings['custom_design_to']);
+        $this->model = Bootstrap::getObjectManager()->create(Design::class);
+        $this->productRepository = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class);
     }
 }

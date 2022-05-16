@@ -63,21 +63,6 @@ class PriceTest extends TestCase
     private $executeInStoreContext;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->priceModel = $this->objectManager->create(Price::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->getPriceIndexDataByProductId = $this->objectManager->get(GetPriceIndexDataByProductId::class);
-        $this->websiteRepository = $this->objectManager->get(WebsiteRepositoryInterface::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-        $this->executeInStoreContext = $this->objectManager->get(ExecuteInStoreContext::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/ConfigurableProduct/_files/tax_rule.php
      * @magentoDataFixture Magento/ConfigurableProduct/_files/product_configurable.php
      * @return void
@@ -97,6 +82,54 @@ class PriceTest extends TestCase
             'simple_20',
             ['price' => 20, 'final_price' => 20, 'min_price' => 20, 'max_price' => 20, 'tier_price' => null]
         );
+    }
+
+    /**
+     * Asserts product final price.
+     *
+     * @param float $expectedPrice
+     * @param ProductInterface|null $product
+     * @return void
+     */
+    public function assertPrice(float $expectedPrice, ?ProductInterface $product = null): void
+    {
+        $product = $product ?: $this->getProduct('configurable');
+        // final price is the lowest price of configurable variations
+        $this->assertEquals(
+            round($expectedPrice, 2),
+            round($this->priceModel->getFinalPrice(1, $product), 2)
+        );
+    }
+
+    /**
+     * Loads product by sku.
+     *
+     * @param string $sku
+     * @return ProductInterface
+     */
+    private function getProduct(string $sku): ProductInterface
+    {
+        return $this->productRepository->get($sku, false, $this->storeManager->getStore()->getId(), true);
+    }
+
+    /**
+     * Asserts price data in index table.
+     *
+     * @param string $sku
+     * @param array $expectedPrices
+     * @return void
+     */
+    public function assertIndexTableData(string $sku, array $expectedPrices): void
+    {
+        $data = $this->getPriceIndexDataByProductId->execute(
+            (int)$this->getProduct($sku)->getId(),
+            Group::NOT_LOGGED_IN_ID,
+            (int)$this->storeManager->getStore()->getWebsiteId()
+        );
+        $data = reset($data);
+        foreach ($expectedPrices as $column => $price) {
+            $this->assertEquals($price, $data[$column], $column);
+        }
     }
 
     /**
@@ -216,50 +249,17 @@ class PriceTest extends TestCase
     }
 
     /**
-     * Asserts price data in index table.
-     *
-     * @param string $sku
-     * @param array $expectedPrices
-     * @return void
+     * @inheritdoc
      */
-    public function assertIndexTableData(string $sku, array $expectedPrices): void
+    protected function setUp(): void
     {
-        $data = $this->getPriceIndexDataByProductId->execute(
-            (int)$this->getProduct($sku)->getId(),
-            Group::NOT_LOGGED_IN_ID,
-            (int)$this->storeManager->getStore()->getWebsiteId()
-        );
-        $data = reset($data);
-        foreach ($expectedPrices as $column => $price) {
-            $this->assertEquals($price, $data[$column], $column);
-        }
-    }
-
-    /**
-     * Asserts product final price.
-     *
-     * @param float $expectedPrice
-     * @param ProductInterface|null $product
-     * @return void
-     */
-    public function assertPrice(float $expectedPrice, ?ProductInterface $product = null): void
-    {
-        $product = $product ?: $this->getProduct('configurable');
-        // final price is the lowest price of configurable variations
-        $this->assertEquals(
-            round($expectedPrice, 2),
-            round($this->priceModel->getFinalPrice(1, $product), 2)
-        );
-    }
-
-    /**
-     * Loads product by sku.
-     *
-     * @param string $sku
-     * @return ProductInterface
-     */
-    private function getProduct(string $sku): ProductInterface
-    {
-        return $this->productRepository->get($sku, false, $this->storeManager->getStore()->getId(), true);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->priceModel = $this->objectManager->create(Price::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->getPriceIndexDataByProductId = $this->objectManager->get(GetPriceIndexDataByProductId::class);
+        $this->websiteRepository = $this->objectManager->get(WebsiteRepositoryInterface::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
+        $this->executeInStoreContext = $this->objectManager->get(ExecuteInStoreContext::class);
     }
 }

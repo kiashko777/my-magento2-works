@@ -52,6 +52,23 @@ class NewActionHtmlTest extends AbstractBackendController
     }
 
     /**
+     * Prepare request
+     *
+     * @return void
+     */
+    private function prepareRequest(): void
+    {
+        $this->getRequest()->setParams(
+            [
+                'id' => 1,
+                'form' => $this->requestFormName,
+                'form_namespace' => $this->formName,
+                'type' => 'Magento\SalesRule\Model\Rule\Condition\Product|quote_item_price',
+            ]
+        )->setMethod('POST');
+    }
+
+    /**
      * @inheritdoc
      */
     public function testAclHasAccess()
@@ -67,22 +84,5 @@ class NewActionHtmlTest extends AbstractBackendController
     {
         $this->prepareRequest();
         parent::testAclNoAccess();
-    }
-
-    /**
-     * Prepare request
-     *
-     * @return void
-     */
-    private function prepareRequest(): void
-    {
-        $this->getRequest()->setParams(
-            [
-                'id' => 1,
-                'form' => $this->requestFormName,
-                'form_namespace' => $this->formName,
-                'type' => 'Magento\SalesRule\Model\Rule\Condition\Product|quote_item_price',
-            ]
-        )->setMethod('POST');
     }
 }

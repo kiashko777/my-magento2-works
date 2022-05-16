@@ -6,16 +6,34 @@
 
 namespace Magento\Tax\Model\Sales\Total\Quote;
 
-use Magento\Framework\App\Config\ScopeConfigInterface;
-use Magento\Quote\Model\Quote;
-use Magento\Tax\Model\Config;
-use Magento\Tax\Model\Calculation;
-use Magento\Quote\Model\Quote\Item\Updater;
-use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Customer\Api\AccountManagementInterface;
+use Magento\Customer\Api\AddressRepositoryInterface;
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Api\Data\CustomerInterface;
+use Magento\Customer\Api\Data\GroupInterfaceFactory;
+use Magento\Customer\Api\GroupManagementInterface;
+use Magento\Customer\Api\GroupRepositoryInterface;
+use Magento\Customer\Model\Address;
+use Magento\Customer\Model\Customer;
+use Magento\Customer\Model\GroupManagement;
 use Magento\Framework\Api\Filter;
 use Magento\Framework\Api\Search\FilterGroup;
 use Magento\Framework\Api\SearchCriteriaInterface;
+use Magento\Framework\App\Config\ReinitableConfigInterface;
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\Quote\Item\Updater;
+use Magento\SalesRule\Model\Rule;
+use Magento\Tax\Model\Calculation;
+use Magento\Tax\Model\Calculation\Rate;
+use Magento\Tax\Model\ClassModel;
+use Magento\Tax\Model\Config;
 
 /**
  * Setup utility for quote
@@ -24,6 +42,28 @@ use Magento\Framework\Api\SearchCriteriaInterface;
  */
 class SetupUtil
 {
+    const TAX_RATE_TX = 'tax_rate_tx';
+    const TAX_RATE_AUSTIN = 'tax_rate_austin';
+    const TAX_RATE_SHIPPING = 'tax_rate_shipping';
+    const TAX_STORE_RATE = 'tax_store_rate';
+    const REGION_TX = '57';
+    const REGION_CA = '12';
+    const COUNTRY_US = 'US';
+    const AUSTIN_POST_CODE = '79729';
+    const PRODUCT_TAX_CLASS_1 = 'product_tax_class_1';
+    const PRODUCT_TAX_CLASS_2 = 'product_tax_class_2';
+    const SHIPPING_TAX_CLASS = 'shipping_tax_class';
+    const CUSTOMER_TAX_CLASS_1 = 'customer_tax_class_1';
+    const CUSTOMER_PASSWORD = 'password';
+    const CONFIG_OVERRIDES = 'config_overrides';
+    const TAX_RATE_OVERRIDES = 'tax_rate_overrides';
+    const TAX_RULE_OVERRIDES = 'tax_rule_overrides';
+    /**
+     * Object manager
+     *
+     * @var ObjectManagerInterface
+     */
+    public $objectManager;
     /**
      * Default tax related configurations
      *
@@ -40,16 +80,6 @@ class SetupUtil
         Config::XML_PATH_ALGORITHM => Calculation::CALC_TOTAL_BASE,
         //@TODO: add config for cross border trade
     ];
-
-    const TAX_RATE_TX = 'tax_rate_tx';
-    const TAX_RATE_AUSTIN = 'tax_rate_austin';
-    const TAX_RATE_SHIPPING = 'tax_rate_shipping';
-    const TAX_STORE_RATE = 'tax_store_rate';
-    const REGION_TX = '57';
-    const REGION_CA = '12';
-    const COUNTRY_US = 'US';
-    const AUSTIN_POST_CODE = '79729';
-
     /**
      * Tax rates
      *
@@ -97,11 +127,6 @@ class SetupUtil
             'id' => null,
         ],
     ];
-
-    const PRODUCT_TAX_CLASS_1 = 'product_tax_class_1';
-    const PRODUCT_TAX_CLASS_2 = 'product_tax_class_2';
-    const SHIPPING_TAX_CLASS = 'shipping_tax_class';
-
     /**
      * List of product tax class that will be created
      *
@@ -112,10 +137,6 @@ class SetupUtil
         self::PRODUCT_TAX_CLASS_2 => null,
         self::SHIPPING_TAX_CLASS => null,
     ];
-
-    const CUSTOMER_TAX_CLASS_1 = 'customer_tax_class_1';
-    const CUSTOMER_PASSWORD = 'password';
-
     /**
      * List of customer tax class to be created
      *
@@ -124,18 +145,12 @@ class SetupUtil
     protected $customerTaxClasses = [
         self::CUSTOMER_TAX_CLASS_1 => null,
     ];
-
     /**
      * List of tax rules
      *
      * @var array
      */
     protected $taxRules = [];
-
-    const CONFIG_OVERRIDES = 'config_overrides';
-    const TAX_RATE_OVERRIDES = 'tax_rate_overrides';
-    const TAX_RULE_OVERRIDES = 'tax_rule_overrides';
-
     /**
      * Default data for shopping cart rule
      *
@@ -144,8 +159,8 @@ class SetupUtil
     protected $defaultShoppingCartPriceRule = [
         'name' => 'Shopping Cart Rule',
         'is_active' => 1,
-        'customer_group_ids' => [\Magento\Customer\Model\GroupManagement::CUST_GROUP_ALL],
-        'coupon_type' => \Magento\SalesRule\Model\Rule::COUPON_TYPE_NO_COUPON,
+        'customer_group_ids' => [GroupManagement::CUST_GROUP_ALL],
+        'coupon_type' => Rule::COUPON_TYPE_NO_COUPON,
         'simple_action' => 'by_percent',
         'discount_amount' => 40,
         'discount_step' => 0,
@@ -153,54 +168,74 @@ class SetupUtil
         'apply_to_shipping' => 0,
         'website_ids' => [1],
     ];
-
     /**
-     * Object manager
-     *
-     * @var \Magento\Framework\ObjectManagerInterface
-     */
-    public $objectManager;
-
-    /**
-     * @var \Magento\Customer\Api\CustomerRepositoryInterface
+     * @var CustomerRepositoryInterface
      */
     protected $customerRepository;
 
     /**
-     * @var \Magento\Customer\Api\AccountManagementInterface
+     * @var AccountManagementInterface
      */
     protected $accountManagement;
 
     /**
-     * @param \Magento\Framework\ObjectManagerInterface $objectManager
+     * @param ObjectManagerInterface $objectManager
      */
     public function __construct($objectManager)
     {
         $this->objectManager = $objectManager;
         $this->customerRepository = $this->objectManager->create(
-            \Magento\Customer\Api\CustomerRepositoryInterface::class
+            CustomerRepositoryInterface::class
         );
         $this->accountManagement = $this->objectManager->create(
-            \Magento\Customer\Api\AccountManagementInterface::class
+            AccountManagementInterface::class
         );
     }
 
     /**
-     * Create customer tax classes
+     * Set up tax classes, tax rates and tax rules
+     * The override structure:
+     * override['self::CONFIG_OVERRIDES']
+     *      [
+     *          [config_path => config_value]
+     *      ]
+     * override['self::TAX_RATE_OVERRIDES']
+     *      [
+     *          ['tax_rate_code' => tax_rate]
+     *      ]
+     * override['self::TAX_RULE_OVERRIDES']
+     *      [
+     *          [
+     *              'code' => code //Required, has to be unique
+     *              'priority' => 0
+     *              'position' => 0
+     *              'tax_customer_class' => array of customer tax class names as defined in this class
+     *              'tax_product_class' => array of product tax class names as defined in this class
+     *              'tax_rate' => array of tax rate codes as defined in this class
+     *          ]
+     *      ]
      *
-     * @return $this
+     * @param array $overrides
+     * @return void
      */
-    protected function createCustomerTaxClass()
+    public function setupTax($overrides)
     {
-        foreach (array_keys($this->customerTaxClasses) as $className) {
-            $this->customerTaxClasses[$className] = $this->objectManager->create(\Magento\Tax\Model\ClassModel::class)
-                ->setClassName($className)
-                ->setClassType(\Magento\Tax\Model\ClassModel::TAX_CLASS_TYPE_CUSTOMER)
-                ->save()
-                ->getId();
-        }
+        //Create product tax classes
+        $this->createProductTaxClass();
 
-        return $this;
+        //Create customer tax classes
+        $this->createCustomerTaxClass();
+
+        //Create tax rates
+        $this->createTaxRates($overrides);
+
+        //Create tax rules
+        $this->createTaxRules($overrides);
+
+        //Tax calculation configuration
+        if (!empty($overrides[self::CONFIG_OVERRIDES])) {
+            $this->setConfig($overrides[self::CONFIG_OVERRIDES]);
+        }
     }
 
     /**
@@ -211,9 +246,9 @@ class SetupUtil
     protected function createProductTaxClass()
     {
         foreach (array_keys($this->productTaxClasses) as $className) {
-            $this->productTaxClasses[$className] = $this->objectManager->create(\Magento\Tax\Model\ClassModel::class)
+            $this->productTaxClasses[$className] = $this->objectManager->create(ClassModel::class)
                 ->setClassName($className)
-                ->setClassType(\Magento\Tax\Model\ClassModel::TAX_CLASS_TYPE_PRODUCT)
+                ->setClassType(ClassModel::TAX_CLASS_TYPE_PRODUCT)
                 ->save()
                 ->getId();
         }
@@ -222,30 +257,19 @@ class SetupUtil
     }
 
     /**
-     * Set the configuration.
+     * Create customer tax classes
      *
-     * @param array $configData
      * @return $this
      */
-    protected function setConfig($configData)
+    protected function createCustomerTaxClass()
     {
-        /** @var \Magento\Config\Model\ResourceModel\Config $config */
-        $config = $this->objectManager->get(\Magento\Config\Model\ResourceModel\Config::class);
-        foreach ($configData as $path => $value) {
-            if ($path == Config::CONFIG_XML_PATH_SHIPPING_TAX_CLASS) {
-                $value = $this->productTaxClasses[$value];
-            }
-            $config->saveConfig(
-                $path,
-                $value,
-                ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
-                0
-            );
+        foreach (array_keys($this->customerTaxClasses) as $className) {
+            $this->customerTaxClasses[$className] = $this->objectManager->create(ClassModel::class)
+                ->setClassName($className)
+                ->setClassType(ClassModel::TAX_CLASS_TYPE_CUSTOMER)
+                ->save()
+                ->getId();
         }
-
-        /** @var \Magento\Framework\App\Config\ReinitableConfigInterface $config */
-        $config = $this->objectManager->get(\Magento\Framework\App\Config\ReinitableConfigInterface::class);
-        $config->reinit();
 
         return $this;
     }
@@ -264,92 +288,13 @@ class SetupUtil
                 $this->taxRates[$taxRateCode]['data']['rate'] = $taxRateOverrides[$taxRateCode];
             }
             $this->taxRates[$taxRateCode]['id'] = $this->objectManager->create(
-                \Magento\Tax\Model\Calculation\Rate::class
+                Rate::class
             )
                 ->setData($this->taxRates[$taxRateCode]['data'])
                 ->save()
                 ->getId();
         }
         return $this;
-    }
-
-    /**
-     * Convert the code to id for productTaxClass, customerTaxClass and taxRate in taxRuleOverrideData
-     *
-     * @param array $taxRuleOverrideData
-     * @param array $taxRateIds
-     * @return array
-     */
-    protected function processTaxRuleOverrides($taxRuleOverrideData, $taxRateIds)
-    {
-        if (!empty($taxRuleOverrideData['customer_tax_class_ids'])) {
-            $customerTaxClassIds = [];
-            foreach ($taxRuleOverrideData['customer_tax_class_ids'] as $customerClassCode) {
-                $customerTaxClassIds[] = $this->customerTaxClasses[$customerClassCode];
-            }
-            $taxRuleOverrideData['customer_tax_class_ids'] = $customerTaxClassIds;
-        }
-        if (!empty($taxRuleOverrideData['product_tax_class_ids'])) {
-            $productTaxClassIds = [];
-            foreach ($taxRuleOverrideData['product_tax_class_ids'] as $productClassCode) {
-                $productTaxClassIds[] = $this->productTaxClasses[$productClassCode];
-            }
-            $taxRuleOverrideData['product_tax_class_ids'] = $productTaxClassIds;
-        }
-        if (!empty($taxRuleOverrideData['tax_rate_ids'])) {
-            $taxRateIdsForRule = [];
-            foreach ($taxRuleOverrideData['tax_rate_ids'] as $taxRateCode) {
-                $taxRateIdsForRule[] = $taxRateIds[$taxRateCode];
-            }
-            $taxRuleOverrideData['tax_rate_ids'] = $taxRateIdsForRule;
-        }
-
-        return $taxRuleOverrideData;
-    }
-
-    /**
-     * Return a list of product tax class ids NOT including shipping product tax class
-     *
-     * @return array
-     */
-    protected function getProductTaxClassIds()
-    {
-        $productTaxClassIds = [];
-        foreach ($this->productTaxClasses as $productTaxClassName => $productTaxClassId) {
-            if ($productTaxClassName != self::SHIPPING_TAX_CLASS) {
-                $productTaxClassIds[] = $productTaxClassId;
-            }
-        }
-
-        return $productTaxClassIds;
-    }
-
-    /**
-     * Return a list of tax rate ids NOT including shipping tax rate
-     *
-     * @return array
-     */
-    protected function getDefaultTaxRateIds()
-    {
-        $taxRateIds = [
-            $this->taxRates[self::TAX_RATE_TX]['id'],
-            $this->taxRates[self::TAX_STORE_RATE]['id'],
-        ];
-
-        return $taxRateIds;
-    }
-
-    /**
-     * Return the default customer group tax class id
-     *
-     * @return int
-     */
-    public function getDefaultCustomerTaxClassId()
-    {
-        /** @var  \Magento\Customer\Api\GroupManagementInterface $groupManagement */
-        $groupManagement = $this->objectManager->get(\Magento\Customer\Api\GroupManagementInterface::class);
-        $defaultGroup = $groupManagement->getDefaultGroup();
-        return $defaultGroup->getTaxClassId();
     }
 
     /**
@@ -422,243 +367,110 @@ class SetupUtil
     }
 
     /**
-     * Set up tax classes, tax rates and tax rules
-     * The override structure:
-     * override['self::CONFIG_OVERRIDES']
-     *      [
-     *          [config_path => config_value]
-     *      ]
-     * override['self::TAX_RATE_OVERRIDES']
-     *      [
-     *          ['tax_rate_code' => tax_rate]
-     *      ]
-     * override['self::TAX_RULE_OVERRIDES']
-     *      [
-     *          [
-     *              'code' => code //Required, has to be unique
-     *              'priority' => 0
-     *              'position' => 0
-     *              'tax_customer_class' => array of customer tax class names as defined in this class
-     *              'tax_product_class' => array of product tax class names as defined in this class
-     *              'tax_rate' => array of tax rate codes as defined in this class
-     *          ]
-     *      ]
+     * Return the default customer group tax class id
      *
-     * @param array $overrides
-     * @return void
-     */
-    public function setupTax($overrides)
-    {
-        //Create product tax classes
-        $this->createProductTaxClass();
-
-        //Create customer tax classes
-        $this->createCustomerTaxClass();
-
-        //Create tax rates
-        $this->createTaxRates($overrides);
-
-        //Create tax rules
-        $this->createTaxRules($overrides);
-
-        //Tax calculation configuration
-        if (!empty($overrides[self::CONFIG_OVERRIDES])) {
-            $this->setConfig($overrides[self::CONFIG_OVERRIDES]);
-        }
-    }
-
-    /**
-     * Create a simple product with given sku, price and tax class
-     *
-     * @param string $sku
-     * @param float $price
-     * @param int $taxClassId
-     * @return \Magento\Catalog\Model\Product
-     */
-    public function createSimpleProduct($sku, $price, $taxClassId)
-    {
-        /** @var \Magento\Catalog\Model\Product $product */
-        $product = $this->objectManager->create(\Magento\Catalog\Model\Product::class);
-        $product->isObjectNew(true);
-        $product->setTypeId('simple')
-            ->setAttributeSetId(4)
-            ->setName('Simple Products' . $sku)
-            ->setSku($sku)
-            ->setPrice($price)
-            ->setTaxClassId($taxClassId)
-            ->setStockData(
-                [
-                    'use_config_manage_stock' => 1,
-                    'qty' => 100,
-                    'is_qty_decimal' => 0,
-                    'is_in_stock' => 1
-                ]
-            )->setMetaTitle('meta title')
-            ->setMetaKeyword('meta keyword')
-            ->setMetaDescription('meta description')
-            ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-            ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
-            ->save();
-
-        $product = $product->load($product->getId());
-        return $product;
-    }
-
-    /**
-     * Create a customer group and associated it with given customer tax class
-     *
-     * @param int $customerTaxClassId
      * @return int
      */
-    protected function createCustomerGroup($customerTaxClassId)
+    public function getDefaultCustomerTaxClassId()
     {
-        /** @var \Magento\Customer\Api\GroupRepositoryInterface $groupRepository */
-        $groupRepository = $this->objectManager->create(\Magento\Customer\Api\GroupRepositoryInterface::class);
-        $customerGroupFactory = $this->objectManager->create(\Magento\Customer\Api\Data\GroupInterfaceFactory::class);
-        $customerGroup = $customerGroupFactory->create()
-            ->setCode('custom_group')
-            ->setTaxClassId($customerTaxClassId);
-        $customerGroupId = $groupRepository->save($customerGroup)->getId();
-        return $customerGroupId;
+        /** @var  GroupManagementInterface $groupManagement */
+        $groupManagement = $this->objectManager->get(GroupManagementInterface::class);
+        $defaultGroup = $groupManagement->getDefaultGroup();
+        return $defaultGroup->getTaxClassId();
     }
 
     /**
-     * Create a customer
+     * Return a list of product tax class ids NOT including shipping product tax class
      *
-     * @return \Magento\Customer\Api\Data\CustomerInterface
+     * @return array
      */
-    protected function createCustomer()
+    protected function getProductTaxClassIds()
     {
-        $customerGroupId = $this->createCustomerGroup($this->customerTaxClasses[self::CUSTOMER_TAX_CLASS_1]);
-        /** @var \Magento\Customer\Model\Customer $customer */
-        $customer = $this->objectManager->create(\Magento\Customer\Model\Customer::class);
-        $customer->isObjectNew(true);
-        $customer->setWebsiteId(1)
-            ->setEntityTypeId(1)
-            ->setAttributeSetId(1)
-            ->setEmail('customer@example.com')
-            ->setPassword('password')
-            ->setGroupId($customerGroupId)
-            ->setStoreId(1)
-            ->setIsActive(1)
-            ->setFirstname('Firstname')
-            ->setLastname('Lastname')
-            ->save();
-
-        return $this->customerRepository->getById($customer->getId());
-    }
-
-    /**
-     * Create customer address
-     *
-     * @param array $addressOverride
-     * @param int $customerId
-     * @return \Magento\Customer\Model\Address
-     */
-    protected function createCustomerAddress($addressOverride, $customerId)
-    {
-        $defaultAddressData = [
-            'attribute_set_id' => 2,
-            'telephone' => 3468676,
-            'postcode' => self::AUSTIN_POST_CODE,
-            'country_id' => self::COUNTRY_US,
-            'city' => 'CityM',
-            'company' => 'CompanyName',
-            'street' => ['Green str, 67'],
-            'lastname' => 'Smith',
-            'firstname' => 'John',
-            'parent_id' => 1,
-            'region_id' => self::REGION_TX,
-        ];
-        $addressData = array_merge($defaultAddressData, $addressOverride);
-
-        /** @var \Magento\Customer\Model\Address $customerAddress */
-        $customerAddress = $this->objectManager->create(\Magento\Customer\Model\Address::class);
-        $customerAddress->setData($addressData)
-            ->setCustomerId($customerId)
-            ->save();
-
-        return $customerAddress;
-    }
-
-    /**
-     * Create shopping cart rule
-     *
-     * @param array $ruleDataOverride
-     * @return $this
-     */
-    protected function createCartRule($ruleDataOverride)
-    {
-        /** @var \Magento\SalesRule\Model\Rule $salesRule */
-        $salesRule = $this->objectManager->create(\Magento\SalesRule\Model\Rule::class);
-        $ruleData = array_merge($this->defaultShoppingCartPriceRule, $ruleDataOverride);
-        $salesRule->setData($ruleData);
-        $salesRule->save();
-
-        return $this;
-    }
-
-    /**
-     * Create a quote object with customer
-     *
-     * @param array $quoteData
-     * @param \Magento\Customer\Api\Data\CustomerInterface $customer
-     * @return Quote
-     */
-    protected function createQuote($quoteData, $customer)
-    {
-        /** @var \Magento\Customer\Api\AddressRepositoryInterface $addressService */
-        $addressService = $this->objectManager->create(\Magento\Customer\Api\AddressRepositoryInterface::class);
-
-        /** @var array $shippingAddressOverride */
-        $shippingAddressOverride = empty($quoteData['shipping_address']) ? [] : $quoteData['shipping_address'];
-        /** @var  \Magento\Customer\Model\Address $shippingAddress */
-        $shippingAddress = $this->createCustomerAddress($shippingAddressOverride, $customer->getId());
-
-        /** @var \Magento\Quote\Model\Quote\Address $quoteShippingAddress */
-        $quoteShippingAddress = $this->objectManager->create(\Magento\Quote\Model\Quote\Address::class);
-        $quoteShippingAddress->importCustomerAddressData($addressService->getById($shippingAddress->getId()));
-
-        /** @var array $billingAddressOverride */
-        $billingAddressOverride = empty($quoteData['billing_address']) ? [] : $quoteData['billing_address'];
-        /** @var  \Magento\Customer\Model\Address $billingAddress */
-        $billingAddress = $this->createCustomerAddress($billingAddressOverride, $customer->getId());
-
-        /** @var \Magento\Quote\Model\Quote\Address $quoteBillingAddress */
-        $quoteBillingAddress = $this->objectManager->create(\Magento\Quote\Model\Quote\Address::class);
-        $quoteBillingAddress->importCustomerAddressData($addressService->getById($billingAddress->getId()));
-
-        /** @var Quote $quote */
-        $quote = $this->objectManager->create(Quote::class);
-        $quote->setStoreId(1)
-            ->setIsActive(true)
-            ->setIsMultiShipping(false)
-            ->assignCustomerWithAddressChange($customer, $quoteBillingAddress, $quoteShippingAddress)
-            ->setCheckoutMethod('register')
-            ->setPasswordHash($this->accountManagement->getPasswordHash(static::CUSTOMER_PASSWORD));
-
-        return $quote;
-    }
-
-    /**
-     * Add products to quote
-     *
-     * @param Quote $quote
-     * @param array $itemsData
-     * @return $this
-     */
-    protected function addProductToQuote($quote, $itemsData)
-    {
-        foreach ($itemsData as $itemData) {
-            $sku = $itemData['sku'];
-            $price = $itemData['price'];
-            $qty = isset($itemData['qty']) ? $itemData['qty'] : 1;
-            $taxClassName =
-                isset($itemData['tax_class_name']) ? $itemData['tax_class_name'] : self::PRODUCT_TAX_CLASS_1;
-            $taxClassId = $this->productTaxClasses[$taxClassName];
-            $product = $this->createSimpleProduct($sku, $price, $taxClassId);
-            $quote->addProduct($product, $qty);
+        $productTaxClassIds = [];
+        foreach ($this->productTaxClasses as $productTaxClassName => $productTaxClassId) {
+            if ($productTaxClassName != self::SHIPPING_TAX_CLASS) {
+                $productTaxClassIds[] = $productTaxClassId;
+            }
         }
+
+        return $productTaxClassIds;
+    }
+
+    /**
+     * Return a list of tax rate ids NOT including shipping tax rate
+     *
+     * @return array
+     */
+    protected function getDefaultTaxRateIds()
+    {
+        $taxRateIds = [
+            $this->taxRates[self::TAX_RATE_TX]['id'],
+            $this->taxRates[self::TAX_STORE_RATE]['id'],
+        ];
+
+        return $taxRateIds;
+    }
+
+    /**
+     * Convert the code to id for productTaxClass, customerTaxClass and taxRate in taxRuleOverrideData
+     *
+     * @param array $taxRuleOverrideData
+     * @param array $taxRateIds
+     * @return array
+     */
+    protected function processTaxRuleOverrides($taxRuleOverrideData, $taxRateIds)
+    {
+        if (!empty($taxRuleOverrideData['customer_tax_class_ids'])) {
+            $customerTaxClassIds = [];
+            foreach ($taxRuleOverrideData['customer_tax_class_ids'] as $customerClassCode) {
+                $customerTaxClassIds[] = $this->customerTaxClasses[$customerClassCode];
+            }
+            $taxRuleOverrideData['customer_tax_class_ids'] = $customerTaxClassIds;
+        }
+        if (!empty($taxRuleOverrideData['product_tax_class_ids'])) {
+            $productTaxClassIds = [];
+            foreach ($taxRuleOverrideData['product_tax_class_ids'] as $productClassCode) {
+                $productTaxClassIds[] = $this->productTaxClasses[$productClassCode];
+            }
+            $taxRuleOverrideData['product_tax_class_ids'] = $productTaxClassIds;
+        }
+        if (!empty($taxRuleOverrideData['tax_rate_ids'])) {
+            $taxRateIdsForRule = [];
+            foreach ($taxRuleOverrideData['tax_rate_ids'] as $taxRateCode) {
+                $taxRateIdsForRule[] = $taxRateIds[$taxRateCode];
+            }
+            $taxRuleOverrideData['tax_rate_ids'] = $taxRateIdsForRule;
+        }
+
+        return $taxRuleOverrideData;
+    }
+
+    /**
+     * Set the configuration.
+     *
+     * @param array $configData
+     * @return $this
+     */
+    protected function setConfig($configData)
+    {
+        /** @var \Magento\Config\Model\ResourceModel\Config $config */
+        $config = $this->objectManager->get(\Magento\Config\Model\ResourceModel\Config::class);
+        foreach ($configData as $path => $value) {
+            if ($path == Config::CONFIG_XML_PATH_SHIPPING_TAX_CLASS) {
+                $value = $this->productTaxClasses[$value];
+            }
+            $config->saveConfig(
+                $path,
+                $value,
+                ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
+                0
+            );
+        }
+
+        /** @var ReinitableConfigInterface $config */
+        $config = $this->objectManager->get(ReinitableConfigInterface::class);
+        $config->reinit();
+
         return $this;
     }
 
@@ -697,6 +509,184 @@ class SetupUtil
     }
 
     /**
+     * Create a customer
+     *
+     * @return CustomerInterface
+     */
+    protected function createCustomer()
+    {
+        $customerGroupId = $this->createCustomerGroup($this->customerTaxClasses[self::CUSTOMER_TAX_CLASS_1]);
+        /** @var Customer $customer */
+        $customer = $this->objectManager->create(Customer::class);
+        $customer->isObjectNew(true);
+        $customer->setWebsiteId(1)
+            ->setEntityTypeId(1)
+            ->setAttributeSetId(1)
+            ->setEmail('customer@example.com')
+            ->setPassword('password')
+            ->setGroupId($customerGroupId)
+            ->setStoreId(1)
+            ->setIsActive(1)
+            ->setFirstname('Firstname')
+            ->setLastname('Lastname')
+            ->save();
+
+        return $this->customerRepository->getById($customer->getId());
+    }
+
+    /**
+     * Create a customer group and associated it with given customer tax class
+     *
+     * @param int $customerTaxClassId
+     * @return int
+     */
+    protected function createCustomerGroup($customerTaxClassId)
+    {
+        /** @var GroupRepositoryInterface $groupRepository */
+        $groupRepository = $this->objectManager->create(GroupRepositoryInterface::class);
+        $customerGroupFactory = $this->objectManager->create(GroupInterfaceFactory::class);
+        $customerGroup = $customerGroupFactory->create()
+            ->setCode('custom_group')
+            ->setTaxClassId($customerTaxClassId);
+        $customerGroupId = $groupRepository->save($customerGroup)->getId();
+        return $customerGroupId;
+    }
+
+    /**
+     * Create a quote object with customer
+     *
+     * @param array $quoteData
+     * @param CustomerInterface $customer
+     * @return Quote
+     */
+    protected function createQuote($quoteData, $customer)
+    {
+        /** @var AddressRepositoryInterface $addressService */
+        $addressService = $this->objectManager->create(AddressRepositoryInterface::class);
+
+        /** @var array $shippingAddressOverride */
+        $shippingAddressOverride = empty($quoteData['shipping_address']) ? [] : $quoteData['shipping_address'];
+        /** @var  Address $shippingAddress */
+        $shippingAddress = $this->createCustomerAddress($shippingAddressOverride, $customer->getId());
+
+        /** @var \Magento\Quote\Model\Quote\Address $quoteShippingAddress */
+        $quoteShippingAddress = $this->objectManager->create(\Magento\Quote\Model\Quote\Address::class);
+        $quoteShippingAddress->importCustomerAddressData($addressService->getById($shippingAddress->getId()));
+
+        /** @var array $billingAddressOverride */
+        $billingAddressOverride = empty($quoteData['billing_address']) ? [] : $quoteData['billing_address'];
+        /** @var  Address $billingAddress */
+        $billingAddress = $this->createCustomerAddress($billingAddressOverride, $customer->getId());
+
+        /** @var \Magento\Quote\Model\Quote\Address $quoteBillingAddress */
+        $quoteBillingAddress = $this->objectManager->create(\Magento\Quote\Model\Quote\Address::class);
+        $quoteBillingAddress->importCustomerAddressData($addressService->getById($billingAddress->getId()));
+
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
+        $quote->setStoreId(1)
+            ->setIsActive(true)
+            ->setIsMultiShipping(false)
+            ->assignCustomerWithAddressChange($customer, $quoteBillingAddress, $quoteShippingAddress)
+            ->setCheckoutMethod('register')
+            ->setPasswordHash($this->accountManagement->getPasswordHash(static::CUSTOMER_PASSWORD));
+
+        return $quote;
+    }
+
+    /**
+     * Create customer address
+     *
+     * @param array $addressOverride
+     * @param int $customerId
+     * @return Address
+     */
+    protected function createCustomerAddress($addressOverride, $customerId)
+    {
+        $defaultAddressData = [
+            'attribute_set_id' => 2,
+            'telephone' => 3468676,
+            'postcode' => self::AUSTIN_POST_CODE,
+            'country_id' => self::COUNTRY_US,
+            'city' => 'CityM',
+            'company' => 'CompanyName',
+            'street' => ['Green str, 67'],
+            'lastname' => 'Smith',
+            'firstname' => 'John',
+            'parent_id' => 1,
+            'region_id' => self::REGION_TX,
+        ];
+        $addressData = array_merge($defaultAddressData, $addressOverride);
+
+        /** @var Address $customerAddress */
+        $customerAddress = $this->objectManager->create(Address::class);
+        $customerAddress->setData($addressData)
+            ->setCustomerId($customerId)
+            ->save();
+
+        return $customerAddress;
+    }
+
+    /**
+     * Add products to quote
+     *
+     * @param Quote $quote
+     * @param array $itemsData
+     * @return $this
+     */
+    protected function addProductToQuote($quote, $itemsData)
+    {
+        foreach ($itemsData as $itemData) {
+            $sku = $itemData['sku'];
+            $price = $itemData['price'];
+            $qty = isset($itemData['qty']) ? $itemData['qty'] : 1;
+            $taxClassName =
+                isset($itemData['tax_class_name']) ? $itemData['tax_class_name'] : self::PRODUCT_TAX_CLASS_1;
+            $taxClassId = $this->productTaxClasses[$taxClassName];
+            $product = $this->createSimpleProduct($sku, $price, $taxClassId);
+            $quote->addProduct($product, $qty);
+        }
+        return $this;
+    }
+
+    /**
+     * Create a simple product with given sku, price and tax class
+     *
+     * @param string $sku
+     * @param float $price
+     * @param int $taxClassId
+     * @return Product
+     */
+    public function createSimpleProduct($sku, $price, $taxClassId)
+    {
+        /** @var Product $product */
+        $product = $this->objectManager->create(Product::class);
+        $product->isObjectNew(true);
+        $product->setTypeId('simple')
+            ->setAttributeSetId(4)
+            ->setName('Simple Products' . $sku)
+            ->setSku($sku)
+            ->setPrice($price)
+            ->setTaxClassId($taxClassId)
+            ->setStockData(
+                [
+                    'use_config_manage_stock' => 1,
+                    'qty' => 100,
+                    'is_qty_decimal' => 0,
+                    'is_in_stock' => 1
+                ]
+            )->setMetaTitle('meta title')
+            ->setMetaKeyword('meta keyword')
+            ->setMetaDescription('meta description')
+            ->setVisibility(Visibility::VISIBILITY_BOTH)
+            ->setStatus(Status::STATUS_ENABLED)
+            ->save();
+
+        $product = $product->load($product->getId());
+        return $product;
+    }
+
+    /**
      * Update quote items
      *
      * @param Quote $quote
@@ -723,5 +713,22 @@ class SetupUtil
                 $items[$product->getSku()]
             );
         }
+    }
+
+    /**
+     * Create shopping cart rule
+     *
+     * @param array $ruleDataOverride
+     * @return $this
+     */
+    protected function createCartRule($ruleDataOverride)
+    {
+        /** @var Rule $salesRule */
+        $salesRule = $this->objectManager->create(Rule::class);
+        $ruleData = array_merge($this->defaultShoppingCartPriceRule, $ruleDataOverride);
+        $salesRule->setData($ruleData);
+        $salesRule->save();
+
+        return $this;
     }
 }

@@ -44,31 +44,6 @@ class TitleTest extends TestCase
     private $executeInStoreContext;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->categoryRepository = $this->objectManager->get(CategoryRepositoryInterface::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-        $this->pageFactory = $this->objectManager->get(PageFactory::class);
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->executeInStoreContext = $this->objectManager->get(ExecuteInStoreContext::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->registry->unregister('current_category');
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDbIsolation enabled
      * @magentoDataFixture Magento/Catalog/_files/category.php
      * @magentoDataFixture Magento/Store/_files/store.php
@@ -91,16 +66,15 @@ class TitleTest extends TestCase
     }
 
     /**
-     * Update category name
+     * Register category in registry
      *
      * @param CategoryInterface $category
-     * @param string $categoryName
      * @return void
      */
-    public function updateCategoryName(CategoryInterface $category, string $categoryName): void
+    private function registerCategory(CategoryInterface $category): void
     {
-        $category->setName($categoryName);
-        $this->categoryRepository->save($category);
+        $this->registry->unregister('current_category');
+        $this->registry->register('current_category', $category);
     }
 
     /**
@@ -123,14 +97,40 @@ class TitleTest extends TestCase
     }
 
     /**
-     * Register category in registry
+     * Update category name
      *
      * @param CategoryInterface $category
+     * @param string $categoryName
      * @return void
      */
-    private function registerCategory(CategoryInterface $category): void
+    public function updateCategoryName(CategoryInterface $category, string $categoryName): void
+    {
+        $category->setName($categoryName);
+        $this->categoryRepository->save($category);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->categoryRepository = $this->objectManager->get(CategoryRepositoryInterface::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
+        $this->pageFactory = $this->objectManager->get(PageFactory::class);
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->executeInStoreContext = $this->objectManager->get(ExecuteInStoreContext::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
     {
         $this->registry->unregister('current_category');
-        $this->registry->register('current_category', $category);
+
+        parent::tearDown();
     }
 }

@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Catalog;
 
+use Exception;
 use Magento\Catalog\Model\ResourceModel\Category\Collection as CategoryCollection;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Store\Model\StoreManagerInterface;
@@ -22,11 +23,6 @@ class CategoryListTest extends GraphQlAbstract
      * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoApiDataFixture Magento/Catalog/_files/categories.php
@@ -145,7 +141,7 @@ QUERY;
      */
     public function testQueryChildCategoriesWithProducts()
     {
-        $query =  <<<QUERY
+        $query = <<<QUERY
 {
     categoryList(filters: {ids: {in: ["3"]}}){
         id
@@ -209,7 +205,7 @@ QUERY;
             ['sku' => 'simple', 'name' => 'Simple Products'],
         ];
         $this->assertCategoryProducts($firstChildCategory, $firstChildCategoryExpectedProducts);
-        $firstChildCategoryChildren = [['name' =>'Category 1.1.1']];
+        $firstChildCategoryChildren = [['name' => 'Category 1.1.1']];
         $this->assertCategoryChildren($firstChildCategory, $firstChildCategoryChildren);
         //Check second child category
         $secondChildCategory = $baseCategory['children'][1];
@@ -225,11 +221,39 @@ QUERY;
     }
 
     /**
+     * Check category products
+     *
+     * @param array $category
+     * @param array $expectedProducts
+     */
+    private function assertCategoryProducts(array $category, array $expectedProducts)
+    {
+        $this->assertEquals(count($expectedProducts), $category['products']['total_count']);
+        $this->assertCount(count($expectedProducts), $category['products']['items']);
+        $this->assertResponseFields($category['products']['items'], $expectedProducts);
+    }
+
+    /**
+     * Check category child categories
+     *
+     * @param array $category
+     * @param array $expectedChildren
+     */
+    private function assertCategoryChildren(array $category, array $expectedChildren)
+    {
+        $this->assertArrayHasKey('children', $category);
+        $this->assertCount(count($expectedChildren), $category['children']);
+        foreach ($expectedChildren as $i => $expectedChild) {
+            $this->assertResponseFields($category['children'][$i], $expectedChild);
+        }
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Catalog/_files/categories_disabled.php
      */
     public function testQueryCategoryWithDisabledChildren()
     {
-        $query =  <<<QUERY
+        $query = <<<QUERY
 {
     categoryList(filters: {ids: {in: ["3"]}}){
         id
@@ -367,7 +391,7 @@ QUERY;
      */
     public function testMinimumMatchQueryLength()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Invalid match filter. Minimum length is 3.');
 
         $query = <<<QUERY
@@ -609,7 +633,7 @@ QUERY;
      */
     public function filterMultipleCategoriesDataProvider(): array
     {
-        return[
+        return [
             //Filter by multiple IDs
             [
                 'ids',
@@ -756,34 +780,6 @@ QUERY;
     }
 
     /**
-     * Check category products
-     *
-     * @param array $category
-     * @param array $expectedProducts
-     */
-    private function assertCategoryProducts(array $category, array $expectedProducts)
-    {
-        $this->assertEquals(count($expectedProducts), $category['products']['total_count']);
-        $this->assertCount(count($expectedProducts), $category['products']['items']);
-        $this->assertResponseFields($category['products']['items'], $expectedProducts);
-    }
-
-    /**
-     * Check category child categories
-     *
-     * @param array $category
-     * @param array $expectedChildren
-     */
-    private function assertCategoryChildren(array $category, array $expectedChildren)
-    {
-        $this->assertArrayHasKey('children', $category);
-        $this->assertCount(count($expectedChildren), $category['children']);
-        foreach ($expectedChildren as $i => $expectedChild) {
-            $this->assertResponseFields($category['children'][$i], $expectedChild);
-        }
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Catalog/_files/categories.php
      */
     public function testFilterCategoryInlineFragment()
@@ -848,7 +844,7 @@ QUERY;
      *
      * @magentoApiDataFixture Magento/Catalog/_files/categories.php
      */
-    public function testFilterCategoryRecursiveFragment() : void
+    public function testFilterCategoryRecursiveFragment(): void
     {
         $query = <<<'QUERY'
 query GetCategoryTree($filters: CategoryFilterInput!) {
@@ -886,5 +882,10 @@ QUERY;
         $this->assertCount(1, $result['categoryList'][0]['children'][0]);
         $this->assertArrayHasKey('id', $result['categoryList'][0]['children'][0]);
         $this->assertEquals($result['categoryList'][0]['children'][0]['id'], '3');
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

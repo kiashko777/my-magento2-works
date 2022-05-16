@@ -10,21 +10,16 @@ use Magento\Framework\App\Area;
 use Magento\Framework\App\Config\Value;
 use Magento\Framework\App\ReinitableConfig;
 use Magento\Framework\App\State;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
-class FormTest extends \PHPUnit\Framework\TestCase
+class FormTest extends TestCase
 {
     /**
      * @var ObjectManager;
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = $this->getObjectManager();
-
-        parent::setUp();
-    }
 
     /**
      * @magentoDbIsolation enabled
@@ -37,7 +32,8 @@ class FormTest extends \PHPUnit\Framework\TestCase
         $scopeId,
         $value,
         $expectedResult
-    ) {
+    )
+    {
         /** @var State $appState */
         $appState = $this->objectManager->get(State::class);
         $appState->setAreaCode(Area::AREA_FRONTEND);
@@ -53,8 +49,8 @@ class FormTest extends \PHPUnit\Framework\TestCase
         $reinitableConfig = $this->objectManager->create(ReinitableConfig::class);
         $reinitableConfig->reinit();
 
-        /** @var \Magento\Review\Block\Form $form */
-        $form = $this->objectManager->create(\Magento\Review\Block\Form::class);
+        /** @var Form $form */
+        $form = $this->objectManager->create(Form::class);
         $result = $form->getAllowWriteReviewFlag();
         $this->assertEquals($result, $expectedResult);
     }
@@ -79,8 +75,15 @@ class FormTest extends \PHPUnit\Framework\TestCase
         ];
     }
 
+    protected function setUp(): void
+    {
+        $this->objectManager = $this->getObjectManager();
+
+        parent::setUp();
+    }
+
     private function getObjectManager()
     {
-        return \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        return Bootstrap::getObjectManager();
     }
 }

@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Dependency\Report\Circular\Data;
 
 /**
@@ -20,7 +21,7 @@ class Module
     /**
      * Circular dependencies chains
      *
-     * @var \Magento\Setup\Module\Dependency\Report\Circular\Data\Chain[]
+     * @var Chain[]
      */
     protected $chains;
 
@@ -28,7 +29,7 @@ class Module
      * Module construct
      *
      * @param array $name
-     * @param \Magento\Setup\Module\Dependency\Report\Circular\Data\Chain[] $chains
+     * @param Chain[] $chains
      */
     public function __construct($name, array $chains = [])
     {
@@ -49,7 +50,7 @@ class Module
     /**
      * Get circular dependencies chains
      *
-     * @return \Magento\Setup\Module\Dependency\Report\Circular\Data\Chain[]
+     * @return Chain[]
      */
     public function getChains()
     {

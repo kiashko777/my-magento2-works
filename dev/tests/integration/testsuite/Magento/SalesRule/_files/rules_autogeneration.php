@@ -4,8 +4,14 @@
  * See COPYING.txt for license details.
  */
 
-/** @var \Magento\SalesRule\Model\Rule $rule */
-$rule = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\SalesRule\Model\Rule::class);
+/** @var Rule $rule */
+
+use Magento\Framework\Registry;
+use Magento\SalesRule\Model\Rule;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+
+$rule = Bootstrap::getObjectManager()->create(Rule::class);
 $rule->setName(
     'AUTO_RULE'
 )->setIsActive(
@@ -26,10 +32,10 @@ $rule->setName(
     0
 )->save();
 
-/** @var $objectManager \Magento\TestFramework\ObjectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+/** @var $objectManager ObjectManager */
+$objectManager = Bootstrap::getObjectManager();
 
 /** @var Magento\Framework\Registry $registry */
-$registry = $objectManager->get(\Magento\Framework\Registry::class);
+$registry = $objectManager->get(Registry::class);
 $registry->unregister('_fixture/Magento_SalesRule_Api_RuleRepository');
 $registry->register('_fixture/Magento_SalesRule_Api_RuleRepository', $rule);

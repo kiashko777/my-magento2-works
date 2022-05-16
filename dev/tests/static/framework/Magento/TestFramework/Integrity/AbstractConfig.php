@@ -5,85 +5,40 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Integrity;
 
-abstract class AbstractConfig extends \PHPUnit\Framework\TestCase
+use DOMDocument;
+use Magento\Framework\App\Utility\AggregateInvoker;
+use Magento\Framework\App\Utility\Files;
+use Magento\Framework\Config\Dom;
+use PHPUnit\Framework\TestCase;
+
+abstract class AbstractConfig extends TestCase
 {
     public function testXmlFiles()
     {
         if (null === $this->_getXmlName()) {
             $this->markTestSkipped('No XML validation of files requested');
         }
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
-            /**
-             * @param string $configFile
-             */
+        /**
+         * @param string $configFile
+         */
             function ($configFile) {
                 $this->_validateFileExpectSuccess($configFile, $this->_getXsd(), $this->_getFileXsd());
             },
-            \Magento\Framework\App\Utility\Files::init()->getConfigFiles($this->_getXmlName())
+            Files::init()->getConfigFiles($this->_getXmlName())
         );
     }
 
-    public function testSchemaUsingValidXml()
-    {
-        $xmlFile = $this->_getKnownValidXml();
-        $schema = $this->_getXsd();
-        $this->_validateFileExpectSuccess($xmlFile, $schema);
-    }
-
-    public function testSchemaUsingInvalidXml($expectedErrors = null)
-    {
-        if (!function_exists('libxml_set_external_entity_loader')) {
-            $this->markTestSkipped('Skipped due to MAGETWO-45033');
-        }
-        $xmlFile = $this->_getKnownInvalidXml();
-        $schema = $this->_getXsd();
-        $this->_validateFileExpectFailure($xmlFile, $schema, $expectedErrors);
-    }
-
-    public function testFileSchemaUsingPartialXml()
-    {
-        if (!function_exists('libxml_set_external_entity_loader')) {
-            $this->markTestSkipped('Skipped due to MAGETWO-45033');
-        }
-        $xmlFile = $this->_getKnownValidPartialXml();
-        if ($xmlFile === null) {
-            $this->markTestSkipped('No Partial File');
-            return;
-        }
-        $schema = $this->_getFileXsd();
-        $this->_validateFileExpectSuccess($xmlFile, $schema);
-    }
-
-    public function testFileSchemaUsingInvalidXml($expectedErrors = null)
-    {
-        if (!function_exists('libxml_set_external_entity_loader')) {
-            $this->markTestSkipped('Skipped due to MAGETWO-45033');
-        }
-        $xmlFile = $this->_getKnownInvalidPartialXml();
-        if ($xmlFile === null) {
-            $this->markTestSkipped('No Partial File');
-            return;
-        }
-        $schema = $this->_getFileXsd();
-        $this->_validateFileExpectFailure($xmlFile, $schema, $expectedErrors);
-    }
-
-    public function testSchemaUsingPartialXml($expectedErrors = null)
-    {
-        if (!function_exists('libxml_set_external_entity_loader')) {
-            $this->markTestSkipped('Skipped due to MAGETWO-45033');
-        }
-        $xmlFile = $this->_getKnownValidPartialXml();
-        if ($xmlFile === null) {
-            $this->markTestSkipped('No Partial File');
-            return;
-        }
-        $schema = $this->_getXsd();
-        $this->_validateFileExpectFailure($xmlFile, $schema, $expectedErrors);
-    }
+    /**
+     * Returns the name of the xml files to validate
+     *
+     * @return string
+     */
+    abstract protected function _getXmlName();
 
     /**
      * Run schema validation against a known bad xml file with a provided schema.
@@ -96,12 +51,12 @@ abstract class AbstractConfig extends \PHPUnit\Framework\TestCase
      */
     protected function _validateFileExpectSuccess($xmlFile, $schemaFile, $fileSchemaFile = null)
     {
-        $dom = new \DOMDocument();
+        $dom = new DOMDocument();
         $dom->loadXML(file_get_contents($xmlFile));
-        $errors = \Magento\Framework\Config\Dom::validateDomDocument($dom, $schemaFile);
+        $errors = Dom::validateDomDocument($dom, $schemaFile);
         if ($errors) {
             if ($fileSchemaFile !== null) {
-                $moreErrors = \Magento\Framework\Config\Dom::validateDomDocument($dom, $fileSchemaFile);
+                $moreErrors = Dom::validateDomDocument($dom, $fileSchemaFile);
                 if (empty($moreErrors)) {
                     return;
                 } else {
@@ -118,6 +73,51 @@ abstract class AbstractConfig extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Returns the name of the XSD file to be used to validate the XML
+     *
+     * @return string
+     */
+    abstract protected function _getXsd();
+
+    /**
+     * Returns the name of the XSD file to be used to validate partial XML
+     *
+     * @return string
+     */
+    abstract protected function _getFileXsd();
+
+    public function testSchemaUsingValidXml()
+    {
+        $xmlFile = $this->_getKnownValidXml();
+        $schema = $this->_getXsd();
+        $this->_validateFileExpectSuccess($xmlFile, $schema);
+    }
+
+    /**
+     * The location of a single valid complete xml file
+     *
+     * @return string
+     */
+    abstract protected function _getKnownValidXml();
+
+    public function testSchemaUsingInvalidXml($expectedErrors = null)
+    {
+        if (!function_exists('libxml_set_external_entity_loader')) {
+            $this->markTestSkipped('Skipped due to MAGETWO-45033');
+        }
+        $xmlFile = $this->_getKnownInvalidXml();
+        $schema = $this->_getXsd();
+        $this->_validateFileExpectFailure($xmlFile, $schema, $expectedErrors);
+    }
+
+    /**
+     * The location of a single known invalid complete xml file
+     *
+     * @return string
+     */
+    abstract protected function _getKnownInvalidXml();
+
+    /**
      * Run schema validation against an xml file with a provided schema.
      *
      * This helper expects the validation to pass and will fail a test if any errors are found.
@@ -129,9 +129,9 @@ abstract class AbstractConfig extends \PHPUnit\Framework\TestCase
      */
     protected function _validateFileExpectFailure($xmlFile, $schemaFile, $expectedErrors = null)
     {
-        $dom = new \DOMDocument();
+        $dom = new DOMDocument();
         $dom->loadXML(file_get_contents($xmlFile));
-        $actualErrors = \Magento\Framework\Config\Dom::validateDomDocument($dom, $schemaFile);
+        $actualErrors = Dom::validateDomDocument($dom, $schemaFile);
 
         if (isset($expectedErrors)) {
             $this->assertNotEmpty(
@@ -162,26 +162,19 @@ abstract class AbstractConfig extends \PHPUnit\Framework\TestCase
         }
     }
 
-    /**
-     * Returns the name of the XSD file to be used to validate the XML
-     *
-     * @return string
-     */
-    abstract protected function _getXsd();
-
-    /**
-     * The location of a single valid complete xml file
-     *
-     * @return string
-     */
-    abstract protected function _getKnownValidXml();
-
-    /**
-     * The location of a single known invalid complete xml file
-     *
-     * @return string
-     */
-    abstract protected function _getKnownInvalidXml();
+    public function testFileSchemaUsingPartialXml()
+    {
+        if (!function_exists('libxml_set_external_entity_loader')) {
+            $this->markTestSkipped('Skipped due to MAGETWO-45033');
+        }
+        $xmlFile = $this->_getKnownValidPartialXml();
+        if ($xmlFile === null) {
+            $this->markTestSkipped('No Partial File');
+            return;
+        }
+        $schema = $this->_getFileXsd();
+        $this->_validateFileExpectSuccess($xmlFile, $schema);
+    }
 
     /**
      * The location of a single known valid partial xml file
@@ -190,12 +183,19 @@ abstract class AbstractConfig extends \PHPUnit\Framework\TestCase
      */
     abstract protected function _getKnownValidPartialXml();
 
-    /**
-     * Returns the name of the XSD file to be used to validate partial XML
-     *
-     * @return string
-     */
-    abstract protected function _getFileXsd();
+    public function testFileSchemaUsingInvalidXml($expectedErrors = null)
+    {
+        if (!function_exists('libxml_set_external_entity_loader')) {
+            $this->markTestSkipped('Skipped due to MAGETWO-45033');
+        }
+        $xmlFile = $this->_getKnownInvalidPartialXml();
+        if ($xmlFile === null) {
+            $this->markTestSkipped('No Partial File');
+            return;
+        }
+        $schema = $this->_getFileXsd();
+        $this->_validateFileExpectFailure($xmlFile, $schema, $expectedErrors);
+    }
 
     /**
      * The location of a single known invalid partial xml file
@@ -204,10 +204,17 @@ abstract class AbstractConfig extends \PHPUnit\Framework\TestCase
      */
     abstract protected function _getKnownInvalidPartialXml();
 
-    /**
-     * Returns the name of the xml files to validate
-     *
-     * @return string
-     */
-    abstract protected function _getXmlName();
+    public function testSchemaUsingPartialXml($expectedErrors = null)
+    {
+        if (!function_exists('libxml_set_external_entity_loader')) {
+            $this->markTestSkipped('Skipped due to MAGETWO-45033');
+        }
+        $xmlFile = $this->_getKnownValidPartialXml();
+        if ($xmlFile === null) {
+            $this->markTestSkipped('No Partial File');
+            return;
+        }
+        $schema = $this->_getXsd();
+        $this->_validateFileExpectFailure($xmlFile, $schema, $expectedErrors);
+    }
 }

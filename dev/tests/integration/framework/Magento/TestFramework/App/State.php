@@ -7,6 +7,7 @@
 /**
  * App State class for integration tests framework
  */
+
 namespace Magento\TestFramework\App;
 
 class State extends \Magento\Framework\App\State

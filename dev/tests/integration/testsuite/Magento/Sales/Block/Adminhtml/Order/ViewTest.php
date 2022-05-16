@@ -41,6 +41,52 @@ class ViewTest extends TestCase
     private $orderFactory;
 
     /**
+     * @magentoDataFixture Magento/Sales/_files/order.php
+     *
+     * @return void
+     */
+    public function testInvoiceButton(): void
+    {
+        $this->registerOrder('100000001');
+        $this->assertEquals(
+            1,
+            Xpath::getElementsCountForXpath(
+                '//button[@id=\'order_invoice\']',
+                $this->layout->createBlock(View::class)->getButtonsHtml()
+            )
+        );
+    }
+
+    /**
+     * Register order
+     *
+     * @param OrderInterface $order
+     * @return void
+     */
+    private function registerOrder(string $orderIncrementId): void
+    {
+        $order = $this->orderFactory->create()->loadByIncrementId($orderIncrementId);
+        $this->registry->unregister('sales_order');
+        $this->registry->register('sales_order', $order);
+    }
+
+    /**
+     * @magentoDataFixture Magento/Sales/_files/order_with_bundle_and_invoiced.php
+     *
+     * @return void
+     */
+    public function testInvoiceButtonIsNotVisible(): void
+    {
+        $this->registerOrder('100000001');
+        $this->assertEmpty(
+            Xpath::getElementsCountForXpath(
+                '//button[@id=\'order_invoice\']',
+                $this->layout->createBlock(View::class)->getButtonsHtml()
+            )
+        );
+    }
+
+    /**
      * @inheritdoc
      */
     protected function setUp(): void
@@ -65,51 +111,5 @@ class ViewTest extends TestCase
         $this->registry->unregister('sales_order');
 
         parent::tearDown();
-    }
-
-    /**
-     * @magentoDataFixture Magento/Sales/_files/order.php
-     *
-     * @return void
-     */
-    public function testInvoiceButton(): void
-    {
-        $this->registerOrder('100000001');
-        $this->assertEquals(
-            1,
-            Xpath::getElementsCountForXpath(
-                '//button[@id=\'order_invoice\']',
-                $this->layout->createBlock(View::class)->getButtonsHtml()
-            )
-        );
-    }
-
-    /**
-     * @magentoDataFixture Magento/Sales/_files/order_with_bundle_and_invoiced.php
-     *
-     * @return void
-     */
-    public function testInvoiceButtonIsNotVisible(): void
-    {
-        $this->registerOrder('100000001');
-        $this->assertEmpty(
-            Xpath::getElementsCountForXpath(
-                '//button[@id=\'order_invoice\']',
-                $this->layout->createBlock(View::class)->getButtonsHtml()
-            )
-        );
-    }
-
-    /**
-     * Register order
-     *
-     * @param OrderInterface $order
-     * @return void
-     */
-    private function registerOrder(string $orderIncrementId): void
-    {
-        $order = $this->orderFactory->create()->loadByIncrementId($orderIncrementId);
-        $this->registry->unregister('sales_order');
-        $this->registry->register('sales_order', $order);
     }
 }

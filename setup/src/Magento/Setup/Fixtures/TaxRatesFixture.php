@@ -6,6 +6,10 @@
 
 namespace Magento\Setup\Fixtures;
 
+use Magento\Tax\Model\Calculation\Rate;
+use Magento\Tax\Model\ResourceModel\Calculation\Rate\Collection;
+use Magento\TaxImportExport\Model\Rate\CsvImportHandler;
+
 /**
  * Fixture for generating tax rates fixture
  *
@@ -33,13 +37,13 @@ class TaxRatesFixture extends Fixture
         }
         $this->fixtureModel->resetObjectManager();
         /** Clean predefined tax rates to maintain consistency */
-        /** @var $collection \Magento\Tax\Model\ResourceModel\Calculation\Rate\Collection */
+        /** @var $collection Collection */
         $collection = $this->fixtureModel->getObjectManager()
-            ->get(\Magento\Tax\Model\ResourceModel\Calculation\Rate\Collection::class);
+            ->get(Collection::class);
 
-        /** @var $model \Magento\Tax\Model\Calculation\Rate */
+        /** @var $model Rate */
         $model = $this->fixtureModel->getObjectManager()
-            ->get(\Magento\Tax\Model\Calculation\Rate::class);
+            ->get(Rate::class);
 
         foreach ($collection->getAllIds() as $id) {
             $model->setId($id);
@@ -57,7 +61,7 @@ class TaxRatesFixture extends Fixture
             'size' => filesize($filename),
         ];
         $importHandler = $this->fixtureModel->getObjectManager()
-            ->create(\Magento\TaxImportExport\Model\Rate\CsvImportHandler::class);
+            ->create(CsvImportHandler::class);
         $importHandler->importFromCsvFile($file);
     }
 

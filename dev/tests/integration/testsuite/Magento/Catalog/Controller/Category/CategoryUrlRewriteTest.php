@@ -53,25 +53,6 @@ class CategoryUrlRewriteTest extends AbstractController
     private $executeInStoreContext;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->config = $this->_objectManager->get(ScopeConfigInterface::class);
-        $this->registry = $this->_objectManager->get(Registry::class);
-        $this->categoryUrlSuffix = $this->config->getValue(
-            CategoryUrlPathGenerator::XML_PATH_CATEGORY_URL_SUFFIX,
-            ScopeInterface::SCOPE_STORE
-        );
-        $this->storeManager = $this->_objectManager->get(StoreManagerInterface::class);
-        $this->categoryRepository = $this->_objectManager->get(CategoryRepositoryInterface::class);
-        $this->catalogSession = $this->_objectManager->get(CatalogSession::class);
-        $this->executeInStoreContext = $this->_objectManager->get(ExecuteInStoreContext::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/category_tree.php
      * @dataProvider categoryRewriteProvider
      * @param int $categoryId
@@ -194,5 +175,24 @@ class CategoryUrlRewriteTest extends AbstractController
         $category = $this->categoryRepository->get($id, $storeId);
         $category->setUrlKey($categoryUrlKey);
         $this->categoryRepository->save($category);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->config = $this->_objectManager->get(ScopeConfigInterface::class);
+        $this->registry = $this->_objectManager->get(Registry::class);
+        $this->categoryUrlSuffix = $this->config->getValue(
+            CategoryUrlPathGenerator::XML_PATH_CATEGORY_URL_SUFFIX,
+            ScopeInterface::SCOPE_STORE
+        );
+        $this->storeManager = $this->_objectManager->get(StoreManagerInterface::class);
+        $this->categoryRepository = $this->_objectManager->get(CategoryRepositoryInterface::class);
+        $this->catalogSession = $this->_objectManager->get(CatalogSession::class);
+        $this->executeInStoreContext = $this->_objectManager->get(ExecuteInStoreContext::class);
     }
 }

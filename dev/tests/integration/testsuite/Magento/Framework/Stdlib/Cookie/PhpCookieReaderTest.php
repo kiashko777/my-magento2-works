@@ -6,29 +6,21 @@
 
 namespace Magento\Framework\Stdlib\Cookie;
 
-class PhpCookieReaderTest extends \PHPUnit\Framework\TestCase
+use PHPUnit\Framework\TestCase;
+
+class PhpCookieReaderTest extends TestCase
 {
+    const NAME = 'cookie-name';
+    const VALUE = 'cookie-val';
+    const DEFAULT_VAL = 'default-val';
     /**
      * @var array
      */
     protected $preTestCookies;
-
     /**
      * @var PhpCookieReader
      */
     protected $model;
-
-    const NAME = 'cookie-name';
-    const VALUE = 'cookie-val';
-    const DEFAULT_VAL = 'default-val';
-
-    protected function setUp(): void
-    {
-        $this->preTestCookies = $_COOKIE;
-        $_COOKIE = [];
-        $_COOKIE[self::NAME] = self::VALUE;
-        $this->model = new PhpCookieReader();
-    }
 
     public function testGetCookieExists()
     {
@@ -45,6 +37,14 @@ class PhpCookieReaderTest extends \PHPUnit\Framework\TestCase
     {
         $this->assertNull($this->model->getCookie('cookies does not exist'));
         $this->assertNull($this->model->getCookie(null));
+    }
+
+    protected function setUp(): void
+    {
+        $this->preTestCookies = $_COOKIE;
+        $_COOKIE = [];
+        $_COOKIE[self::NAME] = self::VALUE;
+        $this->model = new PhpCookieReader();
     }
 
     protected function tearDown(): void

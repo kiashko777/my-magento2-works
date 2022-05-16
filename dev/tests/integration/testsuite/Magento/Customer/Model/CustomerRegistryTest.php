@@ -47,20 +47,6 @@ class CustomerRegistryTest extends TestCase
     private $defaultWebsiteId;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->model = $this->objectManager->get(CustomerRegistry::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-        $this->customerResourceModel = $this->objectManager->get(CustomerResourceModel::class);
-        $this->defaultWebsiteId = $this->storeManager->getWebsite('base')->getWebsiteId();
-    }
-
-    /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
      *
      * @return void
@@ -194,5 +180,19 @@ class CustomerRegistryTest extends TestCase
             NoSuchEntityException::doubleField('email', $email, 'websiteId', $websiteId)
         );
         $this->model->retrieveByEmail($email, $websiteId);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->model = $this->objectManager->get(CustomerRegistry::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
+        $this->customerResourceModel = $this->objectManager->get(CustomerResourceModel::class);
+        $this->defaultWebsiteId = $this->storeManager->getWebsite('base')->getWebsiteId();
     }
 }

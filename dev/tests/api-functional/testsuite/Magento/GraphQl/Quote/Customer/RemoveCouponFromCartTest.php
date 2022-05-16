@@ -29,16 +29,6 @@ class RemoveCouponFromCartTest extends GraphQlAbstract
     private $getMaskedQuoteIdByReservedOrderId;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
      * @magentoApiDataFixture Magento/Checkout/_files/discount_10percent_generalusers.php
@@ -58,11 +48,43 @@ class RemoveCouponFromCartTest extends GraphQlAbstract
     }
 
     /**
+     * @param string $maskedQuoteId
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId): string
+    {
+        return <<<QUERY
+mutation {
+  removeCouponFromCart(input: {cart_id: "$maskedQuoteId"}) {
+    cart {
+      applied_coupon {
+        code
+      }
+    }
+  }
+}
+
+QUERY;
+    }
+
+    /**
+     * @param string $username
+     * @param string $password
+     * @return array
+     */
+    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
+        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
+        return $headerMap;
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      */
     public function testRemoveCouponFromCartIfCartIdIsEmpty()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Required parameter "cart_id" is missing');
 
         $maskedQuoteId = '';
@@ -76,7 +98,7 @@ class RemoveCouponFromCartTest extends GraphQlAbstract
      */
     public function testRemoveCouponFromNonExistentCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Could not find a cart with ID "non_existent_masked_id"');
 
         $maskedQuoteId = 'non_existent_masked_id';
@@ -91,7 +113,7 @@ class RemoveCouponFromCartTest extends GraphQlAbstract
      */
     public function testRemoveCouponFromEmptyCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Cart does not contain products');
 
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
@@ -153,34 +175,12 @@ class RemoveCouponFromCartTest extends GraphQlAbstract
     }
 
     /**
-     * @param string $maskedQuoteId
-     * @return string
+     * @inheritdoc
      */
-    private function getQuery(string $maskedQuoteId): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-mutation {
-  removeCouponFromCart(input: {cart_id: "$maskedQuoteId"}) {
-    cart {
-      applied_coupon {
-        code
-      }
-    }
-  }
-}
-
-QUERY;
-    }
-
-    /**
-     * @param string $username
-     * @param string $password
-     * @return array
-     */
-    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
-    {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
-        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
-        return $headerMap;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
     }
 }

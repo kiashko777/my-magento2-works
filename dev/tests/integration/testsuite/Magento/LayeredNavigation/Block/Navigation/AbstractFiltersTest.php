@@ -80,21 +80,33 @@ abstract class AbstractFiltersTest extends TestCase
     }
 
     /**
+     * Creates navigation block instance.
+     *
+     * @return void
+     */
+    protected function createNavigationBlockInstance(): void
+    {
+        $layerResolver = $this->objectManager->create(Resolver::class);
+
+        if ($this->getLayerType() === Resolver::CATALOG_LAYER_SEARCH) {
+            $layerResolver->create(Resolver::CATALOG_LAYER_SEARCH);
+            $this->navigationBlock = $this->objectManager->create(
+                SearchNavigationBlock::class,
+                [
+                    'layerResolver' => $layerResolver,
+                ]
+            );
+        } else {
+            $this->navigationBlock = $this->objectManager->create(CategoryNavigationBlock::class);
+        }
+    }
+
+    /**
      * Returns layer type for navigation block.
      *
      * @return string
      */
     abstract protected function getLayerType(): string;
-
-    /**
-     * Returns attribute code.
-     *
-     * @return string
-     */
-    protected function getAttributeCode(): string
-    {
-        return '';
-    }
 
     /**
      * Tests getFilters method from navigation block on category page.
@@ -106,11 +118,12 @@ abstract class AbstractFiltersTest extends TestCase
      * @return void
      */
     protected function getCategoryFiltersAndAssert(
-        array $products,
-        array $attributeData,
-        array $expectation,
+        array  $products,
+        array  $attributeData,
+        array  $expectation,
         string $categoryName
-    ): void {
+    ): void
+    {
         $this->updateAttribute($attributeData, $this->getAttributeCode());
         $this->updateProducts($products, $this->getAttributeCode());
         $this->clearInstanceAndReindexSearch();
@@ -128,121 +141,6 @@ abstract class AbstractFiltersTest extends TestCase
     }
 
     /**
-     * Tests getFilters method from navigation block layer state on category page.
-     *
-     * @param array $products
-     * @param array $expectation
-     * @param string $categoryName
-     * @param string|null $filterValue
-     * @param int $productsCount
-     * @return void
-     */
-    protected function getCategoryActiveFiltersAndAssert(
-        array $products,
-        array $expectation,
-        string $categoryName,
-        string $filterValue,
-        int $productsCount
-    ): void {
-        $this->updateAttribute(
-            ['is_filterable' => AbstractFilter::ATTRIBUTE_OPTIONS_ONLY_WITH_RESULTS],
-            $this->getAttributeCode()
-        );
-        $this->updateProducts($products, $this->getAttributeCode());
-        $this->clearInstanceAndReindexSearch();
-        $this->navigationBlock->getRequest()->setParams($this->getRequestParams($filterValue));
-        $this->navigationBlock->getLayer()->setCurrentCategory(
-            $this->loadCategory($categoryName, Store::DEFAULT_STORE_ID)
-        );
-        $this->navigationBlock->setLayout($this->layout);
-        $activeFilters = $this->navigationBlock->getLayer()->getState()->getFilters();
-        $this->assertCount(1, $activeFilters);
-        $currentFilter = reset($activeFilters);
-        $this->assertActiveFilter($expectation, $currentFilter);
-        $this->assertEquals($productsCount, $this->navigationBlock->getLayer()->getProductCollection()->getSize());
-    }
-
-    /**
-     * Tests getFilters method from navigation block on search page.
-     *
-     * @param array $products
-     * @param array $attributeData
-     * @param array $expectation
-     * @return void
-     */
-    protected function getSearchFiltersAndAssert(
-        array $products,
-        array $attributeData,
-        array $expectation
-    ): void {
-        $this->updateAttribute($attributeData, $this->getAttributeCode());
-        $this->updateProducts($products, $this->getAttributeCode());
-        $this->clearInstanceAndReindexSearch();
-        $this->navigationBlock->getRequest()->setParams(['q' => $this->getSearchString()]);
-        $this->navigationBlock->setLayout($this->layout);
-        $filter = $this->getFilterByCode($this->navigationBlock->getFilters(), $this->getAttributeCode());
-
-        if ($attributeData['is_filterable_in_search']) {
-            $this->assertNotNull($filter);
-            $this->assertEquals($expectation, $this->prepareFilterItems($filter));
-        } else {
-            $this->assertNull($filter);
-        }
-    }
-
-    /**
-     * Tests getFilters method from navigation block layer state on search page.
-     *
-     * @param array $products
-     * @param array $expectation
-     * @param string $filterValue
-     * @param int $productsCount
-     * @return void
-     */
-    protected function getSearchActiveFiltersAndAssert(
-        array $products,
-        array $expectation,
-        string $filterValue,
-        int $productsCount
-    ): void {
-        $this->updateAttribute(
-            ['is_filterable' => AbstractFilter::ATTRIBUTE_OPTIONS_ONLY_WITH_RESULTS, 'is_filterable_in_search' => 1],
-            $this->getAttributeCode()
-        );
-        $this->updateProducts($products, $this->getAttributeCode());
-        $this->clearInstanceAndReindexSearch();
-        $this->navigationBlock->getRequest()->setParams(
-            array_merge($this->getRequestParams($filterValue), ['q' => $this->getSearchString()])
-        );
-        $this->navigationBlock->setLayout($this->layout);
-        $activeFilters = $this->navigationBlock->getLayer()->getState()->getFilters();
-        $this->assertCount(1, $activeFilters);
-        $currentFilter = reset($activeFilters);
-        $this->assertActiveFilter($expectation, $currentFilter);
-        $this->assertEquals($productsCount, $this->navigationBlock->getLayer()->getProductCollection()->getSize());
-    }
-
-    /**
-     * Returns filter with specified attribute.
-     *
-     * @param AbstractFilter[] $filters
-     * @param string $code
-     * @return AbstractFilter|null
-     */
-    protected function getFilterByCode(array $filters, string $code): ?AbstractFilter
-    {
-        $filter = array_filter(
-            $filters,
-            function (AbstractFilter $filter) use ($code) {
-                return $filter->getData('attribute_model')
-                    && $filter->getData('attribute_model')->getAttributeCode() === $code;
-            }
-        );
-
-        return array_shift($filter);
-    }
-
-    /**
      * Updates attribute data.
      *
      * @param array $data
@@ -250,9 +148,10 @@ abstract class AbstractFiltersTest extends TestCase
      * @return void
      */
     protected function updateAttribute(
-        array $data,
+        array  $data,
         string $attributeCode
-    ): void {
+    ): void
+    {
         $attribute = $this->attributeRepository->get($attributeCode);
         $attribute->setDataChanges(false);
         $attribute->addData($data);
@@ -263,23 +162,13 @@ abstract class AbstractFiltersTest extends TestCase
     }
 
     /**
-     * Returns filter items as array.
+     * Returns attribute code.
      *
-     * @param AbstractFilter $filter
-     * @return array
+     * @return string
      */
-    protected function prepareFilterItems(AbstractFilter $filter): array
+    protected function getAttributeCode(): string
     {
-        $items = [];
-        /** @var Item $item */
-        foreach ($filter->getItems() as $item) {
-            $items[] = [
-                'label' => $item->getData('label'),
-                'count' => $item->getData('count'),
-            ];
-        }
-
-        return $items;
+        return '';
     }
 
     /**
@@ -291,10 +180,11 @@ abstract class AbstractFiltersTest extends TestCase
      * @return void
      */
     protected function updateProducts(
-        array $products,
+        array  $products,
         string $attributeCode,
-        int $storeId = Store::DEFAULT_STORE_ID
-    ): void {
+        int    $storeId = Store::DEFAULT_STORE_ID
+    ): void
+    {
         $attribute = $this->attributeRepository->get($attributeCode);
 
         foreach ($products as $productSku => $stringValue) {
@@ -345,35 +235,79 @@ abstract class AbstractFiltersTest extends TestCase
     }
 
     /**
-     * Creates navigation block instance.
+     * Returns filter with specified attribute.
      *
-     * @return void
+     * @param AbstractFilter[] $filters
+     * @param string $code
+     * @return AbstractFilter|null
      */
-    protected function createNavigationBlockInstance(): void
+    protected function getFilterByCode(array $filters, string $code): ?AbstractFilter
     {
-        $layerResolver = $this->objectManager->create(Resolver::class);
+        $filter = array_filter(
+            $filters,
+            function (AbstractFilter $filter) use ($code) {
+                return $filter->getData('attribute_model')
+                    && $filter->getData('attribute_model')->getAttributeCode() === $code;
+            }
+        );
 
-        if ($this->getLayerType() === Resolver::CATALOG_LAYER_SEARCH) {
-            $layerResolver->create(Resolver::CATALOG_LAYER_SEARCH);
-            $this->navigationBlock = $this->objectManager->create(
-                SearchNavigationBlock::class,
-                [
-                    'layerResolver' => $layerResolver,
-                ]
-            );
-        } else {
-            $this->navigationBlock = $this->objectManager->create(CategoryNavigationBlock::class);
-        }
+        return array_shift($filter);
     }
 
     /**
-     * Returns search query for filters on search page.
+     * Returns filter items as array.
      *
-     * @return string
+     * @param AbstractFilter $filter
+     * @return array
      */
-    protected function getSearchString(): string
+    protected function prepareFilterItems(AbstractFilter $filter): array
     {
-        return 'Simple Products';
+        $items = [];
+        /** @var Item $item */
+        foreach ($filter->getItems() as $item) {
+            $items[] = [
+                'label' => $item->getData('label'),
+                'count' => $item->getData('count'),
+            ];
+        }
+
+        return $items;
+    }
+
+    /**
+     * Tests getFilters method from navigation block layer state on category page.
+     *
+     * @param array $products
+     * @param array $expectation
+     * @param string $categoryName
+     * @param string|null $filterValue
+     * @param int $productsCount
+     * @return void
+     */
+    protected function getCategoryActiveFiltersAndAssert(
+        array  $products,
+        array  $expectation,
+        string $categoryName,
+        string $filterValue,
+        int    $productsCount
+    ): void
+    {
+        $this->updateAttribute(
+            ['is_filterable' => AbstractFilter::ATTRIBUTE_OPTIONS_ONLY_WITH_RESULTS],
+            $this->getAttributeCode()
+        );
+        $this->updateProducts($products, $this->getAttributeCode());
+        $this->clearInstanceAndReindexSearch();
+        $this->navigationBlock->getRequest()->setParams($this->getRequestParams($filterValue));
+        $this->navigationBlock->getLayer()->setCurrentCategory(
+            $this->loadCategory($categoryName, Store::DEFAULT_STORE_ID)
+        );
+        $this->navigationBlock->setLayout($this->layout);
+        $activeFilters = $this->navigationBlock->getLayer()->getState()->getFilters();
+        $this->assertCount(1, $activeFilters);
+        $currentFilter = reset($activeFilters);
+        $this->assertActiveFilter($expectation, $currentFilter);
+        $this->assertEquals($productsCount, $this->navigationBlock->getLayer()->getProductCollection()->getSize());
     }
 
     /**
@@ -407,5 +341,77 @@ abstract class AbstractFiltersTest extends TestCase
             $this->getAttributeCode(),
             $currentFilter->getFilter()->getData('attribute_model')->getAttributeCode()
         );
+    }
+
+    /**
+     * Tests getFilters method from navigation block on search page.
+     *
+     * @param array $products
+     * @param array $attributeData
+     * @param array $expectation
+     * @return void
+     */
+    protected function getSearchFiltersAndAssert(
+        array $products,
+        array $attributeData,
+        array $expectation
+    ): void
+    {
+        $this->updateAttribute($attributeData, $this->getAttributeCode());
+        $this->updateProducts($products, $this->getAttributeCode());
+        $this->clearInstanceAndReindexSearch();
+        $this->navigationBlock->getRequest()->setParams(['q' => $this->getSearchString()]);
+        $this->navigationBlock->setLayout($this->layout);
+        $filter = $this->getFilterByCode($this->navigationBlock->getFilters(), $this->getAttributeCode());
+
+        if ($attributeData['is_filterable_in_search']) {
+            $this->assertNotNull($filter);
+            $this->assertEquals($expectation, $this->prepareFilterItems($filter));
+        } else {
+            $this->assertNull($filter);
+        }
+    }
+
+    /**
+     * Returns search query for filters on search page.
+     *
+     * @return string
+     */
+    protected function getSearchString(): string
+    {
+        return 'Simple Products';
+    }
+
+    /**
+     * Tests getFilters method from navigation block layer state on search page.
+     *
+     * @param array $products
+     * @param array $expectation
+     * @param string $filterValue
+     * @param int $productsCount
+     * @return void
+     */
+    protected function getSearchActiveFiltersAndAssert(
+        array  $products,
+        array  $expectation,
+        string $filterValue,
+        int    $productsCount
+    ): void
+    {
+        $this->updateAttribute(
+            ['is_filterable' => AbstractFilter::ATTRIBUTE_OPTIONS_ONLY_WITH_RESULTS, 'is_filterable_in_search' => 1],
+            $this->getAttributeCode()
+        );
+        $this->updateProducts($products, $this->getAttributeCode());
+        $this->clearInstanceAndReindexSearch();
+        $this->navigationBlock->getRequest()->setParams(
+            array_merge($this->getRequestParams($filterValue), ['q' => $this->getSearchString()])
+        );
+        $this->navigationBlock->setLayout($this->layout);
+        $activeFilters = $this->navigationBlock->getLayer()->getState()->getFilters();
+        $this->assertCount(1, $activeFilters);
+        $currentFilter = reset($activeFilters);
+        $this->assertActiveFilter($expectation, $currentFilter);
+        $this->assertEquals($productsCount, $this->navigationBlock->getLayer()->getProductCollection()->getSize());
     }
 }

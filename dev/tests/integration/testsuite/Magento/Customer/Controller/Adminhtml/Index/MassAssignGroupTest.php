@@ -9,8 +9,9 @@ namespace Magento\Customer\Controller\Adminhtml\Index;
 
 use Magento\Backend\Model\Session;
 use Magento\Customer\Api\CustomerRepositoryInterface;
-use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Customer\Api\Data\CustomerInterface;
+use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\Exception\AuthenticationException;
 use Magento\Framework\Message\MessageInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\AbstractBackendController;
@@ -31,33 +32,6 @@ class MassAssignGroupTest extends AbstractBackendController
      * @var CustomerRepositoryInterface
      */
     protected $customerRepository;
-
-    /**
-     * @inheritDoc
-     *
-     * @throws \Magento\Framework\Exception\AuthenticationException
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->customerRepository = Bootstrap::getObjectManager()->get(CustomerRepositoryInterface::class);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    protected function tearDown(): void
-    {
-        /**
-         * Unset customer data
-         */
-        Bootstrap::getObjectManager()->get(Session::class)->setCustomerData(null);
-
-        /**
-         * Unset messages
-         */
-        Bootstrap::getObjectManager()->get(Session::class)->getMessages(true);
-    }
 
     /**
      * Tests os update a single customer record.
@@ -135,7 +109,7 @@ class MassAssignGroupTest extends AbstractBackendController
      */
     public function testMassAssignGroupActionNoCustomerIds()
     {
-        $params = ['group'=> 0,'namespace'=> 'customer_listing',
+        $params = ['group' => 0, 'namespace' => 'customer_listing',
         ];
         $this->getRequest()->setParams($params)->setMethod(HttpRequest::METHOD_POST);
         $this->dispatch('backend/customer/index/massAssignGroup');
@@ -143,5 +117,32 @@ class MassAssignGroupTest extends AbstractBackendController
             $this->equalTo(['An item needs to be selected. Select and try again.']),
             MessageInterface::TYPE_ERROR
         );
+    }
+
+    /**
+     * @inheritDoc
+     *
+     * @throws AuthenticationException
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->customerRepository = Bootstrap::getObjectManager()->get(CustomerRepositoryInterface::class);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function tearDown(): void
+    {
+        /**
+         * Unset customer data
+         */
+        Bootstrap::getObjectManager()->get(Session::class)->setCustomerData(null);
+
+        /**
+         * Unset messages
+         */
+        Bootstrap::getObjectManager()->get(Session::class)->getMessages(true);
     }
 }

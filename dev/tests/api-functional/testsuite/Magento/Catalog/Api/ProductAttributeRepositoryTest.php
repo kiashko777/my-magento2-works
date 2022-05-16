@@ -4,14 +4,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Api;
 
+use Exception;
+use Magento\Catalog\Api\Data\ProductAttributeInterface;
 use Magento\Framework\Webapi\Exception as HTTPExceptionCodes;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\TestFramework\TestCase\WebapiAbstract;
+use SoapFault;
 
 /**
  * API tests for \Magento\Catalog\Model\Products\Attribute\Repository.
  */
-class ProductAttributeRepositoryTest extends \Magento\TestFramework\TestCase\WebapiAbstract
+class ProductAttributeRepositoryTest extends WebapiAbstract
 {
     const SERVICE_NAME = 'catalogProductAttributeRepositoryV1';
     const SERVICE_VERSION = 'V1';
@@ -38,6 +44,27 @@ class ProductAttributeRepositoryTest extends \Magento\TestFramework\TestCase\Web
     }
 
     /**
+     * @param $attributeCode
+     * @return array|bool|float|int|string
+     */
+    protected function getAttribute($attributeCode)
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH . '/' . $attributeCode,
+                'httpMethod' => Request::HTTP_METHOD_GET,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'Get',
+            ],
+        ];
+
+        return $this->_webApiCall($serviceInfo, ['attributeCode' => $attributeCode]);
+    }
+
+    /**
      * @return void
      */
     public function testGetList()
@@ -58,13 +85,13 @@ class ProductAttributeRepositoryTest extends \Magento\TestFramework\TestCase\Web
                 'current_page' => 1,
                 'page_size' => 2,
             ],
-            'entityTypeCode' => \Magento\Catalog\Api\Data\ProductAttributeInterface::ENTITY_TYPE_CODE,
+            'entityTypeCode' => ProductAttributeInterface::ENTITY_TYPE_CODE,
         ];
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '?' . http_build_query($searchCriteria),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -125,6 +152,84 @@ class ProductAttributeRepositoryTest extends \Magento\TestFramework\TestCase\Web
     }
 
     /**
+     * @param $attributeCode
+     * @return array|bool|float|int|string
+     */
+    protected function createAttribute($attributeCode)
+    {
+        $attributeData = [
+            'attribute' => [
+                'attribute_code' => $attributeCode,
+                'entity_type_id' => '4',
+                "default_frontend_label" => 'default_label',
+                'frontend_labels' => [
+                    ['store_id' => 0, 'label' => 'front_lbl_store0'],
+                    ['store_id' => 1, 'label' => 'front_lbl_store1'],
+                ],
+                'is_required' => true,
+                "default_value" => "",
+                "frontend_input" => "select",
+                "is_visible_on_front" => true,
+                "is_searchable" => true,
+                "is_visible_in_advanced_search" => true,
+                "is_filterable" => true,
+                "is_filterable_in_search" => true,
+                "options" => [
+                    [
+                        "label" => "Red",
+                        "value" => "",
+                        "sort_order" => 100,
+                        "is_default" => false,
+                        "store_labels" => [
+                            [
+                                "store_id" => 0,
+                                "label" => "Admin Red"
+                            ],
+                            [
+                                "store_id" => 1,
+                                "label" => "Default Red"
+                            ]
+                        ]
+                    ],
+                    [
+                        "label" => "Blue",
+                        "value" => "",
+                        "sort_order" => 0,
+                        "is_default" => true,
+                        "store_labels" => [
+                            [
+                                "store_id" => 0,
+                                "label" => "Admin Blue"
+                            ],
+                            [
+                                "store_id" => 1,
+                                "label" => "Default Blue"
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+        ];
+
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH . '/',
+                'httpMethod' => Request::HTTP_METHOD_POST,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'Save',
+            ],
+        ];
+        $attribute = $this->_webApiCall($serviceInfo, $attributeData);
+        if (isset($attribute['attribute_id']) && $attribute['attribute_id']) {
+            $this->createdAttributes[] = $attributeCode;
+        }
+        return $attribute;
+    }
+
+    /**
      * @return array
      */
     public function attributeCodeDataProvider(): array
@@ -146,9 +251,9 @@ class ProductAttributeRepositoryTest extends \Magento\TestFramework\TestCase\Web
             $this->createAttribute($attributeCode);
             $this->fail("Expected exception");
             // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock.DetectedCatch
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             //Expects soap exception
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->assertEquals(HTTPExceptionCodes::HTTP_BAD_REQUEST, $e->getCode());
         }
     }
@@ -221,6 +326,31 @@ class ProductAttributeRepositoryTest extends \Magento\TestFramework\TestCase\Web
         //New option set as default
         $this->assertEquals($result['options'][3]['value'], $result['default_value']);
         $this->assertEquals("Default Blue Updated", $result['options'][1]['label']);
+    }
+
+    /**
+     * Update attribute by code
+     *
+     * @param $attributeCode
+     * @return array|bool|float|int|string
+     */
+    protected function updateAttribute($attributeCode, $attributeData)
+    {
+        if (TESTS_WEB_API_ADAPTER == self::ADAPTER_SOAP) {
+            $attributeData['attribute']['attributeCode'] = $attributeCode;
+        }
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH . '/' . $attributeCode,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'Save',
+            ],
+        ];
+        return $this->_webApiCall($serviceInfo, $attributeData);
     }
 
     /**
@@ -337,6 +467,28 @@ class ProductAttributeRepositoryTest extends \Magento\TestFramework\TestCase\Web
     }
 
     /**
+     * Delete attribute by code
+     *
+     * @param $attributeCode
+     * @return array|bool|float|int|string
+     */
+    protected function deleteAttribute($attributeCode)
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH . '/' . $attributeCode,
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'deleteById',
+            ],
+        ];
+        return $this->_webApiCall($serviceInfo, ['attributeCode' => $attributeCode]);
+    }
+
+    /**
      * Trying to delete system attribute.
      *
      * @magentoApiDataFixture Magento/Catalog/_files/product_system_attribute.php
@@ -344,7 +496,7 @@ class ProductAttributeRepositoryTest extends \Magento\TestFramework\TestCase\Web
      */
     public function testDeleteSystemAttributeById(): void
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The system attribute can\'t be deleted.');
 
         $attributeCode = 'test_attribute_code_333';
@@ -363,7 +515,7 @@ class ProductAttributeRepositoryTest extends \Magento\TestFramework\TestCase\Web
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/' . $attributeCode,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -375,164 +527,18 @@ class ProductAttributeRepositoryTest extends \Magento\TestFramework\TestCase\Web
         try {
             $this->_webApiCall($serviceInfo, ['attributeCode' => $attributeCode]);
             $this->fail("Expected exception");
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString(
                 $expectedMessage,
                 $e->getMessage(),
                 "SoapFault does not contain expected message."
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $errorObj = $this->processRestExceptionResult($e);
             $this->assertEquals($expectedMessage, $errorObj['message']);
             $this->assertEquals([$attributeCode], $errorObj['parameters']);
             $this->assertEquals(HTTPExceptionCodes::HTTP_NOT_FOUND, $e->getCode());
         }
-    }
-
-    /**
-     * @param $attributeCode
-     * @return array|bool|float|int|string
-     */
-    protected function createAttribute($attributeCode)
-    {
-        $attributeData = [
-            'attribute' => [
-                'attribute_code' => $attributeCode,
-                'entity_type_id' => '4',
-                "default_frontend_label" => 'default_label',
-                'frontend_labels' => [
-                    ['store_id' => 0, 'label' => 'front_lbl_store0'],
-                    ['store_id' => 1, 'label' => 'front_lbl_store1'],
-                ],
-                'is_required' => true,
-                "default_value" => "",
-                "frontend_input" => "select",
-                "is_visible_on_front" => true,
-                "is_searchable" => true,
-                "is_visible_in_advanced_search" => true,
-                "is_filterable" => true,
-                "is_filterable_in_search" => true,
-                "options" => [
-                    [
-                        "label" => "Red",
-                        "value" => "",
-                        "sort_order" => 100,
-                        "is_default" => false,
-                        "store_labels" => [
-                            [
-                                "store_id" => 0,
-                                "label" => "Admin Red"
-                            ],
-                            [
-                                "store_id" => 1,
-                                "label" => "Default Red"
-                            ]
-                        ]
-                    ],
-                    [
-                        "label" => "Blue",
-                        "value" => "",
-                        "sort_order" => 0,
-                        "is_default" => true,
-                        "store_labels" => [
-                            [
-                                "store_id" => 0,
-                                "label" => "Admin Blue"
-                            ],
-                            [
-                                "store_id" => 1,
-                                "label" => "Default Blue"
-                            ]
-                        ]
-                    ]
-                ]
-            ],
-        ];
-
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . '/',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'Save',
-            ],
-        ];
-        $attribute = $this->_webApiCall($serviceInfo, $attributeData);
-        if (isset($attribute['attribute_id']) && $attribute['attribute_id']) {
-            $this->createdAttributes[] = $attributeCode;
-        }
-        return $attribute;
-    }
-
-    /**
-     * @param $attributeCode
-     * @return array|bool|float|int|string
-     */
-    protected function getAttribute($attributeCode)
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . '/' . $attributeCode,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'Get',
-            ],
-        ];
-
-        return $this->_webApiCall($serviceInfo, ['attributeCode' => $attributeCode]);
-    }
-
-    /**
-     * Delete attribute by code
-     *
-     * @param $attributeCode
-     * @return array|bool|float|int|string
-     */
-    protected function deleteAttribute($attributeCode)
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . '/' . $attributeCode,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'deleteById',
-            ],
-        ];
-        return $this->_webApiCall($serviceInfo, ['attributeCode' => $attributeCode]);
-    }
-
-    /**
-     * Update attribute by code
-     *
-     * @param $attributeCode
-     * @return array|bool|float|int|string
-     */
-    protected function updateAttribute($attributeCode, $attributeData)
-    {
-        if (TESTS_WEB_API_ADAPTER == self::ADAPTER_SOAP) {
-            $attributeData['attribute']['attributeCode'] = $attributeCode;
-        }
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . '/' . $attributeCode,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'Save',
-            ],
-        ];
-        return $this->_webApiCall($serviceInfo, $attributeData);
     }
 
     /**

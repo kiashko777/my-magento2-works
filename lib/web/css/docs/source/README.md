@@ -1,6 +1,8 @@
 # Magento UI library
 
-The Magento UI library is a flexible modular Magento frontend library that is designed to assist Magento theme developers. It employs a set of mixins for base elements to ease frontend theme development and customization. The Magento UI library offers the following characteristics for those who develop or customize Magento themes. It is:
+The Magento UI library is a flexible modular Magento frontend library that is designed to assist Magento theme
+developers. It employs a set of mixins for base elements to ease frontend theme development and customization. The
+Magento UI library offers the following characteristics for those who develop or customize Magento themes. It is:
 
 * Built on LESS preprocessor
 * Focused on web standards
@@ -26,7 +28,7 @@ The library provides the ability to customize all of the following user interfac
 * ratings
 * resets
 * responsive
-* sections -  tabs and accordions
+* sections - tabs and accordions
 * tables
 * tooltips
 * typography
@@ -34,7 +36,9 @@ The library provides the ability to customize all of the following user interfac
 * list of theme variables
 
 # Magento UI library file structure
+
 Magento UI library is located under `/lib/web/` folder. It and employs:
+
 * `css/` folder where the library files are placed
 * `fonts/` folder where default and icon fonts are placed
 * `images/` folder where default images are placed
@@ -135,19 +139,24 @@ Magento UI library is located under `/lib/web/` folder. It and employs:
     └── jquery/ (Library javascript files)
 
 ```
+
 &nbsp;
 
 # Magento UI library naming convention
 
-Magento UI library employs a variables and mixins naming convention whereby names of variables and mixins describe their purpose or functions they perform.
+Magento UI library employs a variables and mixins naming convention whereby names of variables and mixins describe their
+purpose or functions they perform.
 
-A variable or a mixins name may only contain lowercase alphanumeric characters, "-" and "_" characters. A variable name must start with "@" character.
+A variable or a mixins name may only contain lowercase alphanumeric characters, "-" and "_" characters. A variable name
+must start with "@" character.
 
 If a variable or mixins name consists of more than one word, they must be concatenated with one hyphen character.
 
 # Less variables naming
 
-A *.less file variable can contain lowercase letters, numbers, special characters: "@", "-" and "_". It must start with "@" character and consist of words concatenated with one hyphen. It should not contain capital letters. A variable name should describe its purpose.
+A *.less file variable can contain lowercase letters, numbers, special characters: "@", "-" and "_". It must start
+with "@" character and consist of words concatenated with one hyphen. It should not contain capital letters. A variable
+name should describe its purpose.
 
 A variable name should be formed according to the following rule:
 
@@ -183,30 +192,36 @@ Private variables:
     @paddingleft;
     @__font-size;
 ```
+
 &nbsp;
 
 # Less mixins naming
 
 A less mixin name can contain lowercase letters, numbers, "-" and "_" characters. It should not contain capital letters.
 
-A mixin name can consist of one or several words, concatenated with one hyphen. If the mixin is private, its name must start with the "_" character. Mixin should be named after property or action it describes.
+A mixin name can consist of one or several words, concatenated with one hyphen. If the mixin is private, its name must
+start with the "_" character. Mixin should be named after property or action it describes.
 
 #### Examples:
 
 ##### Acceptable:
+
 ```css
     .mixin-name() {}
     .transition() {}
     .mixin() {}
     ._button-gradient() {}
 ```
+
 ##### Unacceptable:
+
 ```css
     .mixinName() {}
     .__transition() {}
     .MiXiN() {}
     ._button--gradient() {}
 ```
+
 &nbsp;
 
 # Less Code Standards
@@ -236,6 +251,7 @@ Please verified that you use spaces instead tabs:
 Add space before opening brace and line break after. And line break before closing brace.
 
 ##### Not recommended:
+
 ```css
     .nav{color: @nav__color;}
 ```
@@ -470,8 +486,9 @@ Please follow the next format of comments
 
 #### Types
 
-According to browser support standards the oldest browser that we support is IE9+, it means that you can feel free to use almost all CSS3 selectors: descendants, attributes, pseudo classes, structural, pseudo elements, etc.
-Exeption: Please avoid to use id selector.
+According to browser support standards the oldest browser that we support is IE9+, it means that you can feel free to
+use almost all CSS3 selectors: descendants, attributes, pseudo classes, structural, pseudo elements, etc. Exeption:
+Please avoid to use id selector.
 
 ##### Not recommended:
 
@@ -501,7 +518,8 @@ Exeption: Please avoid to use id selector.
 
 #### Standard classes
 
-All classes should be written in lowercase, starts with letter (exept helpers), words in classes should be separated with dash (minus sign '-')
+All classes should be written in lowercase, starts with letter (exept helpers), words in classes should be separated
+with dash (minus sign '-')
 
 ##### Not recommended:
 
@@ -541,9 +559,8 @@ Helper classes should be written in lowercase, starts with underscore ("_")
 
 ### Size
 
-Use class names that are as short as possible but as long as necessary.
-Try to convey what class is about while being as brief as possible.
-Using class names this way contributes to acceptable levels of understandability and code efficiency.
+Use class names that are as short as possible but as long as necessary. Try to convey what class is about while being as
+brief as possible. Using class names this way contributes to acceptable levels of understandability and code efficiency.
 
 ##### Not recommended: too long
 
@@ -575,6 +592,7 @@ Using class names this way contributes to acceptable levels of understandability
 Write selector name together in single line, don't use concatenation
 
 ##### Not recommended:
+
 ```css
     .product {
         ...
@@ -599,12 +617,14 @@ Write selector name together in single line, don't use concatenation
 
 **Use meaningful or generic class names.**
 
-Instead of presentational or cryptic names, always use class names that reflect the purpose of the element in question, or that are otherwise generic.
-Names that are specific and reflect the purpose of the element should be preferred as these are most understandable and the least likely to change.
-Generic names are simply a fallback for elements that have no particular or no meaning different from their siblings. They are typically needed as “helpers.”
-Using functional or generic names reduces the probability of unnecessary document or template changes.
+Instead of presentational or cryptic names, always use class names that reflect the purpose of the element in question,
+or that are otherwise generic. Names that are specific and reflect the purpose of the element should be preferred as
+these are most understandable and the least likely to change. Generic names are simply a fallback for elements that have
+no particular or no meaning different from their siblings. They are typically needed as “helpers.” Using functional or
+generic names reduces the probability of unnecessary document or template changes.
 
 ##### Not recommended:
+
 ```css
     .foo-1901 {
         ...
@@ -677,8 +697,8 @@ Use type selectors in lowercase
 
 ### Nesting
 
-Be careful with selectors nesting. In general try to use 3 nested levels as max.
-Exception are pseudo elements and states
+Be careful with selectors nesting. In general try to use 3 nested levels as max. Exception are pseudo elements and
+states
 
 ##### Not recommended:
 
@@ -744,8 +764,8 @@ Sort all properties alphabetical. Mixins, variables etc. should go first
 
 Use shortland properties where possible.
 
-CSS offers a variety of shorthand properties (like font) that should be used whenever possible, even in cases where only one value is explicitly set.
-Using shorthand properties is useful for code efficiency and understandability.
+CSS offers a variety of shorthand properties (like font) that should be used whenever possible, even in cases where only
+one value is explicitly set. Using shorthand properties is useful for code efficiency and understandability.
 
 ##### Not recommended:
 
@@ -757,7 +777,7 @@ Using shorthand properties is useful for code efficiency and understandability.
     padding-top: 0;
 ```
 
- ##### Recommended:
+##### Recommended:
 
 ```css
     border-top: 0;
@@ -828,9 +848,11 @@ Omit leading "0"s in values, use dot instead
 
 #### Local variables
 
-If variables are local and used only in module scope it should be located in module file, on the top of the file with general comment
+If variables are local and used only in module scope it should be located in module file, on the top of the file with
+general comment
 
 Example **_module.less**:
+
 ```css
     ...
 
@@ -881,8 +903,8 @@ All variables should be written in lowercase.
     @component-element__state__property__modifier
 ```
 
-Please mention that component can be not only element name, it also can be primary, secondary, tertiary
-Base is a modifier
+Please mention that component can be not only element name, it also can be primary, secondary, tertiary Base is a
+modifier
 
 ##### Examples:
 
@@ -903,13 +925,12 @@ Base is a modifier
 
 ### Location
 
-Theme mixins (except extends) should be saved in **source/utilities** folder
-Extends that used in more than one theme should be saved in lib **lib/source/utilities.less** (will be separated into utilities folder)
+Theme mixins (except extends) should be saved in **source/utilities** folder Extends that used in more than one theme
+should be saved in lib **lib/source/utilities.less** (will be separated into utilities folder)
 
 ### Naming
 
-In name creation you can follow the same rules as for the creation of class names.
-For mixins grouping use prefix__
+In name creation you can follow the same rules as for the creation of class names. For mixins grouping use prefix__
 
 ##### Example:
 
@@ -927,9 +948,10 @@ For mixins grouping use prefix__
 
 ### Location
 
-Local extends that used only in one file, should be written in this **local file**.
-Extends that used in more than two files should be saved in theme **source/_extend.less**
-Extends that used in more than one theme should be saved in lib **lib/source/_abstract.less** (will be renamed to _extend.less)
+Local extends that used only in one file, should be written in this **local file**. Extends that used in more than two
+files should be saved in theme **source/_extend.less**
+Extends that used in more than one theme should be saved in lib **lib/source/_abstract.less** (will be renamed to _
+extend.less)
 
 ### Naming
 

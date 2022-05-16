@@ -7,9 +7,10 @@ declare(strict_types=1);
 
 namespace Magento\Reports\Block\Adminhtml\Shopcart\Abandoned;
 
-use Magento\Quote\Model\Quote;
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Framework\View\LayoutInterface;
+use Magento\Quote\Model\Quote;
+use Magento\Reports\Block\Adminhtml\Shopcart\GridTestAbstract;
+use Magento\TestFramework\Helper\Bootstrap;
 
 /**
  * Test class for \Magento\Reports\Block\Adminhtml\Shopcart\Abandoned\Grid
@@ -18,7 +19,7 @@ use Magento\Framework\View\LayoutInterface;
  * @magentoDataFixture Magento/Sales/_files/quote.php
  * @magentoDataFixture Magento/Customer/_files/customer.php
  */
-class GridTest extends \Magento\Reports\Block\Adminhtml\Shopcart\GridTestAbstract
+class GridTest extends GridTestAbstract
 {
     /**
      * @return void

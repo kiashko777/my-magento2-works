@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\_files;
 
 use Magento\Eav\Model\Entity\Attribute\Source\AbstractSource;

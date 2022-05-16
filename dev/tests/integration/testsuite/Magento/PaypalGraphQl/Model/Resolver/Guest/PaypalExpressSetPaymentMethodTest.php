@@ -7,11 +7,10 @@ declare(strict_types=1);
 
 namespace Magento\PaypalGraphQl\Model\Resolver\Guest;
 
+use Magento\Framework\Serialize\SerializerInterface;
 use Magento\Paypal\Model\Api\Nvp;
 use Magento\PaypalGraphQl\PaypalExpressAbstractTest;
-use Magento\Framework\Serialize\SerializerInterface;
 use Magento\Quote\Model\QuoteIdToMaskedQuoteId;
-use Magento\Framework\GraphQl\Exception\GraphQlInputException;
 
 /**
  * Test ExpressSetPaymentMethodTest graphql endpoint for guest
@@ -29,14 +28,6 @@ class PaypalExpressSetPaymentMethodTest extends PaypalExpressAbstractTest
      * @var QuoteIdToMaskedQuoteId
      */
     private $quoteIdToMaskedId;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->json = $this->objectManager->get(SerializerInterface::class);
-        $this->quoteIdToMaskedId = $this->objectManager->get(QuoteIdToMaskedQuoteId::class);
-    }
 
     /**
      * Test end to end test to process a paypal express order
@@ -210,5 +201,13 @@ QUERY;
             ['paypal_express'],
             ['payflow_express'],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->json = $this->objectManager->get(SerializerInterface::class);
+        $this->quoteIdToMaskedId = $this->objectManager->get(QuoteIdToMaskedQuoteId::class);
     }
 }

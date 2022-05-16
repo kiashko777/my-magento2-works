@@ -3,14 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\AsynchronousOperations\Ui\Component\DataProvider;
 
+use Magento\Backend\Model\Auth\Session;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\User\Model\User;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class SearchResultTest
  */
-class SearchResultTest extends \PHPUnit\Framework\TestCase
+class SearchResultTest extends TestCase
 {
     /**
      * @magentoDataFixture Magento/AsynchronousOperations/_files/bulk.php
@@ -20,14 +24,14 @@ class SearchResultTest extends \PHPUnit\Framework\TestCase
     public function testGetAllIds()
     {
         $objectManager = Bootstrap::getObjectManager();
-        $user = $objectManager->create(\Magento\User\Model\User::class);
+        $user = $objectManager->create(User::class);
         $user->loadByUsername(\Magento\TestFramework\Bootstrap::ADMIN_NAME);
-        $session = $objectManager->get(\Magento\Backend\Model\Auth\Session::class);
+        $session = $objectManager->get(Session::class);
         $session->setUser($user);
 
-        /** @var \Magento\AsynchronousOperations\Ui\Component\DataProvider\SearchResult $searchResult */
+        /** @var SearchResult $searchResult */
         $searchResult = $objectManager->create(
-            \Magento\AsynchronousOperations\Ui\Component\DataProvider\SearchResult::class
+            SearchResult::class
         );
         $this->assertEquals(5, $searchResult->getTotalCount());
     }

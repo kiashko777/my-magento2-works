@@ -6,37 +6,26 @@
 
 namespace Magento\GiftMessage\Model;
 
-class OrderRepositoryTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\Exception\CouldNotSaveException;
+use Magento\Framework\Exception\InputException;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Exception\State\InvalidTransitionException;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\GiftMessage\Api\Data\MessageInterface;
+use Magento\Sales\Model\Order;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class OrderRepositoryTest extends TestCase
 {
-    /** @var \Magento\Framework\ObjectManagerInterface */
+    /** @var ObjectManagerInterface */
     protected $objectManager;
 
-    /** @var \Magento\GiftMessage\Model\Message */
+    /** @var Message */
     protected $message;
 
-    /** @var \Magento\GiftMessage\Model\OrderRepository */
+    /** @var OrderRepository */
     protected $giftMessageOrderRepository;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-
-        $this->message = $this->objectManager->create(\Magento\GiftMessage\Model\Message::class);
-        $this->message->setSender('Romeo');
-        $this->message->setRecipient('Mercutio');
-        $this->message->setMessage('I thought all for the best.');
-
-        $this->giftMessageOrderRepository = $this->objectManager->create(
-            \Magento\GiftMessage\Model\OrderRepository::class
-        );
-    }
-
-    protected function tearDown(): void
-    {
-        $this->objectManager = null;
-        $this->message = null;
-        $this->giftMessageOrderRepository = null;
-    }
 
     /**
      * @magentoDataFixture Magento/GiftMessage/_files/order_with_message.php
@@ -44,10 +33,10 @@ class OrderRepositoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testGet()
     {
-        /** @var \Magento\Sales\Model\Order $order */
-        $order = $this->objectManager->create(\Magento\Sales\Model\Order::class)->loadByIncrementId('100000001');
+        /** @var Order $order */
+        $order = $this->objectManager->create(Order::class)->loadByIncrementId('100000001');
 
-        /** @var \Magento\GiftMessage\Api\Data\MessageInterface $message */
+        /** @var MessageInterface $message */
         $message = $this->giftMessageOrderRepository->get($order->getEntityId());
         $this->assertEquals('Romeo', $message->getSender());
         $this->assertEquals('Mercutio', $message->getRecipient());
@@ -60,10 +49,10 @@ class OrderRepositoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testSave()
     {
-        /** @var \Magento\Sales\Model\Order $order */
-        $order = $this->objectManager->create(\Magento\Sales\Model\Order::class)->loadByIncrementId('100000001');
+        /** @var Order $order */
+        $order = $this->objectManager->create(Order::class)->loadByIncrementId('100000001');
 
-        /** @var \Magento\GiftMessage\Api\Data\MessageInterface $message */
+        /** @var MessageInterface $message */
         $result = $this->giftMessageOrderRepository->save($order->getEntityId(), $this->message);
 
         $message = $this->giftMessageOrderRepository->get($order->getEntityId());
@@ -80,13 +69,13 @@ class OrderRepositoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testSaveMessageIsNotAvailable()
     {
-        $this->expectException(\Magento\Framework\Exception\CouldNotSaveException::class);
+        $this->expectException(CouldNotSaveException::class);
         $this->expectExceptionMessage('The gift message isn\'t available.');
 
-        /** @var \Magento\Sales\Model\Order $order */
-        $order = $this->objectManager->create(\Magento\Sales\Model\Order::class)->loadByIncrementId('100000001');
+        /** @var Order $order */
+        $order = $this->objectManager->create(Order::class)->loadByIncrementId('100000001');
 
-        /** @var \Magento\GiftMessage\Api\Data\MessageInterface $message */
+        /** @var MessageInterface $message */
         $this->giftMessageOrderRepository->save($order->getEntityId(), $this->message);
     }
 
@@ -96,13 +85,13 @@ class OrderRepositoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testSaveMessageIsVirtual()
     {
-        $this->expectException(\Magento\Framework\Exception\State\InvalidTransitionException::class);
+        $this->expectException(InvalidTransitionException::class);
         $this->expectExceptionMessage('Gift messages can\'t be used for virtual products.');
 
-        /** @var \Magento\Sales\Model\Order $order */
-        $order = $this->objectManager->create(\Magento\Sales\Model\Order::class)->loadByIncrementId('100000001');
+        /** @var Order $order */
+        $order = $this->objectManager->create(Order::class)->loadByIncrementId('100000001');
 
-        /** @var \Magento\GiftMessage\Api\Data\MessageInterface $message */
+        /** @var MessageInterface $message */
         $this->giftMessageOrderRepository->save($order->getEntityId(), $this->message);
     }
 
@@ -112,12 +101,12 @@ class OrderRepositoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testSaveMessageIsEmpty()
     {
-        $this->expectException(\Magento\Framework\Exception\InputException::class);
+        $this->expectException(InputException::class);
 
-        /** @var \Magento\Sales\Model\Order $order */
-        $order = $this->objectManager->create(\Magento\Sales\Model\Order::class)->loadByIncrementId('100000001');
+        /** @var Order $order */
+        $order = $this->objectManager->create(Order::class)->loadByIncrementId('100000001');
 
-        /** @var \Magento\GiftMessage\Api\Data\MessageInterface $message */
+        /** @var MessageInterface $message */
         $this->giftMessageOrderRepository->save($order->getEntityId(), $this->message);
 
         $this->expectExceptionMessage(
@@ -131,13 +120,34 @@ class OrderRepositoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testSaveMessageNoProvidedItemId()
     {
-        $this->expectException(\Magento\Framework\Exception\NoSuchEntityException::class);
+        $this->expectException(NoSuchEntityException::class);
         $this->expectExceptionMessage('No order exists with this ID. Verify your information and try again.');
 
-        /** @var \Magento\Sales\Model\Order $order */
-        $order = $this->objectManager->create(\Magento\Sales\Model\Order::class)->loadByIncrementId('100000001');
+        /** @var Order $order */
+        $order = $this->objectManager->create(Order::class)->loadByIncrementId('100000001');
 
-        /** @var \Magento\GiftMessage\Api\Data\MessageInterface $message */
+        /** @var MessageInterface $message */
         $this->giftMessageOrderRepository->save($order->getEntityId() * 10, $this->message);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->message = $this->objectManager->create(Message::class);
+        $this->message->setSender('Romeo');
+        $this->message->setRecipient('Mercutio');
+        $this->message->setMessage('I thought all for the best.');
+
+        $this->giftMessageOrderRepository = $this->objectManager->create(
+            OrderRepository::class
+        );
+    }
+
+    protected function tearDown(): void
+    {
+        $this->objectManager = null;
+        $this->message = null;
+        $this->giftMessageOrderRepository = null;
     }
 }

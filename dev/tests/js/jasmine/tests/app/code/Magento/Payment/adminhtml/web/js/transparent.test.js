@@ -32,8 +32,8 @@ define([
         }
         $('<div id="admin_edit_order_form_container">' +
             '<form id="admin_edit_order_form" action="/">' +
-                '<input type="radio" name="payment[method]" value="payflowpro"/>' +
-                '<input type="radio" name="payment[method]" value="money_order"/>' +
+            '<input type="radio" name="payment[method]" value="payflowpro"/>' +
+            '<input type="radio" name="payment[method]" value="money_order"/>' +
             '</form>' +
             '</div>'
         ).appendTo(document.body);

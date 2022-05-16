@@ -25,15 +25,15 @@ define([
         it('Verify processingUnionInsertDat method', function () {
             var expectedData = [],
                 mockData = [
-                {
-                    attributes: 'Color: dsfsd',
-                    sku: 'Conf&-sdfs'
-                },
-                {
-                    attributes: 'Color: sdfs',
-                    sku: 'Conf-dsfsd'
-                }
-            ],
+                    {
+                        attributes: 'Color: dsfsd',
+                        sku: 'Conf&-sdfs'
+                    },
+                    {
+                        attributes: 'Color: sdfs',
+                        sku: 'Conf-dsfsd'
+                    }
+                ],
                 sourceMock = {
                     get: jasmine.createSpy().and.returnValue(['code1', 'code2']),
                     set: jasmine.createSpy().and.callFake(function (path, row) {

@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Paypal\Model\Api;
 
 use Magento\Framework\Api\SearchCriteriaBuilder;
@@ -14,13 +15,17 @@ use Magento\Paypal\Model\CartFactory;
 use Magento\Paypal\Model\Config;
 use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\QuoteRepository;
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Payment;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\MockObject\MockObject as MockObject;
+use PHPUnit\Framework\TestCase;
+use ReflectionObject;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class NvpTest extends \PHPUnit\Framework\TestCase
+class NvpTest extends TestCase
 {
     /**
      * @var Nvp
@@ -36,46 +41,6 @@ class NvpTest extends \PHPUnit\Framework\TestCase
      * @var Curl|MockObject
      */
     private $httpClient;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-
-        /** @var CurlFactory|MockObject $httpFactory */
-        $httpFactory = $this->getMockBuilder(CurlFactory::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $this->httpClient = $this->getMockBuilder(Curl::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $httpFactory->method('create')
-            ->willReturn($this->httpClient);
-
-        $this->nvpApi = $this->objectManager->create(Nvp::class, [
-            'curlFactory' => $httpFactory
-        ]);
-
-        /** @var ProductMetadataInterface|MockObject $productMetadata */
-        $productMetadata = $this->getMockBuilder(ProductMetadataInterface::class)
-            ->getMock();
-        $productMetadata->method('getEdition')
-            ->willReturn('');
-
-        /** @var Config $config */
-        $config = $this->objectManager->get(Config::class);
-        $config->setMethodCode(Config::METHOD_EXPRESS);
-
-        $refObject = new \ReflectionObject($config);
-        $refProperty = $refObject->getProperty('productMetadata');
-        $refProperty->setAccessible(true);
-        $refProperty->setValue($config, $productMetadata);
-
-        $this->nvpApi->setConfigObject($config);
-    }
 
     /**
      * Checks a case when items with FPT (Fixed Products Tax) are present in the request.
@@ -119,48 +84,6 @@ class NvpTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Test that the refund request to Paypal sends the correct data
-     *
-     * @magentoDataFixture Magento/Paypal/_files/order_express_with_tax.php
-     */
-    public function testCallRefundTransaction()
-    {
-        /** @var \Magento\Sales\Model\Order $order */
-        $order = $this->objectManager->create(\Magento\Sales\Model\Order::class);
-        $order->loadByIncrementId('100000001');
-
-        /** @var \Magento\Sales\Model\Order\Payment $payment */
-        $payment = $order->getPayment();
-
-        $this->nvpApi->setPayment(
-            $payment
-        )->setTransactionId(
-            'fooTransactionId'
-        )->setAmount(
-            $payment->formatAmount($order->getBaseGrandTotal())
-        )->setCurrencyCode(
-            $order->getBaseCurrencyCode()
-        )->setRefundType(
-            Config::REFUND_TYPE_PARTIAL
-        );
-
-        $httpQuery = 'TRANSACTIONID=fooTransactionId&REFUNDTYPE=Partial'
-            .'&CURRENCYCODE=USD&AMT=145.98&METHOD=RefundTransaction'
-            .'&VERSION=72.0&BUTTONSOURCE=Magento_2_';
-
-        $this->httpClient->expects($this->once())->method('write')
-            ->with(
-                'POST',
-                'https://api-3t.paypal.com/nvp',
-                '1.1',
-                [],
-                $httpQuery
-            );
-
-        $this->nvpApi->callRefundTransaction();
-    }
-
-    /**
      * Gets quote by reserved order id.
      *
      * @param string $reservedOrderId
@@ -177,5 +100,87 @@ class NvpTest extends \PHPUnit\Framework\TestCase
         $items = $quoteRepository->getList($searchCriteria)
             ->getItems();
         return array_pop($items);
+    }
+
+    /**
+     * Test that the refund request to Paypal sends the correct data
+     *
+     * @magentoDataFixture Magento/Paypal/_files/order_express_with_tax.php
+     */
+    public function testCallRefundTransaction()
+    {
+        /** @var Order $order */
+        $order = $this->objectManager->create(Order::class);
+        $order->loadByIncrementId('100000001');
+
+        /** @var Payment $payment */
+        $payment = $order->getPayment();
+
+        $this->nvpApi->setPayment(
+            $payment
+        )->setTransactionId(
+            'fooTransactionId'
+        )->setAmount(
+            $payment->formatAmount($order->getBaseGrandTotal())
+        )->setCurrencyCode(
+            $order->getBaseCurrencyCode()
+        )->setRefundType(
+            Config::REFUND_TYPE_PARTIAL
+        );
+
+        $httpQuery = 'TRANSACTIONID=fooTransactionId&REFUNDTYPE=Partial'
+            . '&CURRENCYCODE=USD&AMT=145.98&METHOD=RefundTransaction'
+            . '&VERSION=72.0&BUTTONSOURCE=Magento_2_';
+
+        $this->httpClient->expects($this->once())->method('write')
+            ->with(
+                'POST',
+                'https://api-3t.paypal.com/nvp',
+                '1.1',
+                [],
+                $httpQuery
+            );
+
+        $this->nvpApi->callRefundTransaction();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        /** @var CurlFactory|MockObject $httpFactory */
+        $httpFactory = $this->getMockBuilder(CurlFactory::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->httpClient = $this->getMockBuilder(Curl::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $httpFactory->method('create')
+            ->willReturn($this->httpClient);
+
+        $this->nvpApi = $this->objectManager->create(Nvp::class, [
+            'curlFactory' => $httpFactory
+        ]);
+
+        /** @var ProductMetadataInterface|MockObject $productMetadata */
+        $productMetadata = $this->getMockBuilder(ProductMetadataInterface::class)
+            ->getMock();
+        $productMetadata->method('getEdition')
+            ->willReturn('');
+
+        /** @var Config $config */
+        $config = $this->objectManager->get(Config::class);
+        $config->setMethodCode(Config::METHOD_EXPRESS);
+
+        $refObject = new ReflectionObject($config);
+        $refProperty = $refObject->getProperty('productMetadata');
+        $refProperty->setAccessible(true);
+        $refProperty->setValue($config, $productMetadata);
+
+        $this->nvpApi->setConfigObject($config);
     }
 }

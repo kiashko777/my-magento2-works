@@ -36,30 +36,6 @@ class UploadTest extends AbstractBackendController
     private $fileToRemove;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->filesystem = $this->_objectManager->get(Filesystem::class);
-        $this->tmpDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::TMP);
-        $this->json = $this->_objectManager->get(SerializerInterface::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        if (file_exists($this->fileToRemove)) {
-            unlink($this->fileToRemove);
-        }
-
-        parent::tearDown();
-    }
-
-    /**
      * @return void
      */
     public function testWithNotAllowedFileExtension(): void
@@ -93,5 +69,29 @@ class UploadTest extends AbstractBackendController
             'error' => 0,
             'size' => 12500,
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->filesystem = $this->_objectManager->get(Filesystem::class);
+        $this->tmpDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::TMP);
+        $this->json = $this->_objectManager->get(SerializerInterface::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        if (file_exists($this->fileToRemove)) {
+            unlink($this->fileToRemove);
+        }
+
+        parent::tearDown();
     }
 }

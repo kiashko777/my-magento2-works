@@ -10,11 +10,15 @@ use Magento\Framework\Api\FilterBuilder;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Api\SortOrder;
 use Magento\Framework\Api\SortOrderBuilder;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\WebapiAbstract;
+use Magento\User\Model\User;
 
 /**
  * Test join directives.
  */
-class JoinDirectivesTest extends \Magento\TestFramework\TestCase\WebapiAbstract
+class JoinDirectivesTest extends WebapiAbstract
 {
     /**
      * @var SearchCriteriaBuilder
@@ -32,18 +36,9 @@ class JoinDirectivesTest extends \Magento\TestFramework\TestCase\WebapiAbstract
     private $filterBuilder;
 
     /**
-     * @var \Magento\User\Model\User
+     * @var User
      */
     private $user;
-
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->searchBuilder = $objectManager->create(\Magento\Framework\Api\SearchCriteriaBuilder::class);
-        $this->sortOrderBuilder = $objectManager->create(\Magento\Framework\Api\SortOrderBuilder::class);
-        $this->filterBuilder = $objectManager->create(\Magento\Framework\Api\FilterBuilder::class);
-        $this->user = $objectManager->create(\Magento\User\Model\User::class);
-    }
 
     /**
      * Rollback rules.
@@ -67,7 +62,7 @@ class JoinDirectivesTest extends \Magento\TestFramework\TestCase\WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => $restResourcePath . '?' . http_build_query($requestData),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => $soapService,
@@ -84,6 +79,21 @@ class JoinDirectivesTest extends \Magento\TestFramework\TestCase\WebapiAbstract
         $this->assertEquals($expectedExtensionAttributes['firstname'], $testAttribute['first_name']);
         $this->assertEquals($expectedExtensionAttributes['lastname'], $testAttribute['last_name']);
         $this->assertEquals($expectedExtensionAttributes['email'], $testAttribute['email']);
+    }
+
+    /**
+     * Retrieve the admin user's information.
+     *
+     * @return array
+     */
+    private function getExpectedExtensionAttributes()
+    {
+        $this->user->load(1);
+        return [
+            'firstname' => $this->user->getFirstname(),
+            'lastname' => $this->user->getLastname(),
+            'email' => $this->user->getEmail()
+        ];
     }
 
     /**
@@ -110,7 +120,7 @@ class JoinDirectivesTest extends \Magento\TestFramework\TestCase\WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => $restResourcePath . '?' . http_build_query($requestData),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => $soapService,
@@ -154,7 +164,7 @@ class JoinDirectivesTest extends \Magento\TestFramework\TestCase\WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => $restResourcePath . '?' . http_build_query($requestData),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => $soapService,
@@ -173,18 +183,12 @@ class JoinDirectivesTest extends \Magento\TestFramework\TestCase\WebapiAbstract
         $this->assertEquals($expectedExtensionAttributes['email'], $testAttribute['email']);
     }
 
-    /**
-     * Retrieve the admin user's information.
-     *
-     * @return array
-     */
-    private function getExpectedExtensionAttributes()
+    protected function setUp(): void
     {
-        $this->user->load(1);
-        return [
-            'firstname' => $this->user->getFirstname(),
-            'lastname' => $this->user->getLastname(),
-            'email' => $this->user->getEmail()
-        ];
+        $objectManager = Bootstrap::getObjectManager();
+        $this->searchBuilder = $objectManager->create(SearchCriteriaBuilder::class);
+        $this->sortOrderBuilder = $objectManager->create(SortOrderBuilder::class);
+        $this->filterBuilder = $objectManager->create(FilterBuilder::class);
+        $this->user = $objectManager->create(User::class);
     }
 }

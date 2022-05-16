@@ -70,7 +70,8 @@ define([
                         column: data,
 
                         /** Stub */
-                        on: function () {}
+                        on: function () {
+                        }
                     };
                 });
                 spyOn(ko, 'contextFor').and.callFake(function () {
@@ -97,7 +98,8 @@ define([
                         column: data,
 
                         /** Stub */
-                        on: function () {}
+                        on: function () {
+                        }
                     };
                 });
                 spyOn(ko, 'contextFor').and.callFake(function () {
@@ -163,7 +165,8 @@ define([
                         column: data,
 
                         /** Stub */
-                        on: function () {}
+                        on: function () {
+                        }
                     };
                 });
                 spyOn(ko, 'contextFor').and.callFake(function () {
@@ -177,7 +180,8 @@ define([
                 });
                 event = {
                     /** Stub */
-                    stopImmediatePropagation: function () {}
+                    stopImmediatePropagation: function () {
+                    }
                 };
             });
             it('Check for defined ', function () {
@@ -203,7 +207,8 @@ define([
             beforeEach(function () {
                 event = {
                     /** Stub */
-                    stopImmediatePropagation: function () {}
+                    stopImmediatePropagation: function () {
+                    }
                 };
             });
             it('Check for defined ', function () {
@@ -220,10 +225,12 @@ define([
             beforeEach(function () {
                 event = {
                     /** Stub */
-                    stopPropagation: function () {},
+                    stopPropagation: function () {
+                    },
 
                     /** Stub */
-                    preventDefault: function () {}
+                    preventDefault: function () {
+                    }
                 };
             });
             it('Check for defined ', function () {
@@ -263,7 +270,8 @@ define([
                         },
 
                         /** Stub */
-                        on: function () {}
+                        on: function () {
+                        }
                     };
                 });
             });
@@ -302,7 +310,8 @@ define([
                         },
 
                         /** Stub */
-                        on: function () {}
+                        on: function () {
+                        }
                     };
                 });
             });

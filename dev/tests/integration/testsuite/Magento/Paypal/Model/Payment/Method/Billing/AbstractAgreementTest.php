@@ -3,14 +3,24 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Paypal\Model\Payment\Method\Billing;
 
+use LogicException;
+use Magento\Framework\DataObject;
+use Magento\Payment\Model\Info;
+use Magento\Paypal\Model\Config;
+use Magento\Paypal\Model\Method\Agreement;
+use Magento\Paypal\Model\Pro;
+use Magento\Paypal\Model\ResourceModel\Billing\Agreement\Collection;
 use Magento\Quote\Api\Data\PaymentInterface;
+use Magento\Quote\Model\Quote;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Indexer\TestCase;
 
-class AbstractAgreementTest extends \Magento\TestFramework\Indexer\TestCase
+class AbstractAgreementTest extends TestCase
 {
-    /** @var \Magento\Paypal\Model\Method\Agreement */
+    /** @var Agreement */
     protected $_model;
 
     public static function setUpBeforeClass(): void
@@ -19,23 +29,11 @@ class AbstractAgreementTest extends \Magento\TestFramework\Indexer\TestCase
             ->getApplication()
             ->getDbInstance();
         if (!$db->isDbDumpExists()) {
-            throw new \LogicException('DB dump does not exist.');
+            throw new LogicException('DB dump does not exist.');
         }
         $db->restoreFromDbDump();
 
         parent::setUpBeforeClass();
-    }
-
-    protected function setUp(): void
-    {
-        $config = $this->getMockBuilder(\Magento\Paypal\Model\Config::class)->disableOriginalConstructor()->getMock();
-        $config->expects($this->any())->method('isMethodAvailable')->willReturn(true);
-        $proMock = $this->getMockBuilder(\Magento\Paypal\Model\Pro::class)->disableOriginalConstructor()->getMock();
-        $proMock->expects($this->any())->method('getConfig')->willReturn($config);
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Paypal\Model\Method\Agreement::class,
-            ['data' => [$proMock]]
-        );
     }
 
     /**
@@ -44,7 +42,7 @@ class AbstractAgreementTest extends \Magento\TestFramework\Indexer\TestCase
      */
     public function testIsActive()
     {
-        $quote = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+        $quote = Bootstrap::getObjectManager()->create(
             \Magento\Quote\Model\ResourceModel\Quote\Collection::class
         )->getFirstItem();
         $this->assertTrue($this->_model->isAvailable($quote));
@@ -57,23 +55,23 @@ class AbstractAgreementTest extends \Magento\TestFramework\Indexer\TestCase
     public function testAssignData()
     {
         /** @var \Magento\Quote\Model\ResourceModel\Quote\Collection $collection */
-        $collection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+        $collection = Bootstrap::getObjectManager()->create(
             \Magento\Quote\Model\ResourceModel\Quote\Collection::class
         );
-        /** @var \Magento\Quote\Model\Quote $quote */
+        /** @var Quote $quote */
         $quote = $collection->getFirstItem();
 
-        /** @var \Magento\Payment\Model\Info $info */
-        $info = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Payment\Model\Info::class
+        /** @var Info $info */
+        $info = Bootstrap::getObjectManager()->create(
+            Info::class
         )->setQuote(
             $quote
         );
         $this->_model->setData('info_instance', $info);
-        $billingAgreement = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Paypal\Model\ResourceModel\Billing\Agreement\Collection::class
+        $billingAgreement = Bootstrap::getObjectManager()->create(
+            Collection::class
         )->getFirstItem();
-        $data = new \Magento\Framework\DataObject(
+        $data = new DataObject(
             [
                 PaymentInterface::KEY_ADDITIONAL_DATA => [
                     AbstractAgreement::TRANSPORT_BILLING_AGREEMENT_ID => $billingAgreement->getId()
@@ -84,6 +82,18 @@ class AbstractAgreementTest extends \Magento\TestFramework\Indexer\TestCase
         $this->assertEquals(
             'REF-ID-TEST-678',
             $info->getAdditionalInformation(AbstractAgreement::PAYMENT_INFO_REFERENCE_ID)
+        );
+    }
+
+    protected function setUp(): void
+    {
+        $config = $this->getMockBuilder(Config::class)->disableOriginalConstructor()->getMock();
+        $config->expects($this->any())->method('isMethodAvailable')->willReturn(true);
+        $proMock = $this->getMockBuilder(Pro::class)->disableOriginalConstructor()->getMock();
+        $proMock->expects($this->any())->method('getConfig')->willReturn($config);
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Agreement::class,
+            ['data' => [$proMock]]
         );
     }
 

@@ -60,24 +60,6 @@ class SuffixTest extends TestCase
     private $defaultStoreId;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->model = $this->objectManager->get(Suffix::class);
-        $this->urlFinder = $this->objectManager->get(DbStorage::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-        $this->typeList = $this->objectManager->get(TypeListInterface::class);
-        $this->scopeConfig = $this->objectManager->get(ScopeConfigInterface::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->defaultStoreId = (int)$this->storeManager->getStore('default')->getId();
-    }
-
-    /**
      * @return void
      */
     public function testSaveWithError(): void
@@ -108,6 +90,23 @@ class SuffixTest extends TestCase
                 'entity_id' => $productId,
                 'store_id' => $this->defaultStoreId,
             ]
+        );
+    }
+
+    /**
+     * Assert url rewrite rewrite
+     *
+     * @param string $expectedSuffix
+     * @param array $data
+     * @return void
+     */
+    private function assertRewrite(string $expectedSuffix, array $data): void
+    {
+        $rewrite = $this->urlFinder->findOneByData($data);
+        $this->assertNotNull($rewrite);
+        $this->assertTrue(
+            substr($rewrite->getRequestPath(), -strlen($expectedSuffix)) === $expectedSuffix,
+            'The url rewrite suffix does not match expected value'
         );
     }
 
@@ -240,6 +239,24 @@ class SuffixTest extends TestCase
     }
 
     /**
+     * Check that provided cache types are invalidated
+     *
+     * @param array $cacheTypes
+     * @return void
+     */
+    private function checkIsCacheInvalidated(
+        array $cacheTypes = [Block::TYPE_IDENTIFIER, Collection::TYPE_IDENTIFIER]
+    ): void
+    {
+        $types = $this->typeList->getTypes();
+
+        foreach ($cacheTypes as $type) {
+            $this->assertNotNull($types[$type]);
+            $this->assertEquals(0, $types[$type]->getStatus());
+        }
+    }
+
+    /**
      * @return void
      */
     public function testDeleteCategorySuffix(): void
@@ -252,36 +269,20 @@ class SuffixTest extends TestCase
     }
 
     /**
-     * Check that provided cache types are invalidated
-     *
-     * @param array $cacheTypes
-     * @return void
+     * @inheritdoc
      */
-    private function checkIsCacheInvalidated(
-        array $cacheTypes = [Block::TYPE_IDENTIFIER, Collection::TYPE_IDENTIFIER]
-    ): void {
-        $types = $this->typeList->getTypes();
-
-        foreach ($cacheTypes as $type) {
-            $this->assertNotNull($types[$type]);
-            $this->assertEquals(0, $types[$type]->getStatus());
-        }
-    }
-
-    /**
-     * Assert url rewrite rewrite
-     *
-     * @param string $expectedSuffix
-     * @param array $data
-     * @return void
-     */
-    private function assertRewrite(string $expectedSuffix, array $data): void
+    protected function setUp(): void
     {
-        $rewrite = $this->urlFinder->findOneByData($data);
-        $this->assertNotNull($rewrite);
-        $this->assertTrue(
-            substr($rewrite->getRequestPath(), -strlen($expectedSuffix)) === $expectedSuffix,
-            'The url rewrite suffix does not match expected value'
-        );
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->model = $this->objectManager->get(Suffix::class);
+        $this->urlFinder = $this->objectManager->get(DbStorage::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
+        $this->typeList = $this->objectManager->get(TypeListInterface::class);
+        $this->scopeConfig = $this->objectManager->get(ScopeConfigInterface::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->defaultStoreId = (int)$this->storeManager->getStore('default')->getId();
     }
 }

@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\App\View\Deployment;
 
 use Magento\Framework\App\Filesystem\DirectoryList;
@@ -10,8 +11,11 @@ use Magento\Framework\App\ObjectManager;
 use Magento\Framework\App\State;
 use Magento\Framework\App\View\Deployment\Version\Storage\File;
 use Magento\Framework\Filesystem\Directory\WriteInterface;
+use Magento\TestFramework\App\Filesystem;
+use PHPUnit\Framework\TestCase;
+use UnexpectedValueException;
 
-class VersionTest extends \PHPUnit\Framework\TestCase
+class VersionTest extends TestCase
 {
     /**
      * @var File
@@ -28,19 +32,14 @@ class VersionTest extends \PHPUnit\Framework\TestCase
      */
     private $fileName = 'deployed_version.txt';
 
-    protected function setUp(): void
+    /**
+     */
+    public function testGetValueInProductionModeWithoutVersion()
     {
-        $this->fileStorage = ObjectManager::getInstance()->create(
-            File::class,
-            [
-                'directoryCode' => DirectoryList::STATIC_VIEW,
-                'fileName' => $this->fileName
-            ]
-        );
-        /** @var \Magento\TestFramework\App\Filesystem $filesystem */
-        $filesystem = ObjectManager::getInstance()->get(\Magento\TestFramework\App\Filesystem::class);
-        $this->directoryWrite = $filesystem->getDirectoryWrite(DirectoryList::STATIC_VIEW);
-        $this->removeDeployVersionFile();
+        $this->expectException(UnexpectedValueException::class);
+
+        $this->assertFalse($this->directoryWrite->isExist($this->fileName));
+        $this->getVersionModel(State::MODE_PRODUCTION)->getValue();
     }
 
     /**
@@ -63,28 +62,6 @@ class VersionTest extends \PHPUnit\Framework\TestCase
         );
     }
 
-    protected function tearDown(): void
-    {
-        $this->removeDeployVersionFile();
-    }
-
-    private function removeDeployVersionFile()
-    {
-        if ($this->directoryWrite->isExist($this->fileName)) {
-            $this->directoryWrite->delete($this->fileName);
-        }
-    }
-
-    /**
-     */
-    public function testGetValueInProductionModeWithoutVersion()
-    {
-        $this->expectException(\UnexpectedValueException::class);
-
-        $this->assertFalse($this->directoryWrite->isExist($this->fileName));
-        $this->getVersionModel(State::MODE_PRODUCTION)->getValue();
-    }
-
     public function testGetValueInDeveloperMode()
     {
         $this->assertFalse($this->directoryWrite->isExist($this->fileName));
@@ -102,5 +79,32 @@ class VersionTest extends \PHPUnit\Framework\TestCase
         $version = $versionModel->getValue();
         $this->assertTrue($this->directoryWrite->isExist($this->fileName));
         $this->assertEquals($version, $versionModel->getValue());
+    }
+
+    protected function setUp(): void
+    {
+        $this->fileStorage = ObjectManager::getInstance()->create(
+            File::class,
+            [
+                'directoryCode' => DirectoryList::STATIC_VIEW,
+                'fileName' => $this->fileName
+            ]
+        );
+        /** @var Filesystem $filesystem */
+        $filesystem = ObjectManager::getInstance()->get(Filesystem::class);
+        $this->directoryWrite = $filesystem->getDirectoryWrite(DirectoryList::STATIC_VIEW);
+        $this->removeDeployVersionFile();
+    }
+
+    private function removeDeployVersionFile()
+    {
+        if ($this->directoryWrite->isExist($this->fileName)) {
+            $this->directoryWrite->delete($this->fileName);
+        }
+    }
+
+    protected function tearDown(): void
+    {
+        $this->removeDeployVersionFile();
     }
 }

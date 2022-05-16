@@ -3,11 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Di\App\Task\Operation;
 
-use Magento\Setup\Module\Di\App\Task\OperationInterface;
 use Magento\Framework\App;
+use Magento\Framework\App\ObjectManager\ConfigWriterInterface;
+use Magento\Setup\Module\Di\App\Task\OperationInterface;
 use Magento\Setup\Module\Di\Compiler\Config;
+use Magento\Setup\Module\Di\Compiler\Config\ModificationChain;
 use Magento\Setup\Module\Di\Definition\Collection as DefinitionsCollection;
 
 /**
@@ -31,7 +34,7 @@ class Area implements OperationInterface
     private $configReader;
 
     /**
-     * @var \Magento\Framework\App\ObjectManager\ConfigWriterInterface
+     * @var ConfigWriterInterface
      */
     private $configWriter;
 
@@ -41,7 +44,7 @@ class Area implements OperationInterface
     private $data = [];
 
     /**
-     * @var \Magento\Setup\Module\Di\Compiler\Config\ModificationChain
+     * @var ModificationChain
      */
     private $modificationChain;
 
@@ -49,18 +52,19 @@ class Area implements OperationInterface
      * @param App\AreaList $areaList
      * @param \Magento\Setup\Module\Di\Code\Reader\Decorator\Area $areaInstancesNamesList
      * @param Config\Reader $configReader
-     * @param \Magento\Framework\App\ObjectManager\ConfigWriterInterface $configWriter
-     * @param \Magento\Setup\Module\Di\Compiler\Config\ModificationChain $modificationChain
+     * @param ConfigWriterInterface $configWriter
+     * @param ModificationChain $modificationChain
      * @param array $data
      */
     public function __construct(
-        App\AreaList $areaList,
-        \Magento\Setup\Module\Di\Code\Reader\Decorator\Area $areaInstancesNamesList,
-        Config\Reader $configReader,
-        \Magento\Framework\App\ObjectManager\ConfigWriterInterface $configWriter,
-        Config\ModificationChain $modificationChain,
-        $data = []
-    ) {
+        App\AreaList                                               $areaList,
+        \Magento\Setup\Module\Di\Code\Reader\Decorator\Area        $areaInstancesNamesList,
+        Config\Reader                                              $configReader,
+        ConfigWriterInterface $configWriter,
+        ModificationChain                                   $modificationChain,
+                                                                   $data = []
+    )
+    {
         $this->areaList = $areaList;
         $this->areaInstancesNamesList = $areaInstancesNamesList;
         $this->configReader = $configReader;
@@ -118,16 +122,6 @@ class Area implements OperationInterface
     }
 
     /**
-     * Returns operation name
-     *
-     * @return string
-     */
-    public function getName()
-    {
-        return 'Area configuration aggregation';
-    }
-
-    /**
      * Sort definitions to make reproducible result
      *
      * @param DefinitionsCollection $definitionsCollection
@@ -139,5 +133,15 @@ class Area implements OperationInterface
         ksort($definitions);
 
         $definitionsCollection->initialize($definitions);
+    }
+
+    /**
+     * Returns operation name
+     *
+     * @return string
+     */
+    public function getName()
+    {
+        return 'Area configuration aggregation';
     }
 }

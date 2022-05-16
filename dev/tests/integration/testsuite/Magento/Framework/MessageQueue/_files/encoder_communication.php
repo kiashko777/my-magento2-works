@@ -4,11 +4,14 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Customer\Api\Data\CustomerInterface;
+
 return [
     'topics' => [
         'customer.created' => [
             'request_type' => 'object_interface',
-            'request' => \Magento\Customer\Api\Data\CustomerInterface::class,
+            'request' => CustomerInterface::class,
             'response' => null,
         ],
         'customer.list.retrieved' => [
@@ -18,17 +21,17 @@ return [
         ],
         'customer.updated' => [
             'request_type' => 'object_interface',
-            'request' => \Magento\Customer\Api\Data\CustomerInterface::class,
+            'request' => CustomerInterface::class,
             'response' => null,
         ],
         'customer.deleted' => [
             'request_type' => 'object_interface',
-            'request' => \Magento\Customer\Api\Data\CustomerInterface::class,
+            'request' => CustomerInterface::class,
             'response' => null,
         ],
         'product.created' => [
             'request_type' => 'object_interface',
-            'request' => \Magento\Catalog\Api\Data\ProductInterface::class,
+            'request' => ProductInterface::class,
             'response' => null,
         ],
     ],

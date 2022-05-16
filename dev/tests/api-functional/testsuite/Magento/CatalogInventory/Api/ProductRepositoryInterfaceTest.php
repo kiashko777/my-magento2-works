@@ -3,11 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogInventory\Api;
 
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\CatalogInventory\Api\Data\StockStatusInterface;
+use Magento\Eav\Api\Data\AttributeInterface;
 use Magento\Framework\Api\ExtensibleDataInterface;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 class ProductRepositoryInterfaceTest extends WebapiAbstract
@@ -22,7 +25,7 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
     const KEY_ITEM_ID = 'item_id';
     const KEY_PRODUCT_ID = StockStatusInterface::PRODUCT_ID;
     const KEY_CUSTOM_ATTRIBUTES = 'custom_attributes';
-    const KEY_ATTRIBUTE_CODE = \Magento\Eav\Api\Data\AttributeInterface::ATTRIBUTE_CODE;
+    const KEY_ATTRIBUTE_CODE = AttributeInterface::ATTRIBUTE_CODE;
     const KEY_IS_IN_STOCK = 'is_in_stock';
 
     const CODE_QUANTITY_AND_STOCK_STATUS = 'quantity_and_stock_status';
@@ -47,7 +50,7 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
         $this->assertTrue(isset($response[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM]));
         $stockItemData = $response[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM];
         $returnedQty = $stockItemData[self::KEY_QTY];
-        $this->assertEquals($qty, $returnedQty, 'CREATE: Expected qty to be same: ' . $qty .', '. $returnedQty);
+        $this->assertEquals($qty, $returnedQty, 'CREATE: Expected qty to be same: ' . $qty . ', ' . $returnedQty);
         $this->assertArrayHasKey(self::KEY_ITEM_ID, $stockItemData);
         $this->assertArrayHasKey(self::KEY_PRODUCT_ID, $stockItemData);
 
@@ -56,7 +59,7 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
 
         $stockItemData = $response[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM];
         $returnedQty = $stockItemData[self::KEY_QTY];
-        $this->assertEquals($qty, $returnedQty, 'GET: Expected qty to be same: ' . $qty .', '. $returnedQty);
+        $this->assertEquals($qty, $returnedQty, 'GET: Expected qty to be same: ' . $qty . ', ' . $returnedQty);
 
         // update the catalog inventory
         $qty = $this->getDifferent($qty);  // update the quantity
@@ -66,7 +69,7 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
 
         $stockItemData = $response[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM];
         $returnedQty = $stockItemData[self::KEY_QTY];
-        $this->assertEquals($qty, $returnedQty, 'UPDATE 1: Expected qty to be same: ' . $qty .', '. $returnedQty);
+        $this->assertEquals($qty, $returnedQty, 'UPDATE 1: Expected qty to be same: ' . $qty . ', ' . $returnedQty);
 
         // update the product without any mention of catalog inventory; no change expected for catalog inventory
         // note: $qty expected to be the same as previously set, above
@@ -80,127 +83,12 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
         $this->assertTrue(isset($response[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM]));
         $stockItemData = $response[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM];
         $returnedQty = $stockItemData[self::KEY_QTY];
-        $this->assertEquals($qty, $returnedQty, 'UPDATE 2: Expected qty to be same: ' . $qty .', '. $returnedQty);
+        $this->assertEquals($qty, $returnedQty, 'UPDATE 2: Expected qty to be same: ' . $qty . ', ' . $returnedQty);
         $this->assertEquals($newPrice, $response[ProductInterface::PRICE]);
 
         // delete the product; expect that all goes well
         $response = $this->deleteProduct($productData[ProductInterface::SKU]);
         $this->assertTrue($response);
-    }
-
-    /**
-     * Tests conditions that stray from the 'happy path'
-     */
-    public function testCatalogInventoryWithBogusData()
-    {
-        // create a simple product with catalog inventory
-        $qty = 666;
-        $productData = $this->getSimpleProductData($qty);
-        $stockItemData = $this->getStockItemData($qty);
-        $this->assertArrayNotHasKey(self::KEY_ITEM_ID, $stockItemData);
-        $this->assertArrayNotHasKey(self::KEY_PRODUCT_ID, $stockItemData);
-        $productData[self::KEY_EXTENSION_ATTRIBUTES] = $stockItemData;
-
-        $response = $this->saveProduct($productData);
-
-        $this->assertArrayHasKey(self::KEY_EXTENSION_ATTRIBUTES, $response);
-        $this->assertTrue(isset($response[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM]));
-        $stockItemData = $response[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM];
-        $returnedQty = $stockItemData[self::KEY_QTY];
-        $this->assertEquals($qty, $returnedQty, 'POST 1: Expected qty to be same: ' . $qty .', '. $returnedQty);
-        $this->assertArrayHasKey(self::KEY_ITEM_ID, $stockItemData);
-        $this->assertArrayHasKey(self::KEY_PRODUCT_ID, $stockItemData);
-
-        // re-save the catalog inventory:
-        // -- update quantity (which should be honored)
-        // -- supply an incorrect product id (which should be ignored, and be replaced with the actual one)
-        // -- supply an incorrect website id (which should be ignored, and be replaced with the actual one)
-        $qty = 777;  // update the quantity
-        $response[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM][self::KEY_QTY] = $qty;
-
-        $originalProductId = $stockItemData[self::KEY_PRODUCT_ID];
-        $bogusProductId = $this->getDifferent($originalProductId);
-        $response[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM][self::KEY_PRODUCT_ID] = $bogusProductId;
-
-        $response = $this->saveProduct($response);
-
-        $stockItemData = $response[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM];
-        $returnedQty = $stockItemData[self::KEY_QTY];
-        $this->assertEquals($qty, $returnedQty, 'POST 2: Expected qty to be same: ' . $qty .', '. $returnedQty);
-
-        $returnedProductId = $stockItemData[self::KEY_PRODUCT_ID];
-        $this->assertEquals($originalProductId, $returnedProductId);
-
-        // delete the product; expect that all goes well
-        $response = $this->deleteProduct($productData[ProductInterface::SKU]);
-        $this->assertTrue($response);
-    }
-
-    /**
-     * Tests that creating a simple product has a side-effect of creating catalog inventory
-     */
-    public function testSimpleProductCreationWithoutSpecifyingCatalogInventory()
-    {
-        // create a simple product with catalog inventory
-        $qty = null;
-        $productData = $this->getSimpleProductData($qty);
-        $this->assertArrayNotHasKey(self::KEY_CUSTOM_ATTRIBUTES, $productData);
-        $this->assertArrayNotHasKey(self::KEY_EXTENSION_ATTRIBUTES, $productData);
-
-        $response = $this->saveProduct($productData);
-
-        $this->assertArrayHasKey(self::KEY_EXTENSION_ATTRIBUTES, $response);
-        $this->assertTrue(isset($response[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM]));
-        $stockItemData = $response[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM];
-        $this->assertArrayHasKey(self::KEY_ITEM_ID, $stockItemData);
-        $this->assertArrayHasKey(self::KEY_PRODUCT_ID, $stockItemData);
-
-        // delete the product; expect that all goes well
-        $response = $this->deleteProduct($productData[ProductInterface::SKU]);
-        $this->assertTrue($response);
-    }
-
-    /**
-     * Tests updating product stock item data when previously product was created without specified stock_item
-     */
-    public function testUpdatingQuantity()
-    {
-        // create a simple product with catalog inventory
-        $qty = null;
-        $productData = $this->getSimpleProductData($qty);
-        $response = $this->saveProduct($productData);
-        $stockItemData = $response[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM];
-
-        $this->assertEquals($qty, $stockItemData[self::KEY_QTY]);
-        $this->assertFalse($stockItemData[self::KEY_IS_IN_STOCK]);
-
-        // update a created product with catalog inventory
-        $qty = 1;
-        $inStock = true;
-        $response[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM][self::KEY_QTY] = $qty;
-        $response[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM][self::KEY_IS_IN_STOCK] = $inStock;
-        $responseUpdated = $this->updateProduct($response);
-        $stockItemDataUpdated = $responseUpdated[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM];
-
-        $this->assertEquals($qty, $stockItemDataUpdated[self::KEY_QTY]);
-        $this->assertEquals($inStock, $stockItemDataUpdated[self::KEY_IS_IN_STOCK]);
-
-        // delete the product; expect that all goes well
-        $response = $this->deleteProduct($productData[ProductInterface::SKU]);
-        $this->assertTrue($response);
-    }
-
-    // --- my helpers -----------------------------------------------------------------------------
-
-    /**
-     * Return a value that is different than the original one
-     *
-     * @param int $original
-     * @return int
-     */
-    protected function getDifferent($original)
-    {
-        return 1 + $original * $original;
     }
 
     /**
@@ -271,7 +159,41 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
         ];
     }
 
-    // --- common REST helpers --------------------------------------------------------------------
+    /**
+     * Save a product
+     *
+     * @param array $product
+     * @return array the created product data
+     */
+    protected function saveProduct($product)
+    {
+        if (isset($product['custom_attributes'])) {
+            $count = count($product['custom_attributes']);
+            for ($i = 0; $i < $count; $i++) {
+                if ($product['custom_attributes'][$i]['attribute_code'] == 'category_ids'
+                    && !is_array($product['custom_attributes'][$i]['value'])
+                ) {
+                    $product['custom_attributes'][$i]['value'] = [""];
+                }
+            }
+        }
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH,
+                'httpMethod' => Request::HTTP_METHOD_POST,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'Save',
+            ],
+        ];
+        $requestData = ['product' => $product];
+        $response = $this->_webApiCall($serviceInfo, $requestData);
+        return $response;
+    }
+
+    // --- my helpers -----------------------------------------------------------------------------
 
     /**
      * Get a product via its sku
@@ -284,7 +206,7 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/' . $sku,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -298,37 +220,14 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
     }
 
     /**
-     * Save a product
+     * Return a value that is different than the original one
      *
-     * @param array $product
-     * @return array the created product data
+     * @param int $original
+     * @return int
      */
-    protected function saveProduct($product)
+    protected function getDifferent($original)
     {
-        if (isset($product['custom_attributes'])) {
-            $count = count($product['custom_attributes']);
-            for ($i=0; $i < $count; $i++) {
-                if ($product['custom_attributes'][$i]['attribute_code'] == 'category_ids'
-                    && !is_array($product['custom_attributes'][$i]['value'])
-                ) {
-                    $product['custom_attributes'][$i]['value'] = [""];
-                }
-            }
-        }
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'Save',
-            ],
-        ];
-        $requestData = ['product' => $product];
-        $response = $this->_webApiCall($serviceInfo, $requestData);
-        return $response;
+        return 1 + $original * $original;
     }
 
     /**
@@ -341,7 +240,7 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
     {
         if (isset($product['custom_attributes'])) {
             $count = count($product['custom_attributes']);
-            for ($i=0; $i < $count; $i++) {
+            for ($i = 0; $i < $count; $i++) {
                 if ($product['custom_attributes'][$i]['attribute_code'] == 'category_ids'
                     && !is_array($product['custom_attributes'][$i]['value'])
                 ) {
@@ -357,7 +256,7 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/' . $sku,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -366,9 +265,11 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
             ],
         ];
         $requestData = ['product' => $product];
-        $response =  $this->_webApiCall($serviceInfo, $requestData);
+        $response = $this->_webApiCall($serviceInfo, $requestData);
         return $response;
     }
+
+    // --- common REST helpers --------------------------------------------------------------------
 
     /**
      * Delete a product via its sku
@@ -382,7 +283,7 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => $resourcePath,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE
+                'httpMethod' => Request::HTTP_METHOD_DELETE
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -393,5 +294,107 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
         $requestData = ['sku' => $sku];
         $response = $this->_webApiCall($serviceInfo, $requestData);
         return $response;
+    }
+
+    /**
+     * Tests conditions that stray from the 'happy path'
+     */
+    public function testCatalogInventoryWithBogusData()
+    {
+        // create a simple product with catalog inventory
+        $qty = 666;
+        $productData = $this->getSimpleProductData($qty);
+        $stockItemData = $this->getStockItemData($qty);
+        $this->assertArrayNotHasKey(self::KEY_ITEM_ID, $stockItemData);
+        $this->assertArrayNotHasKey(self::KEY_PRODUCT_ID, $stockItemData);
+        $productData[self::KEY_EXTENSION_ATTRIBUTES] = $stockItemData;
+
+        $response = $this->saveProduct($productData);
+
+        $this->assertArrayHasKey(self::KEY_EXTENSION_ATTRIBUTES, $response);
+        $this->assertTrue(isset($response[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM]));
+        $stockItemData = $response[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM];
+        $returnedQty = $stockItemData[self::KEY_QTY];
+        $this->assertEquals($qty, $returnedQty, 'POST 1: Expected qty to be same: ' . $qty . ', ' . $returnedQty);
+        $this->assertArrayHasKey(self::KEY_ITEM_ID, $stockItemData);
+        $this->assertArrayHasKey(self::KEY_PRODUCT_ID, $stockItemData);
+
+        // re-save the catalog inventory:
+        // -- update quantity (which should be honored)
+        // -- supply an incorrect product id (which should be ignored, and be replaced with the actual one)
+        // -- supply an incorrect website id (which should be ignored, and be replaced with the actual one)
+        $qty = 777;  // update the quantity
+        $response[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM][self::KEY_QTY] = $qty;
+
+        $originalProductId = $stockItemData[self::KEY_PRODUCT_ID];
+        $bogusProductId = $this->getDifferent($originalProductId);
+        $response[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM][self::KEY_PRODUCT_ID] = $bogusProductId;
+
+        $response = $this->saveProduct($response);
+
+        $stockItemData = $response[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM];
+        $returnedQty = $stockItemData[self::KEY_QTY];
+        $this->assertEquals($qty, $returnedQty, 'POST 2: Expected qty to be same: ' . $qty . ', ' . $returnedQty);
+
+        $returnedProductId = $stockItemData[self::KEY_PRODUCT_ID];
+        $this->assertEquals($originalProductId, $returnedProductId);
+
+        // delete the product; expect that all goes well
+        $response = $this->deleteProduct($productData[ProductInterface::SKU]);
+        $this->assertTrue($response);
+    }
+
+    /**
+     * Tests that creating a simple product has a side-effect of creating catalog inventory
+     */
+    public function testSimpleProductCreationWithoutSpecifyingCatalogInventory()
+    {
+        // create a simple product with catalog inventory
+        $qty = null;
+        $productData = $this->getSimpleProductData($qty);
+        $this->assertArrayNotHasKey(self::KEY_CUSTOM_ATTRIBUTES, $productData);
+        $this->assertArrayNotHasKey(self::KEY_EXTENSION_ATTRIBUTES, $productData);
+
+        $response = $this->saveProduct($productData);
+
+        $this->assertArrayHasKey(self::KEY_EXTENSION_ATTRIBUTES, $response);
+        $this->assertTrue(isset($response[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM]));
+        $stockItemData = $response[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM];
+        $this->assertArrayHasKey(self::KEY_ITEM_ID, $stockItemData);
+        $this->assertArrayHasKey(self::KEY_PRODUCT_ID, $stockItemData);
+
+        // delete the product; expect that all goes well
+        $response = $this->deleteProduct($productData[ProductInterface::SKU]);
+        $this->assertTrue($response);
+    }
+
+    /**
+     * Tests updating product stock item data when previously product was created without specified stock_item
+     */
+    public function testUpdatingQuantity()
+    {
+        // create a simple product with catalog inventory
+        $qty = null;
+        $productData = $this->getSimpleProductData($qty);
+        $response = $this->saveProduct($productData);
+        $stockItemData = $response[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM];
+
+        $this->assertEquals($qty, $stockItemData[self::KEY_QTY]);
+        $this->assertFalse($stockItemData[self::KEY_IS_IN_STOCK]);
+
+        // update a created product with catalog inventory
+        $qty = 1;
+        $inStock = true;
+        $response[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM][self::KEY_QTY] = $qty;
+        $response[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM][self::KEY_IS_IN_STOCK] = $inStock;
+        $responseUpdated = $this->updateProduct($response);
+        $stockItemDataUpdated = $responseUpdated[self::KEY_EXTENSION_ATTRIBUTES][self::KEY_STOCK_ITEM];
+
+        $this->assertEquals($qty, $stockItemDataUpdated[self::KEY_QTY]);
+        $this->assertEquals($inStock, $stockItemDataUpdated[self::KEY_IS_IN_STOCK]);
+
+        // delete the product; expect that all goes well
+        $response = $this->deleteProduct($productData[ProductInterface::SKU]);
+        $this->assertTrue($response);
     }
 }

@@ -25,17 +25,6 @@ class ContainerTest extends TestCase
     private $container;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->container = $this->objectManager->get(Container::class);
-    }
-
-    /**
      * @dataProvider getOptionTextDataProvider
      * @param string $value
      * @param string|bool $expectedValue
@@ -62,5 +51,16 @@ class ContainerTest extends TestCase
                 'expected_value' => false,
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->container = $this->objectManager->get(Container::class);
     }
 }

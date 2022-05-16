@@ -38,22 +38,6 @@ class BackordersTest extends TestCase
     private $stockIndexerProcessor;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->backendFactory = $this->objectManager->create(BackendFactory::class);
-        $this->backorders = $this->backendFactory->create(Backorders::class, [
-            'data' => [
-                'path' => Configuration::XML_PATH_BACKORDERS,
-            ]
-        ]);
-        $this->mutableConfig = $this->objectManager->get(MutableScopeConfigInterface::class);
-        $this->stockIndexerProcessor = $this->objectManager->get(Processor::class);
-    }
-
-    /**
      * @dataProvider afterSaveDataProvider
      * @param int $value
      * @param int $currentValue
@@ -95,5 +79,21 @@ class BackordersTest extends TestCase
                 'expected_indexer_status' => StateInterface::STATUS_VALID,
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->backendFactory = $this->objectManager->create(BackendFactory::class);
+        $this->backorders = $this->backendFactory->create(Backorders::class, [
+            'data' => [
+                'path' => Configuration::XML_PATH_BACKORDERS,
+            ]
+        ]);
+        $this->mutableConfig = $this->objectManager->get(MutableScopeConfigInterface::class);
+        $this->stockIndexerProcessor = $this->objectManager->get(Processor::class);
     }
 }

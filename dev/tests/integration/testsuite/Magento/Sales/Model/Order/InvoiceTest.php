@@ -7,12 +7,14 @@ declare(strict_types=1);
 
 namespace Magento\Sales\Model\Order;
 
-use PHPUnit\Framework\TestCase;
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Sales\Model\ResourceModel\Order\Collection as OrderCollection;
+use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Sales\Api\InvoiceManagementInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
-use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\ResourceModel\Order\Collection as OrderCollection;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Invoice model test.
@@ -20,7 +22,7 @@ use Magento\Framework\Api\SearchCriteriaBuilder;
 class InvoiceTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
@@ -45,25 +47,13 @@ class InvoiceTest extends TestCase
     private $searchCriteriaBuilder;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->collection = $this->objectManager->create(OrderCollection::class);
-        $this->invoiceManagement = $this->objectManager->get(InvoiceManagementInterface::class);
-        $this->orderRepository = $this->objectManager->get(OrderRepositoryInterface::class);
-        $this->searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Sales/_files/invoice.php
      */
     public function testOrderTotalItemCount()
     {
         $expectedResult = [['total_item_count' => 1]];
         $actualResult = [];
-        /** @var \Magento\Sales\Model\Order $order */
+        /** @var Order $order */
         foreach ($this->collection->getItems() as $order) {
             $actualResult[] = ['total_item_count' => $order->getData('total_item_count')];
         }
@@ -86,5 +76,17 @@ class InvoiceTest extends TestCase
         $invoice = $this->invoiceManagement->prepareInvoice($order);
 
         self::assertEquals($invoice->isLast(), true);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->collection = $this->objectManager->create(OrderCollection::class);
+        $this->invoiceManagement = $this->objectManager->get(InvoiceManagementInterface::class);
+        $this->orderRepository = $this->objectManager->get(OrderRepositoryInterface::class);
+        $this->searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
     }
 }

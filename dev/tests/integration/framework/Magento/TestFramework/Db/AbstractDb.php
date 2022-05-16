@@ -7,7 +7,11 @@
 /**
  * Abstract database handler for integration tests
  */
+
 namespace Magento\TestFramework\Db;
+
+use LogicException;
+use Magento\Framework\Shell;
 
 abstract class AbstractDb
 {
@@ -47,7 +51,7 @@ abstract class AbstractDb
     protected $_varPath = '';
 
     /**
-     * @var \Magento\Framework\Shell
+     * @var Shell
      */
     protected $_shell;
 
@@ -59,9 +63,9 @@ abstract class AbstractDb
      * @param string $password
      * @param string $schema
      * @param string $varPath
-     * @param \Magento\Framework\Shell $shell
+     * @param Shell $shell
      */
-    public function __construct($host, $user, $password, $schema, $varPath, \Magento\Framework\Shell $shell)
+    public function __construct($host, $user, $password, $schema, $varPath, Shell $shell)
     {
         $this->_host = $host;
         $this->_user = $user;
@@ -75,13 +79,6 @@ abstract class AbstractDb
      * Remove all DB objects
      */
     abstract public function cleanup();
-
-    /**
-     * Get filename for setup db dump
-     *
-     * @return string
-     */
-    abstract protected function getSetupDbDumpFilename();
 
     /**
      * Is dump exists
@@ -138,6 +135,13 @@ abstract class AbstractDb
     }
 
     /**
+     * Get filename for setup db dump
+     *
+     * @return string
+     */
+    abstract protected function getSetupDbDumpFilename();
+
+    /**
      * Create file with sql script content.
      * Utility method that is used in children classes
      *
@@ -151,12 +155,12 @@ abstract class AbstractDb
     }
 
     /**
-     * @throws \LogicException
+     * @throws LogicException
      */
     protected function assertVarPathWritable()
     {
         if (!is_dir($this->_varPath) || !is_writable($this->_varPath)) {
-            throw new \LogicException("The specified '{$this->_varPath}' is not a directory or not writable.");
+            throw new LogicException("The specified '{$this->_varPath}' is not a directory or not writable.");
         }
     }
 }

@@ -5,28 +5,32 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework;
 
-class ValidatorFactoryTest extends \PHPUnit\Framework\TestCase
-{
-    /** @var  \Magento\Framework\ValidatorFactory */
-    private $model;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->model = $objectManager->create(\Magento\Framework\ValidatorFactory::class);
-    }
+class ValidatorFactoryTest extends TestCase
+{
+    /** @var  ValidatorFactory */
+    private $model;
 
     public function testCreateWithInstanceName()
     {
-        $setName = \Magento\Framework\DataObject::class;
+        $setName = DataObject::class;
         $this->assertInstanceOf($setName, $this->model->create([], $setName));
     }
 
     public function testCreateDefault()
     {
-        $default = \Magento\Framework\Validator::class;
+        $default = Validator::class;
         $this->assertInstanceOf($default, $this->model->create());
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->model = $objectManager->create(ValidatorFactory::class);
     }
 }

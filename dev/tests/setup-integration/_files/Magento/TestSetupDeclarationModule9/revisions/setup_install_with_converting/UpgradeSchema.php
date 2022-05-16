@@ -14,6 +14,7 @@ use Magento\Framework\Setup\SchemaSetupInterface;
 use Magento\Framework\Setup\UpgradeSchemaInterface;
 use Magento\TestSetupDeclarationModule8\Setup\InstallSchema as Module8InstallSchema;
 use Magento\TestSetupDeclarationModule8\Setup\UpgradeSchema as Module8UpgradeSchema;
+use Zend_Db_Exception;
 
 /**
  * Upgrade schema script for the TestSetupDeclarationModule9 module.
@@ -27,7 +28,7 @@ class UpgradeSchema implements UpgradeSchemaInterface
 
     /**
      * @inheritdoc
-     * @throws \Zend_Db_Exception
+     * @throws Zend_Db_Exception
      */
     public function upgrade(SchemaSetupInterface $setup, ModuleContextInterface $context)
     {

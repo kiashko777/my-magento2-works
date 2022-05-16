@@ -4,17 +4,30 @@
  * See COPYING.txt for license details.
  */
 
-/** @var \Magento\TestFramework\ObjectManager $objectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+/** @var ObjectManager $objectManager */
 
-$objectManager->removeSharedInstance(\Magento\Catalog\Model\ProductRepository::class);
-$objectManager->removeSharedInstance(\Magento\Catalog\Model\Product\Option\Repository::class);
-$objectManager->removeSharedInstance(\Magento\Catalog\Model\Product\Option\SaveHandler::class);
+use Magento\Catalog\Api\Data\ProductCustomOptionInterface;
+use Magento\Catalog\Api\Data\ProductCustomOptionInterfaceFactory;
+use Magento\Catalog\Api\Data\ProductCustomOptionValuesInterfaceFactory;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Option\Repository;
+use Magento\Catalog\Model\Product\Option\SaveHandler;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Catalog\Model\ProductRepository;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 
-$productRepository = $objectManager->get(\Magento\Catalog\Model\ProductRepository::class);
+$objectManager = Bootstrap::getObjectManager();
 
-/** @var $product \Magento\Catalog\Model\Product */
-$product = $objectManager->create(\Magento\Catalog\Model\Product::class);
+$objectManager->removeSharedInstance(ProductRepository::class);
+$objectManager->removeSharedInstance(Repository::class);
+$objectManager->removeSharedInstance(SaveHandler::class);
+
+$productRepository = $objectManager->get(ProductRepository::class);
+
+/** @var $product Product */
+$product = $objectManager->create(Product::class);
 
 $product->setTypeId(
     'simple'
@@ -35,9 +48,9 @@ $product->setTypeId(
 )->setMetaDescription(
     'meta description'
 )->setVisibility(
-    \Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH
+    Visibility::VISIBILITY_BOTH
 )->setStatus(
-    \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED
+    Status::STATUS_ENABLED
 )->setCanSaveCustomOptions(
     true
 )->setStockData(
@@ -75,14 +88,14 @@ $options = [
 
 $customOptions = [];
 
-/** @var \Magento\Catalog\Api\Data\ProductCustomOptionInterfaceFactory $customOptionFactory */
-$customOptionFactory = $objectManager->create(\Magento\Catalog\Api\Data\ProductCustomOptionInterfaceFactory::class);
+/** @var ProductCustomOptionInterfaceFactory $customOptionFactory */
+$customOptionFactory = $objectManager->create(ProductCustomOptionInterfaceFactory::class);
 $optionValueFactory = $objectManager->create(
-    \Magento\Catalog\Api\Data\ProductCustomOptionValuesInterfaceFactory::class
+    ProductCustomOptionValuesInterfaceFactory::class
 );
 
 foreach ($options as $option) {
-    /** @var \Magento\Catalog\Api\Data\ProductCustomOptionInterface $customOption */
+    /** @var ProductCustomOptionInterface $customOption */
     $customOption = $customOptionFactory->create(['data' => $option]);
     $customOption->setProductSku($product->getSku());
     if (isset($option['values'])) {

@@ -6,90 +6,34 @@
 
 namespace Magento\Framework;
 
+use Magento\Framework\App\Area;
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\App\State;
+use Magento\Framework\Module\Dir\Reader;
+use Magento\Framework\Phrase\Renderer\Composite;
+use Magento\Framework\Phrase\RendererInterface;
+use Magento\Framework\View\Design\Theme\FlyweightFactory;
+use Magento\Framework\View\Design\ThemeInterface;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\TestFramework\Helper\CacheCleaner;
+use Magento\TestFramework\ObjectManager;
+use Magento\Theme\Model\ThemeFactory;
+use Magento\Theme\Model\View\Design;
+use Magento\Theme\Model\View\Design\Proxy;
 use PHPUnit\Framework\MockObject\MockObject as MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppIsolation enabled
  * @magentoCache all disabled
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class TranslateTest extends \PHPUnit\Framework\TestCase
+class TranslateTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Translate
+     * @var Translate
      */
     private $translate;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        /** @var \Magento\Framework\View\FileSystem|MockObject $viewFileSystem */
-        $viewFileSystem = $this->createPartialMock(
-            \Magento\Framework\View\FileSystem::class,
-            ['getLocaleFileName']
-        );
-
-        $viewFileSystem->expects($this->any())
-            ->method('getLocaleFileName')
-            ->willReturn(
-                
-                    dirname(__DIR__) . '/Translation/Model/_files/Magento/design/Magento/theme/i18n/en_US.csv'
-                
-            );
-
-        /** @var \Magento\Framework\View\Design\ThemeInterface|MockObject $theme */
-        $theme = $this->createMock(\Magento\Framework\View\Design\ThemeInterface::class);
-        $theme->expects($this->any())->method('getThemePath')->willReturn('Magento/luma');
-
-        /** @var \Magento\TestFramework\ObjectManager $objectManager */
-        $objectManager = Bootstrap::getObjectManager();
-        $objectManager->addSharedInstance($viewFileSystem, \Magento\Framework\View\FileSystem::class);
-
-        /** @var $moduleReader \Magento\Framework\Module\Dir\Reader */
-        $moduleReader = $objectManager->get(\Magento\Framework\Module\Dir\Reader::class);
-        $moduleReader->setModuleDir(
-            'Magento_Store',
-            'i18n',
-            dirname(__DIR__) . '/Translation/Model/_files/Magento/Store/i18n'
-        );
-        $moduleReader->setModuleDir(
-            'Magento_Catalog',
-            'i18n',
-            dirname(__DIR__) . '/Translation/Model/_files/Magento/Catalog/i18n'
-        );
-
-        /** @var \Magento\Theme\Model\View\Design|MockObject $designModel */
-        $designModel = $this->getMockBuilder(\Magento\Theme\Model\View\Design::class)
-            ->setMethods(['getDesignTheme'])
-            ->setConstructorArgs(
-                [
-                    $objectManager->get(\Magento\Store\Model\StoreManagerInterface::class),
-                    $objectManager->get(\Magento\Framework\View\Design\Theme\FlyweightFactory::class),
-                    $objectManager->get(\Magento\Framework\App\Config\ScopeConfigInterface::class),
-                    $objectManager->get(\Magento\Theme\Model\ThemeFactory::class),
-                    $objectManager->get(\Magento\Framework\ObjectManagerInterface::class),
-                    $objectManager->get(\Magento\Framework\App\State::class),
-                    ['frontend' => 'Test/default']
-                ]
-            )
-            ->getMock();
-
-        $designModel->expects($this->any())->method('getDesignTheme')->willReturn($theme);
-
-        $objectManager->addSharedInstance($designModel, \Magento\Theme\Model\View\Design\Proxy::class);
-
-        $this->translate = $objectManager->create(\Magento\Framework\Translate::class);
-        $objectManager->addSharedInstance($this->translate, \Magento\Framework\Translate::class);
-        $objectManager->removeSharedInstance(\Magento\Framework\Phrase\Renderer\Composite::class);
-        $objectManager->removeSharedInstance(\Magento\Framework\Phrase\Renderer\Translate::class);
-        \Magento\Framework\Phrase::setRenderer(
-            $objectManager->get(\Magento\Framework\Phrase\RendererInterface::class)
-        );
-    }
 
     public function testLoadData()
     {
@@ -110,8 +54,8 @@ class TranslateTest extends \PHPUnit\Framework\TestCase
      */
     public function testTranslate($inputText, $expectedTranslation)
     {
-        $this->translate->loadData(\Magento\Framework\App\Area::AREA_FRONTEND);
-        $actualTranslation = new \Magento\Framework\Phrase($inputText);
+        $this->translate->loadData(Area::AREA_FRONTEND);
+        $actualTranslation = new Phrase($inputText);
         $this->assertEquals($expectedTranslation, $actualTranslation);
     }
 
@@ -143,5 +87,74 @@ class TranslateTest extends \PHPUnit\Framework\TestCase
                 'Magento_Catalog module phrase is overridden by theme translation',
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        /** @var \Magento\Framework\View\FileSystem|MockObject $viewFileSystem */
+        $viewFileSystem = $this->createPartialMock(
+            \Magento\Framework\View\FileSystem::class,
+            ['getLocaleFileName']
+        );
+
+        $viewFileSystem->expects($this->any())
+            ->method('getLocaleFileName')
+            ->willReturn(
+
+                dirname(__DIR__) . '/Translation/Model/_files/Magento/design/Magento/theme/i18n/en_US.csv'
+
+            );
+
+        /** @var ThemeInterface|MockObject $theme */
+        $theme = $this->createMock(ThemeInterface::class);
+        $theme->expects($this->any())->method('getThemePath')->willReturn('Magento/luma');
+
+        /** @var ObjectManager $objectManager */
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->addSharedInstance($viewFileSystem, \Magento\Framework\View\FileSystem::class);
+
+        /** @var $moduleReader Reader */
+        $moduleReader = $objectManager->get(Reader::class);
+        $moduleReader->setModuleDir(
+            'Magento_Store',
+            'i18n',
+            dirname(__DIR__) . '/Translation/Model/_files/Magento/Store/i18n'
+        );
+        $moduleReader->setModuleDir(
+            'Magento_Catalog',
+            'i18n',
+            dirname(__DIR__) . '/Translation/Model/_files/Magento/Catalog/i18n'
+        );
+
+        /** @var Design|MockObject $designModel */
+        $designModel = $this->getMockBuilder(Design::class)
+            ->setMethods(['getDesignTheme'])
+            ->setConstructorArgs(
+                [
+                    $objectManager->get(StoreManagerInterface::class),
+                    $objectManager->get(FlyweightFactory::class),
+                    $objectManager->get(ScopeConfigInterface::class),
+                    $objectManager->get(ThemeFactory::class),
+                    $objectManager->get(ObjectManagerInterface::class),
+                    $objectManager->get(State::class),
+                    ['frontend' => 'Test/default']
+                ]
+            )
+            ->getMock();
+
+        $designModel->expects($this->any())->method('getDesignTheme')->willReturn($theme);
+
+        $objectManager->addSharedInstance($designModel, Proxy::class);
+
+        $this->translate = $objectManager->create(Translate::class);
+        $objectManager->addSharedInstance($this->translate, Translate::class);
+        $objectManager->removeSharedInstance(Composite::class);
+        $objectManager->removeSharedInstance(\Magento\Framework\Phrase\Renderer\Translate::class);
+        Phrase::setRenderer(
+            $objectManager->get(RendererInterface::class)
+        );
     }
 }

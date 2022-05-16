@@ -4,14 +4,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Dependency;
 
 use Magento\Framework\Component\ComponentRegistrar;
+use Magento\Framework\Config\FileResolverInterface;
 
 /**
  * Collects all webapi.xml files
  */
-class WebapiFileResolver implements \Magento\Framework\Config\FileResolverInterface
+class WebapiFileResolver implements FileResolverInterface
 {
     /**
      * @var ComponentRegistrar

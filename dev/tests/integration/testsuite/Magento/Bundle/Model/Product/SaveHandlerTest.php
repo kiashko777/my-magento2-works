@@ -45,17 +45,6 @@ class SaveHandlerTest extends TestCase
     private $productRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->store = $this->objectManager->create(Store::class);
-        /** @var ProductRepositoryInterface $productRepository */
-        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
-    }
-
-    /**
      * Test option title on different stores
      *
      * @return void
@@ -144,66 +133,6 @@ class SaveHandlerTest extends TestCase
     }
 
     /**
-     * Set product option link
-     *
-     * @param $bundleLinks
-     * @param $option
-     * @return array
-     * @throws NoSuchEntityException
-     */
-    private function setProductLink($bundleLinks, $option): array
-    {
-        $links = [];
-        $options = [];
-        if (!empty($bundleLinks)) {
-            foreach ($bundleLinks as $linkData) {
-                if (!(bool)$linkData['delete']) {
-                    /** @var LinkInterface $link */
-                    $link = $this->objectManager->create(LinkInterfaceFactory::class)
-                        ->create(['data' => $linkData]);
-                    $linkProduct = $this->productRepository->getById($linkData['product_id']);
-                    $link->setSku($linkProduct->getSku());
-                    $link->setQty($linkData['selection_qty']);
-                    $link->setPrice($linkData['selection_price_value']);
-                    if (isset($linkData['selection_can_change_qty'])) {
-                        $link->setCanChangeQuantity($linkData['selection_can_change_qty']);
-                    }
-                    $links[] = $link;
-                }
-            }
-            $option->setProductLinks($links);
-            $options[] = $option;
-        }
-        return $options;
-    }
-
-    /**
-     * Set product option
-     *
-     * @return array
-     * @throws NoSuchEntityException
-     */
-    private function setProductOption(): array
-    {
-        $options = [];
-        $product = $this->productRepository->get('bundle-product', true);
-        foreach ($product->getBundleOptionsData() as $optionData) {
-            if (!(bool)$optionData['delete']) {
-                $option = $this->objectManager->create(OptionInterfaceFactory::class)
-                    ->create(['data' => $optionData]);
-                $option->setSku($product->getSku());
-                $option->setOptionId(null);
-
-                $bundleLinks = $product->getBundleSelectionsData();
-                if (!empty($bundleLinks)) {
-                    $options = $this->setProductLink(current($bundleLinks), $option);
-                }
-            }
-        }
-        return $options;
-    }
-
-    /**
      * Set bundle product option data
      *
      * @return array
@@ -242,5 +171,76 @@ class SaveHandlerTest extends TestCase
             $options = $this->setProductOption();
         }
         return $options;
+    }
+
+    /**
+     * Set product option
+     *
+     * @return array
+     * @throws NoSuchEntityException
+     */
+    private function setProductOption(): array
+    {
+        $options = [];
+        $product = $this->productRepository->get('bundle-product', true);
+        foreach ($product->getBundleOptionsData() as $optionData) {
+            if (!(bool)$optionData['delete']) {
+                $option = $this->objectManager->create(OptionInterfaceFactory::class)
+                    ->create(['data' => $optionData]);
+                $option->setSku($product->getSku());
+                $option->setOptionId(null);
+
+                $bundleLinks = $product->getBundleSelectionsData();
+                if (!empty($bundleLinks)) {
+                    $options = $this->setProductLink(current($bundleLinks), $option);
+                }
+            }
+        }
+        return $options;
+    }
+
+    /**
+     * Set product option link
+     *
+     * @param $bundleLinks
+     * @param $option
+     * @return array
+     * @throws NoSuchEntityException
+     */
+    private function setProductLink($bundleLinks, $option): array
+    {
+        $links = [];
+        $options = [];
+        if (!empty($bundleLinks)) {
+            foreach ($bundleLinks as $linkData) {
+                if (!(bool)$linkData['delete']) {
+                    /** @var LinkInterface $link */
+                    $link = $this->objectManager->create(LinkInterfaceFactory::class)
+                        ->create(['data' => $linkData]);
+                    $linkProduct = $this->productRepository->getById($linkData['product_id']);
+                    $link->setSku($linkProduct->getSku());
+                    $link->setQty($linkData['selection_qty']);
+                    $link->setPrice($linkData['selection_price_value']);
+                    if (isset($linkData['selection_can_change_qty'])) {
+                        $link->setCanChangeQuantity($linkData['selection_can_change_qty']);
+                    }
+                    $links[] = $link;
+                }
+            }
+            $option->setProductLinks($links);
+            $options[] = $option;
+        }
+        return $options;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->store = $this->objectManager->create(Store::class);
+        /** @var ProductRepositoryInterface $productRepository */
+        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
     }
 }

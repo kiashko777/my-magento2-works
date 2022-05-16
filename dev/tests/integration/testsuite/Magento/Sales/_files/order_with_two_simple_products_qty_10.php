@@ -5,10 +5,15 @@
  */
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\Sales\Api\OrderRepositoryInterface;
-use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 use Magento\Customer\Model\CustomerRegistry;
+use Magento\Sales\Api\OrderRepositoryInterface;
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Address;
+use Magento\Sales\Model\Order\Item;
+use Magento\Sales\Model\Order\Payment;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Customer/_files/customer.php');
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/product_simple.php');
@@ -24,12 +29,12 @@ $product = $productRepository->get('simple');
 $secondProduct = $productRepository->get('simple-2');
 
 $addressData = include __DIR__ . '/../../../Magento/Sales/_files/address_data.php';
-$billingAddress = $objectManager->create(\Magento\Sales\Model\Order\Address::class, ['data' => $addressData]);
+$billingAddress = $objectManager->create(Address::class, ['data' => $addressData]);
 $billingAddress->setAddressType('billing');
 $shippingAddress = clone $billingAddress;
 $shippingAddress->setId(null)->setAddressType('shipping');
 
-$payment = $objectManager->create(\Magento\Sales\Model\Order\Payment::class);
+$payment = $objectManager->create(Payment::class);
 $payment->setMethod('checkmo');
 $customerIdFromFixture = 1;
 
@@ -54,8 +59,8 @@ foreach ($productOptions as $option) {
     $requestInfo['options'][$option->getOptionId()] = $optionValuesByType[$option->getType()];
 }
 
-/** @var \Magento\Sales\Model\Order\Item $orderItem */
-$orderItem = $objectManager->create(\Magento\Sales\Model\Order\Item::class);
+/** @var Item $orderItem */
+$orderItem = $objectManager->create(Item::class);
 $orderItem->setProductId($product->getId());
 $orderItem->setQtyOrdered(10);
 $orderItem->setBasePrice($product->getPrice());
@@ -68,7 +73,7 @@ $orderItem->setSku($product->getSku());
 $orderItem->setStoreId(0);
 // create second order item
 
-$orderItem2 = $objectManager->create(\Magento\Sales\Model\Order\Item::class);
+$orderItem2 = $objectManager->create(Item::class);
 $requestInfo = [
     'qty' => 1
 ];
@@ -85,11 +90,11 @@ $orderItem2->setProductId($secondProduct->getId())
     ->setSku($secondProduct->getSku())
     ->setProductOptions(['info_buyRequest' => $requestInfo]);
 
-/** @var \Magento\Sales\Model\Order $order */
-$order = $objectManager->create(\Magento\Sales\Model\Order::class);
+/** @var Order $order */
+$order = $objectManager->create(Order::class);
 $order->setIncrementId('100000001');
-$order->setState(\Magento\Sales\Model\Order::STATE_NEW);
-$order->setStatus($order->getConfig()->getStateDefaultStatus(\Magento\Sales\Model\Order::STATE_NEW));
+$order->setState(Order::STATE_NEW);
+$order->setStatus($order->getConfig()->getStateDefaultStatus(Order::STATE_NEW));
 $order->setCustomerIsGuest(false);
 $order->setCustomerId($customer->getId());
 $order->setCustomerEmail($customer->getEmail());
@@ -101,7 +106,7 @@ $order->setAddresses([$billingAddress, $shippingAddress]);
 $order->setPayment($payment);
 $order->addItem($orderItem);
 $order->addItem($orderItem2);
-$order->setStoreId($objectManager->get(\Magento\Store\Model\StoreManagerInterface::class)->getStore()->getId());
+$order->setStoreId($objectManager->get(StoreManagerInterface::class)->getStore()->getId());
 $order->setSubtotal(100);
 $order->setBaseSubtotal(100);
 $order->setBaseGrandTotal(100);

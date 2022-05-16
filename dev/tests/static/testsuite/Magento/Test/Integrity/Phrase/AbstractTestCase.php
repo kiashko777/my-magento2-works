@@ -7,12 +7,15 @@
 /**
  * Abstract class for phrase testing
  */
+
 namespace Magento\Test\Integrity\Phrase;
 
 use Magento\Framework\Component\ComponentRegistrar;
 use Magento\Setup\Module\I18n\FilesCollector;
+use PHPUnit\Framework\TestCase;
+use RegexIterator;
 
-class AbstractTestCase extends \PHPUnit\Framework\TestCase
+class AbstractTestCase extends TestCase
 {
     /**
      * @param array $phrase
@@ -33,7 +36,7 @@ class AbstractTestCase extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @return \RegexIterator
+     * @return RegexIterator
      */
     protected function _getFiles()
     {

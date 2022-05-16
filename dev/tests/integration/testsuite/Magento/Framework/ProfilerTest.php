@@ -5,17 +5,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework;
 
+use Magento\Framework\Profiler\Driver\Standard;
+use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
-class ProfilerTest extends \PHPUnit\Framework\TestCase
+class ProfilerTest extends TestCase
 {
-    protected function tearDown(): void
-    {
-        \Magento\Framework\Profiler::reset();
-    }
-
     /**
      * @dataProvider applyConfigDataProvider
      * @param array $config
@@ -23,10 +21,10 @@ class ProfilerTest extends \PHPUnit\Framework\TestCase
      */
     public function testApplyConfigWithDrivers(array $config, array $expectedDrivers)
     {
-        $profiler = new \Magento\Framework\Profiler();
+        $profiler = new Profiler();
         $profiler::applyConfig($config, '');
-        $this->assertClassHasAttribute('_drivers', \Magento\Framework\Profiler::class);
-        $object = new ReflectionClass(\Magento\Framework\Profiler::class);
+        $this->assertClassHasAttribute('_drivers', Profiler::class);
+        $object = new ReflectionClass(Profiler::class);
         $attribute = $object->getProperty('_drivers');
         $attribute->setAccessible(true);
         $propertyObject = $attribute->getValue($profiler);
@@ -47,15 +45,15 @@ class ProfilerTest extends \PHPUnit\Framework\TestCase
             ],
             'Integer 1 does creates standard driver' => [
                 'config' => ['drivers' => [1]],
-                'drivers' => [new \Magento\Framework\Profiler\Driver\Standard()],
+                'drivers' => [new Standard()],
             ],
             'Config array key sets driver type' => [
                 'configs' => ['drivers' => ['standard' => 1]],
-                'drivers' => [new \Magento\Framework\Profiler\Driver\Standard()],
+                'drivers' => [new Standard()],
             ],
             'Config array key ignored when type set' => [
                 'config' => ['drivers' => ['custom' => ['type' => 'standard']]],
-                'drivers' => [new \Magento\Framework\Profiler\Driver\Standard()],
+                'drivers' => [new Standard()],
             ],
             'Config with outputs element as integer 1 creates output' => [
                 'config' => [
@@ -63,19 +61,19 @@ class ProfilerTest extends \PHPUnit\Framework\TestCase
                     'baseDir' => '/some/base/dir',
                 ],
                 'drivers' => [
-                    new \Magento\Framework\Profiler\Driver\Standard(
+                    new Standard(
                         ['outputs' => [['type' => 'html', 'baseDir' => '/some/base/dir']]]
                     ),
                 ],
             ],
             'Config with outputs element as integer 0 does not create output' => [
                 'config' => ['drivers' => [['outputs' => ['html' => 0]]]],
-                'drivers' => [new \Magento\Framework\Profiler\Driver\Standard()],
+                'drivers' => [new Standard()],
             ],
             'Config with shortly defined outputs element' => [
                 'config' => ['drivers' => [['outputs' => ['foo' => 'html']]]],
                 'drivers' => [
-                    new \Magento\Framework\Profiler\Driver\Standard(['outputs' => [['type' => 'html']]]),
+                    new Standard(['outputs' => [['type' => 'html']]]),
                 ],
             ],
             'Config with fully defined outputs element options' => [
@@ -94,7 +92,7 @@ class ProfilerTest extends \PHPUnit\Framework\TestCase
                     ],
                 ],
                 'drivers' => [
-                    new \Magento\Framework\Profiler\Driver\Standard(
+                    new Standard(
                         [
                             'outputs' => [
                                 [
@@ -111,9 +109,14 @@ class ProfilerTest extends \PHPUnit\Framework\TestCase
             'Config with shortly defined output' => [
                 'config' => ['drivers' => [['output' => 'html']]],
                 'drivers' => [
-                    new \Magento\Framework\Profiler\Driver\Standard(['outputs' => [['type' => 'html']]]),
+                    new Standard(['outputs' => [['type' => 'html']]]),
                 ],
             ]
         ];
+    }
+
+    protected function tearDown(): void
+    {
+        Profiler::reset();
     }
 }

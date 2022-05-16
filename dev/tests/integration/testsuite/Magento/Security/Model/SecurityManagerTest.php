@@ -7,12 +7,16 @@
 namespace Magento\Security\Model;
 
 use Magento\Customer\Api\AccountManagementInterface;
+use Magento\Framework\Exception\SecurityViolationException;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Security\Model\ResourceModel\PasswordResetRequestEvent\Collection;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class SecurityManagerTest extends \PHPUnit\Framework\TestCase
+class SecurityManagerTest extends TestCase
 {
     /**
-     * @var  \Magento\Security\Model\SecurityManager
+     * @var  SecurityManager
      */
     protected $securityManager;
 
@@ -22,39 +26,14 @@ class SecurityManagerTest extends \PHPUnit\Framework\TestCase
     protected $accountManagement;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
 
     /**
-     * @var \Magento\Security\Model\PasswordResetRequestEvent
+     * @var PasswordResetRequestEvent
      */
     protected $passwordResetRequestEvent;
-
-    /**
-     * Set up
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->accountManagement = $this->objectManager->create(
-            \Magento\Customer\Api\AccountManagementInterface::class
-        );
-        $this->securityManager = $this->objectManager->create(\Magento\Security\Model\SecurityManager::class);
-        $this->passwordResetRequestEvent = $this->objectManager
-            ->get(\Magento\Security\Model\PasswordResetRequestEvent::class);
-    }
-
-    /**
-     * Tear down
-     */
-    protected function tearDown(): void
-    {
-        $this->objectManager = null;
-        $this->accountManagement  = null;
-        $this->securityManager  = null;
-        parent::tearDown();
-    }
 
     /**
      * Test for performSecurityCheck() method
@@ -67,11 +46,11 @@ class SecurityManagerTest extends \PHPUnit\Framework\TestCase
         $collection = $this->getPasswordResetRequestEventCollection();
         $sizeBefore = $collection->getSize();
 
-        $requestType = \Magento\Security\Model\PasswordResetRequestEvent::CUSTOMER_PASSWORD_RESET_REQUEST;
+        $requestType = PasswordResetRequestEvent::CUSTOMER_PASSWORD_RESET_REQUEST;
         $longIp = 127001;
         $accountReference = 'customer@example.com';
         $this->assertInstanceOf(
-            \Magento\Security\Model\SecurityManager::class,
+            SecurityManager::class,
             $this->securityManager->performSecurityCheck(
                 $requestType,
                 $accountReference,
@@ -87,7 +66,7 @@ class SecurityManagerTest extends \PHPUnit\Framework\TestCase
     /**
      * Get PasswordResetRequestEvent collection
      *
-     * @return \Magento\Security\Model\ResourceModel\PasswordResetRequestEvent\Collection
+     * @return Collection
      */
     protected function getPasswordResetRequestEventCollection()
     {
@@ -108,10 +87,10 @@ class SecurityManagerTest extends \PHPUnit\Framework\TestCase
      */
     public function testPerformSecurityCheckLimitNumber()
     {
-        $this->expectException(\Magento\Framework\Exception\SecurityViolationException::class);
+        $this->expectException(SecurityViolationException::class);
 
         $attempts = 2;
-        $requestType = \Magento\Security\Model\PasswordResetRequestEvent::CUSTOMER_PASSWORD_RESET_REQUEST;
+        $requestType = PasswordResetRequestEvent::CUSTOMER_PASSWORD_RESET_REQUEST;
         $longIp = 127001;
         $accountReference = 'customer@example.com';
 
@@ -119,9 +98,9 @@ class SecurityManagerTest extends \PHPUnit\Framework\TestCase
             for ($i = 0; $i < $attempts; $i++) {
                 $this->securityManager->performSecurityCheck($requestType, $accountReference, $longIp);
             }
-        } catch (\Magento\Framework\Exception\SecurityViolationException $e) {
+        } catch (SecurityViolationException $e) {
             $this->assertEquals(1, $i);
-            throw new \Magento\Framework\Exception\SecurityViolationException(
+            throw new SecurityViolationException(
                 __($e->getMessage())
             );
         }
@@ -143,10 +122,10 @@ class SecurityManagerTest extends \PHPUnit\Framework\TestCase
      */
     public function testPerformSecurityCheckLimitTime()
     {
-        $this->expectException(\Magento\Framework\Exception\SecurityViolationException::class);
+        $this->expectException(SecurityViolationException::class);
 
         $attempts = 2;
-        $requestType = \Magento\Security\Model\PasswordResetRequestEvent::CUSTOMER_PASSWORD_RESET_REQUEST;
+        $requestType = PasswordResetRequestEvent::CUSTOMER_PASSWORD_RESET_REQUEST;
         $longIp = 127001;
         $accountReference = 'customer@example.com';
 
@@ -154,9 +133,9 @@ class SecurityManagerTest extends \PHPUnit\Framework\TestCase
             for ($i = 0; $i < $attempts; $i++) {
                 $this->securityManager->performSecurityCheck($requestType, $accountReference, $longIp);
             }
-        } catch (\Magento\Framework\Exception\SecurityViolationException $e) {
+        } catch (SecurityViolationException $e) {
             $this->assertEquals(1, $i);
-            throw new \Magento\Framework\Exception\SecurityViolationException(
+            throw new SecurityViolationException(
                 __($e->getMessage())
             );
         }
@@ -167,5 +146,30 @@ class SecurityManagerTest extends \PHPUnit\Framework\TestCase
             'We received too many requests for password resets. '
             . 'Please wait and try again later or contact hi@example.com.'
         );
+    }
+
+    /**
+     * Set up
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->accountManagement = $this->objectManager->create(
+            AccountManagementInterface::class
+        );
+        $this->securityManager = $this->objectManager->create(SecurityManager::class);
+        $this->passwordResetRequestEvent = $this->objectManager
+            ->get(PasswordResetRequestEvent::class);
+    }
+
+    /**
+     * Tear down
+     */
+    protected function tearDown(): void
+    {
+        $this->objectManager = null;
+        $this->accountManagement = null;
+        $this->securityManager = null;
+        parent::tearDown();
     }
 }

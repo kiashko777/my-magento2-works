@@ -6,6 +6,7 @@
 
 namespace Magento\Theme\Controller\Adminhtml\System\Design\Config;
 
+use Exception;
 use Magento\Framework\App\Request\Http;
 use Magento\Framework\Data\Form\FormKey;
 use Magento\TestFramework\TestCase\AbstractBackendController;
@@ -16,32 +17,17 @@ use Magento\TestFramework\TestCase\AbstractBackendController;
 class SaveTest extends AbstractBackendController
 {
     /**
-     * @var FormKey
-     */
-    private $formKey;
-
-    /**
      * @inheritdoc
      */
     protected $resource = 'Magento_Config::config_design';
-
     /**
      * @inheritdoc
      */
     protected $uri = 'backend/theme/design_config/save';
-
     /**
-     * @inheritdoc
+     * @var FormKey
      */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->formKey = $this->_objectManager->get(
-            FormKey::class
-        );
-        $this->httpMethod = Http::METHOD_POST;
-    }
+    private $formKey;
 
     /**
      * Test design configuration save valid values.
@@ -55,7 +41,7 @@ class SaveTest extends AbstractBackendController
         $error = '';
         try {
             $this->dispatch($this->uri);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $error = $e->getMessage();
         }
 
@@ -124,5 +110,18 @@ class SaveTest extends AbstractBackendController
         );
 
         parent::testAclHasAccess();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->formKey = $this->_objectManager->get(
+            FormKey::class
+        );
+        $this->httpMethod = Http::METHOD_POST;
     }
 }

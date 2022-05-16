@@ -43,6 +43,67 @@ class ReorderTest extends AbstractController
     private $quoteRepository;
 
     /**
+     * @magentoDbIsolation disabled
+     *
+     * @magentoDataFixture Magento/Sales/_files/order_by_guest_with_simple_product.php
+     *
+     * @return void
+     */
+    public function testReorderSimpleProduct(): void
+    {
+        $orderIncrementId = 'test_order_1';
+        $order = $this->orderFactory->create()->loadByIncrementId($orderIncrementId);
+        $cookieValue = base64_encode($order->getProtectCode() . ':' . $orderIncrementId);
+        $this->cookieManager->setPublicCookie(Guest::COOKIE_NAME, $cookieValue);
+        $this->dispatchReorderRequest();
+        $this->assertRedirect($this->stringContains('checkout/cart'));
+        $quoteId = $this->checkoutSession->getQuoteId();
+        $this->assertNotNull($quoteId);
+        $quoteItemsCollection = $this->quoteRepository->get((int)$quoteId)->getItemsCollection();
+        $this->assertCount(1, $quoteItemsCollection);
+        $this->assertEquals(
+            $order->getItemsCollection()->getFirstItem()->getSku(),
+            $quoteItemsCollection->getFirstItem()->getSku()
+        );
+    }
+
+    /**
+     * Dispatch reorder request.
+     *
+     * @return void
+     */
+    private function dispatchReorderRequest(): void
+    {
+        $this->getRequest()->setMethod(Request::METHOD_POST);
+        $this->dispatch('sales/guest/reorder/');
+    }
+
+    /**
+     * @return void
+     */
+    public function testReorderWithoutParamsAndCookie(): void
+    {
+        $this->dispatchReorderRequest();
+        $this->assertRedirect($this->stringContains('sales/guest/form'));
+        $this->assertSessionMessages(
+            $this->containsEqual((string)__('You entered incorrect data. Please try again.')),
+            MessageInterface::TYPE_ERROR
+        );
+    }
+
+    /**
+     * @magentoDataFixture Magento/Customer/_files/customer.php
+     *
+     * @return void
+     */
+    public function testReorderGuestOrderByCustomer(): void
+    {
+        $this->customerSession->setCustomerId(1);
+        $this->dispatchReorderRequest();
+        $this->assertRedirect($this->stringContains('sales/order/history'));
+    }
+
+    /**
      * @inheritdoc
      */
     protected function setUp(): void
@@ -74,66 +135,5 @@ class ReorderTest extends AbstractController
         $this->customerSession->setCustomerId(null);
 
         parent::tearDown();
-    }
-
-    /**
-     * @magentoDbIsolation disabled
-     *
-     * @magentoDataFixture Magento/Sales/_files/order_by_guest_with_simple_product.php
-     *
-     * @return void
-     */
-    public function testReorderSimpleProduct(): void
-    {
-        $orderIncrementId = 'test_order_1';
-        $order = $this->orderFactory->create()->loadByIncrementId($orderIncrementId);
-        $cookieValue = base64_encode($order->getProtectCode() . ':' . $orderIncrementId);
-        $this->cookieManager->setPublicCookie(Guest::COOKIE_NAME, $cookieValue);
-        $this->dispatchReorderRequest();
-        $this->assertRedirect($this->stringContains('checkout/cart'));
-        $quoteId = $this->checkoutSession->getQuoteId();
-        $this->assertNotNull($quoteId);
-        $quoteItemsCollection = $this->quoteRepository->get((int)$quoteId)->getItemsCollection();
-        $this->assertCount(1, $quoteItemsCollection);
-        $this->assertEquals(
-            $order->getItemsCollection()->getFirstItem()->getSku(),
-            $quoteItemsCollection->getFirstItem()->getSku()
-        );
-    }
-
-    /**
-     * @return void
-     */
-    public function testReorderWithoutParamsAndCookie(): void
-    {
-        $this->dispatchReorderRequest();
-        $this->assertRedirect($this->stringContains('sales/guest/form'));
-        $this->assertSessionMessages(
-            $this->containsEqual((string)__('You entered incorrect data. Please try again.')),
-            MessageInterface::TYPE_ERROR
-        );
-    }
-
-    /**
-     * @magentoDataFixture Magento/Customer/_files/customer.php
-     *
-     * @return void
-     */
-    public function testReorderGuestOrderByCustomer(): void
-    {
-        $this->customerSession->setCustomerId(1);
-        $this->dispatchReorderRequest();
-        $this->assertRedirect($this->stringContains('sales/order/history'));
-    }
-
-    /**
-     * Dispatch reorder request.
-     *
-     * @return void
-     */
-    private function dispatchReorderRequest(): void
-    {
-        $this->getRequest()->setMethod(Request::METHOD_POST);
-        $this->dispatch('sales/guest/reorder/');
     }
 }

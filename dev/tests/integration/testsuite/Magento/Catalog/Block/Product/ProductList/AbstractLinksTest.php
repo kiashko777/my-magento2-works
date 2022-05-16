@@ -73,18 +73,6 @@ abstract class AbstractLinksTest extends TestCase
     protected $titleXpath = "//strong[@id = 'block-%s-heading'][contains(text(), '%s')]";
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->productLinkInterfaceFactory = $this->objectManager->get(ProductLinkInterfaceFactory::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-    }
-
-    /**
      * Provide test data to verify the display of linked products.
      *
      * @return array
@@ -140,10 +128,10 @@ abstract class AbstractLinksTest extends TestCase
                     'updateProducts' => [
                         'simple-156' => [
                             'stock_data' => [
-                                'use_config_manage_stock'   => 1,
-                                'qty'                       => 0,
-                                'is_qty_decimal'            => 0,
-                                'is_in_stock'               => 0,
+                                'use_config_manage_stock' => 1,
+                                'qty' => 0,
+                                'is_qty_decimal' => 0,
+                                'is_in_stock' => 0,
                             ],
                         ],
                     ],
@@ -192,6 +180,18 @@ abstract class AbstractLinksTest extends TestCase
     }
 
     /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->productLinkInterfaceFactory = $this->objectManager->get(ProductLinkInterfaceFactory::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
+    }
+
+    /**
      * Get test data to check position of related, up-sells and cross-sells products
      *
      * @return array
@@ -225,30 +225,6 @@ abstract class AbstractLinksTest extends TestCase
         $this->block->setLayout($this->layout);
         $this->block->setTemplate('Magento_Catalog::product/list/items.phtml');
         $this->block->setType($this->linkType);
-    }
-
-    /**
-     * Set linked products by link type for current product received from array
-     *
-     * @param ProductInterface $product
-     * @param array $productData
-     * @return void
-     */
-    private function setCustomProductLinks(ProductInterface $product, array $productData): void
-    {
-        $productLinks = [];
-        foreach ($productData as $sku => $data) {
-            /** @var ProductLinkInterface|Link $productLink */
-            $productLink = $this->productLinkInterfaceFactory->create();
-            $productLink->setSku($product->getSku());
-            $productLink->setLinkedProductSku($sku);
-            if (isset($data['position'])) {
-                $productLink->setPosition($data['position']);
-            }
-            $productLink->setLinkType($this->linkType);
-            $productLinks[] = $productLink;
-        }
-        $product->setProductLinks($productLinks);
     }
 
     /**
@@ -296,6 +272,30 @@ abstract class AbstractLinksTest extends TestCase
         $product = $this->productRepository->get($sku);
         $this->setCustomProductLinks($product, $productLinks);
         $this->productRepository->save($product);
+    }
+
+    /**
+     * Set linked products by link type for current product received from array
+     *
+     * @param ProductInterface $product
+     * @param array $productData
+     * @return void
+     */
+    private function setCustomProductLinks(ProductInterface $product, array $productData): void
+    {
+        $productLinks = [];
+        foreach ($productData as $sku => $data) {
+            /** @var ProductLinkInterface|Link $productLink */
+            $productLink = $this->productLinkInterfaceFactory->create();
+            $productLink->setSku($product->getSku());
+            $productLink->setLinkedProductSku($sku);
+            if (isset($data['position'])) {
+                $productLink->setPosition($data['position']);
+            }
+            $productLink->setLinkType($this->linkType);
+            $productLinks[] = $productLink;
+        }
+        $product->setProductLinks($productLinks);
     }
 
     /**

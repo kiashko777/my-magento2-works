@@ -7,7 +7,9 @@
 .trnslate-inline-text-area [data-translate-mode=text],
 .trnslate-inline-script-area [data-translate-mode=script],
 .trnslate-inline-alt-area [data-translate-mode=alt],
-.trnslate-inline-area .translate-inline { outline: dashed 2px darkgray!important;}
+.trnslate-inline-area .translate-inline {
+    outline: dashed 2px darkgray !important;
+}
 
 .translate-dialog {
     border: 0;
@@ -182,7 +184,7 @@
 }
 
 .invisible {
-  visibility: hidden;
+    visibility: hidden;
 }
 
 .translate-dialog-form-submit-loader {

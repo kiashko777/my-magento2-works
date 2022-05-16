@@ -3,14 +3,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\User\Controller\Adminhtml\Locks;
+
+use Magento\Framework\Message\MessageInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractBackendController;
+use Magento\User\Model\User;
 
 /**
  * Testing unlock controller.
  *
  * @magentoAppArea Adminhtml
  */
-class MassUnlockTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class MassUnlockTest extends AbstractBackendController
 {
     /**
      * Test index action
@@ -21,9 +27,9 @@ class MassUnlockTest extends \Magento\TestFramework\TestCase\AbstractBackendCont
     public function testMassUnlockAction()
     {
         $userIds = [];
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var $model \Magento\User\Model\User */
-        $model = $objectManager->create(\Magento\User\Model\User::class);
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var $model User */
+        $model = $objectManager->create(User::class);
         $userIds[] = $model->loadByUsername('adminUser1')->getId();
         $userIds[] = $model->loadByUsername('adminUser2')->getId();
 
@@ -36,7 +42,7 @@ class MassUnlockTest extends \Magento\TestFramework\TestCase\AbstractBackendCont
 
         $this->assertSessionMessages(
             $this->containsEqual((string)__('Unlocked %1 user(s).', count($userIds))),
-            \Magento\Framework\Message\MessageInterface::TYPE_SUCCESS
+            MessageInterface::TYPE_SUCCESS
         );
         $this->assertRedirect();
     }

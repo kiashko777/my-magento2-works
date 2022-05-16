@@ -3,52 +3,33 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\SampleData\Model;
 
-use Magento\Framework\Composer\ComposerInformation;
 use Magento\Framework\Component\ComponentRegistrar;
-use Magento\Framework\Filesystem;
+use Magento\Framework\Composer\ComposerInformation;
 use Magento\Framework\Config\Composer\PackageFactory;
+use Magento\Framework\Filesystem;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
-class DependencyTest extends \PHPUnit\Framework\TestCase
+class DependencyTest extends TestCase
 {
     /**
-     * @var \Magento\SampleData\Model\Dependency
+     * @var Dependency
      */
     private $model;
 
     /**
-     * @var ComposerInformation|\PHPUnit\Framework\MockObject\MockObject
+     * @var ComposerInformation|MockObject
      */
     private $composerInformationMock;
 
     /**
-     * @var ComponentRegistrar|\PHPUnit\Framework\MockObject\MockObject
+     * @var ComponentRegistrar|MockObject
      */
     private $componentRegistrarMock;
-
-    protected function setUp(): void
-    {
-        $this->composerInformationMock = $this->getMockBuilder(ComposerInformation::class)
-            ->disableOriginalConstructor()
-            ->disableOriginalClone()
-            ->getMock();
-        $this->componentRegistrarMock = $this->getMockBuilder(ComponentRegistrar::class)
-            ->disableOriginalConstructor()
-            ->disableOriginalClone()
-            ->getMock();
-
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->model = $objectManager->create(
-            \Magento\SampleData\Model\Dependency::class,
-            [
-                'composerInformation' => $this->composerInformationMock,
-                'filesystem' => $objectManager->get(Filesystem::class),
-                'packageFactory' => $objectManager->get(PackageFactory::class),
-                'componentRegistrar' => $this->componentRegistrarMock
-            ]
-        );
-    }
 
     public function testGetSampleDataPackages()
     {
@@ -68,6 +49,29 @@ class DependencyTest extends \PHPUnit\Framework\TestCase
         $this->assertSame(
             ['magento/module-first-sample-data' => '777.7.*'],
             $this->model->getSampleDataPackages()
+        );
+    }
+
+    protected function setUp(): void
+    {
+        $this->composerInformationMock = $this->getMockBuilder(ComposerInformation::class)
+            ->disableOriginalConstructor()
+            ->disableOriginalClone()
+            ->getMock();
+        $this->componentRegistrarMock = $this->getMockBuilder(ComponentRegistrar::class)
+            ->disableOriginalConstructor()
+            ->disableOriginalClone()
+            ->getMock();
+
+        $objectManager = Bootstrap::getObjectManager();
+        $this->model = $objectManager->create(
+            Dependency::class,
+            [
+                'composerInformation' => $this->composerInformationMock,
+                'filesystem' => $objectManager->get(Filesystem::class),
+                'packageFactory' => $objectManager->get(PackageFactory::class),
+                'componentRegistrar' => $this->componentRegistrarMock
+            ]
         );
     }
 }

@@ -7,17 +7,24 @@
  */
 
 /**
- * @var \Magento\Store\Model\Website $website
+ * @var Website $website
  */
-$website = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Store\Model\Website::class);
+
+use Magento\Customer\Model\Address;
+use Magento\Customer\Model\Customer;
+use Magento\Store\Model\StoreManager;
+use Magento\Store\Model\Website;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$website = Bootstrap::getObjectManager()->create(Website::class);
 $website->setName('new Website')->setCode('newwebsite')->save();
 
 $websiteId = $website->getId();
-$storeManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->get(\Magento\Store\Model\StoreManager::class);
+$storeManager = Bootstrap::getObjectManager()
+    ->get(StoreManager::class);
 $storeManager->reinitStores();
-$customer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Customer::class
+$customer = Bootstrap::getObjectManager()->create(
+    Customer::class
 );
 /** @var Magento\Customer\Model\Customer $customer */
 $customer->setWebsiteId(
@@ -49,9 +56,9 @@ $customer->setWebsiteId(
 );
 $customer->isObjectNew(true);
 
-/** @var \Magento\Customer\Model\Address $addressOne  */
-$addressOne = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Address::class
+/** @var Address $addressOne */
+$addressOne = Bootstrap::getObjectManager()->create(
+    Address::class
 );
 $addressOneData = [
     'firstname' => 'Firstname',
@@ -66,9 +73,9 @@ $addressOneData = [
 $addressOne->setData($addressOneData);
 $customer->addAddress($addressOne);
 
-/** @var \Magento\Customer\Model\Address $addressTwo  */
-$addressTwo = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Address::class
+/** @var Address $addressTwo */
+$addressTwo = Bootstrap::getObjectManager()->create(
+    Address::class
 );
 $addressTwoData = [
     'firstname' => 'test firstname',
@@ -83,9 +90,9 @@ $addressTwoData = [
 $addressTwo->setData($addressTwoData);
 $customer->addAddress($addressTwo);
 
-/** @var \Magento\Customer\Model\Address $addressThree  */
-$addressThree = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Address::class
+/** @var Address $addressThree */
+$addressThree = Bootstrap::getObjectManager()->create(
+    Address::class
 );
 $addressThreeData = [
     'firstname' => 'removed firstname',

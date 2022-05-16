@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestSetupDeclarationModule3\Setup\Patch\Data;
 
 use Magento\Framework\App\ResourceConnection;
@@ -44,6 +45,17 @@ class IncrementalSomeIntegerPatch implements
     /**
      * @return array
      */
+    public static function getDependencies()
+    {
+        return [
+            ReferenceIncrementalSomeIntegerPatch::class,
+            NextChainPatch::class
+        ];
+    }
+
+    /**
+     * @return array
+     */
     public function getAliases()
     {
         return [];
@@ -76,16 +88,5 @@ class IncrementalSomeIntegerPatch implements
         $varchar2 = $adapter->fetchOne($refSelect);
         $adapter->delete('test_table', ['`varchar` = ?' => $varchar . "_ref"]);
         $adapter->delete('test_table', ['`varchar` = ?' => $varchar2]);
-    }
-
-    /**
-     * @return array
-     */
-    public static function getDependencies()
-    {
-        return [
-            ReferenceIncrementalSomeIntegerPatch::class,
-            NextChainPatch::class
-        ];
     }
 }

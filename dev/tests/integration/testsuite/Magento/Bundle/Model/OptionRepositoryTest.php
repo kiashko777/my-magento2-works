@@ -8,18 +8,18 @@ declare(strict_types=1);
 namespace Magento\Bundle\Model;
 
 use Magento\Bundle\Api\Data\LinkInterface;
-use Magento\Bundle\Api\Data\OptionInterface;
 use Magento\Bundle\Api\Data\LinkInterfaceFactory;
+use Magento\Bundle\Api\Data\OptionInterface;
 use Magento\Bundle\Api\Data\OptionInterfaceFactory;
 use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\CatalogInventory\Api\StockRegistryInterface;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test option repository class
  */
-class OptionRepositoryTest extends \PHPUnit\Framework\TestCase
+class OptionRepositoryTest extends TestCase
 {
     /**
      * @var ObjectManagerInterface
@@ -35,14 +35,6 @@ class OptionRepositoryTest extends \PHPUnit\Framework\TestCase
      * @var ProductRepositoryInterface
      */
     private $productRepository;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-
-        $this->optionRepository = $this->objectManager->get(OptionRepository::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Catalog/_files/products.php
@@ -74,5 +66,13 @@ class OptionRepositoryTest extends \PHPUnit\Framework\TestCase
 
         $this->assertNotNull($optionId, 'Bundle option was not saved correctly');
         $this->assertTrue($bundleProduct->isSaleable(), 'Bundle product should show as in stock once option is added');
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->optionRepository = $this->objectManager->get(OptionRepository::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
     }
 }

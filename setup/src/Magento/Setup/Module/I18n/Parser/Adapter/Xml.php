@@ -6,6 +6,8 @@
 
 namespace Magento\Setup\Module\I18n\Parser\Adapter;
 
+use SimpleXMLElement;
+
 /**
  * Xml parser adapter
  *
@@ -21,7 +23,7 @@ class Xml extends AbstractAdapter
     protected function _parse()
     {
         foreach ($this->_getNodes($this->_file) as $element) {
-            if (!$element instanceof \SimpleXMLElement) {
+            if (!$element instanceof SimpleXMLElement) {
                 continue;
             }
             $attributes = $element->attributes();
@@ -57,11 +59,11 @@ class Xml extends AbstractAdapter
     /**
      * Parse nodes pointed out in attribute "translate" and add phrases from them.
      *
-     * @param \SimpleXMLElement $attributes
-     * @param \SimpleXMLElement $element
+     * @param SimpleXMLElement $attributes
+     * @param SimpleXMLElement $element
      * @return void
      */
-    private function parseTranslatableNodes(\SimpleXMLElement $attributes, \SimpleXMLElement $element)
+    private function parseTranslatableNodes(SimpleXMLElement $attributes, SimpleXMLElement $element)
     {
         $nodesDelimiter = strpos($attributes['translate'], ' ') === false ? ',' : ' ';
         foreach (explode($nodesDelimiter, $attributes['translate']) as $value) {

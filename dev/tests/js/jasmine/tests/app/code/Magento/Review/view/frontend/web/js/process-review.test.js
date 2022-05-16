@@ -37,7 +37,8 @@ define([
             $.ajax = jasmine.createSpy().and.callFake(function () {
                 var d = $.Deferred();
 
-                d.promise().complete = function () {};
+                d.promise().complete = function () {
+                };
 
                 return d.promise();
             });
@@ -51,7 +52,8 @@ define([
             $.ajax = jasmine.createSpy().and.callFake(function () {
                 var d = $.Deferred();
 
-                d.promise().complete = function () {};
+                d.promise().complete = function () {
+                };
 
                 return d.promise();
             });
@@ -65,7 +67,8 @@ define([
             $.ajax = jasmine.createSpy().and.callFake(function () {
                 var d = $.Deferred();
 
-                d.promise().complete = function () {};
+                d.promise().complete = function () {
+                };
 
                 return d.promise();
             });

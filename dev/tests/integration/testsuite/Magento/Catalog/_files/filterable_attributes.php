@@ -4,17 +4,23 @@
  * See COPYING.txt for license details.
  */
 
-/** @var $installer \Magento\Catalog\Setup\CategorySetup */
-$installer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Catalog\Setup\CategorySetup::class
+/** @var $installer CategorySetup */
+
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Setup\CategorySetup;
+use Magento\Eav\Model\Entity;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$installer = Bootstrap::getObjectManager()->create(
+    CategorySetup::class
 );
 $attributeSetId = $installer->getAttributeSetId('catalog_product', 'Default');
-$entityModel = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Eav\Model\Entity::class);
-$entityTypeId = $entityModel->setType(\Magento\Catalog\Model\Product::ENTITY)->getTypeId();
+$entityModel = Bootstrap::getObjectManager()->create(Entity::class);
+$entityTypeId = $entityModel->setType(Product::ENTITY)->getTypeId();
 $groupId = $installer->getDefaultAttributeGroupId($entityTypeId, $attributeSetId);
 
 /** @var $attribute \Magento\Catalog\Model\ResourceModel\Eav\Attribute */
-$attribute = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+$attribute = Bootstrap::getObjectManager()->create(
     \Magento\Catalog\Model\ResourceModel\Eav\Attribute::class
 );
 $attribute->setAttributeCode(
@@ -31,7 +37,7 @@ $attribute->setAttributeCode(
     1
 )->save();
 
-$attribute = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+$attribute = Bootstrap::getObjectManager()->create(
     \Magento\Catalog\Model\ResourceModel\Eav\Attribute::class
 );
 $attribute->setAttributeCode(

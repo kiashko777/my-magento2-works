@@ -30,17 +30,6 @@ class DisableMultishippingModeTest extends AbstractController
     private $formKey;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->cart = $this->_objectManager->get(Cart::class);
-        $this->formKey = $this->_objectManager->get(FormKey::class);
-    }
-
-    /**
      * Test that Quote totals are updated correctly when 'Multishipping' mode is enabled.
      *
      * @magentoDataFixture Magento/Catalog/_files/products.php
@@ -66,5 +55,16 @@ class DisableMultishippingModeTest extends AbstractController
         $this->dispatch('checkout/cart/add');
         $this->assertEquals(2, (int)$quote->getItemsQty());
         $this->assertEquals(0, $quote->getIsMultiShipping());
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->cart = $this->_objectManager->get(Cart::class);
+        $this->formKey = $this->_objectManager->get(FormKey::class);
     }
 }

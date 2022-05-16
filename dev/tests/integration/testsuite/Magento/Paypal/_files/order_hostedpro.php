@@ -21,11 +21,11 @@ $shippingAddress = clone $billingAddress;
 $shippingAddress->setId(null)
     ->setAddressType('shipping');
 
-/** @var \Magento\Sales\Model\Order\Payment $payment */
+/** @var Payment $payment */
 $payment = $objManager->create(Payment::class);
 $payment->setMethod(Config::METHOD_HOSTEDPRO);
 
-/** @var \Magento\Sales\Model\Order $order */
+/** @var Order $order */
 $order = $objManager->create(Order::class);
 $order->setCustomerEmail('wpphs.co@co.com')
     ->setIncrementId('100000001')

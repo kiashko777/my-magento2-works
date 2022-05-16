@@ -7,9 +7,9 @@ declare(strict_types=1);
 
 namespace Magento\Persistent\Model\Checkout;
 
-use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Checkout\Model\DefaultConfigProvider;
 use Magento\Checkout\Model\Session as CheckoutSession;
+use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Persistent\Helper\Session as PersistentSessionHelper;
 use Magento\Persistent\Model\Session as PersistentSession;
@@ -54,36 +54,6 @@ class ConfigProviderPluginTest extends TestCase
 
     /** @var GetQuoteByReservedOrderId */
     private $getQuoteByReservedOrderId;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->configProvider = $this->objectManager->get(DefaultConfigProvider::class);
-        $this->customerSession = $this->objectManager->get(CustomerSession::class);
-        $this->checkoutSession = $this->objectManager->get(CheckoutSession::class);
-        $this->quoteIdMask = $this->objectManager->get(QuoteIdMaskFactory::class)->create();
-        $this->persistentSessionHelper = $this->objectManager->get(PersistentSessionHelper::class);
-        $this->persistentSession = $this->objectManager->get(PersistentSessionFactory::class)->create();
-        $this->getQuoteByReservedOrderId = $this->objectManager->get(GetQuoteByReservedOrderId::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->customerSession->setCustomerId(null);
-        $this->checkoutSession->clearQuote();
-        $this->checkoutSession->setCustomerData(null);
-        $this->persistentSessionHelper->setSession(null);
-
-        parent::tearDown();
-    }
 
     /**
      * @return void
@@ -156,5 +126,35 @@ class ConfigProviderPluginTest extends TestCase
         $this->checkoutSession->setQuoteId($quote->getId());
         $result = $this->configProvider->getConfig();
         $this->assertNull($result['quoteData']['entity_id']);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->configProvider = $this->objectManager->get(DefaultConfigProvider::class);
+        $this->customerSession = $this->objectManager->get(CustomerSession::class);
+        $this->checkoutSession = $this->objectManager->get(CheckoutSession::class);
+        $this->quoteIdMask = $this->objectManager->get(QuoteIdMaskFactory::class)->create();
+        $this->persistentSessionHelper = $this->objectManager->get(PersistentSessionHelper::class);
+        $this->persistentSession = $this->objectManager->get(PersistentSessionFactory::class)->create();
+        $this->getQuoteByReservedOrderId = $this->objectManager->get(GetQuoteByReservedOrderId::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->customerSession->setCustomerId(null);
+        $this->checkoutSession->clearQuote();
+        $this->checkoutSession->setCustomerData(null);
+        $this->persistentSessionHelper->setSession(null);
+
+        parent::tearDown();
     }
 }

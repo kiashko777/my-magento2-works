@@ -3,7 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Fixtures\FixturesAsserts;
+
+use AssertionError;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\ConfigurableProduct\Api\OptionRepositoryInterface;
+use Magento\Framework\Exception\InputException;
+use Magento\Framework\Exception\NoSuchEntityException;
 
 /**
  * Class ConfigurableProductsAssert
@@ -14,30 +21,31 @@ namespace Magento\Setup\Fixtures\FixturesAsserts;
 class ConfigurableProductsAssert
 {
     /**
-     * @var \Magento\Catalog\Api\ProductRepositoryInterface
+     * @var ProductRepositoryInterface
      */
     private $productRepository;
 
     /**
-     * @var \Magento\ConfigurableProduct\Api\OptionRepositoryInterface
+     * @var OptionRepositoryInterface
      */
     private $optionRepository;
 
     /**
-     * @var \Magento\Setup\Fixtures\FixturesAsserts\ProductAssert
+     * @var ProductAssert
      */
     private $productAssert;
 
     /**
-     * @param \Magento\Catalog\Api\ProductRepositoryInterface $productRepository
-     * @param \Magento\ConfigurableProduct\Api\OptionRepositoryInterface $optionRepository
-     * @param \Magento\Setup\Fixtures\FixturesAsserts\ProductAssert $productAssert
+     * @param ProductRepositoryInterface $productRepository
+     * @param OptionRepositoryInterface $optionRepository
+     * @param ProductAssert $productAssert
      */
     public function __construct(
-        \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
-        \Magento\ConfigurableProduct\Api\OptionRepositoryInterface $optionRepository,
-        \Magento\Setup\Fixtures\FixturesAsserts\ProductAssert $productAssert
-    ) {
+        ProductRepositoryInterface            $productRepository,
+        OptionRepositoryInterface $optionRepository,
+        ProductAssert $productAssert
+    )
+    {
         $this->productRepository = $productRepository;
         $this->optionRepository = $optionRepository;
         $this->productAssert = $productAssert;
@@ -47,9 +55,9 @@ class ConfigurableProductsAssert
      * Asserts that generated configurable products are valid
      *
      * @return bool
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
-     * @throws \Magento\Framework\Exception\InputException
-     * @throws \AssertionError
+     * @throws NoSuchEntityException
+     * @throws InputException
+     * @throws AssertionError
      */
     public function assert()
     {
@@ -79,11 +87,11 @@ class ConfigurableProductsAssert
             $options = $this->optionRepository->getList($configurableSku);
 
             if ($expectedData['attributes'] !== count($options)) {
-                throw new \AssertionError('Configurable options amount is wrong');
+                throw new AssertionError('Configurable options amount is wrong');
             }
 
             if ($expectedData['options'] !== count($options[0]->getValues())) {
-                throw new \AssertionError('Configurable option values amount is wrong');
+                throw new AssertionError('Configurable option values amount is wrong');
             }
         }
 

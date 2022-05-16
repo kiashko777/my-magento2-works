@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\MediaGalleryUi\Model\Listing;
 
+use DateTime;
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\View\Element\UiComponentFactory;
@@ -31,18 +32,6 @@ class DataProviderTest extends TestCase
     private $request;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->request = $this->objectManager->get(RequestInterface::class);
-        $this->componentFactory = $this->objectManager->get(UiComponentFactory::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/MediaGallery/_files/media_asset.php
      * @magentoDataFixture Magento/MediaGallery/_files/media_asset_loaded_year_ago.php
      *
@@ -52,8 +41,8 @@ class DataProviderTest extends TestCase
     {
         $filter = [
             'created_at' => [
-                'from' => (new \DateTime('-1 day'))->format('m/d/Y'),
-                'to' =>  (new \DateTime())->format('m/d/Y'),
+                'from' => (new DateTime('-1 day'))->format('m/d/Y'),
+                'to' => (new DateTime())->format('m/d/Y'),
             ],
         ];
         $this->request->setParams(['filters' => $filter]);
@@ -62,6 +51,20 @@ class DataProviderTest extends TestCase
         $this->assertCount(1, $items);
         $item = reset($items);
         $this->assertEquals('testDirectory/path.jpg', $item['path']);
+    }
+
+    /**
+     * Get component provided data
+     *
+     * @param string $namespace
+     * @return array
+     */
+    private function getComponentProvidedData(string $namespace): array
+    {
+        $component = $this->componentFactory->create($namespace);
+        $this->prepareChildComponents($component);
+
+        return $component->getContext()->getDataProvider()->getData();
     }
 
     /**
@@ -80,16 +83,14 @@ class DataProviderTest extends TestCase
     }
 
     /**
-     * Get component provided data
-     *
-     * @param string $namespace
-     * @return array
+     * @inheritdoc
      */
-    private function getComponentProvidedData(string $namespace): array
+    protected function setUp(): void
     {
-        $component = $this->componentFactory->create($namespace);
-        $this->prepareChildComponents($component);
+        parent::setUp();
 
-        return $component->getContext()->getDataProvider()->getData();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->request = $this->objectManager->get(RequestInterface::class);
+        $this->componentFactory = $this->objectManager->get(UiComponentFactory::class);
     }
 }

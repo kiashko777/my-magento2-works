@@ -5,12 +5,14 @@
  */
 
 use Magento\CatalogRule\Api\CatalogRuleRepositoryInterface;
+use Magento\CatalogRule\Model\Rule;
 use Magento\CatalogRule\Model\Rule\Condition\Combine;
 use Magento\CatalogRule\Model\Rule\Condition\Product;
+use Magento\CatalogRule\Model\RuleFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var \Magento\CatalogRule\Model\Rule $rule */
-$rule = Bootstrap::getObjectManager()->get(\Magento\CatalogRule\Model\RuleFactory::class)->create();
+/** @var Rule $rule */
+$rule = Bootstrap::getObjectManager()->get(RuleFactory::class)->create();
 $rule->loadPost([
     'name' => 'test_category_rule',
     'is_active' => '1',

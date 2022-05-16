@@ -4,13 +4,15 @@
  * See COPYING.txt for license details.
  */
 
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Framework\Indexer\IndexerRegistry;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Category;
 use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use Magento\Catalog\Model\Product\Type;
 use Magento\Catalog\Model\Product\Visibility;
-use Magento\Catalog\Model\Product\Attribute\Source\Status;
-use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\Indexer\IndexerRegistry;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Store/_files/core_fixturestore.php');
@@ -29,15 +31,15 @@ $website->setData(
 
 $website->save();
 
-$objectManager->get(\Magento\Store\Model\StoreManagerInterface::class)->reinitStores();
+$objectManager->get(StoreManagerInterface::class)->reinitStores();
 
 /** @var IndexerRegistry $indexerRegistry */
 $indexerRegistry = $objectManager->create(IndexerRegistry::class);
-$indexer =  $indexerRegistry->get('catalogsearch_fulltext');
+$indexer = $indexerRegistry->get('catalogsearch_fulltext');
 
 $indexer->reindexAll();
 
-$category = $objectManager->create(\Magento\Catalog\Model\Category::class);
+$category = $objectManager->create(Category::class);
 $category->isObjectNew(true);
 $category->setId(96377)
     ->setName('Category 1')

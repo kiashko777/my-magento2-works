@@ -24,7 +24,8 @@ class GetEntityIdByAttributeId
      */
     public function __construct(
         AttributeSetResource $setResource
-    ) {
+    )
+    {
         $this->attributeSetResource = $setResource;
     }
 

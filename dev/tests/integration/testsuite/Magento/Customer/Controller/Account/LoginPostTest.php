@@ -34,18 +34,6 @@ class LoginPostTest extends AbstractController
     private $customerUrl;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->session = $this->_objectManager->get(Session::class);
-        $this->urlEncoder = $this->_objectManager->get(EncoderInterface::class);
-        $this->customerUrl = $this->_objectManager->get(Url::class);
-    }
-
-    /**
      * @magentoConfigFixture current_store customer/captcha/enable 0
      *
      * @magentoDataFixture Magento/Customer/_files/customer.php
@@ -65,6 +53,24 @@ class LoginPostTest extends AbstractController
             $this->equalTo([(string)__($expectedErrorMessage)]),
             MessageInterface::TYPE_ERROR
         );
+    }
+
+    /**
+     * Prepare request
+     *
+     * @param string|null $email
+     * @param string|null $password
+     * @return void
+     */
+    private function prepareRequest(?string $email, ?string $password): void
+    {
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
+        $this->getRequest()->setPostValue([
+            'login' => [
+                'username' => $email,
+                'password' => $password,
+            ],
+        ]);
     }
 
     /**
@@ -202,20 +208,14 @@ class LoginPostTest extends AbstractController
     }
 
     /**
-     * Prepare request
-     *
-     * @param string|null $email
-     * @param string|null $password
-     * @return void
+     * @inheritdoc
      */
-    private function prepareRequest(?string $email, ?string $password): void
+    protected function setUp(): void
     {
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
-        $this->getRequest()->setPostValue([
-            'login' => [
-                'username' => $email,
-                'password' => $password,
-            ],
-        ]);
+        parent::setUp();
+
+        $this->session = $this->_objectManager->get(Session::class);
+        $this->urlEncoder = $this->_objectManager->get(EncoderInterface::class);
+        $this->customerUrl = $this->_objectManager->get(Url::class);
     }
 }

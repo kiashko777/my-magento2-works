@@ -39,22 +39,6 @@ class ProductUrlRewriteTest extends AbstractUrlRewriteTest
     private $productRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->productResource = $this->objectManager->create(ProductResource::class);
-        $this->productFactory = $this->objectManager->get(ProductFactory::class);
-        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
-        $this->suffix = $this->config->getValue(
-            ProductUrlPathGenerator::XML_PATH_PRODUCT_URL_SUFFIX,
-            ScopeInterface::SCOPE_STORE
-        );
-    }
-
-    /**
      * @dataProvider productDataProvider
      * @param array $data
      * @return void
@@ -68,6 +52,22 @@ class ProductUrlRewriteTest extends AbstractUrlRewriteTest
             $productUrlRewriteCollection,
             $this->prepareData($data['expected_data'], (int)$product->getId())
         );
+    }
+
+    /**
+     * Save product with data using resource model directly
+     *
+     * @param array $data
+     * @param ProductInterface|null $product
+     * @return ProductInterface
+     */
+    protected function saveProduct(array $data, $product = null): ProductInterface
+    {
+        $product = $product ?: $this->productFactory->create();
+        $product->addData($data);
+        $this->productResource->save($product);
+
+        return $product;
     }
 
     /**
@@ -276,19 +276,19 @@ class ProductUrlRewriteTest extends AbstractUrlRewriteTest
     }
 
     /**
-     * Save product with data using resource model directly
-     *
-     * @param array $data
-     * @param ProductInterface|null $product
-     * @return ProductInterface
+     * @inheritdoc
      */
-    protected function saveProduct(array $data, $product = null): ProductInterface
+    protected function setUp(): void
     {
-        $product = $product ?: $this->productFactory->create();
-        $product->addData($data);
-        $this->productResource->save($product);
+        parent::setUp();
 
-        return $product;
+        $this->productResource = $this->objectManager->create(ProductResource::class);
+        $this->productFactory = $this->objectManager->get(ProductFactory::class);
+        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+        $this->suffix = $this->config->getValue(
+            ProductUrlPathGenerator::XML_PATH_PRODUCT_URL_SUFFIX,
+            ScopeInterface::SCOPE_STORE
+        );
     }
 
     /**

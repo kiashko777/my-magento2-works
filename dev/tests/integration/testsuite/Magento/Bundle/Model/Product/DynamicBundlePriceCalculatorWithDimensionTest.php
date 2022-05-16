@@ -7,6 +7,9 @@ declare(strict_types=1);
 
 namespace Magento\Bundle\Model\Product;
 
+use Magento\Catalog\Pricing\Price\FinalPrice;
+use Magento\Framework\Pricing\PriceInfo\Base;
+
 /**
  * @magentoDbIsolation disabled
  * @magentoAppIsolation enabled
@@ -26,9 +29,9 @@ class DynamicBundlePriceCalculatorWithDimensionTest extends BundlePriceAbstract
         $this->prepareFixture($strategyModifiers, 'bundle_product');
         $bundleProduct = $this->productRepository->get('bundle_product', false, null, true);
 
-        /** @var \Magento\Framework\Pricing\PriceInfo\Base $priceInfo */
+        /** @var Base $priceInfo */
         $priceInfo = $bundleProduct->getPriceInfo();
-        $priceCode = \Magento\Catalog\Pricing\Price\FinalPrice::PRICE_CODE;
+        $priceCode = FinalPrice::PRICE_CODE;
 
         $this->assertEquals(
             $expectedResults['minimalPrice'],
@@ -63,9 +66,9 @@ class DynamicBundlePriceCalculatorWithDimensionTest extends BundlePriceAbstract
         $this->prepareFixture($strategyModifiers, 'bundle_product');
         $bundleProduct = $this->productRepository->get('bundle_product', false, null, true);
 
-        /** @var \Magento\Framework\Pricing\PriceInfo\Base $priceInfo */
+        /** @var Base $priceInfo */
         $priceInfo = $bundleProduct->getPriceInfo();
-        $priceCode = \Magento\Catalog\Pricing\Price\FinalPrice::PRICE_CODE;
+        $priceCode = FinalPrice::PRICE_CODE;
 
         $this->assertEquals(
             $expectedResults['minimalPrice'],

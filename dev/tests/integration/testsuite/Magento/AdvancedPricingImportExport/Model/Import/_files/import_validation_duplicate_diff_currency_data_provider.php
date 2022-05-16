@@ -5,6 +5,9 @@
  */
 declare(strict_types=1);
 
+use Magento\Customer\Model\Group;
+use Magento\ImportExport\Model\Import;
+
 return [
     [
         [
@@ -27,7 +30,7 @@ return [
                 'tier_price_value_type' => 'Discount',
             ]
         ],
-        \Magento\ImportExport\Model\Import::BEHAVIOR_APPEND,
+        Import::BEHAVIOR_APPEND,
         []
     ],
     [
@@ -51,7 +54,7 @@ return [
                 'tier_price_value_type' => 'Discount',
             ]
         ],
-        \Magento\ImportExport\Model\Import::BEHAVIOR_APPEND,
+        Import::BEHAVIOR_APPEND,
         []
     ],
     [
@@ -59,7 +62,7 @@ return [
             [
                 'sku' => 'AdvancedPricingSimple 1',
                 'website_id' => 0,
-                'customer_group_id' => \Magento\Customer\Model\Group::CUST_GROUP_ALL,
+                'customer_group_id' => Group::CUST_GROUP_ALL,
                 'qty' => 5,
                 'value' => 300,
                 'percentage_value' => null
@@ -75,7 +78,7 @@ return [
                 'tier_price_value_type' => 'Discount',
             ]
         ],
-        \Magento\ImportExport\Model\Import::BEHAVIOR_APPEND,
+        Import::BEHAVIOR_APPEND,
         []
     ],
     [
@@ -83,7 +86,7 @@ return [
             [
                 'sku' => 'AdvancedPricingSimple 2',
                 'website_id' => 'base',
-                'customer_group_id' => \Magento\Customer\Model\Group::CUST_GROUP_ALL,
+                'customer_group_id' => Group::CUST_GROUP_ALL,
                 'qty' => 10,
                 'value' => 450,
                 'percentage_value' => null
@@ -99,7 +102,7 @@ return [
                 'tier_price_value_type' => 'Discount',
             ]
         ],
-        \Magento\ImportExport\Model\Import::BEHAVIOR_APPEND,
+        Import::BEHAVIOR_APPEND,
         []
     ]
 ];

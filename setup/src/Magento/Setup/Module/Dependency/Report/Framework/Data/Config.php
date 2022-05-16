@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Dependency\Report\Framework\Data;
 
 use Magento\Setup\Module\Dependency\Report\Data\Config\AbstractConfig;
@@ -10,7 +11,7 @@ use Magento\Setup\Module\Dependency\Report\Data\Config\AbstractConfig;
 /**
  * Config
  *
- * @method \Magento\Setup\Module\Dependency\Report\Framework\Data\Module[] getModules()
+ * @method Module[] getModules()
  */
 class Config extends AbstractConfig
 {

@@ -7,9 +7,13 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Sales;
 
+use Exception;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\Exception\AuthenticationException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Integration\Api\CustomerTokenServiceInterface;
 use Magento\Quote\Api\CartRepositoryInterface;
+use Magento\QuoteGraphQl\Model\Cart\CreateEmptyCartForCustomer;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
 
@@ -37,24 +41,6 @@ class ReorderOverlayProductTest extends GraphQlAbstract
      * @var CustomerTokenServiceInterface
      */
     private $customerTokenService;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
-
-        // be sure previous tests didn't left customer quote
-        /** @var CartRepositoryInterface $cartRepository */
-        $cartRepository = Bootstrap::getObjectManager()->get(CartRepositoryInterface::class);
-        try {
-            $quote = $cartRepository->getForCustomer(self::CUSTOMER_ID);
-            $cartRepository->delete($quote);
-        } catch (NoSuchEntityException $e) {
-        }
-    }
 
     /**
      * @magentoApiDataFixture Magento/Sales/_files/customer_order_item_with_product_and_custom_options.php
@@ -90,54 +76,22 @@ class ReorderOverlayProductTest extends GraphQlAbstract
     }
 
     /**
-     * @magentoApiDataFixture Magento/Sales/_files/order_with_two_simple_products.php
-     * @throws NoSuchEntityException
-     */
-    public function testWithOverlay()
-    {
-        $response = $this->addProductToCartAndReorder();
-
-        $expectedResponse = [
-            'userInputErrors' => [],
-            'cart' => [
-                'email' => 'customer@example.com',
-                'total_quantity' => 3,
-                'items' => [
-                    [
-                        'quantity' => 2,
-                        'product' => [
-                            'sku' => 'simple-2',
-                        ],
-                    ],
-                    [
-                        'quantity' => 1,
-                        'product' => [
-                            'sku' => 'simple',
-                        ],
-                    ],
-                ],
-            ],
-        ];
-        $this->assertResponseFields($response['reorderItems'] ?? [], $expectedResponse);
-    }
-
-    /**
      * @return array|bool|float|int|string
      * @throws NoSuchEntityException
-     * @throws \Exception
+     * @throws Exception
      */
     private function addProductToCartAndReorder()
     {
-        /** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
+        /** @var ProductRepositoryInterface $productRepository */
         $productRepository = Bootstrap::getObjectManager()
-            ->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+            ->create(ProductRepositoryInterface::class);
         $product = $productRepository->get('simple-2');
         /** @var CartRepositoryInterface $cartRepository */
         $cartRepository = Bootstrap::getObjectManager()->get(CartRepositoryInterface::class);
 
-        /** @var \Magento\QuoteGraphQl\Model\Cart\CreateEmptyCartForCustomer $emptyCartForCustomer */
+        /** @var CreateEmptyCartForCustomer $emptyCartForCustomer */
         $emptyCartForCustomer = Bootstrap::getObjectManager()
-            ->create(\Magento\QuoteGraphQl\Model\Cart\CreateEmptyCartForCustomer::class);
+            ->create(CreateEmptyCartForCustomer::class);
         $emptyCartForCustomer->execute(self::CUSTOMER_ID);
         $quote = $cartRepository->getForCustomer(self::CUSTOMER_ID);
         $quote->addProduct($product, 1);
@@ -147,23 +101,11 @@ class ReorderOverlayProductTest extends GraphQlAbstract
     }
 
     /**
-     * @param string $email
-     * @param string $password
-     * @return array
-     * @throws \Magento\Framework\Exception\AuthenticationException
-     */
-    private function getCustomerAuthHeaders(string $email, string $password): array
-    {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($email, $password);
-        return ['Authorization' => 'Bearer ' . $customerToken];
-    }
-
-    /**
      * Execute GraphQL Mutation for default customer (make reorder)
      *
      * @param string $orderId
      * @return array|bool|float|int|string
-     * @throws \Exception
+     * @throws Exception
      */
     private function makeReorderForDefaultCustomer(string $orderId = self::ORDER_NUMBER)
     {
@@ -204,5 +146,67 @@ mutation {
     }
 }
 MUTATION;
+    }
+
+    /**
+     * @param string $email
+     * @param string $password
+     * @return array
+     * @throws AuthenticationException
+     */
+    private function getCustomerAuthHeaders(string $email, string $password): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($email, $password);
+        return ['Authorization' => 'Bearer ' . $customerToken];
+    }
+
+    /**
+     * @magentoApiDataFixture Magento/Sales/_files/order_with_two_simple_products.php
+     * @throws NoSuchEntityException
+     */
+    public function testWithOverlay()
+    {
+        $response = $this->addProductToCartAndReorder();
+
+        $expectedResponse = [
+            'userInputErrors' => [],
+            'cart' => [
+                'email' => 'customer@example.com',
+                'total_quantity' => 3,
+                'items' => [
+                    [
+                        'quantity' => 2,
+                        'product' => [
+                            'sku' => 'simple-2',
+                        ],
+                    ],
+                    [
+                        'quantity' => 1,
+                        'product' => [
+                            'sku' => 'simple',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+        $this->assertResponseFields($response['reorderItems'] ?? [], $expectedResponse);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
+
+        // be sure previous tests didn't left customer quote
+        /** @var CartRepositoryInterface $cartRepository */
+        $cartRepository = Bootstrap::getObjectManager()->get(CartRepositoryInterface::class);
+        try {
+            $quote = $cartRepository->getForCustomer(self::CUSTOMER_ID);
+            $cartRepository->delete($quote);
+        } catch (NoSuchEntityException $e) {
+        }
     }
 }

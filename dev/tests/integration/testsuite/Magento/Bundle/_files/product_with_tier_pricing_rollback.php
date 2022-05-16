@@ -6,6 +6,9 @@
 declare(strict_types=1);
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 /*
@@ -15,9 +18,9 @@ use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
  */
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/products_rollback.php');
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-/** @var \Magento\Framework\Registry $registry */
-$registry = $objectManager->get(\Magento\Framework\Registry::class);
+$objectManager = Bootstrap::getObjectManager();
+/** @var Registry $registry */
+$registry = $objectManager->get(Registry::class);
 /** @var ProductRepositoryInterface $productRepository */
 $productRepository = $objectManager->create(ProductRepositoryInterface::class);
 $registry->unregister('isSecureArea');
@@ -26,7 +29,7 @@ $registry->register('isSecureArea', true);
 try {
     $product = $productRepository->get('bundle-product');
     $productRepository->delete($product);
-} catch (\Magento\Framework\Exception\NoSuchEntityException $exception) {
+} catch (NoSuchEntityException $exception) {
     //Products already removed
 }
 

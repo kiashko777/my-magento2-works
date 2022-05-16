@@ -4,30 +4,41 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Persistent\Observer;
+
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Framework\App\Request\Http;
+use Magento\Framework\Event;
+use Magento\Framework\Event\Observer;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Persistent\Helper\Session;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoDataFixture Magento/Persistent/_files/persistent.php
  */
-class EmulateQuoteObserverTest extends \PHPUnit\Framework\TestCase
+class EmulateQuoteObserverTest extends TestCase
 {
     /**
-     * @var \Magento\Customer\Api\CustomerRepositoryInterface
+     * @var CustomerRepositoryInterface
      */
     protected $customerRepository;
 
     /**
-     * @var \Magento\Persistent\Helper\Session
+     * @var Session
      */
     protected $_persistentSessionHelper;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $_objectManager;
 
     /**
-     * @var \Magento\Persistent\Observer\EmulateQuoteObserver
+     * @var EmulateQuoteObserver
      */
     protected $_observer;
 
@@ -37,35 +48,9 @@ class EmulateQuoteObserverTest extends \PHPUnit\Framework\TestCase
     protected $_customerSession;
 
     /**
-     * @var \Magento\Checkout\Model\Session | \PHPUnit\Framework\MockObject\MockObject
+     * @var \Magento\Checkout\Model\Session | MockObject
      */
     protected $_checkoutSession;
-
-    protected function setUp(): void
-    {
-        $this->_objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-
-        $this->_customerSession = $this->_objectManager->get(\Magento\Customer\Model\Session::class);
-
-        $this->customerRepository = $this->_objectManager->create(
-            \Magento\Customer\Api\CustomerRepositoryInterface::class
-        );
-
-        $this->_checkoutSession = $this->getMockBuilder(
-            \Magento\Checkout\Model\Session::class
-        )->disableOriginalConstructor()->setMethods([])->getMock();
-
-        $this->_persistentSessionHelper = $this->_objectManager->create(\Magento\Persistent\Helper\Session::class);
-
-        $this->_observer = $this->_objectManager->create(
-            \Magento\Persistent\Observer\EmulateQuoteObserver::class,
-            [
-                'customerRepository' => $this->customerRepository,
-                'checkoutSession' => $this->_checkoutSession,
-                'persistentSession' => $this->_persistentSessionHelper
-            ]
-        );
-    }
 
     /**
      * @magentoConfigFixture current_store persistent/options/enabled 1
@@ -78,13 +63,13 @@ class EmulateQuoteObserverTest extends \PHPUnit\Framework\TestCase
     public function testEmulateQuote()
     {
         $requestMock = $this->getMockBuilder(
-            \Magento\Framework\App\Request\Http::class
+            Http::class
         )->disableOriginalConstructor()->setMethods(
             []
         )->getMock();
         $requestMock->expects($this->once())->method('getFullActionName')->willReturn('valid_action');
-        $event = new \Magento\Framework\Event(['request' => $requestMock]);
-        $observer = new \Magento\Framework\Event\Observer();
+        $event = new Event(['request' => $requestMock]);
+        $observer = new Observer();
         $observer->setEvent($event);
 
         $this->_customerSession->loginById(1);
@@ -96,5 +81,31 @@ class EmulateQuoteObserverTest extends \PHPUnit\Framework\TestCase
         $this->_customerSession->logout();
 
         $this->_observer->execute($observer);
+    }
+
+    protected function setUp(): void
+    {
+        $this->_objectManager = Bootstrap::getObjectManager();
+
+        $this->_customerSession = $this->_objectManager->get(\Magento\Customer\Model\Session::class);
+
+        $this->customerRepository = $this->_objectManager->create(
+            CustomerRepositoryInterface::class
+        );
+
+        $this->_checkoutSession = $this->getMockBuilder(
+            \Magento\Checkout\Model\Session::class
+        )->disableOriginalConstructor()->setMethods([])->getMock();
+
+        $this->_persistentSessionHelper = $this->_objectManager->create(Session::class);
+
+        $this->_observer = $this->_objectManager->create(
+            EmulateQuoteObserver::class,
+            [
+                'customerRepository' => $this->customerRepository,
+                'checkoutSession' => $this->_checkoutSession,
+                'persistentSession' => $this->_persistentSessionHelper
+            ]
+        );
     }
 }

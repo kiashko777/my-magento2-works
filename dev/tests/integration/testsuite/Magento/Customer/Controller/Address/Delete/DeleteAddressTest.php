@@ -49,18 +49,6 @@ class DeleteAddressTest extends AbstractController
     private $customerRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->escaper = $this->_objectManager->get(Escaper::class);
-        $this->customerSession = $this->_objectManager->get(Session::class);
-        $this->addressRepository = $this->_objectManager->get(AddressRepositoryInterface::class);
-        $this->customerRepository = $this->_objectManager->get(CustomerRepositoryInterface::class);
-    }
-
-    /**
      * Assert that customer address deleted successfully.
      *
      * @magentoDataFixture Magento/Customer/_files/customer.php
@@ -86,72 +74,6 @@ class DeleteAddressTest extends AbstractController
         } catch (LocalizedException $e) {
             //Do nothing, this block mean that address deleted successfully from DB.
         }
-    }
-
-    /**
-     * Check that customer address will not be deleted if we don't pass address ID parameter.
-     *
-     * @magentoDataFixture Magento/Customer/_files/customer.php
-     * @magentoDataFixture Magento/Customer/_files/customer_address.php
-     *
-     * @return void
-     */
-    public function testDeleteWithoutParam(): void
-    {
-        $customer = $this->customerRepository->get('customer@example.com');
-        $customerAddresses = $customer->getAddresses() ?? [];
-        $this->assertCount(1, $customerAddresses);
-        /** @var AddressInterface $currentCustomerAddress */
-        $currentCustomerAddress = reset($customerAddresses);
-        $this->customerSession->setCustomerId($customer->getId());
-        $this->performAddressDeleteRequest();
-        $this->assertRedirect($this->stringContains('customer/address/index'));
-        $customer = $this->customerRepository->get('customer@example.com');
-        $this->assertCount(1, $customer->getAddresses() ?? []);
-        $this->checkAddressWasntDeleted((int)$currentCustomerAddress->getId());
-    }
-
-    /**
-     * Check that customer address will not be deleted if customer id in address and in session are not equals.
-     *
-     * @magentoDataFixture Magento/Customer/_files/customer.php
-     * @magentoDataFixture Magento/Customer/_files/customer_address.php
-     * @magentoDataFixture Magento/Customer/_files/customer_with_uk_address.php
-     *
-     * @return void
-     */
-    public function testDeleteDifferentCustomerAddress(): void
-    {
-        $firstCustomer = $this->customerRepository->get('customer@example.com');
-        $customerAddresses = $firstCustomer->getAddresses() ?? [];
-        $this->assertCount(1, $customerAddresses);
-        /** @var AddressInterface $currentCustomerAddress */
-        $currentCustomerAddress = reset($customerAddresses);
-        $this->customerSession->setCustomerId('1');
-        $secondCustomer = $this->customerRepository->get('customer_uk_address@test.com');
-        $secondCustomerAddresses = $secondCustomer->getAddresses() ?? [];
-        /** @var AddressInterface $secondCustomerAddress */
-        $secondCustomerAddress = reset($secondCustomerAddresses);
-        $this->performAddressDeleteRequest((int)$secondCustomerAddress->getId());
-        $this->checkRequestPerformedWithError(true);
-        $firstCustomer = $this->customerRepository->get('customer@example.com');
-        $this->assertCount(1, $firstCustomer->getAddresses() ?? []);
-        $this->checkAddressWasntDeleted((int)$currentCustomerAddress->getId());
-    }
-
-    /**
-     * Check that error message appear if we try to delete non-exits address.
-     *
-     * @magentoDataFixture Magento/Customer/_files/customer.php
-     *
-     * @return void
-     */
-    public function testDeleteNonExistAddress(): void
-    {
-        $customer = $this->customerRepository->get('customer@example.com');
-        $this->customerSession->setCustomerId($customer->getId());
-        $this->performAddressDeleteRequest(999);
-        $this->checkRequestPerformedWithError();
     }
 
     /**
@@ -185,6 +107,72 @@ class DeleteAddressTest extends AbstractController
     }
 
     /**
+     * Check that customer address will not be deleted if we don't pass address ID parameter.
+     *
+     * @magentoDataFixture Magento/Customer/_files/customer.php
+     * @magentoDataFixture Magento/Customer/_files/customer_address.php
+     *
+     * @return void
+     */
+    public function testDeleteWithoutParam(): void
+    {
+        $customer = $this->customerRepository->get('customer@example.com');
+        $customerAddresses = $customer->getAddresses() ?? [];
+        $this->assertCount(1, $customerAddresses);
+        /** @var AddressInterface $currentCustomerAddress */
+        $currentCustomerAddress = reset($customerAddresses);
+        $this->customerSession->setCustomerId($customer->getId());
+        $this->performAddressDeleteRequest();
+        $this->assertRedirect($this->stringContains('customer/address/index'));
+        $customer = $this->customerRepository->get('customer@example.com');
+        $this->assertCount(1, $customer->getAddresses() ?? []);
+        $this->checkAddressWasntDeleted((int)$currentCustomerAddress->getId());
+    }
+
+    /**
+     * Assert that customer address wasn't deleted.
+     *
+     * @param int $addressId
+     * @return void
+     */
+    private function checkAddressWasntDeleted(int $addressId): void
+    {
+        try {
+            $this->addressRepository->getById($addressId);
+        } catch (LocalizedException $e) {
+            $this->fail('Expects that customer address will not be deleted.');
+        }
+    }
+
+    /**
+     * Check that customer address will not be deleted if customer id in address and in session are not equals.
+     *
+     * @magentoDataFixture Magento/Customer/_files/customer.php
+     * @magentoDataFixture Magento/Customer/_files/customer_address.php
+     * @magentoDataFixture Magento/Customer/_files/customer_with_uk_address.php
+     *
+     * @return void
+     */
+    public function testDeleteDifferentCustomerAddress(): void
+    {
+        $firstCustomer = $this->customerRepository->get('customer@example.com');
+        $customerAddresses = $firstCustomer->getAddresses() ?? [];
+        $this->assertCount(1, $customerAddresses);
+        /** @var AddressInterface $currentCustomerAddress */
+        $currentCustomerAddress = reset($customerAddresses);
+        $this->customerSession->setCustomerId('1');
+        $secondCustomer = $this->customerRepository->get('customer_uk_address@test.com');
+        $secondCustomerAddresses = $secondCustomer->getAddresses() ?? [];
+        /** @var AddressInterface $secondCustomerAddress */
+        $secondCustomerAddress = reset($secondCustomerAddresses);
+        $this->performAddressDeleteRequest((int)$secondCustomerAddress->getId());
+        $this->checkRequestPerformedWithError(true);
+        $firstCustomer = $this->customerRepository->get('customer@example.com');
+        $this->assertCount(1, $firstCustomer->getAddresses() ?? []);
+        $this->checkAddressWasntDeleted((int)$currentCustomerAddress->getId());
+    }
+
+    /**
      * Check that delete address request performed with error.
      * (proper error messages and redirect to customer/address/edit are appear).
      *
@@ -201,17 +189,29 @@ class DeleteAddressTest extends AbstractController
     }
 
     /**
-     * Assert that customer address wasn't deleted.
+     * Check that error message appear if we try to delete non-exits address.
      *
-     * @param int $addressId
+     * @magentoDataFixture Magento/Customer/_files/customer.php
+     *
      * @return void
      */
-    private function checkAddressWasntDeleted(int $addressId): void
+    public function testDeleteNonExistAddress(): void
     {
-        try {
-            $this->addressRepository->getById($addressId);
-        } catch (LocalizedException $e) {
-            $this->fail('Expects that customer address will not be deleted.');
-        }
+        $customer = $this->customerRepository->get('customer@example.com');
+        $this->customerSession->setCustomerId($customer->getId());
+        $this->performAddressDeleteRequest(999);
+        $this->checkRequestPerformedWithError();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->escaper = $this->_objectManager->get(Escaper::class);
+        $this->customerSession = $this->_objectManager->get(Session::class);
+        $this->addressRepository = $this->_objectManager->get(AddressRepositoryInterface::class);
+        $this->customerRepository = $this->_objectManager->get(CustomerRepositoryInterface::class);
     }
 }

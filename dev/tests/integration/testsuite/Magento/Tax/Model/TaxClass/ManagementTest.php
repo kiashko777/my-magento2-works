@@ -3,15 +3,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Tax\Model\TaxClass;
 
+use Magento\Framework\Api\DataObjectHelper;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Tax\Api\Data\TaxClassInterfaceFactory;
 use Magento\Tax\Api\Data\TaxClassKeyInterface;
+use Magento\Tax\Api\Data\TaxClassKeyInterfaceFactory;
 use Magento\Tax\Api\TaxClassManagementInterface;
-use Magento\Tax\Model\TaxClass\Key;
+use Magento\Tax\Api\TaxClassRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class ManagementTest extends \PHPUnit\Framework\TestCase
+class ManagementTest extends TestCase
 {
     /**
      * @var Repository
@@ -29,23 +34,14 @@ class ManagementTest extends \PHPUnit\Framework\TestCase
     private $taxClassFactory;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
     /**
-     * @var \Magento\Framework\Api\DataObjectHelper
+     * @var DataObjectHelper
      */
     private $dataObjectHelper;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->taxClassRepository = $this->objectManager->create(\Magento\Tax\Api\TaxClassRepositoryInterface::class);
-        $this->taxClassManagement = $this->objectManager->create(\Magento\Tax\Api\TaxClassManagementInterface::class);
-        $this->taxClassFactory = $this->objectManager->create(\Magento\Tax\Api\Data\TaxClassInterfaceFactory::class);
-        $this->dataObjectHelper = $this->objectManager->create(\Magento\Framework\Api\DataObjectHelper::class);
-    }
 
     /**
      * @magentoDbIsolation enabled
@@ -58,8 +54,8 @@ class ManagementTest extends \PHPUnit\Framework\TestCase
             ->setClassType(TaxClassManagementInterface::TYPE_CUSTOMER);
 
         $taxClassId = $this->taxClassRepository->save($taxClassDataObject);
-        /** @var \Magento\Tax\Api\Data\TaxClassKeyInterfaceFactory $taxClassKeyFactory */
-        $taxClassKeyFactory = $this->objectManager->create(\Magento\Tax\Api\Data\TaxClassKeyInterfaceFactory::class);
+        /** @var TaxClassKeyInterfaceFactory $taxClassKeyFactory */
+        $taxClassKeyFactory = $this->objectManager->create(TaxClassKeyInterfaceFactory::class);
         $taxClassKeyTypeId = $taxClassKeyFactory->create();
         $this->dataObjectHelper->populateWithArray(
             $taxClassKeyTypeId,
@@ -67,7 +63,7 @@ class ManagementTest extends \PHPUnit\Framework\TestCase
                 Key::KEY_TYPE => TaxClassKeyInterface::TYPE_ID,
                 Key::KEY_VALUE => $taxClassId,
             ],
-            \Magento\Tax\Api\Data\TaxClassKeyInterface::class
+            TaxClassKeyInterface::class
         );
         $this->assertEquals(
             $taxClassId,
@@ -80,7 +76,7 @@ class ManagementTest extends \PHPUnit\Framework\TestCase
                 Key::KEY_TYPE => TaxClassKeyInterface::TYPE_NAME,
                 Key::KEY_VALUE => $taxClassName,
             ],
-            \Magento\Tax\Api\Data\TaxClassKeyInterface::class
+            TaxClassKeyInterface::class
         );
         $this->assertEquals(
             $taxClassId,
@@ -90,5 +86,14 @@ class ManagementTest extends \PHPUnit\Framework\TestCase
         $this->assertNull(
             $this->taxClassManagement->getTaxClassId($taxClassKeyTypeName, TaxClassManagementInterface::TYPE_PRODUCT)
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->taxClassRepository = $this->objectManager->create(TaxClassRepositoryInterface::class);
+        $this->taxClassManagement = $this->objectManager->create(TaxClassManagementInterface::class);
+        $this->taxClassFactory = $this->objectManager->create(TaxClassInterfaceFactory::class);
+        $this->dataObjectHelper = $this->objectManager->create(DataObjectHelper::class);
     }
 }

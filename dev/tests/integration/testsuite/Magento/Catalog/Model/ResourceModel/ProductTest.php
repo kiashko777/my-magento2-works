@@ -3,21 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Model\ResourceModel;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\Catalog\Model\ResourceModel\Product\Action;
-use Magento\Eav\Api\Data\AttributeSetInterface;
-use Magento\Eav\Model\AttributeSetRepository;
-use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\Exception\CouldNotSaveException;
+use Magento\Framework\Exception\InputException;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Exception\StateException;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Eav\Model\GetAttributeSetByName;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
-use Magento\Framework\Exception\NoSuchEntityException;
-use Magento\Framework\Exception\CouldNotSaveException;
-use Magento\Framework\Exception\InputException;
-use Magento\Framework\Exception\StateException;
 
 /**
  * Tests product resource model
@@ -41,17 +38,6 @@ class ProductTest extends TestCase
      * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-
-        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
-        $this->model = $this->objectManager->create(Product::class);
-    }
 
     /**
      * Checks a possibility to retrieve product raw attribute value.
@@ -197,5 +183,16 @@ class ProductTest extends TestCase
 
         $attribute = $this->model->getAttributeRawValue($product->getId(), $attributeCode, 1);
         $this->assertEmpty($attribute);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+        $this->model = $this->objectManager->create(Product::class);
     }
 }

@@ -11,6 +11,7 @@ use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver\TestSetter;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 /**
  * Provide tests for \Magento\TestFramework\Workaround\Override\Fixture\Resolver\TestSetter.
@@ -19,16 +20,6 @@ class TestSetterTest extends TestCase
 {
     /** @var TestSetter */
     private $object;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->object = new TestSetter();
-    }
 
     /**
      * @return void
@@ -40,6 +31,25 @@ class TestSetterTest extends TestCase
             ->method('setCurrentTest')
             ->with($this);
         $this->object->startTest($this);
+    }
+
+    /**
+     * Create mock for resolver object
+     *
+     * @return MockObject
+     */
+    private function createResolverMock(): MockObject
+    {
+        $mock = $this->getMockBuilder(Resolver::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['setCurrentTest'])
+            ->getMock();
+        $reflection = new ReflectionClass(Resolver::class);
+        $reflectionProperty = $reflection->getProperty('instance');
+        $reflectionProperty->setAccessible(true);
+        $reflectionProperty->setValue(Resolver::class, $mock);
+
+        return $mock;
     }
 
     /**
@@ -55,21 +65,12 @@ class TestSetterTest extends TestCase
     }
 
     /**
-     * Create mock for resolver object
-     *
-     * @return MockObject
+     * @inheritdoc
      */
-    private function createResolverMock(): MockObject
+    protected function setUp(): void
     {
-        $mock = $this->getMockBuilder(Resolver::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['setCurrentTest'])
-            ->getMock();
-        $reflection = new \ReflectionClass(Resolver::class);
-        $reflectionProperty = $reflection->getProperty('instance');
-        $reflectionProperty->setAccessible(true);
-        $reflectionProperty->setValue(Resolver::class, $mock);
+        parent::setUp();
 
-        return $mock;
+        $this->object = new TestSetter();
     }
 }

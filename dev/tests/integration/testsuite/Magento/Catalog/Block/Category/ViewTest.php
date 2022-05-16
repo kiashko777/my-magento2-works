@@ -44,31 +44,6 @@ class ViewTest extends TestCase
     private $storeManager;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->getCategoryByName = $this->objectManager->get(GetCategoryByName::class);
-        $this->categoryRepository = $this->objectManager->get(CategoryRepositoryInterface::class);
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->registry->unregister('current_category');
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/category_with_cms_block.php
      *
      * @return void
@@ -93,5 +68,30 @@ class ViewTest extends TestCase
     {
         $this->registry->unregister('current_category');
         $this->registry->register('current_category', $category);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->getCategoryByName = $this->objectManager->get(GetCategoryByName::class);
+        $this->categoryRepository = $this->objectManager->get(CategoryRepositoryInterface::class);
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->registry->unregister('current_category');
+
+        parent::tearDown();
     }
 }

@@ -18,11 +18,6 @@ class FilterApplierTest extends TestCase
      */
     private $applier;
 
-    protected function setUp(): void
-    {
-        $this->applier = ObjectManager::getInstance()->get(FilterApplier::class);
-    }
-
     /**
      * @dataProvider arrayUseCaseProvider
      */
@@ -71,5 +66,10 @@ class FilterApplierTest extends TestCase
             'default filters' => ['', $standardInput, 'Hello ' . "\n" . ' &amp;world!'],
             'params' => ['|nl2br|escape:url|foofilter', $standardInput, '12%DLROW62%02%A0%E3%F2%02%RBC3%02%OLLEH'],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->applier = ObjectManager::getInstance()->get(FilterApplier::class);
     }
 }

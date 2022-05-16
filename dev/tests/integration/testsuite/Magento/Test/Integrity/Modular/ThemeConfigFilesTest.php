@@ -5,11 +5,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Modular;
 
 use Magento\Framework\Component\ComponentRegistrar;
+use Magento\TestFramework\TestCase\AbstractConfigFiles;
+use Magento\Theme\Model\Layout\Config\Reader;
 
-class ThemeConfigFilesTest extends \Magento\TestFramework\TestCase\AbstractConfigFiles
+class ThemeConfigFilesTest extends AbstractConfigFiles
 {
     /**
      * Returns the reader class name that will be instantiated via ObjectManager
@@ -18,7 +21,7 @@ class ThemeConfigFilesTest extends \Magento\TestFramework\TestCase\AbstractConfi
      */
     protected function _getReaderClassName()
     {
-        return \Magento\Theme\Model\Layout\Config\Reader::class;
+        return Reader::class;
     }
 
     /**

@@ -3,12 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\InstantPurchase\CustomerData;
 
+use Magento\Customer\Model\Session;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
-use Magento\Customer\Model\Session;
 
 /**
  * @magentoAppIsolation enabled
@@ -19,11 +20,6 @@ class InstantPurchaseTest extends TestCase
      * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
@@ -71,5 +67,10 @@ class InstantPurchaseTest extends TestCase
             $data['paymentToken']['summary'],
             'Complex implementation returns custom string.'
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

@@ -3,22 +3,24 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Observer;
 
+use Magento\Eav\Model\Config;
 use Magento\Framework\App\Config\ReinitableConfigInterface;
 use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\Event\ManagerInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Store\Model\Store;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class SwitchPriceAttributeScopeOnConfigChangeTest extends \PHPUnit\Framework\TestCase
+class SwitchPriceAttributeScopeOnConfigChangeTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoDbIsolation enabled
@@ -27,7 +29,7 @@ class SwitchPriceAttributeScopeOnConfigChangeTest extends \PHPUnit\Framework\Tes
     public function testPriceAttributeHasScopeGlobal()
     {
         foreach (['price', 'cost', 'special_price'] as $attributeCode) {
-            $attribute = $this->objectManager->get(\Magento\Eav\Model\Config::class)->getAttribute(
+            $attribute = $this->objectManager->get(Config::class)->getAttribute(
                 'catalog_product',
                 $attributeCode
             );
@@ -46,22 +48,27 @@ class SwitchPriceAttributeScopeOnConfigChangeTest extends \PHPUnit\Framework\Tes
             ReinitableConfigInterface::class
         );
         $config->setValue(
-            \Magento\Store\Model\Store::XML_PATH_PRICE_SCOPE,
-            \Magento\Store\Model\Store::PRICE_SCOPE_WEBSITE,
+            Store::XML_PATH_PRICE_SCOPE,
+            Store::PRICE_SCOPE_WEBSITE,
             ScopeConfigInterface::SCOPE_TYPE_DEFAULT
         );
 
-        $eventManager = $this->objectManager->get(\Magento\Framework\Event\ManagerInterface::class);
+        $eventManager = $this->objectManager->get(ManagerInterface::class);
         $eventManager->dispatch(
             "admin_system_config_changed_section_catalog",
             ['website' => 0, 'store' => 0]
         );
         foreach (['price', 'cost', 'special_price'] as $attributeCode) {
-            $attribute = $this->objectManager->get(\Magento\Eav\Model\Config::class)->getAttribute(
+            $attribute = $this->objectManager->get(Config::class)->getAttribute(
                 'catalog_product',
                 $attributeCode
             );
             $this->assertTrue($attribute->isScopeWebsite());
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

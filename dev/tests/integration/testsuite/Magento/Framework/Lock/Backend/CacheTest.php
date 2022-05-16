@@ -7,12 +7,16 @@ declare(strict_types=1);
 
 namespace Magento\Framework\Lock\Backend;
 
-use Magento\Framework\Lock\Backend\Cache;
+use Closure;
+use Magento\Framework\App\Cache\Type\Config;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+use function uniqid;
 
 /**
  * \Magento\Framework\Lock\Backend\Cache test case.
  */
-class CacheTest extends \PHPUnit\Framework\TestCase
+class CacheTest extends TestCase
 {
     /**
      * @var Cache
@@ -25,27 +29,13 @@ class CacheTest extends \PHPUnit\Framework\TestCase
     private $cacheInstance2;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-
-        $frontendInterface1 = $objectManager->create(\Magento\Framework\App\Cache\Type\Config::class);
-        $this->cacheInstance1 = new Cache($frontendInterface1);
-
-        $frontendInterface2 = $objectManager->create(\Magento\Framework\App\Cache\Type\Config::class);
-        $this->cacheInstance2 = new Cache($frontendInterface2);
-    }
-
-    /**
      *  Verify lock mechanism in general.
      *
      * @return void
      */
     public function testParallelLock(): void
     {
-        $identifier1 = \uniqid('lock_name_1_', true);
+        $identifier1 = uniqid('lock_name_1_', true);
 
         $this->assertTrue($this->cacheInstance1->lock($identifier1));
 
@@ -61,11 +51,11 @@ class CacheTest extends \PHPUnit\Framework\TestCase
     public function testParallelLockExpired(): void
     {
         $testLifeTime = 2;
-        \Closure::bind(function (Cache $class) use ($testLifeTime) {
+        Closure::bind(function (Cache $class) use ($testLifeTime) {
             $class->defaultLifetime = $testLifeTime;
         }, null, $this->cacheInstance1)($this->cacheInstance1);
 
-        $identifier1 = \uniqid('lock_name_1_', true);
+        $identifier1 = uniqid('lock_name_1_', true);
 
         $this->assertTrue($this->cacheInstance1->lock($identifier1, 0));
         $this->assertTrue($this->cacheInstance2->lock($identifier1, $testLifeTime + 1));
@@ -80,8 +70,8 @@ class CacheTest extends \PHPUnit\Framework\TestCase
      */
     public function testParallelUnlock(): void
     {
-        $identifier1 = \uniqid('lock_name_1_', true);
-        $identifier2 = \uniqid('lock_name_2_', true);
+        $identifier1 = uniqid('lock_name_1_', true);
+        $identifier2 = uniqid('lock_name_2_', true);
 
         $this->assertTrue($this->cacheInstance1->lock($identifier1, 30));
         $this->assertTrue($this->cacheInstance2->lock($identifier2, 30));
@@ -100,8 +90,8 @@ class CacheTest extends \PHPUnit\Framework\TestCase
      */
     public function testParallelUnlockNoExpiration(): void
     {
-        $identifier1 = \uniqid('lock_name_1_', true);
-        $identifier2 = \uniqid('lock_name_2_', true);
+        $identifier1 = uniqid('lock_name_1_', true);
+        $identifier2 = uniqid('lock_name_2_', true);
 
         $this->assertTrue($this->cacheInstance1->lock($identifier1, -1));
         $this->assertTrue($this->cacheInstance2->lock($identifier2, -1));
@@ -111,5 +101,19 @@ class CacheTest extends \PHPUnit\Framework\TestCase
 
         $this->assertTrue($this->cacheInstance2->isLocked($identifier1));
         $this->assertFalse($this->cacheInstance2->isLocked($identifier2));
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+
+        $frontendInterface1 = $objectManager->create(Config::class);
+        $this->cacheInstance1 = new Cache($frontendInterface1);
+
+        $frontendInterface2 = $objectManager->create(Config::class);
+        $this->cacheInstance2 = new Cache($frontendInterface2);
     }
 }

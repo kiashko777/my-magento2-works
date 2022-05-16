@@ -8,12 +8,12 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Model\Attribute\Backend;
 
-use Magento\Catalog\Model\CategoryFactory;
 use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\CategoryFactory;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
-use Magento\Eav\Model\Entity\Attribute\Backend\AbstractBackend;
+use Throwable;
 
 /**
  * Test 'custom layout' attribute.
@@ -36,31 +36,10 @@ class CustomlayoutupdateTest extends TestCase
     private $category;
 
     /**
-     * Recreate the category model.
-     *
-     * @return void
-     */
-    private function recreateCategory(): void
-    {
-        $this->category = $this->categoryFactory->create();
-        $this->category->load(2);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->categoryFactory = Bootstrap::getObjectManager()->get(CategoryFactory::class);
-        $this->recreateCategory();
-        $this->attribute = $this->category->getAttributes()['custom_layout_update']->getBackend();
-    }
-
-    /**
      * Test that attribute cannot be modified but only removed completely.
      *
      * @return void
-     * @throws \Throwable
+     * @throws Throwable
      * @magentoDbIsolation enabled
      */
     public function testImmutable(): void
@@ -120,5 +99,26 @@ class CustomlayoutupdateTest extends TestCase
         //Empty value
         $this->category->setData('custom_layout_update', null);
         $this->attribute->beforeSave($this->category);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->categoryFactory = Bootstrap::getObjectManager()->get(CategoryFactory::class);
+        $this->recreateCategory();
+        $this->attribute = $this->category->getAttributes()['custom_layout_update']->getBackend();
+    }
+
+    /**
+     * Recreate the category model.
+     *
+     * @return void
+     */
+    private function recreateCategory(): void
+    {
+        $this->category = $this->categoryFactory->create();
+        $this->category->load(2);
     }
 }

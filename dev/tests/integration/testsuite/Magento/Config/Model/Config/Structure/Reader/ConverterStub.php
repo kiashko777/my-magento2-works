@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace Magento\Config\Model\Config\Structure\Reader;
 
+use DOMDocument;
+use DOMNode;
 use Magento\Config\Model\Config\Structure\Converter;
 
 /**
@@ -17,10 +19,10 @@ class ConverterStub extends Converter
     /**
      * Convert dom document wrapper.
      *
-     * @param \DOMDocument $document
+     * @param DOMDocument $document
      * @return array|null
      */
-    public function getArrayData(\DOMDocument $document)
+    public function getArrayData(DOMDocument $document)
     {
         return $this->_convertDOMDocument($document);
     }
@@ -28,7 +30,7 @@ class ConverterStub extends Converter
     /**
      * Convert dom document.
      *
-     * @param \DOMNode $source
+     * @param DOMNode $source
      * @return array
      */
     public function convert($source)

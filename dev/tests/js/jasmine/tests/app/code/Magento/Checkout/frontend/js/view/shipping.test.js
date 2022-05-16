@@ -22,13 +22,16 @@ define(['squire', 'ko', 'jquery', 'jquery/validate'], function (Squire, ko, $) {
         },
         country = {
             /** Stub */
-            on: function () {},
+            on: function () {
+            },
 
             /** Stub */
-            get: function () {},
+            get: function () {
+            },
 
             /** Stub */
-            set: function () {}
+            set: function () {
+            }
         },
         mocks = {
             'Magento_Customer/js/model/customer': {
@@ -63,7 +66,8 @@ define(['squire', 'ko', 'jquery', 'jquery/validate'], function (Squire, ko, $) {
                 ['setSelectedShippingAddress', 'setNewCustomerShippingAddress', 'setSelectedShippingRate']
             ),
             'Magento_Ui/js/lib/registry/registry': {
-                async: jasmine.createSpy().and.returnValue(function () {}),
+                async: jasmine.createSpy().and.returnValue(function () {
+                }),
                 create: jasmine.createSpy(),
                 set: jasmine.createSpy(),
                 get: jasmine.createSpy().and.callFake(function (query) {
@@ -102,7 +106,8 @@ define(['squire', 'ko', 'jquery', 'jquery/validate'], function (Squire, ko, $) {
         try {
             injector.clean();
             injector.remove();
-        } catch (e) {}
+        } catch (e) {
+        }
     });
 
     describe('Magento_Checkout/js/view/shipping', function () {

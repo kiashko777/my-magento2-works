@@ -41,7 +41,7 @@ module.exports = {
         return files;
     },
 
-    isListEntryValid: function(line) {
+    isListEntryValid: function (line) {
         line = line.trim();
         return line.length > 0 && line.startsWith('// ') !== true;
     },

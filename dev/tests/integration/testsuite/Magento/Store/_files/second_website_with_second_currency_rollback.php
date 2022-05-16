@@ -3,28 +3,35 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Catalog\Helper\Data;
+use Magento\Config\Model\ResourceModel\Config;
+use Magento\Directory\Model\Currency;
+use Magento\Store\Model\ScopeInterface;
+use Magento\Store\Model\Website;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
-$objectManager =  \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-/** @var \Magento\Config\Model\ResourceModel\Config $configResource */
-$configResource = $objectManager->get(\Magento\Config\Model\ResourceModel\Config::class);
+$objectManager = Bootstrap::getObjectManager();
+/** @var Config $configResource */
+$configResource = $objectManager->get(Config::class);
 $configResource->deleteConfig(
-    \Magento\Catalog\Helper\Data::XML_PATH_PRICE_SCOPE,
+    Data::XML_PATH_PRICE_SCOPE,
     'default',
     0
 );
-$website = $objectManager->create(\Magento\Store\Model\Website::class);
-/** @var $website \Magento\Store\Model\Website */
+$website = $objectManager->create(Website::class);
+/** @var $website Website */
 $websiteId = $website->load('test', 'code')->getId();
 if ($websiteId) {
     $configResource->deleteConfig(
-        \Magento\Directory\Model\Currency::XML_PATH_CURRENCY_DEFAULT,
-        \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITE,
+        Currency::XML_PATH_CURRENCY_DEFAULT,
+        ScopeInterface::SCOPE_WEBSITE,
         $websiteId
     );
     $configResource->deleteConfig(
-        \Magento\Directory\Model\Currency::XML_PATH_CURRENCY_ALLOW,
-        \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITE,
+        Currency::XML_PATH_CURRENCY_ALLOW,
+        ScopeInterface::SCOPE_WEBSITE,
         $websiteId
     );
 }

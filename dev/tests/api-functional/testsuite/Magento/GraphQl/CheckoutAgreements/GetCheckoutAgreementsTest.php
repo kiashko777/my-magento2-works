@@ -43,6 +43,27 @@ class GetCheckoutAgreementsTest extends GraphQlAbstract
     }
 
     /**
+     * @return string
+     */
+    private function getQuery(): string
+    {
+        return
+            <<<QUERY
+{
+  checkoutAgreements {
+    agreement_id
+    name
+    content
+    content_height
+    checkbox_text
+    is_html
+    mode
+  }
+}
+QUERY;
+    }
+
+    /**
      * @magentoApiDataFixture Magento/CheckoutAgreements/_files/agreement_active_with_html_content.php
      * @magentoApiDataFixture Magento/CheckoutAgreements/_files/agreement_inactive_with_text_content.php
      * @magentoApiDataFixture Magento/Store/_files/second_store.php
@@ -68,6 +89,26 @@ class GetCheckoutAgreementsTest extends GraphQlAbstract
         self::assertEquals('Checkout agreement checkbox text.', $agreements[0]['checkbox_text']);
         self::assertTrue($agreements[0]['is_html']);
         self::assertEquals('AUTO', $agreements[0]['mode']);
+    }
+
+    /**
+     * @param string $storeCode
+     * @param string $agreementsName
+     * @return void
+     */
+    private function assignAgreementsToStore(string $storeCode, string $agreementsName): void
+    {
+        $agreementsFactory = ObjectManager::getInstance()->get(AgreementFactory::class);
+        /** @var Agreement $agreementsResource */
+        $agreementsResource = ObjectManager::getInstance()->get(Agreement::class);
+        /** @var StoreManagerInterface $storeManager */
+        $storeManager = ObjectManager::getInstance()->get(StoreManagerInterface::class);
+        $store = $storeManager->getStore($storeCode);
+        /** @var AgreementModel $agreements */
+        $agreements = $agreementsFactory->create();
+        $agreementsResource->load($agreements, $agreementsName, AgreementInterface::NAME);
+        $agreements->setData('stores', [$store->getId()]);
+        $agreementsResource->save($agreements);
     }
 
     /**
@@ -116,46 +157,5 @@ class GetCheckoutAgreementsTest extends GraphQlAbstract
         self::assertArrayHasKey('checkoutAgreements', $response);
         $agreements = $response['checkoutAgreements'];
         self::assertEmpty($agreements);
-    }
-
-    /**
-     * @return string
-     */
-    private function getQuery(): string
-    {
-        return
-            <<<QUERY
-{
-  checkoutAgreements {
-    agreement_id
-    name
-    content
-    content_height
-    checkbox_text
-    is_html
-    mode
-  }
-}
-QUERY;
-    }
-
-    /**
-     * @param string $storeCode
-     * @param string $agreementsName
-     * @return void
-     */
-    private function assignAgreementsToStore(string $storeCode, string $agreementsName): void
-    {
-        $agreementsFactory = ObjectManager::getInstance()->get(AgreementFactory::class);
-        /** @var Agreement $agreementsResource */
-        $agreementsResource = ObjectManager::getInstance()->get(Agreement::class);
-        /** @var StoreManagerInterface $storeManager */
-        $storeManager = ObjectManager::getInstance()->get(StoreManagerInterface::class);
-        $store = $storeManager->getStore($storeCode);
-        /** @var AgreementModel $agreements */
-        $agreements = $agreementsFactory->create();
-        $agreementsResource->load($agreements, $agreementsName, AgreementInterface::NAME);
-        $agreements->setData('stores', [$store->getId()]);
-        $agreementsResource->save($agreements);
     }
 }

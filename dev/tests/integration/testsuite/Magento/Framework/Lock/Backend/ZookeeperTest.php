@@ -7,16 +7,19 @@ declare(strict_types=1);
 
 namespace Magento\Framework\Lock\Backend;
 
+use Magento\Framework\App\DeploymentConfig\FileReader;
+use Magento\Framework\Config\File\ConfigFilePool;
 use Magento\Framework\Lock\Backend\Zookeeper as ZookeeperLock;
 use Magento\Framework\Lock\LockBackendFactory;
-use Magento\Framework\Config\File\ConfigFilePool;
-use Magento\Framework\App\DeploymentConfig\FileReader;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Stdlib\ArrayManager;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * \Magento\Framework\Lock\Backend\Zookeeper test case
  */
-class ZookeeperTest extends \PHPUnit\Framework\TestCase
+class ZookeeperTest extends TestCase
 {
     /**
      * @var FileReader
@@ -24,7 +27,7 @@ class ZookeeperTest extends \PHPUnit\Framework\TestCase
     private $configReader;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
@@ -42,29 +45,6 @@ class ZookeeperTest extends \PHPUnit\Framework\TestCase
      * @var ZookeeperLock
      */
     private $model;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        if (!extension_loaded('zookeeper')) {
-            $this->markTestSkipped('php extension Zookeeper is not installed.');
-        }
-
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->configReader = $this->objectManager->get(FileReader::class);
-        $this->lockBackendFactory = $this->objectManager->create(LockBackendFactory::class);
-        $this->arrayManager = $this->objectManager->create(ArrayManager::class);
-        $config = $this->configReader->load(ConfigFilePool::APP_ENV);
-
-        if ($this->arrayManager->get('lock/provider', $config) !== 'zookeeper') {
-            $this->markTestSkipped('Zookeeper is not configured during installation.');
-        }
-
-        $this->model = $this->lockBackendFactory->create();
-        $this->assertInstanceOf(ZookeeperLock::class, $this->model);
-    }
 
     public function testLockAndUnlock()
     {
@@ -86,5 +66,28 @@ class ZookeeperTest extends \PHPUnit\Framework\TestCase
 
         $this->assertFalse($this->model->isLocked($name));
         $this->assertFalse($this->model->unlock($name));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        if (!extension_loaded('zookeeper')) {
+            $this->markTestSkipped('php extension Zookeeper is not installed.');
+        }
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->configReader = $this->objectManager->get(FileReader::class);
+        $this->lockBackendFactory = $this->objectManager->create(LockBackendFactory::class);
+        $this->arrayManager = $this->objectManager->create(ArrayManager::class);
+        $config = $this->configReader->load(ConfigFilePool::APP_ENV);
+
+        if ($this->arrayManager->get('lock/provider', $config) !== 'zookeeper') {
+            $this->markTestSkipped('Zookeeper is not configured during installation.');
+        }
+
+        $this->model = $this->lockBackendFactory->create();
+        $this->assertInstanceOf(ZookeeperLock::class, $this->model);
     }
 }

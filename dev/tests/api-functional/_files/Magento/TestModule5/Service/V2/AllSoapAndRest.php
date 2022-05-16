@@ -3,8 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestModule5\Service\V2;
 
+use Magento\Framework\Webapi\Exception;
 use Magento\TestModule5\Service\V2\Entity\AllSoapAndRest as AllSoapAndRestEntity;
 use Magento\TestModule5\Service\V2\Entity\AllSoapAndRestFactory;
 
@@ -44,7 +46,7 @@ class AllSoapAndRest implements AllSoapAndRestInterface
     /**
      * @inheritdoc
      */
-    public function create(\Magento\TestModule5\Service\V2\Entity\AllSoapAndRest $item)
+    public function create(AllSoapAndRestEntity $item)
     {
         return $this->factory->create()->setPrice($item->getPrice());
     }
@@ -52,7 +54,7 @@ class AllSoapAndRest implements AllSoapAndRestInterface
     /**
      * @inheritdoc
      */
-    public function update(\Magento\TestModule5\Service\V2\Entity\AllSoapAndRest $item)
+    public function update(AllSoapAndRestEntity $item)
     {
         $item->setName('Updated' . $item->getName());
         return $item;
@@ -61,7 +63,7 @@ class AllSoapAndRest implements AllSoapAndRestInterface
     /**
      * @param string $id
      * @return AllSoapAndRestEntity
-     * @throws \Magento\Framework\Webapi\Exception
+     * @throws Exception
      */
     public function delete($id)
     {

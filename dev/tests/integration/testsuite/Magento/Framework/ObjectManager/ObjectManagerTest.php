@@ -3,39 +3,62 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\ObjectManager;
 
+use Magento\Framework\Exception\RuntimeException;
+use Magento\Framework\ObjectManager\Config\Config;
+use Magento\Framework\ObjectManager\TestAsset\Basic;
+use Magento\Framework\ObjectManager\TestAsset\BasicInjection;
+use Magento\Framework\ObjectManager\TestAsset\ConstructorEightArguments;
+use Magento\Framework\ObjectManager\TestAsset\ConstructorFiveArguments;
+use Magento\Framework\ObjectManager\TestAsset\ConstructorFourArguments;
+use Magento\Framework\ObjectManager\TestAsset\ConstructorNineArguments;
+use Magento\Framework\ObjectManager\TestAsset\ConstructorNoArguments;
+use Magento\Framework\ObjectManager\TestAsset\ConstructorOneArgument;
+use Magento\Framework\ObjectManager\TestAsset\ConstructorSevenArguments;
+use Magento\Framework\ObjectManager\TestAsset\ConstructorSixArguments;
+use Magento\Framework\ObjectManager\TestAsset\ConstructorTenArguments;
+use Magento\Framework\ObjectManager\TestAsset\ConstructorThreeArguments;
+use Magento\Framework\ObjectManager\TestAsset\ConstructorTwoArguments;
+use Magento\Framework\ObjectManager\TestAsset\ConstructorWithTypeError;
+use Magento\Framework\ObjectManager\TestAsset\InterfaceImplementation;
+use Magento\Framework\ObjectManager\TestAsset\InterfaceInjection;
+use Magento\Framework\ObjectManager\TestAsset\TestAssetInterface;
+use Magento\Framework\ObjectManagerInterface;
+use PHPUnit\Framework\TestCase;
 use ReflectionClass;
+use stdClass;
 
-class ObjectManagerTest extends \PHPUnit\Framework\TestCase
+class ObjectManagerTest extends TestCase
 {
     /**#@+
      * Test class with type error
      */
-    const TEST_CLASS_WITH_TYPE_ERROR = \Magento\Framework\ObjectManager\TestAsset\ConstructorWithTypeError::class;
+    const TEST_CLASS_WITH_TYPE_ERROR = ConstructorWithTypeError::class;
 
     /**#@+
      * Test classes for basic instantiation
      */
-    const TEST_CLASS = \Magento\Framework\ObjectManager\TestAsset\Basic::class;
+    const TEST_CLASS = Basic::class;
 
-    const TEST_CLASS_INJECTION = \Magento\Framework\ObjectManager\TestAsset\BasicInjection::class;
+    const TEST_CLASS_INJECTION = BasicInjection::class;
 
     /**#@-*/
 
     /**#@+
      * Test classes and interface to test preferences
      */
-    const TEST_INTERFACE = \Magento\Framework\ObjectManager\TestAsset\TestAssetInterface::class;
+    const TEST_INTERFACE = TestAssetInterface::class;
 
-    const TEST_INTERFACE_IMPLEMENTATION = \Magento\Framework\ObjectManager\TestAsset\InterfaceImplementation::class;
+    const TEST_INTERFACE_IMPLEMENTATION = InterfaceImplementation::class;
 
-    const TEST_CLASS_WITH_INTERFACE = \Magento\Framework\ObjectManager\TestAsset\InterfaceInjection::class;
+    const TEST_CLASS_WITH_INTERFACE = InterfaceInjection::class;
 
     /**#@-*/
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected static $_objectManager;
 
@@ -45,17 +68,17 @@ class ObjectManagerTest extends \PHPUnit\Framework\TestCase
      * @var array
      */
     protected $_numerableClasses = [
-        0 => \Magento\Framework\ObjectManager\TestAsset\ConstructorNoArguments::class,
-        1 => \Magento\Framework\ObjectManager\TestAsset\ConstructorOneArgument::class,
-        2 => \Magento\Framework\ObjectManager\TestAsset\ConstructorTwoArguments::class,
-        3 => \Magento\Framework\ObjectManager\TestAsset\ConstructorThreeArguments::class,
-        4 => \Magento\Framework\ObjectManager\TestAsset\ConstructorFourArguments::class,
-        5 => \Magento\Framework\ObjectManager\TestAsset\ConstructorFiveArguments::class,
-        6 => \Magento\Framework\ObjectManager\TestAsset\ConstructorSixArguments::class,
-        7 => \Magento\Framework\ObjectManager\TestAsset\ConstructorSevenArguments::class,
-        8 => \Magento\Framework\ObjectManager\TestAsset\ConstructorEightArguments::class,
-        9 => \Magento\Framework\ObjectManager\TestAsset\ConstructorNineArguments::class,
-        10 => \Magento\Framework\ObjectManager\TestAsset\ConstructorTenArguments::class,
+        0 => ConstructorNoArguments::class,
+        1 => ConstructorOneArgument::class,
+        2 => ConstructorTwoArguments::class,
+        3 => ConstructorThreeArguments::class,
+        4 => ConstructorFourArguments::class,
+        5 => ConstructorFiveArguments::class,
+        6 => ConstructorSixArguments::class,
+        7 => ConstructorSevenArguments::class,
+        8 => ConstructorEightArguments::class,
+        9 => ConstructorNineArguments::class,
+        10 => ConstructorTenArguments::class,
     ];
 
     /**
@@ -78,10 +101,10 @@ class ObjectManagerTest extends \PHPUnit\Framework\TestCase
 
     public static function setUpBeforeClass(): void
     {
-        $config = new \Magento\Framework\ObjectManager\Config\Config();
+        $config = new Config();
         $factory = new Factory\Dynamic\Developer($config);
 
-        self::$_objectManager = new \Magento\Framework\ObjectManager\ObjectManager($factory, $config);
+        self::$_objectManager = new ObjectManager($factory, $config);
         self::$_objectManager->configure(
             ['preferences' => [self::TEST_INTERFACE => self::TEST_INTERFACE_IMPLEMENTATION]]
         );
@@ -157,11 +180,11 @@ class ObjectManagerTest extends \PHPUnit\Framework\TestCase
      */
     public function testNewInstanceWithTypeError()
     {
-        $this->expectException(\Magento\Framework\Exception\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Error occurred when creating object');
 
         self::$_objectManager->create(self::TEST_CLASS_WITH_TYPE_ERROR, [
-            'testArgument' => new \stdClass()
+            'testArgument' => new stdClass()
         ]);
     }
 }

@@ -7,10 +7,15 @@
 /**
  * Create dummy user
  */
-\Magento\TestFramework\Helper\Bootstrap::getInstance()
-    ->loadArea(\Magento\Backend\App\Area\FrontNameResolver::AREA_CODE);
-/** @var $user \Magento\User\Model\User */
-$user = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\User\Model\User::class);
+
+use Magento\Backend\App\Area\FrontNameResolver;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\User\Model\User;
+
+Bootstrap::getInstance()
+    ->loadArea(FrontNameResolver::AREA_CODE);
+/** @var $user User */
+$user = Bootstrap::getObjectManager()->create(User::class);
 $user->setFirstname(
     'Dummy'
 )->setLastname(

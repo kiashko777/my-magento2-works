@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Shipping\Model;
 
 use Magento\Framework\DataObject;
@@ -10,11 +11,12 @@ use Magento\Framework\ObjectManagerInterface;
 use Magento\Quote\Model\Quote\Address\RateResult\Method;
 use Magento\Shipping\Model\Rate\Result;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Contains list of tests for Shipping model
  */
-class ShippingTest extends \PHPUnit\Framework\TestCase
+class ShippingTest extends TestCase
 {
     /**
      * @var Shipping
@@ -25,15 +27,6 @@ class ShippingTest extends \PHPUnit\Framework\TestCase
      * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->model = $this->objectManager->get(Shipping::class);
-    }
 
     /**
      * Checks shipping rates processing by address.
@@ -65,7 +58,7 @@ class ShippingTest extends \PHPUnit\Framework\TestCase
 
     /**
      * Checks shipping rate details for processed address.
-     * @covers \Magento\Shipping\Model\Shipping::collectRatesByAddress
+     * @covers  \Magento\Shipping\Model\Shipping::collectRatesByAddress
      * @param Result $result
      * @depends testCollectRatesByAddress
      * @magentoConfigFixture carriers/flatrate/active 1
@@ -82,5 +75,14 @@ class ShippingTest extends \PHPUnit\Framework\TestCase
         static::assertInstanceOf(Method::class, $rate);
         static::assertEquals('flatrate', $rate->getData('carrier'));
         static::assertEquals(5, $rate->getData('price'));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->model = $this->objectManager->get(Shipping::class);
     }
 }

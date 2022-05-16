@@ -3,17 +3,23 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Store\Model\Store;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Store/_files/core_fixturestore.php');
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 
 /** @var Magento\Store\Model\Store $store */
-$store = $objectManager->create(\Magento\Store\Model\Store::class);
+$store = $objectManager->create(Store::class);
 $store->load('fixturestore', 'code');
 
-/** @var $product \Magento\Catalog\Model\Product */
-$product = $objectManager->create(\Magento\Catalog\Model\Product::class);
+/** @var $product Product */
+$product = $objectManager->create(Product::class);
 
 $product->setTypeId(
     \Magento\Catalog\Model\Product\Type::TYPE_SIMPLE
@@ -42,12 +48,12 @@ $product->setTypeId(
 )->setCategoryIds(
     [9]
 )->setVisibility(
-    \Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH
+    Visibility::VISIBILITY_BOTH
 )->setStatus(
-    \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED
+    Status::STATUS_ENABLED
 )->save();
 
-$product = $objectManager->create(\Magento\Catalog\Model\Product::class);
+$product = $objectManager->create(Product::class);
 $product->load(1)
     ->setStoreId($store->getId())
     ->setName('StoreTitle')

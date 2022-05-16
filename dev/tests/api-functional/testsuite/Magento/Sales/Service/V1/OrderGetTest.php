@@ -30,14 +30,6 @@ class OrderGetTest extends WebapiAbstract
     private $objectManager;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
-
-    /**
      * Checks order attributes.
      *
      * @magentoApiDataFixture Magento/Sales/_files/order.php
@@ -114,6 +106,44 @@ class OrderGetTest extends WebapiAbstract
     }
 
     /**
+     * Makes service call.
+     *
+     * @param string $incrementId
+     * @return array
+     */
+    private function makeServiceCall(string $incrementId): array
+    {
+        $order = $this->getOrder($incrementId);
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH . '/' . $order->getId(),
+                'httpMethod' => Request::HTTP_METHOD_GET,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_READ_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_READ_NAME . 'get',
+            ],
+        ];
+        return $this->_webApiCall($serviceInfo, ['id' => $order->getId()]);
+    }
+
+    /**
+     * Gets order by increment ID.
+     *
+     * @param string $incrementId
+     * @return OrderInterface
+     */
+    private function getOrder(string $incrementId): OrderInterface
+    {
+        /** @var Order $order */
+        $order = $this->objectManager->create(Order::class);
+        $order->loadByIncrementId($incrementId);
+
+        return $order;
+    }
+
+    /**
      * Checks order extension attributes.
      *
      * @magentoApiDataFixture Magento/Sales/_files/order_with_tax.php
@@ -164,44 +194,6 @@ class OrderGetTest extends WebapiAbstract
     }
 
     /**
-     * Gets order by increment ID.
-     *
-     * @param string $incrementId
-     * @return OrderInterface
-     */
-    private function getOrder(string $incrementId): OrderInterface
-    {
-        /** @var Order $order */
-        $order = $this->objectManager->create(Order::class);
-        $order->loadByIncrementId($incrementId);
-
-        return $order;
-    }
-
-    /**
-     * Makes service call.
-     *
-     * @param string $incrementId
-     * @return array
-     */
-    private function makeServiceCall(string $incrementId): array
-    {
-        $order = $this->getOrder($incrementId);
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . '/' . $order->getId(),
-                'httpMethod' => Request::HTTP_METHOD_GET,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_READ_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_READ_NAME . 'get',
-            ],
-        ];
-        return $this->_webApiCall($serviceInfo, ['id' => $order->getId()]);
-    }
-
-    /**
      * Gets a bundle product from the result.
      *
      * @param array $items
@@ -216,5 +208,13 @@ class OrderGetTest extends WebapiAbstract
         }
 
         return [];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

@@ -21,17 +21,6 @@ class SortFixturesTest extends AbstractOverridesTest
     private $fixtureCallStorage;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        // phpstan:ignore "Class Magento\TestModuleOverrideConfig\Model\FixtureCallStorage not found."
-        $this->fixtureCallStorage = $this->objectManager->get(FixtureCallStorage::class);
-    }
-
-    /**
      * Checks that fixtures can be placed to specific place according to config
      *
      * @dataProvider sortFixturesProvider
@@ -77,5 +66,16 @@ class SortFixturesTest extends AbstractOverridesTest
                 ],
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // phpstan:ignore "Class Magento\TestModuleOverrideConfig\Model\FixtureCallStorage not found."
+        $this->fixtureCallStorage = $this->objectManager->get(FixtureCallStorage::class);
     }
 }

@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Deploy;
 
 use Magento\Framework\Setup\Declaration\Schema\Db\MySQL\DbSchemaReader;
@@ -13,18 +14,17 @@ use Magento\Framework\Setup\Declaration\Schema\Db\MySQL\DbSchemaReader;
 class DescribeTable
 {
     /**
-     * Schema reader.
-     *
-     * @var DbSchemaReader
-     */
-    private $dbSchemaReader;
-
-    /**
      * This registry is used to ignore some tables, during comparison
      *
      * @var array
      */
     private static $ignoredSystemTables = ['cache', 'cache_tag', 'flag', 'session', 'setup_module', 'patch_list'];
+    /**
+     * Schema reader.
+     *
+     * @var DbSchemaReader
+     */
+    private $dbSchemaReader;
 
     /**
      * Constructor.
@@ -39,7 +39,7 @@ class DescribeTable
     /**
      * Describe shards.
      *
-     * @param  string $shardName
+     * @param string $shardName
      * @return array
      */
     public function describeShard($shardName)

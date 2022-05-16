@@ -4,7 +4,10 @@
  * See COPYING.txt for license details.
  */
 
-$category = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Category::class);
+use Magento\Catalog\Model\Category;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$category = Bootstrap::getObjectManager()->create(Category::class);
 $category->isObjectNew(true);
 $category->setId(
     3331

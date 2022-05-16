@@ -7,22 +7,24 @@ declare(strict_types=1);
 
 namespace Magento\Setup\Console\Command;
 
+use InvalidArgumentException;
 use Magento\Deploy\Console\Command\App\ConfigImportCommand;
+use Magento\Framework\Setup\ConsoleLogger;
 use Magento\Framework\Setup\Declaration\Schema\DryRunLogger;
 use Magento\Framework\Setup\Declaration\Schema\OperationsExecutor;
 use Magento\Framework\Setup\Declaration\Schema\Request;
+use Magento\Framework\Setup\Option\SelectConfigOption;
 use Magento\Setup\Model\AdminAccount;
 use Magento\Setup\Model\ConfigModel;
 use Magento\Setup\Model\InstallerFactory;
-use Magento\Framework\Setup\ConsoleLogger;
 use Magento\Setup\Model\SearchConfigOptionsList;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Input\ArrayInput;
-use Symfony\Component\Console\Question\Question;
-use Symfony\Component\Console\Question\ChoiceQuestion;
 use Symfony\Component\Console\Helper\QuestionHelper;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Question\ChoiceQuestion;
+use Symfony\Component\Console\Question\Question;
 
 /**
  * Command to install Magento application
@@ -88,33 +90,28 @@ class InstallCommand extends AbstractSetupCommand
      * Regex for sales_order_increment_prefix validation.
      */
     const SALES_ORDER_INCREMENT_PREFIX_RULE = '/^.{0,20}$/';
-
+    /**
+     * @var ConfigModel
+     */
+    protected $configModel;
+    /**
+     * @var InstallStoreConfigurationCommand
+     */
+    protected $userConfig;
+    /**
+     * @var AdminUserCreateCommand
+     */
+    protected $adminUser;
+    /**
+     * @var SearchConfigOptionsList
+     */
+    protected $searchConfigOptionsList;
     /**
      * Installer service factory
      *
      * @var InstallerFactory
      */
     private $installerFactory;
-
-    /**
-     * @var ConfigModel
-     */
-    protected $configModel;
-
-    /**
-     * @var InstallStoreConfigurationCommand
-     */
-    protected $userConfig;
-
-    /**
-     * @var AdminUserCreateCommand
-     */
-    protected $adminUser;
-
-    /**
-     * @var SearchConfigOptionsList
-     */
-    protected $searchConfigOptionsList;
 
     /**
      * Constructor
@@ -126,12 +123,13 @@ class InstallCommand extends AbstractSetupCommand
      * @param SearchConfigOptionsList $searchConfigOptionsList
      */
     public function __construct(
-        InstallerFactory $installerFactory,
-        ConfigModel $configModel,
+        InstallerFactory                 $installerFactory,
+        ConfigModel                      $configModel,
         InstallStoreConfigurationCommand $userConfig,
-        AdminUserCreateCommand $adminUser,
-        SearchConfigOptionsList $searchConfigOptionsList
-    ) {
+        AdminUserCreateCommand           $adminUser,
+        SearchConfigOptionsList          $searchConfigOptionsList
+    )
+    {
         $this->installerFactory = $installerFactory;
         $this->configModel = $configModel;
         $this->userConfig = $userConfig;
@@ -271,28 +269,8 @@ class InstallCommand extends AbstractSetupCommand
             foreach ($errors as $error) {
                 $output->writeln("<error>$error</error>");
             }
-            throw new \InvalidArgumentException('Parameter validation failed');
+            throw new InvalidArgumentException('Parameter validation failed');
         }
-    }
-
-    /**
-     * Validate sales_order_increment_prefix value
-     *
-     * It will save the value which discarding characters after 20th to the database so it should be
-     * validated in advance.
-     *
-     * @param InputInterface $input
-     * @return string[] Array of error messages
-     */
-    public function validate(InputInterface $input) : array
-    {
-        $errors = [];
-        $value = $input->getOption(self::INPUT_KEY_SALES_ORDER_INCREMENT_PREFIX);
-        if (preg_match(self::SALES_ORDER_INCREMENT_PREFIX_RULE, (string) $value) != 1) {
-            $errors[] = 'Validation failed, ' . self::INPUT_KEY_SALES_ORDER_INCREMENT_PREFIX
-                . ' must be 20 characters or less';
-        }
-        return $errors;
     }
 
     /**
@@ -304,7 +282,7 @@ class InstallCommand extends AbstractSetupCommand
      * @param OutputInterface $output
      * @return string[] Array of inputs
      */
-    private function interactiveQuestions(InputInterface $input, OutputInterface $output) : array
+    private function interactiveQuestions(InputInterface $input, OutputInterface $output): array
     {
         $helper = $this->getHelper('question');
         $configOptionsToValidate = [];
@@ -366,13 +344,14 @@ class InstallCommand extends AbstractSetupCommand
      * @return string[] Array of inputs
      */
     private function askQuestion(
-        InputInterface $input,
+        InputInterface  $input,
         OutputInterface $output,
-        QuestionHelper $helper,
-        $option,
-        $validateInline = false
-    ) {
-        if ($option instanceof \Magento\Framework\Setup\Option\SelectConfigOption) {
+        QuestionHelper  $helper,
+                        $option,
+                        $validateInline = false
+    )
+    {
+        if ($option instanceof SelectConfigOption) {
             if ($option->isValueRequired()) {
                 $question = new ChoiceQuestion(
                     $option->getDescription() . '? ',
@@ -402,7 +381,7 @@ class InstallCommand extends AbstractSetupCommand
 
         $question->setValidator(function ($answer) use ($option, $validateInline) {
 
-            if ($option instanceof \Magento\Framework\Setup\Option\SelectConfigOption) {
+            if ($option instanceof SelectConfigOption) {
                 $answer = $option->getSelectOptions()[$answer];
             }
 
@@ -442,5 +421,25 @@ class InstallCommand extends AbstractSetupCommand
         }
 
         return [];
+    }
+
+    /**
+     * Validate sales_order_increment_prefix value
+     *
+     * It will save the value which discarding characters after 20th to the database so it should be
+     * validated in advance.
+     *
+     * @param InputInterface $input
+     * @return string[] Array of error messages
+     */
+    public function validate(InputInterface $input): array
+    {
+        $errors = [];
+        $value = $input->getOption(self::INPUT_KEY_SALES_ORDER_INCREMENT_PREFIX);
+        if (preg_match(self::SALES_ORDER_INCREMENT_PREFIX_RULE, (string)$value) != 1) {
+            $errors[] = 'Validation failed, ' . self::INPUT_KEY_SALES_ORDER_INCREMENT_PREFIX
+                . ' must be 20 characters or less';
+        }
+        return $errors;
     }
 }

@@ -3,13 +3,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\I18n\Pack\Writer\File;
 
+use InvalidArgumentException;
 use Magento\Setup\Module\I18n\Context;
 use Magento\Setup\Module\I18n\Dictionary;
+use Magento\Setup\Module\I18n\Dictionary\Loader\FileInterface;
 use Magento\Setup\Module\I18n\Factory;
 use Magento\Setup\Module\I18n\Locale;
 use Magento\Setup\Module\I18n\Pack\WriterInterface;
+use RuntimeException;
 
 /**
  * Abstract pack writer
@@ -19,28 +23,28 @@ abstract class AbstractFile implements WriterInterface
     /**
      * Context
      *
-     * @var \Magento\Setup\Module\I18n\Context
+     * @var Context
      */
     protected $_context;
 
     /**
      * Dictionary loader. This object is need for read dictionary for merge mode
      *
-     * @var \Magento\Setup\Module\I18n\Dictionary\Loader\FileInterface
+     * @var FileInterface
      */
     protected $_dictionaryLoader;
 
     /**
      * Domain abstract factory
      *
-     * @var \Magento\Setup\Module\I18n\Factory
+     * @var Factory
      */
     protected $_factory;
 
     /**
      * Locale
      *
-     * @var \Magento\Setup\Module\I18n\Locale
+     * @var Locale
      */
     protected $_locale;
 
@@ -55,10 +59,10 @@ abstract class AbstractFile implements WriterInterface
      * Writer construct
      *
      * @param Context $context
-     * @param Dictionary\Loader\FileInterface $dictionaryLoader
+     * @param FileInterface $dictionaryLoader
      * @param Factory $factory
      */
-    public function __construct(Context $context, Dictionary\Loader\FileInterface $dictionaryLoader, Factory $factory)
+    public function __construct(Context $context, FileInterface $dictionaryLoader, Factory $factory)
     {
         $this->_context = $context;
         $this->_dictionaryLoader = $dictionaryLoader;
@@ -88,28 +92,18 @@ abstract class AbstractFile implements WriterInterface
     }
 
     /**
-     * Create one pack file. Template method
-     *
-     * @param string $file
-     * @param array $phrases
-     * @return void
-     * @throws \RuntimeException
-     */
-    abstract public function _writeFile($file, $phrases);
-
-    /**
      * Build pack files data
      *
      * @param Dictionary $dictionary
      * @return array
-     * @throws \RuntimeException
+     * @throws RuntimeException
      */
     protected function _buildPackFilesData(Dictionary $dictionary)
     {
         $files = [];
         foreach ($dictionary->getPhrases() as $key => $phrase) {
             if (!$phrase->getContextType() || !$phrase->getContextValue()) {
-                throw new \RuntimeException(
+                throw new RuntimeException(
                     sprintf('Missed context in row #%d.', $key + 1)
                     . "\n"
                     . 'Each row has to consist of 4 columns: original phrase, translation, context type, context value'
@@ -118,8 +112,8 @@ abstract class AbstractFile implements WriterInterface
             foreach ($phrase->getContextValue() as $context) {
                 try {
                     $path = $this->_context->buildPathToLocaleDirectoryByContext($phrase->getContextType(), $context);
-                } catch (\InvalidArgumentException $e) {
-                    throw new \InvalidArgumentException($e->getMessage() . ' Row #' . ($key + 1) . '.');
+                } catch (InvalidArgumentException $e) {
+                    throw new InvalidArgumentException($e->getMessage() . ' Row #' . ($key + 1) . '.');
                 }
 
                 if (null === $path) {
@@ -157,4 +151,14 @@ abstract class AbstractFile implements WriterInterface
             }
         }
     }
+
+    /**
+     * Create one pack file. Template method
+     *
+     * @param string $file
+     * @param array $phrases
+     * @return void
+     * @throws RuntimeException
+     */
+    abstract public function _writeFile($file, $phrases);
 }

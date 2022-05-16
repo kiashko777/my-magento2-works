@@ -3,26 +3,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Model\ResourceModel\Entity;
 
-class TableTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\Simplexml\Config;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class TableTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Model\ResourceModel\Entity\Table
+     * @var Table
      */
     protected $_model;
-
-    protected function setUp(): void
-    {
-        // @codingStandardsIgnoreStart
-        $config = new \Magento\Framework\Simplexml\Config();
-        $config->table = 'test_table';
-        $config->test_key = 'test';
-        // @codingStandardsIgnoreEnd
-
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Framework\Model\ResourceModel\Entity\Table::class, ['config' => $config]);
-    }
 
     public function testGetTable()
     {
@@ -31,8 +24,20 @@ class TableTest extends \PHPUnit\Framework\TestCase
 
     public function testGetConfig()
     {
-        $this->assertInstanceOf(\Magento\Framework\Simplexml\Config::class, $this->_model->getConfig());
+        $this->assertInstanceOf(Config::class, $this->_model->getConfig());
         $this->assertEquals('test', $this->_model->getConfig('test_key'));
         $this->assertFalse($this->_model->getConfig('some_key'));
+    }
+
+    protected function setUp(): void
+    {
+        // @codingStandardsIgnoreStart
+        $config = new Config();
+        $config->table = 'test_table';
+        $config->test_key = 'test';
+        // @codingStandardsIgnoreEnd
+
+        $this->_model = Bootstrap::getObjectManager()
+            ->create(Table::class, ['config' => $config]);
     }
 }

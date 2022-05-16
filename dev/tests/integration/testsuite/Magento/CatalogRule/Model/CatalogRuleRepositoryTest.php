@@ -26,14 +26,6 @@ class CatalogRuleRepositoryTest extends TestCase
     private $catalogRuleRepository;
 
     /**
-     * @inheridoc
-     */
-    protected function setUp(): void
-    {
-        $this->catalogRuleRepository = Bootstrap::getObjectManager()->get(CatalogRuleRepositoryInterface::class);
-    }
-
-    /**
      * Verify index become invalid in case rule become inactive and stays active in case inactive rule has been saved.
      *
      * @magentoDataFixture Magento/CatalogRule/_files/catalog_rule_25_customer_group_all.php
@@ -73,5 +65,13 @@ class CatalogRuleRepositoryTest extends TestCase
         $ruleId = $catalogRuleResource->getConnection()->fetchOne($select);
 
         return $this->catalogRuleRepository->get((int)$ruleId);
+    }
+
+    /**
+     * @inheridoc
+     */
+    protected function setUp(): void
+    {
+        $this->catalogRuleRepository = Bootstrap::getObjectManager()->get(CatalogRuleRepositoryInterface::class);
     }
 }

@@ -4,8 +4,12 @@
  * See COPYING.txt for license details.
  */
 
-/** @var \Magento\Translation\Model\ResourceModel\StringUtils $translateString */
-$translateString = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Translation\Model\ResourceModel\StringUtils::class
+/** @var StringUtils $translateString */
+
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Translation\Model\ResourceModel\StringUtils;
+
+$translateString = Bootstrap::getObjectManager()->create(
+    StringUtils::class
 );
 $translateString->saveTranslate('Fixture String', 'Fixture Db Translation');

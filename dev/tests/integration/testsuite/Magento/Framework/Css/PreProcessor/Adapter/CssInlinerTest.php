@@ -3,28 +3,25 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Css\PreProcessor\Adapter;
 
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 use Pelago\Emogrifier\CssInliner as EmogrifierCssInliner;
+use PHPUnit\Framework\TestCase;
 
-class CssInlinerTest extends \PHPUnit\Framework\TestCase
+class CssInlinerTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Css\PreProcessor\Adapter\CssInliner
+     * @var CssInliner
      */
     private $model;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-
-        $this->model = $this->objectManager->create(\Magento\Framework\Css\PreProcessor\Adapter\CssInliner::class);
-    }
 
     /**
      * @param string $htmlFilePath
@@ -49,12 +46,12 @@ class CssInlinerTest extends \PHPUnit\Framework\TestCase
     {
         $fixtureDir = dirname(dirname(__DIR__));
         return [
-            'noSpacesCss'=>[
+            'noSpacesCss' => [
                 'resultHtml' => $fixtureDir . "/_files/css/test-input.html",
                 'cssWithoutSpaces' => $fixtureDir . "/_files/css/test-css-no-spaces.css",
                 'vertical-align: top; padding: 10px 10px 10px 0; width: 50%;'
             ],
-            'withSpacesCss'=>[
+            'withSpacesCss' => [
                 'resultHtml' => $fixtureDir . "/_files/css/test-input.html",
                 'cssWithSpaces' => $fixtureDir . "/_files/css/test-css-with-spaces.css",
                 'vertical-align: top; padding: 10px 10px 10px 0; width: 50%;'
@@ -88,11 +85,18 @@ class CssInlinerTest extends \PHPUnit\Framework\TestCase
     {
         $fixtureDir = dirname(dirname(__DIR__));
         return [
-            'noSpacesCss'=>[
+            'noSpacesCss' => [
                 'resultHtml' => $fixtureDir . "/_files/css/test-input.html",
                 'cssWithoutSpaces' => $fixtureDir . "/_files/css/test-css-no-spaces.css",
                 'vertical-align: top; padding: 10px 10px 10px 0; width: 50%;'
             ]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->model = $this->objectManager->create(CssInliner::class);
     }
 }

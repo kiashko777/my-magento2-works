@@ -3,17 +3,23 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog;
 
-class WidgetTest extends \PHPUnit\Framework\TestCase
+use Magento\Catalog\Block\Product\Widget\NewWidget;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Widget\Model\Widget\Instance;
+use PHPUnit\Framework\TestCase;
+
+class WidgetTest extends TestCase
 {
     public function testNewProductsWidget()
     {
-        $type = \Magento\Catalog\Block\Product\Widget\NewWidget::class;
+        $type = NewWidget::class;
 
-        /** @var $model \Magento\Widget\Model\Widget\Instance */
-        $model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Widget\Model\Widget\Instance::class
+        /** @var $model Instance */
+        $model = Bootstrap::getObjectManager()->create(
+            Instance::class
         );
         $config = $model->setType($type)->getWidgetConfigAsArray();
         $templates = $config['parameters']['template']['values'];

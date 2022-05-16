@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Sales\Controller\Adminhtml\Order\Creditmemo;
 
+use Magento\Sales\Api\Data\OrderInterface;
 use PHPUnit\Framework\Constraint\RegularExpression;
 use PHPUnit\Framework\Constraint\StringContains;
 
@@ -40,7 +41,7 @@ class AddCommentTest extends AbstractCreditmemoControllerTest
         $this->assertStringContainsString($comment, $html);
 
         $message = $this->transportBuilder->getSentMessage();
-        $subject =__('Update to your %1 credit memo', $order->getStore()->getFrontendName())->render();
+        $subject = __('Update to your %1 credit memo', $order->getStore()->getFrontendName())->render();
         $messageConstraint = $this->logicalAnd(
             new StringContains($order->getCustomerName()),
             new RegularExpression(
@@ -55,6 +56,29 @@ class AddCommentTest extends AbstractCreditmemoControllerTest
 
         $this->assertEquals($message->getSubject(), $subject);
         $this->assertThat($message->getBody()->getParts()[0]->getRawContent(), $messageConstraint);
+    }
+
+    /**
+     * @param array $params
+     * @return OrderInterface|null
+     */
+    private function prepareRequest(array $params = [])
+    {
+        $order = $this->getOrder('100000001');
+        $creditmemo = $this->getCreditMemo($order);
+
+        $this->getRequest()->setMethod('POST');
+        $this->getRequest()->setParams(
+            [
+                'id' => $creditmemo->getEntityId(),
+                'form_key' => $this->formKey->getFormKey(),
+            ]
+        );
+
+        $data = $params ?? [];
+        $this->getRequest()->setPostValue($data);
+
+        return $order;
     }
 
     /**
@@ -75,28 +99,5 @@ class AddCommentTest extends AbstractCreditmemoControllerTest
         $this->prepareRequest(['comment' => ['comment' => 'Comment']]);
 
         parent::testAclNoAccess();
-    }
-
-    /**
-     * @param array $params
-     * @return \Magento\Sales\Api\Data\OrderInterface|null
-     */
-    private function prepareRequest(array $params = [])
-    {
-        $order = $this->getOrder('100000001');
-        $creditmemo = $this->getCreditMemo($order);
-
-        $this->getRequest()->setMethod('POST');
-        $this->getRequest()->setParams(
-            [
-                'id' => $creditmemo->getEntityId(),
-                'form_key' => $this->formKey->getFormKey(),
-            ]
-        );
-
-        $data = $params ?? [];
-        $this->getRequest()->setPostValue($data);
-
-        return $order;
     }
 }

@@ -12,6 +12,7 @@ use Magento\Framework\DB\Ddl\Table;
 use Magento\Framework\Setup\InstallSchemaInterface;
 use Magento\Framework\Setup\ModuleContextInterface;
 use Magento\Framework\Setup\SchemaSetupInterface;
+use Zend_Db_Exception;
 
 /**
  * Install schema script for the TestSetupDeclarationModule8 module.
@@ -35,7 +36,7 @@ class InstallSchema implements InstallSchemaInterface
 
     /**
      * @inheritdoc
-     * @throws \Zend_Db_Exception
+     * @throws Zend_Db_Exception
      */
     public function install(SchemaSetupInterface $setup, ModuleContextInterface $context)
     {
@@ -50,7 +51,7 @@ class InstallSchema implements InstallSchemaInterface
      * Create tables.
      *
      * @param SchemaSetupInterface $installer
-     * @throws \Zend_Db_Exception
+     * @throws Zend_Db_Exception
      */
     private function createTables(SchemaSetupInterface $installer)
     {
@@ -94,7 +95,7 @@ class InstallSchema implements InstallSchemaInterface
      * Add tables to main table.
      *
      * @param Table $table
-     * @throws \Zend_Db_Exception
+     * @throws Zend_Db_Exception
      */
     private function addColumnsToMainTable($table)
     {
@@ -152,7 +153,7 @@ class InstallSchema implements InstallSchemaInterface
      * Add indexes to main table.
      *
      * @param Table $table
-     * @throws \Zend_Db_Exception
+     * @throws Zend_Db_Exception
      */
     private function addIndexesToMainTable($table)
     {
@@ -184,7 +185,7 @@ class InstallSchema implements InstallSchemaInterface
      * Add tables to second table.
      *
      * @param Table $table
-     * @throws \Zend_Db_Exception
+     * @throws Zend_Db_Exception
      */
     private function addColumnsToSecondTable($table)
     {
@@ -252,7 +253,7 @@ class InstallSchema implements InstallSchemaInterface
      * Add indexes to second table.
      *
      * @param Table $table
-     * @throws \Zend_Db_Exception
+     * @throws Zend_Db_Exception
      */
     private function addIndexesToSecondTable($table)
     {
@@ -273,7 +274,7 @@ class InstallSchema implements InstallSchemaInterface
      * Add constraints to second table.
      *
      * @param Table $table
-     * @throws \Zend_Db_Exception
+     * @throws Zend_Db_Exception
      */
     private function addConstraintsToSecondTable($table)
     {
@@ -301,7 +302,7 @@ class InstallSchema implements InstallSchemaInterface
      *
      * @param SchemaSetupInterface $setup
      * @param $tableName
-     * @throws \Zend_Db_Exception
+     * @throws Zend_Db_Exception
      */
     private function createSimpleTable(SchemaSetupInterface $setup, $tableName): void
     {

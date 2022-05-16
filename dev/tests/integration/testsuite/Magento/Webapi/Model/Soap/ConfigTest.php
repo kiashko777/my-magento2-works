@@ -3,25 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Webapi\Model\Soap;
 
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Customer\Api\AccountManagementInterface;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class ConfigTest extends \PHPUnit\Framework\TestCase
+class ConfigTest extends TestCase
 {
     /**
      * @var Config
      */
     private $soapConfig;
-
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->soapConfig = $objectManager->create(Config::class);
-    }
 
     public function testGetRequestedSoapServices()
     {
@@ -36,7 +32,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
                             'Magento_Customer::manage'
                         ],
                         'documentation'
-                            => 'Activate a customer account using a key that was sent in a confirmation email.',
+                        => 'Activate a customer account using a key that was sent in a confirmation email.',
                         'interface' => [
                             'in' => [
                                 'parameters' => [
@@ -112,5 +108,11 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
                 'V1'
             );
         $this->assertEquals($expected, $actual);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->soapConfig = $objectManager->create(Config::class);
     }
 }

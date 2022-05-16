@@ -4,13 +4,15 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Catalog\Api\CategoryLinkManagementInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Bundle/_files/product.php');
 
-/** @var \Magento\Catalog\Api\CategoryLinkManagementInterface $categoryLinkManagement */
-$categoryLinkManagement = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->create(\Magento\Catalog\Api\CategoryLinkManagementInterface::class);
+/** @var CategoryLinkManagementInterface $categoryLinkManagement */
+$categoryLinkManagement = Bootstrap::getObjectManager()
+    ->create(CategoryLinkManagementInterface::class);
 
 $categoryLinkManagement->assignProductToCategories(
     'bundle-product',

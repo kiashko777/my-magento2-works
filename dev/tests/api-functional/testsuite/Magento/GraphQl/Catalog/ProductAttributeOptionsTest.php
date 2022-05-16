@@ -7,8 +7,10 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Catalog;
 
-use Magento\TestFramework\TestCase\GraphQlAbstract;
 use Magento\Eav\Api\Data\AttributeOptionInterface;
+use Magento\Eav\Model\Config;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\GraphQlAbstract;
 
 class ProductAttributeOptionsTest extends GraphQlAbstract
 {
@@ -19,8 +21,8 @@ class ProductAttributeOptionsTest extends GraphQlAbstract
      */
     public function testCustomAttributeMetadataOptions()
     {
-        /** @var \Magento\Eav\Model\Config $eavConfig */
-        $eavConfig = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Eav\Model\Config::class);
+        /** @var Config $eavConfig */
+        $eavConfig = Bootstrap::getObjectManager()->get(Config::class);
         $attribute = $eavConfig->getAttribute('catalog_product', 'dropdown_attribute');
         /** @var AttributeOptionInterface[] $options */
         $options = $attribute->getOptions();

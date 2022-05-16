@@ -101,11 +101,12 @@ abstract class AbstractInvoiceControllerTest extends AbstractBackendController
      * @return array
      */
     protected function hydratePost(
-        array $items,
+        array  $items,
         string $commentText = '',
-        $doShipment = false,
-        $sendEmail = false
-    ): array {
+               $doShipment = false,
+               $sendEmail = false
+    ): array
+    {
         return [
             'invoice' => [
                 'items' => $items,

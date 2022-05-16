@@ -27,17 +27,6 @@ class AuthenticationPopupTest extends TestCase
     private $block;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(AuthenticationPopup::class);
-    }
-
-    /**
      * @magentoConfigFixture current_store customer/password/autocomplete_on_storefront 1
      *
      * @return void
@@ -55,5 +44,16 @@ class AuthenticationPopupTest extends TestCase
     public function testAutocompletePasswordDisabled(): void
     {
         $this->assertEquals('off', $this->block->getConfig()['autocomplete']);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(AuthenticationPopup::class);
     }
 }

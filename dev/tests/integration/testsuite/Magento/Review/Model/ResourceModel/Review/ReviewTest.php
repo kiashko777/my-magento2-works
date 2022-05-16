@@ -3,53 +3,45 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Review\Model\ResourceModel\Review;
 
 use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\DB\Adapter\AdapterInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Review\Model\ResourceModel\Review;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class ReviewTest
  */
-class ReviewTest extends \PHPUnit\Framework\TestCase
+class ReviewTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
 
     /**
-     * @var \Magento\Review\Model\ResourceModel\Review
+     * @var Review
      */
     protected $reviewResource;
 
     /**
-     * @var \Magento\Review\Model\ResourceModel\Review\Collection
+     * @var Collection
      */
     protected $reviewCollection;
 
     /**
-     * @var \Magento\Framework\App\ResourceConnection
+     * @var ResourceConnection
      */
     protected $resource;
 
     /**
-     * @var \Magento\Framework\DB\Adapter\AdapterInterface
+     * @var AdapterInterface
      */
     protected $connection;
-
-    /**
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->resource = $this->objectManager->get(\Magento\Framework\App\ResourceConnection::class);
-        $this->connection = $this->resource->getConnection();
-        $this->reviewCollection = $this->objectManager->create(
-            \Magento\Review\Model\ResourceModel\Review\Collection::class
-        );
-        $this->reviewResource =  $this->objectManager->create(\Magento\Review\Model\ResourceModel\Review::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Review/_files/customer_review_with_rating.php
@@ -64,5 +56,19 @@ class ReviewTest extends \PHPUnit\Framework\TestCase
 
         $this->assertEquals(1, $result['reviews_count']);
         $this->assertEquals(40, $result['rating_summary']);
+    }
+
+    /**
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->resource = $this->objectManager->get(ResourceConnection::class);
+        $this->connection = $this->resource->getConnection();
+        $this->reviewCollection = $this->objectManager->create(
+            Collection::class
+        );
+        $this->reviewResource = $this->objectManager->create(Review::class);
     }
 }

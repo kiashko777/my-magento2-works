@@ -3,38 +3,25 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Annotation;
+
+use Magento\Framework\Exception\LocalizedException;
+use Magento\TestFramework\Annotation\DbIsolation;
+use Magento\TestFramework\Event\Param\Transaction;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\TestFramework\Annotation\DbIsolation.
  *
  * @magentoDbIsolation enabled
  */
-class DbIsolationTest extends \PHPUnit\Framework\TestCase
+class DbIsolationTest extends TestCase
 {
     /**
-     * @var \Magento\TestFramework\Annotation\DbIsolation
+     * @var DbIsolation
      */
     protected $_object;
-
-    protected function setUp(): void
-    {
-        $this->_object = new \Magento\TestFramework\Annotation\DbIsolation();
-    }
-
-    public function testStartTestTransactionRequestClassIsolationEnabled()
-    {
-        $eventParam = new \Magento\TestFramework\Event\Param\Transaction();
-        $this->_object->startTestTransactionRequest($this, $eventParam);
-        $this->assertTrue($eventParam->isTransactionStartRequested());
-        $this->assertFalse($eventParam->isTransactionRollbackRequested());
-
-        $eventParam = new \Magento\TestFramework\Event\Param\Transaction();
-        $this->_object->startTransaction($this);
-        $this->_object->startTestTransactionRequest($this, $eventParam);
-        $this->assertFalse($eventParam->isTransactionStartRequested());
-        $this->assertFalse($eventParam->isTransactionRollbackRequested());
-    }
 
     /**
      * @magentoDbIsolation enabled
@@ -44,17 +31,31 @@ class DbIsolationTest extends \PHPUnit\Framework\TestCase
         $this->testStartTestTransactionRequestClassIsolationEnabled();
     }
 
+    public function testStartTestTransactionRequestClassIsolationEnabled()
+    {
+        $eventParam = new Transaction();
+        $this->_object->startTestTransactionRequest($this, $eventParam);
+        $this->assertTrue($eventParam->isTransactionStartRequested());
+        $this->assertFalse($eventParam->isTransactionRollbackRequested());
+
+        $eventParam = new Transaction();
+        $this->_object->startTransaction($this);
+        $this->_object->startTestTransactionRequest($this, $eventParam);
+        $this->assertFalse($eventParam->isTransactionStartRequested());
+        $this->assertFalse($eventParam->isTransactionRollbackRequested());
+    }
+
     /**
      * @magentoDbIsolation disabled
      */
     public function testStartTestTransactionRequestMethodIsolationDisabled()
     {
-        $eventParam = new \Magento\TestFramework\Event\Param\Transaction();
+        $eventParam = new Transaction();
         $this->_object->startTestTransactionRequest($this, $eventParam);
         $this->assertFalse($eventParam->isTransactionStartRequested());
         $this->assertFalse($eventParam->isTransactionRollbackRequested());
 
-        $eventParam = new \Magento\TestFramework\Event\Param\Transaction();
+        $eventParam = new Transaction();
         $this->_object->startTransaction($this);
         $this->_object->startTestTransactionRequest($this, $eventParam);
         $this->assertFalse($eventParam->isTransactionStartRequested());
@@ -66,9 +67,9 @@ class DbIsolationTest extends \PHPUnit\Framework\TestCase
      */
     public function testStartTestTransactionRequestInvalidAnnotation()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
 
-        $this->_object->startTestTransactionRequest($this, new \Magento\TestFramework\Event\Param\Transaction());
+        $this->_object->startTestTransactionRequest($this, new Transaction());
     }
 
     /**
@@ -77,9 +78,9 @@ class DbIsolationTest extends \PHPUnit\Framework\TestCase
      */
     public function testStartTestTransactionRequestAmbiguousAnnotation()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
 
-        $this->_object->startTestTransactionRequest($this, new \Magento\TestFramework\Event\Param\Transaction());
+        $this->_object->startTestTransactionRequest($this, new Transaction());
     }
 
     /**
@@ -87,15 +88,20 @@ class DbIsolationTest extends \PHPUnit\Framework\TestCase
      */
     public function testEndTestTransactionRequestMethodIsolationEnabled()
     {
-        $eventParam = new \Magento\TestFramework\Event\Param\Transaction();
+        $eventParam = new Transaction();
         $this->_object->endTestTransactionRequest($this, $eventParam);
         $this->assertFalse($eventParam->isTransactionStartRequested());
         $this->assertFalse($eventParam->isTransactionRollbackRequested());
 
-        $eventParam = new \Magento\TestFramework\Event\Param\Transaction();
+        $eventParam = new Transaction();
         $this->_object->startTransaction($this);
         $this->_object->endTestTransactionRequest($this, $eventParam);
         $this->assertFalse($eventParam->isTransactionStartRequested());
         $this->assertTrue($eventParam->isTransactionRollbackRequested());
+    }
+
+    protected function setUp(): void
+    {
+        $this->_object = new DbIsolation();
     }
 }

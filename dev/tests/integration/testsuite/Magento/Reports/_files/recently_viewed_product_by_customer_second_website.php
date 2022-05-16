@@ -5,17 +5,17 @@
  */
 declare(strict_types=1);
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Indexer\Category\Product as CategoryProductIndexer;
+use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Model\Session;
 use Magento\Framework\App\Config\MutableScopeConfigInterface;
 use Magento\Framework\DataObject;
 use Magento\Framework\Event\Observer;
 use Magento\Reports\Observer\CatalogProductViewObserver;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
-use Magento\Catalog\Model\Indexer\Category\Product as CategoryProductIndexer;
-use Magento\Customer\Api\CustomerRepositoryInterface;
-use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\Store\Model\StoreManagerInterface;
 
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/product_two_websites.php');
 Resolver::getInstance()->requireDataFixture('Magento/Customer/_files/customer_for_second_website.php');

@@ -8,24 +8,17 @@ declare(strict_types=1);
 namespace Magento\Sales\Helper;
 
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Tests \Magento\Sales\Helper\Admin
  */
-class AdminTest extends \PHPUnit\Framework\TestCase
+class AdminTest extends TestCase
 {
     /**
      * @var Admin
      */
     private $helper;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->helper = Bootstrap::getObjectManager()->create(Admin::class);
-    }
 
     /**
      * @param string $data
@@ -100,5 +93,13 @@ class AdminTest extends \PHPUnit\Framework\TestCase
                 'allowedTags' => ['a'],
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->helper = Bootstrap::getObjectManager()->create(Admin::class);
     }
 }

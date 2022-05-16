@@ -6,25 +6,25 @@
 
 namespace Magento\CustomerImportExport\Model\Export;
 
-use Magento\Framework\Registry;
 use Magento\Customer\Model\Attribute;
-use Magento\ImportExport\Model\Export;
-use Magento\ImportExport\Model\Import;
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Framework\ObjectManagerInterface;
-use Magento\Store\Model\StoreManagerInterface;
-use Magento\ImportExport\Model\Export\Adapter\Csv;
 use Magento\Customer\Model\Customer as CustomerModel;
-use Magento\CustomerImportExport\Model\Export\Customer;
 use Magento\Customer\Model\ResourceModel\Attribute\Collection;
 use Magento\Customer\Model\ResourceModel\Customer\Collection as CustomerCollection;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Registry;
+use Magento\ImportExport\Model\Export;
+use Magento\ImportExport\Model\Export\Adapter\Csv;
+use Magento\ImportExport\Model\Import;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Tests for customer export model.
  *
  * @magentoAppArea Adminhtml
  */
-class CustomerTest extends \PHPUnit\Framework\TestCase
+class CustomerTest extends TestCase
 {
     /**
      * @var Customer
@@ -52,16 +52,6 @@ class CustomerTest extends \PHPUnit\Framework\TestCase
     private $attributeCollection;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->_model = $this->objectManager->create(Customer::class);
-        $this->attributeCollection = $this->objectManager->create(Collection::class);
-    }
-
-    /**
      * Export "Customer Main File".
      *
      * @magentoDataFixture Magento/Customer/_files/import_export/customers.php
@@ -76,17 +66,46 @@ class CustomerTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Export with Multi Websites "Customer Main File".
+     * Prepare Customer attribute.
      *
-     * @magentoDataFixture Magento/Customer/_files/import_export/customers_with_websites.php
      * @return void
      */
-    public function testExportWithMultiWebsites(): void
+    private function processCustomerAttribute(): void
     {
-        $this->processCustomerAttribute();
-        $expectedAttributes = $this->getExpectedAttributes();
-        $lines = $this->export($expectedAttributes);
-        $this->checkExportData($lines, $expectedAttributes);
+        $this->initAttributeValues($this->attributeCollection);
+        $this->initAttributeTypes($this->attributeCollection);
+    }
+
+    /**
+     * Initialize attribute option values.
+     *
+     * @param Collection $attributeCollection
+     * @return CustomerTest
+     */
+    private function initAttributeValues(Collection $attributeCollection): CustomerTest
+    {
+        /** @var Attribute $attribute */
+        foreach ($attributeCollection as $attribute) {
+            $this->attributeValues[$attribute->getAttributeCode()] = $this->_model->getAttributeOptions($attribute);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Initialize attribute types.
+     *
+     * @param Collection $attributeCollection
+     * @return CustomerTest
+     */
+    private function initAttributeTypes(Collection $attributeCollection): CustomerTest
+    {
+        /** @var Attribute $attribute */
+        foreach ($attributeCollection as $attribute) {
+            $this->attributeTypes[$attribute->getAttributeCode()] = $attribute->getFrontendInput();
+        }
+
+        return $this;
     }
 
     /**
@@ -103,17 +122,6 @@ class CustomerTest extends \PHPUnit\Framework\TestCase
         }
 
         return array_diff($expectedAttributes, $this->_model->getDisabledAttributes());
-    }
-
-    /**
-     * Prepare Customer attribute.
-     *
-     * @return void
-     */
-    private function processCustomerAttribute(): void
-    {
-        $this->initAttributeValues($this->attributeCollection);
-        $this->initAttributeTypes($this->attributeCollection);
     }
 
     /**
@@ -142,6 +150,34 @@ class CustomerTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Export CSV string to array
+     *
+     * @param string $content
+     * @param mixed $entityId
+     * @return array
+     */
+    protected function _csvToArray($content, $entityId = null)
+    {
+        $data = ['header' => [], 'data' => []];
+
+        $lines = str_getcsv($content, "\n");
+        foreach ($lines as $index => $line) {
+            if ($index == 0) {
+                $data['header'] = str_getcsv($line);
+            } else {
+                $row = array_combine($data['header'], str_getcsv($line));
+                if ($entityId !== null && !empty($row[$entityId])) {
+                    $data['data'][$row[$entityId]] = $row;
+                } else {
+                    $data['data'][] = $row;
+                }
+            }
+        }
+
+        return $data;
+    }
+
+    /**
      * Check that exported data is correct.
      *
      * @param array $lines
@@ -161,38 +197,6 @@ class CustomerTest extends \PHPUnit\Framework\TestCase
                 $this->assertEquals($value, $exportData[$key], "Attribute '{$key}' is not equal.");
             }
         }
-    }
-
-    /**
-     * Initialize attribute option values.
-     *
-     * @param Collection $attributeCollection
-     * @return CustomerTest
-     */
-    private function initAttributeValues(Collection $attributeCollection): CustomerTest
-    {
-        /** @var Attribute $attribute */
-        foreach ($attributeCollection as $attribute) {
-            $this->attributeValues[$attribute->getAttributeCode()] = $this->_model->getAttributeOptions($attribute);
-        }
-
-        return $this;
-    }
-
-    /**
-     * Initialize attribute types.
-     *
-     * @param \Magento\Customer\Model\ResourceModel\Attribute\Collection $attributeCollection
-     * @return CustomerTest
-     */
-    private function initAttributeTypes(Collection $attributeCollection): CustomerTest
-    {
-        /** @var Attribute $attribute */
-        foreach ($attributeCollection as $attribute) {
-            $this->attributeTypes[$attribute->getAttributeCode()] = $attribute->getFrontendInput();
-        }
-
-        return $this;
     }
 
     /**
@@ -266,6 +270,20 @@ class CustomerTest extends \PHPUnit\Framework\TestCase
         unset($data['password']);
 
         return $data;
+    }
+
+    /**
+     * Export with Multi Websites "Customer Main File".
+     *
+     * @magentoDataFixture Magento/Customer/_files/import_export/customers_with_websites.php
+     * @return void
+     */
+    public function testExportWithMultiWebsites(): void
+    {
+        $this->processCustomerAttribute();
+        $expectedAttributes = $this->getExpectedAttributes();
+        $lines = $this->export($expectedAttributes);
+        $this->checkExportData($lines, $expectedAttributes);
     }
 
     /**
@@ -374,30 +392,12 @@ class CustomerTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Export CSV string to array
-     *
-     * @param string $content
-     * @param mixed $entityId
-     * @return array
+     * @inheritdoc
      */
-    protected function _csvToArray($content, $entityId = null)
+    protected function setUp(): void
     {
-        $data = ['header' => [], 'data' => []];
-
-        $lines = str_getcsv($content, "\n");
-        foreach ($lines as $index => $line) {
-            if ($index == 0) {
-                $data['header'] = str_getcsv($line);
-            } else {
-                $row = array_combine($data['header'], str_getcsv($line));
-                if ($entityId !== null && !empty($row[$entityId])) {
-                    $data['data'][$row[$entityId]] = $row;
-                } else {
-                    $data['data'][] = $row;
-                }
-            }
-        }
-
-        return $data;
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->_model = $this->objectManager->create(Customer::class);
+        $this->attributeCollection = $this->objectManager->create(Collection::class);
     }
 }

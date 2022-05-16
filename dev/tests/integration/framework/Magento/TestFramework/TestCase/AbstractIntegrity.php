@@ -7,9 +7,18 @@
 /**
  * An ancestor class for integrity tests
  */
+
 namespace Magento\TestFramework\TestCase;
 
-abstract class AbstractIntegrity extends \PHPUnit\Framework\TestCase
+use Magento\Framework\View\Design\ThemeInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Helper\Config;
+use Magento\TestFramework\Helper\Factory;
+use Magento\Theme\Model\ResourceModel\Theme\Collection;
+use Magento\Theme\Model\Theme;
+use PHPUnit\Framework\TestCase;
+
+abstract class AbstractIntegrity extends TestCase
 {
     /**
      * Cached index of enabled modules
@@ -17,22 +26,6 @@ abstract class AbstractIntegrity extends \PHPUnit\Framework\TestCase
      * @var array
      */
     protected $_enabledModules = null;
-
-    /**
-     * Returns array of enabled modules
-     *
-     * @return array
-     */
-    protected function _getEnabledModules()
-    {
-        if ($this->_enabledModules === null) {
-            /** @var $helper \Magento\TestFramework\Helper\Config */
-            $helper = \Magento\TestFramework\Helper\Factory::getHelper(\Magento\TestFramework\Helper\Config::class);
-            $enabledModules = $helper->getEnabledModules();
-            $this->_enabledModules = array_combine($enabledModules, $enabledModules);
-        }
-        return $this->_enabledModules;
-    }
 
     /**
      * Checks resource file declaration - whether it is for disabled module (e.g. 'Disabled_Module::file.ext').
@@ -53,18 +46,34 @@ abstract class AbstractIntegrity extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Returns array of enabled modules
+     *
+     * @return array
+     */
+    protected function _getEnabledModules()
+    {
+        if ($this->_enabledModules === null) {
+            /** @var $helper Config */
+            $helper = Factory::getHelper(Config::class);
+            $enabledModules = $helper->getEnabledModules();
+            $this->_enabledModules = array_combine($enabledModules, $enabledModules);
+        }
+        return $this->_enabledModules;
+    }
+
+    /**
      * Returns flat array of themes currently located in system
      *
-     * @return \Magento\Theme\Model\Theme[]
+     * @return Theme[]
      */
     protected function _getDesignThemes()
     {
         $themeItems = [];
         /** @var $themeCollection \Magento\Theme\Model\Theme\Collection */
-        $themeCollection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Theme\Model\ResourceModel\Theme\Collection::class
+        $themeCollection = Bootstrap::getObjectManager()->create(
+            Collection::class
         );
-        /** @var $theme \Magento\Framework\View\Design\ThemeInterface */
+        /** @var $theme ThemeInterface */
         foreach ($themeCollection as $theme) {
             $themeItems[$theme->getId()] = $theme;
         }

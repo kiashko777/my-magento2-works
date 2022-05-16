@@ -69,32 +69,8 @@ class DeployStaticContentCommandTest extends TestCase
     private $appState;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->inputValidator = $this->createMock(InputValidator::class);
-        $this->consoleLoggerFactory = $this->createMock(ConsoleLoggerFactory::class);
-        $this->logger = $this->createMock(ConsoleLogger::class);
-        $this->objectManager = $this->getMockForAbstractClass(ObjectManagerInterface::class);
-        $this->appState = $this->createMock(State::class);
-        $this->deployService = $this->createMock(DeployStaticContent::class);
-
-        $objectManagerProvider = $this->createMock(ObjectManagerProvider::class);
-        $objectManagerProvider->method('get')->willReturn($this->objectManager);
-
-        $this->command = (new ObjectManager($this))->getObject(DeployStaticContentCommand::class, [
-            'inputValidator' => $this->inputValidator,
-            'consoleLoggerFactory' => $this->consoleLoggerFactory,
-            'options' => new DeployStaticOptions(),
-            'appState' => $this->appState,
-            'objectManagerProvider' => $objectManagerProvider
-        ]);
-    }
-
-    /**
      * @param array $input
-     * @see DeployStaticContentCommand::execute()
+     * @see          DeployStaticContentCommand::execute()
      * @dataProvider executeDataProvider
      */
     public function testExecute($input)
@@ -187,5 +163,29 @@ class DeployStaticContentCommandTest extends TestCase
             [State::MODE_DEFAULT],
             [State::MODE_DEVELOPER],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->inputValidator = $this->createMock(InputValidator::class);
+        $this->consoleLoggerFactory = $this->createMock(ConsoleLoggerFactory::class);
+        $this->logger = $this->createMock(ConsoleLogger::class);
+        $this->objectManager = $this->getMockForAbstractClass(ObjectManagerInterface::class);
+        $this->appState = $this->createMock(State::class);
+        $this->deployService = $this->createMock(DeployStaticContent::class);
+
+        $objectManagerProvider = $this->createMock(ObjectManagerProvider::class);
+        $objectManagerProvider->method('get')->willReturn($this->objectManager);
+
+        $this->command = (new ObjectManager($this))->getObject(DeployStaticContentCommand::class, [
+            'inputValidator' => $this->inputValidator,
+            'consoleLoggerFactory' => $this->consoleLoggerFactory,
+            'options' => new DeployStaticOptions(),
+            'appState' => $this->appState,
+            'objectManagerProvider' => $objectManagerProvider
+        ]);
     }
 }

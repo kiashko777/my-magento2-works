@@ -40,19 +40,6 @@ class LoginTest extends TestCase
     private $block;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->block = $this->layout->createBlock(Login::class);
-        $this->block->setTemplate('Magento_Customer::form/login.phtml');
-
-        parent::setUp();
-    }
-
-    /**
      * @return void
      */
     public function testLoginForm(): void
@@ -108,5 +95,18 @@ class LoginTest extends TestCase
     public function testAutocompletePasswordDisabled(): void
     {
         $this->assertTrue($this->block->isAutocompleteDisabled());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->block = $this->layout->createBlock(Login::class);
+        $this->block->setTemplate('Magento_Customer::form/login.phtml');
+
+        parent::setUp();
     }
 }

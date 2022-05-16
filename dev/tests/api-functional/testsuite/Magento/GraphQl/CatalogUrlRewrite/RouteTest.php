@@ -28,64 +28,6 @@ class RouteTest extends GraphQlAbstract
     private $idDecoder;
 
     /**
-     * {@inheritdoc}
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->idDecoder = $this->objectManager->get(Uid::class);
-    }
-
-    /**
-     * Tests if target_path(relative_url) is resolved for Products entity
-     *
-     * @magentoApiDataFixture Magento/CatalogUrlRewrite/_files/product_with_category.php
-     */
-    public function testProductUrlResolver()
-    {
-        $productSku = 'p002';
-        /** @var ProductRepositoryInterface $productRepository */
-        $productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $product = $productRepository->get($productSku, false, null, true);
-        $storeId = $product->getStoreId();
-
-        $query
-            = <<<QUERY
-{
-    products(filter: {sku: {eq: "{$productSku}"}})
-    {
-        items {
-               url_key
-               url_suffix
-            }
-    }
-}
-QUERY;
-        $response = $this->graphQlQuery($query);
-        $urlPath = $response['products']['items'][0]['url_key'] . $response['products']['items'][0]['url_suffix'];
-
-        /** @var  UrlFinderInterface $urlFinder */
-        $urlFinder = $this->objectManager->get(UrlFinderInterface::class);
-        $actualUrls = $urlFinder->findOneByData(
-            [
-                'request_path' => $urlPath,
-                'store_id' => $storeId
-            ]
-        );
-        $relativePath = $actualUrls->getRequestPath();
-        $expectedType = $actualUrls->getEntityType();
-        $redirectCode =  $actualUrls->getRedirectType();
-
-        $this->queryUrlAndAssertResponse(
-            (int) $product->getEntityId(),
-            $urlPath,
-            $relativePath,
-            $expectedType,
-            $redirectCode
-        );
-    }
-
-    /**
      * Test the use case where non seo friendly is provided as resolver input in the Query
      *
      * @magentoApiDataFixture Magento/CatalogUrlRewrite/_files/product_with_category.php
@@ -125,15 +67,62 @@ QUERY;
         $relativePath = $actualUrls->getRequestPath();
         $expectedType = $actualUrls->getEntityType();
         $nonSeoFriendlyPath = $actualUrls->getTargetPath();
-        $redirectCode =  $actualUrls->getRedirectType();
+        $redirectCode = $actualUrls->getRedirectType();
 
         $this->queryUrlAndAssertResponse(
-            (int) $product->getEntityId(),
+            (int)$product->getEntityId(),
             $nonSeoFriendlyPath,
             $relativePath,
             $expectedType,
             $redirectCode
         );
+    }
+
+    /**
+     * Assert response from GraphQl
+     *
+     * @param string $productId
+     * @param string $urlKey
+     * @param string $relativePath
+     * @param string $expectedType
+     * @param int $redirectCode
+     * @throws GraphQlInputException
+     */
+    private function queryUrlAndAssertResponse(
+        int    $productId,
+        string $urlKey,
+        string $relativePath,
+        string $expectedType,
+        int    $redirectCode
+    ): void
+    {
+        $query
+            = <<<QUERY
+{
+  route(url:"{$urlKey}")
+  {
+       relative_url
+       type
+       redirect_code
+       __typename
+         ...on SimpleProduct {
+          uid
+        }
+         ...on ConfigurableProduct {
+          uid
+        }
+        ...on CategoryTree {
+            uid
+        }
+    }
+}
+QUERY;
+        $response = $this->graphQlQuery($query);
+        $this->assertArrayHasKey('route', $response);
+        $this->assertEquals($productId, $this->idDecoder->decode($response['route']['uid']));
+        $this->assertEquals($relativePath, $response['route']['relative_url']);
+        $this->assertEquals(strtoupper($expectedType), $response['route']['type']);
+        $this->assertEquals($redirectCode, $response['route']['redirect_code']);
     }
 
     /**
@@ -180,7 +169,7 @@ QUERY;
         );
         // querying the end redirect gives the same record
         $this->queryUrlAndAssertResponse(
-            (int) $product->getEntityId(),
+            (int)$product->getEntityId(),
             $renamedKey . $suffix,
             $actualUrls->getRequestPath(),
             $actualUrls->getEntityType(),
@@ -188,7 +177,7 @@ QUERY;
         );
         // querying a url that's a redirect the active redirected final url
         $this->queryUrlAndAssertResponse(
-            (int) $product->getEntityId(),
+            (int)$product->getEntityId(),
             $productSku . $suffix,
             $actualUrls->getRequestPath(),
             $actualUrls->getEntityType(),
@@ -216,7 +205,7 @@ QUERY;
         $urlRewriteModel->save();
         // querying a custom url that should return the target entity but relative should be the custom url
         $this->queryUrlAndAssertResponse(
-            (int) $product->getEntityId(),
+            (int)$product->getEntityId(),
             $customUrl,
             $customUrl,
             $actualUrls->getEntityType(),
@@ -228,60 +217,13 @@ QUERY;
         $urlRewriteModel->save();
         //modifying query by adding spaces to avoid getting cached values.
         $this->queryUrlAndAssertResponse(
-            (int) $product->getEntityId(),
+            (int)$product->getEntityId(),
             $customUrl . ' ',
             $actualUrls->getRequestPath(),
             strtoupper($actualUrls->getEntityType()),
             301
         );
         $urlRewriteModel->delete();
-    }
-
-    /**
-     * Test for category entity
-     *
-     * @magentoApiDataFixture Magento/CatalogUrlRewrite/_files/product_with_category.php
-     */
-    public function testCategoryUrlResolver($categoryUrlPath = null)
-    {
-        $productSku = 'p002';
-        $categoryUrlPath = $categoryUrlPath ? $categoryUrlPath : 'cat-1.html';
-        /** @var ProductRepositoryInterface $productRepository */
-        $productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $product = $productRepository->get($productSku, false, null, true);
-        $storeId = $product->getStoreId();
-
-        /** @var  UrlFinderInterface $urlFinder */
-        $urlFinder = $this->objectManager->get(UrlFinderInterface::class);
-        $actualUrls = $urlFinder->findOneByData(
-            [
-                'request_path' => $categoryUrlPath,
-                'store_id' => $storeId
-            ]
-        );
-        $categoryId = $actualUrls->getEntityId();
-        $relativePath = $actualUrls->getRequestPath();
-        $expectedType = $actualUrls->getEntityType();
-
-        $query
-            = <<<QUERY
-{
-    category(id:{$categoryId}) {
-        url_key
-        url_suffix
-    }
-}
-QUERY;
-        $response = $this->graphQlQuery($query);
-        $urlPath = $response['category']['url_key'] . $response['category']['url_suffix'];
-
-        $this->queryUrlAndAssertResponse(
-            (int) $categoryId,
-            $urlPath,
-            $relativePath,
-            $expectedType,
-            0
-        );
     }
 
     /**
@@ -327,7 +269,7 @@ QUERY;
         $expectedType = $actualUrls->getEntityType();
 
         $this->queryUrlAndAssertResponse(
-            (int) $product->getEntityId(),
+            (int)$product->getEntityId(),
             $urlPath,
             $relativePath,
             $expectedType,
@@ -412,7 +354,7 @@ QUERY;
         $urlPath = $response['category']['url_key'] . $response['category']['url_suffix'];
         $urlPathWithLeadingSlash = "/{$urlPath}";
         $this->queryUrlAndAssertResponse(
-            (int) $categoryId,
+            (int)$categoryId,
             $urlPathWithLeadingSlash,
             $relativePath,
             $expectedType,
@@ -470,6 +412,53 @@ QUERY;
     }
 
     /**
+     * Test for category entity
+     *
+     * @magentoApiDataFixture Magento/CatalogUrlRewrite/_files/product_with_category.php
+     */
+    public function testCategoryUrlResolver($categoryUrlPath = null)
+    {
+        $productSku = 'p002';
+        $categoryUrlPath = $categoryUrlPath ? $categoryUrlPath : 'cat-1.html';
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $product = $productRepository->get($productSku, false, null, true);
+        $storeId = $product->getStoreId();
+
+        /** @var  UrlFinderInterface $urlFinder */
+        $urlFinder = $this->objectManager->get(UrlFinderInterface::class);
+        $actualUrls = $urlFinder->findOneByData(
+            [
+                'request_path' => $categoryUrlPath,
+                'store_id' => $storeId
+            ]
+        );
+        $categoryId = $actualUrls->getEntityId();
+        $relativePath = $actualUrls->getRequestPath();
+        $expectedType = $actualUrls->getEntityType();
+
+        $query
+            = <<<QUERY
+{
+    category(id:{$categoryId}) {
+        url_key
+        url_suffix
+    }
+}
+QUERY;
+        $response = $this->graphQlQuery($query);
+        $urlPath = $response['category']['url_key'] . $response['category']['url_suffix'];
+
+        $this->queryUrlAndAssertResponse(
+            (int)$categoryId,
+            $urlPath,
+            $relativePath,
+            $expectedType,
+            0
+        );
+    }
+
+    /**
      * Tests if target_path(relative_url) is resolved for Products entity with empty url suffix
      *
      * @magentoApiDataFixture Magento/CatalogUrlRewrite/_files/product_with_category_empty_url_suffix.php
@@ -480,48 +469,60 @@ QUERY;
     }
 
     /**
-     * Assert response from GraphQl
+     * Tests if target_path(relative_url) is resolved for Products entity
      *
-     * @param string $productId
-     * @param string $urlKey
-     * @param string $relativePath
-     * @param string $expectedType
-     * @param int $redirectCode
-     * @throws GraphQlInputException
+     * @magentoApiDataFixture Magento/CatalogUrlRewrite/_files/product_with_category.php
      */
-    private function queryUrlAndAssertResponse(
-        int $productId,
-        string $urlKey,
-        string $relativePath,
-        string $expectedType,
-        int $redirectCode
-    ): void {
+    public function testProductUrlResolver()
+    {
+        $productSku = 'p002';
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $product = $productRepository->get($productSku, false, null, true);
+        $storeId = $product->getStoreId();
+
         $query
             = <<<QUERY
 {
-  route(url:"{$urlKey}")
-  {
-       relative_url
-       type
-       redirect_code
-       __typename
-         ...on SimpleProduct {
-          uid
-        }
-         ...on ConfigurableProduct {
-          uid
-        }
-        ...on CategoryTree {
-            uid
-        }
+    products(filter: {sku: {eq: "{$productSku}"}})
+    {
+        items {
+               url_key
+               url_suffix
+            }
     }
 }
 QUERY;
         $response = $this->graphQlQuery($query);
-        $this->assertArrayHasKey('route', $response);
-        $this->assertEquals($productId, $this->idDecoder->decode($response['route']['uid']));
-        $this->assertEquals($relativePath, $response['route']['relative_url']);
-        $this->assertEquals(strtoupper($expectedType), $response['route']['type']);
-        $this->assertEquals($redirectCode, $response['route']['redirect_code']);
+        $urlPath = $response['products']['items'][0]['url_key'] . $response['products']['items'][0]['url_suffix'];
+
+        /** @var  UrlFinderInterface $urlFinder */
+        $urlFinder = $this->objectManager->get(UrlFinderInterface::class);
+        $actualUrls = $urlFinder->findOneByData(
+            [
+                'request_path' => $urlPath,
+                'store_id' => $storeId
+            ]
+        );
+        $relativePath = $actualUrls->getRequestPath();
+        $expectedType = $actualUrls->getEntityType();
+        $redirectCode = $actualUrls->getRedirectType();
+
+        $this->queryUrlAndAssertResponse(
+            (int)$product->getEntityId(),
+            $urlPath,
+            $relativePath,
+            $expectedType,
+            $redirectCode
+        );
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->idDecoder = $this->objectManager->get(Uid::class);
     }
 }

@@ -8,13 +8,12 @@ declare(strict_types=1);
 
 namespace Magento\TestModuleSimpleTemplateDirective\Model;
 
-use Magento\Framework\Filter\SimpleDirective\ProcessorInterface;
-use Magento\Framework\Filter\Template;
+use Magento\Framework\Filter\DirectiveProcessor\FilterInterface;
 
 /**
  * Filters a value for testing purposes
  */
-class FooFilter implements \Magento\Framework\Filter\DirectiveProcessor\FilterInterface
+class FooFilter implements FilterInterface
 {
     /**
      * @inheritDoc

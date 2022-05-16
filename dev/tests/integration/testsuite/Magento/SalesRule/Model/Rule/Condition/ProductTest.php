@@ -6,28 +6,25 @@
 
 namespace Magento\SalesRule\Model\Rule\Condition;
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Registry;
+use Magento\Quote\Model\Quote;
 use Magento\SalesRule\Model\Rule;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class ProductTest extends \PHPUnit\Framework\TestCase
+class ProductTest extends TestCase
 {
     use ConditionHelper;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * Ensure that SalesRules filtering on category validates children products of configurables
@@ -48,8 +45,8 @@ class ProductTest extends \PHPUnit\Framework\TestCase
     public function testValidateCategorySalesRuleIncludesChildren($categoryId, $expectedResult)
     {
         // Load the quote that contains a child of a configurable product
-        /** @var \Magento\Quote\Model\Quote  $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class)
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class)
             ->load('test_cart_with_configurable', 'reserved_order_id');
 
         // Load the SalesRule looking for products in a specific category
@@ -59,7 +56,7 @@ class ProductTest extends \PHPUnit\Framework\TestCase
 
         // Prepare the parent product with the given category setting
         /** @var $product \Magento\Catalog\Model\Product */
-        $product = $this->objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class)
+        $product = $this->objectManager->create(ProductRepositoryInterface::class)
             ->get('configurable');
         $product->setCategoryIds([$categoryId]);
         $product->save();
@@ -78,8 +75,8 @@ class ProductTest extends \PHPUnit\Framework\TestCase
     public function testValidateSalesRuleExcludesBundleChildren(): void
     {
         // Load the quote that contains a child of a bundle product
-        /** @var \Magento\Quote\Model\Quote  $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class)
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class)
             ->load('test_cart_with_bundle_and_options', 'reserved_order_id');
 
         // Load the SalesRule looking for excluding products with selected sku
@@ -150,5 +147,13 @@ class ProductTest extends \PHPUnit\Framework\TestCase
             $rule->validate($quote->getBillingAddress()),
             'Cart price rule validation failed.'
         );
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

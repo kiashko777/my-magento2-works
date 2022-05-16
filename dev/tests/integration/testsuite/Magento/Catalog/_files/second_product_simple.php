@@ -4,9 +4,15 @@
  * See COPYING.txt for license details.
  */
 
-/** @var $product2 \Magento\Catalog\Model\Product */
-$product2 = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->create(\Magento\Catalog\Model\Product::class);
+/** @var $product2 Product */
+
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$product2 = Bootstrap::getObjectManager()
+    ->create(Product::class);
 $product2
     ->setTypeId('simple')
     ->setId(6)
@@ -18,7 +24,7 @@ $product2
     ->setMetaTitle('meta title2')
     ->setMetaKeyword('meta keyword2')
     ->setMetaDescription('meta description2')
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setStockData(['use_config_manage_stock' => 0])
     ->save();

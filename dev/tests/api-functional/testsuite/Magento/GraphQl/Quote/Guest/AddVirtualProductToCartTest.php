@@ -23,15 +23,6 @@ class AddVirtualProductToCartTest extends GraphQlAbstract
     private $getMaskedQuoteIdByReservedOrderId;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/virtual_product.php
      * @magentoApiDataFixture Magento/GraphQl/Quote/_files/guest/create_empty_cart.php
      */
@@ -52,10 +43,47 @@ class AddVirtualProductToCartTest extends GraphQlAbstract
     }
 
     /**
+     * @param string $maskedQuoteId
+     * @param string $sku
+     * @param float $quantity
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId, string $sku, float $quantity): string
+    {
+        return <<<QUERY
+mutation {
+  addVirtualProductsToCart(
+    input: {
+      cart_id: "{$maskedQuoteId}"
+      cart_items: [
+        {
+          data: {
+            quantity: {$quantity}
+            sku: "{$sku}"
+          }
+        }
+      ]
+    }
+  ) {
+    cart {
+      id
+      items {
+        quantity
+        product {
+          sku
+        }
+      }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
      */
     public function testAddVirtualProductToCartIfCartIdIsEmpty()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Required parameter "cart_id" is missing');
 
         $query = <<<QUERY
@@ -82,7 +110,7 @@ QUERY;
      */
     public function testAddVirtualProductToCartIfCartItemsAreEmpty()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Required parameter "cart_items" is missing');
 
         $query = <<<QUERY
@@ -111,7 +139,7 @@ QUERY;
      */
     public function testAddVirtualToNonExistentCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Could not find a cart with ID "non_existent_masked_id"');
 
         $sku = 'virtual_product';
@@ -128,7 +156,7 @@ QUERY;
      */
     public function testNonExistentProductToCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Could not find a product with SKU "virtual_product"');
 
         $sku = 'virtual_product';
@@ -160,39 +188,11 @@ QUERY;
     }
 
     /**
-     * @param string $maskedQuoteId
-     * @param string $sku
-     * @param float $quantity
-     * @return string
+     * @inheritdoc
      */
-    private function getQuery(string $maskedQuoteId, string $sku, float $quantity): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-mutation {  
-  addVirtualProductsToCart(
-    input: {
-      cart_id: "{$maskedQuoteId}"
-      cart_items: [
-        {
-          data: {
-            quantity: {$quantity}
-            sku: "{$sku}"
-          }
-        }
-      ]
-    }
-  ) {
-    cart {
-      id
-      items {
-        quantity
-        product {
-          sku
-        }
-      }
-    }
-  }
-}
-QUERY;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
     }
 }

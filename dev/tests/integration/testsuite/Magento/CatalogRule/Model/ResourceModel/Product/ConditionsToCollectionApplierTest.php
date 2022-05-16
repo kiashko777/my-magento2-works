@@ -7,12 +7,19 @@ declare(strict_types=1);
 
 namespace Magento\CatalogRule\Model\ResourceModel\Product;
 
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\ResourceModel\Category\CollectionFactory;
+use Magento\CatalogRule\Model\Rule\Condition\Combine;
+use Magento\CatalogRule\Model\Rule\Condition\CombineFactory;
+use Magento\CatalogRule\Model\Rule\Condition\ProductFactory;
+use Magento\Eav\Model\Entity\Attribute\SetFactory;
+use Magento\Framework\Exception\InputException;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 // @codingStandardsIgnoreFile
 
-class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
+class ConditionsToCollectionApplierTest extends TestCase
 {
     private $objectManager;
 
@@ -27,29 +34,6 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
     private $categoryCollectionFactory;
 
     private $setFactory;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-
-        $this->productCollectionFactory = $this->objectManager
-            ->get(\Magento\Catalog\Model\ResourceModel\Product\CollectionFactory::class);
-
-        $this->conditionsToCollectionApplier = $this->objectManager
-            ->get(\Magento\CatalogRule\Model\ResourceModel\Product\ConditionsToCollectionApplier::class);
-
-        $this->combinedConditionFactory = $this->objectManager
-            ->get(\Magento\CatalogRule\Model\Rule\Condition\CombineFactory::class);
-
-        $this->simpleConditionFactory = $this->objectManager
-            ->get(\Magento\CatalogRule\Model\Rule\Condition\ProductFactory::class);
-
-        $this->categoryCollectionFactory = $this->objectManager
-            ->get(\Magento\Catalog\Model\ResourceModel\Category\CollectionFactory::class);
-
-        $this->setFactory = $this->objectManager
-            ->get(\Magento\Eav\Model\Entity\Attribute\SetFactory::class);
-    }
 
     /**
      * @magentoDataFixture Magento/CatalogRule/_files/conditions_to_collection/categories.php
@@ -83,66 +67,6 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
 
             $this->assertEquals($expectedSkuList, $resultSkuList, sprintf('%s failed', $variationName));
         }
-    }
-
-    /**
-     *
-     * @magentoDbIsolation disabled
-     */
-    public function testExceptionUndefinedRuleOperator()
-    {
-        $this->expectException(\Magento\Framework\Exception\InputException::class);
-        $this->expectExceptionMessage('Undefined rule operator "====" passed in. Valid operators are: ==,!=,>=,<=,>,<,{},!{},(),!()');
-
-        $conditions = [
-            'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
-            'aggregator' => 'all',
-            'value' => 0,
-            'conditions' => [
-                [
-                    'type' => \Magento\CatalogRule\Model\Rule\Condition\Product::class,
-                    'operator' => '====',
-                    'value' => 42,
-                    'attribute' => 'attribute_set_id'
-                ]
-            ]
-        ];
-
-        $combineCondition = $this->getCombineConditionFromArray($conditions);
-
-        $productCollection = $this->productCollectionFactory->create();
-        $this->conditionsToCollectionApplier
-            ->applyConditionsToCollection($combineCondition, $productCollection);
-    }
-
-    /**
-     *
-     * @magentoDbIsolation disabled
-     */
-    public function testExceptionUndefinedRuleAggregator()
-    {
-        $this->expectException(\Magento\Framework\Exception\InputException::class);
-        $this->expectExceptionMessage('Undefined rule aggregator "olo-lo" passed in. Valid operators are: all,any');
-
-        $conditions = [
-            'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
-            'aggregator' => 'olo-lo',
-            'value' => 0,
-            'conditions' => [
-                [
-                    'type' => \Magento\CatalogRule\Model\Rule\Condition\Product::class,
-                    'operator' => '==',
-                    'value' => 42,
-                    'attribute' => 'attribute_set_id'
-                ]
-            ]
-        ];
-
-        $combineCondition = $this->getCombineConditionFromArray($conditions);
-
-        $productCollection = $this->productCollectionFactory->create();
-        $this->conditionsToCollectionApplier
-            ->applyConditionsToCollection($combineCondition, $productCollection);
     }
 
     /**
@@ -445,7 +369,7 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
             ->getAllIds();
 
         $conditions = [
-            'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+            'type' => Combine::class,
             'aggregator' => 'any',
             'value' => 1,
             'conditions' => [
@@ -461,6 +385,15 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
         return $this->getCombineConditionFromArray($conditions);
     }
 
+    private function getCombineConditionFromArray(array $data)
+    {
+        $combinedCondition = $this->combinedConditionFactory->create();
+        $combinedCondition->setPrefix('conditions');
+        $combinedCondition->loadArray($data);
+
+        return $combinedCondition;
+    }
+
     private function getConditionsForVariation2()
     {
         $categoryName = 'Default Category';
@@ -471,7 +404,7 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
             ->getAllIds();
 
         $conditions = [
-            'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+            'type' => Combine::class,
             'aggregator' => 'any',
             'value' => 1,
             'conditions' => [
@@ -497,7 +430,7 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
             ->getAllIds();
 
         $conditions = [
-            'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+            'type' => Combine::class,
             'aggregator' => 'any',
             'value' => 1,
             'conditions' => [
@@ -516,7 +449,7 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
     private function getConditionsForVariation4()
     {
         $conditions = [
-            'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+            'type' => Combine::class,
             'aggregator' => 'any',
             'value' => 1,
             'conditions' => [
@@ -535,7 +468,7 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
     private function getConditionsForVariation5()
     {
         $conditions = [
-            'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+            'type' => Combine::class,
             'aggregator' => 'any',
             'value' => 1,
             'conditions' => [
@@ -557,7 +490,7 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
             ->load('Super Powerful Muffins', 'attribute_set_name');
 
         $conditions = [
-            'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+            'type' => Combine::class,
             'aggregator' => 'any',
             'value' => 1,
             'conditions' => [
@@ -576,7 +509,7 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
     private function getConditionsForVariation7()
     {
         $conditions = [
-            'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+            'type' => Combine::class,
             'aggregator' => 'any',
             'value' => 1,
             'conditions' => [
@@ -595,7 +528,7 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
     private function getConditionsForVariation8()
     {
         $conditions = [
-            'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+            'type' => Combine::class,
             'aggregator' => 'any',
             'value' => 1,
             'conditions' => [
@@ -614,7 +547,7 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
     private function getConditionsForVariation9()
     {
         $conditions = [
-            'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+            'type' => Combine::class,
             'aggregator' => 'any',
             'value' => 1,
             'conditions' => [
@@ -633,7 +566,7 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
     private function getConditionsForVariation10()
     {
         $conditions = [
-            'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+            'type' => Combine::class,
             'aggregator' => 'any',
             'value' => 1,
             'conditions' => [
@@ -652,7 +585,7 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
     private function getConditionsForVariation11()
     {
         $conditions = [
-            'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+            'type' => Combine::class,
             'aggregator' => 'any',
             'value' => 1,
             'conditions' => [
@@ -678,7 +611,7 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
             ->getAllIds();
 
         $conditions = [
-            'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+            'type' => Combine::class,
             'aggregator' => 'any',
             'value' => 1,
             'conditions' => [
@@ -711,7 +644,7 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
             ->getAllIds();
 
         $conditions = [
-            'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+            'type' => Combine::class,
             'aggregator' => 'all',
             'value' => 1,
             'conditions' => [
@@ -750,7 +683,7 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
             ->getAllIds();
 
         $conditions = [
-            'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+            'type' => Combine::class,
             'aggregator' => 'any',
             'value' => 1,
             'conditions' => [
@@ -789,7 +722,7 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
             ->getAllIds();
 
         $conditions = [
-            'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+            'type' => Combine::class,
             'aggregator' => 'all',
             'value' => 1,
             'conditions' => [
@@ -808,7 +741,7 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
     private function getConditionsForVariation16()
     {
         $conditions = [
-            'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+            'type' => Combine::class,
             'aggregator' => 'any',
             'value' => 1,
             'conditions' => [
@@ -847,12 +780,12 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
             ->load('Banana Rangers', 'attribute_set_name');
 
         $conditions = [
-            'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+            'type' => Combine::class,
             'aggregator' => 'any',
             'value' => 1,
             'conditions' => [
                 [
-                    'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+                    'type' => Combine::class,
                     'aggregator' => 'all',
                     'value' => 1,
                     'conditions' => [
@@ -871,7 +804,7 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
                     ]
                 ],
                 [
-                    'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+                    'type' => Combine::class,
                     'aggregator' => 'all',
                     'value' => 1,
                     'conditions' => [
@@ -908,12 +841,12 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
             ->load('Super Powerful Muffins', 'attribute_set_name');
 
         $conditions = [
-            'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+            'type' => Combine::class,
             'aggregator' => 'any',
             'value' => 1,
             'conditions' => [
                 [
-                    'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+                    'type' => Combine::class,
                     'aggregator' => 'all',
                     'value' => 1,
                     'conditions' => [
@@ -924,7 +857,7 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
                             'attribute' => 'category_ids'
                         ],
                         [
-                            'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+                            'type' => Combine::class,
                             'aggregator' => 'any',
                             'value' => 1,
                             'conditions' => [
@@ -953,7 +886,7 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
     private function getConditionsForVariation19()
     {
         $conditions = [
-            'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+            'type' => Combine::class,
             'aggregator' => 'all',
             'value' => 0,
             'conditions' => []
@@ -971,7 +904,7 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
             ->load('Guardians of the Refrigerator', 'attribute_set_name');
 
         $conditions = [
-            'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+            'type' => Combine::class,
             'aggregator' => 'all',
             'value' => 0,
             'conditions' => [
@@ -1002,7 +935,7 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
             ->load('Guardians of the Refrigerator', 'attribute_set_name');
 
         $conditions = [
-            'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+            'type' => Combine::class,
             'aggregator' => 'any',
             'value' => 0,
             'conditions' => [
@@ -1034,12 +967,12 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
             ->getAllIds();
 
         $conditions = [
-            'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+            'type' => Combine::class,
             'aggregator' => 'all',
             'value' => 0,
             'conditions' => [
                 [
-                    'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+                    'type' => Combine::class,
                     'aggregator' => 'all',
                     'value' => 1,
                     'conditions' => [
@@ -1057,12 +990,86 @@ class ConditionsToCollectionApplierTest extends \PHPUnit\Framework\TestCase
         return $this->getCombineConditionFromArray($conditions);
     }
 
-    private function getCombineConditionFromArray(array $data)
+    /**
+     *
+     * @magentoDbIsolation disabled
+     */
+    public function testExceptionUndefinedRuleOperator()
     {
-        $combinedCondition = $this->combinedConditionFactory->create();
-        $combinedCondition->setPrefix('conditions');
-        $combinedCondition->loadArray($data);
+        $this->expectException(InputException::class);
+        $this->expectExceptionMessage('Undefined rule operator "====" passed in. Valid operators are: ==,!=,>=,<=,>,<,{},!{},(),!()');
 
-        return $combinedCondition;
+        $conditions = [
+            'type' => Combine::class,
+            'aggregator' => 'all',
+            'value' => 0,
+            'conditions' => [
+                [
+                    'type' => \Magento\CatalogRule\Model\Rule\Condition\Product::class,
+                    'operator' => '====',
+                    'value' => 42,
+                    'attribute' => 'attribute_set_id'
+                ]
+            ]
+        ];
+
+        $combineCondition = $this->getCombineConditionFromArray($conditions);
+
+        $productCollection = $this->productCollectionFactory->create();
+        $this->conditionsToCollectionApplier
+            ->applyConditionsToCollection($combineCondition, $productCollection);
+    }
+
+    /**
+     *
+     * @magentoDbIsolation disabled
+     */
+    public function testExceptionUndefinedRuleAggregator()
+    {
+        $this->expectException(InputException::class);
+        $this->expectExceptionMessage('Undefined rule aggregator "olo-lo" passed in. Valid operators are: all,any');
+
+        $conditions = [
+            'type' => Combine::class,
+            'aggregator' => 'olo-lo',
+            'value' => 0,
+            'conditions' => [
+                [
+                    'type' => \Magento\CatalogRule\Model\Rule\Condition\Product::class,
+                    'operator' => '==',
+                    'value' => 42,
+                    'attribute' => 'attribute_set_id'
+                ]
+            ]
+        ];
+
+        $combineCondition = $this->getCombineConditionFromArray($conditions);
+
+        $productCollection = $this->productCollectionFactory->create();
+        $this->conditionsToCollectionApplier
+            ->applyConditionsToCollection($combineCondition, $productCollection);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->productCollectionFactory = $this->objectManager
+            ->get(\Magento\Catalog\Model\ResourceModel\Product\CollectionFactory::class);
+
+        $this->conditionsToCollectionApplier = $this->objectManager
+            ->get(ConditionsToCollectionApplier::class);
+
+        $this->combinedConditionFactory = $this->objectManager
+            ->get(CombineFactory::class);
+
+        $this->simpleConditionFactory = $this->objectManager
+            ->get(ProductFactory::class);
+
+        $this->categoryCollectionFactory = $this->objectManager
+            ->get(CollectionFactory::class);
+
+        $this->setFactory = $this->objectManager
+            ->get(SetFactory::class);
     }
 }

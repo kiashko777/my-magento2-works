@@ -3,7 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Model\Customer;
+
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Setup\Model\Address\AddressDataGenerator;
 
 /**
  * Create new instance of CustomerDataGenerator
@@ -11,14 +15,14 @@ namespace Magento\Setup\Model\Customer;
 class CustomerDataGeneratorFactory
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
     /**
-     * @param \Magento\Framework\ObjectManagerInterface $objectManager
+     * @param ObjectManagerInterface $objectManager
      */
-    public function __construct(\Magento\Framework\ObjectManagerInterface $objectManager)
+    public function __construct(ObjectManagerInterface $objectManager)
     {
         $this->objectManager = $objectManager;
     }
@@ -27,15 +31,15 @@ class CustomerDataGeneratorFactory
      * Create CustomerGenerator instance with specified configuration
      *
      * @param array $config
-     * @return \Magento\Setup\Model\Customer\CustomerDataGenerator
+     * @return CustomerDataGenerator
      */
     public function create(array $config)
     {
         return $this->objectManager->create(
-            \Magento\Setup\Model\Customer\CustomerDataGenerator::class,
+            CustomerDataGenerator::class,
             [
                 'addressGenerator' => $this->objectManager->create(
-                    \Magento\Setup\Model\Address\AddressDataGenerator::class
+                    AddressDataGenerator::class
                 ),
                 'config' => $config
             ]

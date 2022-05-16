@@ -5,14 +5,16 @@
  */
 
 use Magento\Integration\Model\Oauth\Token\RequestThrottler;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\User\Model\User;
 
-/** @var $model \Magento\User\Model\User */
-$model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\User\Model\User::class);
+/** @var $model User */
+$model = Bootstrap::getObjectManager()->create(User::class);
 $userName = 'webapi_user';
 $model->load($userName, 'username');
 $model->delete();
 
 /* Unlock account if it was locked */
 /** @var RequestThrottler $throttler */
-$throttler = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(RequestThrottler::class);
+$throttler = Bootstrap::getObjectManager()->create(RequestThrottler::class);
 $throttler->resetAuthenticationFailuresCount($userName, RequestThrottler::USER_TYPE_ADMIN);

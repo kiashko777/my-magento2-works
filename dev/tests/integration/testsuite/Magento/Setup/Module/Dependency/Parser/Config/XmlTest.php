@@ -3,9 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Dependency\Parser\Config;
 
-class XmlTest extends \PHPUnit\Framework\TestCase
+use PHPUnit\Framework\TestCase;
+
+class XmlTest extends TestCase
 {
     /**
      * @var string
@@ -16,13 +19,6 @@ class XmlTest extends \PHPUnit\Framework\TestCase
      * @var Xml
      */
     protected $parser;
-
-    protected function setUp(): void
-    {
-        $this->fixtureDir = realpath(__DIR__ . '/../../_files') . '/';
-
-        $this->parser = new Xml();
-    }
 
     public function testParse()
     {
@@ -36,5 +32,12 @@ class XmlTest extends \PHPUnit\Framework\TestCase
         );
 
         $this->assertEquals($expected, $actual);
+    }
+
+    protected function setUp(): void
+    {
+        $this->fixtureDir = realpath(__DIR__ . '/../../_files') . '/';
+
+        $this->parser = new Xml();
     }
 }

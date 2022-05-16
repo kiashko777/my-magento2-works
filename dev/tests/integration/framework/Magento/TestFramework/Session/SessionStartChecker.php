@@ -18,7 +18,7 @@ class SessionStartChecker extends \Magento\Framework\Session\SessionStartChecker
      *
      * @return bool
      */
-    public function check() : bool
+    public function check(): bool
     {
         return true;
     }

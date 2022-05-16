@@ -6,8 +6,8 @@
 
 namespace Magento\Analytics\Block\Adminhtml\System\Config;
 
-use Magento\Framework\Data\FormFactory;
 use Magento\Framework\Data\Form\Element\TimeFactory;
+use Magento\Framework\Data\FormFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
 
@@ -28,18 +28,6 @@ class CollectionTimeLabelTest extends TestCase
     }
 
     /**
-     * Test render will add comment considering config locale(non-default de_DE).
-     *
-     * @magentoConfigFixture default_store general/locale/code de_DE
-     * @magentoAppIsolation enabled
-     */
-    public function testRenderWithNonDefaultLocale()
-    {
-        $result = $this->render();
-        $this->assertMatchesRegularExpression('/<span>Nordamerikanische Westküsten-Normalzeit/', $result);
-    }
-
-    /**
      * Render 'time' element.
      *
      * @return string
@@ -52,5 +40,17 @@ class CollectionTimeLabelTest extends TestCase
         $element->setForm($form);
 
         return $collectionTimeLabel->render($element);
+    }
+
+    /**
+     * Test render will add comment considering config locale(non-default de_DE).
+     *
+     * @magentoConfigFixture default_store general/locale/code de_DE
+     * @magentoAppIsolation enabled
+     */
+    public function testRenderWithNonDefaultLocale()
+    {
+        $result = $this->render();
+        $this->assertMatchesRegularExpression('/<span>Nordamerikanische Westküsten-Normalzeit/', $result);
     }
 }

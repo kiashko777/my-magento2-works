@@ -5,33 +5,39 @@
  */
 declare(strict_types=1);
 
+use Magento\Customer\Model\GroupManagement;
 use Magento\Framework\Registry;
+use Magento\SalesRule\Model\Rule;
+use Magento\SalesRule\Model\Rule\Condition\Combine;
+use Magento\SalesRule\Model\Rule\Condition\Product;
+use Magento\SalesRule\Model\Rule\Condition\Product\Subselect;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 
 /** @var Registry $registry */
 $registry = Bootstrap::getObjectManager()->get(Registry::class);
-/** @var \Magento\SalesRule\Model\Rule $rule */
-$salesRule = Bootstrap::getObjectManager()->create(\Magento\SalesRule\Model\Rule::class);
+/** @var Rule $rule */
+$salesRule = Bootstrap::getObjectManager()->create(Rule::class);
 $salesRule->setData(
     [
         'name' => '50% Off on Configurable parent category',
         'is_active' => 1,
-        'customer_group_ids' => [\Magento\Customer\Model\GroupManagement::NOT_LOGGED_IN_ID],
-        'coupon_type' => \Magento\SalesRule\Model\Rule::COUPON_TYPE_NO_COUPON,
+        'customer_group_ids' => [GroupManagement::NOT_LOGGED_IN_ID],
+        'coupon_type' => Rule::COUPON_TYPE_NO_COUPON,
         'simple_action' => 'by_percent',
         'discount_amount' => 50,
         'discount_step' => 0,
         'stop_rules_processing' => 1,
         'website_ids' => [
             Bootstrap::getObjectManager()->get(
-                \Magento\Store\Model\StoreManagerInterface::class
+                StoreManagerInterface::class
             )->getWebsite()->getId()
         ]
     ]
 );
 
 $salesRule->getConditions()->loadArray([
-    'type' => \Magento\SalesRule\Model\Rule\Condition\Combine::class,
+    'type' => Combine::class,
     'attribute' => null,
     'operator' => null,
     'value' => '1',
@@ -40,7 +46,7 @@ $salesRule->getConditions()->loadArray([
     'conditions' =>
         [
             [
-                'type' => \Magento\SalesRule\Model\Rule\Condition\Product\Subselect::class,
+                'type' => Subselect::class,
                 'attribute' => 'qty',
                 'operator' => '==',
                 'value' => '1',
@@ -49,7 +55,7 @@ $salesRule->getConditions()->loadArray([
                 'conditions' =>
                     [
                         [
-                            'type' => \Magento\SalesRule\Model\Rule\Condition\Product::class,
+                            'type' => Product::class,
                             'attribute' => 'category_ids',
                             'attribute_scope' => 'parent',
                             'operator' => '!=',

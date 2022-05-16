@@ -7,17 +7,22 @@
 /**
  * Tests for obsolete directives in email templates
  */
+
 namespace Magento\Test\Legacy;
 
-class EmailTemplateTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\App\Utility\AggregateInvoker;
+use Magento\Framework\App\Utility\Files;
+use PHPUnit\Framework\TestCase;
+
+class EmailTemplateTest extends TestCase
 {
     public function testObsoleteDirectives()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
-            /**
-             * @param string $file
-             */
+        /**
+         * @param string $file
+         */
             function ($file) {
                 $this->assertDoesNotMatchRegularExpression(
                     '/\{\{htmlescape.*?\}\}/i',
@@ -31,7 +36,7 @@ class EmailTemplateTest extends \PHPUnit\Framework\TestCase
                     'Directive {{escapehtml}} is obsolete. Use {{var}} instead.'
                 );
             },
-            \Magento\Framework\App\Utility\Files::init()->getEmailTemplates()
+            Files::init()->getEmailTemplates()
         );
     }
 }

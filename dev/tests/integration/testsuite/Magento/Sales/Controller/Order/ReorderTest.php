@@ -51,34 +51,6 @@ class ReorderTest extends AbstractController
     private $versionChecker;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->checkoutSession = $this->_objectManager->get(CheckoutSession::class);
-        $this->orderFactory = $this->_objectManager->get(OrderInterfaceFactory::class);
-        $this->customerSession = $this->_objectManager->get(Session::class);
-        $this->quoteRepository = $this->_objectManager->get(CartRepositoryInterface::class);
-        $this->escaper = $this->_objectManager->get(Escaper::class);
-        $this->versionChecker = $this->_objectManager->get(View::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        if ($this->quote instanceof CartInterface) {
-            $this->quoteRepository->delete($this->quote);
-        }
-        $this->customerSession->setCustomerId(null);
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Sales/_files/customer_order_with_taxable_product.php
      *
      * @return void
@@ -96,6 +68,19 @@ class ReorderTest extends AbstractController
             $order->getItemsCollection()->getFirstItem()->getSku(),
             $quoteItemsCollection->getFirstItem()->getSku()
         );
+    }
+
+    /**
+     * Dispatch reorder request.
+     *
+     * @param null|int $orderId
+     * @return void
+     */
+    private function dispatchReorderRequest(?int $orderId = null): void
+    {
+        $this->getRequest()->setMethod(Request::METHOD_POST);
+        $this->getRequest()->setParam('order_id', $orderId);
+        $this->dispatch('sales/order/reorder/');
     }
 
     /**
@@ -164,15 +149,30 @@ class ReorderTest extends AbstractController
     }
 
     /**
-     * Dispatch reorder request.
-     *
-     * @param null|int $orderId
-     * @return void
+     * @inheritdoc
      */
-    private function dispatchReorderRequest(?int $orderId = null): void
+    protected function setUp(): void
     {
-        $this->getRequest()->setMethod(Request::METHOD_POST);
-        $this->getRequest()->setParam('order_id', $orderId);
-        $this->dispatch('sales/order/reorder/');
+        parent::setUp();
+
+        $this->checkoutSession = $this->_objectManager->get(CheckoutSession::class);
+        $this->orderFactory = $this->_objectManager->get(OrderInterfaceFactory::class);
+        $this->customerSession = $this->_objectManager->get(Session::class);
+        $this->quoteRepository = $this->_objectManager->get(CartRepositoryInterface::class);
+        $this->escaper = $this->_objectManager->get(Escaper::class);
+        $this->versionChecker = $this->_objectManager->get(View::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        if ($this->quote instanceof CartInterface) {
+            $this->quoteRepository->delete($this->quote);
+        }
+        $this->customerSession->setCustomerId(null);
+
+        parent::tearDown();
     }
 }

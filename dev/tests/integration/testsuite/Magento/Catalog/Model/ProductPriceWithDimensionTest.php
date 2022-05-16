@@ -7,10 +7,12 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Model;
 
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product\Type\Price;
 use Magento\Catalog\Model\ResourceModel\Product\Collection;
 use Magento\CatalogInventory\Api\StockRegistryInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Tests product model:
@@ -21,10 +23,10 @@ use Magento\CatalogInventory\Api\StockRegistryInterface;
  * @see \Magento\Catalog\Model\ProductTest
  * @see \Magento\Catalog\Model\ProductExternalTest
  */
-class ProductPriceWithDimensionTest extends \PHPUnit\Framework\TestCase
+class ProductPriceWithDimensionTest extends TestCase
 {
     /**
-     * @var \Magento\Catalog\Model\Product
+     * @var Product
      */
     protected $_model;
 
@@ -32,15 +34,6 @@ class ProductPriceWithDimensionTest extends \PHPUnit\Framework\TestCase
      * @var ProductRepositoryInterface
      */
     private $productRepository;
-
-    /**
-     * Set up
-     */
-    protected function setUp(): void
-    {
-        $this->_model = Bootstrap::getObjectManager()->create(Product::class);
-        $this->productRepository = Bootstrap::getObjectManager()->create(ProductRepositoryInterface::class);
-    }
 
     /**
      * Get price
@@ -58,7 +51,7 @@ class ProductPriceWithDimensionTest extends \PHPUnit\Framework\TestCase
     public function testGetPriceModel()
     {
         $default = $this->_model->getPriceModel();
-        $this->assertInstanceOf(\Magento\Catalog\Model\Product\Type\Price::class, $default);
+        $this->assertInstanceOf(Price::class, $default);
         $this->assertSame($default, $this->_model->getPriceModel());
     }
 
@@ -108,7 +101,7 @@ class ProductPriceWithDimensionTest extends \PHPUnit\Framework\TestCase
         $collection->addIdFilter($product->getId());
         $collection->addPriceData();
         $collection->load();
-        /** @var \Magento\Catalog\Model\Product $product */
+        /** @var Product $product */
         $product = $collection->getFirstItem();
         $this->assertEquals(323, $product->getData('min_price'));
     }
@@ -134,5 +127,14 @@ class ProductPriceWithDimensionTest extends \PHPUnit\Framework\TestCase
         $collection->clear()->load();
         $product = $collection->getFirstItem();
         $this->assertEquals(20, $product->getData('min_price'));
+    }
+
+    /**
+     * Set up
+     */
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()->create(Product::class);
+        $this->productRepository = Bootstrap::getObjectManager()->create(ProductRepositoryInterface::class);
     }
 }

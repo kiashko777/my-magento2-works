@@ -27,17 +27,6 @@ class ReviewsTest extends TestCase
     private $block;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Reviews::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Review/_files/customer_review.php
      *
      * @return void
@@ -46,5 +35,16 @@ class ReviewsTest extends TestCase
     {
         $this->block->setCustomerId(1);
         $this->assertCount(1, $this->block->getPreparedCollection());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Reviews::class);
     }
 }

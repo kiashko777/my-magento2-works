@@ -148,7 +148,8 @@ define(['rjsResolver', 'mixins'], function (resolver, mixins) {
                 };
             });
 
-            require([name], function () {});
+            require([name], function () {
+            });
         });
 
         it('applies mixins for module that is a relative dependency', function (done) {
@@ -181,7 +182,8 @@ define(['rjsResolver', 'mixins'], function (resolver, mixins) {
                 };
             });
 
-            require([name], function () {});
+            require([name], function () {
+            });
         });
 
         it('applies mixins for modules that have no dependencies', function (done) {

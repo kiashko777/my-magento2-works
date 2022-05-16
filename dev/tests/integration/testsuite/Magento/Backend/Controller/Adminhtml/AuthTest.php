@@ -3,19 +3,27 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Backend\Controller\Adminhtml;
 
+use Magento\Backend\Helper\Data;
+use Magento\Backend\Model\Auth\Session;
+use Magento\Backend\Model\UrlInterface;
+use Magento\Framework\App\ResponseInterface;
+use Magento\Framework\Data\Form\FormKey;
 use Magento\Framework\Message\MessageInterface;
+use Magento\TestFramework\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractController;
 
 /**
  * Test class for \Magento\Backend\Controller\Adminhtml\Auth
  * @magentoAppArea Adminhtml
  * @magentoDbIsolation enabled
  */
-class AuthTest extends \Magento\TestFramework\TestCase\AbstractController
+class AuthTest extends AbstractController
 {
     /**
-     * @var \Magento\Backend\Model\Auth\Session
+     * @var Session
      */
     protected $_session;
 
@@ -24,43 +32,6 @@ class AuthTest extends \Magento\TestFramework\TestCase\AbstractController
      */
     protected $_auth;
 
-    protected function tearDown(): void
-    {
-        $this->_session = null;
-        $this->_auth = null;
-        parent::tearDown();
-    }
-
-    /**
-     * Performs user login
-     */
-    protected function _login()
-    {
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Backend\Model\UrlInterface::class
-        )->turnOffSecretKey();
-
-        $this->_auth = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Backend\Model\Auth::class
-        );
-        $this->_auth->login(
-            \Magento\TestFramework\Bootstrap::ADMIN_NAME,
-            \Magento\TestFramework\Bootstrap::ADMIN_PASSWORD
-        );
-        $this->_session = $this->_auth->getAuthStorage();
-    }
-
-    /**
-     * Performs user logout
-     */
-    protected function _logout()
-    {
-        $this->_auth->logout();
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Backend\Model\UrlInterface::class
-        )->turnOnSecretKey();
-    }
-
     /**
      * Check not logged state
      * @covers \Magento\Backend\Controller\Adminhtml\Auth\Login::execute
@@ -68,9 +39,9 @@ class AuthTest extends \Magento\TestFramework\TestCase\AbstractController
     public function testNotLoggedLoginAction()
     {
         $this->dispatch('backend/admin/auth/login');
-        /** @var $backendUrlModel \Magento\Backend\Model\UrlInterface */
+        /** @var $backendUrlModel UrlInterface */
         $backendUrlModel = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Backend\Model\UrlInterface::class
+            UrlInterface::class
         );
         $backendUrlModel->turnOffSecretKey();
         $url = $backendUrlModel->getUrl('admin');
@@ -87,9 +58,9 @@ class AuthTest extends \Magento\TestFramework\TestCase\AbstractController
         $this->_login();
 
         $this->dispatch('backend/admin/auth/login');
-        /** @var $backendUrlModel \Magento\Backend\Model\UrlInterface */
+        /** @var $backendUrlModel UrlInterface */
         $backendUrlModel = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Backend\Model\UrlInterface::class
+            UrlInterface::class
         );
         $url = $backendUrlModel->getStartupPageUrl();
         $expected = $backendUrlModel->getUrl($url);
@@ -99,17 +70,47 @@ class AuthTest extends \Magento\TestFramework\TestCase\AbstractController
     }
 
     /**
+     * Performs user login
+     */
+    protected function _login()
+    {
+        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
+            UrlInterface::class
+        )->turnOffSecretKey();
+
+        $this->_auth = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
+            \Magento\Backend\Model\Auth::class
+        );
+        $this->_auth->login(
+            Bootstrap::ADMIN_NAME,
+            Bootstrap::ADMIN_PASSWORD
+        );
+        $this->_session = $this->_auth->getAuthStorage();
+    }
+
+    /**
+     * Performs user logout
+     */
+    protected function _logout()
+    {
+        $this->_auth->logout();
+        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
+            UrlInterface::class
+        )->turnOnSecretKey();
+    }
+
+    /**
      * @magentoAppIsolation enabled
      */
     public function testNotLoggedLoginActionWithRedirect()
     {
-        /** @var \Magento\Framework\Data\Form\FormKey $formKey */
-        $formKey = $this->_objectManager->get(\Magento\Framework\Data\Form\FormKey::class);
+        /** @var FormKey $formKey */
+        $formKey = $this->_objectManager->get(FormKey::class);
         $this->getRequest()->setPostValue(
             [
                 'login' => [
-                    'username' => \Magento\TestFramework\Bootstrap::ADMIN_NAME,
-                    'password' => \Magento\TestFramework\Bootstrap::ADMIN_PASSWORD,
+                    'username' => Bootstrap::ADMIN_NAME,
+                    'password' => Bootstrap::ADMIN_PASSWORD,
                 ],
                 'form_key' => $formKey->getFormKey(),
             ]
@@ -118,7 +119,7 @@ class AuthTest extends \Magento\TestFramework\TestCase\AbstractController
         $this->dispatch('backend/admin/index/index');
 
         $response = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\App\ResponseInterface::class);
+            ->get(ResponseInterface::class);
         $code = $response->getHttpResponseCode();
         $this->assertTrue($code >= 300 && $code < 400, 'Incorrect response code');
 
@@ -140,7 +141,7 @@ class AuthTest extends \Magento\TestFramework\TestCase\AbstractController
         $this->assertRedirect(
             $this->equalTo(
                 \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-                    \Magento\Backend\Helper\Data::class
+                    Data::class
                 )->getHomePageUrl()
             )
         );
@@ -159,7 +160,7 @@ class AuthTest extends \Magento\TestFramework\TestCase\AbstractController
         $data = [
             'ajaxExpired' => 1,
             'ajaxRedirect' => \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-                \Magento\Backend\Helper\Data::class
+                Data::class
             )->getHomePageUrl(),
         ];
         $expected = json_encode($data);
@@ -177,7 +178,7 @@ class AuthTest extends \Magento\TestFramework\TestCase\AbstractController
         $this->_login();
         $this->dispatch('backend/admin/auth/deniedIframe');
         $homeUrl = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Backend\Helper\Data::class
+            Data::class
         )->getHomePageUrl();
         $expected = '<script>parent.window.location =';
         $this->assertStringStartsWith($expected, $this->getResponse()->getBody());
@@ -194,8 +195,8 @@ class AuthTest extends \Magento\TestFramework\TestCase\AbstractController
      */
     public function testIncorrectLogin($params)
     {
-        /** @var \Magento\Framework\Data\Form\FormKey $formKey */
-        $formKey = $this->_objectManager->get(\Magento\Framework\Data\Form\FormKey::class);
+        /** @var FormKey $formKey */
+        $formKey = $this->_objectManager->get(FormKey::class);
         $params['form_key'] = $formKey->getFormKey();
         $this->getRequest()->setPostValue($params);
         $this->dispatch('backend/admin/auth/login');
@@ -209,7 +210,7 @@ class AuthTest extends \Magento\TestFramework\TestCase\AbstractController
             MessageInterface::TYPE_ERROR
         );
         $backendUrlModel = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Backend\Model\UrlInterface::class
+            UrlInterface::class
         );
         $backendUrlModel->turnOffSecretKey();
         $url = $backendUrlModel->getUrl('admin');
@@ -223,7 +224,7 @@ class AuthTest extends \Magento\TestFramework\TestCase\AbstractController
                 [
                     'login' => [
                         'username' => 'test1',
-                        'password' => \Magento\TestFramework\Bootstrap::ADMIN_PASSWORD,
+                        'password' => Bootstrap::ADMIN_PASSWORD,
                     ],
                 ],
             ],
@@ -231,7 +232,7 @@ class AuthTest extends \Magento\TestFramework\TestCase\AbstractController
                 [
                     'login' => [
                         'username' => 'test2',
-                        'password' => \Magento\TestFramework\Bootstrap::ADMIN_PASSWORD,
+                        'password' => Bootstrap::ADMIN_PASSWORD,
                     ],
                 ],
             ],
@@ -239,10 +240,17 @@ class AuthTest extends \Magento\TestFramework\TestCase\AbstractController
                 [
                     'login' => [
                         'username' => 'test3',
-                        'password' => \Magento\TestFramework\Bootstrap::ADMIN_PASSWORD,
+                        'password' => Bootstrap::ADMIN_PASSWORD,
                     ],
                 ],
             ]
         ];
+    }
+
+    protected function tearDown(): void
+    {
+        $this->_session = null;
+        $this->_auth = null;
+        parent::tearDown();
     }
 }

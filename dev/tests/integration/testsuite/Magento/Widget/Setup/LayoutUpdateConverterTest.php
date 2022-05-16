@@ -3,21 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Widget\Setup;
 
-class LayoutUpdateConverterTest extends \PHPUnit\Framework\TestCase
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class LayoutUpdateConverterTest extends TestCase
 {
     /**
      * @var LayoutUpdateConverter
      */
     private $converter;
-
-    protected function setUp(): void
-    {
-        $this->converter = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            LayoutUpdateConverter::class
-        );
-    }
 
     /**
      * @param string $value
@@ -51,5 +48,12 @@ class LayoutUpdateConverterTest extends \PHPUnit\Framework\TestCase
                 $beginning . $jsonEncodedWidgetXml . $ending,
             ],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->converter = Bootstrap::getObjectManager()->create(
+            LayoutUpdateConverter::class
+        );
     }
 }

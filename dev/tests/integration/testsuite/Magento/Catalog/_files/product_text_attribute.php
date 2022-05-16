@@ -4,11 +4,15 @@
  * See COPYING.txt for license details.
  */
 
-/** @var \Magento\Catalog\Setup\CategorySetup $installer */
-$installer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->create(\Magento\Catalog\Setup\CategorySetup::class);
+/** @var CategorySetup $installer */
+
+use Magento\Catalog\Setup\CategorySetup;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$installer = Bootstrap::getObjectManager()
+    ->create(CategorySetup::class);
 /** @var $attribute \Magento\Catalog\Model\ResourceModel\Eav\Attribute */
-$attribute = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
+$attribute = Bootstrap::getObjectManager()
     ->create(\Magento\Catalog\Model\ResourceModel\Eav\Attribute::class);
 $attribute->setData(
     [

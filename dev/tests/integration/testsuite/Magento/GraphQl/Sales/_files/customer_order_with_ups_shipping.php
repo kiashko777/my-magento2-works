@@ -4,11 +4,11 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Framework\DB\Transaction;
 use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\ShipmentFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
-use Magento\Framework\DB\Transaction;
-use Magento\Sales\Model\Order\ShipmentFactory;
 
 Resolver::getInstance()->requireDataFixture('Magento/Sales/_files/order_with_customer.php');
 

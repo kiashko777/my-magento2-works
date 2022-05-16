@@ -7,7 +7,10 @@
 /**
  * Isolation of the current working directory changes between tests
  */
+
 namespace Magento\TestFramework\Isolation;
+
+use PHPUnit\Framework\TestCase;
 
 class WorkingDirectory
 {
@@ -19,10 +22,10 @@ class WorkingDirectory
     /**
      * Handler for 'endTest' event
      *
-     * @param \PHPUnit\Framework\TestCase $test
+     * @param TestCase $test
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    public function startTest(\PHPUnit\Framework\TestCase $test)
+    public function startTest(TestCase $test)
     {
         $this->_currentWorkingDir = getcwd();
     }
@@ -30,10 +33,10 @@ class WorkingDirectory
     /**
      * Handler for 'startTest' event
      *
-     * @param \PHPUnit\Framework\TestCase $test
+     * @param TestCase $test
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    public function endTest(\PHPUnit\Framework\TestCase $test)
+    public function endTest(TestCase $test)
     {
         if (getcwd() != $this->_currentWorkingDir) {
             chdir($this->_currentWorkingDir);

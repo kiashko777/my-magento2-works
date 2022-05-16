@@ -10,6 +10,7 @@ namespace Magento\Setup\Test\Unit\Module\I18n\Parser\Adapter;
 use Magento\Setup\Module\I18n\Parser\Adapter\AbstractAdapter;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 
 class AbstractAdapterTest extends TestCase
 {
@@ -22,24 +23,6 @@ class AbstractAdapterTest extends TestCase
      * @var AbstractAdapter
      */
     protected $_adapterReflection;
-
-    protected function setUp(): void
-    {
-        $this->_adapterMock = $this->getMockForAbstractClass(
-            AbstractAdapter::class,
-            [],
-            '',
-            false,
-            true,
-            true,
-            ['_parse']
-        );
-        $this->_adapterReflection = new \ReflectionMethod(
-            AbstractAdapter::class,
-            '_addPhrase'
-        );
-        $this->_adapterReflection->setAccessible(true);
-    }
 
     public function testParse()
     {
@@ -72,5 +55,23 @@ class AbstractAdapterTest extends TestCase
         $this->_adapterReflection->invoke($this->_adapterMock, '', '');
         $actual = $this->_adapterMock->getPhrases();
         $this->assertEquals($expected, $actual);
+    }
+
+    protected function setUp(): void
+    {
+        $this->_adapterMock = $this->getMockForAbstractClass(
+            AbstractAdapter::class,
+            [],
+            '',
+            false,
+            true,
+            true,
+            ['_parse']
+        );
+        $this->_adapterReflection = new ReflectionMethod(
+            AbstractAdapter::class,
+            '_addPhrase'
+        );
+        $this->_adapterReflection->setAccessible(true);
     }
 }

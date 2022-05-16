@@ -8,9 +8,22 @@ declare(strict_types=1);
 namespace Magento\CatalogImportExport\Model\Import\ProductTest;
 
 use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\ResourceModel\Category\Collection;
 use Magento\CatalogImportExport\Model\Import\ProductTestBase;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Filesystem;
+use Magento\Framework\Registry;
+use Magento\ImportExport\Helper\Data;
+use Magento\ImportExport\Model\Import;
+use Magento\ImportExport\Model\Import\ErrorProcessing\ProcessingError;
+use Magento\ImportExport\Model\Import\Source\Csv;
 use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use function array_merge;
+use function array_unique;
 
 /**
  * Integration test for \Magento\CatalogImportExport\Model\Import\Products class.
@@ -37,7 +50,7 @@ class ProductMultipleStoresTest extends ProductTestBase
             'simple3'
         ];
 
-        $importExportData = $this->getMockBuilder(\Magento\ImportExport\Helper\Data::class)
+        $importExportData = $this->getMockBuilder(Data::class)
             ->disableOriginalConstructor()
             ->getMock();
         $importExportData->expects($this->atLeastOnce())
@@ -48,17 +61,17 @@ class ProductMultipleStoresTest extends ProductTestBase
             ['importExportData' => $importExportData]
         );
 
-        $filesystem = $this->objectManager->create(\Magento\Framework\Filesystem::class);
+        $filesystem = $this->objectManager->create(Filesystem::class);
         $directory = $filesystem->getDirectoryWrite(DirectoryList::ROOT);
         $source = $this->objectManager->create(
-            \Magento\ImportExport\Model\Import\Source\Csv::class,
+            Csv::class,
             [
                 'file' => __DIR__ . '/../_files/products_to_import_with_multiple_store.csv',
                 'directory' => $directory
             ]
         );
         $errors = $this->_model->setParameters(
-            ['behavior' => \Magento\ImportExport\Model\Import::BEHAVIOR_APPEND, 'entity' => 'catalog_product']
+            ['behavior' => Import::BEHAVIOR_APPEND, 'entity' => 'catalog_product']
         )->setSource(
             $source
         )->validateData();
@@ -83,8 +96,8 @@ class ProductMultipleStoresTest extends ProductTestBase
             $result
         );
 
-        /** @var \Magento\Framework\Registry $registry */
-        $registry = $this->objectManager->get(\Magento\Framework\Registry::class);
+        /** @var Registry $registry */
+        $registry = $this->objectManager->get(Registry::class);
 
         $registry->unregister('isSecureArea');
         $registry->register('isSecureArea', true);
@@ -93,26 +106,26 @@ class ProductMultipleStoresTest extends ProductTestBase
         $categoryIds = [];
         foreach ($productSkuList as $sku) {
             try {
-                /** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-                $productRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-                    ->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
-                /** @var \Magento\Catalog\Model\Product $product */
+                /** @var ProductRepositoryInterface $productRepository */
+                $productRepository = Bootstrap::getObjectManager()
+                    ->get(ProductRepositoryInterface::class);
+                /** @var Product $product */
                 $product = $productRepository->get($sku, true);
                 $categoryIds[] = $product->getCategoryIds();
                 if ($product->getId()) {
                     $productRepository->delete($product);
                 }
                 // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock
-            } catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+            } catch (NoSuchEntityException $e) {
                 //Products already removed
             }
         }
 
         /** @var \Magento\Catalog\Model\ResourceModel\Product\Collection $collection */
-        $collection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Catalog\Model\ResourceModel\Category\Collection::class);
+        $collection = Bootstrap::getObjectManager()
+            ->create(Collection::class);
         $collection
-            ->addAttributeToFilter('entity_id', ['in' => \array_unique(\array_merge([], ...$categoryIds))])
+            ->addAttributeToFilter('entity_id', ['in' => array_unique(array_merge([], ...$categoryIds))])
             ->load()
             ->delete();
 
@@ -130,10 +143,10 @@ class ProductMultipleStoresTest extends ProductTestBase
     {
         $this->loginAdminUserWithUsername(\Magento\TestFramework\Bootstrap::ADMIN_NAME);
 
-        $filesystem = $this->objectManager->create(\Magento\Framework\Filesystem::class);
+        $filesystem = $this->objectManager->create(Filesystem::class);
         $directory = $filesystem->getDirectoryWrite(DirectoryList::ROOT);
         $source = $this->objectManager->create(
-            \Magento\ImportExport\Model\Import\Source\Csv::class,
+            Csv::class,
             [
                 'file' => __DIR__ . '/../_files/product_with_custom_store_media_disabled.csv',
                 'directory' => $directory,
@@ -141,7 +154,7 @@ class ProductMultipleStoresTest extends ProductTestBase
         );
         $errors = $this->_model->setParameters(
             [
-                'behavior' => \Magento\ImportExport\Model\Import::BEHAVIOR_APPEND,
+                'behavior' => Import::BEHAVIOR_APPEND,
                 'entity' => 'catalog_product',
             ]
         )->setSource(
@@ -150,7 +163,7 @@ class ProductMultipleStoresTest extends ProductTestBase
 
         $errorMessages = array_map(
             function ($value) {
-                /** @var \Magento\ImportExport\Model\Import\ErrorProcessing\ProcessingError $value */
+                /** @var ProcessingError $value */
                 return $value->getErrorMessage();
             },
             $errors->getAllErrors()
@@ -169,19 +182,19 @@ class ProductMultipleStoresTest extends ProductTestBase
      */
     public function testProductsWithMultipleStores()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
 
-        $filesystem = $objectManager->create(\Magento\Framework\Filesystem::class);
+        $filesystem = $objectManager->create(Filesystem::class);
         $directory = $filesystem->getDirectoryWrite(DirectoryList::ROOT);
         $source = $this->objectManager->create(
-            \Magento\ImportExport\Model\Import\Source\Csv::class,
+            Csv::class,
             [
                 'file' => __DIR__ . '/../_files/products_multiple_stores.csv',
                 'directory' => $directory
             ]
         );
         $errors = $this->_model->setParameters(
-            ['behavior' => \Magento\ImportExport\Model\Import::BEHAVIOR_APPEND, 'entity' => 'catalog_product']
+            ['behavior' => Import::BEHAVIOR_APPEND, 'entity' => 'catalog_product']
         )->setSource(
             $source
         )->validateData();
@@ -190,16 +203,16 @@ class ProductMultipleStoresTest extends ProductTestBase
 
         $this->_model->importData();
 
-        /** @var \Magento\Catalog\Model\Product $product */
-        $product = $objectManager->create(\Magento\Catalog\Model\Product::class);
+        /** @var Product $product */
+        $product = $objectManager->create(Product::class);
         $id = $product->getIdBySku('Configurable 03');
         $product->load($id);
         $this->assertEquals('1', $product->getHasOptions());
 
         $objectManager->get(StoreManagerInterface::class)->setCurrentStore('fixturestore');
 
-        /** @var \Magento\Catalog\Model\Product $simpleProduct */
-        $simpleProduct = $objectManager->create(\Magento\Catalog\Model\Product::class);
+        /** @var Product $simpleProduct */
+        $simpleProduct = $objectManager->create(Product::class);
         $id = $simpleProduct->getIdBySku('Configurable 03-Option 1');
         $simpleProduct->load($id);
         $this->assertTrue(count($simpleProduct->getWebsiteIds()) == 2);
@@ -215,19 +228,19 @@ class ProductMultipleStoresTest extends ProductTestBase
      */
     public function testGenerateUrlsWithMultipleStores()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
 
-        $filesystem = $objectManager->create(\Magento\Framework\Filesystem::class);
+        $filesystem = $objectManager->create(Filesystem::class);
         $directory = $filesystem->getDirectoryWrite(DirectoryList::ROOT);
         $source = $this->objectManager->create(
-            \Magento\ImportExport\Model\Import\Source\Csv::class,
+            Csv::class,
             [
                 'file' => __DIR__ . '/../_files/products_to_import_with_two_stores.csv',
                 'directory' => $directory
             ]
         );
         $errors = $this->_model->setParameters(
-            ['behavior' => \Magento\ImportExport\Model\Import::BEHAVIOR_ADD_UPDATE, 'entity' => 'catalog_product']
+            ['behavior' => Import::BEHAVIOR_ADD_UPDATE, 'entity' => 'catalog_product']
         )->setSource(
             $source
         )->validateData();

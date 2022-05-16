@@ -4,6 +4,7 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Catalog\Api\Data\ProductAttributeInterface;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Action;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
@@ -21,7 +22,7 @@ $installer = Bootstrap::getObjectManager()->create(
     ['resourceName' => 'catalog_setup']
 );
 $productEntityTypeId = $installer->getEntityTypeId(
-    \Magento\Catalog\Api\Data\ProductAttributeInterface::ENTITY_TYPE_CODE
+    ProductAttributeInterface::ENTITY_TYPE_CODE
 );
 
 $selectOptions = [];

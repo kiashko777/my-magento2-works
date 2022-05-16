@@ -5,12 +5,21 @@
  */
 
 /* Create attribute */
-/** @var $installer \Magento\Catalog\Setup\CategorySetup */
-$installer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Catalog\Setup\CategorySetup::class
+/** @var $installer CategorySetup */
+
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Action;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Catalog\Setup\CategorySetup;
+use Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$installer = Bootstrap::getObjectManager()->create(
+    CategorySetup::class
 );
 /** @var $attribute \Magento\Catalog\Model\ResourceModel\Eav\Attribute */
-$attribute = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+$attribute = Bootstrap::getObjectManager()->create(
     \Magento\Catalog\Model\ResourceModel\Eav\Attribute::class
 );
 $attribute->setData(
@@ -31,16 +40,16 @@ $attribute->save();
 $installer->addAttributeToGroup('catalog_product', 'Default', 'General', $attribute->getId());
 
 /* Create simple products per each option */
-/** @var $options \Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection */
-$options = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection::class
+/** @var $options Collection */
+$options = Bootstrap::getObjectManager()->create(
+    Collection::class
 );
 $options->setAttributeFilter($attribute->getId());
 
 foreach ($options as $option) {
-    /** @var $product \Magento\Catalog\Model\Product */
-    $product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-        \Magento\Catalog\Model\Product::class
+    /** @var $product Product */
+    $product = Bootstrap::getObjectManager()->create(
+        Product::class
     );
     $product->setTypeId(
         \Magento\Catalog\Model\Product\Type::TYPE_SIMPLE
@@ -57,15 +66,15 @@ foreach ($options as $option) {
     )->setCategoryIds(
         [2]
     )->setVisibility(
-        \Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH
+        Visibility::VISIBILITY_BOTH
     )->setStatus(
-        \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED
+        Status::STATUS_ENABLED
     )->setStockData(
         ['use_config_manage_stock' => 1, 'qty' => 5, 'is_in_stock' => 1]
     )->save();
 
-    \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-        \Magento\Catalog\Model\Product\Action::class
+    Bootstrap::getObjectManager()->get(
+        Action::class
     )->updateAttributes(
         [$product->getId()],
         [$attribute->getAttributeCode() => $option->getId()],

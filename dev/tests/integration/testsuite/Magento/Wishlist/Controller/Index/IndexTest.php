@@ -23,26 +23,6 @@ class IndexTest extends AbstractController
     private $customerSession;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->customerSession = $this->_objectManager->get(Session::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->customerSession->setCustomerId(null);
-
-        parent::tearDown();
-    }
-
-    /**
      * Verify wishlist view action
      *
      * The following is verified:
@@ -78,5 +58,25 @@ class IndexTest extends AbstractController
                 $body
             )
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->customerSession = $this->_objectManager->get(Session::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->customerSession->setCustomerId(null);
+
+        parent::tearDown();
     }
 }

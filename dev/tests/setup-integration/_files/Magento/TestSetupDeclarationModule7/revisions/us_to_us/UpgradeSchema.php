@@ -6,7 +6,7 @@
 
 namespace Magento\TestSetupDeclarationModule7\Setup;
 
-use Magento\Framework\Setup\InstallSchemaInterface;
+use Magento\Framework\DB\Ddl\Table;
 use Magento\Framework\Setup\ModuleContextInterface;
 use Magento\Framework\Setup\SchemaSetupInterface;
 use Magento\Framework\Setup\UpgradeSchemaInterface;
@@ -35,13 +35,13 @@ class UpgradeSchema implements UpgradeSchemaInterface
                 $setup->getTable('custom_table')
             )->addColumn(
                 'custom_id',
-                \Magento\Framework\DB\Ddl\Table::TYPE_INTEGER,
+                Table::TYPE_INTEGER,
                 null,
                 ['identity' => true, 'unsigned' => true, 'nullable' => false, 'primary' => true],
                 'Custom Id'
             )->addColumn(
                 'name',
-                \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
+                Table::TYPE_TEXT,
                 255,
                 [],
                 'Custom Name'

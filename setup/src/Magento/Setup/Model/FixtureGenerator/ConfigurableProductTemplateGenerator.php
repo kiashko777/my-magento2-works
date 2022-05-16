@@ -47,11 +47,12 @@ class ConfigurableProductTemplateGenerator implements TemplateEntityGeneratorInt
      * @param ResourceConnection $resourceConnection
      */
     public function __construct(
-        ProductFactory $productFactory,
-        array $fixture,
-        OptionFactory $optionFactory,
+        ProductFactory     $productFactory,
+        array              $fixture,
+        OptionFactory      $optionFactory,
         ResourceConnection $resourceConnection
-    ) {
+    )
+    {
         $this->fixture = $fixture;
         $this->productFactory = $productFactory;
         $this->optionFactory = $optionFactory;
@@ -126,7 +127,7 @@ class ConfigurableProductTemplateGenerator implements TemplateEntityGeneratorInt
                 'label' => $attribute['name'],
                 'position' => $index,
                 'values' => $attributeValues,
-             ];
+            ];
         }
         $configurableOptions = $this->optionFactory->create($attributes);
         $extensionConfigurableAttributes = $product->getExtensionAttributes();

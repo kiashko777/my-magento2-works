@@ -9,17 +9,18 @@ declare(strict_types=1);
 namespace Magento\WebapiAsync\Model;
 
 use Magento\Catalog\Api\Data\ProductInterface;
-use Magento\Framework\Exception\NotFoundException;
-use Magento\TestFramework\MessageQueue\PreconditionFailedException;
-use Magento\TestFramework\MessageQueue\PublisherConsumerController;
-use Magento\TestFramework\MessageQueue\EnvironmentPreconditionException;
-use Magento\TestFramework\TestCase\WebapiAbstract;
-use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\ResourceModel\Product\Collection;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Phrase;
 use Magento\Framework\Registry;
 use Magento\Framework\Webapi\Exception;
-use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\MessageQueue\EnvironmentPreconditionException;
+use Magento\TestFramework\MessageQueue\PreconditionFailedException;
+use Magento\TestFramework\MessageQueue\PublisherConsumerController;
+use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
  * Check async request for product creation service using custom route, scheduling bulk to rabbitmq
@@ -60,7 +61,7 @@ class AsyncScheduleCustomRouteTest extends WebapiAbstract
     private $productRepository;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
@@ -68,38 +69,6 @@ class AsyncScheduleCustomRouteTest extends WebapiAbstract
      * @var Registry
      */
     private $registry;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $logFilePath = TESTS_TEMP_DIR . "/MessageQueueTestLog.txt";
-        $this->registry = $this->objectManager->get(Registry::class);
-
-        $params = array_merge_recursive(
-            \Magento\TestFramework\Helper\Bootstrap::getInstance()->getAppInitParams(),
-            ['MAGE_DIRS' => ['cache' => ['path' => TESTS_TEMP_DIR . '/cache']]]
-        );
-
-        /** @var PublisherConsumerController publisherConsumerController */
-        $this->publisherConsumerController = $this->objectManager->create(PublisherConsumerController::class, [
-            'consumers'     => $this->consumers,
-            'logFilePath'   => $logFilePath,
-            'appInitParams' => $params,
-        ]);
-        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
-
-        try {
-            $this->publisherConsumerController->initialize();
-        } catch (EnvironmentPreconditionException $e) {
-            $this->markTestSkipped($e->getMessage());
-        } catch (PreconditionFailedException $e) {
-            $this->fail(
-                $e->getMessage()
-            );
-        }
-
-        parent::setUp();
-    }
 
     /**
      * @dataProvider productCreationProvider
@@ -127,13 +96,6 @@ class AsyncScheduleCustomRouteTest extends WebapiAbstract
         } catch (PreconditionFailedException $e) {
             $this->fail("Not all products were created");
         }
-    }
-
-    protected function tearDown(): void
-    {
-        $this->clearProducts();
-        $this->publisherConsumerController->stopConsumers();
-        parent::tearDown();
     }
 
     private function clearProducts()
@@ -170,6 +132,23 @@ class AsyncScheduleCustomRouteTest extends WebapiAbstract
     }
 
     /**
+     * @param $requestData
+     * @param string|null $storeCode
+     * @return mixed
+     */
+    private function saveProductByCustomRoute($requestData, $storeCode = null)
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::ASYNC_RESOURCE_CUSTOM_PATH,
+                'httpMethod' => Request::HTTP_METHOD_POST,
+            ],
+        ];
+
+        return $this->_webApiCall($serviceInfo, $requestData, null, $storeCode);
+    }
+
+    /**
      * @return array
      */
     public function productCreationProvider()
@@ -187,7 +166,7 @@ class AsyncScheduleCustomRouteTest extends WebapiAbstract
                     'product' =>
                         $productBuilder([
                             ProductInterface::TYPE_ID => 'simple',
-                            ProductInterface::SKU     => 'psku-test-1',
+                            ProductInterface::SKU => 'psku-test-1',
                         ]),
                 ],
             ],
@@ -195,7 +174,7 @@ class AsyncScheduleCustomRouteTest extends WebapiAbstract
                 [
                     'product' => $productBuilder([
                         ProductInterface::TYPE_ID => 'virtual',
-                        ProductInterface::SKU     => 'psku-test-2',
+                        ProductInterface::SKU => 'psku-test-2',
                     ]),
                 ],
             ],
@@ -211,37 +190,20 @@ class AsyncScheduleCustomRouteTest extends WebapiAbstract
     private function getSimpleProductData($productData = [])
     {
         return [
-            ProductInterface::SKU              => isset($productData[ProductInterface::SKU])
+            ProductInterface::SKU => isset($productData[ProductInterface::SKU])
                 ? $productData[ProductInterface::SKU] : uniqid('sku-', true),
-            ProductInterface::NAME             => isset($productData[ProductInterface::NAME])
+            ProductInterface::NAME => isset($productData[ProductInterface::NAME])
                 ? $productData[ProductInterface::NAME] : uniqid('sku-', true),
-            ProductInterface::VISIBILITY       => 4,
-            ProductInterface::TYPE_ID          => 'simple',
-            ProductInterface::PRICE            => 3.62,
-            ProductInterface::STATUS           => 1,
+            ProductInterface::VISIBILITY => 4,
+            ProductInterface::TYPE_ID => 'simple',
+            ProductInterface::PRICE => 3.62,
+            ProductInterface::STATUS => 1,
             ProductInterface::ATTRIBUTE_SET_ID => 4,
-            'custom_attributes'                => [
+            'custom_attributes' => [
                 ['attribute_code' => 'cost', 'value' => ''],
                 ['attribute_code' => 'description', 'value' => 'Description'],
             ],
         ];
-    }
-
-    /**
-     * @param $requestData
-     * @param string|null $storeCode
-     * @return mixed
-     */
-    private function saveProductByCustomRoute($requestData, $storeCode = null)
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::ASYNC_RESOURCE_CUSTOM_PATH,
-                'httpMethod'   => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
-            ],
-        ];
-
-        return $this->_webApiCall($serviceInfo, $requestData, null, $storeCode);
     }
 
     public function assertProductCreation()
@@ -252,5 +214,44 @@ class AsyncScheduleCustomRouteTest extends WebapiAbstract
         $size = $collection->getSize();
 
         return $size == count($this->skus);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $logFilePath = TESTS_TEMP_DIR . "/MessageQueueTestLog.txt";
+        $this->registry = $this->objectManager->get(Registry::class);
+
+        $params = array_merge_recursive(
+            Bootstrap::getInstance()->getAppInitParams(),
+            ['MAGE_DIRS' => ['cache' => ['path' => TESTS_TEMP_DIR . '/cache']]]
+        );
+
+        /** @var PublisherConsumerController publisherConsumerController */
+        $this->publisherConsumerController = $this->objectManager->create(PublisherConsumerController::class, [
+            'consumers' => $this->consumers,
+            'logFilePath' => $logFilePath,
+            'appInitParams' => $params,
+        ]);
+        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+
+        try {
+            $this->publisherConsumerController->initialize();
+        } catch (EnvironmentPreconditionException $e) {
+            $this->markTestSkipped($e->getMessage());
+        } catch (PreconditionFailedException $e) {
+            $this->fail(
+                $e->getMessage()
+            );
+        }
+
+        parent::setUp();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->clearProducts();
+        $this->publisherConsumerController->stopConsumers();
+        parent::tearDown();
     }
 }

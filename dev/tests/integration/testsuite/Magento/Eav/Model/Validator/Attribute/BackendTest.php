@@ -7,19 +7,20 @@
 /**
  * Test for \Magento\Eav\Model\Validator\Attribute\Backend
  */
+
 namespace Magento\Eav\Model\Validator\Attribute;
 
-class BackendTest extends \PHPUnit\Framework\TestCase
+use Magento\Customer\Model\Customer;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+use ReflectionObject;
+
+class BackendTest extends TestCase
 {
     /**
-     * @var \Magento\Eav\Model\Validator\Attribute\Backend
+     * @var Backend
      */
     protected $_model;
-
-    protected function setUp(): void
-    {
-        $this->_model = new \Magento\Eav\Model\Validator\Attribute\Backend();
-    }
 
     /**
      * Test method for \Magento\Eav\Model\Validator\Attribute\Backend::isValid
@@ -28,9 +29,9 @@ class BackendTest extends \PHPUnit\Framework\TestCase
      */
     public function testIsValid()
     {
-        /** @var $entity \Magento\Customer\Model\Customer */
-        $entity = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Model\Customer::class
+        /** @var $entity Customer */
+        $entity = Bootstrap::getObjectManager()->create(
+            Customer::class
         )->load(
             1
         );
@@ -48,13 +49,18 @@ class BackendTest extends \PHPUnit\Framework\TestCase
         $this->assertArrayHasKey('firstname', $this->_model->getMessages());
     }
 
+    protected function setUp(): void
+    {
+        $this->_model = new Backend();
+    }
+
     /**
      * @inheritDoc
      */
     protected function tearDown(): void
     {
         parent::tearDown();
-        $reflection = new \ReflectionObject($this);
+        $reflection = new ReflectionObject($this);
         foreach ($reflection->getProperties() as $property) {
             if (!$property->isStatic() && 0 !== strpos($property->getDeclaringClass()->getName(), 'PHPUnit')) {
                 $property->setAccessible(true);

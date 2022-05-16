@@ -46,30 +46,6 @@ class BundleTest extends TestCase
     private $registry;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->block = $this->layout->createBlock(Bundle::class);
-        $this->json = $this->objectManager->get(SerializerInterface::class);
-        $this->registry = $this->objectManager->get(Registry::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->registry->unregister('product');
-
-        parent::tearDown();
-    }
-
-    /**
      * Test for method \Magento\Bundle\Block\Catalog\Products\View\Type\Bundle::getJsonConfig
      *
      * @return void
@@ -88,6 +64,33 @@ class BundleTest extends TestCase
     }
 
     /**
+     * Update product
+     *
+     * @param ProductInterface|string $productSku
+     * @param array $data
+     * @return ProductInterface
+     */
+    private function updateProduct(string $productSku, array $data): ProductInterface
+    {
+        $product = $this->productRepository->get($productSku);
+        $product->addData($data);
+
+        return $this->productRepository->save($product);
+    }
+
+    /**
+     * Register product
+     *
+     * @param ProductInterface $product
+     * @return void
+     */
+    private function registerProduct(ProductInterface $product): void
+    {
+        $this->registry->unregister('product');
+        $this->registry->register('product', $product);
+    }
+
+    /**
      * @dataProvider isSalableForStockStatusProvider
      *
      * @param bool $isSalable
@@ -101,6 +104,19 @@ class BundleTest extends TestCase
         $this->block->setTemplate('Magento_Bundle::catalog/product/view/type/bundle.phtml');
         $result = $this->renderBlockHtml($product);
         $this->assertEquals($expectedValue, trim(strip_tags($result)));
+    }
+
+    /**
+     * Render block output
+     *
+     * @param ProductInterface $product
+     * @return string
+     */
+    private function renderBlockHtml(ProductInterface $product): string
+    {
+        $this->registerProduct($product);
+
+        return $this->block->toHtml();
     }
 
     /**
@@ -170,42 +186,26 @@ class BundleTest extends TestCase
     }
 
     /**
-     * Update product
-     *
-     * @param ProductInterface|string $productSku
-     * @param array $data
-     * @return ProductInterface
+     * @inheritdoc
      */
-    private function updateProduct(string $productSku, array $data): ProductInterface
+    protected function setUp(): void
     {
-        $product = $this->productRepository->get($productSku);
-        $product->addData($data);
-
-        return $this->productRepository->save($product);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->block = $this->layout->createBlock(Bundle::class);
+        $this->json = $this->objectManager->get(SerializerInterface::class);
+        $this->registry = $this->objectManager->get(Registry::class);
     }
 
     /**
-     * Register product
-     *
-     * @param ProductInterface $product
-     * @return void
+     * @inheritdoc
      */
-    private function registerProduct(ProductInterface $product): void
+    protected function tearDown(): void
     {
         $this->registry->unregister('product');
-        $this->registry->register('product', $product);
-    }
 
-    /**
-     * Render block output
-     *
-     * @param ProductInterface $product
-     * @return string
-     */
-    private function renderBlockHtml(ProductInterface $product): string
-    {
-        $this->registerProduct($product);
-
-        return $this->block->toHtml();
+        parent::tearDown();
     }
 }

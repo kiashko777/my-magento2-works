@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\TestFramework\WebapiWorkaround\Override\Config;
 
+use DOMElement;
 use Magento\TestFramework\Annotation\AdminConfigFixture;
 use Magento\TestFramework\Annotation\ApiDataFixture;
 use Magento\TestFramework\Annotation\ConfigFixture;
@@ -22,10 +23,10 @@ class Converter extends IntegrationConverter
     /**
      * Fill node attributes values
      *
-     * @param \DOMElement $fixture
+     * @param DOMElement $fixture
      * @return array
      */
-    protected function fillAttributes(\DOMElement $fixture): array
+    protected function fillAttributes(DOMElement $fixture): array
     {
         $result = [];
         switch ($fixture->nodeName) {

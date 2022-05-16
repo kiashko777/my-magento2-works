@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\CatalogInventory;
 
+use Exception;
 use Magento\GraphQl\Quote\GetMaskedQuoteIdByReservedOrderId;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
@@ -22,21 +23,12 @@ class AddProductToCartTest extends GraphQlAbstract
     private $getMaskedQuoteIdByReservedOrderId;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Catalog/_files/products.php
      * @magentoApiDataFixture Magento/Checkout/_files/active_quote.php
      */
     public function testAddProductIfQuantityIsNotAvailable()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The requested qty is not available');
 
         $sku = 'simple';
@@ -45,6 +37,39 @@ class AddProductToCartTest extends GraphQlAbstract
 
         $query = $this->getQuery($maskedQuoteId, $sku, $quantity);
         $this->graphQlMutation($query);
+    }
+
+    /**
+     * @param string $maskedQuoteId
+     * @param string $sku
+     * @param float $quantity
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId, string $sku, float $quantity): string
+    {
+        return <<<QUERY
+mutation {
+  addSimpleProductsToCart(
+    input: {
+      cart_id: "{$maskedQuoteId}",
+      cart_items: [
+        {
+          data: {
+            quantity: $quantity
+            sku: "$sku"
+          }
+        }
+      ]
+    }
+  ) {
+    cart {
+      items {
+        quantity
+      }
+    }
+  }
+}
+QUERY;
     }
 
     /**
@@ -72,7 +97,7 @@ class AddProductToCartTest extends GraphQlAbstract
      */
     public function testAddSimpleProductToCartWithNegativeQuantity()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Please enter a number greater than 0 in this field.');
 
         $sku = 'simple';
@@ -102,35 +127,11 @@ class AddProductToCartTest extends GraphQlAbstract
     }
 
     /**
-     * @param string $maskedQuoteId
-     * @param string $sku
-     * @param float $quantity
-     * @return string
+     * @inheritdoc
      */
-    private function getQuery(string $maskedQuoteId, string $sku, float $quantity) : string
+    protected function setUp(): void
     {
-        return <<<QUERY
-mutation {
-  addSimpleProductsToCart(
-    input: {
-      cart_id: "{$maskedQuoteId}",
-      cart_items: [
-        {
-          data: {
-            quantity: $quantity
-            sku: "$sku"
-          }
-        }
-      ]
-    }
-  ) {
-    cart {
-      items {
-        quantity
-      }
-    }
-  }
-}
-QUERY;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
     }
 }

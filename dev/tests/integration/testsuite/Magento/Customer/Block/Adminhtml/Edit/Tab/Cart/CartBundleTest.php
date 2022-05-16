@@ -27,16 +27,6 @@ class CartBundleTest extends AbstractCartTest
     /**
      * @inheritdoc
      */
-    public function setUp(): void
-    {
-        parent::setUp();
-
-        $this->quoteCollectionFactory = $this->objectManager->get(CollectionFactory::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
     public static function setUpBeforeClass(): void
     {
         $objectManager = Bootstrap::getObjectManager();
@@ -46,6 +36,16 @@ class CartBundleTest extends AbstractCartTest
         if (!$moduleManager->isEnabled('Magento_Bundle')) {
             self::markTestSkipped('Magento_Bundle module disabled.');
         }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setUp(): void
+    {
+        parent::setUp();
+
+        $this->quoteCollectionFactory = $this->objectManager->get(CollectionFactory::class);
     }
 
     /**

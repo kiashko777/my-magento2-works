@@ -33,18 +33,6 @@ class SynchronizePersistentOnLogoutObserverTest extends TestCase
     private $sessionFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->customerSession = $this->objectManager->get(CustomerSession::class);
-        $this->sessionFactory = $this->objectManager->get(SessionFactory::class);
-    }
-
-    /**
      * @magentoConfigFixture current_store persistent/options/enabled 1
      * @magentoConfigFixture current_store persistent/options/logout_clear 1
      *
@@ -75,5 +63,17 @@ class SynchronizePersistentOnLogoutObserverTest extends TestCase
         $sessionModel = $this->sessionFactory->create();
         $sessionModel->loadByCookieKey();
         $this->assertEquals(1, $sessionModel->getCustomerId());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->customerSession = $this->objectManager->get(CustomerSession::class);
+        $this->sessionFactory = $this->objectManager->get(SessionFactory::class);
     }
 }

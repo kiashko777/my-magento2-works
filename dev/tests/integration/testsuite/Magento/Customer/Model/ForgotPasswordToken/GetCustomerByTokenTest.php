@@ -24,12 +24,6 @@ class GetCustomerByTokenTest extends TestCase
      */
     private $customerByToken;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->customerByToken = $this->objectManager->get(GetCustomerByToken::class);
-    }
-
     /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
      */
@@ -38,5 +32,11 @@ class GetCustomerByTokenTest extends TestCase
         self::expectException(NoSuchEntityException::class);
         self::expectExceptionMessage('No such entity with rp_token = ' . self::RESET_PASSWORD);
         $this->customerByToken->execute(self::RESET_PASSWORD);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->customerByToken = $this->objectManager->get(GetCustomerByToken::class);
     }
 }

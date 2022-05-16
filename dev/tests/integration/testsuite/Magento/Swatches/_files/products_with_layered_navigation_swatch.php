@@ -5,13 +5,23 @@
  */
 declare(strict_types=1);
 
-use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Catalog\Api\Data\ProductAttributeInterface;
+use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Catalog\Setup\CategorySetup;
 use Magento\Eav\Api\Data\AttributeOptionInterface;
+use Magento\Eav\Model\Config;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Indexer\Model\Indexer;
+use Magento\Indexer\Model\Indexer\Collection;
+use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var \Magento\Framework\ObjectManagerInterface $objectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-/** @var $installer \Magento\Catalog\Setup\CategorySetup */
-$installer = Bootstrap::getObjectManager()->create(\Magento\Catalog\Setup\CategorySetup::class);
+/** @var ObjectManagerInterface $objectManager */
+$objectManager = Bootstrap::getObjectManager();
+/** @var $installer CategorySetup */
+$installer = Bootstrap::getObjectManager()->create(CategorySetup::class);
 
 $data = [
     'attribute_code' => 'color_swatch',
@@ -80,7 +90,7 @@ foreach ($data['options']['option'] as $optionData) {
 }
 
 $attribute = $objectManager->create(
-    \Magento\Catalog\Api\Data\ProductAttributeInterface::class,
+    ProductAttributeInterface::class,
     ['data' => $data]
 );
 $attribute->setOptions($options);
@@ -89,8 +99,8 @@ $attribute->save();
 /* Assign attribute to attribute set */
 $installer->addAttributeToGroup('catalog_product', 'Default', 'General', $attribute->getId());
 
-/** @var \Magento\Eav\Model\Config $eavConfig */
-$eavConfig = Bootstrap::getObjectManager()->get(\Magento\Eav\Model\Config::class);
+/** @var Config $eavConfig */
+$eavConfig = Bootstrap::getObjectManager()->get(Config::class);
 $eavConfig->clear();
 
 $attribute = $eavConfig->getAttribute('catalog_product', 'color_swatch');
@@ -102,8 +112,8 @@ $attribute->setDefaultValue($options[1]->getValue());
 $attribute->save();
 $eavConfig->clear();
 
-/** @var $product \Magento\Catalog\Model\Product */
-$product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Product::class);
+/** @var $product Product */
+$product = Bootstrap::getObjectManager()->create(Product::class);
 $product->isObjectNew(true);
 $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setId(10)
@@ -120,15 +130,15 @@ $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setMetaTitle('meta title')
     ->setMetaKeyword('meta keyword')
     ->setMetaDescription('meta description')
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setWebsiteIds([1])
     ->setCategoryIds([])
     ->setStockData(['use_config_manage_stock' => 1, 'qty' => 100, 'is_qty_decimal' => 0, 'is_in_stock' => 1])
     ->setSpecialPrice('5.99')
     ->save();
 
-$product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Product::class);
+$product = Bootstrap::getObjectManager()->create(Product::class);
 $product->isObjectNew(true);
 $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setId(11)
@@ -145,15 +155,15 @@ $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setMetaTitle('meta title')
     ->setMetaKeyword('meta keyword')
     ->setMetaDescription('meta description')
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setWebsiteIds([1])
     ->setCategoryIds([])
     ->setStockData(['use_config_manage_stock' => 1, 'qty' => 50, 'is_qty_decimal' => 0, 'is_in_stock' => 1])
     ->setSpecialPrice('15.99')
     ->save();
 
-$product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Product::class);
+$product = Bootstrap::getObjectManager()->create(Product::class);
 $product->isObjectNew(true);
 $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setId(12)
@@ -165,15 +175,15 @@ $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setShortDescription('short description')
     ->setPrice(30)
     ->setWeight(1)
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setWebsiteIds([1])
     ->setCategoryIds([])
     ->setStockData(['use_config_manage_stock' => 1, 'qty' => 140, 'is_qty_decimal' => 0, 'is_in_stock' => 1])
     ->setSpecialPrice('25.99')
     ->save();
 
-$category = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Category::class);
+$category = Bootstrap::getObjectManager()->create(Category::class);
 $category->isObjectNew(true);
 $category->setId(
     333
@@ -199,10 +209,10 @@ $category->setId(
     [10 => 10, 11 => 11, 12 => 12]
 )->save();
 
-/** @var \Magento\Indexer\Model\Indexer\Collection $indexerCollection */
-$indexerCollection = Bootstrap::getObjectManager()->get(\Magento\Indexer\Model\Indexer\Collection::class);
+/** @var Collection $indexerCollection */
+$indexerCollection = Bootstrap::getObjectManager()->get(Collection::class);
 $indexerCollection->load();
-/** @var \Magento\Indexer\Model\Indexer $indexer */
+/** @var Indexer $indexer */
 foreach ($indexerCollection->getItems() as $indexer) {
     $indexer->reindexAll();
 }

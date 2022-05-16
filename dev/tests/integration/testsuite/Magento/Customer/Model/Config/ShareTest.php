@@ -28,18 +28,6 @@ class ShareTest extends TestCase
     private $websiteRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->share = $this->objectManager->get(Share::class);
-        $this->websiteRepository = $this->objectManager->create(WebsiteRepositoryInterface::class);
-    }
-
-    /**
      * @return void
      */
     public function testGetSharedWebsiteIds(): void
@@ -78,5 +66,17 @@ class ShareTest extends TestCase
         $this->expectExceptionObject(new LocalizedException(__($message)));
         $this->share->setPath(Share::XML_PATH_CUSTOMER_ACCOUNT_SHARE)->setValue((string)Share::SHARE_GLOBAL)
             ->beforeSave();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->share = $this->objectManager->get(Share::class);
+        $this->websiteRepository = $this->objectManager->create(WebsiteRepositoryInterface::class);
     }
 }

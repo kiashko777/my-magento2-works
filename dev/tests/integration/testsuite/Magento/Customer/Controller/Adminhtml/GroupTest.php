@@ -6,14 +6,23 @@
 
 namespace Magento\Customer\Controller\Adminhtml;
 
+use Magento\Customer\Api\Data\GroupInterface;
+use Magento\Customer\Api\Data\GroupInterfaceFactory;
+use Magento\Customer\Api\GroupRepositoryInterface;
+use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\Api\SimpleDataObjectConverter;
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\Exception\AuthenticationException;
 use Magento\Framework\Message\MessageInterface;
+use Magento\Framework\Reflection\DataObjectProcessor;
+use Magento\Framework\Session\SessionManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class GroupTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class GroupTest extends AbstractBackendController
 {
     const TAX_CLASS_ID = 3;
 
@@ -25,24 +34,11 @@ class GroupTest extends \Magento\TestFramework\TestCase\AbstractBackendControlle
 
     const CUSTOMER_GROUP_ID = 2;
 
-    /** @var  \Magento\Framework\Session\SessionManagerInterface */
+    /** @var  SessionManagerInterface */
     private $session;
 
-    /** @var  \Magento\Customer\Api\GroupRepositoryInterface */
+    /** @var  GroupRepositoryInterface */
     private $groupRepository;
-
-    /**
-     * @inheritDoc
-     *
-     * @throws \Magento\Framework\Exception\AuthenticationException
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $objectManager = Bootstrap::getObjectManager();
-        $this->session = $objectManager->get(\Magento\Framework\Session\SessionManagerInterface::class);
-        $this->groupRepository = $objectManager->get(\Magento\Customer\Api\GroupRepositoryInterface::class);
-    }
 
     /**
      * Test new group form.
@@ -65,17 +61,17 @@ class GroupTest extends \Magento\TestFramework\TestCase\AbstractBackendControlle
      */
     public function testNewActionWithCustomerGroupDataInSession()
     {
-        /** @var \Magento\Customer\Api\Data\GroupInterfaceFactory $customerGroupFactory */
+        /** @var GroupInterfaceFactory $customerGroupFactory */
         $customerGroupFactory = $this->_objectManager
-            ->get(\Magento\Customer\Api\Data\GroupInterfaceFactory::class);
-        /** @var \Magento\Customer\Api\Data\GroupInterface $customerGroup */
+            ->get(GroupInterfaceFactory::class);
+        /** @var GroupInterface $customerGroup */
         $customerGroup = $customerGroupFactory->create()
             ->setCode(self::CUSTOMER_GROUP_CODE)
             ->setTaxClassId(self::TAX_CLASS_ID);
-        /** @var \Magento\Framework\Reflection\DataObjectProcessor $dataObjectProcessor */
-        $dataObjectProcessor = $this->_objectManager->get(\Magento\Framework\Reflection\DataObjectProcessor::class);
+        /** @var DataObjectProcessor $dataObjectProcessor */
+        $dataObjectProcessor = $this->_objectManager->get(DataObjectProcessor::class);
         $customerGroupData = $dataObjectProcessor
-            ->buildOutputDataArray($customerGroup, \Magento\Customer\Api\Data\GroupInterface::class);
+            ->buildOutputDataArray($customerGroup, GroupInterface::class);
         if (array_key_exists('code', $customerGroupData)) {
             $customerGroupData['customer_group_code'] = $customerGroupData['code'];
             unset($customerGroupData['code']);
@@ -99,7 +95,7 @@ class GroupTest extends \Magento\TestFramework\TestCase\AbstractBackendControlle
      */
     public function testDeleteActionNoGroupId()
     {
-        $this->getRequest()->setMethod(\Magento\Framework\App\Request\Http::METHOD_POST);
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
         $this->dispatch('backend/customer/group/delete');
         $this->assertRedirect($this->stringStartsWith(self::BASE_CONTROLLER_URL));
     }
@@ -113,7 +109,7 @@ class GroupTest extends \Magento\TestFramework\TestCase\AbstractBackendControlle
     {
         $groupId = $this->findGroupIdWithCode(self::CUSTOMER_GROUP_CODE);
         $this->getRequest()->setParam('id', $groupId);
-        $this->getRequest()->setMethod(\Magento\Framework\App\Request\Http::METHOD_POST);
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
         $this->dispatch('backend/customer/group/delete');
 
         /**
@@ -127,6 +123,25 @@ class GroupTest extends \Magento\TestFramework\TestCase\AbstractBackendControlle
     }
 
     /**
+     * Find the group with a given code.
+     *
+     * @param string $code
+     * @return int
+     */
+    protected function findGroupIdWithCode($code)
+    {
+        /** @var SearchCriteriaBuilder $searchBuilder */
+        $searchBuilder = $this->_objectManager->create(SearchCriteriaBuilder::class);
+        foreach ($this->groupRepository->getList($searchBuilder->create())->getItems() as $group) {
+            if ($group->getCode() === $code) {
+                return $group->getId();
+            }
+        }
+
+        return -1;
+    }
+
+    /**
      * Tet deleting with wrong ID.
      *
      * @magentoDataFixture Magento/Customer/_files/customer_group.php
@@ -134,7 +149,7 @@ class GroupTest extends \Magento\TestFramework\TestCase\AbstractBackendControlle
     public function testDeleteActionNonExistingGroupId()
     {
         $this->getRequest()->setParam('id', 10000);
-        $this->getRequest()->setMethod(\Magento\Framework\App\Request\Http::METHOD_POST);
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
         $this->dispatch('backend/customer/group/delete');
 
         /**
@@ -170,12 +185,12 @@ class GroupTest extends \Magento\TestFramework\TestCase\AbstractBackendControlle
             MessageInterface::TYPE_SUCCESS
         );
 
-        /** @var \Magento\Framework\Api\SimpleDataObjectConverter $simpleDataObjectConverter */
+        /** @var SimpleDataObjectConverter $simpleDataObjectConverter */
         $simpleDataObjectConverter = Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\Api\SimpleDataObjectConverter::class);
+            ->get(SimpleDataObjectConverter::class);
         $customerGroupData = $simpleDataObjectConverter->toFlatArray(
             $this->groupRepository->getById($groupId),
-            \Magento\Customer\Api\Data\GroupInterface::class
+            GroupInterface::class
         );
         ksort($customerGroupData);
 
@@ -311,21 +326,15 @@ class GroupTest extends \Magento\TestFramework\TestCase\AbstractBackendControlle
     }
 
     /**
-     * Find the group with a given code.
+     * @inheritDoc
      *
-     * @param string $code
-     * @return int
+     * @throws AuthenticationException
      */
-    protected function findGroupIdWithCode($code)
+    protected function setUp(): void
     {
-        /** @var \Magento\Framework\Api\SearchCriteriaBuilder $searchBuilder */
-        $searchBuilder = $this->_objectManager->create(\Magento\Framework\Api\SearchCriteriaBuilder::class);
-        foreach ($this->groupRepository->getList($searchBuilder->create())->getItems() as $group) {
-            if ($group->getCode() === $code) {
-                return $group->getId();
-            }
-        }
-
-        return -1;
+        parent::setUp();
+        $objectManager = Bootstrap::getObjectManager();
+        $this->session = $objectManager->get(SessionManagerInterface::class);
+        $this->groupRepository = $objectManager->get(GroupRepositoryInterface::class);
     }
 }

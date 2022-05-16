@@ -68,59 +68,6 @@ class RollbackCommandTest extends TestCase
      */
     private $command;
 
-    protected function setUp(): void
-    {
-        $this->deploymentConfig = $this->createMock(DeploymentConfig::class);
-        $maintenanceMode = $this->createMock(MaintenanceMode::class);
-        $this->objectManager = $this->getMockForAbstractClass(
-            ObjectManagerInterface::class,
-            [],
-            '',
-            false
-        );
-        $objectManagerProvider = $this->createMock(ObjectManagerProvider::class);
-        $objectManagerProvider->expects($this->any())->method('get')->willReturn($this->objectManager);
-        $this->backupRollback = $this->createMock(BackupRollback::class);
-        $this->backupRollbackFactory = $this->createMock(BackupRollbackFactory::class);
-        $this->backupRollbackFactory->expects($this->any())
-            ->method('create')
-            ->willReturn($this->backupRollback);
-        $appState = $this->createMock(State::class);
-        $configLoader = $this->getMockForAbstractClass(
-            ConfigLoaderInterface::class,
-            [],
-            '',
-            false
-        );
-        $configLoader->expects($this->any())->method('load')->willReturn([]);
-        $this->objectManager->expects($this->any())
-            ->method('get')
-            ->willReturnMap([
-                [BackupRollbackFactory::class, $this->backupRollbackFactory],
-                [State::class, $appState],
-                [ConfigLoaderInterface::class, $configLoader],
-            ]);
-        $this->helperSet = $this->createMock(HelperSet::class);
-        $this->question = $this->createMock(QuestionHelper::class);
-        $this->question
-            ->expects($this->any())
-            ->method('ask')
-            ->willReturn(true);
-        $this->helperSet
-            ->expects($this->any())
-            ->method('get')
-            ->with('question')
-            ->willReturn($this->question);
-        $this->command = new RollbackCommand(
-            $objectManagerProvider,
-            $maintenanceMode,
-            $this->deploymentConfig,
-            new MaintenanceModeEnabler($maintenanceMode)
-        );
-        $this->command->setHelperSet($this->helperSet);
-        $this->tester = new CommandTester($this->command);
-    }
-
     public function testExecuteCodeRollback()
     {
         $this->deploymentConfig->expects($this->once())
@@ -195,5 +142,58 @@ class RollbackCommandTest extends TestCase
         $this->command->setHelperSet($this->helperSet);
         $this->tester = new CommandTester($this->command);
         $this->tester->execute(['--db-file' => 'C.gz']);
+    }
+
+    protected function setUp(): void
+    {
+        $this->deploymentConfig = $this->createMock(DeploymentConfig::class);
+        $maintenanceMode = $this->createMock(MaintenanceMode::class);
+        $this->objectManager = $this->getMockForAbstractClass(
+            ObjectManagerInterface::class,
+            [],
+            '',
+            false
+        );
+        $objectManagerProvider = $this->createMock(ObjectManagerProvider::class);
+        $objectManagerProvider->expects($this->any())->method('get')->willReturn($this->objectManager);
+        $this->backupRollback = $this->createMock(BackupRollback::class);
+        $this->backupRollbackFactory = $this->createMock(BackupRollbackFactory::class);
+        $this->backupRollbackFactory->expects($this->any())
+            ->method('create')
+            ->willReturn($this->backupRollback);
+        $appState = $this->createMock(State::class);
+        $configLoader = $this->getMockForAbstractClass(
+            ConfigLoaderInterface::class,
+            [],
+            '',
+            false
+        );
+        $configLoader->expects($this->any())->method('load')->willReturn([]);
+        $this->objectManager->expects($this->any())
+            ->method('get')
+            ->willReturnMap([
+                [BackupRollbackFactory::class, $this->backupRollbackFactory],
+                [State::class, $appState],
+                [ConfigLoaderInterface::class, $configLoader],
+            ]);
+        $this->helperSet = $this->createMock(HelperSet::class);
+        $this->question = $this->createMock(QuestionHelper::class);
+        $this->question
+            ->expects($this->any())
+            ->method('ask')
+            ->willReturn(true);
+        $this->helperSet
+            ->expects($this->any())
+            ->method('get')
+            ->with('question')
+            ->willReturn($this->question);
+        $this->command = new RollbackCommand(
+            $objectManagerProvider,
+            $maintenanceMode,
+            $this->deploymentConfig,
+            new MaintenanceModeEnabler($maintenanceMode)
+        );
+        $this->command->setHelperSet($this->helperSet);
+        $this->tester = new CommandTester($this->command);
     }
 }

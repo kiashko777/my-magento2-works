@@ -33,27 +33,12 @@ class UninstallCommandTest extends TestCase
      */
     private $command;
 
-    protected function setUp(): void
-    {
-        $this->installerFactory = $this->createMock(InstallerFactory::class);
-        $this->installer = $this->createMock(Installer::class);
-        $this->command = new UninstallCommand($this->installerFactory);
-    }
-
     public function testExecuteInteractionYes()
     {
         $this->installer->expects($this->once())->method('uninstall');
         $this->installerFactory->expects($this->once())->method('create')->willReturn($this->installer);
 
         $this->checkInteraction(true);
-    }
-
-    public function testExecuteInteractionNo()
-    {
-        $this->installer->expects($this->exactly(0))->method('uninstall');
-        $this->installerFactory->expects($this->exactly(0))->method('create');
-
-        $this->checkInteraction(false);
     }
 
     /**
@@ -78,5 +63,20 @@ class UninstallCommandTest extends TestCase
 
         $tester = new CommandTester($this->command);
         $tester->execute([]);
+    }
+
+    public function testExecuteInteractionNo()
+    {
+        $this->installer->expects($this->exactly(0))->method('uninstall');
+        $this->installerFactory->expects($this->exactly(0))->method('create');
+
+        $this->checkInteraction(false);
+    }
+
+    protected function setUp(): void
+    {
+        $this->installerFactory = $this->createMock(InstallerFactory::class);
+        $this->installer = $this->createMock(Installer::class);
+        $this->command = new UninstallCommand($this->installerFactory);
     }
 }

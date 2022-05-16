@@ -3,23 +3,31 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Block\Adminhtml\Product\Edit\Tab\Options;
+
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class OptionTest extends \PHPUnit\Framework\TestCase
+class OptionTest extends TestCase
 {
     public function testGetOptionValuesCaching()
     {
-        $block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
+        $block = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
         )->createBlock(
-            \Magento\Catalog\Block\Adminhtml\Product\Edit\Tab\Options\Option::class
+            Option::class
         );
-        /** @var $productWithOptions \Magento\Catalog\Model\Product */
-        $productWithOptions = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\Product::class
+        /** @var $productWithOptions Product */
+        $productWithOptions = Bootstrap::getObjectManager()->create(
+            Product::class
         );
         $productWithOptions->setTypeId(
             'simple'
@@ -42,14 +50,14 @@ class OptionTest extends \PHPUnit\Framework\TestCase
         )->setMetaDescription(
             'meta description'
         )->setVisibility(
-            \Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH
+            Visibility::VISIBILITY_BOTH
         )->setStatus(
-            \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED
+            Status::STATUS_ENABLED
         );
 
         $product = clone $productWithOptions;
         /** @var $option \Magento\Catalog\Model\Product\Option */
-        $option = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+        $option = Bootstrap::getObjectManager()->create(
             \Magento\Catalog\Model\Product\Option::class,
             ['data' => ['id' => 1, 'title' => 'some_title']]
         );

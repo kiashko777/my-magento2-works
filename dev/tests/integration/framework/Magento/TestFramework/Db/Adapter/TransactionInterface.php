@@ -8,6 +8,7 @@
  * DB adapter transaction interface that allows starting transaction with adjusted level,
  * transparently to the application
  */
+
 namespace Magento\TestFramework\Db\Adapter;
 
 interface TransactionInterface

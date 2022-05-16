@@ -4,39 +4,26 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\ReleaseNotification\Controller\Adminhtml\Dashboard;
 
 use Magento\ReleaseNotification\Model\ContentProvider\Http\HttpContentProvider;
 use Magento\ReleaseNotification\Model\ContentProviderInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Helper\CacheCleaner;
 use Magento\TestFramework\ObjectManager;
+use Magento\TestFramework\TestCase\AbstractBackendController;
+use PHPUnit\Framework\MockObject\MockObject;
 
-class IndexTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class IndexTest extends AbstractBackendController
 {
     /** @var ObjectManager */
     private $objectManager;
 
     /**
-     * @var HttpContentProvider | \PHPUnit\Framework\MockObject\MockObject
+     * @var HttpContentProvider | MockObject
      */
     private $contentProviderMock;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->contentProviderMock = $this->getMockBuilder(HttpContentProvider::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $this->objectManager->addSharedInstance($this->contentProviderMock, HttpContentProvider::class);
-    }
-
-    protected function tearDown(): void
-    {
-        $this->objectManager->removeSharedInstance(ContentProviderInterface::class);
-        CacheCleaner::clean(['layout']);
-        parent::tearDown();
-    }
 
     /**
      * @magentoAppArea Adminhtml
@@ -86,5 +73,22 @@ class IndexTest extends \Magento\TestFramework\TestCase\AbstractBackendControlle
 
         $actual = $this->getResponse()->getBody();
         $this->assertStringContainsString('"autoOpen":false', $actual);
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->contentProviderMock = $this->getMockBuilder(HttpContentProvider::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->objectManager->addSharedInstance($this->contentProviderMock, HttpContentProvider::class);
+    }
+
+    protected function tearDown(): void
+    {
+        $this->objectManager->removeSharedInstance(ContentProviderInterface::class);
+        CacheCleaner::clean(['layout']);
+        parent::tearDown();
     }
 }

@@ -3,12 +3,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\SalesRule\Model\Rule\Condition;
 
 use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\Exception\InputException;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Api\Data\CartInterface;
 use Magento\SalesRule\Api\RuleRepositoryInterface;
+use Magento\SalesRule\Model\Converter\ToModel;
+use Magento\SalesRule\Model\Rule;
 
 /**
  * Helper class for testing cart price rule conditions.
@@ -38,11 +43,11 @@ trait ConditionHelper
      * Gets rule by name.
      *
      * @param string $name
-     * @return \Magento\SalesRule\Model\Rule
-     * @throws \Magento\Framework\Exception\InputException
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @return Rule
+     * @throws InputException
+     * @throws NoSuchEntityException
      */
-    private function getSalesRule(string $name): \Magento\SalesRule\Model\Rule
+    private function getSalesRule(string $name): Rule
     {
         /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
         $searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
@@ -54,8 +59,8 @@ trait ConditionHelper
         $items = $ruleRepository->getList($searchCriteria)->getItems();
 
         $rule = array_pop($items);
-        /** @var \Magento\SalesRule\Model\Converter\ToModel $converter */
-        $converter = $this->objectManager->get(\Magento\SalesRule\Model\Converter\ToModel::class);
+        /** @var ToModel $converter */
+        $converter = $this->objectManager->get(ToModel::class);
 
         return $converter->toModel($rule);
     }

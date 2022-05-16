@@ -5,20 +5,26 @@
  */
 declare(strict_types=1);
 
-use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Attribute\Source\Status as ProductStatus;
-use Magento\Downloadable\Model\Product\Type as ProductType;
 use Magento\Catalog\Model\Product\Visibility as ProductVisibility;
+use Magento\Downloadable\Api\Data\LinkInterfaceFactory;
+use Magento\Downloadable\Api\Data\SampleInterfaceFactory;
 use Magento\Downloadable\Api\DomainManagerInterface;
+use Magento\Downloadable\Helper\Download;
+use Magento\Downloadable\Model\Link;
+use Magento\Downloadable\Model\Product\Type as ProductType;
+use Magento\TestFramework\Helper\Bootstrap;
 
 /** @var DomainManagerInterface $domainManager */
 $domainManager = Bootstrap::getObjectManager()->get(DomainManagerInterface::class);
 $domainManager->addDomains(['example.com']);
 
 /**
- * @var \Magento\Catalog\Model\Product $product
+ * @var Product $product
  */
-$product = Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Product::class);
+$product = Bootstrap::getObjectManager()->create(Product::class);
 $product
     ->setTypeId(ProductType::TYPE_DOWNLOADABLE)
     ->setAttributeSetId(4)
@@ -38,15 +44,15 @@ $product
     );
 
 /**
- * @var \Magento\Downloadable\Api\Data\LinkInterfaceFactory $linkFactory1
+ * @var LinkInterfaceFactory $linkFactory1
  */
 $linkFactory1 = Bootstrap::getObjectManager()
-    ->get(\Magento\Downloadable\Api\Data\LinkInterfaceFactory::class);
+    ->get(LinkInterfaceFactory::class);
 $link1 = $linkFactory1->create();
 $link1
     ->setTitle('Downloadable Products link 1')
-    ->setLinkType(\Magento\Downloadable\Helper\Download::LINK_TYPE_URL)
-    ->setIsShareable(\Magento\Downloadable\Model\Link::LINK_SHAREABLE_CONFIG)
+    ->setLinkType(Download::LINK_TYPE_URL)
+    ->setIsShareable(Link::LINK_SHAREABLE_CONFIG)
     ->setLinkUrl('http://example.com/downloadable1.txt')
     ->setStoreId($product->getStoreId())
     ->setWebsiteId($product->getStore()->getWebsiteId())
@@ -55,15 +61,15 @@ $link1
     ->setPrice(2.0000)
     ->setNumberOfDownloads(0);
 /**
- * @var \Magento\Downloadable\Api\Data\LinkInterfaceFactory $linkFactory2
+ * @var LinkInterfaceFactory $linkFactory2
  */
 $linkFactory2 = Bootstrap::getObjectManager()
-    ->get(\Magento\Downloadable\Api\Data\LinkInterfaceFactory::class);
+    ->get(LinkInterfaceFactory::class);
 $link2 = $linkFactory2->create();
 $link2
     ->setTitle('Downloadable Products link 2')
-    ->setLinkType(\Magento\Downloadable\Helper\Download::LINK_TYPE_URL)
-    ->setIsShareable(\Magento\Downloadable\Model\Link::LINK_SHAREABLE_CONFIG)
+    ->setLinkType(Download::LINK_TYPE_URL)
+    ->setIsShareable(Link::LINK_SHAREABLE_CONFIG)
     ->setLinkUrl('http://example.com/downloadable2.txt')
     ->setStoreId($product->getStoreId())
     ->setWebsiteId($product->getStore()->getWebsiteId())
@@ -73,13 +79,13 @@ $link2
     ->setNumberOfDownloads(0);
 
 /**
- * @var \Magento\Downloadable\Api\Data\SampleInterfaceFactory $sampleFactory
+ * @var SampleInterfaceFactory $sampleFactory
  */
 $sampleFactory = Bootstrap::getObjectManager()
-    ->get(\Magento\Downloadable\Api\Data\SampleInterfaceFactory::class);
+    ->get(SampleInterfaceFactory::class);
 $sample1 = $sampleFactory->create();
 $sample1->setTitle('Downloadable Products Sample')
-    ->setSampleType(\Magento\Downloadable\Helper\Download::LINK_TYPE_URL)
+    ->setSampleType(Download::LINK_TYPE_URL)
     ->setSampleUrl('http://example.com/downloadable.txt')
     ->setStoreId($product->getStoreId())
     ->setWebsiteId($product->getStore()->getWebsiteId())
@@ -94,5 +100,5 @@ $product->setExtensionAttributes($extension);
 $product->setLinksPurchasedSeparately(true);
 
 $productRepository = Bootstrap::getObjectManager()
-    ->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+    ->get(ProductRepositoryInterface::class);
 $productRepository->save($product);

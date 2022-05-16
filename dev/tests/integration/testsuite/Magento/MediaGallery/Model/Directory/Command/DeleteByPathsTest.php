@@ -9,14 +9,18 @@ declare(strict_types=1);
 namespace Magento\MediaGallery\Model\Directory\Command;
 
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Exception\CouldNotDeleteException;
+use Magento\Framework\Exception\FileSystemException;
 use Magento\Framework\Filesystem;
+use Magento\Framework\Filesystem\Directory\WriteInterface;
 use Magento\MediaGalleryApi\Api\DeleteDirectoriesByPathsInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for DeleteDirectoriesByPathsInterface
  */
-class DeleteByPathsTest extends \PHPUnit\Framework\TestCase
+class DeleteByPathsTest extends TestCase
 {
     /**
      * @var DeleteDirectoriesByPathsInterface
@@ -34,21 +38,12 @@ class DeleteByPathsTest extends \PHPUnit\Framework\TestCase
     private $filesystem;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->deleteByPaths = Bootstrap::getObjectManager()->get(DeleteDirectoriesByPathsInterface::class);
-        $this->filesystem = Bootstrap::getObjectManager()->get(Filesystem::class);
-    }
-
-    /**
-     * @throws \Magento\Framework\Exception\CouldNotDeleteException
-     * @throws \Magento\Framework\Exception\FileSystemException
+     * @throws CouldNotDeleteException
+     * @throws FileSystemException
      */
     public function testDeleteDirectory(): void
     {
-        /** @var \Magento\Framework\Filesystem\Directory\WriteInterface $mediaDirectory */
+        /** @var WriteInterface $mediaDirectory */
         $mediaDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::MEDIA);
         $mediaDirectory->create($this->testDirectoryName);
         $fullPath = $mediaDirectory->getAbsolutePath($this->testDirectoryName);
@@ -59,12 +54,12 @@ class DeleteByPathsTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @param array $paths
-     * @throws \Magento\Framework\Exception\CouldNotDeleteException
+     * @throws CouldNotDeleteException
      * @dataProvider notAllowedPathsProvider
      */
     public function testDeleteDirectoryThatIsNotAllowed(array $paths): void
     {
-        $this->expectException(\Magento\Framework\Exception\CouldNotDeleteException::class);
+        $this->expectException(CouldNotDeleteException::class);
 
         $this->deleteByPaths->execute($paths);
     }
@@ -90,7 +85,16 @@ class DeleteByPathsTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @throws \Magento\Framework\Exception\FileSystemException
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->deleteByPaths = Bootstrap::getObjectManager()->get(DeleteDirectoriesByPathsInterface::class);
+        $this->filesystem = Bootstrap::getObjectManager()->get(Filesystem::class);
+    }
+
+    /**
+     * @throws FileSystemException
      */
     protected function tearDown(): void
     {

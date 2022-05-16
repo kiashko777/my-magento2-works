@@ -4,15 +4,21 @@
  * See COPYING.txt for license details.
  *
  */
+
 namespace Magento\Cms\Model\Wysiwyg\Images;
 
+use Magento\Backend\App\Area\FrontNameResolver;
+use Magento\Cms\Helper\Wysiwyg\Images;
 use Magento\Cms\Model\Wysiwyg\Images\Storage\Collection;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\DataObject;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Filesystem;
 use Magento\Framework\Filesystem\Driver\File;
 use Magento\Framework\Filesystem\DriverInterface;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test methods of class Storage
@@ -22,7 +28,7 @@ use Magento\TestFramework\Helper\Bootstrap;
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  */
-class StorageTest extends \PHPUnit\Framework\TestCase
+class StorageTest extends TestCase
 {
     /**
      * @var string
@@ -30,7 +36,7 @@ class StorageTest extends \PHPUnit\Framework\TestCase
     protected static $_baseDir;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
@@ -56,8 +62,8 @@ class StorageTest extends \PHPUnit\Framework\TestCase
     public static function setUpBeforeClass(): void
     {
         self::$_baseDir = Bootstrap::getObjectManager()->get(
-            \Magento\Cms\Helper\Wysiwyg\Images::class
-        )->getCurrentPath() . 'MagentoCmsModelWysiwygImagesStorageTest';
+                Images::class
+            )->getCurrentPath() . 'MagentoCmsModelWysiwygImagesStorageTest';
         if (!file_exists(self::$_baseDir)) {
             mkdir(self::$_baseDir);
         }
@@ -79,24 +85,13 @@ class StorageTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->filesystem = $this->objectManager->get(Filesystem::class);
-        $this->storage = $this->objectManager->create(Storage::class);
-        $this->driver = Bootstrap::getObjectManager()->get(DriverInterface::class);
-    }
-
-    /**
      * @magentoAppIsolation enabled
      * @return void
      */
     public function testGetFilesCollection(): void
     {
         Bootstrap::getInstance()
-            ->loadArea(\Magento\Backend\App\Area\FrontNameResolver::AREA_CODE);
+            ->loadArea(FrontNameResolver::AREA_CODE);
         $fileName = 'magento_image.jpg';
         $imagePath = realpath(__DIR__ . '/../../../../Catalog/_files/' . $fileName);
         $mediaDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::MEDIA);
@@ -143,7 +138,7 @@ class StorageTest extends \PHPUnit\Framework\TestCase
      */
     public function testDeleteDirectory(): void
     {
-        $path = $this->objectManager->get(\Magento\Cms\Helper\Wysiwyg\Images::class)->getCurrentPath();
+        $path = $this->objectManager->get(Images::class)->getCurrentPath();
         $dir = 'testDeleteDirectory';
         $fullPath = $path . $dir;
         $this->storage->createDirectory($dir, $path);
@@ -157,10 +152,10 @@ class StorageTest extends \PHPUnit\Framework\TestCase
      */
     public function testDeleteDirectoryWithExcludedDirPath(): void
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage('We cannot delete directory /downloadable.');
 
-        $dir = $this->objectManager->get(\Magento\Cms\Helper\Wysiwyg\Images::class)->getCurrentPath() . 'downloadable';
+        $dir = $this->objectManager->get(Images::class)->getCurrentPath() . 'downloadable';
         $this->storage->deleteDirectory($dir);
     }
 
@@ -194,7 +189,7 @@ class StorageTest extends \PHPUnit\Framework\TestCase
      */
     public function testUploadFileWithExcludedDirPath(): void
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage(
             'We can\'t upload the file to current folder right now. Please try another folder.'
         );
@@ -214,7 +209,7 @@ class StorageTest extends \PHPUnit\Framework\TestCase
             'size' => 12500,
         ];
 
-        $dir = $this->objectManager->get(\Magento\Cms\Helper\Wysiwyg\Images::class)->getCurrentPath() . 'downloadable';
+        $dir = $this->objectManager->get(Images::class)->getCurrentPath() . 'downloadable';
         $this->storage->uploadFile($dir);
         // phpcs:enable
     }
@@ -229,7 +224,7 @@ class StorageTest extends \PHPUnit\Framework\TestCase
      */
     public function testUploadFileWithWrongExtension(string $fileName, string $fileType, ?string $storageType): void
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage('File validation failed.');
 
         $tmpDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::SYS_TMP);
@@ -275,7 +270,7 @@ class StorageTest extends \PHPUnit\Framework\TestCase
      */
     public function testUploadFileWithWrongFile(): void
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage('File validation failed.');
 
         $fileName = 'file.gif';
@@ -326,6 +321,36 @@ class StorageTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Generate a dummy image of the given width and height.
+     *
+     * @param string $path
+     * @param int $width
+     * @param int $height
+     * @return string
+     */
+    private function generateImage(string $path, int $width = 1024, int $height = 768)
+    {
+        $dir = dirname($path);
+        if (!file_exists($dir)) {
+            mkdir($dir, 0777, true);
+        }
+        $file = fopen($path, 'wb');
+        $filename = basename($path);
+        ob_start();
+        $image = imagecreatetruecolor($width, $height);
+        switch (substr($filename, strrpos($filename, '.'))) {
+            case '.jpeg':
+                imagejpeg($image);
+                break;
+            case '.png':
+                imagepng($image);
+                break;
+        }
+        fwrite($file, ob_get_clean());
+        return $path;
+    }
+
+    /**
      * Verify thumbnail generation for diferent sizes
      *
      * @param array $sizes
@@ -339,7 +364,7 @@ class StorageTest extends \PHPUnit\Framework\TestCase
         $this->generateImage($path, $sizes['width'], $sizes['height']);
         $this->storage->resizeFile($path);
 
-        $thumbPath =   $this->storage->getThumbnailPath($path);
+        $thumbPath = $this->storage->getThumbnailPath($path);
         list($imageWidth, $imageHeight) = getimagesize($thumbPath);
 
         $this->assertEquals(
@@ -404,32 +429,13 @@ class StorageTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Generate a dummy image of the given width and height.
-     *
-     * @param string $path
-     * @param int $width
-     * @param int $height
-     * @return string
+     * @inheritdoc
      */
-    private function generateImage(string $path, int $width = 1024, int $height = 768)
+    protected function setUp(): void
     {
-        $dir = dirname($path);
-        if (!file_exists($dir)) {
-            mkdir($dir, 0777, true);
-        }
-        $file = fopen($path, 'wb');
-        $filename = basename($path);
-        ob_start();
-        $image = imagecreatetruecolor($width, $height);
-        switch (substr($filename, strrpos($filename, '.'))) {
-            case '.jpeg':
-                imagejpeg($image);
-                break;
-            case '.png':
-                imagepng($image);
-                break;
-        }
-        fwrite($file, ob_get_clean());
-        return $path;
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->filesystem = $this->objectManager->get(Filesystem::class);
+        $this->storage = $this->objectManager->create(Storage::class);
+        $this->driver = Bootstrap::getObjectManager()->get(DriverInterface::class);
     }
 }

@@ -48,23 +48,6 @@ class MultiStoreConfigurableViewOnProductPageTest extends TestCase
     private $executeInStoreContext;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->serializer = $this->objectManager->get(SerializerInterface::class);
-        $this->productResource = $this->objectManager->get(ProductResource::class);
-        $this->executeInStoreContext = $this->objectManager->get(ExecuteInStoreContext::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/ConfigurableProduct/_files/configurable_product_different_option_labeles_per_stores.php
      *
      * @dataProvider expectedLabelsDataProvider
@@ -127,6 +110,40 @@ class MultiStoreConfigurableViewOnProductPageTest extends TestCase
     }
 
     /**
+     * Get block config
+     *
+     * @param ProductInterface $product
+     * @return array
+     */
+    private function getBlockConfig(ProductInterface $product): array
+    {
+        $block = $this->layout->createBlock(Configurable::class);
+        $block->setProduct($product);
+
+        return $this->serializer->unserialize($block->getJsonConfig());
+    }
+
+    /**
+     * Assert configurable product config
+     *
+     * @param array $expectedData
+     * @param array $actualOptions
+     * @return void
+     */
+    private function assertAttributeConfig(array $expectedData, array $actualOptions): void
+    {
+        $skus = array_keys($expectedData);
+        $idBySkuMap = $this->productResource->getProductsIdsBySkus($skus);
+        array_walk($actualOptions['options'], function (&$option) {
+            unset($option['id']);
+        });
+        foreach ($expectedData as $sku => &$option) {
+            $option['products'] = [$idBySkuMap[$sku]];
+        }
+        $this->assertEquals(array_values($expectedData), $actualOptions['options']);
+    }
+
+    /**
      * @magentoDataFixture Magento/ConfigurableProduct/_files/configurable_product_two_websites.php
      *
      * @dataProvider expectedProductDataProvider
@@ -144,6 +161,25 @@ class MultiStoreConfigurableViewOnProductPageTest extends TestCase
             [$this, 'assertProductConfig'],
             $expectedSecondStoreProducts
         );
+    }
+
+    /**
+     * Prepare configurable product to test
+     *
+     * @param string $sku
+     * @param string $storeCode
+     * @return void
+     */
+    private function prepareConfigurableProduct(string $sku, string $storeCode): void
+    {
+        $product = $this->productRepository->get($sku, false, null, true);
+        $productToUpdate = $product->getTypeInstance()->getUsedProductCollection($product)
+            ->addStoreFilter($storeCode)
+            ->setPageSize(1)
+            ->getFirstItem();
+
+        $this->assertNotEmpty($productToUpdate->getData(), 'Configurable product does not have a child');
+        $this->executeInStoreContext->execute($storeCode, [$this, 'setProductDisabled'], $productToUpdate);
     }
 
     /**
@@ -171,25 +207,6 @@ class MultiStoreConfigurableViewOnProductPageTest extends TestCase
         $config = $this->getBlockConfig($product)['index'] ?? null;
         $this->assertNotNull($config);
         $this->assertProducts($expectedProducts, $config);
-    }
-
-    /**
-     * Prepare configurable product to test
-     *
-     * @param string $sku
-     * @param string $storeCode
-     * @return void
-     */
-    private function prepareConfigurableProduct(string $sku, string $storeCode): void
-    {
-        $product = $this->productRepository->get($sku, false, null, true);
-        $productToUpdate = $product->getTypeInstance()->getUsedProductCollection($product)
-            ->addStoreFilter($storeCode)
-            ->setPageSize(1)
-            ->getFirstItem();
-
-        $this->assertNotEmpty($productToUpdate->getData(), 'Configurable product does not have a child');
-        $this->executeInStoreContext->execute($storeCode, [$this, 'setProductDisabled'], $productToUpdate);
     }
 
     /**
@@ -223,36 +240,19 @@ class MultiStoreConfigurableViewOnProductPageTest extends TestCase
     }
 
     /**
-     * Get block config
-     *
-     * @param ProductInterface $product
-     * @return array
+     * @inheritdoc
      */
-    private function getBlockConfig(ProductInterface $product): array
+    protected function setUp(): void
     {
-        $block = $this->layout->createBlock(Configurable::class);
-        $block->setProduct($product);
+        parent::setUp();
 
-        return $this->serializer->unserialize($block->getJsonConfig());
-    }
-
-    /**
-     * Assert configurable product config
-     *
-     * @param array $expectedData
-     * @param array $actualOptions
-     * @return void
-     */
-    private function assertAttributeConfig(array $expectedData, array $actualOptions): void
-    {
-        $skus = array_keys($expectedData);
-        $idBySkuMap = $this->productResource->getProductsIdsBySkus($skus);
-        array_walk($actualOptions['options'], function (&$option) {
-            unset($option['id']);
-        });
-        foreach ($expectedData as $sku => &$option) {
-            $option['products'] = [$idBySkuMap[$sku]];
-        }
-        $this->assertEquals(array_values($expectedData), $actualOptions['options']);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->serializer = $this->objectManager->get(SerializerInterface::class);
+        $this->productResource = $this->objectManager->get(ProductResource::class);
+        $this->executeInStoreContext = $this->objectManager->get(ExecuteInStoreContext::class);
     }
 }

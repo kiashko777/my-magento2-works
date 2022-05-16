@@ -3,14 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Theme\Model\Theme;
 
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Theme\Model\Theme;
 use Magento\Theme\Model\ResourceModel\Theme\Collection as ThemeCollection;
-use Magento\TestFramework\Helper\CacheCleaner;
+use Magento\Theme\Model\Theme;
+use PHPUnit\Framework\TestCase;
 
-class ThemeProviderTest extends \PHPUnit\Framework\TestCase
+class ThemeProviderTest extends TestCase
 {
     /**
      * @var ThemeProvider
@@ -26,14 +27,6 @@ class ThemeProviderTest extends \PHPUnit\Framework\TestCase
      * @var ThemeCollection
      */
     private $themeCollection;
-
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->themeProviderOne = $objectManager->create(ThemeProvider::class);
-        $this->themeProviderTwo = clone $this->themeProviderOne;
-        $this->themeCollection = $objectManager->create(ThemeCollection::class);
-    }
 
     public function testGetThemeById()
     {
@@ -65,5 +58,13 @@ class ThemeProviderTest extends \PHPUnit\Framework\TestCase
                 $this->themeProviderTwo->getThemeByFullPath($theme->getFullPath())->getData()
             );
         }
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->themeProviderOne = $objectManager->create(ThemeProvider::class);
+        $this->themeProviderTwo = clone $this->themeProviderOne;
+        $this->themeCollection = $objectManager->create(ThemeCollection::class);
     }
 }

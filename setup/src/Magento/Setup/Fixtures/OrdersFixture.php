@@ -6,8 +6,25 @@
 
 namespace Magento\Setup\Fixtures;
 
+use Exception;
+use Generator;
+use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product\Type;
+use Magento\Catalog\Model\ResourceModel\Product\Collection;
+use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
+use Magento\ConfigurableProduct\Api\LinkManagementInterface;
+use Magento\ConfigurableProduct\Api\OptionRepositoryInterface;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
+use Magento\Framework\DB\Adapter\AdapterInterface;
+use Magento\Framework\Model\ResourceModel\Db\AbstractDb;
+use Magento\Framework\Serialize\SerializerInterface;
+use Magento\Framework\Stdlib\DateTime;
+use Magento\Sales\Model\ResourceModel\Order;
+use Magento\Sales\Model\ResourceModel\Order\Item;
+use Magento\SalesRule\Model\ResourceModel\Rule;
+use Magento\Store\Api\Data\StoreInterface;
+use Magento\Store\Model\StoreManagerInterface;
+use RuntimeException;
 
 /**
  * Fixture generator for Order entities with configurable number of different types of order items.
@@ -118,37 +135,37 @@ class OrdersFixture extends Fixture
     /**
      * Array of resource connections ordered by tables.
      *
-     * @var \Magento\Framework\DB\Adapter\AdapterInterface[]
+     * @var AdapterInterface[]
      */
     private $resourceConnections;
 
     /**
-     * @var \Magento\Store\Model\StoreManagerInterface
+     * @var StoreManagerInterface
      */
     private $storeManager;
 
     /**
-     * @var \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory
+     * @var CollectionFactory
      */
     private $productCollectionFactory;
 
     /**
-     * @var \Magento\Catalog\Api\ProductRepositoryInterface
+     * @var ProductRepositoryInterface
      */
     private $productRepository;
 
     /**
-     * @var \Magento\ConfigurableProduct\Api\OptionRepositoryInterface
+     * @var OptionRepositoryInterface
      */
     private $optionRepository;
 
     /**
-     * @var \Magento\ConfigurableProduct\Api\LinkManagementInterface
+     * @var LinkManagementInterface
      */
     private $linkManagement;
 
     /**
-     * @var \Magento\Framework\Serialize\SerializerInterface
+     * @var SerializerInterface
      */
     private $serializer;
 
@@ -160,23 +177,24 @@ class OrdersFixture extends Fixture
     private $orderQuotesEnable = true;
 
     /**
-     * @param \Magento\Store\Model\StoreManagerInterface $storeManager
-     * @param \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory $productCollectionFactory
-     * @param \Magento\Catalog\Api\ProductRepositoryInterface $productRepository
-     * @param \Magento\ConfigurableProduct\Api\OptionRepositoryInterface $optionRepository
-     * @param \Magento\ConfigurableProduct\Api\LinkManagementInterface $linkManagement
-     * @param \Magento\Framework\Serialize\SerializerInterface $serializer
+     * @param StoreManagerInterface $storeManager
+     * @param CollectionFactory $productCollectionFactory
+     * @param ProductRepositoryInterface $productRepository
+     * @param OptionRepositoryInterface $optionRepository
+     * @param LinkManagementInterface $linkManagement
+     * @param SerializerInterface $serializer
      * @param FixtureModel $fixtureModel
      */
     public function __construct(
-        \Magento\Store\Model\StoreManagerInterface $storeManager,
-        \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory $productCollectionFactory,
-        \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
-        \Magento\ConfigurableProduct\Api\OptionRepositoryInterface $optionRepository,
-        \Magento\ConfigurableProduct\Api\LinkManagementInterface $linkManagement,
-        \Magento\Framework\Serialize\SerializerInterface $serializer,
-        FixtureModel $fixtureModel
-    ) {
+        StoreManagerInterface                     $storeManager,
+        CollectionFactory $productCollectionFactory,
+        ProductRepositoryInterface                $productRepository,
+        OptionRepositoryInterface     $optionRepository,
+        LinkManagementInterface       $linkManagement,
+        SerializerInterface               $serializer,
+        FixtureModel                                                   $fixtureModel
+    )
+    {
         $this->storeManager = $storeManager;
         $this->productCollectionFactory = $productCollectionFactory;
         $this->productRepository = $productRepository;
@@ -191,9 +209,9 @@ class OrdersFixture extends Fixture
      *
      * Design of Performance Fixture Generators require generator classes to override Fixture Model's execute method.
      *
-     * @throws \Exception Any exception raised during DB query.
      * @return void
      * @SuppressWarnings(PHPMD)
+     * @throws Exception Any exception raised during DB query.
      */
     public function execute()
     {
@@ -225,7 +243,7 @@ class OrdersFixture extends Fixture
 
         $entityId = $this->getMaxEntityId(
             'sales_order',
-            \Magento\Sales\Model\ResourceModel\Order::class,
+            Order::class,
             'entity_id'
         );
         $requestedOrders = (int)$this->fixtureModel->getValue('orders', 0);
@@ -235,18 +253,18 @@ class OrdersFixture extends Fixture
 
         $ruleId = $this->getMaxEntityId(
             'salesrule',
-            \Magento\SalesRule\Model\ResourceModel\Rule::class,
+            Rule::class,
             'rule_id'
         );
 
         $maxItemId = $this->getMaxEntityId(
             'sales_order_item',
-            \Magento\Sales\Model\ResourceModel\Order\Item::class,
+            Item::class,
             'item_id'
         );
         $maxItemsPerOrder = $orderSimpleCountTo + ($orderConfigurableCountTo + $orderBigConfigurableCountTo) * 2;
 
-        /** @var \Generator $itemIdSequence */
+        /** @var Generator $itemIdSequence */
         $itemIdSequence = $this->getItemIdSequence($maxItemId, $requestedOrders, $maxItemsPerOrder);
 
         $this->prepareQueryTemplates();
@@ -337,7 +355,7 @@ class OrdersFixture extends Fixture
                 '%itemsPerOrder%' => array_sum($productCount),
                 '%orderNumber%' => 100000000 * $productStoreId($entityId) + $entityId,
                 '%email%' => "order_{$entityId}@example.com",
-                '%time%' => date(\Magento\Framework\Stdlib\DateTime::DATETIME_PHP_FORMAT),
+                '%time%' => date(DateTime::DATETIME_PHP_FORMAT),
                 '%productStoreId%' => $productStoreId($entityId),
                 '%productStoreName%' => $productStoreName($entityId),
                 '%entityId%' => $entityId,
@@ -442,7 +460,7 @@ class OrdersFixture extends Fixture
                         $itemIdSequence->next();
                     }
                 }
-            } catch (\Exception $lastException) {
+            } catch (Exception $lastException) {
                 foreach ($this->resourceConnections as $connection) {
                     if ($connection->getTransactionLevel() > 0) {
                         $connection->rollBack();
@@ -462,6 +480,63 @@ class OrdersFixture extends Fixture
             if ($connection->getTransactionLevel() > 0) {
                 $connection->commit();
             }
+        }
+    }
+
+    /**
+     * Get maximum order id currently existing in the database.
+     *
+     * To support incremental generation of the orders it is necessary to get the maximum order entity_id currently
+     * existing in the database.
+     *
+     * @param string $tableName
+     * @param string $resourceName
+     * @param string $column
+     * @return int
+     */
+    private function getMaxEntityId($tableName, $resourceName, $column = 'entity_id')
+    {
+        $tableName = $this->getTableName(
+            $tableName,
+            $resourceName
+        );
+
+        /** @var \Magento\Framework\Model\ResourceModel\Db\VersionControl\AbstractDb $resource */
+        $resource = $this->fixtureModel->getObjectManager()->get($resourceName);
+        $connection = $resource->getConnection();
+        // phpcs:ignore Magento2.SQL.RawQuery
+        return (int)$connection->query("SELECT MAX(`{$column}`) FROM `{$tableName}`;")->fetchColumn(0);
+    }
+
+    /**
+     * Get real table name for db table, validated by db adapter.
+     *
+     * In case prefix or other features mutating default table names are used.
+     *
+     * @param string $tableName
+     * @param string $resourceName
+     * @return string
+     */
+    public function getTableName($tableName, $resourceName)
+    {
+        /** @var AbstractDb $resource */
+        $resource = $this->fixtureModel->getObjectManager()->get($resourceName);
+        return $resource->getConnection()->getTableName($resource->getTable($tableName));
+    }
+
+    /**
+     * Get sequence for order items
+     *
+     * @param int $maxItemId
+     * @param int $requestedOrders
+     * @param int $maxItemsPerOrder
+     * @return Generator
+     */
+    private function getItemIdSequence($maxItemId, $requestedOrders, $maxItemsPerOrder)
+    {
+        $requestedItems = $requestedOrders * $maxItemsPerOrder;
+        for ($i = $maxItemId + 1; $i <= $requestedItems; $i++) {
+            yield $i;
         }
     }
 
@@ -510,7 +585,7 @@ class OrdersFixture extends Fixture
             $fields = implode(', ', array_keys($template));
             $values = implode(', ', array_values($template));
 
-            /** @var \Magento\Framework\Model\ResourceModel\Db\AbstractDb $resourceModel */
+            /** @var AbstractDb $resourceModel */
             $resourceModel = $this->fixtureModel->getObjectManager()->get($resource);
             $connection = $resourceModel->getConnection();
             if ($connection->getTransactionLevel() == 0) {
@@ -521,86 +596,6 @@ class OrdersFixture extends Fixture
             $this->queryTemplates[$table] = "INSERT INTO `{$tableName}` ({$fields}) VALUES ({$values}){$querySuffix};";
             $this->resourceConnections[$table] = $connection;
         }
-    }
-
-    /**
-     * Build and execute query.
-     *
-     * Builds a database query by replacing placeholder values in the cached queries and executes query in appropriate
-     * DB connection (if setup). Additionally filters out quote-related queries, if appropriate flag is set.
-     *
-     * @param string $table
-     * @param array $replacements
-     * @return void
-     */
-    protected function query($table, ... $replacements)
-    {
-        if (!$this->orderQuotesEnable && strpos($table, "quote") !== false) {
-            return;
-        }
-        $query = $this->queryTemplates[$table];
-        foreach ($replacements as $data) {
-            $query = str_replace(array_keys($data), array_values($data), $query);
-        }
-
-        $this->resourceConnections[$table]->query($query);
-    }
-
-    /**
-     * Get maximum order id currently existing in the database.
-     *
-     * To support incremental generation of the orders it is necessary to get the maximum order entity_id currently
-     * existing in the database.
-     *
-     * @param string $tableName
-     * @param string $resourceName
-     * @param string $column
-     * @return int
-     */
-    private function getMaxEntityId($tableName, $resourceName, $column = 'entity_id')
-    {
-        $tableName = $this->getTableName(
-            $tableName,
-            $resourceName
-        );
-
-        /** @var \Magento\Framework\Model\ResourceModel\Db\VersionControl\AbstractDb $resource */
-        $resource = $this->fixtureModel->getObjectManager()->get($resourceName);
-        $connection = $resource->getConnection();
-        // phpcs:ignore Magento2.SQL.RawQuery
-        return (int)$connection->query("SELECT MAX(`{$column}`) FROM `{$tableName}`;")->fetchColumn(0);
-    }
-
-    /**
-     * Get a limited amount of product id's from a collection filtered by store and specific product type.
-     *
-     * @param \Magento\Store\Api\Data\StoreInterface $store
-     * @param string $typeId
-     * @param int $limit
-     * @return array
-     * @throws \RuntimeException
-     */
-    private function getProductIds(\Magento\Store\Api\Data\StoreInterface $store, $typeId, $limit = null)
-    {
-        /** @var $productCollection \Magento\Catalog\Model\ResourceModel\Product\Collection */
-        $productCollection = $this->productCollectionFactory->create();
-
-        $productCollection->addStoreFilter($store->getId());
-        $productCollection->addWebsiteFilter($store->getWebsiteId());
-
-        // "Big%" should be replaced with a configurable value.
-        if ($typeId === self::BIG_CONFIGURABLE_TYPE) {
-            $productCollection->getSelect()->where(" type_id = '" . Configurable::TYPE_CODE . "' ");
-            $productCollection->getSelect()->where(" sku LIKE 'Big%' ");
-        } else {
-            $productCollection->getSelect()->where(" type_id = '$typeId' ");
-            $productCollection->getSelect()->where(" sku NOT LIKE 'Big%' ");
-        }
-        $ids = $productCollection->getAllIds($limit);
-        if ($limit && count($ids) < $limit) {
-            throw new \RuntimeException('Not enough products of type: ' . $typeId);
-        }
-        return $ids;
     }
 
     /**
@@ -629,6 +624,38 @@ class OrdersFixture extends Fixture
             ]);
         }
         return $productsResult;
+    }
+
+    /**
+     * Get a limited amount of product id's from a collection filtered by store and specific product type.
+     *
+     * @param StoreInterface $store
+     * @param string $typeId
+     * @param int $limit
+     * @return array
+     * @throws RuntimeException
+     */
+    private function getProductIds(StoreInterface $store, $typeId, $limit = null)
+    {
+        /** @var $productCollection Collection */
+        $productCollection = $this->productCollectionFactory->create();
+
+        $productCollection->addStoreFilter($store->getId());
+        $productCollection->addWebsiteFilter($store->getWebsiteId());
+
+        // "Big%" should be replaced with a configurable value.
+        if ($typeId === self::BIG_CONFIGURABLE_TYPE) {
+            $productCollection->getSelect()->where(" type_id = '" . Configurable::TYPE_CODE . "' ");
+            $productCollection->getSelect()->where(" sku LIKE 'Big%' ");
+        } else {
+            $productCollection->getSelect()->where(" type_id = '$typeId' ");
+            $productCollection->getSelect()->where(" sku NOT LIKE 'Big%' ");
+        }
+        $ids = $productCollection->getAllIds($limit);
+        if ($limit && count($ids) < $limit) {
+            throw new RuntimeException('Not enough products of type: ' . $typeId);
+        }
+        return $ids;
     }
 
     /**
@@ -709,6 +736,29 @@ class OrdersFixture extends Fixture
     }
 
     /**
+     * Build and execute query.
+     *
+     * Builds a database query by replacing placeholder values in the cached queries and executes query in appropriate
+     * DB connection (if setup). Additionally filters out quote-related queries, if appropriate flag is set.
+     *
+     * @param string $table
+     * @param array $replacements
+     * @return void
+     */
+    protected function query($table, ...$replacements)
+    {
+        if (!$this->orderQuotesEnable && strpos($table, "quote") !== false) {
+            return;
+        }
+        $query = $this->queryTemplates[$table];
+        foreach ($replacements as $data) {
+            $query = str_replace(array_keys($data), array_values($data), $query);
+        }
+
+        $this->resourceConnections[$table]->query($query);
+    }
+
+    /**
      * Commit all active transactions at the end of the batch.
      *
      * Many transactions may exist, since generation process creates a transaction per each available DB connection.
@@ -741,37 +791,5 @@ class OrdersFixture extends Fixture
         return [
             'orders' => 'Orders'
         ];
-    }
-
-    /**
-     * Get real table name for db table, validated by db adapter.
-     *
-     * In case prefix or other features mutating default table names are used.
-     *
-     * @param string $tableName
-     * @param string $resourceName
-     * @return string
-     */
-    public function getTableName($tableName, $resourceName)
-    {
-        /** @var \Magento\Framework\Model\ResourceModel\Db\AbstractDb $resource */
-        $resource = $this->fixtureModel->getObjectManager()->get($resourceName);
-        return $resource->getConnection()->getTableName($resource->getTable($tableName));
-    }
-
-    /**
-     * Get sequence for order items
-     *
-     * @param int $maxItemId
-     * @param int $requestedOrders
-     * @param int $maxItemsPerOrder
-     * @return \Generator
-     */
-    private function getItemIdSequence($maxItemId, $requestedOrders, $maxItemsPerOrder)
-    {
-        $requestedItems = $requestedOrders * $maxItemsPerOrder;
-        for ($i = $maxItemId + 1; $i <= $requestedItems; $i++) {
-            yield $i;
-        }
     }
 }

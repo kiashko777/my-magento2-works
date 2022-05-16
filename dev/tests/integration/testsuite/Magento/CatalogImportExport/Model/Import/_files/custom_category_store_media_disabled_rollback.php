@@ -5,35 +5,42 @@
  */
 declare(strict_types=1);
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\Catalog\Model\Category;
+use Magento\Eav\Model\Entity\Attribute\Set;
+use Magento\Framework\Registry;
+use Magento\Store\Model\Store;
+use Magento\Store\Model\Website;
+use Magento\TestFramework\Helper\Bootstrap;
 
-$registry = $objectManager->get(\Magento\Framework\Registry::class);
+$objectManager = Bootstrap::getObjectManager();
+
+$registry = $objectManager->get(Registry::class);
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
-/** @var $category \Magento\Catalog\Model\Category */
-$category = $objectManager->create(\Magento\Catalog\Model\Category::class);
+/** @var $category Category */
+$category = $objectManager->create(Category::class);
 $category->loadByAttribute('name', 'MV');
 if ($category->getId()) {
     $category->delete();
 }
 
-/** @var $store \Magento\Store\Model\Store */
-$store = $objectManager->create(\Magento\Store\Model\Store::class);
+/** @var $store Store */
+$store = $objectManager->create(Store::class);
 $store->load('mascota', 'code');
 if ($store->getId()) {
     $store->delete();
 }
 
-/** @var $website \Magento\Store\Model\Website */
-$website = $objectManager->create(\Magento\Store\Model\Website::class);
+/** @var $website Website */
+$website = $objectManager->create(Website::class);
 $website->load('mascota', 'code');
 if ($website->getId()) {
     $website->delete();
 }
 
-/** @var $attributeSet \Magento\Eav\Model\Entity\Attribute\Set */
-$attributeSet = $objectManager->create(\Magento\Eav\Model\Entity\Attribute\Set::class);
+/** @var $attributeSet Set */
+$attributeSet = $objectManager->create(Set::class);
 $attributeSet->load('vinos', 'attribute_set_name');
 if ($attributeSet->getId()) {
     $attributeSet->delete();

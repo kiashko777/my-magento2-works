@@ -22,16 +22,6 @@ class StockTest extends AbstractAlertTest
     private $block;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Stock::class);
-    }
-
-    /**
      * @dataProvider alertsDataProvider
      *
      * @magentoDbIsolation disabled
@@ -94,5 +84,15 @@ class StockTest extends AbstractAlertTest
                 'store_code' => 'default',
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Stock::class);
     }
 }

@@ -22,15 +22,6 @@ class CollectionTest extends TestCase
     private $attributesCollectionFactory;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->attributesCollectionFactory = $objectManager->get(CollectionFactory::class);
-    }
-
-    /**
      * @magentoAppArea Adminhtml
      * @dataProvider attributesCollectionGetCurrentPageDataProvider
      *
@@ -41,9 +32,10 @@ class CollectionTest extends TestCase
      */
     public function testAttributesCollectionGetCurrentPage(
         ?array $condition,
-        int $currentPage,
-        int $expectedCurrentPage
-    ): void {
+        int    $currentPage,
+        int    $expectedCurrentPage
+    ): void
+    {
         $attributeCollection = $this->attributesCollectionFactory->create();
         $attributeCollection->setCurPage($currentPage)->setPageSize(20);
 
@@ -76,5 +68,14 @@ class CollectionTest extends TestCase
                 'expectedCurrentPage' => 1,
             ],
         ];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->attributesCollectionFactory = $objectManager->get(CollectionFactory::class);
     }
 }

@@ -7,9 +7,12 @@
 namespace Magento\TestFramework\Annotation;
 
 use Magento\Framework\Component\ComponentRegistrar;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Filesystem\Io\File;
 use Magento\TestFramework\Deploy\CliCommand;
 use Magento\TestFramework\Deploy\TestModuleManager;
+use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 /**
  * Handler for applying reinstallMagento annotation.
@@ -38,10 +41,10 @@ class CopyModules
     /**
      * Handler for 'startTest' event.
      *
-     * @param  \PHPUnit\Framework\TestCase $test
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @param TestCase $test
+     * @throws LocalizedException
      */
-    public function startTest(\PHPUnit\Framework\TestCase $test)
+    public function startTest(TestCase $test)
     {
         $annotations = $test->getAnnotations();
         //This annotation can be declared only on method level
@@ -60,9 +63,9 @@ class CopyModules
     /**
      * Handler for 'startTest' event
      *
-     * @param \PHPUnit\Framework\TestCase $test
+     * @param TestCase $test
      */
-    public function endTest(\PHPUnit\Framework\TestCase $test)
+    public function endTest(TestCase $test)
     {
         $annotations = $test->getAnnotations();
         //This annotation can be declared only on method level
@@ -88,7 +91,7 @@ class CopyModules
      */
     private function unsergisterModuleFromComponentRegistrar($moduleName)
     {
-        $reflection = new \ReflectionClass(ComponentRegistrar::class);
+        $reflection = new ReflectionClass(ComponentRegistrar::class);
         $reflectionProperty = $reflection->getProperty('paths');
         $reflectionProperty->setAccessible(true);
         $value = $reflectionProperty->getValue();

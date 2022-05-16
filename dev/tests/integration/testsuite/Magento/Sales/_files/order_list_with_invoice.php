@@ -18,8 +18,8 @@ use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Sales/_files/order.php');
 $objectManager = Bootstrap::getObjectManager();
-/** @var \Magento\Sales\Model\Order $order */
-$order = $objectManager->create(\Magento\Sales\Model\Order::class);
+/** @var Order $order */
+$order = $objectManager->create(Order::class);
 $order->loadByIncrementId('100000001');
 $payment = $order->getPayment();
 $billingAddress = $order->getBillingAddress();
@@ -35,7 +35,7 @@ $invoiceManagement = $objectManager->get(InvoiceManagementInterface::class);
 /** @var Transaction $transaction */
 $transaction = $objectManager->get(Transaction::class);
 
-$dateTime = new \DateTimeImmutable();
+$dateTime = new DateTimeImmutable();
 $ordersData = [
     [
         'increment_id' => '100000002',

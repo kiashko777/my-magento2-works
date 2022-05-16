@@ -3,72 +3,44 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Quote\Api;
 
-class GuestPaymentMethodManagementTest extends \Magento\TestFramework\TestCase\WebapiAbstract
+use Exception;
+use InvalidArgumentException;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\QuoteIdMask;
+use Magento\Quote\Model\QuoteIdMaskFactory;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use Magento\TestFramework\TestCase\WebapiAbstract;
+
+class GuestPaymentMethodManagementTest extends WebapiAbstract
 {
     const SERVICE_VERSION = 'V1';
     const SERVICE_NAME = 'quoteGuestPaymentMethodManagementV1';
     const RESOURCE_PATH = '/V1/guest-carts/';
 
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->deleteCart('test_order_1');
-        $this->deleteCart('test_order_1_with_payment');
-        $this->deleteCart('test_order_with_virtual_product');
-        $this->deleteCart('test_order_with_virtual_product_without_address');
-        parent::tearDown();
-    }
-
-    /**
-     * Delete quote by given reserved order ID
-     *
-     * @param string $reservedOrderId
-     * @return void
-     */
-    protected function deleteCart($reservedOrderId)
-    {
-        try {
-            /** @var $cart \Magento\Quote\Model\Quote */
-            $cart = $this->objectManager->get(\Magento\Quote\Model\Quote::class);
-            $cart->load($reservedOrderId, 'reserved_order_id');
-            if (!$cart->getId()) {
-                throw new \InvalidArgumentException('There is no quote with provided reserved order ID.');
-            }
-            $cart->delete();
-            /** @var \Magento\Quote\Model\QuoteIdMask $quoteIdMask */
-            $quoteIdMask = $this->objectManager->create(\Magento\Quote\Model\QuoteIdMask::class);
-            $quoteIdMask->load($cart->getId(), 'quote_id');
-            $quoteIdMask->delete();
-        } catch (\InvalidArgumentException $e) {
-            // Do nothing if cart fixture was not used
-        }
-    }
 
     /**
      * @magentoApiDataFixture Magento/Checkout/_files/quote_with_payment_saved.php
      */
     public function testReSetPayment()
     {
-        /** @var \Magento\Quote\Model\Quote  $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_1_with_payment', 'reserved_order_id');
         $cartId = $this->getMaskedCartId($quote->getId());
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $cartId . '/selected-payment-method',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -89,19 +61,35 @@ class GuestPaymentMethodManagementTest extends \Magento\TestFramework\TestCase\W
     }
 
     /**
+     * Retrieve masked cart ID for guest cart.
+     *
+     * @param string $cartId
+     * @return string
+     */
+    protected function getMaskedCartId($cartId)
+    {
+        /** @var QuoteIdMask $quoteIdMask */
+        $quoteIdMask = Bootstrap::getObjectManager()
+            ->create(QuoteIdMaskFactory::class)
+            ->create();
+        $quoteIdMask->load($cartId, 'quote_id');
+        return $quoteIdMask->getMaskedId();
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Checkout/_files/quote_with_virtual_product_and_address.php
      */
     public function testSetPaymentWithVirtualProduct()
     {
-        /** @var \Magento\Quote\Model\Quote  $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_with_virtual_product', 'reserved_order_id');
         $cartId = $this->getMaskedCartId($quote->getId());
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $cartId . '/selected-payment-method',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -125,15 +113,15 @@ class GuestPaymentMethodManagementTest extends \Magento\TestFramework\TestCase\W
      */
     public function testSetPaymentWithSimpleProduct()
     {
-        /** @var \Magento\Quote\Model\Quote  $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_1', 'reserved_order_id');
         $cartId = $this->getMaskedCartId($quote->getId());
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $cartId . '/selected-payment-method',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -158,18 +146,18 @@ class GuestPaymentMethodManagementTest extends \Magento\TestFramework\TestCase\W
      */
     public function testSetPaymentWithSimpleProductWithoutAddress()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The shipping address is missing. Set the address and try again.');
 
-        /** @var \Magento\Quote\Model\Quote  $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_with_simple_product_without_address', 'reserved_order_id');
         $cartId = $this->getMaskedCartId($quote->getId());
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $cartId . '/selected-payment-method',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -193,15 +181,15 @@ class GuestPaymentMethodManagementTest extends \Magento\TestFramework\TestCase\W
      */
     public function testGetList()
     {
-        /** @var \Magento\Quote\Model\Quote  $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_1', 'reserved_order_id');
         $cartId = $this->getMaskedCartId($quote->getId());
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $cartId . '/payment-methods',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -227,15 +215,15 @@ class GuestPaymentMethodManagementTest extends \Magento\TestFramework\TestCase\W
      */
     public function testGet()
     {
-        /** @var \Magento\Quote\Model\Quote $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_1_with_payment', 'reserved_order_id');
         $cartId = $this->getMaskedCartId($quote->getId());
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $cartId . '/selected-payment-method',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -263,19 +251,42 @@ class GuestPaymentMethodManagementTest extends \Magento\TestFramework\TestCase\W
         return ['method', 'po_number', 'additional_data'];
     }
 
-    /**
-     * Retrieve masked cart ID for guest cart.
-     *
-     * @param string $cartId
-     * @return string
-     */
-    protected function getMaskedCartId($cartId)
+    protected function setUp(): void
     {
-        /** @var \Magento\Quote\Model\QuoteIdMask $quoteIdMask */
-        $quoteIdMask = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Quote\Model\QuoteIdMaskFactory::class)
-            ->create();
-        $quoteIdMask->load($cartId, 'quote_id');
-        return $quoteIdMask->getMaskedId();
+        $this->objectManager = Bootstrap::getObjectManager();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->deleteCart('test_order_1');
+        $this->deleteCart('test_order_1_with_payment');
+        $this->deleteCart('test_order_with_virtual_product');
+        $this->deleteCart('test_order_with_virtual_product_without_address');
+        parent::tearDown();
+    }
+
+    /**
+     * Delete quote by given reserved order ID
+     *
+     * @param string $reservedOrderId
+     * @return void
+     */
+    protected function deleteCart($reservedOrderId)
+    {
+        try {
+            /** @var $cart Quote */
+            $cart = $this->objectManager->get(Quote::class);
+            $cart->load($reservedOrderId, 'reserved_order_id');
+            if (!$cart->getId()) {
+                throw new InvalidArgumentException('There is no quote with provided reserved order ID.');
+            }
+            $cart->delete();
+            /** @var QuoteIdMask $quoteIdMask */
+            $quoteIdMask = $this->objectManager->create(QuoteIdMask::class);
+            $quoteIdMask->load($cart->getId(), 'quote_id');
+            $quoteIdMask->delete();
+        } catch (InvalidArgumentException $e) {
+            // Do nothing if cart fixture was not used
+        }
     }
 }

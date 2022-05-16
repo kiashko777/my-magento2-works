@@ -41,25 +41,6 @@ class AttributeSearchWeightTest extends TestCase
     private $quickSearchByQuery;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productAttributeRepository = $this->objectManager->get(ProductAttributeRepositoryInterface::class);
-        $this->quickSearchByQuery = $this->objectManager->get(QuickSearchByQuery::class);
-        $this->collectCurrentProductAttributesWeights();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->updateAttributesWeight($this->collectedAttributesWeight);
-    }
-
-    /**
      * Perform search by word and check founded product order in different cases.
      *
      * @magentoDataFixture Magento/CatalogSearch/_files/products_for_sku_search_weight_score.php
@@ -74,9 +55,10 @@ class AttributeSearchWeightTest extends TestCase
      */
     public function testAttributeSearchWeight(
         string $searchQuery,
-        array $attributeWeights,
-        array $expectedProductNames
-    ): void {
+        array  $attributeWeights,
+        array  $expectedProductNames
+    ): void
+    {
         $this->markTestSkipped(
             'MC-33824: Stabilize skipped test cases for Integration AttributeSearchWeightTest with Elasticsearch'
         );
@@ -149,18 +131,14 @@ class AttributeSearchWeightTest extends TestCase
     }
 
     /**
-     * Update attributes weight.
-     *
-     * @param array $attributeWeights
-     * @return void
+     * @inheritdoc
      */
-    protected function updateAttributesWeight(array $attributeWeights): void
+    protected function setUp(): void
     {
-        foreach ($attributeWeights as $attributeCode => $weight) {
-            $attribute = $this->productAttributeRepository->get($attributeCode);
-            $attribute->setSearchWeight($weight);
-            $this->productAttributeRepository->save($attribute);
-        }
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productAttributeRepository = $this->objectManager->get(ProductAttributeRepositoryInterface::class);
+        $this->quickSearchByQuery = $this->objectManager->get(QuickSearchByQuery::class);
+        $this->collectCurrentProductAttributesWeights();
     }
 
     /**
@@ -181,6 +159,29 @@ class AttributeSearchWeightTest extends TestCase
                 $attribute = $this->productAttributeRepository->get($attributeCode);
                 $this->collectedAttributesWeight[$attribute->getAttributeCode()] = $attribute->getSearchWeight();
             }
+        }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->updateAttributesWeight($this->collectedAttributesWeight);
+    }
+
+    /**
+     * Update attributes weight.
+     *
+     * @param array $attributeWeights
+     * @return void
+     */
+    protected function updateAttributesWeight(array $attributeWeights): void
+    {
+        foreach ($attributeWeights as $attributeCode => $weight) {
+            $attribute = $this->productAttributeRepository->get($attributeCode);
+            $attribute->setSearchWeight($weight);
+            $this->productAttributeRepository->save($attribute);
         }
     }
 }

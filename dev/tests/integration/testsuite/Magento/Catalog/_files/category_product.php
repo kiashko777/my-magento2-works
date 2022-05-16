@@ -4,7 +4,13 @@
  * See COPYING.txt for license details.
  */
 
-$category = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Category::class);
+use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$category = Bootstrap::getObjectManager()->create(Category::class);
 $category->isObjectNew(true);
 $category->setId(
     333
@@ -30,8 +36,8 @@ $category->setId(
     ['position']
 )->save();
 
-/** @var $product \Magento\Catalog\Model\Product */
-$product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Product::class);
+/** @var $product Product */
+$product = Bootstrap::getObjectManager()->create(Product::class);
 $product->setTypeId(
     \Magento\Catalog\Model\Product\Type::TYPE_SIMPLE
 )->setId(
@@ -55,7 +61,7 @@ $product->setTypeId(
 )->setCategoryIds(
     [333]
 )->setVisibility(
-    \Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH
+    Visibility::VISIBILITY_BOTH
 )->setStatus(
-    \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED
+    Status::STATUS_ENABLED
 )->save();

@@ -7,6 +7,9 @@ declare(strict_types=1);
 
 namespace Magento\TestFramework\Utility;
 
+use ReflectionClass;
+use ReflectionException;
+
 /**
  * Search for children classes in list of files.
  */
@@ -33,7 +36,7 @@ class ChildrenClassesSearch
      * @param bool $asDataSet
      *
      * @return array
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     public function getClassesWhichAreChildrenOf(array $fileList, string $parent, bool $asDataSet = true): array
     {
@@ -44,7 +47,7 @@ class ChildrenClassesSearch
             $class = $this->classNameExtractor->getNameWithNamespace(file_get_contents($name));
 
             if ($class) {
-                $classReflection = new \ReflectionClass($class);
+                $classReflection = new ReflectionClass($class);
                 if ($classReflection->isSubclassOf($parent)) {
                     $found[] = $class;
                 }

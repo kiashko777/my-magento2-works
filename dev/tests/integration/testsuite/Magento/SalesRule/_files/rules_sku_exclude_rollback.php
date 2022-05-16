@@ -6,11 +6,17 @@
 
 declare(strict_types=1);
 
-/** @var \Magento\Eav\Api\AttributeRepositoryInterface $repository */
-$repository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->create(\Magento\Eav\Api\AttributeRepositoryInterface::class);
+/** @var AttributeRepositoryInterface $repository */
 
-/** @var \Magento\Eav\Api\Data\AttributeInterface $skuAttribute */
+use Magento\Eav\Api\AttributeRepositoryInterface;
+use Magento\Eav\Api\Data\AttributeInterface;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$repository = Bootstrap::getObjectManager()
+    ->create(AttributeRepositoryInterface::class);
+
+/** @var AttributeInterface $skuAttribute */
 $skuAttribute = $repository->get(
     'catalog_product',
     'sku'
@@ -21,7 +27,7 @@ $skuAttribute->setData($data);
 $skuAttribute->save();
 
 /** @var Magento\Framework\Registry $registry */
-$registry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
+$registry = Bootstrap::getObjectManager()->get(Registry::class);
 
 /** @var Magento\SalesRule\Model\Rule $rule */
 $rule = $registry->registry('_fixture/Magento_SalesRule_Sku_Exclude');

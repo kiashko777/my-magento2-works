@@ -3,8 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\SalesRule\Plugin;
 
+use Exception;
 use Magento\Framework\DataObject;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Quote\Model\Quote;
@@ -64,47 +66,6 @@ class CouponUsagesTest extends TestCase
      * @var OrderService
      */
     private $orderService;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->usage = $this->objectManager->get(Usage::class);
-        $this->couponUsage = $this->objectManager->create(DataObject::class);
-        $this->quoteManagement = $this->objectManager->get(QuoteManagement::class);
-        $this->orderService = $this->objectManager->get(OrderService::class);
-
-        $this->publisherConsumerController = Bootstrap::getObjectManager()->create(
-            PublisherConsumerController::class,
-            [
-                'consumers' => $this->consumers,
-                'logFilePath' => TESTS_TEMP_DIR . "/MessageQueueTestLog.txt",
-                'maxMessages' => 100,
-                'appInitParams' => Bootstrap::getInstance()->getAppInitParams()
-            ]
-        );
-        try {
-            $this->publisherConsumerController->startConsumers();
-        } catch (EnvironmentPreconditionException $e) {
-            $this->markTestSkipped($e->getMessage());
-        } catch (PreconditionFailedException $e) {
-            $this->fail(
-                $e->getMessage()
-            );
-        }
-        parent::setUp();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->publisherConsumerController->stopConsumers();
-        parent::tearDown();
-    }
 
     /**
      * Test increasing coupon usages after after order placing and decreasing after order cancellation.
@@ -178,7 +139,7 @@ class CouponUsagesTest extends TestCase
         $orderManagement = $this->createMock(OrderManagementInterface::class);
         $orderManagement->expects($this->once())
             ->method('place')
-            ->willThrowException(new \Exception($exceptionMessage));
+            ->willThrowException(new Exception($exceptionMessage));
 
         /** @var QuoteManagement $quoteManagement */
         $quoteManagement = $this->objectManager->create(
@@ -188,7 +149,7 @@ class CouponUsagesTest extends TestCase
 
         try {
             $quoteManagement->submit($quote);
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             $this->assertEquals($exceptionMessage, $exception->getMessage());
 
             $this->usage->loadByCustomerCoupon($this->couponUsage, $customerId, $coupon->getId());
@@ -202,5 +163,46 @@ class CouponUsagesTest extends TestCase
                 $this->couponUsage->getTimesUsed()
             );
         }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->usage = $this->objectManager->get(Usage::class);
+        $this->couponUsage = $this->objectManager->create(DataObject::class);
+        $this->quoteManagement = $this->objectManager->get(QuoteManagement::class);
+        $this->orderService = $this->objectManager->get(OrderService::class);
+
+        $this->publisherConsumerController = Bootstrap::getObjectManager()->create(
+            PublisherConsumerController::class,
+            [
+                'consumers' => $this->consumers,
+                'logFilePath' => TESTS_TEMP_DIR . "/MessageQueueTestLog.txt",
+                'maxMessages' => 100,
+                'appInitParams' => Bootstrap::getInstance()->getAppInitParams()
+            ]
+        );
+        try {
+            $this->publisherConsumerController->startConsumers();
+        } catch (EnvironmentPreconditionException $e) {
+            $this->markTestSkipped($e->getMessage());
+        } catch (PreconditionFailedException $e) {
+            $this->fail(
+                $e->getMessage()
+            );
+        }
+        parent::setUp();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->publisherConsumerController->stopConsumers();
+        parent::tearDown();
     }
 }

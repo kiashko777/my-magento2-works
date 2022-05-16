@@ -12,6 +12,7 @@ use Magento\Customer\Model\Customer;
 use Magento\Customer\Model\CustomerFactory;
 use Magento\Directory\Model\ResourceModel\Region\CollectionFactory as RegionCollectionFactory;
 use Magento\Framework\App\ObjectManager;
+use Magento\Framework\Stdlib\DateTime;
 use Magento\Store\Model\StoreManagerInterface;
 
 /**
@@ -46,11 +47,12 @@ class CustomerTemplateGenerator implements TemplateEntityGeneratorInterface
      * @param RegionCollectionFactory|null $regionsCollectionFactory
      */
     public function __construct(
-        CustomerFactory $customerFactory,
-        AddressFactory $addressFactory,
-        StoreManagerInterface $storeManager,
+        CustomerFactory         $customerFactory,
+        AddressFactory          $addressFactory,
+        StoreManagerInterface   $storeManager,
         RegionCollectionFactory $regionsCollectionFactory = null
-    ) {
+    )
+    {
         $this->customerFactory = $customerFactory;
         $this->addressFactory = $addressFactory;
         $this->storeManager = $storeManager;
@@ -87,7 +89,7 @@ class CustomerTemplateGenerator implements TemplateEntityGeneratorInterface
             'data' => [
                 'email' => sprintf('user_%s@example.com', $customerRandomizerNumber),
                 'confirmation' => null,
-                'created_at' => $now->format(\Magento\Framework\Stdlib\DateTime::DATETIME_PHP_FORMAT),
+                'created_at' => $now->format(DateTime::DATETIME_PHP_FORMAT),
                 'created_in' => 'Default',
                 'default_billing' => '1',
                 'default_shipping' => '1',

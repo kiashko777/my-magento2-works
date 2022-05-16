@@ -3,13 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Magento\Backend;
 
-use Magento\TestFramework\Utility\ChangedFiles;
-use Magento\Framework\App\Utility\Files;
 use Magento\Backend\App\AbstractAction;
+use Magento\Framework\App\Utility\Files;
+use Magento\TestFramework\Utility\ChangedFiles;
+use PHPUnit\Framework\TestCase;
+use ReflectionClass;
+use ReflectionException;
+use stdClass;
 
-class ControllerAclTest extends \PHPUnit\Framework\TestCase
+class ControllerAclTest extends TestCase
 {
     /**
      * Default function for checking accessibility of the ACL resource.
@@ -39,27 +44,6 @@ class ControllerAclTest extends \PHPUnit\Framework\TestCase
      * @var null|array
      */
     private $aclResources;
-
-    /**
-     * Set up before test execution.
-     */
-    protected function setUp(): void
-    {
-        $whitelistedClasses = [];
-        $path = sprintf('%s/_files/controller_acl_test_whitelist_*.txt', __DIR__);
-        foreach (glob($path) as $listFile) {
-            $whitelistedClasses = array_merge(
-                $whitelistedClasses,
-                file($listFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES)
-            );
-        }
-        foreach ($whitelistedClasses as $item) {
-            if (substr($item, 0, 1) === '#') {
-                continue;
-            }
-            $this->whiteListedBackendControllers[$item] = 1;
-        }
-    }
 
     /**
      * Test ACL in the admin area by various assertions.
@@ -113,12 +97,109 @@ class ControllerAclTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Check is file looks like a test.
+     *
+     * @param string $relativeFilePath
+     * @return bool
+     */
+    private function isItTest($relativeFilePath)
+    {
+        $isTest = (preg_match('~.*?(/dev/tests/|/Test/Unit/).*?\.php$~', $relativeFilePath) === 1);
+        return $isTest;
+    }
+
+    /**
+     * Get c
+     *
+     * @param string $relativeFilePath
+     * @return string
+     */
+    private function getControllerPath($relativeFilePath)
+    {
+        if (preg_match('~(Magento\/[^\/]+\/Controller\/Adminhtml\/.*)\.php~', $relativeFilePath, $matches)) {
+            if (count($matches) === 2) {
+                $partPath = $matches[1];
+                return $partPath;
+            }
+        }
+        return '';
+    }
+
+    /**
+     * Try to get reflection for a admin html controller class by it path.
+     *
+     * @param string $controllerPath
+     * @return ReflectionClass
+     */
+    private function getClassByFilePath($controllerPath)
+    {
+        $className = str_replace('/', '\\', $controllerPath);
+        try {
+            $reflectionClass = new ReflectionClass($className);
+        } catch (ReflectionException $e) {
+            $reflectionClass = new ReflectionClass(new stdClass());
+        }
+        return $reflectionClass;
+    }
+
+    /**
+     * Is controller extends Magento\Backend\App\AbstractAction.
+     *
+     * @param ReflectionClass $class
+     * @return bool
+     */
+    private function isClassExtendsBackendClass(ReflectionClass $class)
+    {
+        while ($parentClass = $class->getParentClass()) {
+            if (AbstractAction::class === $parentClass->getName()) {
+                return true;
+            }
+            $class = $parentClass;
+        }
+        return false;
+    }
+
+    /**
+     * Is ADMIN_RESOURCE constant was overwritten in the child class.
+     *
+     * @param ReflectionClass $class
+     * @return bool
+     */
+    private function isConstantOverwritten(ReflectionClass $class)
+    {
+        // check that controller overwrites default ACL to some specific
+        if ($class->getConstant(self::ACL_CONST_NAME) !== self::DEFAULT_BACKEND_RESOURCE) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Is _isAllowed method was overwritten in the child class.
+     *
+     * @param ReflectionClass $class
+     * @return bool
+     */
+    private function isMethodOverwritten(ReflectionClass $class)
+    {
+        // check that controller overwrites default ACL to some specific (at least we check that it was overwritten).
+        $method = $class->getMethod(self::ACL_FUNC_NAME);
+        try {
+            $method->getPrototype();
+            return true;
+        } catch (ReflectionException $e) {
+            return false;
+        }
+    }
+
+    /**
      * Collect possible errors for the ACL that exists in the php code but doesn't exists in the XML code.
      *
-     * @param \ReflectionClass $class
+     * @param ReflectionClass $class
      * @return array
      */
-    private function collectAclErrorsInTheXml(\ReflectionClass $class)
+    private function collectAclErrorsInTheXml(ReflectionClass $class)
     {
         $errorMessages = [];
         $className = $class->getName();
@@ -162,99 +243,23 @@ class ControllerAclTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Is ADMIN_RESOURCE constant was overwritten in the child class.
-     *
-     * @param \ReflectionClass $class
-     * @return bool
+     * Set up before test execution.
      */
-    private function isConstantOverwritten(\ReflectionClass $class)
+    protected function setUp(): void
     {
-        // check that controller overwrites default ACL to some specific
-        if ($class->getConstant(self::ACL_CONST_NAME) !== self::DEFAULT_BACKEND_RESOURCE) {
-            return true;
+        $whitelistedClasses = [];
+        $path = sprintf('%s/_files/controller_acl_test_whitelist_*.txt', __DIR__);
+        foreach (glob($path) as $listFile) {
+            $whitelistedClasses = array_merge(
+                $whitelistedClasses,
+                file($listFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES)
+            );
         }
-
-        return false;
-    }
-
-    /**
-     * Is _isAllowed method was overwritten in the child class.
-     *
-     * @param \ReflectionClass $class
-     * @return bool
-     */
-    private function isMethodOverwritten(\ReflectionClass $class)
-    {
-        // check that controller overwrites default ACL to some specific (at least we check that it was overwritten).
-        $method = $class->getMethod(self::ACL_FUNC_NAME);
-        try {
-            $method->getPrototype();
-            return true;
-        } catch (\ReflectionException $e) {
-            return false;
-        }
-    }
-
-    /**
-     * Is controller extends Magento\Backend\App\AbstractAction.
-     *
-     * @param \ReflectionClass $class
-     * @return bool
-     */
-    private function isClassExtendsBackendClass(\ReflectionClass $class)
-    {
-        while ($parentClass = $class->getParentClass()) {
-            if (AbstractAction::class === $parentClass->getName()) {
-                return true;
+        foreach ($whitelistedClasses as $item) {
+            if (substr($item, 0, 1) === '#') {
+                continue;
             }
-            $class = $parentClass;
+            $this->whiteListedBackendControllers[$item] = 1;
         }
-        return false;
-    }
-
-    /**
-     * Check is file looks like a test.
-     *
-     * @param string $relativeFilePath
-     * @return bool
-     */
-    private function isItTest($relativeFilePath)
-    {
-        $isTest = (preg_match('~.*?(/dev/tests/|/Test/Unit/).*?\.php$~', $relativeFilePath) === 1);
-        return $isTest;
-    }
-
-    /**
-     * Get c
-     *
-     * @param string $relativeFilePath
-     * @return string
-     */
-    private function getControllerPath($relativeFilePath)
-    {
-        if (preg_match('~(Magento\/[^\/]+\/Controller\/Adminhtml\/.*)\.php~', $relativeFilePath, $matches)) {
-            if (count($matches) === 2) {
-                $partPath = $matches[1];
-                return $partPath;
-            }
-        }
-        return '';
-    }
-
-    /**
-     * Try to get reflection for a admin html controller class by it path.
-     *
-     * @param string  $controllerPath
-     * @return \ReflectionClass
-     */
-    private function getClassByFilePath($controllerPath)
-    {
-        $className = str_replace('/', '\\', $controllerPath);
-        try {
-            $reflectionClass = new \ReflectionClass($className);
-        } catch (\ReflectionException $e) {
-            $reflectionClass = new \ReflectionClass(new \stdClass());
-        }
-        return $reflectionClass;
     }
 }

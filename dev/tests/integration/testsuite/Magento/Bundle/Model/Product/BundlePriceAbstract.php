@@ -6,12 +6,29 @@
 
 namespace Magento\Bundle\Model\Product;
 
+use Magento\Bundle\Api\Data\LinkInterfaceFactory;
+use Magento\Bundle\Api\Data\OptionInterfaceFactory;
+use Magento\Catalog\Api\Data\ProductCustomOptionInterfaceFactory;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
+use Magento\CatalogInventory\Model\Configuration;
+use Magento\CatalogRule\Model\RuleFactory;
+use Magento\Framework\App\Config\MutableScopeConfigInterface;
+use Magento\Framework\Exception\CouldNotSaveException;
+use Magento\Framework\Exception\InputException;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Exception\StateException;
+use Magento\Store\Model\ScopeInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
 /**
  * Abstract class for testing bundle prices
  * @codingStandardsIgnoreStart
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-abstract class BundlePriceAbstract extends \PHPUnit\Framework\TestCase
+abstract class BundlePriceAbstract extends TestCase
 {
     /** Fixed price type for product custom option */
     const CUSTOM_OPTION_PRICE_TYPE_FIXED = 'fixed';
@@ -19,37 +36,21 @@ abstract class BundlePriceAbstract extends \PHPUnit\Framework\TestCase
     /** Percent price type for product custom option */
     const CUSTOM_OPTION_PRICE_TYPE_PERCENT = 'percent';
 
-    /** @var \Magento\TestFramework\Helper\Bootstrap */
+    /** @var Bootstrap */
     protected $objectManager;
 
-    /** @var \Magento\Catalog\Api\ProductRepositoryInterface */
+    /** @var ProductRepositoryInterface */
     protected $productRepository;
 
     /**
-     * @var \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory
+     * @var CollectionFactory
      */
     protected $productCollectionFactory;
 
     /**
-     * @var \Magento\CatalogRule\Model\RuleFactory
+     * @var RuleFactory
      */
     private $ruleFactory;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
-        $this->productCollectionFactory =
-            $this->objectManager->create(\Magento\Catalog\Model\ResourceModel\Product\CollectionFactory::class);
-
-        $scopeConfig = $this->objectManager->get(\Magento\Framework\App\Config\MutableScopeConfigInterface::class);
-        $scopeConfig->setValue(
-            \Magento\CatalogInventory\Model\Configuration::XML_PATH_SHOW_OUT_OF_STOCK,
-            true,
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE
-        );
-        $this->ruleFactory = $this->objectManager->get(\Magento\CatalogRule\Model\RuleFactory::class);
-    }
 
     /**
      * Get test cases
@@ -57,14 +58,30 @@ abstract class BundlePriceAbstract extends \PHPUnit\Framework\TestCase
      */
     abstract public function getTestCases();
 
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+        $this->productCollectionFactory =
+            $this->objectManager->create(CollectionFactory::class);
+
+        $scopeConfig = $this->objectManager->get(MutableScopeConfigInterface::class);
+        $scopeConfig->setValue(
+            Configuration::XML_PATH_SHOW_OUT_OF_STOCK,
+            true,
+            ScopeInterface::SCOPE_STORE
+        );
+        $this->ruleFactory = $this->objectManager->get(RuleFactory::class);
+    }
+
     /**
      * @param array $strategyModifiers
      * @param string $productSku
      * @return void
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
-     * @throws \Magento\Framework\Exception\InputException
-     * @throws \Magento\Framework\Exception\StateException
-     * @throws \Magento\Framework\Exception\CouldNotSaveException
+     * @throws NoSuchEntityException
+     * @throws InputException
+     * @throws StateException
+     * @throws CouldNotSaveException
      */
     protected function prepareFixture($strategyModifiers, $productSku)
     {
@@ -77,7 +94,7 @@ abstract class BundlePriceAbstract extends \PHPUnit\Framework\TestCase
                 array_unshift($modifier['data'], $bundleProduct);
                 $bundleProduct = call_user_func_array([$this, $modifier['modifierName']], $modifier['data']);
             } else {
-                throw new \Magento\Framework\Exception\InputException(
+                throw new InputException(
                     __('Modifier %s does not exists', $modifier['modifierName'])
                 );
             }
@@ -88,11 +105,11 @@ abstract class BundlePriceAbstract extends \PHPUnit\Framework\TestCase
     /**
      * Add simple product to bundle
      *
-     * @param \Magento\Catalog\Model\Product $bundleProduct
+     * @param Product $bundleProduct
      * @param array $optionsData
-     * @return \Magento\Catalog\Model\Product
+     * @return Product
      */
-    protected function addSimpleProduct(\Magento\Catalog\Model\Product $bundleProduct, array $optionsData)
+    protected function addSimpleProduct(Product $bundleProduct, array $optionsData)
     {
         $options = [];
 
@@ -101,12 +118,12 @@ abstract class BundlePriceAbstract extends \PHPUnit\Framework\TestCase
             $linksData = $optionData['links'];
             unset($optionData['links']);
 
-            $option = $this->objectManager->create(\Magento\Bundle\Api\Data\OptionInterfaceFactory::class)
+            $option = $this->objectManager->create(OptionInterfaceFactory::class)
                 ->create(['data' => $optionData])
                 ->setSku($bundleProduct->getSku());
 
             foreach ($linksData as $linkData) {
-                $links[] = $this->objectManager->create(\Magento\Bundle\Api\Data\LinkInterfaceFactory::class)
+                $links[] = $this->objectManager->create(LinkInterfaceFactory::class)
                     ->create(['data' => $linkData]);
             }
 
@@ -122,15 +139,15 @@ abstract class BundlePriceAbstract extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @param \Magento\Catalog\Model\Product $bundleProduct
+     * @param Product $bundleProduct
      * @param array $optionsData
-     * @return \Magento\Catalog\Model\Product
+     * @return Product
      */
-    protected function addCustomOption(\Magento\Catalog\Model\Product $bundleProduct, array $optionsData)
+    protected function addCustomOption(Product $bundleProduct, array $optionsData)
     {
-        /** @var \Magento\Catalog\Api\Data\ProductCustomOptionInterfaceFactory $customOptionFactory */
+        /** @var ProductCustomOptionInterfaceFactory $customOptionFactory */
         $customOptionFactory = $this->objectManager
-            ->create(\Magento\Catalog\Api\Data\ProductCustomOptionInterfaceFactory::class);
+            ->create(ProductCustomOptionInterfaceFactory::class);
 
         $options = [];
         foreach ($optionsData as $optionData) {

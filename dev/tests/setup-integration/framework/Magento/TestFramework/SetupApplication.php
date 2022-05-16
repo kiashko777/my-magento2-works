@@ -3,7 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework;
+
+use Exception;
 
 /**
  * Encapsulates application installation, initialization and uninstall, add flag to skip database dump.
@@ -32,6 +35,6 @@ class SetupApplication extends Application
      */
     public function run()
     {
-        throw new \Exception("Can't start application.");
+        throw new Exception("Can't start application.");
     }
 }

@@ -3,11 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Composer;
 
 use Magento\Composer\MagentoComposerApplication;
+use PHPUnit\Framework\TestCase;
 
-class RemoveTest extends \PHPUnit\Framework\TestCase
+class RemoveTest extends TestCase
 {
     public function testRemove()
     {

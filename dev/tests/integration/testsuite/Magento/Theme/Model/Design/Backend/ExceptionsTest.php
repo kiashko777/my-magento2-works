@@ -3,30 +3,23 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Theme\Model\Design\Backend;
 
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Serialize\Serializer\Json;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class ExceptionsTest extends \PHPUnit\Framework\TestCase
+class ExceptionsTest extends TestCase
 {
     /**
-     * @var \Magento\Theme\Model\Design\Backend\Exceptions
+     * @var Exceptions
      */
     private $exceptions = null;
 
     /** @var Json */
     private $serializer;
-
-    protected function setUp(): void
-    {
-        $this->exceptions = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Theme\Model\Design\Backend\Exceptions::class
-        );
-        $this->exceptions->setScope('default');
-        $this->exceptions->setScopeId(0);
-        $this->exceptions->setPath('design/theme/ua_regexp');
-        $this->serializer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(Json::class);
-    }
 
     /**
      * Basic test, checks that saved value contains all required entries and is saved as an array
@@ -110,7 +103,7 @@ class ExceptionsTest extends \PHPUnit\Framework\TestCase
      */
     public function testSaveWrongException($value)
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
 
         $this->exceptions->setValue($value);
         $this->exceptions->save();
@@ -161,5 +154,16 @@ class ExceptionsTest extends \PHPUnit\Framework\TestCase
         ];
 
         return $result;
+    }
+
+    protected function setUp(): void
+    {
+        $this->exceptions = Bootstrap::getObjectManager()->create(
+            Exceptions::class
+        );
+        $this->exceptions->setScope('default');
+        $this->exceptions->setScopeId(0);
+        $this->exceptions->setPath('design/theme/ua_regexp');
+        $this->serializer = Bootstrap::getObjectManager()->get(Json::class);
     }
 }

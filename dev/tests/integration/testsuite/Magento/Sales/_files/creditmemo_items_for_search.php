@@ -23,7 +23,7 @@ $objectManager = Bootstrap::getObjectManager();
 $productRepository = $objectManager->create(ProductRepositoryInterface::class);
 $product = $productRepository->get('simple');
 $orderCollection = $objectManager->create(Order::class)->getCollection();
-/** @var \Magento\Sales\Model\Order $order */
+/** @var Order $order */
 $order = $orderCollection->getFirstItem();
 
 /** @var ItemFactory $creditmemoItemFactory */

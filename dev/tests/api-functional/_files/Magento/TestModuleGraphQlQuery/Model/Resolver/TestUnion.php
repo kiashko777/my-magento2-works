@@ -20,12 +20,13 @@ class TestUnion implements ResolverInterface
      * @inheritDoc
      */
     public function resolve(
-        Field $field,
-        $context,
+        Field       $field,
+                    $context,
         ResolveInfo $info,
-        array $value = null,
-        array $args = null
-    ) {
+        array       $value = null,
+        array       $args = null
+    )
+    {
         return [
             'custom_name1' => 'custom_name1_value',
             'custom_name2' => 'custom_name2_value',

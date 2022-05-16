@@ -3,6 +3,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Catalog\Api\Data\CustomOptionInterface;
+use Magento\Catalog\Api\Data\ProductCustomOptionInterface;
+use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\CustomOptions\CustomOptionFactory;
+use Magento\Quote\Api\CartItemRepositoryInterface;
+use Magento\Quote\Api\Data\CartItemInterface;
+use Magento\Quote\Api\Data\ProductOptionExtensionFactory;
+use Magento\Quote\Api\Data\ProductOptionExtensionInterface;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\Quote\ProductOption;
+use Magento\Quote\Model\Quote\ProductOptionFactory;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/product_simple.php');
@@ -23,27 +37,27 @@ $optionValue = [
     'radio' => '4-1-radio',
 ];
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 
-$productRepository = $objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
-/** @var \Magento\Catalog\Api\Data\ProductInterface $product */
+$productRepository = $objectManager->create(ProductRepositoryInterface::class);
+/** @var ProductInterface $product */
 $product = $productRepository->get('simple');
 
-/** @var \Magento\Quote\Model\Quote $quote */
-$quote = $objectManager->create(\Magento\Quote\Model\Quote::class);
-/** @var \Magento\Quote\Api\CartItemRepositoryInterface  $quoteItemRepository */
-$quoteItemRepository = $objectManager->create(\Magento\Quote\Api\CartItemRepositoryInterface::class);
-/** @var \Magento\Quote\Api\Data\CartItemInterface $cartItem */
-$cartItem = $objectManager->create(\Magento\Quote\Api\Data\CartItemInterface::class);
-/** @var \Magento\Quote\Model\Quote\ProductOption $productOption */
-$productOption = $objectManager->create(\Magento\Quote\Model\Quote\ProductOptionFactory::class)->create();
-/** @var  \Magento\Quote\Api\Data\ProductOptionExtensionInterface $extensionAttributes */
-$extensionAttributes = $objectManager->create(\Magento\Quote\Api\Data\ProductOptionExtensionFactory::class)->create();
-$customOptionFactory = $objectManager->create(\Magento\Catalog\Model\CustomOptions\CustomOptionFactory::class);
+/** @var Quote $quote */
+$quote = $objectManager->create(Quote::class);
+/** @var CartItemRepositoryInterface $quoteItemRepository */
+$quoteItemRepository = $objectManager->create(CartItemRepositoryInterface::class);
+/** @var CartItemInterface $cartItem */
+$cartItem = $objectManager->create(CartItemInterface::class);
+/** @var ProductOption $productOption */
+$productOption = $objectManager->create(ProductOptionFactory::class)->create();
+/** @var  ProductOptionExtensionInterface $extensionAttributes */
+$extensionAttributes = $objectManager->create(ProductOptionExtensionFactory::class)->create();
+$customOptionFactory = $objectManager->create(CustomOptionFactory::class);
 $options = [];
-/** @var \Magento\Catalog\Api\Data\ProductCustomOptionInterface $option */
+/** @var ProductCustomOptionInterface $option */
 foreach ($product->getOptions() as $option) {
-    /** @var \Magento\Catalog\Api\Data\CustomOptionInterface $customOption */
+    /** @var CustomOptionInterface $customOption */
     $customOption = $customOptionFactory->create();
     $customOption->setOptionId($option->getId());
     $customOption->setOptionValue($optionValue[$option->getType()]);

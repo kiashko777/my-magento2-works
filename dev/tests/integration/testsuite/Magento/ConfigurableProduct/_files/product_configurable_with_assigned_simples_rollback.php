@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\CatalogInventory\Model\Stock\Status;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Registry;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
@@ -29,7 +30,7 @@ foreach (['simple_1', 'simple_2', 'configurable'] as $sku) {
         if ($product->getId()) {
             $productRepository->delete($product);
         }
-    } catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+    } catch (NoSuchEntityException $e) {
         //Products already removed
     }
 }

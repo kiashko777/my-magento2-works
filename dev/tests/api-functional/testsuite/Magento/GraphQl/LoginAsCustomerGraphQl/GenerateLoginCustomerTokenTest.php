@@ -31,13 +31,6 @@ class GenerateLoginCustomerTokenTest extends GraphQlAbstract
      */
     private $adminTokenService;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-        $this->adminTokenService = $objectManager->get(AdminTokenService::class);
-    }
-
     /**
      * Verify with Admin email ID and Magento_LoginAsCustomer::login is enabled
      *
@@ -60,6 +53,46 @@ class GenerateLoginCustomerTokenTest extends GraphQlAbstract
         );
         $this->assertArrayHasKey('generateCustomerTokenAsAdmin', $response);
         $this->assertIsArray($response['generateCustomerTokenAsAdmin']);
+    }
+
+    /**
+     * @param string $customerEmail
+     * @return string
+     */
+    private function getQuery(string $customerEmail): string
+    {
+        return <<<MUTATION
+mutation{
+  generateCustomerTokenAsAdmin(input: {
+    customer_email: "{$customerEmail}"
+  }){
+    customer_token
+  }
+}
+MUTATION;
+    }
+
+    /**
+     * To get admin access token
+     *
+     * @param string $userName
+     * @param string $password
+     * @return string[]
+     * @throws AuthenticationException
+     */
+    private function getAdminHeaderAuthentication(string $userName, string $password)
+    {
+        try {
+            $adminAccessToken = $this->adminTokenService->createAdminAccessToken($userName, $password);
+            return ['Authorization' => 'Bearer ' . $adminAccessToken];
+        } catch (Exception $e) {
+            throw new AuthenticationException(
+                __(
+                    'The account sign-in was incorrect or your account is disabled temporarily. '
+                    . 'Please wait and try again later.'
+                )
+            );
+        }
     }
 
     /**
@@ -112,6 +145,26 @@ class GenerateLoginCustomerTokenTest extends GraphQlAbstract
     }
 
     /**
+     * Generate customer authentication token
+     *
+     * @magentoApiDataFixture Magento/LoginAsCustomer/_files/admin.php
+     *
+     * @param string $username
+     * @param string $password
+     * @return string[]
+     * @throws AuthenticationException
+     */
+    public function getCustomerHeaderAuthentication(
+        string $username = 'github@gmail.com',
+        string $password = \Magento\TestFramework\Bootstrap::ADMIN_PASSWORD
+    ): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
+
+        return ['Authorization' => 'Bearer ' . $customerToken];
+    }
+
+    /**
      * Test with invalid data.
      *
      * @magentoApiDataFixture Magento/LoginAsCustomer/_files/admin.php
@@ -128,7 +181,8 @@ class GenerateLoginCustomerTokenTest extends GraphQlAbstract
         string $adminPassword,
         string $customerEmail,
         string $message
-    ) {
+    )
+    {
         $this->expectException(Exception::class);
         $this->expectExceptionMessage($message);
 
@@ -166,62 +220,10 @@ class GenerateLoginCustomerTokenTest extends GraphQlAbstract
         ];
     }
 
-    /**
-     * @param string $customerEmail
-     * @return string
-     */
-    private function getQuery(string $customerEmail) : string
+    protected function setUp(): void
     {
-        return <<<MUTATION
-mutation{
-  generateCustomerTokenAsAdmin(input: {
-    customer_email: "{$customerEmail}"
-  }){
-    customer_token
-  }
-}
-MUTATION;
-    }
-
-    /**
-     * Generate customer authentication token
-     *
-     * @magentoApiDataFixture Magento/LoginAsCustomer/_files/admin.php
-     *
-     * @param string $username
-     * @param string $password
-     * @return string[]
-     * @throws AuthenticationException
-     */
-    public function getCustomerHeaderAuthentication(
-        string $username = 'github@gmail.com',
-        string $password = \Magento\TestFramework\Bootstrap::ADMIN_PASSWORD
-    ): array {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
-
-        return ['Authorization' => 'Bearer ' . $customerToken];
-    }
-
-    /**
-     * To get admin access token
-     *
-     * @param string $userName
-     * @param string $password
-     * @return string[]
-     * @throws AuthenticationException
-     */
-    private function getAdminHeaderAuthentication(string $userName, string $password)
-    {
-        try {
-            $adminAccessToken = $this->adminTokenService->createAdminAccessToken($userName, $password);
-            return ['Authorization' => 'Bearer ' . $adminAccessToken];
-        } catch (\Exception $e) {
-            throw new AuthenticationException(
-                __(
-                    'The account sign-in was incorrect or your account is disabled temporarily. '
-                    . 'Please wait and try again later.'
-                )
-            );
-        }
+        $objectManager = Bootstrap::getObjectManager();
+        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
+        $this->adminTokenService = $objectManager->get(AdminTokenService::class);
     }
 }

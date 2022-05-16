@@ -3,25 +3,27 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Tax\Controller\Adminhtml;
 
 use Magento\Directory\Model\CountryFactory;
 use Magento\Directory\Model\RegionFactory;
 use Magento\Framework\Api\DataObjectHelper;
 use Magento\Framework\Json\Helper\Data;
+use Magento\Tax\Api\Data\TaxRateInterface;
 use Magento\Tax\Api\Data\TaxRateInterfaceFactory;
 use Magento\Tax\Api\TaxRateRepositoryInterface;
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Tax\Api\Data\TaxRateInterface;
-use Magento\Tax\Model\TaxRuleFixtureFactory;
 use Magento\Tax\Model\Rate\Provider as RatesProvider;
+use Magento\Tax\Model\TaxRuleFixtureFactory;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * Tests for Tax Rules controllers.
  *
  * @magentoAppArea Adminhtml
  */
-class RuleTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class RuleTest extends AbstractBackendController
 {
     /**
      * TaxRate factory
@@ -65,24 +67,6 @@ class RuleTest extends \Magento\TestFramework\TestCase\AbstractBackendController
     private $taxRatesProvider;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->rateRepository = $this->_objectManager->get(TaxRateRepositoryInterface::class);
-        $this->taxRateFactory = $this->_objectManager->create(TaxRateInterfaceFactory::class);
-        $this->dataObjectHelper = $this->_objectManager->create(DataObjectHelper::class);
-        $this->taxRateFixtureFactory = new TaxRuleFixtureFactory();
-        $this->countryFactory = $this->_objectManager->create(CountryFactory::class);
-        $this->regionFactory = $this->_objectManager->create(RegionFactory::class);
-        $this->taxRatesProvider = $this->_objectManager->create(RatesProvider::class);
-
-        $this->_generateTaxRates();
-    }
-
-    /**
      * Tests request of tax rates collection set.
      *
      * @param array $postData
@@ -105,6 +89,39 @@ class RuleTest extends \Magento\TestFramework\TestCase\AbstractBackendController
         $this->assertEmpty($response['errorMessage']);
         $this->assertArrayHasKey('result', $response);
         $this->assertCount($itemsCount, $response['result']);
+    }
+
+    /**
+     * Provides POST data
+     *
+     * @return array
+     */
+    public function ajaxActionDataProvider()
+    {
+        $taxRatesProvider = Bootstrap::getObjectManager()->create(RatesProvider::class);
+
+        return [
+            [['p' => 1], $taxRatesProvider->getPageSize()],
+            [['p' => 1, 's' => 'no_such_code'], 0]
+        ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->rateRepository = $this->_objectManager->get(TaxRateRepositoryInterface::class);
+        $this->taxRateFactory = $this->_objectManager->create(TaxRateInterfaceFactory::class);
+        $this->dataObjectHelper = $this->_objectManager->create(DataObjectHelper::class);
+        $this->taxRateFixtureFactory = new TaxRuleFixtureFactory();
+        $this->countryFactory = $this->_objectManager->create(CountryFactory::class);
+        $this->regionFactory = $this->_objectManager->create(RegionFactory::class);
+        $this->taxRatesProvider = $this->_objectManager->create(RatesProvider::class);
+
+        $this->_generateTaxRates();
     }
 
     /**
@@ -131,20 +148,5 @@ class RuleTest extends \Magento\TestFramework\TestCase\AbstractBackendController
             //Tax rate service call
             $this->rateRepository->save($taxRate);
         }
-    }
-
-    /**
-     * Provides POST data
-     *
-     * @return array
-     */
-    public function ajaxActionDataProvider()
-    {
-        $taxRatesProvider = Bootstrap::getObjectManager()->create(RatesProvider::class);
-
-        return [
-            [['p' => 1], $taxRatesProvider->getPageSize()],
-            [['p' => 1, 's' => 'no_such_code'], 0]
-        ];
     }
 }

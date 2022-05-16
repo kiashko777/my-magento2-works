@@ -6,32 +6,54 @@
 
 namespace Magento\Framework\View\Design\FileResolution;
 
+use Magento\Framework\App\Area;
 use Magento\Framework\App\Bootstrap as AppBootstrap;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\View\Design\FileResolution\Fallback\EmailTemplateFile;
+use Magento\Framework\View\Design\FileResolution\Fallback\File;
+use Magento\Framework\View\Design\FileResolution\Fallback\StaticFile;
+use Magento\Framework\View\Design\FileResolution\Fallback\TemplateFile;
+use Magento\Framework\View\Design\Theme\FlyweightFactory;
+use Magento\Setup\Module\I18n\Locale;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Theme\Model\Theme\Registration;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoComponentsDir Magento/Framework/View/_files/fallback
  * @magentoDbIsolation enabled
  */
-class FallbackTest extends \PHPUnit\Framework\TestCase
+class FallbackTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\View\Design\Theme\FlyweightFactory
+     * @var FlyweightFactory
      */
     private $themeFactory;
 
-    protected function setUp(): void
+    /**
+     * @param string $file
+     * @param string $themePath
+     * @param string|null $module
+     * @param string|null $expectedFilename
+     *
+     * @dataProvider getTemplateFileDataProvider
+     */
+    public function testGetTemplateFile($file, $themePath, $module, $expectedFilename)
     {
-        $objectManager = Bootstrap::getObjectManager();
-        /** @var \Magento\Theme\Model\Theme\Registration $registration */
-        $registration = $objectManager->get(
-            \Magento\Theme\Model\Theme\Registration::class
-        );
-        $registration->register();
-        /** @var \Magento\Framework\View\Design\Theme\FlyweightFactory $themeFactory */
-        $this->themeFactory = $objectManager
-            ->get(\Magento\Framework\View\Design\Theme\FlyweightFactory::class);
+        $this->reinitializeEnvironment();
+        /** @var TemplateFile $model */
+        $model = Bootstrap::getObjectManager()
+            ->create(TemplateFile::class);
+        $themeModel = $this->themeFactory->create($themePath);
+
+        $actualFilename = $model->getFile('frontend', $themeModel, $file, $module);
+        if ($expectedFilename) {
+            $this->assertIsString($actualFilename);
+            $this->assertStringMatchesFormat($expectedFilename, $actualFilename);
+            $this->assertFileExists($actualFilename);
+        } else {
+            $this->assertFalse($actualFilename);
+        }
     }
 
     /**
@@ -51,32 +73,6 @@ class FallbackTest extends \PHPUnit\Framework\TestCase
                 ],
             ],
         ]);
-    }
-
-    /**
-     * @param string $file
-     * @param string $themePath
-     * @param string|null $module
-     * @param string|null $expectedFilename
-     *
-     * @dataProvider getTemplateFileDataProvider
-     */
-    public function testGetTemplateFile($file, $themePath, $module, $expectedFilename)
-    {
-        $this->reinitializeEnvironment();
-        /** @var \Magento\Framework\View\Design\FileResolution\Fallback\TemplateFile $model */
-        $model = Bootstrap::getObjectManager()
-            ->create(\Magento\Framework\View\Design\FileResolution\Fallback\TemplateFile::class);
-        $themeModel = $this->themeFactory->create($themePath);
-
-        $actualFilename = $model->getFile('frontend', $themeModel, $file, $module);
-        if ($expectedFilename) {
-            $this->assertIsString($actualFilename);
-            $this->assertStringMatchesFormat($expectedFilename, $actualFilename);
-            $this->assertFileExists($actualFilename);
-        } else {
-            $this->assertFalse($actualFilename);
-        }
     }
 
     /**
@@ -126,9 +122,9 @@ class FallbackTest extends \PHPUnit\Framework\TestCase
     public function testGetI18nCsvFile($themePath, $locale, $expectedFilename)
     {
         $this->reinitializeEnvironment();
-        /** @var \Magento\Framework\View\Design\FileResolution\Fallback\File $model */
+        /** @var File $model */
         $model = Bootstrap::getObjectManager()->create(
-            \Magento\Framework\View\Design\FileResolution\Fallback\File::class
+            File::class
         );
         $themeModel = $this->themeFactory->create($themePath);
 
@@ -175,9 +171,9 @@ class FallbackTest extends \PHPUnit\Framework\TestCase
     public function testGetViewFile($file, $themePath, $locale, $module, $expectedFilename)
     {
         $this->reinitializeEnvironment();
-        /** @var \Magento\Framework\View\Design\FileResolution\Fallback\StaticFile $model */
+        /** @var StaticFile $model */
         $model = Bootstrap::getObjectManager()
-            ->create(\Magento\Framework\View\Design\FileResolution\Fallback\StaticFile::class);
+            ->create(StaticFile::class);
         $themeModel = $this->themeFactory->create($themePath);
 
         $actualFilename = $model->getFile('frontend', $themeModel, $locale, $file, $module);
@@ -271,14 +267,14 @@ class FallbackTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetEmailTemplateFile($file, $themePath, $module, $expectedFilename)
     {
-        $area = \Magento\Framework\App\Area::AREA_FRONTEND;
+        $area = Area::AREA_FRONTEND;
 
-        /** @var \Magento\Framework\View\Design\FileResolution\Fallback\EmailTemplateFile $model */
+        /** @var EmailTemplateFile $model */
         $model = Bootstrap::getObjectManager()
-            ->create(\Magento\Framework\View\Design\FileResolution\Fallback\EmailTemplateFile::class);
+            ->create(EmailTemplateFile::class);
 
         $themeModel = $this->themeFactory->create($themePath);
-        $locale = \Magento\Setup\Module\I18n\Locale::DEFAULT_SYSTEM_LOCALE;
+        $locale = Locale::DEFAULT_SYSTEM_LOCALE;
 
         $actualFilename = $model->getFile($area, $themeModel, $locale, $file, $module);
         if ($expectedFilename) {
@@ -315,5 +311,18 @@ class FallbackTest extends \PHPUnit\Framework\TestCase
                 '%s/frontend/Magento/default/Magento_Customer/email/account_new_confirmed.html',
             ],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var Registration $registration */
+        $registration = $objectManager->get(
+            Registration::class
+        );
+        $registration->register();
+        /** @var FlyweightFactory $themeFactory */
+        $this->themeFactory = $objectManager
+            ->get(FlyweightFactory::class);
     }
 }

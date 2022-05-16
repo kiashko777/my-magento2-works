@@ -9,7 +9,6 @@ declare(strict_types=1);
 
 namespace Magento\Framework\Filesystem\Io;
 
-use Magento\Framework\Exception\FileSystemException;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
 
@@ -35,27 +34,6 @@ class FileTest extends TestCase
     private $generatedPath;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->io = new File();
-        $this->absolutePath = Bootstrap::getInstance()->getAppTempDir();
-        $this->generatedPath = $this->getTestPath('/rollback_test_');
-        $this->io->mkdir($this->generatedPath);
-    }
-
-    /**
-     * @inheritdoc
-     *
-     * @return void
-     */
-    protected function tearDown(): void
-    {
-        $this->removeGeneratedDirectory();
-    }
-
-    /**
      * Verify file put without content.
      *
      * @return void
@@ -68,6 +46,17 @@ class FileTest extends TestCase
     }
 
     /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->io = new File();
+        $this->absolutePath = Bootstrap::getInstance()->getAppTempDir();
+        $this->generatedPath = $this->getTestPath('/rollback_test_');
+        $this->io->mkdir($this->generatedPath);
+    }
+
+    /**
      * Returns relative path for the test.
      *
      * @param $relativePath
@@ -76,6 +65,16 @@ class FileTest extends TestCase
     protected function getTestPath($relativePath): string
     {
         return $this->absolutePath . $relativePath . time();
+    }
+
+    /**
+     * @inheritdoc
+     *
+     * @return void
+     */
+    protected function tearDown(): void
+    {
+        $this->removeGeneratedDirectory();
     }
 
     /**

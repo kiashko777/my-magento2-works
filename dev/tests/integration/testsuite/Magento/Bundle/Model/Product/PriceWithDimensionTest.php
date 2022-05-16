@@ -7,37 +7,31 @@ declare(strict_types=1);
 
 namespace Magento\Bundle\Model\Product;
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
 /**
  * @magentoDbIsolation disabled
  * @magentoIndexerDimensionMode catalog_product_price website_and_customer_group
  * @group indexer_dimension
  * @magentoDataFixture Magento/Bundle/_files/product_with_tier_pricing.php
  */
-class PriceWithDimensionTest extends \PHPUnit\Framework\TestCase
+class PriceWithDimensionTest extends TestCase
 {
     /**
-     * @var \Magento\Bundle\Model\Product\Price
+     * @var Price
      */
     protected $_model;
-
-    /**
-     * Set up
-     */
-    protected function setUp(): void
-    {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Bundle\Model\Product\Price::class
-        );
-    }
 
     /**
      * Get tier price
      */
     public function testGetTierPrice()
     {
-        /** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-        $productRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = Bootstrap::getObjectManager()
+            ->create(ProductRepositoryInterface::class);
         $product = $productRepository->get('bundle-product');
         // fixture
 
@@ -47,5 +41,15 @@ class PriceWithDimensionTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(20.0, $this->_model->getTierPrice(3, $product));
         $this->assertEquals(20.0, $this->_model->getTierPrice(4, $product));
         $this->assertEquals(30.0, $this->_model->getTierPrice(5, $product));
+    }
+
+    /**
+     * Set up
+     */
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Price::class
+        );
     }
 }

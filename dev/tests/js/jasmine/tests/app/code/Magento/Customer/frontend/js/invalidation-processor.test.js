@@ -33,7 +33,8 @@ define([
         try {
             injector.clean();
             injector.remove();
-        } catch (e) {}
+        } catch (e) {
+        }
     });
 
     describe('Magento_Customer/js/invalidation-processor', function () {

@@ -3,10 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sniffs\Less;
 
-use PHP_CodeSniffer\Sniffs\Sniff;
 use PHP_CodeSniffer\Files\File;
+use PHP_CodeSniffer\Sniffs\Sniff;
 use PHP_CodeSniffer\Util\Tokens;
 
 /**
@@ -99,7 +100,7 @@ class ColonSpacingSniff implements Sniff
         } else {
             $content = $tokens[($stackPtr + 1)]['content'];
             if (false === strpos($content, $phpcsFile->eolChar)) {
-                $length  = strlen($content);
+                $length = strlen($content);
                 if ($length !== 1) {
                     $error = 'Expected 1 space after colon in style definition; %s found';
                     $phpcsFile->addError($error, $stackPtr, 'After');

@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Api;
 
+use Exception;
 use Magento\Catalog\Model\ProductWebsiteLink;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Webapi\Rest\Request;
@@ -36,18 +37,6 @@ class ProductWebsiteLinkRepositoryTest extends WebapiAbstract
     private $websiteRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->websiteRepository = $this->objectManager->get(WebsiteRepositoryInterface::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Catalog/_files/second_product_simple.php
      *
      * @return void
@@ -63,9 +52,29 @@ class ProductWebsiteLinkRepositoryTest extends WebapiAbstract
                 ProductWebsiteLink::WEBSITE_ID => $unexistingWebsiteId,
             ],
         ];
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessageMatches($pattern);
         $this->_webApiCall($serviceInfo, $requestData);
+    }
+
+    /**
+     * Fill service information
+     *
+     * @param string $resourcePath
+     * @param string $httpMethod
+     * @param string $operation
+     * @return array
+     */
+    private function fillServiceInfo(string $resourcePath, string $httpMethod, string $operation): array
+    {
+        return [
+            'rest' => ['resourcePath' => $resourcePath, 'httpMethod' => $httpMethod],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . $operation,
+            ],
+        ];
     }
 
     /**
@@ -88,22 +97,14 @@ class ProductWebsiteLinkRepositoryTest extends WebapiAbstract
     }
 
     /**
-     * Fill service information
-     *
-     * @param string $resourcePath
-     * @param string $httpMethod
-     * @param string $operation
-     * @return array
+     * @inheritdoc
      */
-    private function fillServiceInfo(string $resourcePath, string $httpMethod, string $operation): array
+    protected function setUp(): void
     {
-        return [
-            'rest' => ['resourcePath' => $resourcePath, 'httpMethod' => $httpMethod],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . $operation,
-            ],
-        ];
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->websiteRepository = $this->objectManager->get(WebsiteRepositoryInterface::class);
     }
 }

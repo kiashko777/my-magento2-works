@@ -7,18 +7,21 @@ declare(strict_types=1);
 
 namespace Magento\ImportExport\Controller\Adminhtml;
 
+use Magento\Framework\Data\Form\FormKey;
+use Magento\Framework\Filesystem;
 use Magento\Framework\Filesystem\DirectoryList;
 use Magento\Framework\HTTP\Adapter\FileTransferFactory;
+use Magento\ImportExport\Controller\Adminhtml\Import\HttpFactoryMock;
 use Magento\ImportExport\Model\Import;
 use Magento\ImportExport\Model\Import\ErrorProcessing\ProcessingErrorAggregatorInterface;
-use Magento\ImportExport\Controller\Adminhtml\Import\HttpFactoryMock;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * Test for \Magento\ImportExport\Controller\Adminhtml\ImportResult class.
  *
  * @magentoAppArea Adminhtml
  */
-class ImportResultTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class ImportResultTest extends AbstractBackendController
 {
     /**
      * @param string $fileName
@@ -37,8 +40,8 @@ class ImportResultTest extends \Magento\TestFramework\TestCase\AbstractBackendCo
         $this->getRequest()->setMethod('POST');
         $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
 
-        /** @var $formKey \Magento\Framework\Data\Form\FormKey */
-        $formKey = $this->_objectManager->get(\Magento\Framework\Data\Form\FormKey::class);
+        /** @var $formKey FormKey */
+        $formKey = $this->_objectManager->get(FormKey::class);
         $this->getRequest()->setPostValue('form_key', $formKey->getFormKey());
         $this->getRequest()->setPostValue('entity', 'catalog_product');
         $this->getRequest()->setPostValue('behavior', 'append');
@@ -47,7 +50,7 @@ class ImportResultTest extends \Magento\TestFramework\TestCase\AbstractBackendCo
         $this->getRequest()->setPostValue('_import_field_separator', $delimiter);
 
         /** @var \Magento\TestFramework\App\Filesystem $filesystem */
-        $filesystem = $this->_objectManager->get(\Magento\Framework\Filesystem::class);
+        $filesystem = $this->_objectManager->get(Filesystem::class);
         $tmpDir = $filesystem->getDirectoryWrite(DirectoryList::SYS_TMP);
         $subDir = str_replace('\\', '_', __CLASS__);
         $tmpDir->create($subDir);

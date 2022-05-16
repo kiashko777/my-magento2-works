@@ -3,10 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sniffs\Less;
 
-use PHP_CodeSniffer\Sniffs\Sniff;
 use PHP_CodeSniffer\Files\File;
+use PHP_CodeSniffer\Sniffs\Sniff;
 
 /**
  * Class ZeroUnitsSniff
@@ -22,7 +23,12 @@ class ZeroUnitsSniff implements Sniff
     const CSS_PROPERTY_UNIT_PX = 'px';
     const CSS_PROPERTY_UNIT_EM = 'em';
     const CSS_PROPERTY_UNIT_REM = 'rem';
-
+    /**
+     * A list of tokenizers this sniff supports.
+     *
+     * @var array
+     */
+    public $supportedTokenizers = [TokenizerSymbolsInterface::TOKENIZER_CSS];
     /**
      * List of available CSS Property units
      *
@@ -33,13 +39,6 @@ class ZeroUnitsSniff implements Sniff
         self::CSS_PROPERTY_UNIT_EM,
         self::CSS_PROPERTY_UNIT_REM,
     ];
-
-    /**
-     * A list of tokenizers this sniff supports.
-     *
-     * @var array
-     */
-    public $supportedTokenizers = [TokenizerSymbolsInterface::TOKENIZER_CSS];
 
     /**
      * @inheritdoc

@@ -3,14 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Cms\Model;
 
-use Magento\Cms\Model\ResourceModel\Block;
+use Exception;
 use Magento\Cms\Model\BlockFactory;
+use Magento\Cms\Model\ResourceModel\Block;
 use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\DB\Adapter\AdapterInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\ObjectManagerInterface;
-use Magento\Framework\Stdlib\DateTime\DateTime;
-use Magento\Framework\Stdlib\DateTime\Timezone;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
 
@@ -40,23 +42,11 @@ class BlockTest extends TestCase
      */
     private $blockIdentifier;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-
-        /** @var BlockFactory $blockFactory */
-        /** @var Block $blockResource */
-        /** @var GetBlockByIdentifier $getBlockByIdentifierCommand */
-        $this->blockResource   = $this->objectManager->create(Block::class);
-        $this->blockFactory    = $this->objectManager->create(BlockFactory::class);
-        $this->blockIdentifier = $this->objectManager->create(GetBlockByIdentifier::class);
-    }
-
     /**
      * Tests the get by identifier command
      * @param array $blockData
-     * @throws \Exception
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @throws Exception
+     * @throws NoSuchEntityException
      * @magentoDbIsolation enabled
      * @dataProvider testGetByIdentifierDataProvider
      */
@@ -69,36 +59,36 @@ class BlockTest extends TestCase
 
         # Load previously created block and compare identifiers
         $storeId = reset($blockData['stores']);
-        $block   = $this->blockIdentifier->execute($blockData['identifier'], $storeId);
+        $block = $this->blockIdentifier->execute($blockData['identifier'], $storeId);
         $this->assertEquals($blockData['identifier'], $block->getIdentifier());
     }
 
     /**
      * Tests the get by identifier command
      * @param array $blockData
-     * @throws \Exception
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @throws Exception
+     * @throws NoSuchEntityException
      * @magentoDbIsolation enabled
      * @dataProvider testGetByIdentifierDataProvider
      */
     public function testUpdateTime(array $blockData)
     {
         /**
-         * @var $db \Magento\Framework\DB\Adapter\AdapterInterface
+         * @var $db AdapterInterface
          */
-        $db = $this->objectManager->get(\Magento\Framework\App\ResourceConnection::class)
+        $db = $this->objectManager->get(ResourceConnection::class)
             ->getConnection(ResourceConnection::DEFAULT_CONNECTION);
 
         # Prepare and save the temporary block
-        $tempBlock       = $this->blockFactory->create();
+        $tempBlock = $this->blockFactory->create();
         $tempBlock->setData($blockData);
         $beforeTimestamp = $db->fetchCol('SELECT UNIX_TIMESTAMP()')[0];
         $this->blockResource->save($tempBlock);
         $afterTimestamp = $db->fetchCol('SELECT UNIX_TIMESTAMP()')[0];
 
         # Load previously created block and compare identifiers
-        $storeId        = reset($blockData['stores']);
-        $block          = $this->blockIdentifier->execute($blockData['identifier'], $storeId);
+        $storeId = reset($blockData['stores']);
+        $block = $this->blockIdentifier->execute($blockData['identifier'], $storeId);
         $blockTimestamp = strtotime($block->getUpdateTime());
 
         /*
@@ -117,13 +107,25 @@ class BlockTest extends TestCase
         return [
             [
                 'data' => [
-                    'title'      => 'Test title',
-                    'stores'     => [0],
+                    'title' => 'Test title',
+                    'stores' => [0],
                     'identifier' => 'test-identifier',
-                    'content'    => 'Test content',
-                    'is_active'  => 1
+                    'content' => 'Test content',
+                    'is_active' => 1
                 ]
             ]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        /** @var BlockFactory $blockFactory */
+        /** @var Block $blockResource */
+        /** @var GetBlockByIdentifier $getBlockByIdentifierCommand */
+        $this->blockResource = $this->objectManager->create(Block::class);
+        $this->blockFactory = $this->objectManager->create(BlockFactory::class);
+        $this->blockIdentifier = $this->objectManager->create(GetBlockByIdentifier::class);
     }
 }

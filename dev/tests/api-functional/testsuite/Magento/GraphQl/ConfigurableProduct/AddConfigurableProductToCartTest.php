@@ -23,15 +23,6 @@ class AddConfigurableProductToCartTest extends GraphQlAbstract
     private $getMaskedQuoteIdByReservedOrderId;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/ConfigurableProduct/_files/product_configurable.php
      * @magentoApiDataFixture Magento/Checkout/_files/active_quote.php
      */
@@ -44,7 +35,7 @@ class AddConfigurableProductToCartTest extends GraphQlAbstract
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_order_1');
         $parentSku = $product['sku'];
         $sku = 'simple_20';
-        $attributeId = (int) $product['configurable_options'][0]['attribute_id'];
+        $attributeId = (int)$product['configurable_options'][0]['attribute_id'];
         $optionId = $product['configurable_options'][0]['values'][1]['value_index'];
 
         $query = $this->getQuery(
@@ -66,6 +57,85 @@ class AddConfigurableProductToCartTest extends GraphQlAbstract
         self::assertEquals($optionId, $option['value_id']);
         self::assertArrayHasKey('option_label', $option);
         self::assertArrayHasKey('value_label', $option);
+    }
+
+    private function getFetchProductQuery(string $term): string
+    {
+        return <<<QUERY
+{
+  products(
+    search:"{$term}"
+    pageSize:1
+  ) {
+    items {
+      sku
+      ... on ConfigurableProduct {
+        configurable_options {
+          attribute_id
+          attribute_code
+          id
+          label
+          position
+          product_id
+          use_default
+          values {
+            default_label
+            label
+            store_label
+            use_default_value
+            value_index
+          }
+        }
+      }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
+     * @param string $maskedQuoteId
+     * @param string $parentSku
+     * @param string $sku
+     * @param int $quantity
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId, string $parentSku, string $sku, int $quantity): string
+    {
+        return <<<QUERY
+mutation {
+  addConfigurableProductsToCart(
+    input:{
+      cart_id:"{$maskedQuoteId}"
+      cart_items:{
+        parent_sku: "{$parentSku}"
+        data:{
+          sku:"{$sku}"
+          quantity:{$quantity}
+        }
+      }
+    }
+  ) {
+    cart {
+      items {
+        id
+        quantity
+        product {
+          sku
+        }
+        ... on ConfigurableCartItem {
+          configurable_options {
+            id
+            option_label
+            value_id
+            value_label
+          }
+        }
+      }
+    }
+  }
+}
+QUERY;
     }
 
     /**
@@ -147,7 +217,7 @@ QUERY;
      */
     public function testAddVariationFromAnotherConfigurableProductWithTheSameSuperAttributeToCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Could not find specified product.');
 
         $searchResponse = $this->graphQlQuery($this->getFetchProductQuery('configurable_12345'));
@@ -176,7 +246,7 @@ QUERY;
      */
     public function testAddVariationFromAnotherConfigurableProductWithDifferentSuperAttributeToCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Could not find specified product.');
 
         $searchResponse = $this->graphQlQuery($this->getFetchProductQuery('configurable_12345'));
@@ -204,7 +274,7 @@ QUERY;
      */
     public function testAddProductIfQuantityIsNotAvailable()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The requested qty is not available');
 
         $searchResponse = $this->graphQlQuery($this->getFetchProductQuery('configurable'));
@@ -230,7 +300,7 @@ QUERY;
      */
     public function testAddNonExistentConfigurableProductParentToCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Could not find a product with SKU "configurable_no_exist"');
 
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_order_1');
@@ -417,6 +487,42 @@ QUERY;
     }
 
     /**
+     * Get product customizable dropdown options
+     *
+     * @param string $productSku
+     * @return array
+     * @throws Exception
+     */
+    private function getAvailableProductCustomOption(string $productSku): array
+    {
+        $query = <<<QUERY
+{
+  products(filter: {sku: {eq: "${productSku}"}}) {
+    items {
+      name
+      ... on CustomizableProductInterface {
+        options {
+          option_id
+          title
+          ... on CustomizableDropDownOption {
+            value {
+              option_type_id
+              title
+            }
+          }
+        }
+      }
+    }
+  }
+}
+QUERY;
+
+        $response = $this->graphQlQuery($query);
+        $this->assertNotEmpty($response['products']['items'], "No result for product with sku: '{$productSku}'");
+        return $response['products']['items'][0]['options'];
+    }
+
+    /**
      * @magentoApiDataFixture Magento/ConfigurableProduct/_files/product_configurable.php
      * @magentoApiDataFixture Magento/Checkout/_files/active_quote.php
      * @magentoApiDataFixture Magento/Store/_files/second_store.php
@@ -430,7 +536,7 @@ QUERY;
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_order_1');
         $parentSku = $product['sku'];
         $sku = 'simple_20';
-        $attributeId = (int) $product['configurable_options'][0]['attribute_id'];
+        $attributeId = (int)$product['configurable_options'][0]['attribute_id'];
         $optionId = $product['configurable_options'][0]['values'][1]['value_index'];
 
         $query = $this->getQuery(
@@ -493,89 +599,6 @@ QUERY;
     }
 
     /**
-     * @magentoConfigFixture default_store checkout/cart/configurable_product_image parent
-     * @magentoApiDataFixture Magento/ConfigurableProduct/_files/configurable_product_with_child_products_with_images.php
-     * @magentoApiDataFixture Magento/Checkout/_files/active_quote.php
-     */
-    public function testAddConfigurableProductWithImageToCartParentImage(): void
-    {
-        $searchResponse = $this->graphQlQuery($this->getFetchProductQuery('configurable'));
-        $product = current($searchResponse['products']['items']);
-
-        $quantity = 1;
-        $parentSku = $product['sku'];
-        $sku = 'simple_20';
-
-        $query = $this->graphQlQueryForVariant(
-            $this->getMaskedQuoteIdByReservedOrderId->execute('test_order_1'),
-            $parentSku,
-            'simple_20',
-            $quantity
-        );
-
-        $response = $this->graphQlMutation($query);
-
-        $cartItem = current($response['addConfigurableProductsToCart']['cart']['items']);
-        self::assertEquals($quantity, $cartItem['quantity']);
-        self::assertEquals($parentSku, $cartItem['product']['sku']);
-        self::assertArrayHasKey('configured_variant', $cartItem);
-
-        $variant = $cartItem['configured_variant'];
-        $expectedThumbnailUrl = 'magento_thumbnail.jpg';
-        $expectedThumbnailLabel = 'Thumbnail Image';
-        $variantImage = basename($variant['thumbnail']['url']);
-
-        self::assertEquals($expectedThumbnailUrl, $variantImage);
-        self::assertEquals($expectedThumbnailLabel, $variant['thumbnail']['label']);
-        self::assertEquals($sku, $variant['sku']);
-    }
-
-    /**
-     * @param string $maskedQuoteId
-     * @param string $parentSku
-     * @param string $sku
-     * @param int $quantity
-     * @return string
-     */
-    private function getQuery(string $maskedQuoteId, string $parentSku, string $sku, int $quantity): string
-    {
-        return <<<QUERY
-mutation {
-  addConfigurableProductsToCart(
-    input:{
-      cart_id:"{$maskedQuoteId}"
-      cart_items:{
-        parent_sku: "{$parentSku}"
-        data:{
-          sku:"{$sku}"
-          quantity:{$quantity}
-        }
-      }
-    }
-  ) {
-    cart {
-      items {
-        id
-        quantity
-        product {
-          sku
-        }
-        ... on ConfigurableCartItem {
-          configurable_options {
-            id
-            option_label
-            value_id
-            value_label
-          }
-        }
-      }
-    }
-  }
-}
-QUERY;
-    }
-
-    /**
      * @param string $maskedQuoteId
      * @param string $parentSku
      * @param string $sku
@@ -621,73 +644,50 @@ mutation {
 QUERY;
     }
 
-    private function getFetchProductQuery(string $term): string
+    /**
+     * @magentoConfigFixture default_store checkout/cart/configurable_product_image parent
+     * @magentoApiDataFixture Magento/ConfigurableProduct/_files/configurable_product_with_child_products_with_images.php
+     * @magentoApiDataFixture Magento/Checkout/_files/active_quote.php
+     */
+    public function testAddConfigurableProductWithImageToCartParentImage(): void
     {
-        return <<<QUERY
-{
-  products(
-    search:"{$term}"
-    pageSize:1
-  ) {
-    items {
-      sku
-      ... on ConfigurableProduct {
-        configurable_options {
-          attribute_id
-          attribute_code
-          id
-          label
-          position
-          product_id
-          use_default
-          values {
-            default_label
-            label
-            store_label
-            use_default_value
-            value_index
-          }
-        }
-      }
-    }
-  }
-}
-QUERY;
+        $searchResponse = $this->graphQlQuery($this->getFetchProductQuery('configurable'));
+        $product = current($searchResponse['products']['items']);
+
+        $quantity = 1;
+        $parentSku = $product['sku'];
+        $sku = 'simple_20';
+
+        $query = $this->graphQlQueryForVariant(
+            $this->getMaskedQuoteIdByReservedOrderId->execute('test_order_1'),
+            $parentSku,
+            'simple_20',
+            $quantity
+        );
+
+        $response = $this->graphQlMutation($query);
+
+        $cartItem = current($response['addConfigurableProductsToCart']['cart']['items']);
+        self::assertEquals($quantity, $cartItem['quantity']);
+        self::assertEquals($parentSku, $cartItem['product']['sku']);
+        self::assertArrayHasKey('configured_variant', $cartItem);
+
+        $variant = $cartItem['configured_variant'];
+        $expectedThumbnailUrl = 'magento_thumbnail.jpg';
+        $expectedThumbnailLabel = 'Thumbnail Image';
+        $variantImage = basename($variant['thumbnail']['url']);
+
+        self::assertEquals($expectedThumbnailUrl, $variantImage);
+        self::assertEquals($expectedThumbnailLabel, $variant['thumbnail']['label']);
+        self::assertEquals($sku, $variant['sku']);
     }
 
     /**
-     * Get product customizable dropdown options
-     *
-     * @param string $productSku
-     * @return array
-     * @throws Exception
+     * @inheritdoc
      */
-    private function getAvailableProductCustomOption(string $productSku): array
+    protected function setUp(): void
     {
-        $query = <<<QUERY
-{
-  products(filter: {sku: {eq: "${productSku}"}}) {
-    items {
-      name
-      ... on CustomizableProductInterface {
-        options {
-          option_id
-          title
-          ... on CustomizableDropDownOption {
-            value {
-              option_type_id
-              title
-            }
-          }
-        }
-      }
-    }
-  }
-}
-QUERY;
-
-        $response = $this->graphQlQuery($query);
-        $this->assertNotEmpty($response['products']['items'], "No result for product with sku: '{$productSku}'");
-        return $response['products']['items'][0]['options'];
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
     }
 }

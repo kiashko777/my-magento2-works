@@ -3,8 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestModule1\Service\V2;
 
+use Magento\Framework\Api\Filter;
 use Magento\TestModule1\Service\V2\Entity\Item;
 
 interface AllSoapAndRestInterface
@@ -13,7 +15,7 @@ interface AllSoapAndRestInterface
      * Get item.
      *
      * @param int $id
-     * @return \Magento\TestModule1\Service\V2\Entity\Item
+     * @return Item
      */
     public function item($id);
 
@@ -21,24 +23,24 @@ interface AllSoapAndRestInterface
      * Create item.
      *
      * @param string $name
-     * @return \Magento\TestModule1\Service\V2\Entity\Item
+     * @return Item
      */
     public function create($name);
 
     /**
      * Update item.
      *
-     * @param \Magento\TestModule1\Service\V2\Entity\Item $entityItem
-     * @return \Magento\TestModule1\Service\V2\Entity\Item
+     * @param Item $entityItem
+     * @return Item
      */
     public function update(Item $entityItem);
 
     /**
      * Retrieve a list of items.
      *
-     * @param \Magento\Framework\Api\Filter[] $filters
+     * @param Filter[] $filters
      * @param string $sortOrder
-     * @return \Magento\TestModule1\Service\V2\Entity\Item[]
+     * @return Item[]
      */
     public function items($filters = [], $sortOrder = 'ASC');
 
@@ -46,7 +48,7 @@ interface AllSoapAndRestInterface
      * Delete an item.
      *
      * @param int $id
-     * @return \Magento\TestModule1\Service\V2\Entity\Item
+     * @return Item
      */
     public function delete($id);
 }

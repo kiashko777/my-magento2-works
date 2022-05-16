@@ -34,18 +34,6 @@ class DataProviderTest extends TestCase
     private $request;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->request = $this->objectManager->get(RequestInterface::class);
-        $this->componentFactory = $this->objectManager->get(UiComponentFactory::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Cms/_files/pages.php
      *
      * @return void
@@ -60,17 +48,17 @@ class DataProviderTest extends TestCase
     }
 
     /**
-     * @magentoDataFixture Magento/Cms/_files/blocks.php
+     * Get component provided data
      *
-     * @return void
+     * @param string $namespace
+     * @return array
      */
-    public function testBlockFilteringByTitlePart(): void
+    private function getComponentProvidedData(string $namespace): array
     {
-        $this->request->setParams(['search' => 'Enabled CMS Block']);
-        $data = $this->getComponentProvidedData('cms_block_listing');
-        $items = $data['items'];
-        $this->assertCount(1, $items);
-        $this->assertEquals('enabled_block', reset($items)[BlockInterface::IDENTIFIER]);
+        $component = $this->componentFactory->create($namespace);
+        $this->prepareChildComponents($component);
+
+        return $component->getContext()->getDataProvider()->getData();
     }
 
     /**
@@ -89,16 +77,28 @@ class DataProviderTest extends TestCase
     }
 
     /**
-     * Get component provided data
+     * @magentoDataFixture Magento/Cms/_files/blocks.php
      *
-     * @param string $namespace
-     * @return array
+     * @return void
      */
-    private function getComponentProvidedData(string $namespace): array
+    public function testBlockFilteringByTitlePart(): void
     {
-        $component = $this->componentFactory->create($namespace);
-        $this->prepareChildComponents($component);
+        $this->request->setParams(['search' => 'Enabled CMS Block']);
+        $data = $this->getComponentProvidedData('cms_block_listing');
+        $items = $data['items'];
+        $this->assertCount(1, $items);
+        $this->assertEquals('enabled_block', reset($items)[BlockInterface::IDENTIFIER]);
+    }
 
-        return $component->getContext()->getDataProvider()->getData();
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->request = $this->objectManager->get(RequestInterface::class);
+        $this->componentFactory = $this->objectManager->get(UiComponentFactory::class);
     }
 }

@@ -160,9 +160,9 @@ try {
 /**
  * Generate a phpunit configuration file for a given group
  *
- * @param string  $in
- * @param string  $out
- * @param array   $group
+ * @param string $in
+ * @param string $out
+ * @param array $group
  * @param integer $index
  * @return void
  * @throws Exception
@@ -209,7 +209,7 @@ function createGroupConfig($in, $out, $group, $index)
 /**
  * Format tests in an array into <testsuite> node defined by phpunit xml schema
  *
- * @param array   $group
+ * @param array $group
  * @param integer $index
  * @return string
  */
@@ -253,7 +253,7 @@ function getTestList($configFile, $suiteName)
                     continue;
                 }
                 $suffix = isset($directory['suffix']) ? (string)$directory['suffix'] : 'Test.php';
-                $fileIterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator((string)$directory));
+                $fileIterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator((string)$directory));
                 foreach ($fileIterator as $fileInfo) {
                     $pathToTestCase = (string)$fileInfo;
                     if (substr_compare($pathToTestCase, $suffix, -strlen($suffix)) === 0

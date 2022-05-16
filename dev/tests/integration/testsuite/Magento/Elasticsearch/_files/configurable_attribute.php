@@ -5,16 +5,18 @@
  */
 declare(strict_types=1);
 
-use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Catalog\Setup\CategorySetup;
 use Magento\Eav\Api\AttributeRepositoryInterface;
+use Magento\Eav\Model\Config;
+use Magento\TestFramework\Helper\Bootstrap;
 
-$eavConfig = Bootstrap::getObjectManager()->get(\Magento\Eav\Model\Config::class);
+$eavConfig = Bootstrap::getObjectManager()->get(Config::class);
 $attribute = $eavConfig->getAttribute('catalog_product', 'test_configurable');
 
 $eavConfig->clear();
 
-/** @var $installer \Magento\Catalog\Setup\CategorySetup */
-$installer = Bootstrap::getObjectManager()->create(\Magento\Catalog\Setup\CategorySetup::class);
+/** @var $installer CategorySetup */
+$installer = Bootstrap::getObjectManager()->create(CategorySetup::class);
 
 if (!$attribute->getId()) {
     /** @var $attribute \Magento\Catalog\Model\ResourceModel\Eav\Attribute */

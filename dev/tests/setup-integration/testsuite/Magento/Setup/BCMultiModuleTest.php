@@ -51,17 +51,6 @@ class BCMultiModuleTest extends SetupTestCase
      */
     private $dbSchemaReader;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->moduleManager = $objectManager->get(TestModuleManager::class);
-        $this->cliCommand = $objectManager->get(CliCommand::class);
-        $this->dbVersionInfo = $objectManager->get(DbVersionInfo::class);
-        $this->tableData = $objectManager->get(TableData::class);
-        $this->moduleResource = $objectManager->get(ModuleResource::class);
-        $this->dbSchemaReader = $objectManager->get(DbSchemaReaderInterface::class);
-    }
-
     /**
      * @moduleName Magento_TestSetupDeclarationModule6
      * @moduleName Magento_TestSetupDeclarationModule7
@@ -80,87 +69,6 @@ class BCMultiModuleTest extends SetupTestCase
         $columns = $this->dbSchemaReader->readColumns('test_table', 'default');
         $floatColumn = $columns['float'];
         self::assertEquals(29, $floatColumn['default']);
-    }
-
-    private function doUsToUsRevision()
-    {
-        $this->moduleManager->updateRevision(
-            'Magento_TestSetupDeclarationModule7',
-            'us_to_us',
-            'UpgradeSchema.php',
-            'Setup'
-        );
-        $this->moduleManager->updateRevision(
-            'Magento_TestSetupDeclarationModule7',
-            'us_to_us',
-            'module.xml',
-            'etc'
-        );
-        $this->moduleManager->updateRevision(
-            'Magento_TestSetupDeclarationModule7',
-            'us_to_us',
-            'UpgradeData.php',
-            'Setup'
-        );
-    }
-
-    private function doUsToDsRevision()
-    {
-        $this->moduleManager->updateRevision(
-            'Magento_TestSetupDeclarationModule7',
-            'swap_with_declaration',
-            'db_schema.xml',
-            'etc'
-        );
-        $this->moduleManager->updateRevision(
-            'Magento_TestSetupDeclarationModule7',
-            'swap_with_declaration',
-            'SomePatch.php',
-            'Setup/Patch/Data'
-        );
-        $this->moduleManager->updateRevision(
-            'Magento_TestSetupDeclarationModule7',
-            'swap_with_declaration',
-            'SomeSkippedPatch.php',
-            'Setup/Patch/Data'
-        );
-    }
-
-    /**
-     * Assert that data and schema of 2 modules are installed successfully
-     */
-    private function assertUsToUsUpgrade()
-    {
-        $usToUsTables = $this->dbSchemaReader->readTables('default');
-        self::assertContains('custom_table', $usToUsTables);
-        self::assertTrue($this->dbVersionInfo->isDataUpToDate('Magento_TestSetupDeclarationModule7'));
-        self::assertTrue($this->dbVersionInfo->isSchemaUpToDate('Magento_TestSetupDeclarationModule7'));
-        self::assertEquals(
-            [6,12],
-            $this->tableData->describeTableData('reference_table', 'bigint_without_padding')
-        );
-    }
-
-    /**
-     * Assert that data and schema of 2 modules are installed successfully
-     */
-    private function assertUsToDsUpgrade()
-    {
-        //Check UpgradeSchema old format, that modify declaration
-        $columns = $this->dbSchemaReader->readColumns('test_table', 'default');
-        $floatColumn = $columns['float'];
-        //Check whether declaration will be applied
-        self::assertEquals(35, $floatColumn['default']);
-        self::assertTrue($this->dbVersionInfo->isDataUpToDate('Magento_TestSetupDeclarationModule7'));
-        self::assertTrue($this->dbVersionInfo->isSchemaUpToDate('Magento_TestSetupDeclarationModule7'));
-        self::assertEquals(
-            [6,12],
-            $this->tableData->describeTableData('reference_table', 'bigint_without_padding')
-        );
-        self::assertEquals(
-            ['_ref'],
-            $this->tableData->describeTableData('test_table', 'varchar')
-        );
     }
 
     /**
@@ -198,6 +106,87 @@ class BCMultiModuleTest extends SetupTestCase
         self::assertNotContains('custom_table', $tables);
     }
 
+    private function doUsToUsRevision()
+    {
+        $this->moduleManager->updateRevision(
+            'Magento_TestSetupDeclarationModule7',
+            'us_to_us',
+            'UpgradeSchema.php',
+            'Setup'
+        );
+        $this->moduleManager->updateRevision(
+            'Magento_TestSetupDeclarationModule7',
+            'us_to_us',
+            'module.xml',
+            'etc'
+        );
+        $this->moduleManager->updateRevision(
+            'Magento_TestSetupDeclarationModule7',
+            'us_to_us',
+            'UpgradeData.php',
+            'Setup'
+        );
+    }
+
+    /**
+     * Assert that data and schema of 2 modules are installed successfully
+     */
+    private function assertUsToUsUpgrade()
+    {
+        $usToUsTables = $this->dbSchemaReader->readTables('default');
+        self::assertContains('custom_table', $usToUsTables);
+        self::assertTrue($this->dbVersionInfo->isDataUpToDate('Magento_TestSetupDeclarationModule7'));
+        self::assertTrue($this->dbVersionInfo->isSchemaUpToDate('Magento_TestSetupDeclarationModule7'));
+        self::assertEquals(
+            [6, 12],
+            $this->tableData->describeTableData('reference_table', 'bigint_without_padding')
+        );
+    }
+
+    private function doUsToDsRevision()
+    {
+        $this->moduleManager->updateRevision(
+            'Magento_TestSetupDeclarationModule7',
+            'swap_with_declaration',
+            'db_schema.xml',
+            'etc'
+        );
+        $this->moduleManager->updateRevision(
+            'Magento_TestSetupDeclarationModule7',
+            'swap_with_declaration',
+            'SomePatch.php',
+            'Setup/Patch/Data'
+        );
+        $this->moduleManager->updateRevision(
+            'Magento_TestSetupDeclarationModule7',
+            'swap_with_declaration',
+            'SomeSkippedPatch.php',
+            'Setup/Patch/Data'
+        );
+    }
+
+    /**
+     * Assert that data and schema of 2 modules are installed successfully
+     */
+    private function assertUsToDsUpgrade()
+    {
+        //Check UpgradeSchema old format, that modify declaration
+        $columns = $this->dbSchemaReader->readColumns('test_table', 'default');
+        $floatColumn = $columns['float'];
+        //Check whether declaration will be applied
+        self::assertEquals(35, $floatColumn['default']);
+        self::assertTrue($this->dbVersionInfo->isDataUpToDate('Magento_TestSetupDeclarationModule7'));
+        self::assertTrue($this->dbVersionInfo->isSchemaUpToDate('Magento_TestSetupDeclarationModule7'));
+        self::assertEquals(
+            [6, 12],
+            $this->tableData->describeTableData('reference_table', 'bigint_without_padding')
+        );
+        self::assertEquals(
+            ['_ref'],
+            $this->tableData->describeTableData('test_table', 'varchar')
+        );
+    }
+
     /**
      * @moduleName Magento_TestSetupDeclarationModule1
      * @dataProvider firstCleanInstallOneModuleDataProvider
@@ -214,7 +203,8 @@ class BCMultiModuleTest extends SetupTestCase
         string $indexName,
         string $constraintName,
         string $foreignKeyName
-    ) {
+    )
+    {
         $this->cliCommand->install(
             [
                 'Magento_TestSetupDeclarationModule1'
@@ -261,5 +251,16 @@ class BCMultiModuleTest extends SetupTestCase
                 'foreignKeyName' => 'SPEC_TEST_TABLE_TINYINT_SPEC_REFERENCE_TABLE_TINYINT_REF',
             ]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->moduleManager = $objectManager->get(TestModuleManager::class);
+        $this->cliCommand = $objectManager->get(CliCommand::class);
+        $this->dbVersionInfo = $objectManager->get(DbVersionInfo::class);
+        $this->tableData = $objectManager->get(TableData::class);
+        $this->moduleResource = $objectManager->get(ModuleResource::class);
+        $this->dbSchemaReader = $objectManager->get(DbSchemaReaderInterface::class);
     }
 }

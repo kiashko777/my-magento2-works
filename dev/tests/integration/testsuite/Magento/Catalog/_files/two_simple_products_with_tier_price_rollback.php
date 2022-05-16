@@ -5,14 +5,18 @@
  */
 declare(strict_types=1);
 
-$productRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$productRepository = Bootstrap::getObjectManager()
+    ->get(ProductRepositoryInterface::class);
 
 foreach (['simple', 'second_simple'] as $sku) {
     try {
         $product = $productRepository->get($sku, false, null, true);
         $productRepository->delete($product);
-    } catch (\Magento\Framework\Exception\NoSuchEntityException $exception) {
+    } catch (NoSuchEntityException $exception) {
         //Products already removed
     }
 }

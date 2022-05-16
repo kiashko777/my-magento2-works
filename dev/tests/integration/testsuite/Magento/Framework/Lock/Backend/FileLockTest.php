@@ -7,29 +7,24 @@ declare(strict_types=1);
 
 namespace Magento\Framework\Lock\Backend;
 
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
 /**
  * \Magento\Framework\Lock\Backend\File test case
  */
-class FileLockTest extends \PHPUnit\Framework\TestCase
+class FileLockTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Lock\Backend\FileLock
+     * @var FileLock
      */
     private $model;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->model = $this->objectManager->create(
-            \Magento\Framework\Lock\Backend\FileLock::class,
-            ['path' => '/tmp']
-        );
-    }
 
     public function testLockAndUnlock()
     {
@@ -51,5 +46,14 @@ class FileLockTest extends \PHPUnit\Framework\TestCase
 
         $this->assertFalse($this->model->isLocked($name));
         $this->assertFalse($this->model->unlock($name));
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->model = $this->objectManager->create(
+            FileLock::class,
+            ['path' => '/tmp']
+        );
     }
 }

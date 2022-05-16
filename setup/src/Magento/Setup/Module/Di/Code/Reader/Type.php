@@ -7,6 +7,9 @@
 
 namespace Magento\Setup\Module\Di\Code\Reader;
 
+use ReflectionClass;
+use ReflectionException;
+
 class Type
 {
     /**
@@ -18,8 +21,8 @@ class Type
     public function isConcrete($type)
     {
         try {
-            $instance = new \ReflectionClass($type);
-        } catch (\ReflectionException $e) {
+            $instance = new ReflectionClass($type);
+        } catch (ReflectionException $e) {
             return false;
         }
         return !$instance->isAbstract() && !$instance->isInterface();

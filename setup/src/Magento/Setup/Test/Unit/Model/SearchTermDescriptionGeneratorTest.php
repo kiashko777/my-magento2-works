@@ -30,18 +30,6 @@ class SearchTermDescriptionGeneratorTest extends TestCase
      */
     private $searchTermManagerMock;
 
-    protected function setUp(): void
-    {
-        $this->descriptionGeneratorMock =
-            $this->createMock(DescriptionGenerator::class);
-        $this->searchTermManagerMock = $this->createMock(SearchTermManager::class);
-
-        $this->searchTermDescriptionGenerator = new SearchTermDescriptionGenerator(
-            $this->descriptionGeneratorMock,
-            $this->searchTermManagerMock
-        );
-    }
-
     public function testGeneratorWithCaching()
     {
         $descriptionMock = '<o>';
@@ -63,5 +51,17 @@ class SearchTermDescriptionGeneratorTest extends TestCase
 
         $this->searchTermDescriptionGenerator->generate($firstProductIndex);
         $this->searchTermDescriptionGenerator->generate($secondProductIndex);
+    }
+
+    protected function setUp(): void
+    {
+        $this->descriptionGeneratorMock =
+            $this->createMock(DescriptionGenerator::class);
+        $this->searchTermManagerMock = $this->createMock(SearchTermManager::class);
+
+        $this->searchTermDescriptionGenerator = new SearchTermDescriptionGenerator(
+            $this->descriptionGeneratorMock,
+            $this->searchTermManagerMock
+        );
     }
 }

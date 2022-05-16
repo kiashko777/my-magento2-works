@@ -8,6 +8,9 @@ declare(strict_types=1);
 namespace Magento\GraphQl\Swatches;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Eav\Api\Data\AttributeOptionInterface;
+use Magento\Eav\Model\Config;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
 
 /**
@@ -80,16 +83,43 @@ QUERY;
     }
 
     /**
+     * Assert filters data.
+     *
+     * @param array $response
+     * @param array $expectedFilters
+     * @param string $message
+     */
+    private function assertFilters($response, $expectedFilters, $message = '')
+    {
+        $this->assertArrayHasKey('filters', $response['products'], 'Products has filters');
+        $this->assertIsArray(($response['products']['filters']), 'Products filters is array');
+        $this->assertTrue(count($response['products']['filters']) > 0, 'Products filters is not empty');
+        foreach ($expectedFilters as $expectedFilter) {
+            $found = false;
+            foreach ($response['products']['filters'] as $responseFilter) {
+                if ($responseFilter['name'] == $expectedFilter['name']
+                    && $responseFilter['request_var'] == $expectedFilter['request_var']) {
+                    $found = true;
+                    break;
+                }
+            }
+            if (!$found) {
+                $this->fail($message);
+            }
+        }
+    }
+
+    /**
      * Get array with expected data for layered navigation filters
      *
      * @return array
      */
     private function getExpectedFiltersDataSet()
     {
-        /** @var \Magento\Eav\Model\Config $eavConfig */
-        $eavConfig = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Eav\Model\Config::class);
+        /** @var Config $eavConfig */
+        $eavConfig = Bootstrap::getObjectManager()->get(Config::class);
         $attribute = $eavConfig->getAttribute('catalog_product', 'color_swatch');
-        /** @var \Magento\Eav\Api\Data\AttributeOptionInterface[] $options */
+        /** @var AttributeOptionInterface[] $options */
         $options = $attribute->getOptions();
         // Fetching option ID is required for continuous debug as of autoincrement IDs.
         return [
@@ -120,7 +150,7 @@ QUERY;
                         ],
                     ],
                 ],
-             ],
+            ],
             [
                 'name' => 'Price',
                 'filter_items_count' => 3,
@@ -144,32 +174,5 @@ QUERY;
                 ],
             ],
         ];
-    }
-
-    /**
-     * Assert filters data.
-     *
-     * @param array $response
-     * @param array $expectedFilters
-     * @param string $message
-     */
-    private function assertFilters($response, $expectedFilters, $message = '')
-    {
-        $this->assertArrayHasKey('filters', $response['products'], 'Products has filters');
-        $this->assertIsArray(($response['products']['filters']), 'Products filters is array');
-        $this->assertTrue(count($response['products']['filters']) > 0, 'Products filters is not empty');
-        foreach ($expectedFilters as $expectedFilter) {
-            $found = false;
-            foreach ($response['products']['filters'] as $responseFilter) {
-                if ($responseFilter['name'] == $expectedFilter['name']
-                    && $responseFilter['request_var'] == $expectedFilter['request_var']) {
-                    $found = true;
-                    break;
-                }
-            }
-            if (!$found) {
-                $this->fail($message);
-            }
-        }
     }
 }

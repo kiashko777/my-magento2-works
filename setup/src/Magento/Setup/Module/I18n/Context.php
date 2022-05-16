@@ -3,11 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\I18n;
 
-use Magento\Framework\App\Filesystem\DirectoryList;
+use InvalidArgumentException;
 use Magento\Framework\Component\ComponentRegistrar;
-use Magento\Framework\Filesystem;
 
 /**
  *  Context
@@ -51,7 +51,7 @@ class Context
      *
      * @param string $path
      * @return array
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     public function getContextByPath($path)
     {
@@ -63,7 +63,7 @@ class Context
             $type = self::CONTEXT_TYPE_LIB;
             $value = ltrim($value, '/');
         } else {
-            throw new \InvalidArgumentException(sprintf('Invalid path given: "%s".', $path));
+            throw new InvalidArgumentException(sprintf('Invalid path given: "%s".', $path));
         }
         return [$type, $value];
     }
@@ -92,7 +92,7 @@ class Context
      * @param string $type
      * @param array $value
      * @return string|null
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     public function buildPathToLocaleDirectoryByContext($type, $value)
     {
@@ -107,7 +107,7 @@ class Context
                 $path = BP . '/lib/web';
                 break;
             default:
-                throw new \InvalidArgumentException(sprintf('Invalid context given: "%s".', $type));
+                throw new InvalidArgumentException(sprintf('Invalid context given: "%s".', $type));
         }
 
         return (null === $path) ? null : $path . '/' . self::LOCALE_DIRECTORY . '/';

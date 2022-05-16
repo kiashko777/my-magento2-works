@@ -4,12 +4,18 @@
  * See COPYING.txt for license details.
  */
 /* Create attribute */
-/** @var $installer \Magento\Catalog\Setup\CategorySetup */
-$installer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Catalog\Setup\CategorySetup::class
+/** @var $installer CategorySetup */
+
+use Magento\Catalog\_files\MultiselectSourceMock;
+use Magento\Catalog\Setup\CategorySetup;
+use Magento\Eav\Model\Entity\Attribute\Backend\ArrayBackend;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$installer = Bootstrap::getObjectManager()->create(
+    CategorySetup::class
 );
 /** @var $attribute \Magento\Catalog\Model\ResourceModel\Eav\Attribute */
-$attribute = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+$attribute = Bootstrap::getObjectManager()->create(
     \Magento\Catalog\Model\ResourceModel\Eav\Attribute::class
 );
 $entityType = $installer->getEntityTypeId('catalog_product');
@@ -35,8 +41,8 @@ if (!$attribute->loadByCode($entityType, 'multiselect_attr_with_source')->getAtt
             'used_for_sort_by' => 0,
             'frontend_label' => ['Multiselect Attribute with Source Model'],
             'backend_type' => 'varchar',
-            'backend_model' => \Magento\Eav\Model\Entity\Attribute\Backend\ArrayBackend::class,
-            'source_model' => \Magento\Catalog\_files\MultiselectSourceMock::class
+            'backend_model' => ArrayBackend::class,
+            'source_model' => MultiselectSourceMock::class
         ]
     );
     $attribute->save();

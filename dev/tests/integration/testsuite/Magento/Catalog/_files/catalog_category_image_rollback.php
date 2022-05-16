@@ -6,10 +6,13 @@
 declare(strict_types=1);
 
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Filesystem;
+use Magento\Framework\Filesystem\Directory\WriteInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var \Magento\Framework\Filesystem\Directory\WriteInterface $mediaDirectory */
-$mediaDirectory = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-    \Magento\Framework\Filesystem::class
+/** @var WriteInterface $mediaDirectory */
+$mediaDirectory = Bootstrap::getObjectManager()->get(
+    Filesystem::class
 )->getDirectoryWrite(
     DirectoryList::MEDIA
 );

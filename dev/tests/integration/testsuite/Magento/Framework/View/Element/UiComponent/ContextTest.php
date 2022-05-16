@@ -10,12 +10,12 @@ namespace Magento\Framework\View\Element\UiComponent;
 
 use Magento\Framework\Api\Search\SearchCriteria;
 use Magento\Framework\App\RequestInterface;
+use Magento\Framework\View\Element\UiComponent\DataProvider\DataProviderInterface;
 use Magento\TestFramework\Helper\Bootstrap;
-use PHPUnit\Framework\MockObject\MockObject;
-use PHPUnit\Framework\TestCase;
 use Magento\Ui\Component\Form;
 use Magento\Ui\Component\FormFactory;
-use Magento\Framework\View\Element\UiComponent\DataProvider\DataProviderInterface;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test UI component context.
@@ -36,39 +36,6 @@ class ContextTest extends TestCase
      * @var FormFactory
      */
     private $componentFactory;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->request = Bootstrap::getObjectManager()->get(RequestInterface::class);
-        $this->contextFactory = Bootstrap::getObjectManager()->get(ContextFactory::class);
-        $this->componentFactory = Bootstrap::getObjectManager()->get(FormFactory::class);
-    }
-
-    /**
-     * Generate provider for the test.
-     *
-     * @return DataProviderInterface
-     */
-    private function generateMockProvider(): DataProviderInterface
-    {
-        /** @var DataProviderInterface|MockObject $mock */
-        $mock = $this->getMockForAbstractClass(DataProviderInterface::class);
-        $mock->method('getName')->willReturn('test');
-        $mock->method('getPrimaryFieldName')->willReturn('id');
-        $mock->method('getRequestFieldName')->willReturn('id');
-        $mock->method('getData')->willReturn(['id' => ['some_field' => '${\'some_value\'}']]);
-        $mock->method('getConfigData')->willReturn([]);
-        $mock->method('getFieldMetaInfo')->willReturn([]);
-        $mock->method('getFieldSetMetaInfo')->willReturn('id');
-        $mock->method('getFieldsMetaInfo')->willReturn('id');
-        $mock->method('getSearchCriteria')->willReturn(new SearchCriteria());
-        $mock->method('getSearchResult')->willReturn([]);
-
-        return $mock;
-    }
 
     /**
      * Check processed provider data.
@@ -97,5 +64,38 @@ class ContextTest extends TestCase
             ],
             $data
         );
+    }
+
+    /**
+     * Generate provider for the test.
+     *
+     * @return DataProviderInterface
+     */
+    private function generateMockProvider(): DataProviderInterface
+    {
+        /** @var DataProviderInterface|MockObject $mock */
+        $mock = $this->getMockForAbstractClass(DataProviderInterface::class);
+        $mock->method('getName')->willReturn('test');
+        $mock->method('getPrimaryFieldName')->willReturn('id');
+        $mock->method('getRequestFieldName')->willReturn('id');
+        $mock->method('getData')->willReturn(['id' => ['some_field' => '${\'some_value\'}']]);
+        $mock->method('getConfigData')->willReturn([]);
+        $mock->method('getFieldMetaInfo')->willReturn([]);
+        $mock->method('getFieldSetMetaInfo')->willReturn('id');
+        $mock->method('getFieldsMetaInfo')->willReturn('id');
+        $mock->method('getSearchCriteria')->willReturn(new SearchCriteria());
+        $mock->method('getSearchResult')->willReturn([]);
+
+        return $mock;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->request = Bootstrap::getObjectManager()->get(RequestInterface::class);
+        $this->contextFactory = Bootstrap::getObjectManager()->get(ContextFactory::class);
+        $this->componentFactory = Bootstrap::getObjectManager()->get(FormFactory::class);
     }
 }

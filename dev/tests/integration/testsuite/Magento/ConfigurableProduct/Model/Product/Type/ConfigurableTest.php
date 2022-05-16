@@ -8,11 +8,18 @@
 
 namespace Magento\ConfigurableProduct\Model\Product\Type;
 
+use Magento\Catalog\Api\Data\ProductCustomOptionInterfaceFactory;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Type\AbstractType;
+use Magento\ConfigurableProduct\Model\Product\Type\Configurable\Attribute;
+use Magento\ConfigurableProduct\Model\ResourceModel\Product\Type\Configurable\Product\Collection;
+use Magento\Eav\Model\Config;
+use Magento\Framework\App\Cache\StateInterface;
+use Magento\Framework\DataObject;
+use Magento\Framework\Serialize\Serializer\Json;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Catalog\Api\Data\ProductCustomOptionInterfaceFactory;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -39,26 +46,10 @@ class ConfigurableTest extends TestCase
      */
     private $productRepository;
 
-    protected function setUp(): void
-    {
-        $this->productRepository = Bootstrap::getObjectManager()
-            ->create(ProductRepositoryInterface::class);
-
-        $this->product = Bootstrap::getObjectManager()
-            ->create(Product::class);
-        $this->product->load(1);
-
-        $this->model = Bootstrap::getObjectManager()
-            ->create(Configurable::class);
-
-        // prevent fatal errors by assigning proper "singleton" of type instance to the product
-        $this->product->setTypeInstance($this->model);
-    }
-
     public function testGetRelationInfo()
     {
         $info = $this->model->getRelationInfo();
-        $this->assertInstanceOf(\Magento\Framework\DataObject::class, $info);
+        $this->assertInstanceOf(DataObject::class, $info);
         $this->assertEquals('catalog_product_super_link', $info->getTable());
         $this->assertEquals('parent_id', $info->getParentFieldName());
         $this->assertEquals('product_id', $info->getChildFieldName());
@@ -91,6 +82,22 @@ class ConfigurableTest extends TestCase
     }
 
     /**
+     * Find and instantiate a catalog attribute model by attribute code
+     *
+     * @param string $code
+     * @return \Magento\Catalog\Model\ResourceModel\Eav\Attribute
+     */
+    protected function _getAttributeByCode($code)
+    {
+        return Bootstrap::getObjectManager()->get(
+            Config::class
+        )->getAttribute(
+            'catalog_product',
+            $code
+        );
+    }
+
+    /**
      * @magentoAppIsolation enabled
      * @magentoDataFixture Magento/ConfigurableProduct/_files/product_configurable.php
      */
@@ -113,7 +120,7 @@ class ConfigurableTest extends TestCase
         $attributes = $this->product->getData('_cache_instance_configurable_attributes');
         $this->assertArrayHasKey(0, $attributes);
         $this->assertInstanceOf(
-            \Magento\ConfigurableProduct\Model\Product\Type\Configurable\Attribute::class,
+            Attribute::class,
             $attributes[0]
         );
         $this->assertSame($testConfigurable, $attributes[0]->getProductAttribute());
@@ -146,7 +153,7 @@ class ConfigurableTest extends TestCase
         $testConfigurable = $this->_getAttributeByCode('test_configurable');
         foreach ($collection as $attribute) {
             $this->assertInstanceOf(
-                \Magento\ConfigurableProduct\Model\Product\Type\Configurable\Attribute::class,
+                Attribute::class,
                 $attribute
             );
             $this->assertEquals($testConfigurable->getId(), $attribute->getAttributeId());
@@ -166,7 +173,7 @@ class ConfigurableTest extends TestCase
     public function testGetConfigurableAttributesWithSourceModel()
     {
         $collection = $this->model->getConfigurableAttributes($this->product);
-        /** @var \Magento\ConfigurableProduct\Model\Product\Type\Configurable\Attribute $configurableAttribute */
+        /** @var Attribute $configurableAttribute */
         $configurableAttribute = $collection->getFirstItem();
         $attribute = $this->_getAttributeByCode('test_configurable_with_sm');
         $this->assertSameSize($attribute->getSource()->getAllOptions(), $configurableAttribute->getOptions());
@@ -252,7 +259,7 @@ class ConfigurableTest extends TestCase
         $this->assertIsArray($products);
         $this->assertTrue(2 === count($products));
         foreach ($products as $product) {
-            $this->assertInstanceOf(\Magento\Catalog\Model\Product::class, $product);
+            $this->assertInstanceOf(Product::class, $product);
         }
     }
 
@@ -291,8 +298,8 @@ class ConfigurableTest extends TestCase
      */
     public function testGetUsedProductsCached()
     {
-        /** @var  \Magento\Framework\App\Cache\StateInterface $cacheState */
-        $cacheState = Bootstrap::getObjectManager()->get(\Magento\Framework\App\Cache\StateInterface::class);
+        /** @var  StateInterface $cacheState */
+        $cacheState = Bootstrap::getObjectManager()->get(StateInterface::class);
         $cacheState->setEnabled(\Magento\Framework\App\Cache\Type\Collection::TYPE_IDENTIFIER, true);
 
         $products = $this->getUsedProducts();
@@ -303,10 +310,20 @@ class ConfigurableTest extends TestCase
         );
     }
 
+    /**
+     * @return ProductInterface[]
+     */
+    protected function getUsedProducts()
+    {
+        $product = Bootstrap::getObjectManager()->create(Product::class);
+        $product->load(1);
+        return $this->model->getUsedProducts($product);
+    }
+
     public function testGetUsedProductCollection()
     {
         $this->assertInstanceOf(
-            \Magento\ConfigurableProduct\Model\ResourceModel\Product\Type\Configurable\Product\Collection::class,
+            Collection::class,
             $this->model->getUsedProductCollection($this->product)
         );
     }
@@ -348,7 +365,7 @@ class ConfigurableTest extends TestCase
             [$attribute['attribute_id'] => $optionValueId],
             $this->product
         );
-        $this->assertInstanceOf(\Magento\Catalog\Model\Product::class, $product);
+        $this->assertInstanceOf(Product::class, $product);
         $this->assertEquals("simple_10", $product->getSku());
     }
 
@@ -359,8 +376,8 @@ class ConfigurableTest extends TestCase
      */
     public function testGetSelectedAttributesInfo()
     {
-        /** @var $serializer \Magento\Framework\Serialize\Serializer\Json */
-        $serializer = Bootstrap::getObjectManager()->create(\Magento\Framework\Serialize\Serializer\Json::class);
+        /** @var $serializer Json */
+        $serializer = Bootstrap::getObjectManager()->create(Json::class);
 
         $product = $this->productRepository->getById(1, true);
         $attributes = $this->model->getConfigurableAttributesAsArray($product);
@@ -383,8 +400,8 @@ class ConfigurableTest extends TestCase
      */
     public function testGetSelectedAttributesInfoForStore()
     {
-        /** @var $serializer \Magento\Framework\Serialize\Serializer\Json */
-        $serializer = Bootstrap::getObjectManager()->create(\Magento\Framework\Serialize\Serializer\Json::class);
+        /** @var $serializer Json */
+        $serializer = Bootstrap::getObjectManager()->create(Json::class);
 
         $attributes = $this->model->getConfigurableAttributesAsArray($this->product);
 
@@ -416,16 +433,16 @@ class ConfigurableTest extends TestCase
         $attribute = reset($attributes);
         $optionValueId = $attribute['values'][0]['value_index'];
 
-        $buyRequest = new \Magento\Framework\DataObject(
+        $buyRequest = new DataObject(
             ['qty' => 5, 'super_attribute' => [$attribute['attribute_id'] => $optionValueId]]
         );
         $result = $this->model->prepareForCart($buyRequest, $this->product);
         $this->assertIsArray($result);
         $this->assertTrue(2 === count($result));
         foreach ($result as $product) {
-            $this->assertInstanceOf(\Magento\Catalog\Model\Product::class, $product);
+            $this->assertInstanceOf(Product::class, $product);
         }
-        $this->assertInstanceOf(\Magento\Framework\DataObject::class, $result[1]->getCustomOption('parent_product_id'));
+        $this->assertInstanceOf(DataObject::class, $result[1]->getCustomOption('parent_product_id'));
     }
 
     public function testGetSpecifyOptionMessage()
@@ -454,13 +471,33 @@ class ConfigurableTest extends TestCase
         $this->assertArrayHasKey('product_calculations', $result);
         $this->assertArrayHasKey('shipment_type', $result);
         $this->assertEquals(
-            \Magento\Catalog\Model\Product\Type\AbstractType::CALCULATE_PARENT,
+            AbstractType::CALCULATE_PARENT,
             $result['product_calculations']
         );
         $this->assertEquals(
-            \Magento\Catalog\Model\Product\Type\AbstractType::SHIPMENT_TOGETHER,
+            AbstractType::SHIPMENT_TOGETHER,
             $result['shipment_type']
         );
+    }
+
+    /**
+     * Select one of the options and "prepare for cart" with a proper buy request
+     *
+     * @return ProductInterface
+     */
+    protected function _prepareForCart()
+    {
+        $product = $this->productRepository->getById(1, true);
+        $attributes = $this->model->getConfigurableAttributesAsArray($product);
+        $attribute = reset($attributes);
+        $optionValueId = $attribute['values'][0]['value_index'];
+
+        $buyRequest = new DataObject(
+            ['qty' => 5, 'super_attribute' => [$attribute['attribute_id'] => $optionValueId]]
+        );
+        $this->model->prepareForCart($buyRequest, $product);
+
+        return $product;
     }
 
     /**
@@ -490,9 +527,9 @@ class ConfigurableTest extends TestCase
 
         $this->product->setCustomOptions(
             [
-                'simple_product' => new \Magento\Framework\DataObject(
+                'simple_product' => new DataObject(
                     [
-                        'product' => new \Magento\Framework\DataObject(['weight' => 2]),
+                        'product' => new DataObject(['weight' => 2]),
                     ]
                 ),
             ]
@@ -502,7 +539,7 @@ class ConfigurableTest extends TestCase
 
     public function testAssignProductToOption()
     {
-        $option = new \Magento\Framework\DataObject();
+        $option = new DataObject();
         $this->model->assignProductToOption('test', $option, $this->product);
         $this->assertEquals('test', $option->getProduct());
         // other branch of logic depends on \Magento\Sales module
@@ -520,7 +557,7 @@ class ConfigurableTest extends TestCase
         $this->assertTrue(2 === count($result[0]));
         // fixture has 2 simple products
         foreach ($result[0] as $product) {
-            $this->assertInstanceOf(\Magento\Catalog\Model\Product::class, $product);
+            $this->assertInstanceOf(Product::class, $product);
         }
     }
 
@@ -537,7 +574,7 @@ class ConfigurableTest extends TestCase
 
     public function testProcessBuyRequest()
     {
-        $buyRequest = new \Magento\Framework\DataObject(['super_attribute' => ['10', 'string']]);
+        $buyRequest = new DataObject(['super_attribute' => ['10', 'string']]);
         $result = $this->model->processBuyRequest($this->product, $buyRequest);
         $this->assertEquals(['super_attribute' => [10]], $result);
     }
@@ -603,52 +640,6 @@ class ConfigurableTest extends TestCase
     }
 
     /**
-     * Find and instantiate a catalog attribute model by attribute code
-     *
-     * @param string $code
-     * @return \Magento\Catalog\Model\ResourceModel\Eav\Attribute
-     */
-    protected function _getAttributeByCode($code)
-    {
-        return Bootstrap::getObjectManager()->get(
-            \Magento\Eav\Model\Config::class
-        )->getAttribute(
-            'catalog_product',
-            $code
-        );
-    }
-
-    /**
-     * Select one of the options and "prepare for cart" with a proper buy request
-     *
-     * @return ProductInterface
-     */
-    protected function _prepareForCart()
-    {
-        $product = $this->productRepository->getById(1, true);
-        $attributes = $this->model->getConfigurableAttributesAsArray($product);
-        $attribute = reset($attributes);
-        $optionValueId = $attribute['values'][0]['value_index'];
-
-        $buyRequest = new \Magento\Framework\DataObject(
-            ['qty' => 5, 'super_attribute' => [$attribute['attribute_id'] => $optionValueId]]
-        );
-        $this->model->prepareForCart($buyRequest, $product);
-
-        return $product;
-    }
-
-    /**
-     * @return ProductInterface[]
-     */
-    protected function getUsedProducts()
-    {
-        $product = Bootstrap::getObjectManager()->create(Product::class);
-        $product->load(1);
-        return $this->model->getUsedProducts($product);
-    }
-
-    /**
      * Unable to save product required option to product which is a part of configurable product
      *
      * @magentoDataFixture Magento/ConfigurableProduct/_files/configurable_product_with_two_child_products.php
@@ -672,5 +663,21 @@ class ConfigurableTest extends TestCase
 
         $product = $this->productRepository->get($sku);
         $this->assertEmpty($product->getOptions());
+    }
+
+    protected function setUp(): void
+    {
+        $this->productRepository = Bootstrap::getObjectManager()
+            ->create(ProductRepositoryInterface::class);
+
+        $this->product = Bootstrap::getObjectManager()
+            ->create(Product::class);
+        $this->product->load(1);
+
+        $this->model = Bootstrap::getObjectManager()
+            ->create(Configurable::class);
+
+        // prevent fatal errors by assigning proper "singleton" of type instance to the product
+        $this->product->setTypeInstance($this->model);
     }
 }

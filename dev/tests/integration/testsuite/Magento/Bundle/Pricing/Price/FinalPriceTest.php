@@ -30,15 +30,6 @@ class FinalPriceTest extends TestCase
     private $objectManager;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-    }
-
-    /**
      * Check minimal and maximal prices are calculated correctly for Bundle product selections with Tier Prices.
      *
      * @return void
@@ -68,5 +59,14 @@ class FinalPriceTest extends TestCase
                 'quantity' => 0.,
             ]
         );
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
     }
 }

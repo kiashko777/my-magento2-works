@@ -3,7 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-declare (strict_types = 1);
+declare (strict_types=1);
 
 namespace Magento\GraphQl\Wishlist;
 
@@ -22,15 +22,6 @@ class AddWishlistItemsToCartTest extends GraphQlAbstract
      * @var CustomerTokenServiceInterface
      */
     private $customerTokenService;
-
-    /**
-     * Set Up
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-    }
 
     /**
      * @magentoConfigFixture default_store wishlist/general/active 1
@@ -54,6 +45,105 @@ class AddWishlistItemsToCartTest extends GraphQlAbstract
         $this->assertEmpty($wishlistItems);
         $this->assertArrayHasKey('status', $response['addWishlistItemsToCart']);
         $this->assertEquals($response['addWishlistItemsToCart']['status'], true);
+    }
+
+    /**
+     * Get wishlist result
+     *
+     * @param string $username
+     * @return array
+     *
+     * @throws Exception
+     */
+    public function getWishlist(string $username = 'customer@example.com'): array
+    {
+        return $this->graphQlQuery($this->getCustomerWishlistQuery(), [], '', $this->getHeaderMap($username));
+    }
+
+    /**
+     * Get customer wishlist query
+     *
+     * @return string
+     */
+    private function getCustomerWishlistQuery(): string
+    {
+        return <<<QUERY
+query {
+  customer {
+    wishlists {
+      id
+      items_count
+      sharing_code
+      updated_at
+      items_v2 {
+       items {
+        id
+        quantity
+        description
+         product {
+          sku
+        }
+      }
+      }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
+     * Authentication header map
+     *
+     * @param string $username
+     * @param string $password
+     *
+     * @return array
+     *
+     * @throws AuthenticationException
+     */
+    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
+
+        return ['Authorization' => 'Bearer ' . $customerToken];
+    }
+
+    /**
+     * Returns GraphQl mutation string
+     *
+     * @param string $wishlistId
+     * @param string $itemId
+     * @return string
+     */
+    private function getQuery(
+        string $wishlistId,
+        string $itemId
+    ): string
+    {
+        return <<<MUTATION
+mutation {
+    addWishlistItemsToCart
+    (
+      wishlistId: "{$wishlistId}"
+      wishlistItemIds: ["{$itemId}"]
+    ) {
+    status
+    wishlist {
+      items_v2 {
+        items {
+          id
+        }
+      }
+    }
+    add_wishlist_items_to_cart_user_errors{
+        message
+        code
+        wishlistId
+        wishlistItemId
+    }
+   }
+}
+MUTATION;
     }
 
     /**
@@ -105,6 +195,40 @@ class AddWishlistItemsToCartTest extends GraphQlAbstract
         $this->assertEmpty($wishlistItems);
         $this->assertArrayHasKey('status', $response['addWishlistItemsToCart']);
         $this->assertEquals($response['addWishlistItemsToCart']['status'], true);
+    }
+
+    /**
+     * Returns GraphQl mutation string
+     *
+     * @param string $wishlistId
+     * @param string $itemId
+     * @return string
+     */
+    private function getAddAllItemsToCartQuery(
+        string $wishlistId
+    ): string
+    {
+        return <<<MUTATION
+mutation {
+    addWishlistItemsToCart
+    (
+      wishlistId: "{$wishlistId}"
+    ) {
+    status
+    wishlist {
+      items_v2 {
+        items {
+          id
+        }
+      }
+    }
+    add_wishlist_items_to_cart_user_errors{
+        message
+        code
+    }
+   }
+}
+MUTATION;
     }
 
     /**
@@ -206,7 +330,8 @@ class AddWishlistItemsToCartTest extends GraphQlAbstract
         $query = $this->getQuery($customerWishlist['id'], $itemId);
         $this->graphQlMutation($query, [], '', $this->getHeaderMap());
     }
-     /** Add all items from customer's wishlist to cart
+
+    /** Add all items from customer's wishlist to cart
      *
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
      * @magentoConfigFixture wishlist/general/active 1
@@ -237,142 +362,6 @@ class AddWishlistItemsToCartTest extends GraphQlAbstract
     }
 
     /**
-     * Authentication header map
-     *
-     * @param string $username
-     * @param string $password
-     *
-     * @return array
-     *
-     * @throws AuthenticationException
-     */
-    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
-    {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
-
-        return ['Authorization' => 'Bearer ' . $customerToken];
-    }
-
-    /**
-     * Returns GraphQl mutation string
-     *
-     * @param string $wishlistId
-     * @param string $itemId
-     * @return string
-     */
-    private function getQuery(
-        string $wishlistId,
-        string $itemId
-    ): string {
-        return <<<MUTATION
-mutation {
-    addWishlistItemsToCart
-    (
-      wishlistId: "{$wishlistId}"
-      wishlistItemIds: ["{$itemId}"]
-    ) {
-    status
-    wishlist {
-      items_v2 {
-        items {
-          id
-        }
-      }
-    }
-    add_wishlist_items_to_cart_user_errors{
-        message
-        code
-        wishlistId
-        wishlistItemId
-    }
-   }
-}
-MUTATION;
-    }
-
-    /**
-     * Returns GraphQl mutation string
-     *
-     * @param string $wishlistId
-     * @param string $itemId
-     * @return string
-     */
-    private function getAddAllItemsToCartQuery(
-        string $wishlistId
-    ): string {
-        return <<<MUTATION
-mutation {
-    addWishlistItemsToCart
-    (
-      wishlistId: "{$wishlistId}"
-    ) {
-    status
-    wishlist {
-      items_v2 {
-        items {
-          id
-        }
-      }
-    }
-    add_wishlist_items_to_cart_user_errors{
-        message
-        code
-    }
-   }
-}
-MUTATION;
-    }
-
-    /**
-     * Get wishlist result
-     *
-     * @param string $username
-     * @return array
-     *
-     * @throws Exception
-     */
-    public function getWishlist(string $username = 'customer@example.com'): array
-    {
-        return $this->graphQlQuery($this->getCustomerWishlistQuery(), [], '', $this->getHeaderMap($username));
-    }
-
-    public function getCustomerCart(string $username): array
-    {
-        return $this->graphQlQuery($this->getCustomerCartQuery(), [], '', $this->getHeaderMap($username));
-    }
-
-    /**
-     * Get customer wishlist query
-     *
-     * @return string
-     */
-    private function getCustomerWishlistQuery(): string
-    {
-        return <<<QUERY
-query {
-  customer {
-    wishlists {
-      id
-      items_count
-      sharing_code
-      updated_at
-      items_v2 {
-       items {
-        id
-        quantity
-        description
-         product {
-          sku
-        }
-      }
-      }
-    }
-  }
-}
-QUERY;
-    }
-
-    /**
      * Returns the GraphQl mutation string for products added to wishlist
      *
      * @param string $wishlistId
@@ -383,8 +372,9 @@ QUERY;
     private function addSecondProductToWishlist(
         string $wishlistId,
         string $sku,
-        int $quantity
-    ): string {
+        int    $quantity
+    ): string
+    {
         return <<<MUTATION
 mutation {
   addProductsToWishlist(
@@ -417,6 +407,11 @@ mutation {
 MUTATION;
     }
 
+    public function getCustomerCart(string $username): array
+    {
+        return $this->graphQlQuery($this->getCustomerCartQuery(), [], '', $this->getHeaderMap($username));
+    }
+
     /**
      * Get customer cart query
      *
@@ -436,6 +431,15 @@ MUTATION;
  }
 }
 QUERY;
+    }
+
+    /**
+     * Set Up
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
     }
 
 

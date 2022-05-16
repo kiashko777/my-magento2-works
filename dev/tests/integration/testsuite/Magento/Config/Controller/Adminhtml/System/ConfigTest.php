@@ -7,14 +7,17 @@
 namespace Magento\Config\Controller\Adminhtml\System;
 
 use Magento\Config\Controller\Adminhtml\System\Config\Save;
+use Magento\Config\Model\Config\Factory;
 use Magento\Framework\App\Config\ScopeConfigInterface;
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\Url;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class ConfigTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class ConfigTest extends AbstractBackendController
 {
     /**
      * Test Configuration page existing.
@@ -33,7 +36,7 @@ class ConfigTest extends \Magento\TestFramework\TestCase\AbstractBackendControll
      */
     public function testChangeBaseUrl()
     {
-        $defaultHost = Bootstrap::getObjectManager()->create(\Magento\Framework\Url::class)->getBaseUrl();
+        $defaultHost = Bootstrap::getObjectManager()->create(Url::class)->getBaseUrl();
         $newHost = 'm2test123.loc';
         $request = $this->getRequest();
         $request->setPostValue(
@@ -46,7 +49,7 @@ class ConfigTest extends \Magento\TestFramework\TestCase\AbstractBackendControll
                             ]
                         ]
                     ],
-                    'config_state' => ['web_unsecure' => 1]
+                'config_state' => ['web_unsecure' => 1]
             ]
         )->setParam(
             'section',
@@ -67,6 +70,33 @@ class ConfigTest extends \Magento\TestFramework\TestCase\AbstractBackendControll
         );
         $this->assertEquals($newHost, $url['host'], 'A new host in the url expected, but there is old one');
         $this->resetBaseUrl($defaultHost);
+    }
+
+    /**
+     * Reset test framework default base url.
+     *
+     * @param string $defaultHost
+     */
+    protected function resetBaseUrl($defaultHost)
+    {
+        $baseUrlData = [
+            'section' => 'web',
+            'website' => null,
+            'store' => null,
+            'groups' => [
+                'unsecure' => [
+                    'fields' => [
+                        'base_url' => [
+                            'value' => $defaultHost
+                        ]
+                    ]
+                ]
+            ]
+        ];
+        Bootstrap::getObjectManager()->create(Factory::class)
+            ->create()
+            ->addData($baseUrlData)
+            ->save();
     }
 
     /**
@@ -99,32 +129,5 @@ class ConfigTest extends \Magento\TestFramework\TestCase\AbstractBackendControll
         /** @var ScopeConfigInterface $scopeConfig */
         $scopeConfig = Bootstrap::getObjectManager()->get(ScopeConfigInterface::class);
         $this->assertNull($scopeConfig->getValue('web/non_existing/non_existing_field'));
-    }
-
-    /**
-     * Reset test framework default base url.
-     *
-     * @param string $defaultHost
-     */
-    protected function resetBaseUrl($defaultHost)
-    {
-        $baseUrlData = [
-            'section' => 'web',
-            'website' => null,
-            'store' => null,
-            'groups' => [
-                'unsecure' => [
-                    'fields' => [
-                        'base_url' => [
-                            'value' => $defaultHost
-                        ]
-                    ]
-                ]
-            ]
-        ];
-        Bootstrap::getObjectManager()->create(\Magento\Config\Model\Config\Factory::class)
-            ->create()
-            ->addData($baseUrlData)
-            ->save();
     }
 }

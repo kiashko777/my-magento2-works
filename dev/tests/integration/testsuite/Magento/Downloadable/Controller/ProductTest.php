@@ -7,9 +7,12 @@
 /**
  * Test class for \Magento\Catalog\Controller\Products (downloadable product type)
  */
+
 namespace Magento\Downloadable\Controller;
 
-class ProductTest extends \Magento\TestFramework\TestCase\AbstractController
+use Magento\TestFramework\TestCase\AbstractController;
+
+class ProductTest extends AbstractController
 {
     /**
      * @magentoDataFixture Magento/Downloadable/_files/product_downloadable.php

@@ -3,24 +3,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\App\Config;
 
-use Magento\TestFramework\Helper\CacheCleaner;
-use Magento\TestFramework\ObjectManager;
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Framework\App\Config\Initial as Config;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
-class InitialTest extends \PHPUnit\Framework\TestCase
+class InitialTest extends TestCase
 {
     /**
      * @var ObjectManager
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
 
     public function testGetMetadata()
     {
@@ -49,5 +45,10 @@ class InitialTest extends \PHPUnit\Framework\TestCase
             ['stores|default'],
             ['websites|default']
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

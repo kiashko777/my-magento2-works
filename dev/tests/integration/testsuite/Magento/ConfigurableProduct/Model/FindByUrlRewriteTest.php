@@ -17,6 +17,7 @@ use Magento\UrlRewrite\Model\ResourceModel\UrlRewriteCollectionFactory;
 use Magento\UrlRewrite\Model\UrlRewrite as UrlRewriteItem;
 use Magento\UrlRewrite\Service\V1\Data\UrlRewrite;
 use PHPUnit\Framework\TestCase;
+use ReflectionObject;
 
 /**
  * Test cases related to check that URL rewrite has created or not.
@@ -42,18 +43,6 @@ class FindByUrlRewriteTest extends TestCase
      * @var UrlRewriteCollectionFactory
      */
     private $urlRewriteCollectionFactory;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManger = Bootstrap::getObjectManager();
-        $this->productResource = $this->objectManger->get(ProductResource::class);
-        $this->productRepository = $this->objectManger->get(ProductRepositoryInterface::class);
-        $this->urlRewriteCollectionFactory = $this->objectManger->get(UrlRewriteCollectionFactory::class);
-        parent::setUp();
-    }
 
     /**
      * Assert that product is available by URL rewrite with different visibility.
@@ -89,6 +78,70 @@ class FindByUrlRewriteTest extends TestCase
             }
         }
         $this->assertCount($expectedCount, $urlRewritesCollection);
+    }
+
+    /**
+     * Check that configurable url rewrite was created.
+     *
+     * @return void
+     */
+    private function checkConfigurableUrlRewriteWasCreated(): void
+    {
+        $configurableProduct = $this->productRepository->get('Configurable product');
+        $configurableUrlRewrite = $this->getUrlRewritesCollectionByProductIds([$configurableProduct->getId()])
+            ->getFirstItem();
+        $this->assertEquals(
+            $configurableUrlRewrite->getTargetPath(),
+            "catalog/product/view/id/{$configurableProduct->getId()}"
+        );
+    }
+
+    /**
+     * Get URL rewrite collection by product ids.
+     *
+     * @param int[] $productIds
+     * @param string $storeCode
+     * @return UrlRewriteCollection
+     */
+    private function getUrlRewritesCollectionByProductIds(
+        array  $productIds,
+        string $storeCode = 'default'
+    ): UrlRewriteCollection
+    {
+        $collection = $this->urlRewriteCollectionFactory->create();
+        $collection->addStoreFilter($storeCode);
+        $collection->addFieldToFilter(UrlRewrite::ENTITY_TYPE, ['eq' => 'product']);
+        $collection->addFieldToFilter(UrlRewrite::ENTITY_ID, ['in' => $productIds]);
+
+        return $collection;
+    }
+
+    /**
+     * Update products visibility.
+     *
+     * @param array $productsData
+     * @return void
+     */
+    private function updateProductsVisibility(array $productsData): void
+    {
+        foreach ($productsData as $productData) {
+            $product = $this->productRepository->get($productData['sku']);
+            $product->setVisibility($productData['visibility']);
+            $this->productRepository->save($product);
+        }
+    }
+
+    /**
+     * Load all product ids by skus.
+     *
+     * @param array $productsData
+     * @return array
+     */
+    private function getProductIdsBySkus(array $productsData): array
+    {
+        $skus = array_column($productsData, 'sku');
+
+        return $this->productResource->getProductsIdsBySkus($skus);
     }
 
     /**
@@ -203,66 +256,15 @@ class FindByUrlRewriteTest extends TestCase
     }
 
     /**
-     * Update products visibility.
-     *
-     * @param array $productsData
-     * @return void
+     * @inheritdoc
      */
-    private function updateProductsVisibility(array $productsData): void
+    protected function setUp(): void
     {
-        foreach ($productsData as $productData) {
-            $product = $this->productRepository->get($productData['sku']);
-            $product->setVisibility($productData['visibility']);
-            $this->productRepository->save($product);
-        }
-    }
-
-    /**
-     * Get URL rewrite collection by product ids.
-     *
-     * @param int[] $productIds
-     * @param string $storeCode
-     * @return UrlRewriteCollection
-     */
-    private function getUrlRewritesCollectionByProductIds(
-        array $productIds,
-        string $storeCode = 'default'
-    ): UrlRewriteCollection {
-        $collection = $this->urlRewriteCollectionFactory->create();
-        $collection->addStoreFilter($storeCode);
-        $collection->addFieldToFilter(UrlRewrite::ENTITY_TYPE, ['eq' => 'product']);
-        $collection->addFieldToFilter(UrlRewrite::ENTITY_ID, ['in' => $productIds]);
-
-        return $collection;
-    }
-
-    /**
-     * Check that configurable url rewrite was created.
-     *
-     * @return void
-     */
-    private function checkConfigurableUrlRewriteWasCreated(): void
-    {
-        $configurableProduct = $this->productRepository->get('Configurable product');
-        $configurableUrlRewrite = $this->getUrlRewritesCollectionByProductIds([$configurableProduct->getId()])
-            ->getFirstItem();
-        $this->assertEquals(
-            $configurableUrlRewrite->getTargetPath(),
-            "catalog/product/view/id/{$configurableProduct->getId()}"
-        );
-    }
-
-    /**
-     * Load all product ids by skus.
-     *
-     * @param array $productsData
-     * @return array
-     */
-    private function getProductIdsBySkus(array $productsData): array
-    {
-        $skus = array_column($productsData, 'sku');
-
-        return $this->productResource->getProductsIdsBySkus($skus);
+        $this->objectManger = Bootstrap::getObjectManager();
+        $this->productResource = $this->objectManger->get(ProductResource::class);
+        $this->productRepository = $this->objectManger->get(ProductRepositoryInterface::class);
+        $this->urlRewriteCollectionFactory = $this->objectManger->get(UrlRewriteCollectionFactory::class);
+        parent::setUp();
     }
 
     /**
@@ -271,7 +273,7 @@ class FindByUrlRewriteTest extends TestCase
     protected function tearDown(): void
     {
         parent::tearDown();
-        $reflection = new \ReflectionObject($this);
+        $reflection = new ReflectionObject($this);
         foreach ($reflection->getProperties() as $property) {
             if (!$property->isStatic() && 0 !== strpos($property->getDeclaringClass()->getName(), 'PHPUnit')) {
                 $property->setAccessible(true);

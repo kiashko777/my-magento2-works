@@ -7,6 +7,7 @@
 /**
  * Implementation of the @magentoAdminConfigFixture DocBlock annotation
  */
+
 namespace Magento\TestFramework\Annotation;
 
 use Magento\Framework\App\Config\MutableScopeConfigInterface;
@@ -36,26 +37,15 @@ class AdminConfigFixture
     private $_configValues = [];
 
     /**
-     * Retrieve configuration node value
+     * Handler for 'startTest' event
      *
-     * @param string $configPath
-     * @return string
-     */
-    protected function _getConfigValue($configPath)
-    {
-        return Bootstrap::getObjectManager()->get(MutableScopeConfigInterface::class)->getValue($configPath);
-    }
-
-    /**
-     * Assign configuration node value
-     *
-     * @param string $configPath
-     * @param string $value
+     * @param TestCase $test
      * @return void
      */
-    protected function _setConfigValue($configPath, $value)
+    public function startTest(TestCase $test)
     {
-        Bootstrap::getObjectManager()->get(MutableScopeConfigInterface::class)->setValue($configPath, $value);
+        $this->_currentTest = $test;
+        $this->_assignConfigData($test);
     }
 
     /**
@@ -82,28 +72,26 @@ class AdminConfigFixture
     }
 
     /**
-     * Restore original values for changed config options
+     * Retrieve configuration node value
      *
-     * @return void
+     * @param string $configPath
+     * @return string
      */
-    protected function _restoreConfigData()
+    protected function _getConfigValue($configPath)
     {
-        foreach ($this->_configValues as $configPath => $originalValue) {
-            $this->_setConfigValue($configPath, $originalValue);
-        }
-        $this->_configValues = [];
+        return Bootstrap::getObjectManager()->get(MutableScopeConfigInterface::class)->getValue($configPath);
     }
 
     /**
-     * Handler for 'startTest' event
+     * Assign configuration node value
      *
-     * @param TestCase $test
+     * @param string $configPath
+     * @param string $value
      * @return void
      */
-    public function startTest(TestCase $test)
+    protected function _setConfigValue($configPath, $value)
     {
-        $this->_currentTest = $test;
-        $this->_assignConfigData($test);
+        Bootstrap::getObjectManager()->get(MutableScopeConfigInterface::class)->setValue($configPath, $value);
     }
 
     /**
@@ -117,6 +105,19 @@ class AdminConfigFixture
     {
         $this->_currentTest = null;
         $this->_restoreConfigData();
+    }
+
+    /**
+     * Restore original values for changed config options
+     *
+     * @return void
+     */
+    protected function _restoreConfigData()
+    {
+        foreach ($this->_configValues as $configPath => $originalValue) {
+            $this->_setConfigValue($configPath, $originalValue);
+        }
+        $this->_configValues = [];
     }
 
     /**

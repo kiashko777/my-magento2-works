@@ -30,6 +30,24 @@ class FixedAttributeTest extends AbstractEavTest
     }
 
     /**
+     * @return array
+     */
+    private function getAttributeMeta(): array
+    {
+        return [
+            'visible' => '1',
+            'required' => '0',
+            'label' => 'fixed product tax',
+            'code' => 'fixed_product_attribute',
+            'source' => 'product-details',
+            'scopeLabel' => '[GLOBAL]',
+            'globalScope' => true,
+            'sortOrder' => '__placeholder__',
+            'componentType' => 'field',
+        ];
+    }
+
+    /**
      * @return void
      */
     public function testModifyData(): void
@@ -55,23 +73,5 @@ class FixedAttributeTest extends AbstractEavTest
             ]
         );
         $this->callModifyDataAndAssert($this->getProduct(), $expectedData);
-    }
-
-    /**
-     * @return array
-     */
-    private function getAttributeMeta(): array
-    {
-        return [
-            'visible' => '1',
-            'required' => '0',
-            'label' => 'fixed product tax',
-            'code' => 'fixed_product_attribute',
-            'source' => 'product-details',
-            'scopeLabel' => '[GLOBAL]',
-            'globalScope' => true,
-            'sortOrder' => '__placeholder__',
-            'componentType' => 'field',
-        ];
     }
 }

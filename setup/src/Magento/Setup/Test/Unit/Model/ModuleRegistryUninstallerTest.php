@@ -51,23 +51,6 @@ class ModuleRegistryUninstallerTest extends TestCase
      */
     private $moduleRegistryUninstaller;
 
-    protected function setUp(): void
-    {
-        $this->deploymentConfig = $this->createMock(DeploymentConfig::class);
-        $this->writer = $this->createMock(Writer::class);
-        $this->loader = $this->createMock(Loader::class);
-        $this->dataSetup = $this->createMock(DataSetup::class);
-        $dataSetupFactory = $this->createMock(DataSetupFactory::class);
-        $dataSetupFactory->expects($this->any())->method('create')->willReturn($this->dataSetup);
-        $this->output = $this->getMockForAbstractClass(OutputInterface::class);
-        $this->moduleRegistryUninstaller = new ModuleRegistryUninstaller(
-            $dataSetupFactory,
-            $this->deploymentConfig,
-            $this->writer,
-            $this->loader
-        );
-    }
-
     public function testRemoveModulesFromDb()
     {
         $this->output->expects($this->atLeastOnce())->method('writeln');
@@ -92,5 +75,22 @@ class ModuleRegistryUninstallerTest extends TestCase
                 ]
             );
         $this->moduleRegistryUninstaller->removeModulesFromDeploymentConfig($this->output, ['moduleA', 'moduleB']);
+    }
+
+    protected function setUp(): void
+    {
+        $this->deploymentConfig = $this->createMock(DeploymentConfig::class);
+        $this->writer = $this->createMock(Writer::class);
+        $this->loader = $this->createMock(Loader::class);
+        $this->dataSetup = $this->createMock(DataSetup::class);
+        $dataSetupFactory = $this->createMock(DataSetupFactory::class);
+        $dataSetupFactory->expects($this->any())->method('create')->willReturn($this->dataSetup);
+        $this->output = $this->getMockForAbstractClass(OutputInterface::class);
+        $this->moduleRegistryUninstaller = new ModuleRegistryUninstaller(
+            $dataSetupFactory,
+            $this->deploymentConfig,
+            $this->writer,
+            $this->loader
+        );
     }
 }

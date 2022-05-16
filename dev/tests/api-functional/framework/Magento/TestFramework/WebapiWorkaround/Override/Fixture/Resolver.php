@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\TestFramework\WebapiWorkaround\Override\Fixture;
 
+use InvalidArgumentException;
 use Magento\TestFramework\Annotation\AdminConfigFixture;
 use Magento\TestFramework\Annotation\ApiConfigFixture;
 use Magento\TestFramework\Annotation\ApiDataFixture;
@@ -44,7 +45,7 @@ class Resolver extends IntegrationResolver
                 $applier = $this->objectManager->get(AdminConfigFixtureApplier::class);
                 break;
             default:
-                throw new \InvalidArgumentException(sprintf('Unsupported fixture type %s provided', $fixtureType));
+                throw new InvalidArgumentException(sprintf('Unsupported fixture type %s provided', $fixtureType));
         }
 
         return $applier;

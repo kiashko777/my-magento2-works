@@ -3,17 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Sales\Model\Order;
+use Magento\Tax\Model\Sales\Order\Tax;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Sales/_files/order.php');
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-/** @var \Magento\Sales\Model\Order $order */
-$order = $objectManager->create(\Magento\Sales\Model\Order::class);
+$objectManager = Bootstrap::getObjectManager();
+/** @var Order $order */
+$order = $objectManager->create(Order::class);
 $order->loadByIncrementId('100000001')->setBaseToGlobalRate(2)->save();
 
-/** @var \Magento\Tax\Model\Sales\Order\Tax $tax */
-$tax = $objectManager->create(\Magento\Tax\Model\Sales\Order\Tax::class);
+/** @var Tax $tax */
+$tax = $objectManager->create(Tax::class);
 $tax->setData(
     [
         'order_id' => $order->getId(),

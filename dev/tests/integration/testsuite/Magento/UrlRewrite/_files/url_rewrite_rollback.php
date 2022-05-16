@@ -5,10 +5,14 @@
  */
 declare(strict_types=1);
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
+use Magento\UrlRewrite\Model\ResourceModel\UrlRewriteCollection;
 
-/** @var \Magento\Framework\Registry $registry */
-$registry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
+/** @var Registry $registry */
+$registry = Bootstrap::getObjectManager()->get(Registry::class);
 
 Resolver::getInstance()->requireDataFixture('Magento/Store/_files/second_store_rollback.php');
 
@@ -16,7 +20,7 @@ $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
 /** @var Magento\Cms\Api\PageRepositoryInterface $pageRepository */
-$pageRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
+$pageRepository = Bootstrap::getObjectManager()->get(
     Magento\Cms\Api\PageRepositoryInterface::class
 );
 
@@ -26,13 +30,13 @@ $pageRepository->deleteById('page-c');
 $pageRepository->deleteById('page-d');
 $pageRepository->deleteById('page-e');
 
-/** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-$productRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+/** @var ProductRepositoryInterface $productRepository */
+$productRepository = Bootstrap::getObjectManager()
+    ->create(ProductRepositoryInterface::class);
 
-/** @var \Magento\UrlRewrite\Model\ResourceModel\UrlRewriteCollection $urlRewriteCollection */
-$urlRewriteCollection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->create(\Magento\UrlRewrite\Model\ResourceModel\UrlRewriteCollection::class);
+/** @var UrlRewriteCollection $urlRewriteCollection */
+$urlRewriteCollection = Bootstrap::getObjectManager()
+    ->create(UrlRewriteCollection::class);
 $collection = $urlRewriteCollection
     ->addFieldToFilter('entity_type', 'custom')
     ->addFieldToFilter(

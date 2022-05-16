@@ -5,6 +5,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Block\Adminhtml\Order\Create;
 
 use Magento\Backend\Model\Session\Quote as QuoteSession;
@@ -12,6 +13,8 @@ use Magento\Customer\Api\AddressRepositoryInterface;
 use Magento\Customer\Api\Data\AddressInterfaceFactory;
 use Magento\Customer\Api\Data\RegionInterfaceFactory;
 use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\View\LayoutInterface;
 use Magento\Quote\Api\CartRepositoryInterface;
@@ -19,12 +22,13 @@ use Magento\Quote\Model\Quote;
 use Magento\Store\Model\Store;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\MockObject\MockObject as MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class FormTest extends \PHPUnit\Framework\TestCase
+class FormTest extends TestCase
 {
     /**
      * @var Form
@@ -40,39 +44,6 @@ class FormTest extends \PHPUnit\Framework\TestCase
      * @var QuoteSession|MockObject
      */
     private $session;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-
-        $this->session = $this->getMockBuilder(QuoteSession::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['getCustomerId', 'getQuote', 'getStoreId', 'getStore', 'getQuoteId'])
-            ->getMock();
-        $this->session->method('getCustomerId')
-            ->willReturn(1);
-
-        $this->session->method('getStoreId')
-            ->willReturn(1);
-
-        $store = $this->getMockBuilder(Store::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['getCurrentCurrencyCode'])
-            ->getMock();
-        $store->method('getCurrentCurrencyCode')
-            ->willReturn('USD');
-        $this->session->method('getStore')
-            ->willReturn($store);
-
-        /** @var LayoutInterface $layout */
-        $layout = $this->objectManager->get(LayoutInterface::class);
-        $this->block = $layout->createBlock(
-            Form::class,
-            'order_create_block' . random_int(0, PHP_INT_MAX),
-            ['sessionQuote' => $this->session]
-        );
-        parent::setUp();
-    }
 
     /**
      * Checks if all needed order's data is correctly returned to the form.
@@ -107,38 +78,24 @@ class FormTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Saves customer's addresses.
+     * Gets quote by ID.
      *
-     * @param int $customerId
-     * @param array $addressData
-     * @return array
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @param string $reservedOrderId
+     * @return Quote
+     * @throws NoSuchEntityException
      */
-    private function setUpMockAddress(int $customerId, array $addressData)
+    private function getQuote(string $reservedOrderId): Quote
     {
-        /** @var RegionInterfaceFactory $regionFactory */
-        $regionFactory = $this->objectManager->create(RegionInterfaceFactory::class);
-        /** @var AddressInterfaceFactory $addressFactory */
-        $addressFactory = $this->objectManager->create(AddressInterfaceFactory::class);
-        /** @var AddressRepositoryInterface $addressRepository */
-        $addressRepository = $this->objectManager->create(AddressRepositoryInterface::class);
-        $region = $regionFactory->create()
-            ->setRegionCode('AL')
-            ->setRegion('Alabama')
-            ->setRegionId(1);
+        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
+        $searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
+        $searchCriteria = $searchCriteriaBuilder->addFilter('reserved_order_id', $reservedOrderId)
+            ->create();
+        /** @var CartRepositoryInterface $repository */
+        $repository = $this->objectManager->get(CartRepositoryInterface::class);
+        $items = $repository->getList($searchCriteria)
+            ->getItems();
 
-        $ids = [];
-        foreach ($addressData as $data) {
-            $address = $addressFactory->create(['data' => $data]);
-            $address->setRegion($region)
-                ->setCustomerId($customerId)
-                ->setIsDefaultBilling(true)
-                ->setIsDefaultShipping(true);
-            $address = $addressRepository->save($address);
-            $ids[] = $address->getId();
-        }
-
-        return $ids;
+        return array_pop($items);
     }
 
     /**
@@ -179,23 +136,70 @@ class FormTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Gets quote by ID.
+     * Saves customer's addresses.
      *
-     * @param string $reservedOrderId
-     * @return Quote
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @param int $customerId
+     * @param array $addressData
+     * @return array
+     * @throws LocalizedException
      */
-    private function getQuote(string $reservedOrderId): Quote
+    private function setUpMockAddress(int $customerId, array $addressData)
     {
-        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
-        $searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
-        $searchCriteria = $searchCriteriaBuilder->addFilter('reserved_order_id', $reservedOrderId)
-            ->create();
-        /** @var CartRepositoryInterface $repository */
-        $repository = $this->objectManager->get(CartRepositoryInterface::class);
-        $items = $repository->getList($searchCriteria)
-            ->getItems();
+        /** @var RegionInterfaceFactory $regionFactory */
+        $regionFactory = $this->objectManager->create(RegionInterfaceFactory::class);
+        /** @var AddressInterfaceFactory $addressFactory */
+        $addressFactory = $this->objectManager->create(AddressInterfaceFactory::class);
+        /** @var AddressRepositoryInterface $addressRepository */
+        $addressRepository = $this->objectManager->create(AddressRepositoryInterface::class);
+        $region = $regionFactory->create()
+            ->setRegionCode('AL')
+            ->setRegion('Alabama')
+            ->setRegionId(1);
 
-        return array_pop($items);
+        $ids = [];
+        foreach ($addressData as $data) {
+            $address = $addressFactory->create(['data' => $data]);
+            $address->setRegion($region)
+                ->setCustomerId($customerId)
+                ->setIsDefaultBilling(true)
+                ->setIsDefaultShipping(true);
+            $address = $addressRepository->save($address);
+            $ids[] = $address->getId();
+        }
+
+        return $ids;
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->session = $this->getMockBuilder(QuoteSession::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['getCustomerId', 'getQuote', 'getStoreId', 'getStore', 'getQuoteId'])
+            ->getMock();
+        $this->session->method('getCustomerId')
+            ->willReturn(1);
+
+        $this->session->method('getStoreId')
+            ->willReturn(1);
+
+        $store = $this->getMockBuilder(Store::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['getCurrentCurrencyCode'])
+            ->getMock();
+        $store->method('getCurrentCurrencyCode')
+            ->willReturn('USD');
+        $this->session->method('getStore')
+            ->willReturn($store);
+
+        /** @var LayoutInterface $layout */
+        $layout = $this->objectManager->get(LayoutInterface::class);
+        $this->block = $layout->createBlock(
+            Form::class,
+            'order_create_block' . random_int(0, PHP_INT_MAX),
+            ['sessionQuote' => $this->session]
+        );
+        parent::setUp();
     }
 }

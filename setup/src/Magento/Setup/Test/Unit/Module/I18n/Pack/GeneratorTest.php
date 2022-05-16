@@ -45,25 +45,6 @@ class GeneratorTest extends TestCase
      */
     protected $_generator;
 
-    protected function setUp(): void
-    {
-        $this->dictionaryLoaderMock =
-            $this->getMockForAbstractClass(FileInterface::class);
-        $this->packWriterMock = $this->getMockForAbstractClass(WriterInterface::class);
-        $this->factoryMock = $this->createMock(Factory::class);
-        $this->dictionaryMock = $this->createMock(Dictionary::class);
-
-        $objectManagerHelper = new ObjectManager($this);
-        $this->_generator = $objectManagerHelper->getObject(
-            Generator::class,
-            [
-                'dictionaryLoader' => $this->dictionaryLoaderMock,
-                'packWriter' => $this->packWriterMock,
-                'factory' => $this->factoryMock
-            ]
-        );
-    }
-
     public function testGenerate()
     {
         $dictionaryPath = 'dictionary_path';
@@ -144,5 +125,24 @@ class GeneratorTest extends TestCase
             ->willReturn([[$phraseFirstMock], [$phraseSecondMock]]);
 
         $this->_generator->generate('dictionary_path', 'locale', 'mode', $allowDuplicates);
+    }
+
+    protected function setUp(): void
+    {
+        $this->dictionaryLoaderMock =
+            $this->getMockForAbstractClass(FileInterface::class);
+        $this->packWriterMock = $this->getMockForAbstractClass(WriterInterface::class);
+        $this->factoryMock = $this->createMock(Factory::class);
+        $this->dictionaryMock = $this->createMock(Dictionary::class);
+
+        $objectManagerHelper = new ObjectManager($this);
+        $this->_generator = $objectManagerHelper->getObject(
+            Generator::class,
+            [
+                'dictionaryLoader' => $this->dictionaryLoaderMock,
+                'packWriter' => $this->packWriterMock,
+                'factory' => $this->factoryMock
+            ]
+        );
     }
 }

@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Quote\Customer;
 
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\GraphQl\Quote\GetMaskedQuoteIdByReservedOrderId;
 use Magento\Integration\Api\CustomerTokenServiceInterface;
 use Magento\TestFramework\Helper\Bootstrap;
@@ -28,16 +29,6 @@ class SetOfflineShippingMethodsOnCartTest extends GraphQlAbstract
     private $customerTokenService;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
      * @magentoApiDataFixture Magento/GraphQl/Quote/_files/customer/create_empty_cart.php
@@ -53,7 +44,7 @@ class SetOfflineShippingMethodsOnCartTest extends GraphQlAbstract
      * @param string $carrierTitle
      * @param string $methodTitle
      * @param array $amount
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @throws NoSuchEntityException
      * @dataProvider offlineShippingMethodDataProvider
      */
     public function testSetOfflineShippingMethod(
@@ -61,8 +52,9 @@ class SetOfflineShippingMethodsOnCartTest extends GraphQlAbstract
         string $methodCode,
         string $carrierTitle,
         string $methodTitle,
-        array $amount
-    ) {
+        array  $amount
+    )
+    {
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
 
         $query = $this->getQuery(
@@ -97,36 +89,6 @@ class SetOfflineShippingMethodsOnCartTest extends GraphQlAbstract
     }
 
     /**
-     * @return array
-     */
-    public function offlineShippingMethodDataProvider(): array
-    {
-        return [
-            'flatrate_flatrate' => [
-                'flatrate',
-                'flatrate',
-                'Flat Rate',
-                'Fixed',
-                ['value' => 10, 'currency' => 'USD'],
-            ],
-            'tablerate_bestway' => [
-                'tablerate',
-                'bestway',
-                'Best Way',
-                'Table Rate',
-                ['value' => 10, 'currency' => 'USD'],
-            ],
-            'freeshipping_freeshipping' => [
-                'freeshipping',
-                'freeshipping',
-                'Free Shipping',
-                'Free',
-                ['value' => 0, 'currency' => 'USD'],
-            ],
-        ];
-    }
-
-    /**
      * @param string $maskedQuoteId
      * @param string $shippingMethodCode
      * @param string $shippingCarrierCode
@@ -136,12 +98,13 @@ class SetOfflineShippingMethodsOnCartTest extends GraphQlAbstract
         string $maskedQuoteId,
         string $shippingMethodCode,
         string $shippingCarrierCode
-    ): string {
+    ): string
+    {
         return <<<QUERY
 mutation {
-  setShippingMethodsOnCart(input: 
+  setShippingMethodsOnCart(input:
     {
-      cart_id: "$maskedQuoteId", 
+      cart_id: "$maskedQuoteId",
       shipping_methods: [{
         carrier_code: "$shippingCarrierCode"
         method_code: "$shippingMethodCode"
@@ -176,5 +139,45 @@ QUERY;
         $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
         $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
         return $headerMap;
+    }
+
+    /**
+     * @return array
+     */
+    public function offlineShippingMethodDataProvider(): array
+    {
+        return [
+            'flatrate_flatrate' => [
+                'flatrate',
+                'flatrate',
+                'Flat Rate',
+                'Fixed',
+                ['value' => 10, 'currency' => 'USD'],
+            ],
+            'tablerate_bestway' => [
+                'tablerate',
+                'bestway',
+                'Best Way',
+                'Table Rate',
+                ['value' => 10, 'currency' => 'USD'],
+            ],
+            'freeshipping_freeshipping' => [
+                'freeshipping',
+                'freeshipping',
+                'Free Shipping',
+                'Free',
+                ['value' => 0, 'currency' => 'USD'],
+            ],
+        ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
     }
 }

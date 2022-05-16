@@ -7,6 +7,15 @@
 
 namespace Magento\Quote\Api;
 
+use Exception;
+use Magento\Framework\Registry;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\QuoteIdMask;
+use Magento\Quote\Model\QuoteIdMaskFactory;
+use Magento\SalesRule\Model\Rule;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 class GuestCouponManagementTest extends WebapiAbstract
@@ -16,45 +25,17 @@ class GuestCouponManagementTest extends WebapiAbstract
     const RESOURCE_PATH = '/V1/guest-carts/';
 
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
-
-    protected function tearDown(): void
-    {
-        $createdQuotes = ['test_order_1', 'test01'];
-        /** @var \Magento\Quote\Model\Quote $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
-        foreach ($createdQuotes as $quoteId) {
-            $quote->load($quoteId, 'reserved_order_id');
-            $quote->delete();
-            /** @var \Magento\Quote\Model\QuoteIdMask $quoteIdMask */
-            $quoteIdMask = $this->objectManager->create(\Magento\Quote\Model\QuoteIdMask::class);
-            $quoteIdMask->load($quoteId, 'quote_id');
-            $quoteIdMask->delete();
-        }
-    }
-
-    protected function getQuoteMaskedId($quoteId)
-    {
-        /** @var \Magento\Quote\Model\QuoteIdMask $quoteIdMask */
-        $quoteIdMask = $this->objectManager->create(\Magento\Quote\Model\QuoteIdMaskFactory::class)->create();
-        $quoteIdMask->load($quoteId, 'quote_id');
-        return $quoteIdMask->getMaskedId();
-    }
 
     /**
      * @magentoApiDataFixture Magento/Checkout/_files/quote_with_coupon_saved.php
      */
     public function testGet()
     {
-        /** @var \Magento\Quote\Model\Quote  $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_1', 'reserved_order_id');
 
         $cartId = $this->getQuoteMaskedId($quote->getId());
@@ -62,8 +43,8 @@ class GuestCouponManagementTest extends WebapiAbstract
         $couponCode = $quote->getCouponCode();
         $serviceInfo = [
             'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . $cartId . '/coupons/' ,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'resourcePath' => self::RESOURCE_PATH . $cartId . '/coupons/',
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -76,19 +57,27 @@ class GuestCouponManagementTest extends WebapiAbstract
         $this->assertEquals($couponCode, $this->_webApiCall($serviceInfo, $requestData));
     }
 
+    protected function getQuoteMaskedId($quoteId)
+    {
+        /** @var QuoteIdMask $quoteIdMask */
+        $quoteIdMask = $this->objectManager->create(QuoteIdMaskFactory::class)->create();
+        $quoteIdMask->load($quoteId, 'quote_id');
+        return $quoteIdMask->getMaskedId();
+    }
+
     /**
      * @magentoApiDataFixture Magento/Checkout/_files/quote_with_coupon_saved.php
      */
     public function testDelete()
     {
-        /** @var \Magento\Quote\Model\Quote $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_1', 'reserved_order_id');
         $cartId = $this->getQuoteMaskedId($quote->getId());
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $cartId . '/coupons',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -107,11 +96,11 @@ class GuestCouponManagementTest extends WebapiAbstract
      */
     public function testSetCouponThrowsExceptionIfCouponDoesNotExist()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The coupon code isn\'t valid. Verify the code and try again.');
 
-        /** @var \Magento\Quote\Model\Quote $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_1', 'reserved_order_id');
         $cartId = $this->getQuoteMaskedId($quote->getId());
 
@@ -120,7 +109,7 @@ class GuestCouponManagementTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $cartId . '/coupons/' . $couponCode,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -143,19 +132,19 @@ class GuestCouponManagementTest extends WebapiAbstract
      */
     public function testSetCouponSuccess()
     {
-        /** @var \Magento\Quote\Model\Quote $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test01', 'reserved_order_id');
         $cartId = $this->getQuoteMaskedId($quote->getId());
-        $salesRule = $this->objectManager->create(\Magento\SalesRule\Model\Rule::class);
-        $salesRuleId = $this->objectManager->get(\Magento\Framework\Registry::class)
+        $salesRule = $this->objectManager->create(Rule::class);
+        $salesRuleId = $this->objectManager->get(Registry::class)
             ->registry('Magento/Checkout/_file/discount_10percent');
         $salesRule->load($salesRuleId);
         $couponCode = $salesRule->getPrimaryCoupon()->getCode();
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $cartId . '/coupons/' . $couponCode,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -171,9 +160,29 @@ class GuestCouponManagementTest extends WebapiAbstract
 
         $this->assertTrue($this->_webApiCall($serviceInfo, $requestData));
 
-        $quoteWithCoupon = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        $quoteWithCoupon = $this->objectManager->create(Quote::class);
         $quoteWithCoupon->load('test01', 'reserved_order_id');
 
         $this->assertEquals($quoteWithCoupon->getCouponCode(), $couponCode);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+    }
+
+    protected function tearDown(): void
+    {
+        $createdQuotes = ['test_order_1', 'test01'];
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
+        foreach ($createdQuotes as $quoteId) {
+            $quote->load($quoteId, 'reserved_order_id');
+            $quote->delete();
+            /** @var QuoteIdMask $quoteIdMask */
+            $quoteIdMask = $this->objectManager->create(QuoteIdMask::class);
+            $quoteIdMask->load($quoteId, 'quote_id');
+            $quoteIdMask->delete();
+        }
     }
 }

@@ -15,7 +15,8 @@ define([], function () {
     /**
      * Function whose call wll be tested.
      */
-    fn.testCallback = function () {};
+    fn.testCallback = function () {
+    };
 
     return fn;
 });

@@ -4,14 +4,14 @@
  * See COPYING.txt for license details.
  */
 
-use Magento\Store\Api\StoreRepositoryInterface;
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Framework\Indexer\IndexerRegistry;
+use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use Magento\Catalog\Model\Product\Type;
 use Magento\Catalog\Model\Product\Visibility;
-use Magento\Catalog\Model\Product\Attribute\Source\Status;
-use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\Indexer\IndexerRegistry;
+use Magento\Store\Api\StoreRepositoryInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Store/_files/core_fixturestore.php');
@@ -20,7 +20,7 @@ $objectManager = Bootstrap::getObjectManager();
 
 /** @var IndexerRegistry $indexerRegistry */
 $indexerRegistry = $objectManager->create(IndexerRegistry::class);
-$indexer =  $indexerRegistry->get('catalogsearch_fulltext');
+$indexer = $indexerRegistry->get('catalogsearch_fulltext');
 
 $indexer->reindexAll();
 /** @var StoreRepositoryInterface $storeRepository */
@@ -46,10 +46,10 @@ $product->setTypeId(Type::TYPE_SIMPLE)
     ->setStatus(Status::STATUS_ENABLED)
     ->setStockData(
         [
-            'use_config_manage_stock'   => 1,
-            'qty'                       => 100,
-            'is_qty_decimal'            => 0,
-            'is_in_stock'               => 1,
+            'use_config_manage_stock' => 1,
+            'qty' => 100,
+            'is_qty_decimal' => 0,
+            'is_in_stock' => 1,
         ]
     );
 

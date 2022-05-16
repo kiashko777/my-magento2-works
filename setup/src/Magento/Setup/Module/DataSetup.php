@@ -5,11 +5,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module;
 
-use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Event\ManagerInterface;
+use Magento\Framework\Filesystem;
+use Magento\Framework\Module\Setup\Context;
+use Magento\Framework\Module\Setup\Migration;
+use Magento\Framework\Module\Setup\MigrationFactory;
 use Magento\Framework\Setup\ModuleDataSetupInterface;
 use Magento\Setup\Module\Setup\SetupCache;
+use Psr\Log\LoggerInterface;
 
 /**
  * @api
@@ -26,41 +32,42 @@ class DataSetup extends \Magento\Framework\Module\Setup implements ModuleDataSet
     /**
      * Event manager
      *
-     * @var \Magento\Framework\Event\ManagerInterface
+     * @var ManagerInterface
      */
     private $_eventManager;
 
     /**
      * Logger
      *
-     * @var \Psr\Log\LoggerInterface
+     * @var LoggerInterface
      */
     private $_logger;
 
     /**
      * Migration factory
      *
-     * @var \Magento\Framework\Module\Setup\MigrationFactory
+     * @var MigrationFactory
      */
     private $_migrationFactory;
 
     /**
      * Filesystem instance
      *
-     * @var \Magento\Framework\Filesystem
+     * @var Filesystem
      */
     private $filesystem;
 
     /**
      * Init
      *
-     * @param \Magento\Framework\Module\Setup\Context $context
+     * @param Context $context
      * @param string $connectionName
      */
     public function __construct(
-        \Magento\Framework\Module\Setup\Context $context,
-        $connectionName = ModuleDataSetupInterface::DEFAULT_SETUP_CONNECTION
-    ) {
+        Context $context,
+                                                $connectionName = ModuleDataSetupInterface::DEFAULT_SETUP_CONNECTION
+    )
+    {
         parent::__construct($context->getResourceModel(), $connectionName);
         $this->_eventManager = $context->getEventManager();
         $this->_logger = $context->getLogger();
@@ -175,7 +182,7 @@ class DataSetup extends \Magento\Framework\Module\Setup implements ModuleDataSet
     /**
      * Gets event manager
      *
-     * @return \Magento\Framework\Event\ManagerInterface
+     * @return ManagerInterface
      */
     public function getEventManager()
     {
@@ -185,7 +192,7 @@ class DataSetup extends \Magento\Framework\Module\Setup implements ModuleDataSet
     /**
      * Gets filesystem
      *
-     * @return \Magento\Framework\Filesystem
+     * @return Filesystem
      */
     public function getFilesystem()
     {
@@ -196,7 +203,7 @@ class DataSetup extends \Magento\Framework\Module\Setup implements ModuleDataSet
      * Create migration setup
      *
      * @param array $data
-     * @return \Magento\Framework\Module\Setup\Migration
+     * @return Migration
      */
     public function createMigrationSetup(array $data = [])
     {

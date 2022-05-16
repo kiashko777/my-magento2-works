@@ -11,8 +11,8 @@ use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\View\Element\Text;
 use Magento\Framework\View\LayoutInterface;
 use Magento\TestFramework\Helper\Bootstrap;
-use PHPUnit\Framework\TestCase;
 use Magento\TestFramework\Helper\Xpath;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Checks product list toolbar.
@@ -41,18 +41,6 @@ class ToolbarTest extends TestCase
 
     /** @var Toolbar */
     private $toolbarBlock;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->toolbarBlock = $this->layout->createBlock(Toolbar::class);
-    }
 
     /**
      * @return void
@@ -94,6 +82,18 @@ class ToolbarTest extends TestCase
                 $htmlOutput
             )
         );
+    }
+
+    /**
+     * Mode switcher html
+     *
+     * @return string
+     */
+    private function getModeSwitcherHtml(): string
+    {
+        $this->toolbarBlock->setTemplate('Magento_Catalog::product/list/toolbar/viewmode.phtml');
+
+        return $this->toolbarBlock->toHtml();
     }
 
     /**
@@ -167,14 +167,14 @@ class ToolbarTest extends TestCase
     }
 
     /**
-     * Mode switcher html
-     *
-     * @return string
+     * @inheritdoc
      */
-    private function getModeSwitcherHtml(): string
+    protected function setUp(): void
     {
-        $this->toolbarBlock->setTemplate('Magento_Catalog::product/list/toolbar/viewmode.phtml');
+        parent::setUp();
 
-        return $this->toolbarBlock->toHtml();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->toolbarBlock = $this->layout->createBlock(Toolbar::class);
     }
 }

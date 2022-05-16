@@ -7,13 +7,13 @@ declare(strict_types=1);
 
 namespace Magento\Customer\Controller\Adminhtml\Index;
 
+use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Framework\Message\MessageInterface;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\CollectionFactory;
 use Magento\Newsletter\Model\Subscriber;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
@@ -32,18 +32,6 @@ class MassUnsubscribeTest extends AbstractBackendController
 
     /** @var CollectionFactory */
     private $subscriberCollectionFactory;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->subscriberCollectionFactory = $this->objectManager->get(CollectionFactory::class);
-        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Newsletter/_files/three_subscribers.php
@@ -87,5 +75,17 @@ class MassUnsubscribeTest extends AbstractBackendController
             $this->equalTo([(string)__('An item needs to be selected. Select and try again.')]),
             MessageInterface::TYPE_ERROR
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->subscriberCollectionFactory = $this->objectManager->get(CollectionFactory::class);
+        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
     }
 }

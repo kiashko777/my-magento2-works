@@ -7,23 +7,30 @@ declare(strict_types=1);
 
 namespace Magento\CatalogSearch\Model\Indexer;
 
+use Magento\Catalog\Model\Layer\Search;
 use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Action;
 use Magento\Catalog\Model\Product\Visibility;
+use Magento\Framework\Indexer\IndexerInterface;
+use Magento\Framework\Search\Request\Dimension;
+use Magento\Indexer\Model\Indexer;
+use Magento\Search\Model\QueryFactory;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoDbIsolation disabled
  * @magentoDataFixture Magento/CatalogSearch/_files/indexer_fulltext.php
  */
-class FulltextTest extends \PHPUnit\Framework\TestCase
+class FulltextTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Indexer\IndexerInterface
+     * @var IndexerInterface
      */
     protected $indexer;
 
     /**
-     * @var \Magento\Search\Model\QueryFactory
+     * @var QueryFactory
      */
     protected $queryFactory;
 
@@ -53,33 +60,9 @@ class FulltextTest extends \PHPUnit\Framework\TestCase
     protected $productCherry;
 
     /**
-     * @var  \Magento\Framework\Search\Request\Dimension
+     * @var  Dimension
      */
     protected $dimension;
-
-    protected function setUp(): void
-    {
-        /** @var \Magento\Framework\Indexer\IndexerInterface indexer */
-        $this->indexer = Bootstrap::getObjectManager()->create(
-            \Magento\Indexer\Model\Indexer::class
-        );
-        $this->indexer->load('catalogsearch_fulltext');
-
-        $this->queryFactory = Bootstrap::getObjectManager()->get(
-            \Magento\Search\Model\QueryFactory::class
-        );
-
-        $this->dimension = Bootstrap::getObjectManager()->create(
-            \Magento\Framework\Search\Request\Dimension::class,
-            ['name' => 'scope', 'value' => '1']
-        );
-
-        $this->productApple = $this->getProductBySku('fulltext-1');
-        $this->productBanana = $this->getProductBySku('fulltext-2');
-        $this->productOrange = $this->getProductBySku('fulltext-3');
-        $this->productPapaya = $this->getProductBySku('fulltext-4');
-        $this->productCherry = $this->getProductBySku('fulltext-5');
-    }
 
     public function testReindexAll()
     {
@@ -91,6 +74,34 @@ class FulltextTest extends \PHPUnit\Framework\TestCase
 
         $products = $this->search('Simple Products');
         $this->assertCount(5, $products);
+    }
+
+    /**
+     * Search the text and return result collection
+     *
+     * @param string $text
+     * @param array|null $visibilityFilter
+     * @return Product[]
+     */
+    protected function search(string $text, $visibilityFilter = null): array
+    {
+        $query = $this->queryFactory->get();
+        $query->unsetData();
+        $query->setQueryText($text);
+        $query->saveIncrementalPopularity();
+        $products = [];
+        $searchLayer = Bootstrap::getObjectManager()->create(Search::class);
+        $collection = $searchLayer->getProductCollection();
+        $collection->addSearchFilter($text);
+
+        if (null !== $visibilityFilter) {
+            $collection->setVisibility($visibilityFilter);
+        }
+
+        foreach ($collection as $product) {
+            $products[] = $product;
+        }
+        return $products;
     }
 
     /**
@@ -129,9 +140,9 @@ class FulltextTest extends \PHPUnit\Framework\TestCase
             'name' => 'Simple Products Common',
         ];
 
-        /** @var \Magento\Catalog\Model\Product\Action $action */
+        /** @var Action $action */
         $action = Bootstrap::getObjectManager()->get(
-            \Magento\Catalog\Model\Product\Action::class
+            Action::class
         );
         $action->updateAttributes($productIds, $attrData, 1);
 
@@ -194,32 +205,28 @@ class FulltextTest extends \PHPUnit\Framework\TestCase
         $this->assertCount(0, $products);
     }
 
-    /**
-     * Search the text and return result collection
-     *
-     * @param string $text
-     * @param array|null $visibilityFilter
-     * @return Product[]
-     */
-    protected function search(string $text, $visibilityFilter = null): array
+    protected function setUp(): void
     {
-        $query = $this->queryFactory->get();
-        $query->unsetData();
-        $query->setQueryText($text);
-        $query->saveIncrementalPopularity();
-        $products = [];
-        $searchLayer = Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Layer\Search::class);
-        $collection = $searchLayer->getProductCollection();
-        $collection->addSearchFilter($text);
+        /** @var IndexerInterface indexer */
+        $this->indexer = Bootstrap::getObjectManager()->create(
+            Indexer::class
+        );
+        $this->indexer->load('catalogsearch_fulltext');
 
-        if (null !== $visibilityFilter) {
-            $collection->setVisibility($visibilityFilter);
-        }
+        $this->queryFactory = Bootstrap::getObjectManager()->get(
+            QueryFactory::class
+        );
 
-        foreach ($collection as $product) {
-            $products[] = $product;
-        }
-        return $products;
+        $this->dimension = Bootstrap::getObjectManager()->create(
+            Dimension::class,
+            ['name' => 'scope', 'value' => '1']
+        );
+
+        $this->productApple = $this->getProductBySku('fulltext-1');
+        $this->productBanana = $this->getProductBySku('fulltext-2');
+        $this->productOrange = $this->getProductBySku('fulltext-3');
+        $this->productPapaya = $this->getProductBySku('fulltext-4');
+        $this->productCherry = $this->getProductBySku('fulltext-5');
     }
 
     /**
@@ -232,7 +239,7 @@ class FulltextTest extends \PHPUnit\Framework\TestCase
     {
         /** @var Product $product */
         $product = Bootstrap::getObjectManager()->get(
-            \Magento\Catalog\Model\Product::class
+            Product::class
         );
         return $product->loadByAttribute('sku', $sku);
     }

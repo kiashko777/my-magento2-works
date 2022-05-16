@@ -3,17 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Email\Controller\Adminhtml\Email;
+
+use Magento\Framework\Data\Form\FormKey;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class TemplateTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class TemplateTest extends AbstractBackendController
 {
     public function testDefaultTemplateAction()
     {
-        /** @var $formKey \Magento\Framework\Data\Form\FormKey */
-        $formKey = $this->_objectManager->get(\Magento\Framework\Data\Form\FormKey::class);
+        /** @var $formKey FormKey */
+        $formKey = $this->_objectManager->get(FormKey::class);
         $post = [
             'form_key' => $formKey->getFormKey(),
             'code' => 'customer_password_forgot_email_template',

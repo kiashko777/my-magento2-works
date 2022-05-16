@@ -26,17 +26,6 @@ class RemoveFixtureTest extends AbstractOverridesTest
     private $configStorage;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->config = $this->objectManager->get(ScopeConfigInterface::class);
-        $this->configStorage = $this->objectManager->get(ConfigStorage::class);
-    }
-
-    /**
      * Checks that fixture can be removed in test class node
      *
      * @magentoConfigFixture default_store test_section/test_group/field_1 new_value
@@ -77,9 +66,10 @@ class RemoveFixtureTest extends AbstractOverridesTest
     public function testRemoveFixtureForMethod(
         string $expectedFirstValue,
         string $expectedSecondValue,
-        bool $firstvalueExist,
-        bool $secondvalueExist
-    ): void {
+        bool   $firstvalueExist,
+        bool   $secondvalueExist
+    ): void
+    {
         $fistValue = $this->config->getValue(
             'test_section/test_group/field_2',
             ScopeInterface::SCOPE_STORES,
@@ -174,5 +164,16 @@ class RemoveFixtureTest extends AbstractOverridesTest
                 'base'
             )
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->config = $this->objectManager->get(ScopeConfigInterface::class);
+        $this->configStorage = $this->objectManager->get(ConfigStorage::class);
     }
 }

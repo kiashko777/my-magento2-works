@@ -3,39 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Error;
 
+use Exception;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 require_once __DIR__ . '/../../../../../../../pub/errors/processor.php';
 
-class ProcessorTest extends \PHPUnit\Framework\TestCase
+class ProcessorTest extends TestCase
 {
     /**
      * @var Processor
      */
     private $processor;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->processor = $this->createProcessor();
-    }
-
-    /**
-     * {@inheritdoc}
-     * @throws \Exception
-     */
-    protected function tearDown(): void
-    {
-        $reportDir = $this->processor->_reportDir;
-
-        if (is_dir($reportDir)) {
-            $this->removeDirRecursively($reportDir);
-        }
-    }
 
     /**
      * @param int $logReportDirNestingLevel
@@ -44,10 +26,11 @@ class ProcessorTest extends \PHPUnit\Framework\TestCase
      * @dataProvider dataProviderSaveAndLoadReport
      */
     public function testSaveAndLoadReport(
-        int $logReportDirNestingLevel,
-        int $logReportDirNestingLevelChanged,
+        int    $logReportDirNestingLevel,
+        int    $logReportDirNestingLevelChanged,
         string $exceptionMessage
-    ) {
+    )
+    {
         $_ENV['MAGE_ERROR_REPORT_DIR_NESTING_LEVEL'] = $logReportDirNestingLevel;
         $reportData = [
             0 => $exceptionMessage,
@@ -111,37 +94,6 @@ class ProcessorTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @return Processor
-     */
-    private function createProcessor(): Processor
-    {
-        return Bootstrap::getObjectManager()->create(Processor::class);
-    }
-
-    /**
-     * Remove dir recursively
-     *
-     * @param string $dir
-     * @param int $i
-     * @return bool
-     * @throws \Exception
-     */
-    private function removeDirRecursively(string $dir, int $i = 0): bool
-    {
-        if ($i >= 100) {
-            throw new \Exception('Emergency exit from recursion');
-        }
-        $files = array_diff(scandir($dir), ['.', '..']);
-        foreach ($files as $file) {
-            $i++;
-            (is_dir("$dir/$file"))
-                ? $this->removeDirRecursively("$dir/$file", $i)
-                : unlink("$dir/$file");
-        }
-        return rmdir($dir);
-    }
-
-    /**
      * @return void
      */
     public function testGetViewFileUrl(): void
@@ -151,5 +103,57 @@ class ProcessorTest extends \PHPUnit\Framework\TestCase
 
         $this->assertStringNotContainsString('version2/magento2', $this->processor->getViewFileUrl());
         $this->assertStringContainsString('errors/', $this->processor->getViewFileUrl());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->processor = $this->createProcessor();
+    }
+
+    /**
+     * @return Processor
+     */
+    private function createProcessor(): Processor
+    {
+        return Bootstrap::getObjectManager()->create(Processor::class);
+    }
+
+    /**
+     * {@inheritdoc}
+     * @throws Exception
+     */
+    protected function tearDown(): void
+    {
+        $reportDir = $this->processor->_reportDir;
+
+        if (is_dir($reportDir)) {
+            $this->removeDirRecursively($reportDir);
+        }
+    }
+
+    /**
+     * Remove dir recursively
+     *
+     * @param string $dir
+     * @param int $i
+     * @return bool
+     * @throws Exception
+     */
+    private function removeDirRecursively(string $dir, int $i = 0): bool
+    {
+        if ($i >= 100) {
+            throw new Exception('Emergency exit from recursion');
+        }
+        $files = array_diff(scandir($dir), ['.', '..']);
+        foreach ($files as $file) {
+            $i++;
+            (is_dir("$dir/$file"))
+                ? $this->removeDirRecursively("$dir/$file", $i)
+                : unlink("$dir/$file");
+        }
+        return rmdir($dir);
     }
 }

@@ -3,27 +3,22 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Model;
 
-use Magento\Framework\Component\ComponentRegistrarInterface;
-use Magento\Setup\Validator\DbValidator;
 use Laminas\ServiceManager\ServiceLocatorInterface;
+use Magento\Framework\Component\ComponentRegistrarInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Setup\Validator\DbValidator;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
-class ConfigOptionsListCollectorTest extends \PHPUnit\Framework\TestCase
+class ConfigOptionsListCollectorTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @var ObjectManagerInterface|MockObject
      */
     private $objectManagerProvider;
-
-    protected function setUp(): void
-    {
-        $this->objectManagerProvider = $this->createMock(ObjectManagerProvider::class);
-        $this->objectManagerProvider
-            ->expects($this->any())
-            ->method('get')
-            ->willReturn(\Magento\TestFramework\Helper\Bootstrap::getObjectManager());
-    }
 
     public function testCollectOptionsLists()
     {
@@ -31,14 +26,14 @@ class ConfigOptionsListCollectorTest extends \PHPUnit\Framework\TestCase
         $componentRegistrar = $this->createMock(ComponentRegistrarInterface::class);
         $componentRegistrar->expects($this->once())
             ->method('getPaths')
-            ->willReturn(['Magento_Backend'=>'app/code/Magento/Backend']);
+            ->willReturn(['Magento_Backend' => 'app/code/Magento/Backend']);
 
         $dbValidator = $this->createMock(DbValidator::class);
         $configGenerator = $this->createMock(ConfigGenerator::class);
 
         $setupOptions = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
             ->create(
-                \Magento\Setup\Model\ConfigOptionsList::class,
+                ConfigOptionsList::class,
                 [
                     'configGenerator' => $configGenerator,
                     'dbValidator' => $dbValidator
@@ -49,12 +44,12 @@ class ConfigOptionsListCollectorTest extends \PHPUnit\Framework\TestCase
 
         $serviceLocator->expects($this->once())
             ->method('get')
-            ->with(\Magento\Setup\Model\ConfigOptionsList::class)
+            ->with(ConfigOptionsList::class)
             ->willReturn($setupOptions);
 
-        /** @var \Magento\Setup\Model\ConfigOptionsListCollector $object */
+        /** @var ConfigOptionsListCollector $object */
         $object = $objectManager->create(
-            \Magento\Setup\Model\ConfigOptionsListCollector::class,
+            ConfigOptionsListCollector::class,
             [
                 'objectManagerProvider' => $this->objectManagerProvider,
                 'componentRegistrar' => $componentRegistrar,
@@ -70,5 +65,14 @@ class ConfigOptionsListCollectorTest extends \PHPUnit\Framework\TestCase
         ];
 
         $this->assertEquals($expected, $result);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManagerProvider = $this->createMock(ObjectManagerProvider::class);
+        $this->objectManagerProvider
+            ->expects($this->any())
+            ->method('get')
+            ->willReturn(\Magento\TestFramework\Helper\Bootstrap::getObjectManager());
     }
 }

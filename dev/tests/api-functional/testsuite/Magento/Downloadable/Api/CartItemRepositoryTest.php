@@ -3,8 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Downloadable\Api;
 
+use Exception;
+use Magento\Catalog\Model\Product;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Quote\Api\Data\CartItemInterface;
+use Magento\Quote\Model\Quote;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 class CartItemRepositoryTest extends WebapiAbstract
@@ -13,14 +21,9 @@ class CartItemRepositoryTest extends WebapiAbstract
     const SERVICE_NAME = 'quoteCartItemRepositoryV1';
 
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoApiDataFixture Magento/Quote/_files/empty_quote.php
@@ -28,17 +31,17 @@ class CartItemRepositoryTest extends WebapiAbstract
      */
     public function testAddItem()
     {
-        /** @var  \Magento\Catalog\Model\Product $product */
-        $product = $this->objectManager->create(\Magento\Catalog\Model\Product::class)->load(1);
+        /** @var  Product $product */
+        $product = $this->objectManager->create(Product::class)->load(1);
         $productSku = $product->getSku();
-        /** @var \Magento\Quote\Model\Quote  $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('reserved_order_id', 'reserved_order_id');
         $cartId = $quote->getId();
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/carts/' . $cartId . '/items',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -84,19 +87,19 @@ class CartItemRepositoryTest extends WebapiAbstract
      */
     public function testAddItemWithInvalidLinkId()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
 
-        /** @var  \Magento\Catalog\Model\Product $product */
-        $product = $this->objectManager->create(\Magento\Catalog\Model\Product::class)->load(1);
-        /** @var \Magento\Quote\Model\Quote  $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var  Product $product */
+        $product = $this->objectManager->create(Product::class)->load(1);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('reserved_order_id', 'reserved_order_id');
         $cartId = $quote->getId();
         $productSku = $product->getSku();
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/carts/' . $cartId . '/items',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -129,18 +132,18 @@ class CartItemRepositoryTest extends WebapiAbstract
      */
     public function testUpdateItem()
     {
-        /** @var \Magento\Quote\Model\Quote  $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('reserved_order_id_1', 'reserved_order_id');
         $cartId = $quote->getId();
-        $product = $this->objectManager->create(\Magento\Catalog\Model\Product::class);
+        $product = $this->objectManager->create(Product::class);
         $product->load($product->getIdBySku('downloadable-product'));
         // use ID of the first quote item
         $itemId = $quote->getAllItems()[0]->getId();
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/carts/' . $cartId . '/items/' . $itemId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -186,13 +189,13 @@ class CartItemRepositoryTest extends WebapiAbstract
      */
     public function testUpdateItemWithInvalidLinkId()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
 
-        /** @var \Magento\Quote\Model\Quote  $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('reserved_order_id_1', 'reserved_order_id');
         $cartId = $quote->getId();
-        $product = $this->objectManager->create(\Magento\Catalog\Model\Product::class);
+        $product = $this->objectManager->create(Product::class);
         $product->load($product->getIdBySku('downloadable-product'));
         // use ID of the first quote item
         $itemId = $quote->getAllItems()[0]->getId();
@@ -204,7 +207,7 @@ class CartItemRepositoryTest extends WebapiAbstract
             ],
             'rest' => [
                 'resourcePath' => '/V1/carts/' . $cartId . '/items/' . $itemId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
         ];
 
@@ -233,16 +236,16 @@ class CartItemRepositoryTest extends WebapiAbstract
      */
     public function testGetList()
     {
-        /** @var \Magento\Quote\Model\Quote  $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('reserved_order_id_1', 'reserved_order_id');
         $cartId = $quote->getId();
-        $product = $this->objectManager->create(\Magento\Catalog\Model\Product::class);
+        $product = $this->objectManager->create(Product::class);
         $product->load($product->getIdBySku('downloadable-product'));
         // use ID of the first downloadable link
         $linkId = array_values($product->getDownloadableLinks())[0]->getId();
 
-        /** @var  \Magento\Quote\Api\Data\CartItemInterface $item */
+        /** @var  CartItemInterface $item */
         $item = $quote->getAllItems()[0];
         $expectedResult = [[
             'item_id' => $item->getItemId(),
@@ -264,7 +267,7 @@ class CartItemRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/carts/' . $cartId . '/items',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -282,10 +285,10 @@ class CartItemRepositoryTest extends WebapiAbstract
      */
     public function testUpdateItemQty()
     {
-        /** @var \Magento\Quote\Model\Quote  $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('reserved_order_id_1', 'reserved_order_id');
-        $product = $this->objectManager->create(\Magento\Catalog\Model\Product::class);
+        $product = $this->objectManager->create(Product::class);
         $product->load($product->getIdBySku('downloadable-product'));
         $cartId = $quote->getId();
         // use ID of the first quote item
@@ -293,7 +296,7 @@ class CartItemRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/carts/' . $cartId . '/items/' . $itemId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -325,5 +328,10 @@ class CartItemRepositoryTest extends WebapiAbstract
             $linkId,
             $response['product_option']['extension_attributes']['downloadable_option']['downloadable_links']
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

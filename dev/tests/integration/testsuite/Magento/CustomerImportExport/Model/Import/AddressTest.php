@@ -7,6 +7,7 @@
 /**
  * Test class for \Magento\CustomerImportExport\Model\Import\Address
  */
+
 namespace Magento\CustomerImportExport\Model\Import;
 
 use Magento\Catalog\Model\ResourceModel\Product;
@@ -20,6 +21,7 @@ use Magento\Customer\Model\ResourceModel\Address\Collection;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Filesystem;
+use Magento\Framework\Indexer\StateInterface;
 use Magento\Framework\Registry;
 use Magento\Framework\Stdlib\DateTime;
 use Magento\ImportExport\Model\Import as ImportModel;
@@ -28,10 +30,10 @@ use Magento\ImportExport\Model\Import\ErrorProcessing\ProcessingErrorAggregatorI
 use Magento\ImportExport\Model\Import\Source\Csv;
 use Magento\ImportExport\Model\ResourceModel\Helper;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Framework\Indexer\StateInterface;
 use Magento\TestFramework\ObjectManager;
 use PHPUnit\Framework\TestCase;
-use ReflectionClass;
+use ReflectionMethod;
+use ReflectionProperty;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
@@ -108,23 +110,6 @@ class AddressTest extends TestCase
     private $indexerProcessor;
 
     /**
-     * Init new instance of address entity adapter
-     */
-    protected function setUp(): void
-    {
-        /** @var Product $productResource */
-        $this->customerResource = Bootstrap::getObjectManager()->get(
-            \Magento\Customer\Model\ResourceModel\Customer::class
-        );
-        $this->_entityAdapter = Bootstrap::getObjectManager()->create(
-            $this->_testClassName
-        );
-        $this->indexerProcessor = Bootstrap::getObjectManager()->create(
-            Processor::class
-        );
-    }
-
-    /**
      * Test _saveAddressEntity
      *
      * @magentoDataFixture Magento/Customer/_files/import_export/customer_with_addresses.php
@@ -175,7 +160,7 @@ class AddressTest extends TestCase
         ];
 
         // invoke _saveAddressEntities
-        $saveAddressEntities = new \ReflectionMethod($this->_testClassName, '_saveAddressEntities');
+        $saveAddressEntities = new ReflectionMethod($this->_testClassName, '_saveAddressEntities');
         $saveAddressEntities->setAccessible(true);
         $saveAddressEntities->invoke($entityAdapter, $newEntityData, []);
 
@@ -191,7 +176,7 @@ class AddressTest extends TestCase
     {
         $this->markTestSkipped("to test _saveAddressAttributes attribute need to add custom address attribute");
         // get attributes list
-        $attributesReflection = new \ReflectionProperty($this->_testClassName, '_attributes');
+        $attributesReflection = new ReflectionProperty($this->_testClassName, '_attributes');
         $attributesReflection->setAccessible(true);
         $attributes = $attributesReflection->getValue($this->_entityAdapter);
 
@@ -213,7 +198,7 @@ class AddressTest extends TestCase
         $attributeArray[$attributeTable][$addressId][$attributeId] = $attributeValue;
 
         // invoke _saveAddressAttributes
-        $saveAttributes = new \ReflectionMethod($this->_testClassName, '_saveAddressAttributes');
+        $saveAttributes = new ReflectionMethod($this->_testClassName, '_saveAddressAttributes');
         $saveAttributes->setAccessible(true);
         $saveAttributes->invoke($this->_entityAdapter, $attributeArray);
 
@@ -271,7 +256,7 @@ class AddressTest extends TestCase
         ];
 
         // invoke _saveCustomerDefaults
-        $saveDefaults = new \ReflectionMethod($this->_testClassName, '_saveCustomerDefaults');
+        $saveDefaults = new ReflectionMethod($this->_testClassName, '_saveCustomerDefaults');
         $saveDefaults->setAccessible(true);
         $saveDefaults->invoke($this->_entityAdapter, $defaults);
 
@@ -525,6 +510,86 @@ class AddressTest extends TestCase
     }
 
     /**
+     * @param string $email
+     * @return CustomerInterface
+     */
+    private function getCustomer(string $email): CustomerInterface
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $customerRepository = $objectManager->get(CustomerRepositoryInterface::class);
+        return $customerRepository->get($email);
+    }
+
+    /**
+     * @param string $file
+     * @param string $behavior
+     * @param bool $validateOnly
+     * @return ProcessingErrorAggregatorInterface
+     */
+    private function doImport(
+        string $file,
+        string $behavior = ImportModel::BEHAVIOR_ADD_UPDATE,
+        bool   $validateOnly = false
+    ): ProcessingErrorAggregatorInterface
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var Filesystem $filesystem */
+        $filesystem = $objectManager->create(Filesystem::class);
+        $directoryWrite = $filesystem->getDirectoryWrite(DirectoryList::ROOT);
+        $source = ImportAdapter::findAdapterFor($file, $directoryWrite);
+        $errors = $this->_entityAdapter
+            ->setParameters(['behavior' => $behavior])
+            ->setSource($source)
+            ->validateData();
+        if (!$validateOnly && !$errors->getAllErrors()) {
+            $this->_entityAdapter->importData();
+        }
+        return $errors;
+    }
+
+    /**
+     * @param ProcessingErrorAggregatorInterface $errors
+     */
+    private function assertImportValidationPassed(ProcessingErrorAggregatorInterface $errors): void
+    {
+        if ($errors->getAllErrors()) {
+            $messages = [];
+            $messages[] = 'Import validation failed';
+            $messages[] = '';
+            foreach ($errors->getAllErrors() as $error) {
+                $messages[] = sprintf(
+                    '%s: #%d [%s] %s: %s',
+                    strtoupper($error->getErrorLevel()),
+                    $error->getRowNumber(),
+                    $error->getErrorCode(),
+                    $error->getErrorMessage(),
+                    $error->getErrorDescription()
+                );
+            }
+            $this->fail(implode("\n", $messages));
+        }
+    }
+
+    /**
+     * Get Addresses by filter
+     *
+     * @param array $filter
+     * @return AddressInterface[]
+     */
+    private function getAddresses(array $filter): array
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var AddressRepositoryInterface $repository */
+        $repository = $objectManager->create(AddressRepositoryInterface::class);
+        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
+        $searchCriteriaBuilder = $objectManager->get(SearchCriteriaBuilder::class);
+        foreach ($filter as $attr => $value) {
+            $searchCriteriaBuilder->addFilter($attr, $value);
+        }
+        return $repository->getList($searchCriteriaBuilder->create())->getItems();
+    }
+
+    /**
      * Test update first name and last name
      *
      * @magentoAppIsolation enabled
@@ -575,62 +640,6 @@ class AddressTest extends TestCase
     }
 
     /**
-     * Get Addresses by filter
-     *
-     * @param array $filter
-     * @return AddressInterface[]
-     */
-    private function getAddresses(array $filter): array
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        /** @var AddressRepositoryInterface $repository */
-        $repository = $objectManager->create(AddressRepositoryInterface::class);
-        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
-        $searchCriteriaBuilder = $objectManager->get(SearchCriteriaBuilder::class);
-        foreach ($filter as $attr => $value) {
-            $searchCriteriaBuilder->addFilter($attr, $value);
-        }
-        return $repository->getList($searchCriteriaBuilder->create())->getItems();
-    }
-
-    /**
-     * @param string $email
-     * @return CustomerInterface
-     */
-    private function getCustomer(string $email): CustomerInterface
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $customerRepository = $objectManager->get(CustomerRepositoryInterface::class);
-        return $customerRepository->get($email);
-    }
-
-    /**
-     * @param string $file
-     * @param string $behavior
-     * @param bool $validateOnly
-     * @return ProcessingErrorAggregatorInterface
-     */
-    private function doImport(
-        string $file,
-        string $behavior = ImportModel::BEHAVIOR_ADD_UPDATE,
-        bool $validateOnly = false
-    ): ProcessingErrorAggregatorInterface {
-        $objectManager = Bootstrap::getObjectManager();
-        /** @var Filesystem $filesystem */
-        $filesystem = $objectManager->create(Filesystem::class);
-        $directoryWrite = $filesystem->getDirectoryWrite(DirectoryList::ROOT);
-        $source = ImportAdapter::findAdapterFor($file, $directoryWrite);
-        $errors = $this->_entityAdapter
-            ->setParameters(['behavior' => $behavior])
-            ->setSource($source)
-            ->validateData();
-        if (!$validateOnly && !$errors->getAllErrors()) {
-            $this->_entityAdapter->importData();
-        }
-        return $errors;
-    }
-
-    /**
      * @param array $data
      * @return string
      */
@@ -652,29 +661,6 @@ class AddressTest extends TestCase
         $stream->unlock();
         $stream->close();
         return $tmpDir->getAbsolutePath($tmpFilename);
-    }
-
-    /**
-     * @param ProcessingErrorAggregatorInterface $errors
-     */
-    private function assertImportValidationPassed(ProcessingErrorAggregatorInterface $errors): void
-    {
-        if ($errors->getAllErrors()) {
-            $messages = [];
-            $messages[] = 'Import validation failed';
-            $messages[] = '';
-            foreach ($errors->getAllErrors() as $error) {
-                $messages[] = sprintf(
-                    '%s: #%d [%s] %s: %s',
-                    strtoupper($error->getErrorLevel()),
-                    $error->getRowNumber(),
-                    $error->getErrorCode(),
-                    $error->getErrorMessage(),
-                    $error->getErrorDescription()
-                );
-            }
-            $this->fail(implode("\n", $messages));
-        }
     }
 
     /**
@@ -708,5 +694,22 @@ class AddressTest extends TestCase
             '_address_default_billing_',
             '_address_default_shipping_',
         ];
+    }
+
+    /**
+     * Init new instance of address entity adapter
+     */
+    protected function setUp(): void
+    {
+        /** @var Product $productResource */
+        $this->customerResource = Bootstrap::getObjectManager()->get(
+            \Magento\Customer\Model\ResourceModel\Customer::class
+        );
+        $this->_entityAdapter = Bootstrap::getObjectManager()->create(
+            $this->_testClassName
+        );
+        $this->indexerProcessor = Bootstrap::getObjectManager()->create(
+            Processor::class
+        );
     }
 }

@@ -5,22 +5,24 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Dependency\VirtualType;
 
 use DOMDocument;
+use DOMElement;
+use Exception;
 use Magento\Framework\App\Utility\Files;
 
 class VirtualTypeMapper
 {
     /**
-     * @var array
-     */
-    private $map = [];
-
-    /**
      * @var string
      */
     private static $mainScope = 'global';
+    /**
+     * @var array
+     */
+    private $map = [];
 
     /**
      * VirtualTypeMapper constructor.
@@ -57,28 +59,9 @@ class VirtualTypeMapper
     }
 
     /**
-     * @param string $file
-     * @return string
-     */
-    public function getScopeFromFile($file)
-    {
-        $basename = basename(pathinfo($file, PATHINFO_DIRNAME));
-        return $basename === 'etc' ? 'global' : $basename;
-    }
-
-    /**
-     * @return array
-     * @throws \Exception
-     */
-    private function loadDiConfigs()
-    {
-        return Files::init()->getDiConfigs();
-    }
-
-    /**
      * @param array $diFiles
      * @return array
-     * @throws \Exception
+     * @throws Exception
      */
     public function loadMap(array $diFiles = [])
     {
@@ -91,7 +74,7 @@ class VirtualTypeMapper
             $doc = new DOMDocument();
             $doc->loadXML(file_get_contents($file));
             $nodes = $doc->getElementsByTagName('virtualType');
-/** @var \DOMElement $node */
+            /** @var DOMElement $node */
             foreach ($nodes as $node) {
                 $name = $node->getAttribute('name');
                 $type = $node->getAttribute('type');
@@ -103,5 +86,24 @@ class VirtualTypeMapper
         }
 
         return $this->map;
+    }
+
+    /**
+     * @return array
+     * @throws Exception
+     */
+    private function loadDiConfigs()
+    {
+        return Files::init()->getDiConfigs();
+    }
+
+    /**
+     * @param string $file
+     * @return string
+     */
+    public function getScopeFromFile($file)
+    {
+        $basename = basename(pathinfo($file, PATHINFO_DIRNAME));
+        return $basename === 'etc' ? 'global' : $basename;
     }
 }

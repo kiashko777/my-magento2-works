@@ -3,29 +3,31 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\MessageQueue\Publisher;
+
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\MessageQueue\Publisher\Config\PublisherConnectionInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test of queue publisher configuration reading and parsing.
  *
  * @magentoCache config disabled
  */
-class ConfigTest extends \PHPUnit\Framework\TestCase
+class ConfigTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
-
     public function testGetPublishersWithOneEnabledConnection()
     {
-        /** @var \Magento\Framework\MessageQueue\Publisher\ConfigInterface $config */
-        $config = $this->objectManager->create(\Magento\Framework\MessageQueue\Publisher\ConfigInterface::class);
+        /** @var ConfigInterface $config */
+        $config = $this->objectManager->create(ConfigInterface::class);
 
         $publishers = $config->getPublishers();
         $publisher = $config->getPublisher('topic.message.queue.config.01');
@@ -41,7 +43,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
 
         $this->assertEquals('topic.message.queue.config.01', $publisher->getTopic(), 'Incorrect topic name');
         $this->assertFalse($publisher->isDisabled(), 'Incorrect publisher state');
-        /** @var \Magento\Framework\MessageQueue\Publisher\Config\PublisherConnectionInterface $connection */
+        /** @var PublisherConnectionInterface $connection */
         $connection = $publisher->getConnection();
         $this->assertEquals('amqp', $connection->getName(), 'Incorrect connection name');
         $this->assertEquals('magento2', $connection->getExchange(), 'Incorrect exchange name');
@@ -50,8 +52,8 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
 
     public function testGetPublisherConnectionWithoutConfiguredExchange()
     {
-        /** @var \Magento\Framework\MessageQueue\Publisher\ConfigInterface $config */
-        $config = $this->objectManager->create(\Magento\Framework\MessageQueue\Publisher\ConfigInterface::class);
+        /** @var ConfigInterface $config */
+        $config = $this->objectManager->create(ConfigInterface::class);
 
         $publisher = $config->getPublisher('topic.message.queue.config.04');
         $connection = $publisher->getConnection();
@@ -60,15 +62,15 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
 
     public function testGetPublishersWithoutEnabledConnection()
     {
-        /** @var \Magento\Framework\MessageQueue\Publisher\ConfigInterface $config */
-        $config = $this->objectManager->create(\Magento\Framework\MessageQueue\Publisher\ConfigInterface::class);
+        /** @var ConfigInterface $config */
+        $config = $this->objectManager->create(ConfigInterface::class);
 
         $publisher = $config->getPublisher('topic.message.queue.config.02');
 
         $this->assertEquals('topic.message.queue.config.02', $publisher->getTopic(), 'Incorrect topic name');
         $this->assertFalse($publisher->isDisabled(), 'Incorrect publisher state');
 
-        /** @var \Magento\Framework\MessageQueue\Publisher\Config\PublisherConnectionInterface $connection */
+        /** @var PublisherConnectionInterface $connection */
         $connection = $publisher->getConnection();
         $this->assertEquals('amqp', $connection->getName(), 'Incorrect default connection name');
         $this->assertEquals('magento', $connection->getExchange(), 'Incorrect default exchange name');
@@ -79,11 +81,16 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetDisabledPublisherThrowsException()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage('Publisher \'topic.message.queue.config.03\' is not declared.');
 
-        /** @var \Magento\Framework\MessageQueue\Publisher\ConfigInterface $config */
-        $config = $this->objectManager->create(\Magento\Framework\MessageQueue\Publisher\ConfigInterface::class);
+        /** @var ConfigInterface $config */
+        $config = $this->objectManager->create(ConfigInterface::class);
         $config->getPublisher('topic.message.queue.config.03');
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

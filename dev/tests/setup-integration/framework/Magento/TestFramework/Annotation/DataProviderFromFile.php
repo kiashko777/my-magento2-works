@@ -6,10 +6,12 @@
 
 namespace Magento\TestFramework\Annotation;
 
+use Exception;
 use Magento\Framework\DB\Adapter\SqlVersionProvider;
 use Magento\TestFramework\Deploy\CliCommand;
 use Magento\TestFramework\Deploy\TestModuleManager;
 use Magento\TestFramework\TestCase\MutableDataInterface;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Handler for applying reinstallMagento annotation.
@@ -51,10 +53,10 @@ class DataProviderFromFile
     /**
      * Start test.
      *
-     * @param \PHPUnit\Framework\TestCase $test
-     * @throws \Exception
+     * @param TestCase $test
+     * @throws Exception
      */
-    public function startTest(\PHPUnit\Framework\TestCase $test)
+    public function startTest(TestCase $test)
     {
         $annotations = $test->getAnnotations();
         //This annotation can be declared only on method level
@@ -63,20 +65,7 @@ class DataProviderFromFile
                 $this->loadAllFiles(TESTS_MODULES_PATH . "/" . $annotations['method']['dataProviderFromFile'][0])
             );
         } elseif (!$test instanceof MutableDataInterface) {
-            throw new \Exception("Test type do not supports @dataProviderFromFile annotation");
-        }
-    }
-
-    /**
-     * Finish test.
-     *
-     * @param \PHPUnit\Framework\TestCase $test
-     * @throws \Exception
-     */
-    public function endTest(\PHPUnit\Framework\TestCase $test)
-    {
-        if ($test instanceof MutableDataInterface) {
-            $test->flushData();
+            throw new Exception("Test type do not supports @dataProviderFromFile annotation");
         }
     }
 
@@ -137,5 +126,18 @@ class DataProviderFromFile
     private function isValidDatabaseSuffix(string $databaseSuffix): bool
     {
         return in_array($databaseSuffix, self::POSSIBLE_SUFFIXES);
+    }
+
+    /**
+     * Finish test.
+     *
+     * @param TestCase $test
+     * @throws Exception
+     */
+    public function endTest(TestCase $test)
+    {
+        if ($test instanceof MutableDataInterface) {
+            $test->flushData();
+        }
     }
 }

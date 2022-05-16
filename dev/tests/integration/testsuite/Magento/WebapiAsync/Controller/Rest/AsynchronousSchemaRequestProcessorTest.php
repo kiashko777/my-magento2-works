@@ -6,6 +6,8 @@
 
 namespace Magento\WebapiAsync\Controller\Rest;
 
+use Magento\Framework\App\ResponseInterface;
+use Magento\Framework\Webapi\Rest\Response;
 use Magento\TestFramework\TestCase\AbstractController;
 
 class AsynchronousSchemaRequestProcessorTest extends AbstractController
@@ -34,12 +36,12 @@ class AsynchronousSchemaRequestProcessorTest extends AbstractController
     /**
      * Response getter
      *
-     * @return \Magento\Framework\App\ResponseInterface
+     * @return ResponseInterface
      */
     public function getResponse()
     {
         if (!$this->_response) {
-            $this->_response = $this->_objectManager->get(\Magento\Framework\Webapi\Rest\Response::class);
+            $this->_response = $this->_objectManager->get(Response::class);
         }
         return $this->_response;
     }

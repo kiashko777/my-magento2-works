@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Setup\Test\Unit\Module\I18n\Dictionary\Loader\File;
 
+use DomainException;
 use Magento\Setup\Module\I18n\Dictionary;
 use Magento\Setup\Module\I18n\Dictionary\Loader\File\AbstractFile;
 use Magento\Setup\Module\I18n\Dictionary\Phrase;
@@ -30,12 +31,6 @@ class AbstractFileTest extends TestCase
      * @var AbstractFile|MockObject
      */
     protected $_abstractLoaderMock;
-
-    protected function setUp(): void
-    {
-        $this->_dictionaryMock = $this->createMock(Dictionary::class);
-        $this->_factoryMock = $this->createMock(Factory::class);
-    }
 
     public function testLoadWrongFile()
     {
@@ -152,10 +147,16 @@ class AbstractFileTest extends TestCase
         )->method(
             'createPhrase'
         )->willThrowException(
-            new \DomainException('exception_message')
+            new DomainException('exception_message')
         );
 
         /** @var AbstractFile $abstractLoaderMock */
         $this->assertEquals($this->_dictionaryMock, $abstractLoaderMock->load('test.csv'));
+    }
+
+    protected function setUp(): void
+    {
+        $this->_dictionaryMock = $this->createMock(Dictionary::class);
+        $this->_factoryMock = $this->createMock(Factory::class);
     }
 }

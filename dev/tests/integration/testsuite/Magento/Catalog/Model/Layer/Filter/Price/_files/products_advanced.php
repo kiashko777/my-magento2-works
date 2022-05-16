@@ -8,17 +8,24 @@
  * Products generation to test base data
  */
 
+use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Catalog\Setup\CategorySetup;
+use Magento\TestFramework\Helper\Bootstrap;
+
 $prices = [5, 10, 15, 20, 50, 100, 150];
 
-/** @var $installer \Magento\Catalog\Setup\CategorySetup */
-$installer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Catalog\Setup\CategorySetup::class
+/** @var $installer CategorySetup */
+$installer = Bootstrap::getObjectManager()->create(
+    CategorySetup::class
 );
 /**
  * After installation system has two categories: root one with ID:1 and Default category with ID:2
  */
-/** @var $category \Magento\Catalog\Model\Category */
-$category = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Category::class);
+/** @var $category Category */
+$category = Bootstrap::getObjectManager()->create(Category::class);
 $category->isObjectNew(true);
 $category->setId(
     3
@@ -40,7 +47,7 @@ $category->setId(
     1
 )->save();
 
-$category = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Category::class);
+$category = Bootstrap::getObjectManager()->create(Category::class);
 $category->isObjectNew(true);
 $category->setId(
     4
@@ -66,8 +73,8 @@ $category->setId(
 
 $lastProductId = 0;
 foreach ($prices as $price) {
-    $product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-        \Magento\Catalog\Model\Product::class
+    $product = Bootstrap::getObjectManager()->create(
+        Product::class
     );
     $productId = $lastProductId + 1;
     $product->setTypeId(
@@ -95,9 +102,9 @@ foreach ($prices as $price) {
     )->setCategoryIds(
         [4]
     )->setVisibility(
-        \Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH
+        Visibility::VISIBILITY_BOTH
     )->setStatus(
-        \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED
+        Status::STATUS_ENABLED
     )->save();
     ++$lastProductId;
 }

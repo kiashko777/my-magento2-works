@@ -7,10 +7,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\LayeredNavigation\Block\Navigation;
+use Magento\LayeredNavigation\Block\Navigation\State;
+use Magento\Paypal\Block\Express\InContext\Minicart\Button;
+use Magento\Reminder\Block\Adminhtml\Reminder\Edit\Tab\Customers;
+
 return [
     // Fails because of dependence on registry
-    \Magento\Reminder\Block\Adminhtml\Reminder\Edit\Tab\Customers::class,
-    \Magento\LayeredNavigation\Block\Navigation::class,
-    \Magento\LayeredNavigation\Block\Navigation\State::class,
-    \Magento\Paypal\Block\Express\InContext\Minicart\Button::class,
+    Customers::class,
+    Navigation::class,
+    State::class,
+    Button::class,
 ];

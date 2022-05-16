@@ -6,12 +6,15 @@
 
 namespace Magento\Checkout\Controller\Cart\Index;
 
+use Magento\Checkout\Model\Session;
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\Message\MessageInterface;
+use Magento\TestFramework\TestCase\AbstractController;
 
 /**
  * @magentoDbIsolation enabled
  */
-class CouponPostTest extends \Magento\TestFramework\TestCase\AbstractController
+class CouponPostTest extends AbstractController
 {
     /**
      * Test for \Magento\Checkout\Controller\Cart\CouponPost::execute() with simple product
@@ -20,8 +23,8 @@ class CouponPostTest extends \Magento\TestFramework\TestCase\AbstractController
      */
     public function testExecute()
     {
-        /** @var $session \Magento\Checkout\Model\Session */
-        $session = $this->_objectManager->create(\Magento\Checkout\Model\Session::class);
+        /** @var $session Session */
+        $session = $this->_objectManager->create(Session::class);
         $quote = $session->getQuote();
         $quote->setData('trigger_recollect', 1)->setTotalsCollectedFlag(true);
         $inputData = [
@@ -36,7 +39,7 @@ class CouponPostTest extends \Magento\TestFramework\TestCase\AbstractController
 
         $this->assertSessionMessages(
             $this->equalTo(['The coupon code &quot;test&quot; is not valid.']),
-            \Magento\Framework\Message\MessageInterface::TYPE_ERROR
+            MessageInterface::TYPE_ERROR
         );
     }
 
@@ -49,8 +52,8 @@ class CouponPostTest extends \Magento\TestFramework\TestCase\AbstractController
      */
     public function testAddingValidCoupon(): void
     {
-        /** @var $session \Magento\Checkout\Model\Session */
-        $session = $this->_objectManager->create(\Magento\Checkout\Model\Session::class);
+        /** @var $session Session */
+        $session = $this->_objectManager->create(Session::class);
         $quote = $session->getQuote();
         $quote->setData('trigger_recollect', 1)->setTotalsCollectedFlag(true);
 
@@ -67,7 +70,7 @@ class CouponPostTest extends \Magento\TestFramework\TestCase\AbstractController
 
         $this->assertSessionMessages(
             $this->equalTo(['You used coupon code &quot;' . $couponCode . '&quot;.']),
-            \Magento\Framework\Message\MessageInterface::TYPE_SUCCESS
+            MessageInterface::TYPE_SUCCESS
         );
     }
 }

@@ -3,31 +3,24 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\DB;
 
-class HelperTest extends \PHPUnit\Framework\TestCase
+use Magento\Store\Model\ResourceModel\Store\Collection;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class HelperTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\DB\Helper
+     * @var Helper
      */
     protected $_model;
 
     /**
-     * @var \Magento\Framework\DB\Select
+     * @var Select
      */
     protected $_select;
-
-    protected function setUp(): void
-    {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\DB\Helper::class,
-            ['modulePrefix' => 'core']
-        );
-        $collection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Store\Model\ResourceModel\Store\Collection::class
-        );
-        $this->_select = $collection->getSelect();
-    }
 
     public function testPrepareColumnsList()
     {
@@ -54,5 +47,17 @@ class HelperTest extends \PHPUnit\Framework\TestCase
         $value = $this->_model->addLikeEscape('test');
         $this->assertInstanceOf('Zend_Db_Expr', $value);
         $this->assertStringContainsString('test', (string)$value);
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Helper::class,
+            ['modulePrefix' => 'core']
+        );
+        $collection = Bootstrap::getObjectManager()->create(
+            Collection::class
+        );
+        $this->_select = $collection->getSelect();
     }
 }

@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Csp\Model;
 
+use Magento\Csp\Api\Data\PolicyInterface;
 use Magento\Csp\Api\PolicyCollectorInterface;
 use Magento\Csp\Model\Policy\FetchPolicy;
 use Magento\Csp\Model\Policy\FlagPolicy;
@@ -20,73 +21,6 @@ use PHPUnit\Framework\TestCase;
  */
 class CompositePolicyCollectorTest extends TestCase
 {
-    /**
-     * Create mock collectors that will populate policies.
-     *
-     * @return PolicyCollectorInterface[]
-     */
-    private function createMockCollectors(): array
-    {
-        $mockCollector1 = $this->getMockForAbstractClass(PolicyCollectorInterface::class);
-        $mockCollector1->method('collect')
-            ->willReturnCallback(
-                function (array $prevPolicies) {
-                    return array_merge(
-                        $prevPolicies,
-                        [
-                            new FetchPolicy(
-                                'script-src',
-                                false,
-                                ['https://magento.com'],
-                                ['https'],
-                                true,
-                                false,
-                                true,
-                                ['569403695046645'],
-                                ['B2yPHKaXnvFWtRChIbabYmUBFZdVfKKXHbWtWidDVF8=' => 'sha256'],
-                                false,
-                                true
-                            ),
-                            new FetchPolicy('script-src', false, ['https://devdocs.magento.com']),
-                            new FlagPolicy('upgrade-insecure-requests'),
-                            new PluginTypesPolicy(['application/x-shockwave-flash']),
-                            new SandboxPolicy(false, true, false, true, false, true, false, true, false, true, false)
-                        ]
-                    );
-                }
-            );
-        $mockCollector2 = $this->getMockForAbstractClass(PolicyCollectorInterface::class);
-        $mockCollector2->method('collect')
-            ->willReturnCallback(
-                function (array $prevPolicies) {
-                    return array_merge(
-                        $prevPolicies,
-                        [
-                            new FetchPolicy(
-                                'script-src',
-                                true,
-                                ['http://magento.com'],
-                                ['http'],
-                                false,
-                                false,
-                                false,
-                                ['5694036950466451'],
-                                ['B2yPHKaXnvFWtRChIbabYmUBFZdVfKKXHbWtWidDVF7=' => 'sha256'],
-                                true,
-                                false
-                            ),
-                            new FetchPolicy('default-src', false, [], [], true),
-                            new FlagPolicy('upgrade-insecure-requests'),
-                            new PluginTypesPolicy(['application/x-java-applet']),
-                            new SandboxPolicy(true, false, true, false, true, false, true, false, true, false, false)
-                        ]
-                    );
-                }
-            );
-
-        return [$mockCollector1, $mockCollector2];
-    }
-
     /**
      * Test collect method.
      *
@@ -105,7 +39,7 @@ class CompositePolicyCollectorTest extends TestCase
         $collected = $collector->collect([]);
         /** @var FetchPolicy[]|FlagPolicy[]|PluginTypesPolicy[]|SandboxPolicy[] $policies */
         $policies = [];
-        /** @var \Magento\Csp\Api\Data\PolicyInterface $policy */
+        /** @var PolicyInterface $policy */
         foreach ($collected as $policy) {
             $policies[$policy->getId()] = $policy;
         }
@@ -173,5 +107,72 @@ class CompositePolicyCollectorTest extends TestCase
         $this->assertTrue($policies['sandbox']->isTopNavigationAllowed());
         $this->assertTrue($policies['sandbox']->isSameOriginAllowed());
         $this->assertTrue($policies['sandbox']->isPresentationAllowed());
+    }
+
+    /**
+     * Create mock collectors that will populate policies.
+     *
+     * @return PolicyCollectorInterface[]
+     */
+    private function createMockCollectors(): array
+    {
+        $mockCollector1 = $this->getMockForAbstractClass(PolicyCollectorInterface::class);
+        $mockCollector1->method('collect')
+            ->willReturnCallback(
+                function (array $prevPolicies) {
+                    return array_merge(
+                        $prevPolicies,
+                        [
+                            new FetchPolicy(
+                                'script-src',
+                                false,
+                                ['https://magento.com'],
+                                ['https'],
+                                true,
+                                false,
+                                true,
+                                ['569403695046645'],
+                                ['B2yPHKaXnvFWtRChIbabYmUBFZdVfKKXHbWtWidDVF8=' => 'sha256'],
+                                false,
+                                true
+                            ),
+                            new FetchPolicy('script-src', false, ['https://devdocs.magento.com']),
+                            new FlagPolicy('upgrade-insecure-requests'),
+                            new PluginTypesPolicy(['application/x-shockwave-flash']),
+                            new SandboxPolicy(false, true, false, true, false, true, false, true, false, true, false)
+                        ]
+                    );
+                }
+            );
+        $mockCollector2 = $this->getMockForAbstractClass(PolicyCollectorInterface::class);
+        $mockCollector2->method('collect')
+            ->willReturnCallback(
+                function (array $prevPolicies) {
+                    return array_merge(
+                        $prevPolicies,
+                        [
+                            new FetchPolicy(
+                                'script-src',
+                                true,
+                                ['http://magento.com'],
+                                ['http'],
+                                false,
+                                false,
+                                false,
+                                ['5694036950466451'],
+                                ['B2yPHKaXnvFWtRChIbabYmUBFZdVfKKXHbWtWidDVF7=' => 'sha256'],
+                                true,
+                                false
+                            ),
+                            new FetchPolicy('default-src', false, [], [], true),
+                            new FlagPolicy('upgrade-insecure-requests'),
+                            new PluginTypesPolicy(['application/x-java-applet']),
+                            new SandboxPolicy(true, false, true, false, true, false, true, false, true, false, false)
+                        ]
+                    );
+                }
+            );
+
+        return [$mockCollector1, $mockCollector2];
     }
 }

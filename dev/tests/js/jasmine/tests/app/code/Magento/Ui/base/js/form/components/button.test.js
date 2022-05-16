@@ -12,27 +12,29 @@ define([
 
     describe('Magento_Ui/js/form/components/button', function () {
         var params = {
-            provider: 'provName',
-            name: '',
-            index: '',
-            actions: [
-                {
-                    actionName: 'someAction',
-                    targetName: 'some_target_component'
-                },
-                {
-                    targetName: 'some_other_target_component'
-                }
-            ]
-        },
+                provider: 'provName',
+                name: '',
+                index: '',
+                actions: [
+                    {
+                        actionName: 'someAction',
+                        targetName: 'some_target_component'
+                    },
+                    {
+                        targetName: 'some_other_target_component'
+                    }
+                ]
+            },
             obj = new Constr(params);
 
         registry.set('provName', {
             /** Stub */
-            has: function () {},
+            has: function () {
+            },
 
             /** Stub */
-            async: function () {}
+            async: function () {
+            }
         });
 
         describe('initialize method', function () {

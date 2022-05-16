@@ -7,25 +7,18 @@ declare(strict_types=1);
 
 namespace Magento\Sales\Model;
 
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
 /**
  * Class to verify isIncrementIdUsed method behaviour.
  */
-class OrderIncrementIdCheckerTest extends \PHPUnit\Framework\TestCase
+class OrderIncrementIdCheckerTest extends TestCase
 {
     /**
-     * @var \Magento\Sales\Model\OrderIncrementIdChecker
+     * @var OrderIncrementIdChecker
      */
     private $checker;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->checker = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Sales\Model\OrderIncrementIdChecker::class
-        );
-    }
 
     /**
      * Test to verify if isIncrementIdUsed method works with numeric increment ids.
@@ -47,5 +40,15 @@ class OrderIncrementIdCheckerTest extends \PHPUnit\Framework\TestCase
     public function testIsOrderIncrementIdUsedAlphanumericIncrementId(): void
     {
         $this->assertTrue($this->checker->isIncrementIdUsed('M00000001'));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->checker = Bootstrap::getObjectManager()->create(
+            OrderIncrementIdChecker::class
+        );
     }
 }

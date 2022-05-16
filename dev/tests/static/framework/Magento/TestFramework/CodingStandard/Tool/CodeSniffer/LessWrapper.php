@@ -7,6 +7,7 @@
 /**
  * PHP Code Sniffer CLI Wrapper
  */
+
 namespace Magento\TestFramework\CodingStandard\Tool\CodeSniffer;
 
 /**

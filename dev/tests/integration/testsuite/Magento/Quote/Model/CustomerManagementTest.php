@@ -36,21 +36,6 @@ class CustomerManagementTest extends TestCase
      */
     private $customer;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = BootstrapHelper::getObjectManager();
-        $this->customerManagemet = $this->objectManager->create(CustomerManagement::class);
-        $this->customer = $this->objectManager->create(CustomerInterface::class);
-    }
-
-    protected function tearDown(): void
-    {
-        /** @var CustomerRepositoryInterface $customerRepository */
-        $customerRepository = $this->objectManager->create(CustomerRepositoryInterface::class);
-        $customer = $customerRepository->get('john1.doe001@test.com');
-        $customerRepository->delete($customer);
-    }
-
     /**
      * @magentoDataFixture Magento/Sales/_files/quote.php
      */
@@ -59,8 +44,8 @@ class CustomerManagementTest extends TestCase
         $reservedOrderId = 'test01';
 
         $this->customer->setEmail('john1.doe001@test.com')
-        ->setFirstname('doe')
-        ->setLastname('john');
+            ->setFirstname('doe')
+            ->setLastname('john');
 
         $quote = $this->getQuote($reservedOrderId)->setCustomer($this->customer);
         $this->customerManagemet->populateCustomerInfo($quote);
@@ -87,5 +72,20 @@ class CustomerManagementTest extends TestCase
             ->getItems();
 
         return array_pop($items);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = BootstrapHelper::getObjectManager();
+        $this->customerManagemet = $this->objectManager->create(CustomerManagement::class);
+        $this->customer = $this->objectManager->create(CustomerInterface::class);
+    }
+
+    protected function tearDown(): void
+    {
+        /** @var CustomerRepositoryInterface $customerRepository */
+        $customerRepository = $this->objectManager->create(CustomerRepositoryInterface::class);
+        $customer = $customerRepository->get('john1.doe001@test.com');
+        $customerRepository->delete($customer);
     }
 }

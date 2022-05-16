@@ -7,12 +7,12 @@ declare(strict_types=1);
 
 namespace Magento\LayeredNavigation\Block\Navigation\Category;
 
+use Magento\Catalog\Model\Layer\Filter\AbstractFilter;
 use Magento\Catalog\Model\Layer\Resolver;
 use Magento\CatalogInventory\Model\Configuration;
 use Magento\Framework\App\Config\MutableScopeConfigInterface;
 use Magento\Framework\App\ScopeInterface;
 use Magento\LayeredNavigation\Block\Navigation\AbstractFiltersTest;
-use Magento\Catalog\Model\Layer\Filter\AbstractFilter;
 use Magento\Store\Model\ScopeInterface as StoreScope;
 
 /**
@@ -31,15 +31,6 @@ class OutOfStockProductsFilterTest extends AbstractFiltersTest
     private $scopeConfig;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->scopeConfig = $this->objectManager->get(MutableScopeConfigInterface::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/product_dropdown_attribute.php
      * @magentoDataFixture Magento/Catalog/_files/out_of_stock_product_with_category.php
      * @magentoDataFixture Magento/Catalog/_files/product_with_category.php
@@ -56,6 +47,22 @@ class OutOfStockProductsFilterTest extends AbstractFiltersTest
             ['is_filterable' => AbstractFilter::ATTRIBUTE_OPTIONS_ONLY_WITH_RESULTS],
             $expectation,
             'Category 1'
+        );
+    }
+
+    /**
+     * Updates store config 'cataloginventory/options/show_out_of_stock' flag.
+     *
+     * @param int $showOutOfStock
+     * @return void
+     */
+    protected function updateConfigShowOutOfStockFlag(int $showOutOfStock): void
+    {
+        $this->scopeConfig->setValue(
+            Configuration::XML_PATH_SHOW_OUT_OF_STOCK,
+            $showOutOfStock,
+            StoreScope::SCOPE_STORE,
+            ScopeInterface::SCOPE_DEFAULT
         );
     }
 
@@ -79,6 +86,15 @@ class OutOfStockProductsFilterTest extends AbstractFiltersTest
     /**
      * @inheritdoc
      */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->scopeConfig = $this->objectManager->get(MutableScopeConfigInterface::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
     protected function getLayerType(): string
     {
         return Resolver::CATALOG_LAYER_CATEGORY;
@@ -90,21 +106,5 @@ class OutOfStockProductsFilterTest extends AbstractFiltersTest
     protected function getAttributeCode(): string
     {
         return 'dropdown_attribute';
-    }
-
-    /**
-     * Updates store config 'cataloginventory/options/show_out_of_stock' flag.
-     *
-     * @param int $showOutOfStock
-     * @return void
-     */
-    protected function updateConfigShowOutOfStockFlag(int $showOutOfStock): void
-    {
-        $this->scopeConfig->setValue(
-            Configuration::XML_PATH_SHOW_OUT_OF_STOCK,
-            $showOutOfStock,
-            StoreScope::SCOPE_STORE,
-            ScopeInterface::SCOPE_DEFAULT
-        );
     }
 }

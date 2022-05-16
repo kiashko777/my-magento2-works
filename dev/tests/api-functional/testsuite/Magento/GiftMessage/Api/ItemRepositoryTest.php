@@ -3,8 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\GiftMessage\Api;
 
+use Magento\Catalog\Model\Product;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\GiftMessage\Model\Message;
+use Magento\Integration\Api\CustomerTokenServiceInterface;
+use Magento\Quote\Model\Quote;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 class ItemRepositoryTest extends WebapiAbstract
@@ -14,14 +22,9 @@ class ItemRepositoryTest extends WebapiAbstract
     const RESOURCE_PATH = '/V1/carts/';
 
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoApiDataFixture Magento/GiftMessage/_files/quote_with_item_message.php
@@ -30,18 +33,18 @@ class ItemRepositoryTest extends WebapiAbstract
      */
     public function testGet()
     {
-        /** @var \Magento\Quote\Model\Quote $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_item_with_message', 'reserved_order_id');
-        $product = $this->objectManager->create(\Magento\Catalog\Model\Product::class);
+        $product = $this->objectManager->create(Product::class);
         $product->load($product->getIdBySku('simple_with_message'));
         $itemId = $quote->getItemByProduct($product)->getId();
-        /** @var  \Magento\Catalog\Model\Product $product */
+        /** @var  Product $product */
         $cartId = $quote->getId();
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $cartId . '/gift-message/' . $itemId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -72,23 +75,23 @@ class ItemRepositoryTest extends WebapiAbstract
         $this->_markTestAsRestOnly();
 
         // get customer ID token
-        /** @var \Magento\Integration\Api\CustomerTokenServiceInterface $customerTokenService */
+        /** @var CustomerTokenServiceInterface $customerTokenService */
         $customerTokenService = $this->objectManager->create(
-            \Magento\Integration\Api\CustomerTokenServiceInterface::class
+            CustomerTokenServiceInterface::class
         );
         $token = $customerTokenService->createCustomerAccessToken('customer@example.com', 'password');
 
-        /** @var \Magento\Quote\Model\Quote $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_item_with_message', 'reserved_order_id');
-        $product = $this->objectManager->create(\Magento\Catalog\Model\Product::class);
+        $product = $this->objectManager->create(Product::class);
         $product->load($product->getIdBySku('simple_with_message'));
         $itemId = $quote->getItemByProduct($product)->getId();
-        /** @var  \Magento\Catalog\Model\Product $product */
+        /** @var  Product $product */
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . 'mine/gift-message/' . $itemId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
                 'token' => $token,
             ],
         ];
@@ -115,17 +118,17 @@ class ItemRepositoryTest extends WebapiAbstract
         // sales/gift_options/allow_items must be set to 1 in system configuration
         // @todo remove next statement when \Magento\TestFramework\TestCase\WebapiAbstract::_updateAppConfig is fixed
         $this->markTestIncomplete('This test relies on system configuration state.');
-        /** @var \Magento\Quote\Model\Quote $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_item_with_message', 'reserved_order_id');
         $cartId = $quote->getId();
-        $product = $this->objectManager->create(\Magento\Catalog\Model\Product::class);
+        $product = $this->objectManager->create(Product::class);
         $product->load($product->getIdBySku('simple_with_message'));
         $itemId = $quote->getItemByProduct($product)->getId();
         $serviceInfo = [
             'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . $cartId . '/gift-message/' .  $itemId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'resourcePath' => self::RESOURCE_PATH . $cartId . '/gift-message/' . $itemId,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -145,8 +148,8 @@ class ItemRepositoryTest extends WebapiAbstract
         ];
         $this->assertTrue($this->_webApiCall($serviceInfo, $requestData));
         $messageId = $quote->getItemByProduct($product)->getGiftMessageId();
-        /** @var  \Magento\GiftMessage\Model\Message $message */
-        $message = $this->objectManager->create(\Magento\GiftMessage\Model\Message::class)->load($messageId);
+        /** @var  Message $message */
+        $message = $this->objectManager->create(Message::class)->load($messageId);
         $this->assertEquals('John Doe', $message->getRecipient());
         $this->assertEquals('Jane Roe', $message->getSender());
         $this->assertEquals('Gift Message Text New', $message->getMessage());
@@ -160,25 +163,25 @@ class ItemRepositoryTest extends WebapiAbstract
         $this->_markTestAsRestOnly();
 
         // get customer ID token
-        /** @var \Magento\Integration\Api\CustomerTokenServiceInterface $customerTokenService */
+        /** @var CustomerTokenServiceInterface $customerTokenService */
         $customerTokenService = $this->objectManager->create(
-            \Magento\Integration\Api\CustomerTokenServiceInterface::class
+            CustomerTokenServiceInterface::class
         );
         $token = $customerTokenService->createCustomerAccessToken('customer@example.com', 'password');
 
         // sales/gift_options/allow_items must be set to 1 in system configuration
         // @todo remove next statement when \Magento\TestFramework\TestCase\WebapiAbstract::_updateAppConfig is fixed
         $this->markTestIncomplete('This test relies on system configuration state.');
-        /** @var \Magento\Quote\Model\Quote $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_item_with_message', 'reserved_order_id');
-        $product = $this->objectManager->create(\Magento\Catalog\Model\Product::class);
+        $product = $this->objectManager->create(Product::class);
         $product->load($product->getIdBySku('simple_with_message'));
         $itemId = $quote->getItemByProduct($product)->getId();
         $serviceInfo = [
             'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . 'mine/gift-message/' .  $itemId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'resourcePath' => self::RESOURCE_PATH . 'mine/gift-message/' . $itemId,
+                'httpMethod' => Request::HTTP_METHOD_POST,
                 'token' => $token,
             ],
         ];
@@ -193,10 +196,15 @@ class ItemRepositoryTest extends WebapiAbstract
         ];
         $this->assertTrue($this->_webApiCall($serviceInfo, $requestData));
         $messageId = $quote->getItemByProduct($product)->getGiftMessageId();
-        /** @var  \Magento\GiftMessage\Model\Message $message */
-        $message = $this->objectManager->create(\Magento\GiftMessage\Model\Message::class)->load($messageId);
+        /** @var  Message $message */
+        $message = $this->objectManager->create(Message::class)->load($messageId);
         $this->assertEquals('John Doe', $message->getRecipient());
         $this->assertEquals('Jane Roe', $message->getSender());
         $this->assertEquals('Gift Message Text New', $message->getMessage());
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

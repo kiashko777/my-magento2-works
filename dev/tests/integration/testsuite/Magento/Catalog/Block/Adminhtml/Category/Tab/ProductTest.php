@@ -9,13 +9,13 @@ namespace Magento\Catalog\Block\Adminhtml\Category\Tab;
 
 use Magento\Catalog\Api\CategoryRepositoryInterface;
 use Magento\Catalog\Api\Data\CategoryInterface;
+use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Model\ResourceModel\Collection\AbstractCollection;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Registry;
 use Magento\Framework\View\LayoutInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
-use Magento\Framework\ObjectManagerInterface;
-use Magento\Catalog\Api\Data\ProductInterface;
 
 /**
  * Checks grid data on the tab 'Products in Category' category view page.
@@ -40,29 +40,6 @@ class ProductTest extends TestCase
     private $registry;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->categoryRepository = $this->objectManager->get(CategoryRepositoryInterface::class);
-        $this->registry = $this->objectManager->get(Registry::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->registry->unregister('category');
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/category_with_two_products.php
      * @magentoDataFixture Magento/Catalog/_files/product_associated.php
      * @magentoDataFixture Magento/Catalog/_files/simple_product_disabled.php
@@ -80,6 +57,40 @@ class ProductTest extends TestCase
         foreach ($items as $item) {
             $this->assertNotNull($collection->getItemByColumnValue(ProductInterface::SKU, $item));
         }
+    }
+
+    /**
+     * Filter product in grid
+     *
+     * @param string $filterOption
+     * @param int $categoryId
+     * @param int $storeId
+     * @return AbstractCollection
+     */
+    private function filterProductInGrid(string $filterOption, int $categoryId, int $storeId): AbstractCollection
+    {
+        $this->registerCategory($this->categoryRepository->get($categoryId));
+        $block = $this->layout->createBlock(Product::class);
+        $block->getRequest()->setParams([
+            'id' => $categoryId,
+            'filter' => base64_encode($filterOption),
+            'store' => $storeId,
+        ]);
+        $block->toHtml();
+
+        return $block->getCollection();
+    }
+
+    /**
+     * Register category in registry
+     *
+     * @param CategoryInterface $category
+     * @return void
+     */
+    private function registerCategory(CategoryInterface $category): void
+    {
+        $this->registry->unregister('category');
+        $this->registry->register('category', $category);
     }
 
     /**
@@ -142,36 +153,25 @@ class ProductTest extends TestCase
     }
 
     /**
-     * Filter product in grid
-     *
-     * @param string $filterOption
-     * @param int $categoryId
-     * @param int $storeId
-     * @return AbstractCollection
+     * @inheritdoc
      */
-    private function filterProductInGrid(string $filterOption, int $categoryId, int $storeId): AbstractCollection
+    protected function setUp(): void
     {
-        $this->registerCategory($this->categoryRepository->get($categoryId));
-        $block = $this->layout->createBlock(Product::class);
-        $block->getRequest()->setParams([
-            'id' => $categoryId,
-            'filter' => base64_encode($filterOption),
-            'store' => $storeId,
-        ]);
-        $block->toHtml();
+        parent::setUp();
 
-        return $block->getCollection();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->categoryRepository = $this->objectManager->get(CategoryRepositoryInterface::class);
+        $this->registry = $this->objectManager->get(Registry::class);
     }
 
     /**
-     * Register category in registry
-     *
-     * @param CategoryInterface $category
-     * @return void
+     * @inheritdoc
      */
-    private function registerCategory(CategoryInterface $category): void
+    protected function tearDown(): void
     {
         $this->registry->unregister('category');
-        $this->registry->register('category', $category);
+
+        parent::tearDown();
     }
 }

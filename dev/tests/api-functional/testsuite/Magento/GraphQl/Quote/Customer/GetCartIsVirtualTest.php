@@ -27,13 +27,6 @@ class GetCartIsVirtualTest extends GraphQlAbstract
      */
     private $customerTokenService;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-    }
-
     /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
@@ -50,6 +43,33 @@ class GetCartIsVirtualTest extends GraphQlAbstract
         $this->assertArrayHasKey('cart', $response);
         $this->assertArrayHasKey('is_virtual', $response['cart']);
         $this->assertFalse($response['cart']['is_virtual']);
+    }
+
+    /**
+     * @param string $maskedQuoteId
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId): string
+    {
+        return <<<QUERY
+{
+  cart(cart_id:"$maskedQuoteId") {
+    is_virtual
+  }
+}
+QUERY;
+    }
+
+    /**
+     * @param string $username
+     * @param string $password
+     * @return array
+     */
+    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
+        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
+        return $headerMap;
     }
 
     /**
@@ -90,30 +110,10 @@ class GetCartIsVirtualTest extends GraphQlAbstract
         $this->assertTrue($response['cart']['is_virtual']);
     }
 
-    /**
-     * @param string $maskedQuoteId
-     * @return string
-     */
-    private function getQuery(string $maskedQuoteId): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-{
-  cart(cart_id:"$maskedQuoteId") {    
-    is_virtual
-  }
-}
-QUERY;
-    }
-
-    /**
-     * @param string $username
-     * @param string $password
-     * @return array
-     */
-    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
-    {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
-        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
-        return $headerMap;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
     }
 }

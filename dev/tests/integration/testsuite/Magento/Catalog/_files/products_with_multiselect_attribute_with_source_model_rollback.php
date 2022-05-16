@@ -4,11 +4,12 @@
  * See COPYING.txt for license details.
  */
 
-use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\Framework\Indexer\IndexerRegistry;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\Data\ProductSearchResultsInterface;
+use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\Indexer\IndexerRegistry;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture(
@@ -18,7 +19,7 @@ Resolver::getInstance()->requireDataFixture(
 /**
  * Remove all products as strategy of isolation process
  */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 $registry = $objectManager->get('Magento\Framework\Registry');
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
@@ -38,6 +39,6 @@ foreach ($products->getItems() as $product) {
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', false);
 
-\Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(IndexerRegistry::class)
+Bootstrap::getObjectManager()->get(IndexerRegistry::class)
     ->get(Magento\CatalogInventory\Model\Indexer\Stock\Processor::INDEXER_ID)
     ->reindexAll();

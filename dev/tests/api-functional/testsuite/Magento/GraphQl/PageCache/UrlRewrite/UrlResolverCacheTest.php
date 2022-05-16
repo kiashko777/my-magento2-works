@@ -9,6 +9,7 @@ namespace Magento\GraphQl\PageCache\UrlRewrite;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product;
+use Magento\Cms\Model\Page;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
@@ -19,16 +20,6 @@ use Magento\UrlRewrite\Model\UrlFinderInterface;
  */
 class UrlResolverCacheTest extends GraphQlAbstract
 {
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->markTestSkipped(
-            'This test will stay skipped until DEVOPS-4924 is resolved'
-        );
-    }
-
     /**
      * Tests that X-Magento-tags and cache debug headers are correct for product urlResolver
      *
@@ -62,6 +53,29 @@ class UrlResolverCacheTest extends GraphQlAbstract
         $this->assertArrayNotHasKey('errors', $responseHit['body']);
         $this->assertEquals('PRODUCT', $responseHit['body']['urlResolver']['type']);
     }
+
+    /**
+     * Get url resolver query
+     *
+     * @param $urlKey
+     * @return string
+     */
+    private function getUrlResolverQuery(string $urlKey): string
+    {
+        $query = <<<QUERY
+{
+  urlResolver(url:"{$urlKey}")
+  {
+   id
+   relative_url
+   canonical_url
+   type
+  }
+}
+QUERY;
+        return $query;
+    }
+
     /**
      * Tests that X-Magento-tags and cache debug headers are correct for category urlResolver
      *
@@ -107,6 +121,7 @@ class UrlResolverCacheTest extends GraphQlAbstract
         $this->assertArrayNotHasKey('errors', $responseHit['body']);
         $this->assertEquals('CATEGORY', $responseHit['body']['urlResolver']['type']);
     }
+
     /**
      * Test that X-Magento-Tags Cache debug headers are correct for cms page url resolver
      *
@@ -114,8 +129,8 @@ class UrlResolverCacheTest extends GraphQlAbstract
      */
     public function testUrlResolverCachingForCMSPage()
     {
-        /** @var \Magento\Cms\Model\Page $page */
-        $page = Bootstrap::getObjectManager()->get(\Magento\Cms\Model\Page::class);
+        /** @var Page $page */
+        $page = Bootstrap::getObjectManager()->get(Page::class);
         $page->load('page100');
         $cmsPageId = $page->getId();
         $requestPath = $page->getIdentifier();
@@ -140,6 +155,7 @@ class UrlResolverCacheTest extends GraphQlAbstract
         $this->assertArrayNotHasKey('errors', $responseHit['body']);
         $this->assertEquals('CMS_PAGE', $responseHit['body']['urlResolver']['type']);
     }
+
     /**
      * Tests that cache is invalidated when url key is updated and access the original request path
      *
@@ -172,24 +188,12 @@ class UrlResolverCacheTest extends GraphQlAbstract
     }
 
     /**
-     * Get url resolver query
-     *
-     * @param $urlKey
-     * @return string
+     * @inheritdoc
      */
-    private function getUrlResolverQuery(string $urlKey): string
+    protected function setUp(): void
     {
-        $query = <<<QUERY
-{
-  urlResolver(url:"{$urlKey}")
-  {
-   id
-   relative_url
-   canonical_url
-   type
-  }
-}
-QUERY;
-        return $query;
+        $this->markTestSkipped(
+            'This test will stay skipped until DEVOPS-4924 is resolved'
+        );
     }
 }

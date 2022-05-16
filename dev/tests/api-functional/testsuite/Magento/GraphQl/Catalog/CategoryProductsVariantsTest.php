@@ -9,6 +9,7 @@ namespace Magento\GraphQl\Catalog;
 
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
 
@@ -19,7 +20,7 @@ class CategoryProductsVariantsTest extends GraphQlAbstract
 {
     /**
      * @magentoApiDataFixture Magento/ConfigurableProduct/_files/product_configurable.php
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @throws NoSuchEntityException
      */
     public function testGetSimpleProductsFromCategory()
     {
@@ -65,8 +66,8 @@ QUERY;
         $assertionMap = [
             [
                 'response_field' => 'product', 'expected_value' => [
-                    "sku" => $product->getSku()
-                ]
+                "sku" => $product->getSku()
+            ]
             ],
         ];
 

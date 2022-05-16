@@ -3,23 +3,23 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Block\Order;
 
-class CommentsTest extends \PHPUnit\Framework\TestCase
+use Magento\Catalog\Model\Product;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\View\LayoutInterface;
+use Magento\Sales\Model\Order\Shipment;
+use Magento\Sales\Model\ResourceModel\Order\Shipment\Comment\Collection;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class CommentsTest extends TestCase
 {
     /**
-     * @var \Magento\Sales\Block\Order\Comments
+     * @var Comments
      */
     protected $_block;
-
-    protected function setUp(): void
-    {
-        $this->_block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
-        )->createBlock(
-            \Magento\Sales\Block\Order\Comments::class
-        );
-    }
 
     /**
      * @param string $commentedEntity
@@ -28,7 +28,7 @@ class CommentsTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetComments($commentedEntity, $expectedClass)
     {
-        $commentedEntity = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create($commentedEntity);
+        $commentedEntity = Bootstrap::getObjectManager()->create($commentedEntity);
         $this->_block->setEntity($commentedEntity);
         $comments = $this->_block->getComments();
         $this->assertInstanceOf($expectedClass, $comments);
@@ -49,8 +49,8 @@ class CommentsTest extends \PHPUnit\Framework\TestCase
                 \Magento\Sales\Model\ResourceModel\Order\Creditmemo\Comment\Collection::class
             ],
             [
-                \Magento\Sales\Model\Order\Shipment::class,
-                \Magento\Sales\Model\ResourceModel\Order\Shipment\Comment\Collection::class
+                Shipment::class,
+                Collection::class
             ]
         ];
     }
@@ -59,12 +59,21 @@ class CommentsTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetCommentsWrongEntityException()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
 
-        $entity = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\Product::class
+        $entity = Bootstrap::getObjectManager()->create(
+            Product::class
         );
         $this->_block->setEntity($entity);
         $this->_block->getComments();
+    }
+
+    protected function setUp(): void
+    {
+        $this->_block = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
+        )->createBlock(
+            Comments::class
+        );
     }
 }

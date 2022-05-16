@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\SendFriend;
 
+use Exception;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\Exception\AuthenticationException;
 use Magento\Integration\Api\CustomerTokenServiceInterface;
@@ -36,13 +37,6 @@ class SendFriendTest extends GraphQlAbstract
      */
     private $customerTokenService;
 
-    protected function setUp(): void
-    {
-        $this->sendFriendFactory = Bootstrap::getObjectManager()->get(SendFriendFactory::class);
-        $this->productRepository = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class);
-        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
-    }
-
     /**
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
      * @magentoConfigFixture default_store sendfriend/email/enabled 1
@@ -66,13 +60,63 @@ class SendFriendTest extends GraphQlAbstract
     }
 
     /**
+     * @param int $productId
+     * @param string $recipients
+     * @return string
+     */
+    private function getQuery(int $productId, string $recipients): string
+    {
+        return <<<QUERY
+mutation {
+    sendEmailToFriend(
+        input: {
+          product_id: {$productId}
+          sender: {
+            name: "Name"
+            email: "e@mail.com"
+            message: "Lorem Ipsum"
+        }
+          recipients: [{$recipients}]
+        }
+    ) {
+        sender {
+            name
+            email
+            message
+        }
+        recipients {
+            name
+            email
+        }
+    }
+}
+QUERY;
+    }
+
+    /**
+     * Generic assertions for send a friend response
+     *
+     * @param array $response
+     */
+    private function assertResponse(array $response): void
+    {
+        self::assertEquals('Name', $response['sendEmailToFriend']['sender']['name']);
+        self::assertEquals('e@mail.com', $response['sendEmailToFriend']['sender']['email']);
+        self::assertEquals('Lorem Ipsum', $response['sendEmailToFriend']['sender']['message']);
+        self::assertEquals('Recipient Name 1', $response['sendEmailToFriend']['recipients'][0]['name']);
+        self::assertEquals('recipient1@mail.com', $response['sendEmailToFriend']['recipients'][0]['email']);
+        self::assertEquals('Recipient Name 2', $response['sendEmailToFriend']['recipients'][1]['name']);
+        self::assertEquals('recipient2@mail.com', $response['sendEmailToFriend']['recipients'][1]['email']);
+    }
+
+    /**
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
      * @magentoConfigFixture default_store sendfriend/email/enabled 1
      * @magentoConfigFixture default_store sendfriend/email/allow_guest 0
      */
     public function testSendFriendGuestDisableAsGuest()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The current customer isn\'t authorized.');
 
         $productId = (int)$this->productRepository->get('simple_product')->getId();
@@ -97,7 +141,7 @@ class SendFriendTest extends GraphQlAbstract
      */
     public function testSendFriendDisableAsCustomer()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('"Email to a Friend" is not enabled.');
 
         $productId = (int)$this->productRepository->get('simple_product')->getId();
@@ -116,12 +160,27 @@ class SendFriendTest extends GraphQlAbstract
     }
 
     /**
+     * Retrieve customer authorization headers
+     *
+     * @param string $username
+     * @param string $password
+     * @return array
+     * @throws AuthenticationException
+     */
+    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
+        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
+        return $headerMap;
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      * @magentoConfigFixture default_store sendfriend/email/enabled 1
      */
     public function testSendWithoutExistProduct()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage(
             'The product that was requested doesn\'t exist. Verify the product and try again.'
         );
@@ -178,7 +237,7 @@ class SendFriendTest extends GraphQlAbstract
 
         $query = $this->getQuery($productId, $recipients);
 
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage("No more than {$sendFriend->getMaxRecipients()} emails can be sent at a time.");
         $this->graphQlMutation($query, [], '', $this->getHeaderMap());
     }
@@ -213,7 +272,7 @@ mutation {
     }
 }
 QUERY;
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage($errorMessage);
         $this->graphQlMutation($query, [], '', $this->getHeaderMap());
     }
@@ -238,7 +297,7 @@ QUERY;
               }';
         $query = $this->getQuery($productId, $recipients);
 
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage(
             "You can't send messages more than 1 times an hour."
         );
@@ -261,7 +320,7 @@ QUERY;
                }';
         $query = $this->getQuery($productId, $recipients);
 
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('GraphQL response contains errors: Please provide Email for all of recipients.');
         $this->graphQlMutation($query, [], '', $this->getHeaderMap());
     }
@@ -413,68 +472,10 @@ QUERY;
         ];
     }
 
-    /**
-     * Generic assertions for send a friend response
-     *
-     * @param array $response
-     */
-    private function assertResponse(array $response): void
+    protected function setUp(): void
     {
-        self::assertEquals('Name', $response['sendEmailToFriend']['sender']['name']);
-        self::assertEquals('e@mail.com', $response['sendEmailToFriend']['sender']['email']);
-        self::assertEquals('Lorem Ipsum', $response['sendEmailToFriend']['sender']['message']);
-        self::assertEquals('Recipient Name 1', $response['sendEmailToFriend']['recipients'][0]['name']);
-        self::assertEquals('recipient1@mail.com', $response['sendEmailToFriend']['recipients'][0]['email']);
-        self::assertEquals('Recipient Name 2', $response['sendEmailToFriend']['recipients'][1]['name']);
-        self::assertEquals('recipient2@mail.com', $response['sendEmailToFriend']['recipients'][1]['email']);
-    }
-
-    /**
-     * Retrieve customer authorization headers
-     *
-     * @param string $username
-     * @param string $password
-     * @return array
-     * @throws AuthenticationException
-     */
-    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
-    {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
-        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
-        return $headerMap;
-    }
-
-    /**
-     * @param int $productId
-     * @param string $recipients
-     * @return string
-     */
-    private function getQuery(int $productId, string $recipients): string
-    {
-        return <<<QUERY
-mutation {
-    sendEmailToFriend(
-        input: {
-          product_id: {$productId}
-          sender: {
-            name: "Name"
-            email: "e@mail.com"
-            message: "Lorem Ipsum"
-        }
-          recipients: [{$recipients}]
-        }
-    ) {
-        sender {
-            name
-            email
-            message
-        }
-        recipients {
-            name
-            email
-        }
-    }
-}
-QUERY;
+        $this->sendFriendFactory = Bootstrap::getObjectManager()->get(SendFriendFactory::class);
+        $this->productRepository = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class);
+        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
     }
 }

@@ -3,12 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestModuleMSC\Model;
 
+use Magento\TestModuleMSC\Api\AllSoapAndRestInterface;
 use Magento\TestModuleMSC\Api\Data\CustomAttributeDataObjectInterfaceFactory;
+use Magento\TestModuleMSC\Api\Data\ItemInterface;
 use Magento\TestModuleMSC\Api\Data\ItemInterfaceFactory;
 
-class AllSoapAndRest implements \Magento\TestModuleMSC\Api\AllSoapAndRestInterface
+class AllSoapAndRest implements AllSoapAndRestInterface
 {
     /**
      * @var ItemInterfaceFactory
@@ -25,9 +28,10 @@ class AllSoapAndRest implements \Magento\TestModuleMSC\Api\AllSoapAndRestInterfa
      * @param CustomAttributeDataObjectInterfaceFactory $customAttributeNestedDataObjectFactory
      */
     public function __construct(
-        ItemInterfaceFactory $itemDataFactory,
+        ItemInterfaceFactory                      $itemDataFactory,
         CustomAttributeDataObjectInterfaceFactory $customAttributeNestedDataObjectFactory
-    ) {
+    )
+    {
         $this->itemDataFactory = $itemDataFactory;
         $this->customAttributeDataObjectDataFactory = $customAttributeNestedDataObjectFactory;
     }
@@ -62,7 +66,7 @@ class AllSoapAndRest implements \Magento\TestModuleMSC\Api\AllSoapAndRestInterfa
     /**
      * {@inheritdoc}
      */
-    public function update(\Magento\TestModuleMSC\Api\Data\ItemInterface $entityItem)
+    public function update(ItemInterface $entityItem)
     {
         return $this->itemDataFactory->create()->setItemId($entityItem->getItemId())
             ->setName('Updated' . $entityItem->getName());
@@ -80,7 +84,7 @@ class AllSoapAndRest implements \Magento\TestModuleMSC\Api\AllSoapAndRestInterfa
     /**
      * {@inheritdoc}
      */
-    public function itemAnyType(\Magento\TestModuleMSC\Api\Data\ItemInterface $entityItem)
+    public function itemAnyType(ItemInterface $entityItem)
     {
         return $entityItem;
     }

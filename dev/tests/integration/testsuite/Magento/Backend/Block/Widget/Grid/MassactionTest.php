@@ -3,29 +3,36 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Backend\Block\Widget\Grid;
 
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\View\DesignInterface;
+use Magento\Framework\View\LayoutInterface;
 use Magento\TestFramework\App\State;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Theme\Model\Theme\Registration;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  * @magentoComponentsDir Magento/Backend/Block/_files/design
  * @magentoDbIsolation enabled
  */
-class MassactionTest extends \PHPUnit\Framework\TestCase
+class MassactionTest extends TestCase
 {
     /**
-     * @var \Magento\Backend\Block\Widget\Grid\Massaction
+     * @var Massaction
      */
     protected $_block;
 
     /**
-     * @var \Magento\Framework\View\LayoutInterface
+     * @var LayoutInterface
      */
     protected $_layout;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
@@ -34,24 +41,19 @@ class MassactionTest extends \PHPUnit\Framework\TestCase
      */
     private $mageMode;
 
-    protected function setUp(): void
+    public function testMassactionDefaultValues()
     {
-        parent::setUp();
+        $this->loadLayout();
 
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        /** @var $blockEmpty Massaction */
+        $blockEmpty = Bootstrap::getObjectManager()
+            ->get(LayoutInterface::class)
+            ->createBlock(Massaction::class);
+        $this->assertEmpty($blockEmpty->getItems());
+        $this->assertEquals(0, $blockEmpty->getCount());
+        $this->assertSame('[]', $blockEmpty->getItemsJson());
 
-        $this->mageMode = $this->objectManager->get(State::class)->getMode();
-
-        /** @var \Magento\Theme\Model\Theme\Registration $registration */
-        $registration = $this->objectManager->get(\Magento\Theme\Model\Theme\Registration::class);
-        $registration->register();
-        $this->objectManager->get(\Magento\Framework\View\DesignInterface::class)
-            ->setDesignTheme('BackendTest/test_default');
-    }
-
-    protected function tearDown(): void
-    {
-        $this->objectManager->get(State::class)->setMode($this->mageMode);
+        $this->assertFalse($blockEmpty->isAvailable());
     }
 
     /**
@@ -61,7 +63,7 @@ class MassactionTest extends \PHPUnit\Framework\TestCase
     {
         $this->objectManager->get(State::class)->setMode($mageMode);
         $this->_layout = $this->objectManager->create(
-            \Magento\Framework\View\LayoutInterface::class,
+            LayoutInterface::class,
             ['area' => 'Adminhtml']
         );
         $this->_layout->getUpdate()->load('layout_test_grid_handle');
@@ -70,21 +72,6 @@ class MassactionTest extends \PHPUnit\Framework\TestCase
 
         $this->_block = $this->_layout->getBlock('admin.test.grid.massaction');
         $this->assertNotFalse($this->_block, 'Could not load the block for testing');
-    }
-
-    public function testMassactionDefaultValues()
-    {
-        $this->loadLayout();
-
-        /** @var $blockEmpty \Magento\Backend\Block\Widget\Grid\Massaction */
-        $blockEmpty = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\View\LayoutInterface::class)
-            ->createBlock(\Magento\Backend\Block\Widget\Grid\Massaction::class);
-        $this->assertEmpty($blockEmpty->getItems());
-        $this->assertEquals(0, $blockEmpty->getCount());
-        $this->assertSame('[]', $blockEmpty->getItemsJson());
-
-        $this->assertFalse($blockEmpty->isAvailable());
     }
 
     /**
@@ -177,5 +164,25 @@ class MassactionTest extends \PHPUnit\Framework\TestCase
                 ]
             ]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->mageMode = $this->objectManager->get(State::class)->getMode();
+
+        /** @var Registration $registration */
+        $registration = $this->objectManager->get(Registration::class);
+        $registration->register();
+        $this->objectManager->get(DesignInterface::class)
+            ->setDesignTheme('BackendTest/test_default');
+    }
+
+    protected function tearDown(): void
+    {
+        $this->objectManager->get(State::class)->setMode($this->mageMode);
     }
 }

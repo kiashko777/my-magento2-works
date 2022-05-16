@@ -21,7 +21,8 @@ define([
                 /**
                  * @return void
                  */
-                destroy: function () {},
+                destroy: function () {
+                },
                 index: index
             };
         };

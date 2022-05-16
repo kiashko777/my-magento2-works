@@ -3,15 +3,23 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-/** @var \Magento\Framework\Registry $registry */
-/** @var \Magento\SalesRule\Model\Rule $salesRule */
-/** @var \Magento\SalesRule\Model\RuleRepository $salesRuleRepository */
+/** @var Registry $registry */
+/** @var Rule $salesRule */
+/** @var RuleRepository $salesRuleRepository */
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-$registry = $objectManager->get(\Magento\Framework\Registry::class);
-$salesRule = $objectManager->create(\Magento\SalesRule\Model\Rule::class);
-$salesRuleRepository = $objectManager->create(\Magento\SalesRule\Model\RuleRepository::class);
-$allRules = $salesRuleRepository->getList($objectManager->get(\Magento\Framework\Api\SearchCriteriaInterface::class));
+use Magento\Customer\Model\GroupManagement;
+use Magento\Framework\Api\SearchCriteriaInterface;
+use Magento\Framework\Registry;
+use Magento\SalesRule\Model\Rule;
+use Magento\SalesRule\Model\RuleRepository;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
+$registry = $objectManager->get(Registry::class);
+$salesRule = $objectManager->create(Rule::class);
+$salesRuleRepository = $objectManager->create(RuleRepository::class);
+$allRules = $salesRuleRepository->getList($objectManager->get(SearchCriteriaInterface::class));
 foreach ($allRules->getItems() as $rule) {
     $salesRuleRepository->deleteById($rule->getRuleId());
 }
@@ -19,15 +27,15 @@ $salesRule->setData(
     [
         'name' => '50% off - July 4',
         'is_active' => 1,
-        'customer_group_ids' => [\Magento\Customer\Model\GroupManagement::NOT_LOGGED_IN_ID],
-        'coupon_type' => \Magento\SalesRule\Model\Rule::COUPON_TYPE_NO_COUPON,
+        'customer_group_ids' => [GroupManagement::NOT_LOGGED_IN_ID],
+        'coupon_type' => Rule::COUPON_TYPE_NO_COUPON,
         'simple_action' => 'by_percent',
         'discount_amount' => 50,
         'discount_step' => 0,
         'stop_rules_processing' => 1,
         'website_ids' => [
-            \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-                \Magento\Store\Model\StoreManagerInterface::class
+            Bootstrap::getObjectManager()->get(
+                StoreManagerInterface::class
             )->getWebsite()->getId()
         ]
     ]

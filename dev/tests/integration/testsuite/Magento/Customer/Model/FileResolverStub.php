@@ -6,16 +6,21 @@
 
 namespace Magento\Customer\Model;
 
-class FileResolverStub implements \Magento\Framework\Config\FileResolverInterface
+use Magento\Framework\Config\FileIterator;
+use Magento\Framework\Config\FileResolverInterface;
+use Magento\Framework\Filesystem\File\ReadFactory;
+use Magento\TestFramework\Helper\Bootstrap;
+
+class FileResolverStub implements FileResolverInterface
 {
     /**
      * {@inheritdoc}
      */
     public function get($filename, $scope)
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $fileReadFactory = $objectManager->create(\Magento\Framework\Filesystem\File\ReadFactory::class);
+        $objectManager = Bootstrap::getObjectManager();
+        $fileReadFactory = $objectManager->create(ReadFactory::class);
         $paths = [realpath(__DIR__ . '/../_files/etc/') . '/extension_attributes.xml'];
-        return new \Magento\Framework\Config\FileIterator($fileReadFactory, $paths);
+        return new FileIterator($fileReadFactory, $paths);
     }
 }

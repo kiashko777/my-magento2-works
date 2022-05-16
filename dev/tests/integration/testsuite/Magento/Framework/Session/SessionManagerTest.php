@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 // @codingStandardsIgnoreStart
 namespace {
     $mockPHPFunctions = false;
@@ -10,8 +11,21 @@ namespace {
 
 namespace Magento\Framework\Session {
 
+    use Magento\Framework\App\Area;
     use Magento\Framework\App\DeploymentConfig;
+    use Magento\Framework\App\Request\Http;
+    use Magento\Framework\App\RequestInterface;
     use Magento\Framework\App\State;
+    use Magento\Framework\Config\ScopeInterface;
+    use Magento\Framework\Exception\SessionException;
+    use Magento\Framework\Session\Config\ConfigInterface;
+    use Magento\Framework\Stdlib\Cookie\CookieMetadataFactory;
+    use Magento\Framework\Stdlib\CookieManagerInterface;
+    use Magento\TestFramework\Helper\Bootstrap;
+    use Magento\TestFramework\ObjectManager;
+    use PHPUnit\Framework\MockObject\MockObject;
+    use PHPUnit\Framework\TestCase;
+    use ReflectionMethod;
 
     // @codingStandardsIgnoreEnd
 
@@ -73,7 +87,7 @@ namespace Magento\Framework\Session {
     /**
      * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
      */
-    class SessionManagerTest extends \PHPUnit\Framework\TestCase
+    class SessionManagerTest extends TestCase
     {
         /**
          * @var string[]
@@ -86,12 +100,12 @@ namespace Magento\Framework\Session {
         public static $isSessionSetSaveHandlerInvoked;
 
         /**
-         * @var \Magento\Framework\Session\SessionManagerInterface
+         * @var SessionManagerInterface
          */
         private $model;
 
         /**
-         * @var \Magento\Framework\Session\SidResolverInterface
+         * @var SidResolverInterface
          */
         private $sidResolver;
 
@@ -101,60 +115,19 @@ namespace Magento\Framework\Session {
         private $sessionName;
 
         /**
-         * @var \Magento\TestFramework\ObjectManager
+         * @var ObjectManager
          */
         private $objectManager;
 
         /**
-         * @var \Magento\Framework\App\RequestInterface
+         * @var RequestInterface
          */
         private $request;
 
         /**
-         * @var State|\PHPUnit\Framework\MockObject\MockObject
+         * @var State|MockObject
          */
         private $appState;
-
-        /**
-         * @inheritdoc
-         */
-        protected function setUp(): void
-        {
-            $this->sessionName = 'frontEndSession';
-
-            ini_set('session.use_only_cookies', '0');
-            ini_set('session.name', $this->sessionName);
-
-            $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-
-            /** @var \Magento\Framework\Session\SidResolverInterface $sidResolver */
-            $this->appState = $this->getMockBuilder(State::class)
-                ->setMethods(['getAreaCode'])
-                ->disableOriginalConstructor()
-                ->getMock();
-
-            /** @var \Magento\Framework\Session\SidResolver $sidResolver */
-            $this->sidResolver = $this->objectManager->create(
-                \Magento\Framework\Session\SidResolver::class,
-                [
-                    'appState' => $this->appState,
-                ]
-            );
-
-            $this->request = $this->objectManager->get(\Magento\Framework\App\RequestInterface::class);
-        }
-
-        protected function tearDown(): void
-        {
-            global $mockPHPFunctions;
-            $mockPHPFunctions = false;
-            self::$isIniSetInvoked = [];
-            self::$isSessionSetSaveHandlerInvoked = false;
-            if ($this->model !== null) {
-                $this->model->destroy();
-                $this->model = null;
-            }
-        }
 
         public function testSessionNameFromIni()
         {
@@ -162,6 +135,16 @@ namespace Magento\Framework\Session {
             $this->model->start();
             $this->assertSame($this->sessionName, $this->model->getName());
             $this->model->destroy();
+        }
+
+        private function initializeModel(): void
+        {
+            $this->model = $this->objectManager->create(
+                SessionManager::class,
+                [
+                    'sidResolver' => $this->sidResolver
+                ]
+            );
         }
 
         public function testSessionUseOnlyCookies()
@@ -219,7 +202,7 @@ namespace Magento\Framework\Session {
             $this->assertNotEmpty($this->model->getSessionId());
             $this->appState->expects($this->any())
                 ->method('getAreaCode')
-                ->willReturn(\Magento\Framework\App\Area::AREA_FRONTEND);
+                ->willReturn(Area::AREA_FRONTEND);
 
             $this->model->setSessionId('test');
             $this->assertEquals('test', $this->model->getSessionId());
@@ -244,7 +227,7 @@ namespace Magento\Framework\Session {
             $_SERVER['HTTP_HOST'] = 'localhost';
             $this->model->start();
 
-            $reflection = new \ReflectionMethod($this->model, '_addHost');
+            $reflection = new ReflectionMethod($this->model, '_addHost');
             $reflection->setAccessible(true);
             $reflection->invoke($this->model);
 
@@ -255,27 +238,27 @@ namespace Magento\Framework\Session {
 
         public function testStartAreaNotSet()
         {
-            $this->expectException(\Magento\Framework\Exception\SessionException::class);
+            $this->expectException(SessionException::class);
             $this->expectExceptionMessage('Area code not set: Area code must be set before starting a session.');
 
-            $scope = $this->objectManager->get(\Magento\Framework\Config\ScopeInterface::class);
-            $appState = new \Magento\Framework\App\State($scope);
+            $scope = $this->objectManager->get(ScopeInterface::class);
+            $appState = new State($scope);
 
             /**
              * Must be created by "new" in order to get a real Magento\Framework\App\State object that
              * is not overridden in the TestFramework
              *
-             * @var \Magento\Framework\Session\SessionManager _model
+             * @var SessionManager _model
              */
-            $this->model = new \Magento\Framework\Session\SessionManager(
-                $this->objectManager->get(\Magento\Framework\App\Request\Http::class),
+            $this->model = new SessionManager(
+                $this->objectManager->get(Http::class),
                 $this->sidResolver,
-                $this->objectManager->get(\Magento\Framework\Session\Config\ConfigInterface::class),
-                $this->objectManager->get(\Magento\Framework\Session\SaveHandlerInterface::class),
-                $this->objectManager->get(\Magento\Framework\Session\ValidatorInterface::class),
-                $this->objectManager->get(\Magento\Framework\Session\StorageInterface::class),
-                $this->objectManager->get(\Magento\Framework\Stdlib\CookieManagerInterface::class),
-                $this->objectManager->get(\Magento\Framework\Stdlib\Cookie\CookieMetadataFactory::class),
+                $this->objectManager->get(ConfigInterface::class),
+                $this->objectManager->get(SaveHandlerInterface::class),
+                $this->objectManager->get(ValidatorInterface::class),
+                $this->objectManager->get(StorageInterface::class),
+                $this->objectManager->get(CookieManagerInterface::class),
+                $this->objectManager->get(CookieMetadataFactory::class),
                 $appState
             );
 
@@ -313,7 +296,7 @@ namespace Magento\Framework\Session {
             $saveHandler = $this->objectManager->create(SaveHandler::class, ['sessionConfig' => $sessionConfig]);
 
             $this->model = $this->objectManager->create(
-                \Magento\Framework\Session\SessionManager::class,
+                SessionManager::class,
                 [
                     'sidResolver' => $this->sidResolver,
                     'saveHandler' => $saveHandler,
@@ -342,21 +325,52 @@ namespace Magento\Framework\Session {
         public function dataConstructor(): array
         {
             return [
-                [Config::PARAM_SESSION_SAVE_METHOD =>'db'],
-                [Config::PARAM_SESSION_SAVE_METHOD =>'redis'],
-                [Config::PARAM_SESSION_SAVE_METHOD =>'memcached'],
-                [Config::PARAM_SESSION_SAVE_METHOD =>'user'],
+                [Config::PARAM_SESSION_SAVE_METHOD => 'db'],
+                [Config::PARAM_SESSION_SAVE_METHOD => 'redis'],
+                [Config::PARAM_SESSION_SAVE_METHOD => 'memcached'],
+                [Config::PARAM_SESSION_SAVE_METHOD => 'user'],
             ];
         }
 
-        private function initializeModel(): void
+        /**
+         * @inheritdoc
+         */
+        protected function setUp(): void
         {
-            $this->model = $this->objectManager->create(
-                \Magento\Framework\Session\SessionManager::class,
+            $this->sessionName = 'frontEndSession';
+
+            ini_set('session.use_only_cookies', '0');
+            ini_set('session.name', $this->sessionName);
+
+            $this->objectManager = Bootstrap::getObjectManager();
+
+            /** @var SidResolverInterface $sidResolver */
+            $this->appState = $this->getMockBuilder(State::class)
+                ->setMethods(['getAreaCode'])
+                ->disableOriginalConstructor()
+                ->getMock();
+
+            /** @var SidResolver $sidResolver */
+            $this->sidResolver = $this->objectManager->create(
+                SidResolver::class,
                 [
-                    'sidResolver' => $this->sidResolver
+                    'appState' => $this->appState,
                 ]
             );
+
+            $this->request = $this->objectManager->get(RequestInterface::class);
+        }
+
+        protected function tearDown(): void
+        {
+            global $mockPHPFunctions;
+            $mockPHPFunctions = false;
+            self::$isIniSetInvoked = [];
+            self::$isSessionSetSaveHandlerInvoked = false;
+            if ($this->model !== null) {
+                $this->model->destroy();
+                $this->model = null;
+            }
         }
     }
 }

@@ -3,184 +3,27 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\UrlRewrite\Block\Catalog\Edit;
+
+use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\Product;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\View\Layout;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for \Magento\UrlRewrite\Block\Catalog\Edit\Form
  * @magentoAppArea Adminhtml
  */
-class FormTest extends \PHPUnit\Framework\TestCase
+class FormTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
-
-    /**
-     * Get form instance
-     *
-     * @param array $args
-     * @return \Magento\Framework\Data\Form
-     */
-    protected function _getFormInstance($args = [])
-    {
-        /** @var $layout \Magento\Framework\View\Layout */
-        $layout = $this->objectManager->get(
-            \Magento\Framework\View\LayoutInterface::class
-        );
-        /** @var $block \Magento\UrlRewrite\Block\Catalog\Edit\Form */
-        $block = $layout->createBlock(
-            \Magento\UrlRewrite\Block\Catalog\Edit\Form::class,
-            'block',
-            ['data' => $args]
-        );
-        $block->setTemplate(null);
-        $block->toHtml();
-        return $block->getForm();
-    }
-
-    /**
-     * Check _formPostInit set expected fields values
-     *
-     * @covers \Magento\UrlRewrite\Block\Catalog\Edit\Form::_formPostInit
-     *
-     * @dataProvider formPostInitDataProvider
-     *
-     * @param array $productData
-     * @param array $categoryData
-     * @param string $action
-     * @param string $requestPath
-     * @param string $targetPath
-     * @magentoConfigFixture current_store general/single_store_mode/enabled 1
-     * @magentoAppIsolation enabled
-     */
-    public function testFormPostInitNew($productData, $categoryData, $action, $requestPath, $targetPath)
-    {
-        $args = [];
-        if ($productData) {
-            $args['product'] = $this->objectManager->create(
-                \Magento\Catalog\Model\Product::class,
-                ['data' => $productData]
-            );
-        }
-        if ($categoryData) {
-            $args['category'] = $this->objectManager->create(
-                \Magento\Catalog\Model\Category::class,
-                ['data' => $categoryData]
-            );
-        }
-        $form = $this->_getFormInstance($args);
-        $this->assertStringContainsString($action, $form->getAction());
-
-        $this->assertEquals($requestPath, $form->getElement('request_path')->getValue());
-        $this->assertEquals($targetPath, $form->getElement('target_path')->getValue());
-
-        $this->assertTrue($form->getElement('target_path')->getData('disabled'));
-    }
-
-    /**
-     * Test entity stores
-     *
-     * @dataProvider getEntityStoresDataProvider
-     * @magentoAppIsolation enabled
-     * @magentoDataFixture Magento/Store/_files/core_fixturestore.php
-     *
-     * @param array $productData
-     * @param array $categoryData
-     * @param array $expectedStores
-     */
-    public function testGetEntityStores($productData, $categoryData, $expectedStores)
-    {
-        $args = [];
-        if ($productData) {
-            $args['product'] = $this->objectManager->create(
-                \Magento\Catalog\Model\Product::class,
-                ['data' => $productData]
-            );
-        }
-        if ($categoryData) {
-            $args['category'] = $this->objectManager->create(
-                \Magento\Catalog\Model\Category::class,
-                ['data' => $categoryData]
-            );
-        }
-        $form = $this->_getFormInstance($args);
-        $this->assertEquals($expectedStores, $form->getElement('store_id')->getValues());
-    }
-
-    /**
-     * Check exception is thrown when product does not associated with stores
-     *
-     * @magentoAppIsolation enabled
-     * @magentoDataFixture Magento/Store/_files/core_fixturestore.php
-     */
-    public function testGetEntityStoresProductStoresException()
-    {
-        $args = [
-            'product' => $this->objectManager->create(
-                \Magento\Catalog\Model\Product::class,
-                ['data' => ['entity_id' => 1, 'name' => 'product1', 'url_key' => 'product2']]
-            ),
-        ];
-        $form = $this->_getFormInstance($args);
-        $this->assertEquals([], $form->getElement('store_id')->getValues());
-        $this->assertEquals(
-            'We can\'t set up a URL rewrite because the product you chose is not associated with a website.',
-            $form->getElement('store_id')->getAfterElementHtml()
-        );
-    }
-
-    /**
-     * Check exception is thrown when product stores in intersection with category stores is empty
-     *
-     * @magentoAppIsolation enabled
-     * @magentoDataFixture Magento/Store/_files/core_fixturestore.php
-     *
-     */
-    public function testGetEntityStoresProductCategoryStoresException()
-    {
-        $args = [
-            'product' => $this->objectManager->create(
-                \Magento\Catalog\Model\Product::class,
-                ['data' => ['entity_id' => 1, 'name' => 'product1', 'url_key' => 'product1', 'store_ids' => [1]]]
-            ),
-            'category' => $this->objectManager->create(
-                \Magento\Catalog\Model\Category::class,
-                ['data' => ['entity_id' => 1, 'name' => 'category1', 'url_key' => 'category1', 'store_ids' => [3]]]
-            ),
-        ];
-        $form = $this->_getFormInstance($args);
-        $this->assertEquals([], $form->getElement('store_id')->getValues());
-        $this->assertEquals(
-            'We can\'t set up a URL rewrite because the product you chose is not associated with a website.',
-            $form->getElement('store_id')->getAfterElementHtml()
-        );
-    }
-
-    /**
-     * Check exception is thrown when category does not associated with stores
-     *
-     * @magentoAppIsolation enabled
-     * @magentoDataFixture Magento/Store/_files/core_fixturestore.php
-     */
-    public function testGetEntityStoresCategoryStoresException()
-    {
-        $args = ['category' => $this->objectManager->create(
-            \Magento\Catalog\Model\Category::class,
-            ['data' => ['entity_id' => 1, 'name' => 'product1', 'url_key' => 'product', 'initial_setup_flag' => true]]
-        )];
-        $form = $this->_getFormInstance($args);
-        $this->assertEquals([], $form->getElement('store_id')->getValues());
-        $this->assertEquals(
-            'Please assign a website to the selected category.',
-            $form->getElement('store_id')->getAfterElementHtml()
-        );
-    }
 
     /**
      * Data provider for testing formPostInit
@@ -203,7 +46,7 @@ class FormTest extends \PHPUnit\Framework\TestCase
                 'catalog/category/view/id/3',
             ],
             [
-                ['entity_id' => 2, 'level' => 2,  'url_key' => 'product', 'store_id' => 1],
+                ['entity_id' => 2, 'level' => 2, 'url_key' => 'product', 'store_id' => 1],
                 null,
                 'product/2',
                 'product.html',
@@ -269,5 +112,171 @@ class FormTest extends \PHPUnit\Framework\TestCase
                 ]
             ]
         ];
+    }
+
+    /**
+     * Check _formPostInit set expected fields values
+     *
+     * @covers       \Magento\UrlRewrite\Block\Catalog\Edit\Form::_formPostInit
+     *
+     * @dataProvider formPostInitDataProvider
+     *
+     * @param array $productData
+     * @param array $categoryData
+     * @param string $action
+     * @param string $requestPath
+     * @param string $targetPath
+     * @magentoConfigFixture current_store general/single_store_mode/enabled 1
+     * @magentoAppIsolation enabled
+     */
+    public function testFormPostInitNew($productData, $categoryData, $action, $requestPath, $targetPath)
+    {
+        $args = [];
+        if ($productData) {
+            $args['product'] = $this->objectManager->create(
+                Product::class,
+                ['data' => $productData]
+            );
+        }
+        if ($categoryData) {
+            $args['category'] = $this->objectManager->create(
+                Category::class,
+                ['data' => $categoryData]
+            );
+        }
+        $form = $this->_getFormInstance($args);
+        $this->assertStringContainsString($action, $form->getAction());
+
+        $this->assertEquals($requestPath, $form->getElement('request_path')->getValue());
+        $this->assertEquals($targetPath, $form->getElement('target_path')->getValue());
+
+        $this->assertTrue($form->getElement('target_path')->getData('disabled'));
+    }
+
+    /**
+     * Get form instance
+     *
+     * @param array $args
+     * @return \Magento\Framework\Data\Form
+     */
+    protected function _getFormInstance($args = [])
+    {
+        /** @var $layout Layout */
+        $layout = $this->objectManager->get(
+            LayoutInterface::class
+        );
+        /** @var $block Form */
+        $block = $layout->createBlock(
+            Form::class,
+            'block',
+            ['data' => $args]
+        );
+        $block->setTemplate(null);
+        $block->toHtml();
+        return $block->getForm();
+    }
+
+    /**
+     * Test entity stores
+     *
+     * @dataProvider getEntityStoresDataProvider
+     * @magentoAppIsolation enabled
+     * @magentoDataFixture Magento/Store/_files/core_fixturestore.php
+     *
+     * @param array $productData
+     * @param array $categoryData
+     * @param array $expectedStores
+     */
+    public function testGetEntityStores($productData, $categoryData, $expectedStores)
+    {
+        $args = [];
+        if ($productData) {
+            $args['product'] = $this->objectManager->create(
+                Product::class,
+                ['data' => $productData]
+            );
+        }
+        if ($categoryData) {
+            $args['category'] = $this->objectManager->create(
+                Category::class,
+                ['data' => $categoryData]
+            );
+        }
+        $form = $this->_getFormInstance($args);
+        $this->assertEquals($expectedStores, $form->getElement('store_id')->getValues());
+    }
+
+    /**
+     * Check exception is thrown when product does not associated with stores
+     *
+     * @magentoAppIsolation enabled
+     * @magentoDataFixture Magento/Store/_files/core_fixturestore.php
+     */
+    public function testGetEntityStoresProductStoresException()
+    {
+        $args = [
+            'product' => $this->objectManager->create(
+                Product::class,
+                ['data' => ['entity_id' => 1, 'name' => 'product1', 'url_key' => 'product2']]
+            ),
+        ];
+        $form = $this->_getFormInstance($args);
+        $this->assertEquals([], $form->getElement('store_id')->getValues());
+        $this->assertEquals(
+            'We can\'t set up a URL rewrite because the product you chose is not associated with a website.',
+            $form->getElement('store_id')->getAfterElementHtml()
+        );
+    }
+
+    /**
+     * Check exception is thrown when product stores in intersection with category stores is empty
+     *
+     * @magentoAppIsolation enabled
+     * @magentoDataFixture Magento/Store/_files/core_fixturestore.php
+     *
+     */
+    public function testGetEntityStoresProductCategoryStoresException()
+    {
+        $args = [
+            'product' => $this->objectManager->create(
+                Product::class,
+                ['data' => ['entity_id' => 1, 'name' => 'product1', 'url_key' => 'product1', 'store_ids' => [1]]]
+            ),
+            'category' => $this->objectManager->create(
+                Category::class,
+                ['data' => ['entity_id' => 1, 'name' => 'category1', 'url_key' => 'category1', 'store_ids' => [3]]]
+            ),
+        ];
+        $form = $this->_getFormInstance($args);
+        $this->assertEquals([], $form->getElement('store_id')->getValues());
+        $this->assertEquals(
+            'We can\'t set up a URL rewrite because the product you chose is not associated with a website.',
+            $form->getElement('store_id')->getAfterElementHtml()
+        );
+    }
+
+    /**
+     * Check exception is thrown when category does not associated with stores
+     *
+     * @magentoAppIsolation enabled
+     * @magentoDataFixture Magento/Store/_files/core_fixturestore.php
+     */
+    public function testGetEntityStoresCategoryStoresException()
+    {
+        $args = ['category' => $this->objectManager->create(
+            Category::class,
+            ['data' => ['entity_id' => 1, 'name' => 'product1', 'url_key' => 'product', 'initial_setup_flag' => true]]
+        )];
+        $form = $this->_getFormInstance($args);
+        $this->assertEquals([], $form->getElement('store_id')->getValues());
+        $this->assertEquals(
+            'Please assign a website to the selected category.',
+            $form->getElement('store_id')->getAfterElementHtml()
+        );
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

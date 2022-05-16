@@ -22,15 +22,6 @@ class ExportTest extends ExportBase
     private $shipmentFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->shipmentFactory = $this->_objectManager->get(ShipmentInterfaceFactory::class);
-    }
-
-    /**
      * @magentoDbIsolation disabled
      * @magentoAppArea Adminhtml
      * @magentoConfigFixture general/locale/timezone America/Chicago
@@ -44,9 +35,10 @@ class ExportTest extends ExportBase
      */
     public function testExportShipment(
         string $format,
-        bool $addIdToUrl,
+        bool   $addIdToUrl,
         string $namespace
-    ): void {
+    ): void
+    {
         $order = $this->getOrder('200000001');
         $url = $this->getExportUrl($format, $addIdToUrl ? (int)$order->getId() : null);
         $response = $this->dispatchExport(
@@ -65,6 +57,17 @@ class ExportTest extends ExportBase
             $this->prepareDate($order->getCreatedAt(), 'America/Chicago'),
             $exportedShipment['Order Date']
         );
+    }
+
+    /**
+     * Returns shipment by increment id.
+     *
+     * @param string $incrementId
+     * @return ShipmentInterface
+     */
+    private function getShipment(string $incrementId): ShipmentInterface
+    {
+        return $this->shipmentFactory->create()->loadByIncrementId($incrementId);
     }
 
     /**
@@ -97,13 +100,11 @@ class ExportTest extends ExportBase
     }
 
     /**
-     * Returns shipment by increment id.
-     *
-     * @param string $incrementId
-     * @return ShipmentInterface
+     * @inheritdoc
      */
-    private function getShipment(string $incrementId): ShipmentInterface
+    protected function setUp(): void
     {
-        return $this->shipmentFactory->create()->loadByIncrementId($incrementId);
+        parent::setUp();
+        $this->shipmentFactory = $this->_objectManager->get(ShipmentInterfaceFactory::class);
     }
 }

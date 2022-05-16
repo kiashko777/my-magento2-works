@@ -3,17 +3,36 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Customer\Model\Metadata;
 
+use Magento\Framework\App\RequestInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class FormFactoryTest extends \PHPUnit\Framework\TestCase
+class FormFactoryTest extends TestCase
 {
     /** @var array */
     private $_requestData;
 
     /** @var array */
     private $_expectedData;
+
+    public function testCreate()
+    {
+        /** @var FormFactory $formFactory */
+        $formFactory = Bootstrap::getObjectManager()->create(FormFactory::class);
+        $form = $formFactory->create('customer_address', 'customer_address_edit');
+
+        $this->assertInstanceOf(Form::class, $form);
+        $this->assertNotEmpty($form->getAttributes());
+
+        /** @var RequestInterface $request */
+        $request = Bootstrap::getObjectManager()->get(RequestInterface::class);
+        $request->setParams($this->_requestData);
+
+        $this->assertEquals($this->_expectedData, $form->restoreData($form->extractData($request)));
+    }
 
     protected function setUp(): void
     {
@@ -45,21 +64,5 @@ class FormFactoryTest extends \PHPUnit\Framework\TestCase
         unset($this->_expectedData['middlename']);
         unset($this->_expectedData['prefix']);
         unset($this->_expectedData['suffix']);
-    }
-
-    public function testCreate()
-    {
-        /** @var FormFactory $formFactory */
-        $formFactory = Bootstrap::getObjectManager()->create(\Magento\Customer\Model\Metadata\FormFactory::class);
-        $form = $formFactory->create('customer_address', 'customer_address_edit');
-
-        $this->assertInstanceOf(\Magento\Customer\Model\Metadata\Form::class, $form);
-        $this->assertNotEmpty($form->getAttributes());
-
-        /** @var \Magento\Framework\App\RequestInterface $request */
-        $request = Bootstrap::getObjectManager()->get(\Magento\Framework\App\RequestInterface::class);
-        $request->setParams($this->_requestData);
-
-        $this->assertEquals($this->_expectedData, $form->restoreData($form->extractData($request)));
     }
 }

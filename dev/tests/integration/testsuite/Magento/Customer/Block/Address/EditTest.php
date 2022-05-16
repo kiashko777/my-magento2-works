@@ -53,42 +53,6 @@ class EditTest extends TestCase
     private $executeInStoreContext;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->customerSession = $this->objectManager->get(Session::class);
-        $this->customerSession->setCustomerId(1);
-        $this->request = $this->objectManager->get(RequestInterface::class);
-        $this->request->setParam('id', '1');
-        /** @var Page $page */
-        $page = $this->objectManager->get(PageFactory::class)->create();
-        $page->addHandle(['default', 'customer_address_form']);
-        $page->getLayout()->generateXml();
-        $this->block = $page->getLayout()->getBlock('customer_address_edit');
-        $this->addressRegistry = $this->objectManager->get(AddressRegistry::class);
-        $this->customerRegistry = $this->objectManager->get(CustomerRegistry::class);
-        $this->executeInStoreContext = $this->objectManager->get(ExecuteInStoreContext::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        parent::tearDown();
-        $this->customerSession->setCustomerId(null);
-        $this->request->setParam('id', null);
-        //Cleanup address from registry
-        $this->addressRegistry->remove(1);
-        $this->addressRegistry->remove(2);
-        //Cleanup customer from registry
-        $this->customerRegistry->remove(1);
-    }
-
-    /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
      * @return void
      */
@@ -217,5 +181,41 @@ class EditTest extends TestCase
         $html = $this->block->toHtml();
         $buttonXpath = "//form[contains(@class, 'form-address-edit')]//button[@type='submit' and @disabled='disabled']";
         $this->assertEquals(1, Xpath::getElementsCountForXpath($buttonXpath, $html));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->customerSession = $this->objectManager->get(Session::class);
+        $this->customerSession->setCustomerId(1);
+        $this->request = $this->objectManager->get(RequestInterface::class);
+        $this->request->setParam('id', '1');
+        /** @var Page $page */
+        $page = $this->objectManager->get(PageFactory::class)->create();
+        $page->addHandle(['default', 'customer_address_form']);
+        $page->getLayout()->generateXml();
+        $this->block = $page->getLayout()->getBlock('customer_address_edit');
+        $this->addressRegistry = $this->objectManager->get(AddressRegistry::class);
+        $this->customerRegistry = $this->objectManager->get(CustomerRegistry::class);
+        $this->executeInStoreContext = $this->objectManager->get(ExecuteInStoreContext::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+        $this->customerSession->setCustomerId(null);
+        $this->request->setParam('id', null);
+        //Cleanup address from registry
+        $this->addressRegistry->remove(1);
+        $this->addressRegistry->remove(2);
+        //Cleanup customer from registry
+        $this->customerRegistry->remove(1);
     }
 }

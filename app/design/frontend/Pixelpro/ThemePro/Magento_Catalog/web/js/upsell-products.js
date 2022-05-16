@@ -75,7 +75,7 @@ define([
                     random.push([weights[index][0], Math.pow(Math.random(), 1 / weights[index][1])]);
                 }
 
-                random.sort(function(a, b) {
+                random.sort(function (a, b) {
                     a = a[1];
                     b = b[1];
                     return a < b ? 1 : (a > b ? -1 : 0);
@@ -101,13 +101,13 @@ define([
          * @param elements
          * @returns {*}
          */
-        _shuffle: function shuffle(elements){ //v1.0
+        _shuffle: function shuffle(elements) { //v1.0
             var parent, child, lastSibling;
             if (elements.length) {
                 parent = $(elements[0]).parent();
             }
             while (elements.length) {
-                child = elements.splice(Math.floor(Math.random() *  elements.length), 1)[0];
+                child = elements.splice(Math.floor(Math.random() * elements.length), 1)[0];
                 lastSibling = parent.find('[data-shuffle-group="' + $(child).data('shuffle-group') + '"]').last();
                 lastSibling.after(child);
             }

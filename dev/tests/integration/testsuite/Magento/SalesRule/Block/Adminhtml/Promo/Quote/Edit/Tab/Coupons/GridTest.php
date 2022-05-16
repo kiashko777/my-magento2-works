@@ -48,30 +48,6 @@ class GridTest extends TestCase
     private $resourceConnection;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->resourceConnection = Bootstrap::getObjectManager()->get(ResourceConnection::class);
-        $this->registry = Bootstrap::getObjectManager()->get(Registry::class);
-
-        $this->initSalesRule();
-        $this->prepareLayout();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        parent::tearDown();
-
-        $this->registry->unregister(RegistryConstants::CURRENT_SALES_RULE);
-    }
-
-    /**
      * Check if mass action block exists
      */
     public function testMassActionBlockExists()
@@ -79,18 +55,6 @@ class GridTest extends TestCase
         $this->assertNotFalse(
             $this->getMassActionBlock(),
             'Mass action block does not exist in the grid, or it name was changed.'
-        );
-    }
-
-    /**
-     * Check if function returns correct result
-     */
-    public function testMassActionBlockContainsCorrectIdList()
-    {
-        $this->assertEquals(
-            implode(',', $this->getCouponsIdList()),
-            $this->getMassActionBlock()->getGridIdsJson(),
-            'Function returns incorrect result.'
         );
     }
 
@@ -108,29 +72,15 @@ class GridTest extends TestCase
     }
 
     /**
-     * Prepare layout blocks
+     * Check if function returns correct result
      */
-    private function prepareLayout()
+    public function testMassActionBlockContainsCorrectIdList()
     {
-        $this->layout = Bootstrap::getObjectManager()->create(LayoutInterface::class);
-        $this->layout->getUpdate()->load('sales_rule_promo_quote_couponsgrid');
-        $this->layout->generateXml();
-        $this->layout->generateElements();
-
-        $grid = $this->layout->getBlock('sales_rule_quote_edit_tab_coupons_grid');
-        $grid->toHtml();
-    }
-
-    /**
-     * Init current sales rule
-     */
-    private function initSalesRule()
-    {
-        /** @var RuleCollection $collection */
-        $collection = Bootstrap::getObjectManager()->create(RuleCollection::class);
-        $collection->addFieldToFilter('name', 'Rule with coupon list');
-        $this->salesRule = $collection->getFirstItem();
-        $this->registry->register(RegistryConstants::CURRENT_SALES_RULE, $this->salesRule);
+        $this->assertEquals(
+            implode(',', $this->getCouponsIdList()),
+            $this->getMassActionBlock()->getGridIdsJson(),
+            'Function returns incorrect result.'
+        );
     }
 
     /**
@@ -147,5 +97,55 @@ class GridTest extends TestCase
             ->where('rule_id=?', $this->salesRule->getId());
 
         return $this->resourceConnection->getConnection()->fetchCol($select);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->resourceConnection = Bootstrap::getObjectManager()->get(ResourceConnection::class);
+        $this->registry = Bootstrap::getObjectManager()->get(Registry::class);
+
+        $this->initSalesRule();
+        $this->prepareLayout();
+    }
+
+    /**
+     * Init current sales rule
+     */
+    private function initSalesRule()
+    {
+        /** @var RuleCollection $collection */
+        $collection = Bootstrap::getObjectManager()->create(RuleCollection::class);
+        $collection->addFieldToFilter('name', 'Rule with coupon list');
+        $this->salesRule = $collection->getFirstItem();
+        $this->registry->register(RegistryConstants::CURRENT_SALES_RULE, $this->salesRule);
+    }
+
+    /**
+     * Prepare layout blocks
+     */
+    private function prepareLayout()
+    {
+        $this->layout = Bootstrap::getObjectManager()->create(LayoutInterface::class);
+        $this->layout->getUpdate()->load('sales_rule_promo_quote_couponsgrid');
+        $this->layout->generateXml();
+        $this->layout->generateElements();
+
+        $grid = $this->layout->getBlock('sales_rule_quote_edit_tab_coupons_grid');
+        $grid->toHtml();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+
+        $this->registry->unregister(RegistryConstants::CURRENT_SALES_RULE);
     }
 }

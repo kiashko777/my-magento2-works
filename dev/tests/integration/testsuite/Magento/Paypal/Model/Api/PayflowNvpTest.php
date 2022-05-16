@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Paypal\Model\Api;
 
 use Magento\Framework\Api\SearchCriteriaBuilder;
@@ -16,11 +17,13 @@ use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\QuoteRepository;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\MockObject_MockObject as MockObject;
+use PHPUnit\Framework\TestCase;
+use ReflectionObject;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class PayflowNvpTest extends \PHPUnit\Framework\TestCase
+class PayflowNvpTest extends TestCase
 {
     /**
      * @var PayflowNvp
@@ -36,46 +39,6 @@ class PayflowNvpTest extends \PHPUnit\Framework\TestCase
      * @var Curl|MockObject
      */
     private $httpClient;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-
-        /** @var CurlFactory|MockObject $httpFactory */
-        $httpFactory = $this->getMockBuilder(CurlFactory::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $this->httpClient = $this->getMockBuilder(Curl::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $httpFactory->method('create')
-            ->willReturn($this->httpClient);
-
-        $this->nvpApi = $this->objectManager->create(PayflowNvp::class, [
-            'curlFactory' => $httpFactory
-        ]);
-
-        /** @var ProductMetadataInterface|MockObject $productMetadata */
-        $productMetadata = $this->getMockBuilder(ProductMetadataInterface::class)
-            ->getMock();
-        $productMetadata->method('getEdition')
-            ->willReturn('');
-
-        /** @var Config $config */
-        $config = $this->objectManager->get(Config::class);
-        $config->setMethodCode(Config::METHOD_WPP_PE_EXPRESS);
-
-        $refObject = new \ReflectionObject($config);
-        $refProperty = $refObject->getProperty('productMetadata');
-        $refProperty->setAccessible(true);
-        $refProperty->setValue($config, $productMetadata);
-
-        $this->nvpApi->setConfigObject($config);
-    }
 
     /**
      * Checks a case when items and discount are present in the request.
@@ -133,5 +96,45 @@ class PayflowNvpTest extends \PHPUnit\Framework\TestCase
         $items = $quoteRepository->getList($searchCriteria)
             ->getItems();
         return array_pop($items);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        /** @var CurlFactory|MockObject $httpFactory */
+        $httpFactory = $this->getMockBuilder(CurlFactory::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->httpClient = $this->getMockBuilder(Curl::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $httpFactory->method('create')
+            ->willReturn($this->httpClient);
+
+        $this->nvpApi = $this->objectManager->create(PayflowNvp::class, [
+            'curlFactory' => $httpFactory
+        ]);
+
+        /** @var ProductMetadataInterface|MockObject $productMetadata */
+        $productMetadata = $this->getMockBuilder(ProductMetadataInterface::class)
+            ->getMock();
+        $productMetadata->method('getEdition')
+            ->willReturn('');
+
+        /** @var Config $config */
+        $config = $this->objectManager->get(Config::class);
+        $config->setMethodCode(Config::METHOD_WPP_PE_EXPRESS);
+
+        $refObject = new ReflectionObject($config);
+        $refProperty = $refObject->getProperty('productMetadata');
+        $refProperty->setAccessible(true);
+        $refProperty->setValue($config, $productMetadata);
+
+        $this->nvpApi->setConfigObject($config);
     }
 }

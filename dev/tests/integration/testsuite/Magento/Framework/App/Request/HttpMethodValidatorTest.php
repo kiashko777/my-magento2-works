@@ -9,10 +9,11 @@ declare(strict_types=1);
 namespace Magento\Framework\App\Request;
 
 use Magento\Framework\App\ActionInterface;
-use Magento\Framework\App\RequestInterface;
-use PHPUnit\Framework\TestCase;
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\App\RequestInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 class HttpMethodValidatorTest extends TestCase
 {
@@ -32,40 +33,6 @@ class HttpMethodValidatorTest extends TestCase
     private $map;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->validator = $objectManager->get(HttpMethodValidator::class);
-        $this->request = $objectManager->get(RequestInterface::class);
-        if (!$this->request instanceof HttpRequest) {
-            throw new \RuntimeException('We need HTTP request');
-        }
-        $this->map = $objectManager->get(HttpMethodMap::class);
-    }
-
-    /**
-     * @return array
-     */
-    private function getMap(): array
-    {
-        $map = $this->map->getMap();
-        if (count($map) < 2) {
-            throw new \RuntimeException(
-                'We need at least 2 HTTP methods allowed'
-            );
-        }
-
-        $sorted = [];
-        foreach ($map as $method => $interface) {
-            $sorted[] = ['method' => $method, 'interface' => $interface];
-        }
-
-        return $sorted;
-    }
-
-    /**
      * Test positive case.
      *
      * @throws InvalidRequestException
@@ -83,14 +50,34 @@ class HttpMethodValidatorTest extends TestCase
     }
 
     /**
+     * @return array
+     */
+    private function getMap(): array
+    {
+        $map = $this->map->getMap();
+        if (count($map) < 2) {
+            throw new RuntimeException(
+                'We need at least 2 HTTP methods allowed'
+            );
+        }
+
+        $sorted = [];
+        foreach ($map as $method => $interface) {
+            $sorted[] = ['method' => $method, 'interface' => $interface];
+        }
+
+        return $sorted;
+    }
+
+    /**
      * Test negative case.
      *
      */
     public function testNotAllowedMethod()
     {
-        $this->expectException(\Magento\Framework\App\Request\InvalidRequestException::class);
+        $this->expectException(InvalidRequestException::class);
 
-        $this->request->setMethod('method' .rand(0, 1000));
+        $this->request->setMethod('method' . rand(0, 1000));
         $action = $this->getMockForAbstractClass(ActionInterface::class);
 
         $this->validator->validate($this->request, $action);
@@ -100,7 +87,7 @@ class HttpMethodValidatorTest extends TestCase
      */
     public function testRestrictedMethod()
     {
-        $this->expectException(\Magento\Framework\App\Request\InvalidRequestException::class);
+        $this->expectException(InvalidRequestException::class);
 
         $map = $this->getMap();
 
@@ -108,5 +95,19 @@ class HttpMethodValidatorTest extends TestCase
         $action = $this->getMockForAbstractClass($map[0]['interface']);
 
         $this->validator->validate($this->request, $action);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->validator = $objectManager->get(HttpMethodValidator::class);
+        $this->request = $objectManager->get(RequestInterface::class);
+        if (!$this->request instanceof HttpRequest) {
+            throw new RuntimeException('We need HTTP request');
+        }
+        $this->map = $objectManager->get(HttpMethodMap::class);
     }
 }

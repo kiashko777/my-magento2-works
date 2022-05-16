@@ -14,6 +14,7 @@ use Magento\Framework\Exception\LocalizedException;
 use Magento\TestFramework\Utility\AddedFiles;
 use Magento\TestFramework\Utility\ChildrenClassesSearch;
 use PHPUnit\Framework\TestCase;
+use ReflectionException;
 
 /**
  * Test newly created controllers must do not extend AbstractAction.
@@ -31,18 +32,9 @@ class AbstractActionTest extends TestCase
     private $fileUtilities;
 
     /**
-     * @throws LocalizedException
-     */
-    protected function setUp(): void
-    {
-        $this->childrenClassesSearch = new ChildrenClassesSearch();
-        $this->fileUtilities = Files::init();
-    }
-
-    /**
      * Test newly created controllers do not extend deprecated AbstractAction.
      *
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     public function testNewControllersDoNotExtendAbstractAction(): void
     {
@@ -81,5 +73,14 @@ class AbstractActionTest extends TestCase
     {
         return BP . DIRECTORY_SEPARATOR . 'dev' . DIRECTORY_SEPARATOR . 'tests' . DIRECTORY_SEPARATOR . 'static' .
             DIRECTORY_SEPARATOR . 'testsuite' . DIRECTORY_SEPARATOR . 'Magento' . DIRECTORY_SEPARATOR . 'Test';
+    }
+
+    /**
+     * @throws LocalizedException
+     */
+    protected function setUp(): void
+    {
+        $this->childrenClassesSearch = new ChildrenClassesSearch();
+        $this->fileUtilities = Files::init();
     }
 }

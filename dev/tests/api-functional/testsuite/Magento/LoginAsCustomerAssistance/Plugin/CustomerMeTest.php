@@ -54,19 +54,6 @@ class CustomerMeTest extends WebapiAbstract
     private $tokenFactory;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->dataObjectProcessor = $objectManager->get(DataObjectProcessor::class);
-        $this->customerRepository = $objectManager->get(CustomerRepositoryInterface::class);
-        $this->customerRegistry = $objectManager->get(CustomerRegistry::class);
-        $this->isAssistanceEnabled = $objectManager->get(GetLoginAsCustomerAssistanceAllowed::class);
-        $this->tokenFactory = $objectManager->get(TokenFactory::class);
-    }
-
-    /**
      * Check that 'assistance_allowed' set as expected.
      *
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
@@ -107,6 +94,20 @@ class CustomerMeTest extends WebapiAbstract
     }
 
     /**
+     * Retrieve customer data by Id.
+     *
+     * @param int $customerId
+     * @return Customer
+     */
+    private function getCustomerData(int $customerId): Customer
+    {
+        $customerData = $this->customerRepository->getById($customerId);
+        $this->customerRegistry->remove($customerId);
+
+        return $customerData;
+    }
+
+    /**
      * @param string $operation
      * @param string $token
      * @return array
@@ -129,20 +130,6 @@ class CustomerMeTest extends WebapiAbstract
     }
 
     /**
-     * Retrieve customer data by Id.
-     *
-     * @param int $customerId
-     * @return Customer
-     */
-    private function getCustomerData(int $customerId): Customer
-    {
-        $customerData = $this->customerRepository->getById($customerId);
-        $this->customerRegistry->remove($customerId);
-
-        return $customerData;
-    }
-
-    /**
      * @return array
      */
     public function assistanceStatesDataProvider(): array
@@ -151,5 +138,18 @@ class CustomerMeTest extends WebapiAbstract
             'Assistance Allowed' => [IsAssistanceEnabledInterface::ALLOWED, true],
             'Assistance Denied' => [IsAssistanceEnabledInterface::DENIED, false],
         ];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->dataObjectProcessor = $objectManager->get(DataObjectProcessor::class);
+        $this->customerRepository = $objectManager->get(CustomerRepositoryInterface::class);
+        $this->customerRegistry = $objectManager->get(CustomerRegistry::class);
+        $this->isAssistanceEnabled = $objectManager->get(GetLoginAsCustomerAssistanceAllowed::class);
+        $this->tokenFactory = $objectManager->get(TokenFactory::class);
     }
 }

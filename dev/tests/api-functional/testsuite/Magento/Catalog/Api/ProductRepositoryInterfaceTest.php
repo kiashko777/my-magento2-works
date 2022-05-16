@@ -8,14 +8,15 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Api;
 
+use Exception;
 use Magento\Authorization\Model\Role;
 use Magento\Authorization\Model\RoleFactory;
 use Magento\Authorization\Model\Rules;
-use Magento\UrlRewrite\Model\ResourceModel\UrlRewriteCollectionFactory;
 use Magento\Authorization\Model\RulesFactory;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Model\ResourceModel\Product\Gallery;
 use Magento\CatalogInventory\Api\Data\StockItemInterface;
+use Magento\Customer\Model\Group;
 use Magento\Downloadable\Api\DomainManagerInterface;
 use Magento\Downloadable\Model\Link;
 use Magento\Framework\Api\ExtensibleDataInterface;
@@ -30,12 +31,17 @@ use Magento\Integration\Api\AdminTokenServiceInterface;
 use Magento\Store\Api\Data\StoreInterface;
 use Magento\Store\Api\StoreWebsiteRelationInterface;
 use Magento\Store\Model\Store;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\Store\Model\StoreRepository;
 use Magento\Store\Model\Website;
 use Magento\Store\Model\WebsiteRepository;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\WebapiAbstract;
+use Magento\UrlRewrite\Model\ResourceModel\UrlRewriteCollectionFactory;
 use Magento\UrlRewrite\Service\V1\Data\UrlRewrite;
+use SoapFault;
+use Throwable;
 
 /**
  * Test for \Magento\Catalog\Api\ProductRepositoryInterface
@@ -96,37 +102,6 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
      * @var UrlRewriteCollectionFactory
      */
     private $urlRewriteCollectionFactory;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $objectManager = Bootstrap::getObjectManager();
-        $this->roleFactory = $objectManager->get(RoleFactory::class);
-        $this->rulesFactory = $objectManager->get(RulesFactory::class);
-        $this->adminTokens = $objectManager->get(AdminTokenServiceInterface::class);
-        $this->urlRewriteCollectionFactory = $objectManager->get(UrlRewriteCollectionFactory::class);
-        /** @var DomainManagerInterface $domainManager */
-        $domainManager = $objectManager->get(DomainManagerInterface::class);
-        $domainManager->addDomains(['example.com']);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    protected function tearDown(): void
-    {
-        $this->deleteFixtureProducts();
-        parent::tearDown();
-
-        $objectManager = Bootstrap::getObjectManager();
-        /** @var DomainManagerInterface $domainManager */
-        $domainManager = $objectManager->get(DomainManagerInterface::class);
-        $domainManager->removeDomains(['example.com']);
-    }
 
     /**
      * Test get() method
@@ -191,13 +166,13 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, ['sku' => $invalidSku]);
             $this->fail("Expected throwing exception");
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString(
                 $expectedMessage,
                 $e->getMessage(),
                 "SoapFault does not contain expected message."
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $errorObj = $this->processRestExceptionResult($e);
             $this->assertEquals($expectedMessage, $errorObj['message']);
             $this->assertEquals(HTTPExceptionCodes::HTTP_NOT_FOUND, $e->getCode());
@@ -225,22 +200,28 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
     }
 
     /**
-     * Load website by website code
+     * Get Simple Products Data
      *
-     * @param $websiteCode
-     * @return Website
+     * @param array $productData
+     * @return array
      */
-    private function loadWebsiteByCode($websiteCode)
+    protected function getSimpleProductData($productData = [])
     {
-        $websiteRepository = Bootstrap::getObjectManager()->get(WebsiteRepository::class);
-        try {
-            $website = $websiteRepository->get($websiteCode);
-        } catch (NoSuchEntityException $e) {
-            $website = null;
-            $this->fail("Couldn`t load website: {$websiteCode}");
-        }
-
-        return $website;
+        return [
+            ProductInterface::SKU => isset($productData[ProductInterface::SKU])
+                ? $productData[ProductInterface::SKU] : uniqid('sku-', true),
+            ProductInterface::NAME => isset($productData[ProductInterface::NAME])
+                ? $productData[ProductInterface::NAME] : uniqid('sku-', true),
+            ProductInterface::VISIBILITY => 4,
+            ProductInterface::TYPE_ID => 'simple',
+            ProductInterface::PRICE => 3.62,
+            ProductInterface::STATUS => 1,
+            ProductInterface::ATTRIBUTE_SET_ID => 4,
+            'custom_attributes' => [
+                ['attribute_code' => 'cost', 'value' => ''],
+                ['attribute_code' => 'description', 'value' => 'Description'],
+            ],
+        ];
     }
 
     /**
@@ -265,6 +246,65 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
             $response[ProductInterface::EXTENSION_ATTRIBUTES_KEY]["website_ids"],
             $websitesData["website_ids"]
         );
+    }
+
+    /**
+     * Load website by website code
+     *
+     * @param $websiteCode
+     * @return Website
+     */
+    private function loadWebsiteByCode($websiteCode)
+    {
+        $websiteRepository = Bootstrap::getObjectManager()->get(WebsiteRepository::class);
+        try {
+            $website = $websiteRepository->get($websiteCode);
+        } catch (NoSuchEntityException $e) {
+            $website = null;
+            $this->fail("Couldn`t load website: {$websiteCode}");
+        }
+
+        return $website;
+    }
+
+    /**
+     * Update product
+     *
+     * @param array $product
+     * @param string|null $token
+     * @return array|bool|float|int|string
+     */
+    protected function updateProduct($product, ?string $token = null)
+    {
+        if (isset($product['custom_attributes'])) {
+            foreach ($product['custom_attributes'] as &$attribute) {
+                if ($attribute['attribute_code'] == 'category_ids' && !is_array($attribute['value'])) {
+                    $attribute['value'] = [""];
+                }
+            }
+        }
+        $sku = $product[ProductInterface::SKU];
+        if (TESTS_WEB_API_ADAPTER == self::ADAPTER_REST) {
+            $product[ProductInterface::SKU] = null;
+        }
+
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH . '/' . $sku,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'Save',
+            ],
+        ];
+        if ($token) {
+            $serviceInfo['rest']['token'] = $serviceInfo['soap']['token'] = $token;
+        }
+        $requestData = ['product' => $product];
+        $response = $this->_webApiCall($serviceInfo, $requestData);
+        return $response;
     }
 
     /**
@@ -369,6 +409,44 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
     }
 
     /**
+     * Save Products
+     *
+     * @param $product
+     * @param string|null $storeCode
+     * @param string|null $token
+     * @return mixed
+     */
+    protected function saveProduct($product, $storeCode = null, ?string $token = null)
+    {
+        if (isset($product['custom_attributes'])) {
+            foreach ($product['custom_attributes'] as &$attribute) {
+                if ($attribute['attribute_code'] == 'category_ids'
+                    && !is_array($attribute['value'])
+                ) {
+                    $attribute['value'] = [""];
+                }
+            }
+        }
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH,
+                'httpMethod' => Request::HTTP_METHOD_POST,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'Save',
+            ],
+        ];
+        if ($token) {
+            $serviceInfo['rest']['token'] = $serviceInfo['soap']['token'] = $token;
+        }
+        $requestData = ['product' => $product];
+
+        return $this->_webApiCall($serviceInfo, $requestData, null, $storeCode);
+    }
+
+    /**
      * Add product associated with website that is not associated with default store
      *
      * @magentoApiDataFixture Magento/Store/_files/second_website_with_two_stores.php
@@ -468,9 +546,9 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
         $response = $this->saveProduct($fixtureProduct, 'all');
         $this->assertArrayHasKey(ProductInterface::SKU, $response);
 
-        /** @var \Magento\Store\Model\StoreManagerInterface $storeManager */
-        $storeManager = \Magento\TestFramework\ObjectManager::getInstance()->get(
-            \Magento\Store\Model\StoreManagerInterface::class
+        /** @var StoreManagerInterface $storeManager */
+        $storeManager = ObjectManager::getInstance()->get(
+            StoreManagerInterface::class
         );
 
         foreach ($storeManager->getStores(true) as $store) {
@@ -497,9 +575,9 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
         $response = $this->saveProduct($fixtureProduct, 'all');
         $this->assertArrayHasKey(ProductInterface::SKU, $response);
 
-        /** @var \Magento\Store\Model\StoreManagerInterface $storeManager */
-        $storeManager = \Magento\TestFramework\ObjectManager::getInstance()->get(
-            \Magento\Store\Model\StoreManagerInterface::class
+        /** @var StoreManagerInterface $storeManager */
+        $storeManager = ObjectManager::getInstance()->get(
+            StoreManagerInterface::class
         );
 
         foreach ($storeManager->getStores(true) as $store) {
@@ -527,7 +605,7 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
         try {
             $this->saveProduct(['name' => 'simple', 'price' => 'invalid_format', 'sku' => 'simple']);
             $this->fail("Expected exception was not raised");
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $errorObj = $this->processRestExceptionResult($e);
             $this->assertEquals($expectedMessage, $errorObj['message']);
             $this->assertEquals(HTTPExceptionCodes::HTTP_BAD_REQUEST, $e->getCode());
@@ -651,44 +729,36 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
     }
 
     /**
-     * Get options data
+     * Get stock item data
      *
-     * @param string $productSku
      * @return array
      */
-    protected function getOptionsData($productSku)
+    private function getStockItemData()
     {
         return [
-            [
-                "product_sku" => $productSku,
-                "title" => "DropdownOption",
-                "type" => "drop_down",
-                "sort_order" => 0,
-                "is_require" => true,
-                "values" => [
-                    [
-                        "title" => "DropdownOption2_1",
-                        "sort_order" => 0,
-                        "price" => 3,
-                        "price_type" => "fixed",
-                    ],
-                ],
-            ],
-            [
-                "product_sku" => $productSku,
-                "title" => "CheckboxOption",
-                "type" => "checkbox",
-                "sort_order" => 1,
-                "is_require" => false,
-                "values" => [
-                    [
-                        "title" => "CheckBoxValue1",
-                        "price" => 5,
-                        "price_type" => "fixed",
-                        "sort_order" => 1,
-                    ],
-                ],
-            ],
+            StockItemInterface::IS_IN_STOCK => 1,
+            StockItemInterface::QTY => 100500,
+            StockItemInterface::IS_QTY_DECIMAL => 1,
+            StockItemInterface::SHOW_DEFAULT_NOTIFICATION_MESSAGE => 0,
+            StockItemInterface::USE_CONFIG_MIN_QTY => 0,
+            StockItemInterface::USE_CONFIG_MIN_SALE_QTY => 0,
+            StockItemInterface::MIN_QTY => 1,
+            StockItemInterface::MIN_SALE_QTY => 1,
+            StockItemInterface::MAX_SALE_QTY => 100,
+            StockItemInterface::USE_CONFIG_MAX_SALE_QTY => 0,
+            StockItemInterface::USE_CONFIG_BACKORDERS => 0,
+            StockItemInterface::BACKORDERS => 0,
+            StockItemInterface::USE_CONFIG_NOTIFY_STOCK_QTY => 0,
+            StockItemInterface::NOTIFY_STOCK_QTY => 0,
+            StockItemInterface::USE_CONFIG_QTY_INCREMENTS => 0,
+            StockItemInterface::QTY_INCREMENTS => 0,
+            StockItemInterface::USE_CONFIG_ENABLE_QTY_INC => 0,
+            StockItemInterface::ENABLE_QTY_INCREMENTS => 0,
+            StockItemInterface::USE_CONFIG_MANAGE_STOCK => 1,
+            StockItemInterface::MANAGE_STOCK => 1,
+            StockItemInterface::LOW_STOCK_DATE => null,
+            StockItemInterface::IS_DECIMAL_DIVIDED => 0,
+            StockItemInterface::STOCK_STATUS_CHANGED_AUTO => 0,
         ];
     }
 
@@ -754,6 +824,48 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
         $this->assertEmpty($response['options']);
 
         $this->deleteProduct($productData[ProductInterface::SKU]);
+    }
+
+    /**
+     * Get options data
+     *
+     * @param string $productSku
+     * @return array
+     */
+    protected function getOptionsData($productSku)
+    {
+        return [
+            [
+                "product_sku" => $productSku,
+                "title" => "DropdownOption",
+                "type" => "drop_down",
+                "sort_order" => 0,
+                "is_require" => true,
+                "values" => [
+                    [
+                        "title" => "DropdownOption2_1",
+                        "sort_order" => 0,
+                        "price" => 3,
+                        "price_type" => "fixed",
+                    ],
+                ],
+            ],
+            [
+                "product_sku" => $productSku,
+                "title" => "CheckboxOption",
+                "type" => "checkbox",
+                "sort_order" => 1,
+                "is_require" => false,
+                "values" => [
+                    [
+                        "title" => "CheckBoxValue1",
+                        "price" => 5,
+                        "price_type" => "fixed",
+                        "sort_order" => 1,
+                    ],
+                ],
+            ],
+        ];
     }
 
     /**
@@ -839,6 +951,50 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
     }
 
     /**
+     * @return string
+     */
+    private function getTestImage(): string
+    {
+        $testImagePath = __DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'test_image.jpg';
+        // @codingStandardsIgnoreLine
+        return base64_encode(file_get_contents($testImagePath));
+    }
+
+    /**
+     * Get media gallery data
+     *
+     * @param string $filename
+     * @param string $encodedImage
+     * @param int $position
+     * @param string $label
+     * @param bool $disabled
+     * @param array $types
+     * @return array
+     */
+    private function getMediaGalleryData(
+        string $filename,
+        string $encodedImage,
+        int    $position,
+        string $label,
+        bool   $disabled = false,
+        array  $types = []
+    ): array
+    {
+        return [
+            'position' => $position,
+            'media_type' => 'image',
+            'disabled' => $disabled,
+            'label' => $label,
+            'types' => $types,
+            'content' => [
+                'type' => 'image/jpeg',
+                'name' => $filename,
+                'base64_encoded_data' => $encodedImage,
+            ],
+        ];
+    }
+
+    /**
      * Test update() method
      *
      * @magentoApiDataFixture Magento/Catalog/_files/product_simple.php
@@ -881,46 +1037,6 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
 
         self::assertArrayHasKey(Link::KEY_LINK_URL, $linkData);
         self::assertEquals('http://example.com/downloadable.txt', $linkData[Link::KEY_LINK_URL]);
-    }
-
-    /**
-     * Update product
-     *
-     * @param array $product
-     * @param string|null $token
-     * @return array|bool|float|int|string
-     */
-    protected function updateProduct($product, ?string $token = null)
-    {
-        if (isset($product['custom_attributes'])) {
-            foreach ($product['custom_attributes'] as &$attribute) {
-                if ($attribute['attribute_code'] == 'category_ids' && !is_array($attribute['value'])) {
-                    $attribute['value'] = [""];
-                }
-            }
-        }
-        $sku = $product[ProductInterface::SKU];
-        if (TESTS_WEB_API_ADAPTER == self::ADAPTER_REST) {
-            $product[ProductInterface::SKU] = null;
-        }
-
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . '/' . $sku,
-                'httpMethod' => Request::HTTP_METHOD_PUT,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'Save',
-            ],
-        ];
-        if ($token) {
-            $serviceInfo['rest']['token'] = $serviceInfo['soap']['token'] = $token;
-        }
-        $requestData = ['product' => $product];
-        $response = $this->_webApiCall($serviceInfo, $requestData);
-        return $response;
     }
 
     /**
@@ -1397,6 +1513,35 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
     }
 
     /**
+     * Test eav attributes
+     *
+     * @magentoApiDataFixture Magento/Catalog/_files/product_simple.php
+     */
+    public function testEavAttributes()
+    {
+        $response = $this->getProduct('simple');
+
+        $this->assertNotEmpty($response['custom_attributes']);
+        $customAttributesData = $this->convertCustomAttributesToAssociativeArray($response['custom_attributes']);
+        $this->assertNotTrue(isset($customAttributesData['name']));
+        $this->assertNotTrue(isset($customAttributesData['tier_price']));
+
+        //Set description
+        $descriptionValue = "new description";
+        $customAttributesData['description'] = $descriptionValue;
+        $response['custom_attributes'] = $this->convertAssociativeArrayToCustomAttributes($customAttributesData);
+
+        $response = $this->updateProduct($response);
+        $this->assertNotEmpty($response['custom_attributes']);
+
+        $customAttributesData = $this->convertCustomAttributesToAssociativeArray($response['custom_attributes']);
+        $this->assertTrue(isset($customAttributesData['description']));
+        $this->assertEquals($descriptionValue, $customAttributesData['description']);
+
+        $this->deleteProduct('simple');
+    }
+
+    /**
      * Convert custom attributes to associative array
      *
      * @param $customAttributes
@@ -1429,129 +1574,13 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
     }
 
     /**
-     * Test eav attributes
-     *
-     * @magentoApiDataFixture Magento/Catalog/_files/product_simple.php
-     */
-    public function testEavAttributes()
-    {
-        $response = $this->getProduct('simple');
-
-        $this->assertNotEmpty($response['custom_attributes']);
-        $customAttributesData = $this->convertCustomAttributesToAssociativeArray($response['custom_attributes']);
-        $this->assertNotTrue(isset($customAttributesData['name']));
-        $this->assertNotTrue(isset($customAttributesData['tier_price']));
-
-        //Set description
-        $descriptionValue = "new description";
-        $customAttributesData['description'] = $descriptionValue;
-        $response['custom_attributes'] = $this->convertAssociativeArrayToCustomAttributes($customAttributesData);
-
-        $response = $this->updateProduct($response);
-        $this->assertNotEmpty($response['custom_attributes']);
-
-        $customAttributesData = $this->convertCustomAttributesToAssociativeArray($response['custom_attributes']);
-        $this->assertTrue(isset($customAttributesData['description']));
-        $this->assertEquals($descriptionValue, $customAttributesData['description']);
-
-        $this->deleteProduct('simple');
-    }
-
-    /**
-     * Get Simple Products Data
-     *
-     * @param array $productData
-     * @return array
-     */
-    protected function getSimpleProductData($productData = [])
-    {
-        return [
-            ProductInterface::SKU => isset($productData[ProductInterface::SKU])
-                ? $productData[ProductInterface::SKU] : uniqid('sku-', true),
-            ProductInterface::NAME => isset($productData[ProductInterface::NAME])
-                ? $productData[ProductInterface::NAME] : uniqid('sku-', true),
-            ProductInterface::VISIBILITY => 4,
-            ProductInterface::TYPE_ID => 'simple',
-            ProductInterface::PRICE => 3.62,
-            ProductInterface::STATUS => 1,
-            ProductInterface::ATTRIBUTE_SET_ID => 4,
-            'custom_attributes' => [
-                ['attribute_code' => 'cost', 'value' => ''],
-                ['attribute_code' => 'description', 'value' => 'Description'],
-            ],
-        ];
-    }
-
-    /**
-     * Save Products
-     *
-     * @param $product
-     * @param string|null $storeCode
-     * @param string|null $token
-     * @return mixed
-     */
-    protected function saveProduct($product, $storeCode = null, ?string $token = null)
-    {
-        if (isset($product['custom_attributes'])) {
-            foreach ($product['custom_attributes'] as &$attribute) {
-                if ($attribute['attribute_code'] == 'category_ids'
-                    && !is_array($attribute['value'])
-                ) {
-                    $attribute['value'] = [""];
-                }
-            }
-        }
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => Request::HTTP_METHOD_POST,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'Save',
-            ],
-        ];
-        if ($token) {
-            $serviceInfo['rest']['token'] = $serviceInfo['soap']['token'] = $token;
-        }
-        $requestData = ['product' => $product];
-
-        return $this->_webApiCall($serviceInfo, $requestData, null, $storeCode);
-    }
-
-    /**
-     * Delete Products
-     *
-     * @param string $sku
-     * @return boolean
-     */
-    protected function deleteProduct($sku)
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . '/' . $sku,
-                'httpMethod' => Request::HTTP_METHOD_DELETE,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'DeleteById',
-            ],
-        ];
-
-        return (TESTS_WEB_API_ADAPTER == self::ADAPTER_SOAP) ?
-            $this->_webApiCall($serviceInfo, ['sku' => $sku]) : $this->_webApiCall($serviceInfo);
-    }
-
-    /**
      * Test tier prices
      */
     public function testTierPrices()
     {
         // create a product with tier prices
-        $custGroup1 = \Magento\Customer\Model\Group::NOT_LOGGED_IN_ID;
-        $custGroup2 = \Magento\Customer\Model\Group::CUST_GROUP_ALL;
+        $custGroup1 = Group::NOT_LOGGED_IN_ID;
+        $custGroup2 = Group::CUST_GROUP_ALL;
         $productData = $this->getSimpleProductData();
         $productData[self::KEY_TIER_PRICES] = [
             [
@@ -1626,40 +1655,6 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
         // delete the product with tier prices; expect that all goes well
         $response = $this->deleteProduct($productData[ProductInterface::SKU]);
         $this->assertTrue($response);
-    }
-
-    /**
-     * Get stock item data
-     *
-     * @return array
-     */
-    private function getStockItemData()
-    {
-        return [
-            StockItemInterface::IS_IN_STOCK => 1,
-            StockItemInterface::QTY => 100500,
-            StockItemInterface::IS_QTY_DECIMAL => 1,
-            StockItemInterface::SHOW_DEFAULT_NOTIFICATION_MESSAGE => 0,
-            StockItemInterface::USE_CONFIG_MIN_QTY => 0,
-            StockItemInterface::USE_CONFIG_MIN_SALE_QTY => 0,
-            StockItemInterface::MIN_QTY => 1,
-            StockItemInterface::MIN_SALE_QTY => 1,
-            StockItemInterface::MAX_SALE_QTY => 100,
-            StockItemInterface::USE_CONFIG_MAX_SALE_QTY => 0,
-            StockItemInterface::USE_CONFIG_BACKORDERS => 0,
-            StockItemInterface::BACKORDERS => 0,
-            StockItemInterface::USE_CONFIG_NOTIFY_STOCK_QTY => 0,
-            StockItemInterface::NOTIFY_STOCK_QTY => 0,
-            StockItemInterface::USE_CONFIG_QTY_INCREMENTS => 0,
-            StockItemInterface::QTY_INCREMENTS => 0,
-            StockItemInterface::USE_CONFIG_ENABLE_QTY_INC => 0,
-            StockItemInterface::ENABLE_QTY_INCREMENTS => 0,
-            StockItemInterface::USE_CONFIG_MANAGE_STOCK => 1,
-            StockItemInterface::MANAGE_STOCK => 1,
-            StockItemInterface::LOW_STOCK_DATE => null,
-            StockItemInterface::IS_DECIMAL_DIVIDED => 0,
-            StockItemInterface::STOCK_STATUS_CHANGED_AUTO => 0,
-        ];
     }
 
     /**
@@ -1740,39 +1735,6 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
         $response[ProductInterface::EXTENSION_ATTRIBUTES_KEY][self::KEY_CATEGORY_LINKS] = [];
         $response = $this->updateProduct($response);
         $this->assertArrayNotHasKey(self::KEY_CATEGORY_LINKS, $response[ProductInterface::EXTENSION_ATTRIBUTES_KEY]);
-    }
-
-    /**
-     * Get media gallery data
-     *
-     * @param string $filename
-     * @param string $encodedImage
-     * @param int $position
-     * @param string $label
-     * @param bool $disabled
-     * @param array $types
-     * @return array
-     */
-    private function getMediaGalleryData(
-        string $filename,
-        string $encodedImage,
-        int $position,
-        string $label,
-        bool $disabled = false,
-        array $types = []
-    ): array {
-        return [
-            'position' => $position,
-            'media_type' => 'image',
-            'disabled' => $disabled,
-            'label' => $label,
-            'types' => $types,
-            'content' => [
-                'type' => 'image/jpeg',
-                'name' => $filename,
-                'base64_encoded_data' => $encodedImage,
-            ],
-        ];
     }
 
     /**
@@ -1950,7 +1912,7 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
      *
      * @magentoApiDataFixture Magento/User/_files/user_with_custom_role.php
      * @return void
-     * @throws \Throwable
+     * @throws Throwable
      */
     public function testSaveDesign(): void
     {
@@ -1976,7 +1938,7 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
         $exceptionMessage = null;
         try {
             $this->saveProduct($productData, null, $token);
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             if ($restResponse = json_decode($exception->getMessage(), true)) {
                 //REST
                 $exceptionMessage = $restResponse['message'];
@@ -2034,7 +1996,7 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
         $exceptionMessage = null;
         try {
             $this->updateProduct($productData, $token);
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             if ($restResponse = json_decode($exception->getMessage(), true)) {
                 //REST
                 $exceptionMessage = $restResponse['message'];
@@ -2130,6 +2092,58 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
     }
 
     /**
+     * @param string $code
+     * @return StoreInterface
+     */
+    private function loadStoreByCode(string $code): StoreInterface
+    {
+        try {
+            $store = Bootstrap::getObjectManager()->get(StoreRepository::class)->get($code);
+        } catch (NoSuchEntityException $e) {
+            $store = null;
+            $this->fail("Couldn`t load store: {$code}");
+        }
+        return $store;
+    }
+
+    /**
+     * @param string $sku
+     * @param array $stores
+     * @param array $roles
+     * @return array
+     */
+    private function getProductStoreImageRoles(string $sku, array $stores, array $roles = []): array
+    {
+        /** @var Gallery $galleryResource */
+        $galleryResource = Bootstrap::getObjectManager()->get(Gallery::class);
+        $productModel = $this->getProductModel($sku);
+        $imageRolesPerStore = [];
+        foreach ($galleryResource->getProductImages($productModel, $stores) as $role) {
+            if (empty($roles) || in_array($role['attribute_code'], $roles)) {
+                $imageRolesPerStore[$role['store_id']][$role['attribute_code']] = $role['filepath'];
+            }
+        }
+        return $imageRolesPerStore;
+    }
+
+    /**
+     * @param string $sku
+     * @param int|null $storeId
+     * @return ProductInterface
+     */
+    private function getProductModel(string $sku, int $storeId = null): ProductInterface
+    {
+        try {
+            $productRepository = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class);
+            $product = $productRepository->get($sku, false, $storeId, true);
+        } catch (NoSuchEntityException $e) {
+            $product = null;
+            $this->fail("Couldn`t load product: {$sku}");
+        }
+        return $product;
+    }
+
+    /**
      * Test that updating product image with same image name will result in incremented image name
      */
     public function testUpdateProductWithMediaGallery(): void
@@ -2193,13 +2207,34 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
     }
 
     /**
-     * @return string
+     * @inheritDoc
      */
-    private function getTestImage(): string
+    protected function setUp(): void
     {
-        $testImagePath = __DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'test_image.jpg';
-        // @codingStandardsIgnoreLine
-        return base64_encode(file_get_contents($testImagePath));
+        parent::setUp();
+
+        $objectManager = Bootstrap::getObjectManager();
+        $this->roleFactory = $objectManager->get(RoleFactory::class);
+        $this->rulesFactory = $objectManager->get(RulesFactory::class);
+        $this->adminTokens = $objectManager->get(AdminTokenServiceInterface::class);
+        $this->urlRewriteCollectionFactory = $objectManager->get(UrlRewriteCollectionFactory::class);
+        /** @var DomainManagerInterface $domainManager */
+        $domainManager = $objectManager->get(DomainManagerInterface::class);
+        $domainManager->addDomains(['example.com']);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function tearDown(): void
+    {
+        $this->deleteFixtureProducts();
+        parent::tearDown();
+
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var DomainManagerInterface $domainManager */
+        $domainManager = $objectManager->get(DomainManagerInterface::class);
+        $domainManager->removeDomains(['example.com']);
     }
 
     /**
@@ -2214,54 +2249,26 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
     }
 
     /**
-     * @param string $code
-     * @return StoreInterface
-     */
-    private function loadStoreByCode(string $code): StoreInterface
-    {
-        try {
-            $store = Bootstrap::getObjectManager()->get(StoreRepository::class)->get($code);
-        } catch (NoSuchEntityException $e) {
-            $store = null;
-            $this->fail("Couldn`t load store: {$code}");
-        }
-        return $store;
-    }
-
-    /**
+     * Delete Products
+     *
      * @param string $sku
-     * @param int|null $storeId
-     * @return ProductInterface
+     * @return boolean
      */
-    private function getProductModel(string $sku, int $storeId = null): ProductInterface
+    protected function deleteProduct($sku)
     {
-        try {
-            $productRepository = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class);
-            $product = $productRepository->get($sku, false, $storeId, true);
-        } catch (NoSuchEntityException $e) {
-            $product = null;
-            $this->fail("Couldn`t load product: {$sku}");
-        }
-        return $product;
-    }
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH . '/' . $sku,
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'DeleteById',
+            ],
+        ];
 
-    /**
-     * @param string $sku
-     * @param array $stores
-     * @param array $roles
-     * @return array
-     */
-    private function getProductStoreImageRoles(string $sku, array $stores, array $roles = []): array
-    {
-        /** @var Gallery $galleryResource */
-        $galleryResource = Bootstrap::getObjectManager()->get(Gallery::class);
-        $productModel = $this->getProductModel($sku);
-        $imageRolesPerStore = [];
-        foreach ($galleryResource->getProductImages($productModel, $stores) as $role) {
-            if (empty($roles) || in_array($role['attribute_code'], $roles)) {
-                $imageRolesPerStore[$role['store_id']][$role['attribute_code']] = $role['filepath'];
-            }
-        }
-        return $imageRolesPerStore;
+        return (TESTS_WEB_API_ADAPTER == self::ADAPTER_SOAP) ?
+            $this->_webApiCall($serviceInfo, ['sku' => $sku]) : $this->_webApiCall($serviceInfo);
     }
 }

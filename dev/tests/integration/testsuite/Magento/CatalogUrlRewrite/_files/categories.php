@@ -4,14 +4,18 @@
  * See COPYING.txt for license details.
  */
 
-\Magento\TestFramework\Helper\Bootstrap::getInstance()
-    ->loadArea(\Magento\Backend\App\Area\FrontNameResolver::AREA_CODE);
+use Magento\Backend\App\Area\FrontNameResolver;
+use Magento\Catalog\Model\Category;
+use Magento\TestFramework\Helper\Bootstrap;
+
+Bootstrap::getInstance()
+    ->loadArea(FrontNameResolver::AREA_CODE);
 
 /**
  * After installation system has two categories: root one with ID:1 and Default category with ID:2
  */
-/** @var $category \Magento\Catalog\Model\Category */
-$category = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Category::class);
+/** @var $category Category */
+$category = Bootstrap::getObjectManager()->create(Category::class);
 $category->isObjectNew(true);
 $category->setId(3)
     ->setName('Category 1')
@@ -24,7 +28,7 @@ $category->setId(3)
     ->setPosition(1)
     ->save();
 
-$category = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Category::class);
+$category = Bootstrap::getObjectManager()->create(Category::class);
 $category->isObjectNew(true);
 $category->setId(4)
     ->setName('Category 1.1')
@@ -38,7 +42,7 @@ $category->setId(4)
     ->setPosition(1)
     ->save();
 
-$category = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Category::class);
+$category = Bootstrap::getObjectManager()->create(Category::class);
 $category->isObjectNew(true);
 $category->setId(5)
     ->setName('Category 1.1.1')
@@ -53,7 +57,7 @@ $category->setId(5)
     ->setCustomDesign('Magento/blank')
     ->save();
 
-$category = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Category::class);
+$category = Bootstrap::getObjectManager()->create(Category::class);
 $category->isObjectNew(true);
 $category->setId(6)
     ->setName('Category 2')

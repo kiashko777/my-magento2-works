@@ -74,11 +74,12 @@ class CustomersFixture extends Fixture
      * @param CollectionFactory $collectionFactory
      */
     public function __construct(
-        FixtureModel $fixtureModel,
-        CustomerGenerator $customerGenerator,
+        FixtureModel                 $fixtureModel,
+        CustomerGenerator            $customerGenerator,
         CustomerDataGeneratorFactory $customerDataGeneratorFactory,
-        CollectionFactory $collectionFactory
-    ) {
+        CollectionFactory            $collectionFactory
+    )
+    {
         parent::__construct($fixtureModel);
 
         $this->customerGenerator = $customerGenerator;
@@ -119,6 +120,14 @@ class CustomersFixture extends Fixture
     }
 
     /**
+     * @return array
+     */
+    private function getCustomersConfig()
+    {
+        return $this->fixtureModel->getValue('customer-config', $this->defaultCustomerConfig);
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function getActionTitle()
@@ -134,13 +143,5 @@ class CustomersFixture extends Fixture
         return [
             'customers' => 'Customers'
         ];
-    }
-
-    /**
-     * @return array
-     */
-    private function getCustomersConfig()
-    {
-        return $this->fixtureModel->getValue('customer-config', $this->defaultCustomerConfig);
     }
 }

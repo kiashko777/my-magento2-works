@@ -8,6 +8,7 @@ declare(strict_types=1);
 use Magento\Catalog\Api\Data\ProductInterfaceFactory;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Helper\Data;
+use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use Magento\Catalog\Model\Product\Type;
 use Magento\Catalog\Model\Product\Visibility;
@@ -42,7 +43,7 @@ $defaultWebsiteId = $websiteRepository->get('base')->getId();
 /** @var StoreManagerInterface $storeManager */
 $storeManager = $objectManager->get(StoreManagerInterface::class);
 $secondStoreId = $storeManager->getStore('fixture_second_store')->getId();
-/** @var $product \Magento\Catalog\Model\Product */
+/** @var $product Product */
 $product = $productFactory->create();
 $product->setTypeId(Type::TYPE_SIMPLE)
     ->setAttributeSetId($product->getDefaultAttributeSetId())

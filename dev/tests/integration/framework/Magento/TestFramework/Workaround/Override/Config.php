@@ -27,6 +27,7 @@ use Magento\TestFramework\Workaround\Override\Config\RelationsCollector;
 use Magento\TestFramework\Workaround\Override\Config\SchemaLocator;
 use Magento\TestFramework\Workaround\Override\Config\ValidationState;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 /**
  * Provides integration tests configuration.
@@ -68,10 +69,21 @@ class Config implements ConfigInterface
     public static function getInstance(): ConfigInterface
     {
         if (empty(self::$instance)) {
-            throw new \RuntimeException('Override config isn\'t initialized');
+            throw new RuntimeException('Override config isn\'t initialized');
         }
 
         return self::$instance;
+    }
+
+    /**
+     * Self instance setter.
+     *
+     * @param ConfigInterface $config
+     * @return void
+     */
+    public static function setInstance(ConfigInterface $config): void
+    {
+        self::$instance = $config;
     }
 
     /**
@@ -88,17 +100,6 @@ class Config implements ConfigInterface
         }
 
         return $result;
-    }
-
-    /**
-     * Self instance setter.
-     *
-     * @param ConfigInterface $config
-     * @return void
-     */
-    public static function setInstance(ConfigInterface $config): void
-    {
-        self::$instance = $config;
     }
 
     /**
@@ -137,76 +138,6 @@ class Config implements ConfigInterface
     }
 
     /**
-     * @inheritdoc
-     */
-    public function getSkipConfiguration(TestCase $test): array
-    {
-        $classConfig = $this->getClassConfig($test);
-        $testConfig = $this->getMethodConfig($test);
-        $dataSetConfig = $this->getDataSetConfig($test);
-        $result['skip'] = false;
-
-        if (isset($dataSetConfig['skip']) && $dataSetConfig['skip']) {
-            $result = $this->prepareSkipConfig($dataSetConfig);
-        } elseif (isset($testConfig['skip']) && $testConfig['skip']) {
-            $result = $this->prepareSkipConfig($testConfig);
-        } elseif (isset($classConfig['skip']) && $classConfig['skip']) {
-            $result = $this->prepareSkipConfig($classConfig);
-        }
-
-        return $result;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function hasSkippedTest(string $className): bool
-    {
-        $classConfig = $this->getInheritedClassConfig($className);
-
-        return $this->isSkippedByConfig($classConfig);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getClassConfig(TestCase $test, ?string $fixtureType = null): array
-    {
-        $config = $this->getInheritedClassConfig($this->getOriginalClassName($test));
-
-        return $fixtureType
-            ? $config[$fixtureType] ?? []
-            : $config;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getMethodConfig(TestCase $test, ?string $fixtureType = null): array
-    {
-        $config = $this->getClassConfig($test)[$test->getName(false)] ?? [];
-
-        if ($fixtureType) {
-            $config = $config[$fixtureType] ?? [];
-        }
-
-        return $config;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getDataSetConfig(TestCase $test, ?string $fixtureType = null): array
-    {
-        $config = $this->getClassConfig($test)[$test->getName(false)][(string)$test->dataName()] ?? [];
-        if ($fixtureType) {
-            $config = $config[$fixtureType] ?? [];
-        }
-
-        return $config;
-    }
-
-    /**
      * Returns file resolver.
      *
      * @return FileResolver
@@ -229,6 +160,16 @@ class Config implements ConfigInterface
                 )
             ]
         );
+    }
+
+    /**
+     * Returns file collector.
+     *
+     * @return CollectorInterface
+     */
+    protected function getFileCollector(): CollectorInterface
+    {
+        return ObjectManager::getInstance()->create(FileCollector::class);
     }
 
     /**
@@ -272,73 +213,36 @@ class Config implements ConfigInterface
     }
 
     /**
-     * Returns file collector.
-     *
-     * @return CollectorInterface
+     * @inheritdoc
      */
-    protected function getFileCollector(): CollectorInterface
+    public function getSkipConfiguration(TestCase $test): array
     {
-        return ObjectManager::getInstance()->create(FileCollector::class);
-    }
+        $classConfig = $this->getClassConfig($test);
+        $testConfig = $this->getMethodConfig($test);
+        $dataSetConfig = $this->getDataSetConfig($test);
+        $result['skip'] = false;
 
-    /**
-     * Check that class has even one test skipped
-     *
-     * @param array $config
-     * @return bool
-     */
-    private function isSkippedByConfig(array $config): bool
-    {
-        $result = false;
-        if (isset($config['skip']) && $config['skip']) {
-            $result = true;
-        } else {
-            foreach ($config as $lowerLevelConfig) {
-                if (is_array($lowerLevelConfig)) {
-                    $result = $this->isSkippedByConfig($lowerLevelConfig);
-                    if ($result === true) {
-                        break;
-                    }
-                }
-            }
+        if (isset($dataSetConfig['skip']) && $dataSetConfig['skip']) {
+            $result = $this->prepareSkipConfig($dataSetConfig);
+        } elseif (isset($testConfig['skip']) && $testConfig['skip']) {
+            $result = $this->prepareSkipConfig($testConfig);
+        } elseif (isset($classConfig['skip']) && $classConfig['skip']) {
+            $result = $this->prepareSkipConfig($classConfig);
         }
 
         return $result;
     }
 
     /**
-     * Returns original test class name.
-     *
-     * @param TestCase $test
-     * @return string
+     * @inheritdoc
      */
-    private function getOriginalClassName(TestCase $test)
+    public function getClassConfig(TestCase $test, ?string $fixtureType = null): array
     {
-        return str_replace('\\' . WrapperGenerator::SKIPPABLE_SUFFIX, '', get_class($test));
-    }
+        $config = $this->getInheritedClassConfig($this->getOriginalClassName($test));
 
-    /**
-     * Get skipped message
-     *
-     * @param array $config
-     * @return array
-     */
-    private function prepareSkipConfig(array $config): array
-    {
-        return [
-            'skip' => $config['skip'],
-            'skipMessage' => $config['skipMessage'] ?: 'Skipped according to override configurations',
-        ];
-    }
-
-    /**
-     * Returns class relation collector.
-     *
-     * @return RelationsCollector
-     */
-    private function getRelationsCollector(): RelationsCollector
-    {
-        return ObjectManager::getInstance()->get(RelationsCollector::class);
+        return $fixtureType
+            ? $config[$fixtureType] ?? []
+            : $config;
     }
 
     /**
@@ -359,6 +263,16 @@ class Config implements ConfigInterface
         }
 
         return $this->inheritedConfig[$originalClassName];
+    }
+
+    /**
+     * Returns class relation collector.
+     *
+     * @return RelationsCollector
+     */
+    private function getRelationsCollector(): RelationsCollector
+    {
+        return ObjectManager::getInstance()->get(RelationsCollector::class);
     }
 
     /**
@@ -395,5 +309,92 @@ class Config implements ConfigInterface
         }
 
         return $merged;
+    }
+
+    /**
+     * Returns original test class name.
+     *
+     * @param TestCase $test
+     * @return string
+     */
+    private function getOriginalClassName(TestCase $test)
+    {
+        return str_replace('\\' . WrapperGenerator::SKIPPABLE_SUFFIX, '', get_class($test));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getMethodConfig(TestCase $test, ?string $fixtureType = null): array
+    {
+        $config = $this->getClassConfig($test)[$test->getName(false)] ?? [];
+
+        if ($fixtureType) {
+            $config = $config[$fixtureType] ?? [];
+        }
+
+        return $config;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDataSetConfig(TestCase $test, ?string $fixtureType = null): array
+    {
+        $config = $this->getClassConfig($test)[$test->getName(false)][(string)$test->dataName()] ?? [];
+        if ($fixtureType) {
+            $config = $config[$fixtureType] ?? [];
+        }
+
+        return $config;
+    }
+
+    /**
+     * Get skipped message
+     *
+     * @param array $config
+     * @return array
+     */
+    private function prepareSkipConfig(array $config): array
+    {
+        return [
+            'skip' => $config['skip'],
+            'skipMessage' => $config['skipMessage'] ?: 'Skipped according to override configurations',
+        ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function hasSkippedTest(string $className): bool
+    {
+        $classConfig = $this->getInheritedClassConfig($className);
+
+        return $this->isSkippedByConfig($classConfig);
+    }
+
+    /**
+     * Check that class has even one test skipped
+     *
+     * @param array $config
+     * @return bool
+     */
+    private function isSkippedByConfig(array $config): bool
+    {
+        $result = false;
+        if (isset($config['skip']) && $config['skip']) {
+            $result = true;
+        } else {
+            foreach ($config as $lowerLevelConfig) {
+                if (is_array($lowerLevelConfig)) {
+                    $result = $this->isSkippedByConfig($lowerLevelConfig);
+                    if ($result === true) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        return $result;
     }
 }

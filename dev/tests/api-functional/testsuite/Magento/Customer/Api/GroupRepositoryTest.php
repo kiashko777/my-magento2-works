@@ -6,7 +6,10 @@
 
 namespace Magento\Customer\Api;
 
+use Exception;
+use Magento\Customer\Api\Data\GroupExtensionInterfaceFactory;
 use Magento\Customer\Api\Data\GroupInterface;
+use Magento\Customer\Api\Data\GroupInterfaceFactory;
 use Magento\Customer\Model\Data\Group as CustomerGroup;
 use Magento\Customer\Model\GroupRegistry;
 use Magento\Customer\Model\ResourceModel\GroupRepository;
@@ -16,8 +19,10 @@ use Magento\Framework\Api\SortOrder;
 use Magento\Framework\Api\SortOrderBuilder;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
+use SoapFault;
 
 /**
  * Customer Group Repository API test
@@ -41,28 +46,14 @@ class GroupRepositoryTest extends WebapiAbstract
     private $groupRepository;
 
     /**
-     * @var \Magento\Customer\Api\Data\GroupInterfaceFactory
+     * @var GroupInterfaceFactory
      */
     private $customerGroupFactory;
 
     /**
-     * @var \Magento\Customer\Api\Data\GroupExtensionInterfaceFactory
+     * @var GroupExtensionInterfaceFactory
      */
     private $groupExtensionInterfaceFactory;
-
-    /**
-     * Execute per test initialization.
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->groupRegistry = $objectManager->get(\Magento\Customer\Model\GroupRegistry::class);
-        $this->groupRepository = $objectManager->get(\Magento\Customer\Model\ResourceModel\GroupRepository::class);
-        $this->customerGroupFactory = $objectManager->create(\Magento\Customer\Api\Data\GroupInterfaceFactory::class);
-        $this->groupExtensionInterfaceFactory = $objectManager->create(
-            \Magento\Customer\Api\Data\GroupExtensionInterfaceFactory::class
-        );
-    }
 
     /**
      * Verify the retrieval of a customer group by Id.
@@ -77,7 +68,7 @@ class GroupRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/$groupId",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -144,7 +135,7 @@ class GroupRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
         ];
 
@@ -180,15 +171,16 @@ class GroupRepositoryTest extends WebapiAbstract
      */
     public function testCreateGroupWithExcludedWebsiteRest(
         string $code,
-        array $excludeWebsitesIds,
+        array  $excludeWebsitesIds,
         ?array $result
-    ): void {
+    ): void
+    {
         $this->_markTestAsRestOnly();
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
         ];
 
@@ -249,7 +241,7 @@ class GroupRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
         ];
 
@@ -263,7 +255,7 @@ class GroupRepositoryTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, $requestData);
             $this->fail("Expected exception");
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $errorData = json_decode($e->getMessage(), true);
 
             $this->assertEquals(
@@ -272,6 +264,31 @@ class GroupRepositoryTest extends WebapiAbstract
             );
             $this->assertEquals(400, $e->getCode(), 'Invalid HTTP code');
         }
+    }
+
+    /**
+     * Create a test group.
+     *
+     * @param CustomerGroup $group The group to create and save.
+     * @return int The group Id of the group that was created.
+     */
+    private function createGroup($group)
+    {
+        $groupId = $this->groupRepository->save($group)->getId();
+        $this->assertNotNull($groupId);
+
+        $newGroup = $this->groupRepository->getById($groupId);
+        $this->assertEquals($groupId, $newGroup->getId(), 'The group id does not match.');
+        $this->assertEquals($group->getCode(), $newGroup->getCode(), 'The group code does not match.');
+        $this->assertEquals(
+            $group->getTaxClassId(),
+            $newGroup->getTaxClassId(),
+            'The group tax class id does not match.'
+        );
+
+        $this->groupRegistry->remove($groupId);
+
+        return $groupId;
     }
 
     /**
@@ -284,7 +301,7 @@ class GroupRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
         ];
 
@@ -318,7 +335,7 @@ class GroupRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
         ];
 
@@ -332,7 +349,7 @@ class GroupRepositoryTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, $requestData);
             $this->fail("Expected exception");
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // @codingStandardsIgnoreStart
             $this->assertStringContainsString(
                 '\"%fieldName\" is required. Enter and try again.","parameters":{"fieldName":"code"}',
@@ -355,7 +372,7 @@ class GroupRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
         ];
 
@@ -369,7 +386,7 @@ class GroupRepositoryTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, $requestData);
             $this->fail("Expected exception");
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // @codingStandardsIgnoreStart
             $this->assertStringContainsString(
                 '{"message":"Invalid value of \"%value\" provided for the %fieldName field.","parameters":{"fieldName":"taxClassId","value":9999}',
@@ -389,7 +406,7 @@ class GroupRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
         ];
 
@@ -403,7 +420,7 @@ class GroupRepositoryTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, $requestData);
             $this->fail('Expected exception');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->assertStringContainsString(
                 '{"message":"No such entity with %fieldName = %fieldValue","parameters":{"fieldName":"id","fieldValue":88}',
                 $e->getMessage(),
@@ -437,7 +454,7 @@ class GroupRepositoryTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, $requestData);
             $this->fail("Expected exception");
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString(
                 'No such entity with %fieldName = %fieldValue',
                 $e->getMessage(),
@@ -461,7 +478,7 @@ class GroupRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/$groupId",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
         ];
 
@@ -498,7 +515,7 @@ class GroupRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/$groupId",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
         ];
 
@@ -538,7 +555,7 @@ class GroupRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/$nonExistentGroupId",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
         ];
 
@@ -552,9 +569,9 @@ class GroupRepositoryTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, $requestData);
             $this->fail('Expected exception');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $expectedMessage = '{"message":"No such entity with %fieldName = %fieldValue",'
-             . '"parameters":{"fieldName":"id","fieldValue":9999}';
+                . '"parameters":{"fieldName":"id","fieldValue":9999}';
             $this->assertStringContainsString(
                 $expectedMessage,
                 $e->getMessage(),
@@ -610,9 +627,10 @@ class GroupRepositoryTest extends WebapiAbstract
      */
     public function testCreateGroupWithExcludedWebsiteSoap(
         string $code,
-        array $excludeWebsitesIds,
+        array  $excludeWebsitesIds,
         ?array $result
-    ): void {
+    ): void
+    {
         $this->_markTestAsSoapOnly();
 
         $serviceInfo = [
@@ -696,7 +714,7 @@ class GroupRepositoryTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, $requestData);
             $this->fail("Expected exception");
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString(
                 $expectedMessage,
                 $e->getMessage(),
@@ -767,7 +785,7 @@ class GroupRepositoryTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, $requestData);
             $this->fail("Expected exception");
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString(
                 '"%fieldName" is required. Enter and try again.',
                 $e->getMessage(),
@@ -805,7 +823,7 @@ class GroupRepositoryTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, $requestData);
             $this->fail("Expected exception");
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString(
                 $expectedMessage,
                 $e->getMessage(),
@@ -918,7 +936,7 @@ class GroupRepositoryTest extends WebapiAbstract
 
         try {
             $this->_webApiCall($serviceInfo, $requestData);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $expectedMessage = 'No such entity with %fieldName = %fieldValue';
 
             $this->assertStringContainsString(
@@ -943,7 +961,7 @@ class GroupRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/$groupId",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -988,7 +1006,7 @@ class GroupRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/$groupId",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -1024,7 +1042,7 @@ class GroupRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/$groupId",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -1039,13 +1057,13 @@ class GroupRepositoryTest extends WebapiAbstract
 
         try {
             $this->_webApiCall($serviceInfo, $requestData);
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString(
                 $expectedMessage,
                 $e->getMessage(),
                 "SoapFault does not contain expected message."
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $errorObj = $this->processRestExceptionResult($e);
             $this->assertEquals($expectedMessage, $errorObj['message']);
             $this->assertEquals($expectedParameters, $errorObj['parameters']);
@@ -1063,7 +1081,7 @@ class GroupRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/$groupIdAssignedDefault",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -1078,13 +1096,13 @@ class GroupRepositoryTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, $requestData);
             $this->fail("Expected exception");
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString(
                 $expectedMessage,
                 $e->getMessage(),
                 "SoapFault does not contain expected message."
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->assertStringContainsString(
                 $expectedMessage,
                 $e->getMessage(),
@@ -1093,31 +1111,6 @@ class GroupRepositoryTest extends WebapiAbstract
         }
 
         $this->assertNotNull($this->groupRepository->getById($groupIdAssignedDefault));
-    }
-
-    /**
-     * Create a test group.
-     *
-     * @param CustomerGroup $group The group to create and save.
-     * @return int The group Id of the group that was created.
-     */
-    private function createGroup($group)
-    {
-        $groupId = $this->groupRepository->save($group)->getId();
-        $this->assertNotNull($groupId);
-
-        $newGroup = $this->groupRepository->getById($groupId);
-        $this->assertEquals($groupId, $newGroup->getId(), 'The group id does not match.');
-        $this->assertEquals($group->getCode(), $newGroup->getCode(), 'The group code does not match.');
-        $this->assertEquals(
-            $group->getTaxClassId(),
-            $newGroup->getTaxClassId(),
-            'The group tax class id does not match.'
-        );
-
-        $this->groupRegistry->remove($groupId);
-
-        return $groupId;
     }
 
     /**
@@ -1183,14 +1176,14 @@ class GroupRepositoryTest extends WebapiAbstract
      */
     public function testSearchGroups($filterField, $filterValue, $expectedResult)
     {
-        $filterBuilder = Bootstrap::getObjectManager()->create(\Magento\Framework\Api\FilterBuilder::class);
+        $filterBuilder = Bootstrap::getObjectManager()->create(FilterBuilder::class);
         /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
-        $searchCriteriaBuilder =  Bootstrap::getObjectManager()
-            ->create(\Magento\Framework\Api\SearchCriteriaBuilder::class);
+        $searchCriteriaBuilder = Bootstrap::getObjectManager()
+            ->create(SearchCriteriaBuilder::class);
         $filter = $filterBuilder
-                    ->setField($filterField)
-                    ->setValue($filterValue)
-                    ->create();
+            ->setField($filterField)
+            ->setValue($filterValue)
+            ->create();
         $searchCriteriaBuilder->addFilters([$filter]);
 
         $searchData = $searchCriteriaBuilder->create()->__toArray();
@@ -1198,7 +1191,7 @@ class GroupRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/search" . '?' . http_build_query($requestData),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -1245,7 +1238,7 @@ class GroupRepositoryTest extends WebapiAbstract
         $sortOrder = $sortOrderBuilder->setField(GroupInterface::CODE)->setDirection(SortOrder::SORT_ASC)->create();
 
         /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
-        $searchCriteriaBuilder =  Bootstrap::getObjectManager()->create(SearchCriteriaBuilder::class);
+        $searchCriteriaBuilder = Bootstrap::getObjectManager()->create(SearchCriteriaBuilder::class);
 
         $searchCriteriaBuilder->addFilters([$filter1, $filter2, $filter3]);
         $searchCriteriaBuilder->addFilters([$filter4]);
@@ -1256,7 +1249,7 @@ class GroupRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/search" . '?' . http_build_query($requestData),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -1284,10 +1277,10 @@ class GroupRepositoryTest extends WebapiAbstract
     public function testSearchGroupsWithGET($filterField, $filterValue, $expectedResult)
     {
         $this->_markTestAsRestOnly('SOAP is covered in ');
-        $filterBuilder = Bootstrap::getObjectManager()->create(\Magento\Framework\Api\FilterBuilder::class);
+        $filterBuilder = Bootstrap::getObjectManager()->create(FilterBuilder::class);
         /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
-        $searchCriteriaBuilder =  Bootstrap::getObjectManager()
-            ->create(\Magento\Framework\Api\SearchCriteriaBuilder::class);
+        $searchCriteriaBuilder = Bootstrap::getObjectManager()
+            ->create(SearchCriteriaBuilder::class);
         $filter = $filterBuilder
             ->setField($filterField)
             ->setValue($filterValue)
@@ -1299,7 +1292,7 @@ class GroupRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/search?' . $searchQueryString,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
         ];
         $searchResult = $this->_webApiCall($serviceInfo);
@@ -1312,5 +1305,19 @@ class GroupRepositoryTest extends WebapiAbstract
                 $this->assertEquals($expectedResult, $searchResult['items'][0]);
             }
         }
+    }
+
+    /**
+     * Execute per test initialization.
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->groupRegistry = $objectManager->get(GroupRegistry::class);
+        $this->groupRepository = $objectManager->get(GroupRepository::class);
+        $this->customerGroupFactory = $objectManager->create(GroupInterfaceFactory::class);
+        $this->groupExtensionInterfaceFactory = $objectManager->create(
+            GroupExtensionInterfaceFactory::class
+        );
     }
 }

@@ -16,8 +16,9 @@ use Magento\Catalog\Model\Product\Media\Config;
 use Magento\Catalog\Model\ResourceModel\Product as ProductResource;
 use Magento\Catalog\Model\ResourceModel\Product\Gallery;
 use Magento\Framework\App\Filesystem\DirectoryList;
-use Magento\Framework\Exception\ValidatorException;
+use Magento\Framework\DataObject;
 use Magento\Framework\EntityManager\MetadataPool;
+use Magento\Framework\Exception\ValidatorException;
 use Magento\Framework\Filesystem;
 use Magento\Framework\Filesystem\Directory\WriteInterface;
 use Magento\Framework\ObjectManagerInterface;
@@ -25,13 +26,14 @@ use Magento\Store\Api\StoreRepositoryInterface;
 use Magento\Store\Model\Store;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Provides tests for media gallery images update during product save.
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class UpdateHandlerTest extends \PHPUnit\Framework\TestCase
+class UpdateHandlerTest extends TestCase
 {
     /**
      * @var ObjectManagerInterface
@@ -103,30 +105,6 @@ class UpdateHandlerTest extends \PHPUnit\Framework\TestCase
     private $metadataPool;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->fileName = 'image.txt';
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->updateHandler = $this->objectManager->create(UpdateHandler::class);
-        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
-        $this->storeRepository = $this->objectManager->create(StoreRepositoryInterface::class);
-        $this->galleryResource = $this->objectManager->create(Gallery::class);
-        $this->productResource = $this->objectManager->create(ProductResource::class);
-        $this->mediaAttributeId = (int)$this->productResource->getAttribute('media_gallery')->getAttributeId();
-        $this->config = $this->objectManager->get(Config::class);
-        $this->storeManager = $this->objectManager->create(StoreManagerInterface::class);
-        $this->currentStoreId = $this->storeManager->getStore()->getId();
-        $this->mediaDirectory = $this->objectManager->get(Filesystem::class)
-            ->getDirectoryWrite(DirectoryList::MEDIA);
-        $this->mediaDirectory->writeFile($this->fileName, 'Test');
-        $this->updateHandler = $this->objectManager->create(UpdateHandler::class);
-        $this->eavUpdateHandler = $this->objectManager->create(\Magento\Eav\Model\ResourceModel\UpdateHandler::class);
-        $this->metadataPool = $this->objectManager->get(MetadataPool::class);
-    }
-
-    /**
      * Tests updating image with illegal filename during product save.
      *
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
@@ -156,6 +134,19 @@ class UpdateHandlerTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Returns current product.
+     *
+     * @param int|null $storeId
+     * @param string|null $sku
+     * @return ProductInterface|Product
+     */
+    private function getProduct(?int $storeId = null, ?string $sku = null): ProductInterface
+    {
+        $sku = $sku ?: 'simple';
+        return $this->productRepository->get($sku, false, $storeId, true);
+    }
+
+    /**
      * Tests updating image label, position and disabling during product save.
      *
      * @magentoDataFixture Magento/Catalog/_files/product_with_image.php
@@ -174,6 +165,19 @@ class UpdateHandlerTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('New image', $updatedImage['label_default']);
         $this->assertEquals('1', $updatedImage['disabled']);
         $this->assertEquals('1', $updatedImage['disabled_default']);
+    }
+
+    /**
+     * @param ProductInterface|Product $product
+     * @param array $imageData
+     * @return void
+     */
+    private function updateProductGalleryImages(ProductInterface $product, array $imageData): void
+    {
+        $images = $product->getData('media_gallery')['images'];
+        $image = reset($images) ?: [];
+        $product->setData('store_id', Store::DEFAULT_STORE_ID);
+        $product->setData('media_gallery', ['images' => ['image' => array_merge($image, $imageData)]]);
     }
 
     /**
@@ -220,7 +224,7 @@ class UpdateHandlerTest extends \PHPUnit\Framework\TestCase
         $entityData[$entityIdField] = $product->getData($entityIdField);
         $entityData = array_merge($entityData, $roles);
         $this->eavUpdateHandler->execute(
-            \Magento\Catalog\Api\Data\ProductInterface::class,
+            ProductInterface::class,
             $entityData
         );
         $product->addData($roles);
@@ -253,7 +257,7 @@ class UpdateHandlerTest extends \PHPUnit\Framework\TestCase
             'unassign_all_roles' => [
                 'roles' => [
                     'image' => 'no_selection',
-                    'small_image' =>'no_selection',
+                    'small_image' => 'no_selection',
                     'thumbnail' => 'no_selection',
                     'swatch_image' => 'no_selection',
                 ],
@@ -367,8 +371,8 @@ class UpdateHandlerTest extends \PHPUnit\Framework\TestCase
         foreach ($productImages as $image) {
             $imageToAssert = [
                 'label' => $image['label'],
-                'label_default' =>$image['label_default'],
-                'disabled' =>$image['disabled'],
+                'label_default' => $image['label_default'],
+                'disabled' => $image['disabled'],
                 'disabled_default' => $image['disabled_default'],
                 'position' => $image['position'],
                 'position_default' => $image['position_default'],
@@ -395,45 +399,83 @@ class UpdateHandlerTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->storeManager->setCurrentStore($this->currentStoreId);
-        parent::tearDown();
-        $this->mediaDirectory->getDriver()->deleteFile($this->mediaDirectory->getAbsolutePath($this->fileName));
-        $this->galleryResource->getConnection()
-            ->delete($this->galleryResource->getTable(Gallery::GALLERY_TABLE));
-        $this->galleryResource->getConnection()
-            ->delete($this->galleryResource->getTable(Gallery::GALLERY_VALUE_TABLE));
-        $this->galleryResource->getConnection()
-            ->delete($this->galleryResource->getTable(Gallery::GALLERY_VALUE_TO_ENTITY_TABLE));
-    }
-
-    /**
-     * Returns current product.
+     * Duplicate media gallery entries for a product
      *
-     * @param int|null $storeId
-     * @param string|null $sku
-     * @return ProductInterface|Product
-     */
-    private function getProduct(?int $storeId = null, ?string $sku = null): ProductInterface
-    {
-        $sku = $sku ?: 'simple';
-        return $this->productRepository->get($sku, false, $storeId, true);
-    }
-
-    /**
-     * @param ProductInterface|Product $product
-     * @param array $imageData
+     * @param string $imagePath
+     * @param string $productSku
      * @return void
      */
-    private function updateProductGalleryImages(ProductInterface $product, array $imageData): void
+    private function duplicateMediaGalleryForProduct(string $imagePath, string $productSku): void
     {
-        $images = $product->getData('media_gallery')['images'];
-        $image = reset($images) ?: [];
-        $product->setData('store_id', Store::DEFAULT_STORE_ID);
-        $product->setData('media_gallery', ['images' => ['image' => array_merge($image, $imageData)]]);
+        $product = $this->getProduct(null, $productSku);
+        $connect = $this->galleryResource->getConnection();
+        $select = $connect->select()->from($this->galleryResource->getMainTable())->where('value = ?', $imagePath);
+        $result = $connect->fetchRow($select);
+        $value_id = $result['value_id'];
+        unset($result['value_id']);
+        $rows = [
+            'attribute_id' => $result['attribute_id'],
+            'value' => $result['value'],
+            ProductAttributeMediaGalleryEntryInterface::MEDIA_TYPE => $result['media_type'],
+            ProductAttributeMediaGalleryEntryInterface::DISABLED => $result['disabled'],
+        ];
+        $connect->insert($this->galleryResource->getMainTable(), $rows);
+        $select = $connect->select()
+            ->from($this->galleryResource->getTable(Gallery::GALLERY_VALUE_TABLE))
+            ->where('value_id = ?', $value_id);
+        $result = $connect->fetchRow($select);
+        $newValueId = (int)$value_id + 1;
+        $metadata = $this->metadataPool->getMetadata(ProductInterface::class);
+        $linkField = $metadata->getLinkField();
+        $rows = [
+            'value_id' => $newValueId,
+            'store_id' => $result['store_id'],
+            ProductAttributeMediaGalleryEntryInterface::LABEL => $result['label'],
+            ProductAttributeMediaGalleryEntryInterface::POSITION => $result['position'],
+            ProductAttributeMediaGalleryEntryInterface::DISABLED => $result['disabled'],
+            $linkField => $product->getData($linkField),
+        ];
+        $connect->insert($this->galleryResource->getTable(Gallery::GALLERY_VALUE_TABLE), $rows);
+        $rows = ['value_id' => $newValueId, $linkField => $product->getData($linkField)];
+        $connect->insert($this->galleryResource->getTable(Gallery::GALLERY_VALUE_TO_ENTITY_TABLE), $rows);
+    }
+
+    /**
+     * Prepare the product to remove image
+     *
+     * @param ProductInterface $product
+     * @return ProductInterface
+     */
+    private function prepareRemoveImage(ProductInterface $product): ProductInterface
+    {
+        $item = $product->getMediaGalleryImages()->getFirstItem();
+        $item->setRemoved('1');
+        $galleryData = [
+            'images' => [
+                (int)$item->getValueId() => $item->getData(),
+            ]
+        ];
+        $product->setData(ProductInterface::MEDIA_GALLERY, $galleryData);
+        $product->setStoreId(0);
+
+        return $product;
+    }
+
+    /**
+     * Check product image link and product image exist
+     *
+     * @param ProductInterface $product
+     * @param string $imagePath
+     * @return void
+     */
+    private function checkProductImageExist(ProductInterface $product, string $imagePath): void
+    {
+        $productImageItem = $product->getMediaGalleryImages()->getFirstItem();
+        $this->assertEquals($imagePath, $productImageItem->getFile());
+        $productImageFile = $productImageItem->getPath();
+        $this->assertNotEmpty($productImageFile);
+        $this->assertTrue($this->mediaDirectory->getDriver()->isExists($productImageFile));
+        $this->fileName = $productImageFile;
     }
 
     /**
@@ -444,10 +486,10 @@ class UpdateHandlerTest extends \PHPUnit\Framework\TestCase
      */
     public function testDeleteWithMultiWebsites(): void
     {
-        $defaultWebsiteId = (int) $this->storeManager->getWebsite('base')->getId();
-        $secondWebsiteId = (int) $this->storeManager->getWebsite('test')->getId();
-        $defaultStoreId = (int) $this->storeManager->getStore('default')->getId();
-        $secondStoreId = (int) $this->storeManager->getStore('fixture_second_store')->getId();
+        $defaultWebsiteId = (int)$this->storeManager->getWebsite('base')->getId();
+        $secondWebsiteId = (int)$this->storeManager->getWebsite('test')->getId();
+        $defaultStoreId = (int)$this->storeManager->getStore('default')->getId();
+        $secondStoreId = (int)$this->storeManager->getStore('fixture_second_store')->getId();
         $imageRoles = ['image', 'small_image', 'thumbnail'];
         $globalScopeId = Store::DEFAULT_STORE_ID;
         $this->storeManager->setCurrentStore(Store::DEFAULT_STORE_ID);
@@ -507,6 +549,23 @@ class UpdateHandlerTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('no_selection', $imageRolesPerStore[$globalScopeId]['thumbnail']);
         $this->assertArrayNotHasKey($defaultStoreId, $imageRolesPerStore);
         $this->assertArrayNotHasKey($secondStoreId, $imageRolesPerStore);
+    }
+
+    /**
+     * @param Product $product
+     * @param array $roles
+     * @return array
+     */
+    private function getProductStoreImageRoles(Product $product, array $roles = []): array
+    {
+        $imageRolesPerStore = [];
+        $stores = array_keys($this->storeManager->getStores(true));
+        foreach ($this->galleryResource->getProductImages($product, $stores) as $role) {
+            if (empty($roles) || in_array($role['attribute_code'], $roles)) {
+                $imageRolesPerStore[$role['store_id']][$role['attribute_code']] = $role['filepath'];
+            }
+        }
+        return $imageRolesPerStore;
     }
 
     /**
@@ -610,11 +669,12 @@ class UpdateHandlerTest extends \PHPUnit\Framework\TestCase
      */
     public function testAddImages(
         string $addFromStore,
-        array $newImages,
+        array  $newImages,
         string $viewFromStore,
-        array $expectedImages,
-        array $select = ['file', 'label', 'position']
-    ): void {
+        array  $expectedImages,
+        array  $select = ['file', 'label', 'position']
+    ): void
+    {
         $storeId = (int)$this->storeRepository->get($addFromStore)->getId();
         $product = $this->getProduct($storeId);
         $images = $product->getData('media_gallery')['images'];
@@ -624,7 +684,7 @@ class UpdateHandlerTest extends \PHPUnit\Framework\TestCase
         $storeId = (int)$this->storeRepository->get($viewFromStore)->getId();
         $product = $this->getProduct($storeId);
         $actualImages = array_map(
-            function (\Magento\Framework\DataObject $item) use ($select) {
+            function (DataObject $item) use ($select) {
                 return $item->toArray($select);
             },
             $product->getMediaGalleryImages()->getItems()
@@ -692,99 +752,42 @@ class UpdateHandlerTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Check product image link and product image exist
-     *
-     * @param ProductInterface $product
-     * @param string $imagePath
-     * @return void
+     * @inheritdoc
      */
-    private function checkProductImageExist(ProductInterface $product, string $imagePath): void
+    protected function setUp(): void
     {
-        $productImageItem = $product->getMediaGalleryImages()->getFirstItem();
-        $this->assertEquals($imagePath, $productImageItem->getFile());
-        $productImageFile = $productImageItem->getPath();
-        $this->assertNotEmpty($productImageFile);
-        $this->assertTrue($this->mediaDirectory->getDriver()->isExists($productImageFile));
-        $this->fileName = $productImageFile;
+        $this->fileName = 'image.txt';
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->updateHandler = $this->objectManager->create(UpdateHandler::class);
+        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+        $this->storeRepository = $this->objectManager->create(StoreRepositoryInterface::class);
+        $this->galleryResource = $this->objectManager->create(Gallery::class);
+        $this->productResource = $this->objectManager->create(ProductResource::class);
+        $this->mediaAttributeId = (int)$this->productResource->getAttribute('media_gallery')->getAttributeId();
+        $this->config = $this->objectManager->get(Config::class);
+        $this->storeManager = $this->objectManager->create(StoreManagerInterface::class);
+        $this->currentStoreId = $this->storeManager->getStore()->getId();
+        $this->mediaDirectory = $this->objectManager->get(Filesystem::class)
+            ->getDirectoryWrite(DirectoryList::MEDIA);
+        $this->mediaDirectory->writeFile($this->fileName, 'Test');
+        $this->updateHandler = $this->objectManager->create(UpdateHandler::class);
+        $this->eavUpdateHandler = $this->objectManager->create(\Magento\Eav\Model\ResourceModel\UpdateHandler::class);
+        $this->metadataPool = $this->objectManager->get(MetadataPool::class);
     }
 
     /**
-     * Prepare the product to remove image
-     *
-     * @param ProductInterface $product
-     * @return ProductInterface
+     * @inheritdoc
      */
-    private function prepareRemoveImage(ProductInterface $product): ProductInterface
+    protected function tearDown(): void
     {
-        $item = $product->getMediaGalleryImages()->getFirstItem();
-        $item->setRemoved('1');
-        $galleryData = [
-            'images' => [
-                (int)$item->getValueId() => $item->getData(),
-            ]
-        ];
-        $product->setData(ProductInterface::MEDIA_GALLERY, $galleryData);
-        $product->setStoreId(0);
-
-        return $product;
-    }
-
-    /**
-     * Duplicate media gallery entries for a product
-     *
-     * @param string $imagePath
-     * @param string $productSku
-     * @return void
-     */
-    private function duplicateMediaGalleryForProduct(string $imagePath, string $productSku): void
-    {
-        $product = $this->getProduct(null, $productSku);
-        $connect = $this->galleryResource->getConnection();
-        $select = $connect->select()->from($this->galleryResource->getMainTable())->where('value = ?', $imagePath);
-        $result = $connect->fetchRow($select);
-        $value_id = $result['value_id'];
-        unset($result['value_id']);
-        $rows = [
-            'attribute_id' => $result['attribute_id'],
-            'value' => $result['value'],
-            ProductAttributeMediaGalleryEntryInterface::MEDIA_TYPE => $result['media_type'],
-            ProductAttributeMediaGalleryEntryInterface::DISABLED => $result['disabled'],
-        ];
-        $connect->insert($this->galleryResource->getMainTable(), $rows);
-        $select = $connect->select()
-            ->from($this->galleryResource->getTable(Gallery::GALLERY_VALUE_TABLE))
-            ->where('value_id = ?', $value_id);
-        $result = $connect->fetchRow($select);
-        $newValueId = (int)$value_id + 1;
-        $metadata = $this->metadataPool->getMetadata(ProductInterface::class);
-        $linkField = $metadata->getLinkField();
-        $rows = [
-            'value_id' => $newValueId,
-            'store_id' => $result['store_id'],
-            ProductAttributeMediaGalleryEntryInterface::LABEL => $result['label'],
-            ProductAttributeMediaGalleryEntryInterface::POSITION => $result['position'],
-            ProductAttributeMediaGalleryEntryInterface::DISABLED => $result['disabled'],
-            $linkField => $product->getData($linkField),
-        ];
-        $connect->insert($this->galleryResource->getTable(Gallery::GALLERY_VALUE_TABLE), $rows);
-        $rows = ['value_id' => $newValueId, $linkField => $product->getData($linkField)];
-        $connect->insert($this->galleryResource->getTable(Gallery::GALLERY_VALUE_TO_ENTITY_TABLE), $rows);
-    }
-
-    /**
-     * @param Product $product
-     * @param array $roles
-     * @return array
-     */
-    private function getProductStoreImageRoles(Product $product, array $roles = []): array
-    {
-        $imageRolesPerStore = [];
-        $stores = array_keys($this->storeManager->getStores(true));
-        foreach ($this->galleryResource->getProductImages($product, $stores) as $role) {
-            if (empty($roles) || in_array($role['attribute_code'], $roles)) {
-                $imageRolesPerStore[$role['store_id']][$role['attribute_code']] = $role['filepath'];
-            }
-        }
-        return $imageRolesPerStore;
+        $this->storeManager->setCurrentStore($this->currentStoreId);
+        parent::tearDown();
+        $this->mediaDirectory->getDriver()->deleteFile($this->mediaDirectory->getAbsolutePath($this->fileName));
+        $this->galleryResource->getConnection()
+            ->delete($this->galleryResource->getTable(Gallery::GALLERY_TABLE));
+        $this->galleryResource->getConnection()
+            ->delete($this->galleryResource->getTable(Gallery::GALLERY_VALUE_TABLE));
+        $this->galleryResource->getConnection()
+            ->delete($this->galleryResource->getTable(Gallery::GALLERY_VALUE_TO_ENTITY_TABLE));
     }
 }

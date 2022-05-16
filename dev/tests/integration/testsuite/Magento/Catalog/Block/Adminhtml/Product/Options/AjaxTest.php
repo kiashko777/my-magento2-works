@@ -3,27 +3,25 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Block\Adminhtml\Product\Options;
+
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\Registry;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class AjaxTest extends \PHPUnit\Framework\TestCase
+class AjaxTest extends TestCase
 {
     /**
-     * @var \Magento\Catalog\Block\Adminhtml\Product\Options\Ajax
+     * @var Ajax
      */
     protected $_block = null;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->_block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
-        )->createBlock(
-            \Magento\Catalog\Block\Adminhtml\Product\Options\Ajax::class
-        );
-    }
 
     public function testToHtmlWithoutProducts()
     {
@@ -35,13 +33,13 @@ class AjaxTest extends \PHPUnit\Framework\TestCase
      */
     public function testToHtml()
     {
-        /** @var \Magento\TestFramework\ObjectManager $objectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        /** @var ObjectManager $objectManager */
+        $objectManager = Bootstrap::getObjectManager();
 
-        /** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-        $productRepository = $objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = $objectManager->create(ProductRepositoryInterface::class);
 
-        $objectManager->get(\Magento\Framework\Registry::class)
+        $objectManager->get(Registry::class)
             ->register(
                 'import_option_products',
                 [$productRepository->get('simple')->getId()]
@@ -50,5 +48,15 @@ class AjaxTest extends \PHPUnit\Framework\TestCase
         $result = json_decode($this->_block->toHtml(), true);
 
         $this->assertEquals('test_option_code_1', $result[0]['title']);
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->_block = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
+        )->createBlock(
+            Ajax::class
+        );
     }
 }

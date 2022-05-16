@@ -65,35 +65,6 @@ class UpdateCustomOptionsTest extends TestCase
     private $currentStoreId;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->optionRepository = $this->objectManager->get(ProductCustomOptionRepositoryInterface::class);
-        $this->customOptionFactory = $this->objectManager->get(ProductCustomOptionInterfaceFactory::class);
-        $this->customOptionValueFactory = $this->objectManager
-            ->get(ProductCustomOptionValuesInterfaceFactory::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-        $this->currentStoreId = $this->storeManager->getStore()->getId();
-        $adminStoreId = $this->storeManager->getStore('admin')->getId();
-        $this->storeManager->setCurrentStore($adminStoreId);
-
-        parent::setUp();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->storeManager->setCurrentStore($this->currentStoreId);
-
-        parent::tearDown();
-    }
-
-    /**
      * Test update product custom options with type "area".
      *
      * @magentoDataFixture Magento/Catalog/_files/product_without_options.php
@@ -107,6 +78,85 @@ class UpdateCustomOptionsTest extends TestCase
     public function testUpdateAreaCustomOption(array $optionData, array $updateData): void
     {
         $this->updateAndAssertNotSelectCustomOptions($optionData, $updateData);
+    }
+
+    /**
+     * Update product custom options which are not from "select" group and assert updated data.
+     *
+     * @param array $optionData
+     * @param array $updateData
+     * @return void
+     */
+    private function updateAndAssertNotSelectCustomOptions(array $optionData, array $updateData): void
+    {
+        $productSku = 'simple';
+        $createdOption = $this->createCustomOption($optionData, $productSku);
+        $updatedOption = $this->updateOptionWithValues($updateData, $productSku);
+
+        foreach ($updateData as $methodKey => $newValue) {
+            $this->assertEquals($newValue, $updatedOption->getDataUsingMethod($methodKey));
+            $this->assertNotEquals(
+                $createdOption->getDataUsingMethod($methodKey),
+                $updatedOption->getDataUsingMethod($methodKey)
+            );
+        }
+
+        $this->assertEquals($createdOption->getOptionId(), $updatedOption->getOptionId());
+    }
+
+    /**
+     * Create custom option and save product with created option.
+     *
+     * @param array $optionData
+     * @param string $productSku
+     * @return ProductCustomOptionInterface|Option
+     */
+    private function createCustomOption(array $optionData, string $productSku): ProductCustomOptionInterface
+    {
+        $product = $this->productRepository->get($productSku);
+        $createdOption = $this->customOptionFactory->create(['data' => $optionData]);
+        $createdOption->setProductSku($product->getSku());
+        $product->setOptions([$createdOption]);
+        $this->productRepository->save($product);
+        $productCustomOptions = $this->optionRepository->getProductOptions($product);
+        $option = reset($productCustomOptions);
+
+        return $option;
+    }
+
+    /**
+     * Update product option with values.
+     *
+     * @param array $updateData
+     * @param string $productSku
+     * @return ProductCustomOptionInterface|Option
+     */
+    private function updateOptionWithValues(array $updateData, string $productSku): ProductCustomOptionInterface
+    {
+        $product = $this->productRepository->get($productSku);
+        $currentOption = $this->getProductOptionByProductSku($product->getSku());
+        $currentOption->setProductSku($product->getSku());
+        foreach ($updateData as $methodKey => $newValue) {
+            $currentOption->setDataUsingMethod($methodKey, $newValue);
+        }
+        $product->setOptions([$currentOption]);
+        $this->productRepository->save($product);
+
+        return $this->getProductOptionByProductSku($product->getSku());
+    }
+
+    /**
+     * Get product option by product sku.
+     *
+     * @param string $productSku
+     * @return ProductCustomOptionInterface|Option
+     */
+    private function getProductOptionByProductSku(string $productSku): ProductCustomOptionInterface
+    {
+        $product = $this->productRepository->get($productSku);
+        $currentOptions = $this->optionRepository->getProductOptions($product);
+
+        return reset($currentOptions);
     }
 
     /**
@@ -191,118 +241,14 @@ class UpdateCustomOptionsTest extends TestCase
         array $optionValueData,
         array $updateOptionData,
         array $updateOptionValueData
-    ): void {
-        $this->updateAndAssertSelectCustomOptions(
-            $optionData,
-            $optionValueData,
-            $updateOptionData,
-            $updateOptionValueData
-        );
-    }
-
-    /**
-     * Test update product custom options with type "Radio Buttons".
-     *
-     * @magentoDataFixture Magento/Catalog/_files/product_without_options.php
-     *
-     * @dataProvider \Magento\TestFramework\Catalog\Model\Product\Option\DataProvider\Type\RadioButtons::getDataForUpdateOptions
-     *
-     * @param array $optionData
-     * @param array $optionValueData
-     * @param array $updateOptionData
-     * @param array $updateOptionValueData
-     * @return void
-     */
-    public function testUpdateRadioButtonsCustomOption(
-        array $optionData,
-        array $optionValueData,
-        array $updateOptionData,
-        array $updateOptionValueData
-    ): void {
-        $this->updateAndAssertSelectCustomOptions(
-            $optionData,
-            $optionValueData,
-            $updateOptionData,
-            $updateOptionValueData
-        );
-    }
-
-    /**
-     * Test update product custom options with type "Checkbox".
-     *
-     * @magentoDataFixture Magento/Catalog/_files/product_without_options.php
-     *
-     * @dataProvider \Magento\TestFramework\Catalog\Model\Product\Option\DataProvider\Type\Checkbox::getDataForUpdateOptions
-     *
-     * @param array $optionData
-     * @param array $optionValueData
-     * @param array $updateOptionData
-     * @param array $updateOptionValueData
-     * @return void
-     */
-    public function testUpdateCheckboxCustomOption(
-        array $optionData,
-        array $optionValueData,
-        array $updateOptionData,
-        array $updateOptionValueData
-    ): void {
-        $this->updateAndAssertSelectCustomOptions(
-            $optionData,
-            $optionValueData,
-            $updateOptionData,
-            $updateOptionValueData
-        );
-    }
-
-    /**
-     * Test update product custom options with type "Multiple Select".
-     *
-     * @magentoDataFixture Magento/Catalog/_files/product_without_options.php
-     *
-     * @dataProvider \Magento\TestFramework\Catalog\Model\Product\Option\DataProvider\Type\MultipleSelect::getDataForUpdateOptions
-     *
-     * @param array $optionData
-     * @param array $optionValueData
-     * @param array $updateOptionData
-     * @param array $updateOptionValueData
-     * @return void
-     */
-    public function testUpdateMultipleSelectCustomOption(
-        array $optionData,
-        array $optionValueData,
-        array $updateOptionData,
-        array $updateOptionValueData
-    ): void {
-        $this->updateAndAssertSelectCustomOptions(
-            $optionData,
-            $optionValueData,
-            $updateOptionData,
-            $updateOptionValueData
-        );
-    }
-
-    /**
-     * Update product custom options which are not from "select" group and assert updated data.
-     *
-     * @param array $optionData
-     * @param array $updateData
-     * @return void
-     */
-    private function updateAndAssertNotSelectCustomOptions(array $optionData, array $updateData): void
+    ): void
     {
-        $productSku = 'simple';
-        $createdOption = $this->createCustomOption($optionData, $productSku);
-        $updatedOption = $this->updateOptionWithValues($updateData, $productSku);
-
-        foreach ($updateData as $methodKey => $newValue) {
-            $this->assertEquals($newValue, $updatedOption->getDataUsingMethod($methodKey));
-            $this->assertNotEquals(
-                $createdOption->getDataUsingMethod($methodKey),
-                $updatedOption->getDataUsingMethod($methodKey)
-            );
-        }
-
-        $this->assertEquals($createdOption->getOptionId(), $updatedOption->getOptionId());
+        $this->updateAndAssertSelectCustomOptions(
+            $optionData,
+            $optionValueData,
+            $updateOptionData,
+            $updateOptionValueData
+        );
     }
 
     /**
@@ -319,7 +265,8 @@ class UpdateCustomOptionsTest extends TestCase
         array $optionValueData,
         array $updateOptionData,
         array $updateOptionValueData
-    ): void {
+    ): void
+    {
         $productSku = 'simple';
         $createdOption = $this->createCustomOptionWithValue($optionData, $optionValueData, $productSku);
         $createdOptionValue = $this->getOptionValue($createdOption);
@@ -347,26 +294,6 @@ class UpdateCustomOptionsTest extends TestCase
     }
 
     /**
-     * Create custom option and save product with created option.
-     *
-     * @param array $optionData
-     * @param string $productSku
-     * @return ProductCustomOptionInterface|Option
-     */
-    private function createCustomOption(array $optionData, string $productSku): ProductCustomOptionInterface
-    {
-        $product = $this->productRepository->get($productSku);
-        $createdOption = $this->customOptionFactory->create(['data' => $optionData]);
-        $createdOption->setProductSku($product->getSku());
-        $product->setOptions([$createdOption]);
-        $this->productRepository->save($product);
-        $productCustomOptions = $this->optionRepository->getProductOptions($product);
-        $option = reset($productCustomOptions);
-
-        return $option;
-    }
-
-    /**
      * Create custom option from select group and save product with created option.
      *
      * @param array $optionData
@@ -375,10 +302,11 @@ class UpdateCustomOptionsTest extends TestCase
      * @return ProductCustomOptionInterface|Option
      */
     private function createCustomOptionWithValue(
-        array $optionData,
-        array $optionValueData,
+        array  $optionData,
+        array  $optionValueData,
         string $productSku
-    ): ProductCustomOptionInterface {
+    ): ProductCustomOptionInterface
+    {
         $optionValue = $this->customOptionValueFactory->create(['data' => $optionValueData]);
         $optionData['values'] = [$optionValue];
 
@@ -386,24 +314,16 @@ class UpdateCustomOptionsTest extends TestCase
     }
 
     /**
-     * Update product option with values.
+     * Return custom option value.
      *
-     * @param array $updateData
-     * @param string $productSku
-     * @return ProductCustomOptionInterface|Option
+     * @param ProductCustomOptionInterface $customOption
+     * @return ProductCustomOptionValuesInterface|Value
      */
-    private function updateOptionWithValues(array $updateData, string $productSku): ProductCustomOptionInterface
+    private function getOptionValue(ProductCustomOptionInterface $customOption): ProductCustomOptionValuesInterface
     {
-        $product = $this->productRepository->get($productSku);
-        $currentOption = $this->getProductOptionByProductSku($product->getSku());
-        $currentOption->setProductSku($product->getSku());
-        foreach ($updateData as $methodKey => $newValue) {
-            $currentOption->setDataUsingMethod($methodKey, $newValue);
-        }
-        $product->setOptions([$currentOption]);
-        $this->productRepository->save($product);
+        $optionValues = $customOption->getValues();
 
-        return $this->getProductOptionByProductSku($product->getSku());
+        return reset($optionValues);
     }
 
     /**
@@ -415,10 +335,11 @@ class UpdateCustomOptionsTest extends TestCase
      * @return ProductCustomOptionInterface|Option
      */
     private function updateOptionAndValueWithValues(
-        array $optionUpdateData,
-        array $optionValueUpdateData,
+        array  $optionUpdateData,
+        array  $optionValueUpdateData,
         string $productSku
-    ): ProductCustomOptionInterface {
+    ): ProductCustomOptionInterface
+    {
         $product = $this->productRepository->get($productSku);
         $currentOption = $this->getProductOptionByProductSku($product->getSku());
         $currentOption->setProductSku($product->getSku());
@@ -437,29 +358,115 @@ class UpdateCustomOptionsTest extends TestCase
     }
 
     /**
-     * Get product option by product sku.
+     * Test update product custom options with type "Radio Buttons".
      *
-     * @param string $productSku
-     * @return ProductCustomOptionInterface|Option
+     * @magentoDataFixture Magento/Catalog/_files/product_without_options.php
+     *
+     * @dataProvider \Magento\TestFramework\Catalog\Model\Product\Option\DataProvider\Type\RadioButtons::getDataForUpdateOptions
+     *
+     * @param array $optionData
+     * @param array $optionValueData
+     * @param array $updateOptionData
+     * @param array $updateOptionValueData
+     * @return void
      */
-    private function getProductOptionByProductSku(string $productSku): ProductCustomOptionInterface
+    public function testUpdateRadioButtonsCustomOption(
+        array $optionData,
+        array $optionValueData,
+        array $updateOptionData,
+        array $updateOptionValueData
+    ): void
     {
-        $product = $this->productRepository->get($productSku);
-        $currentOptions = $this->optionRepository->getProductOptions($product);
-
-        return reset($currentOptions);
+        $this->updateAndAssertSelectCustomOptions(
+            $optionData,
+            $optionValueData,
+            $updateOptionData,
+            $updateOptionValueData
+        );
     }
 
     /**
-     * Return custom option value.
+     * Test update product custom options with type "Checkbox".
      *
-     * @param ProductCustomOptionInterface $customOption
-     * @return ProductCustomOptionValuesInterface|Value
+     * @magentoDataFixture Magento/Catalog/_files/product_without_options.php
+     *
+     * @dataProvider \Magento\TestFramework\Catalog\Model\Product\Option\DataProvider\Type\Checkbox::getDataForUpdateOptions
+     *
+     * @param array $optionData
+     * @param array $optionValueData
+     * @param array $updateOptionData
+     * @param array $updateOptionValueData
+     * @return void
      */
-    private function getOptionValue(ProductCustomOptionInterface $customOption): ProductCustomOptionValuesInterface
+    public function testUpdateCheckboxCustomOption(
+        array $optionData,
+        array $optionValueData,
+        array $updateOptionData,
+        array $updateOptionValueData
+    ): void
     {
-        $optionValues = $customOption->getValues();
+        $this->updateAndAssertSelectCustomOptions(
+            $optionData,
+            $optionValueData,
+            $updateOptionData,
+            $updateOptionValueData
+        );
+    }
 
-        return reset($optionValues);
+    /**
+     * Test update product custom options with type "Multiple Select".
+     *
+     * @magentoDataFixture Magento/Catalog/_files/product_without_options.php
+     *
+     * @dataProvider \Magento\TestFramework\Catalog\Model\Product\Option\DataProvider\Type\MultipleSelect::getDataForUpdateOptions
+     *
+     * @param array $optionData
+     * @param array $optionValueData
+     * @param array $updateOptionData
+     * @param array $updateOptionValueData
+     * @return void
+     */
+    public function testUpdateMultipleSelectCustomOption(
+        array $optionData,
+        array $optionValueData,
+        array $updateOptionData,
+        array $updateOptionValueData
+    ): void
+    {
+        $this->updateAndAssertSelectCustomOptions(
+            $optionData,
+            $optionValueData,
+            $updateOptionData,
+            $updateOptionValueData
+        );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->optionRepository = $this->objectManager->get(ProductCustomOptionRepositoryInterface::class);
+        $this->customOptionFactory = $this->objectManager->get(ProductCustomOptionInterfaceFactory::class);
+        $this->customOptionValueFactory = $this->objectManager
+            ->get(ProductCustomOptionValuesInterfaceFactory::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
+        $this->currentStoreId = $this->storeManager->getStore()->getId();
+        $adminStoreId = $this->storeManager->getStore('admin')->getId();
+        $this->storeManager->setCurrentStore($adminStoreId);
+
+        parent::setUp();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->storeManager->setCurrentStore($this->currentStoreId);
+
+        parent::tearDown();
     }
 }

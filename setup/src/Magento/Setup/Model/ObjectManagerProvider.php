@@ -6,11 +6,13 @@
 
 namespace Magento\Setup\Model;
 
-use Symfony\Component\Console\Application;
+use Laminas\ServiceManager\ServiceLocatorInterface;
+use Magento\Framework\App\ObjectManagerFactory;
 use Magento\Framework\Console\CommandListInterface;
 use Magento\Framework\ObjectManagerInterface;
-use Laminas\ServiceManager\ServiceLocatorInterface;
+use Magento\Setup\Exception;
 use Magento\Setup\Mvc\Bootstrap\InitParamListener;
+use Symfony\Component\Console\Application;
 
 /**
  * Object manager provider
@@ -42,8 +44,9 @@ class ObjectManagerProvider
      */
     public function __construct(
         ServiceLocatorInterface $serviceLocator,
-        Bootstrap $bootstrap
-    ) {
+        Bootstrap               $bootstrap
+    )
+    {
         $this->serviceLocator = $serviceLocator;
         $this->bootstrap = $bootstrap;
     }
@@ -52,7 +55,7 @@ class ObjectManagerProvider
      * Retrieve object manager.
      *
      * @return ObjectManagerInterface
-     * @throws \Magento\Setup\Exception
+     * @throws Exception
      */
     public function get()
     {
@@ -65,6 +68,20 @@ class ObjectManagerProvider
             }
         }
         return $this->objectManager;
+    }
+
+    /**
+     * Returns ObjectManagerFactory
+     *
+     * @param array $initParams
+     * @return ObjectManagerFactory
+     */
+    public function getObjectManagerFactory($initParams = [])
+    {
+        return $this->bootstrap->createObjectManagerFactory(
+            BP,
+            $initParams
+        );
     }
 
     /**
@@ -101,19 +118,5 @@ class ObjectManagerProvider
     public function setObjectManager(ObjectManagerInterface $objectManager)
     {
         $this->objectManager = $objectManager;
-    }
-
-    /**
-     * Returns ObjectManagerFactory
-     *
-     * @param array $initParams
-     * @return \Magento\Framework\App\ObjectManagerFactory
-     */
-    public function getObjectManagerFactory($initParams = [])
-    {
-        return $this->bootstrap->createObjectManagerFactory(
-            BP,
-            $initParams
-        );
     }
 }

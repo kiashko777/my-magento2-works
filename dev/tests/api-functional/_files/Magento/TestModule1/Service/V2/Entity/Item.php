@@ -3,9 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestModule1\Service\V2\Entity;
 
-class Item extends \Magento\Framework\Api\AbstractExtensibleObject
+use Magento\Framework\Api\AbstractExtensibleObject;
+
+class Item extends AbstractExtensibleObject
 {
     /**
      * @return int

@@ -45,21 +45,6 @@ class ProductInCategoriesViewTest extends TestCase
     private $layout;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->categoryRepository = $this->objectManager->create(CategoryRepositoryInterface::class);
-        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->block = $this->layout->createBlock(ListProduct::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/category_with_two_products.php
      * @dataProvider productDataProvider
      * @param array $data
@@ -72,6 +57,50 @@ class ProductInCategoriesViewTest extends TestCase
 
         $this->assertEquals(1, $collection->getSize());
         $this->assertEquals('simple333', $collection->getFirstItem()->getSku());
+    }
+
+    /**
+     * Update product
+     *
+     * @param string $sku
+     * @param array $data
+     * @return void
+     */
+    private function updateProduct(string $sku, array $data): void
+    {
+        $product = $this->productRepository->get($sku);
+        $product->addData($data);
+        $this->productRepository->save($product);
+    }
+
+    /**
+     * Returns category collection by category id
+     *
+     * @param int $categoryId
+     * @param bool $refreshBlock
+     * @return AbstractCollection
+     */
+    private function getCategoryProductCollection(int $categoryId, bool $refreshBlock = false): AbstractCollection
+    {
+        $block = $this->getListingBlock($refreshBlock);
+        $block->getLayer()->setCurrentCategory($categoryId);
+
+        return $block->getLoadedProductCollection();
+    }
+
+    /**
+     * Get product listing block
+     *
+     * @param bool $refresh
+     * @return ListProduct
+     */
+    private function getListingBlock(bool $refresh): ListProduct
+    {
+        if ($refresh) {
+            $this->block = $this->layout->createBlock(ListProduct::class);
+        }
+
+        return $this->block;
     }
 
     /**
@@ -194,6 +223,37 @@ class ProductInCategoriesViewTest extends TestCase
     }
 
     /**
+     * Update is_anchor attribute of the category
+     *
+     * @param int $categoryId
+     * @param bool $isAnchor
+     * @return void
+     */
+    private function updateCategoryIsAnchor(int $categoryId, bool $isAnchor): void
+    {
+        $category = $this->categoryRepository->get($categoryId);
+        $category->setIsAnchor($isAnchor);
+        $this->categoryRepository->save($category);
+    }
+
+    /**
+     * Set categories to the products
+     *
+     * @param string|array $sku
+     * @param $categoryIds
+     * @return void
+     */
+    private function assignProductCategories($sku, array $categoryIds): void
+    {
+        $skus = !is_array($sku) ? [$sku] : $sku;
+        foreach ($skus as $sku) {
+            $product = $this->productRepository->get($sku);
+            $product->setCategoryIds($categoryIds);
+            $this->productRepository->save($product);
+        }
+    }
+
+    /**
      * @magentoDataFixture Magento/Catalog/_files/category_tree.php
      * @magentoDataFixture Magento/Catalog/_files/second_product_simple.php
      * @return void
@@ -234,77 +294,17 @@ class ProductInCategoriesViewTest extends TestCase
     }
 
     /**
-     * Set categories to the products
-     *
-     * @param string|array $sku
-     * @param $categoryIds
-     * @return void
+     * @inheritdoc
      */
-    private function assignProductCategories($sku, array $categoryIds): void
+    protected function setUp(): void
     {
-        $skus = !is_array($sku) ? [$sku] : $sku;
-        foreach ($skus as $sku) {
-            $product = $this->productRepository->get($sku);
-            $product->setCategoryIds($categoryIds);
-            $this->productRepository->save($product);
-        }
-    }
+        parent::setUp();
 
-    /**
-     * Update product
-     *
-     * @param string $sku
-     * @param array $data
-     * @return void
-     */
-    private function updateProduct(string $sku, array $data): void
-    {
-        $product = $this->productRepository->get($sku);
-        $product->addData($data);
-        $this->productRepository->save($product);
-    }
-
-    /**
-     * Returns category collection by category id
-     *
-     * @param int $categoryId
-     * @param bool $refreshBlock
-     * @return AbstractCollection
-     */
-    private function getCategoryProductCollection(int $categoryId, bool $refreshBlock = false): AbstractCollection
-    {
-        $block = $this->getListingBlock($refreshBlock);
-        $block->getLayer()->setCurrentCategory($categoryId);
-
-        return $block->getLoadedProductCollection();
-    }
-
-    /**
-     * Update is_anchor attribute of the category
-     *
-     * @param int $categoryId
-     * @param bool $isAnchor
-     * @return void
-     */
-    private function updateCategoryIsAnchor(int $categoryId, bool $isAnchor): void
-    {
-        $category = $this->categoryRepository->get($categoryId);
-        $category->setIsAnchor($isAnchor);
-        $this->categoryRepository->save($category);
-    }
-
-    /**
-     * Get product listing block
-     *
-     * @param bool $refresh
-     * @return ListProduct
-     */
-    private function getListingBlock(bool $refresh): ListProduct
-    {
-        if ($refresh) {
-            $this->block = $this->layout->createBlock(ListProduct::class);
-        }
-
-        return $this->block;
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->categoryRepository = $this->objectManager->create(CategoryRepositoryInterface::class);
+        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->block = $this->layout->createBlock(ListProduct::class);
     }
 }

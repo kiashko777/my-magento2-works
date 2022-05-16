@@ -7,11 +7,12 @@ declare(strict_types=1);
 
 use Magento\Framework\App\Config\Storage\Writer;
 use Magento\Framework\App\Config\Storage\WriterInterface;
+use Magento\Sales\Model\Order\Shipment;
 use Magento\TestFramework\Helper\Bootstrap;
 
 $objectManager = Bootstrap::getObjectManager();
-/** @var Writer  $configWriter */
+/** @var Writer $configWriter */
 $configWriter = $objectManager->create(WriterInterface::class);
 
 $configWriter->delete('carriers/usps/active');
-$configWriter->delete(\Magento\Sales\Model\Order\Shipment::XML_PATH_STORE_ZIP);
+$configWriter->delete(Shipment::XML_PATH_STORE_ZIP);

@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Api;
 
+use Exception;
 use Magento\Catalog\Model\ProductLink\Link;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Webapi\Rest\Request;
@@ -47,17 +48,6 @@ class ProductLinkRepositoryInterfaceTest extends WebapiAbstract
     private $linkManagement;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->linkManagement = $this->objectManager->get(ProductLinkManagementInterface::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Catalog/_files/products_related_multiple.php
      *
      * @return void
@@ -71,65 +61,6 @@ class ProductLinkRepositoryInterfaceTest extends WebapiAbstract
         $this->assertCount(1, $linkedProducts);
         $product = current($linkedProducts);
         $this->assertEquals('simple_with_cross_two', $product->getLinkedProductSku());
-    }
-
-    /**
-     * @magentoApiDataFixture Magento/Catalog/_files/product_simple.php
-     *
-     * @return void
-     */
-    public function testDeleteNotExistedProductLink(): void
-    {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage((string)__("Products %1 doesn't have linked %2 as %3"));
-        $this->deleteApiCall('simple', 'related', 'not_exists_product');
-    }
-
-    /**
-     * @magentoApiDataFixture Magento/Catalog/_files/products_related.php
-     *
-     * @return void
-     */
-    public function testSave(): void
-    {
-        $productSku = 'simple_with_cross';
-        $linkType = 'related';
-        $data = [
-            'entity' => [
-                Link::KEY_SKU => 'simple_with_cross',
-                Link::KEY_LINK_TYPE => 'related',
-                Link::KEY_LINKED_PRODUCT_SKU => 'simple',
-                Link::KEY_LINKED_PRODUCT_TYPE => 'simple',
-                Link::KEY_POSITION => 1000,
-            ],
-        ];
-        $this->saveApiCall($productSku, $data);
-        $actual = $this->linkManagement->getLinkedItemsByType($productSku, $linkType);
-        $this->assertCount(1, $actual, 'Invalid actual linked products count');
-        $this->assertEquals(1000, $actual[0]->getPosition(), 'Products position is not updated');
-    }
-
-    /**
-     * Get service info for api call
-     *
-     * @param string $resourcePath
-     * @param string $httpMethod
-     * @param string $operation
-     * @return array
-     */
-    private function getServiceInfo(string $resourcePath, string $httpMethod, string $operation): array
-    {
-        return [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . $resourcePath,
-                'httpMethod' => $httpMethod,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . $operation,
-            ],
-        ];
     }
 
     /**
@@ -159,6 +90,65 @@ class ProductLinkRepositoryInterfaceTest extends WebapiAbstract
     }
 
     /**
+     * Get service info for api call
+     *
+     * @param string $resourcePath
+     * @param string $httpMethod
+     * @param string $operation
+     * @return array
+     */
+    private function getServiceInfo(string $resourcePath, string $httpMethod, string $operation): array
+    {
+        return [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH . $resourcePath,
+                'httpMethod' => $httpMethod,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . $operation,
+            ],
+        ];
+    }
+
+    /**
+     * @magentoApiDataFixture Magento/Catalog/_files/product_simple.php
+     *
+     * @return void
+     */
+    public function testDeleteNotExistedProductLink(): void
+    {
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage((string)__("Products %1 doesn't have linked %2 as %3"));
+        $this->deleteApiCall('simple', 'related', 'not_exists_product');
+    }
+
+    /**
+     * @magentoApiDataFixture Magento/Catalog/_files/products_related.php
+     *
+     * @return void
+     */
+    public function testSave(): void
+    {
+        $productSku = 'simple_with_cross';
+        $linkType = 'related';
+        $data = [
+            'entity' => [
+                Link::KEY_SKU => 'simple_with_cross',
+                Link::KEY_LINK_TYPE => 'related',
+                Link::KEY_LINKED_PRODUCT_SKU => 'simple',
+                Link::KEY_LINKED_PRODUCT_TYPE => 'simple',
+                Link::KEY_POSITION => 1000,
+            ],
+        ];
+        $this->saveApiCall($productSku, $data);
+        $actual = $this->linkManagement->getLinkedItemsByType($productSku, $linkType);
+        $this->assertCount(1, $actual, 'Invalid actual linked products count');
+        $this->assertEquals(1000, $actual[0]->getPosition(), 'Products position is not updated');
+    }
+
+    /**
      * Make api call to save product link
      *
      * @param string $productSku
@@ -174,5 +164,16 @@ class ProductLinkRepositoryInterfaceTest extends WebapiAbstract
         );
 
         return $this->_webApiCall($serviceInfo, $data);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->linkManagement = $this->objectManager->get(ProductLinkManagementInterface::class);
     }
 }

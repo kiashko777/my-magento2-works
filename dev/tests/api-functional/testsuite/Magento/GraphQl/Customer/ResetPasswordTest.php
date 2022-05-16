@@ -41,18 +41,6 @@ class ResetPasswordTest extends GraphQlAbstract
     private $lockCustomer;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->accountManagement = $this->objectManager->get(AccountManagementInterface::class);
-        $this->customerRegistry = $this->objectManager->get(CustomerRegistry::class);
-        $this->lockCustomer = Bootstrap::getObjectManager()->get(LockCustomer::class);
-        parent::setUp();
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      *
      * @return void
@@ -78,6 +66,46 @@ QUERY;
     }
 
     /**
+     * Get customer email
+     *
+     * @return string
+     */
+    private function getCustomerEmail()
+    {
+        return self::CUSTOMER_EMAIL;
+    }
+
+    /**
+     * Get reset password token
+     *
+     * @return string
+     *
+     * @throws LocalizedException
+     * @throws NoSuchEntityException
+     */
+    private function getResetPasswordToken()
+    {
+        $this->accountManagement->initiatePasswordReset(
+            $this->getCustomerEmail(),
+            AccountManagement::EMAIL_RESET,
+            1
+        );
+
+        $customerSecure = $this->customerRegistry->retrieveSecureData(1);
+        return $customerSecure->getRpToken();
+    }
+
+    /**
+     * Get new password for customer account
+     *
+     * @return string
+     */
+    private function getNewPassword()
+    {
+        return self::CUSTOMER_NEW_PASSWORD;
+    }
+
+    /**
      * @magentoApiDataFixture    Magento/Customer/_files/customer.php
      *
      * @throws NoSuchEntityException
@@ -86,7 +114,7 @@ QUERY;
      */
     public function testEmailAvailableEmptyValue()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('You must specify an email address.');
         $query = <<<QUERY
 mutation {
@@ -109,7 +137,7 @@ QUERY;
      */
     public function testEmailInvalidValue()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The email address has an invalid format.');
         $query = <<<QUERY
 mutation {
@@ -132,7 +160,7 @@ QUERY;
      */
     public function testResetPasswordTokenEmptyValue()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('resetPasswordToken must be specified');
         $query = <<<QUERY
 mutation {
@@ -155,7 +183,7 @@ QUERY;
      */
     public function testResetPasswordTokenMismatched()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The password token is mismatched. Reset and try again');
         $query = <<<QUERY
 mutation {
@@ -178,7 +206,7 @@ QUERY;
      */
     public function testNewPasswordEmptyValue()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('newPassword must be specified');
         $query = <<<QUERY
 mutation {
@@ -201,7 +229,7 @@ QUERY;
      */
     public function testNewPasswordCheckMinLength()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The password needs at least 8 characters. Create a new password and try again');
         $query = <<<QUERY
 mutation {
@@ -224,7 +252,7 @@ QUERY;
      */
     public function testNewPasswordCheckCharactersStrength()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage(
             'Minimum of different classes of characters in password is 3. ' .
             'Classes of characters: Lower Case, Upper Case, Digits, Special Characters.'
@@ -251,7 +279,7 @@ QUERY;
      */
     public function testPasswordResetForLockCustomer()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The account is locked');
         $this->lockCustomer->execute(1);
         $query = <<<QUERY
@@ -267,42 +295,14 @@ QUERY;
     }
 
     /**
-     * Get reset password token
-     *
-     * @return string
-     *
-     * @throws LocalizedException
-     * @throws NoSuchEntityException
+     * @inheritdoc
      */
-    private function getResetPasswordToken()
+    protected function setUp(): void
     {
-        $this->accountManagement->initiatePasswordReset(
-            $this->getCustomerEmail(),
-            AccountManagement::EMAIL_RESET,
-            1
-        );
-
-        $customerSecure = $this->customerRegistry->retrieveSecureData(1);
-        return $customerSecure->getRpToken();
-    }
-
-    /**
-     * Get customer email
-     *
-     * @return string
-     */
-    private function getCustomerEmail()
-    {
-        return self::CUSTOMER_EMAIL;
-    }
-
-    /**
-     * Get new password for customer account
-     *
-     * @return string
-     */
-    private function getNewPassword()
-    {
-        return self::CUSTOMER_NEW_PASSWORD;
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->accountManagement = $this->objectManager->get(AccountManagementInterface::class);
+        $this->customerRegistry = $this->objectManager->get(CustomerRegistry::class);
+        $this->lockCustomer = Bootstrap::getObjectManager()->get(LockCustomer::class);
+        parent::setUp();
     }
 }

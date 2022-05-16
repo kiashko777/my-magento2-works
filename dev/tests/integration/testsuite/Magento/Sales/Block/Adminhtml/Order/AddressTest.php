@@ -39,29 +39,6 @@ class AddressTest extends TestCase
     private $orderFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Address::class);
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->orderFactory = $this->objectManager->get(OrderFactory::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->registry->unregister('order_address');
-
-        parent::tearDown();
-    }
-
-    /**
      * @dataProvider addressTypeProvider
      *
      * @magentoDataFixture Magento/Sales/_files/order.php
@@ -83,6 +60,18 @@ class AddressTest extends TestCase
     }
 
     /**
+     * Get address by address type
+     *
+     * @param OrderInterface $order
+     * @param string $type
+     * @return OrderAddressInterface|null
+     */
+    private function getAddressByType(OrderInterface $order, string $type): ?OrderAddressInterface
+    {
+        return $type === AddressType::TYPE_BILLING ? $order->getBillingAddress() : $order->getShippingAddress();
+    }
+
+    /**
      * @return array
      */
     public function addressTypeProvider(): array
@@ -98,14 +87,25 @@ class AddressTest extends TestCase
     }
 
     /**
-     * Get address by address type
-     *
-     * @param OrderInterface $order
-     * @param string $type
-     * @return OrderAddressInterface|null
+     * @inheritdoc
      */
-    private function getAddressByType(OrderInterface $order, string $type): ?OrderAddressInterface
+    protected function setUp(): void
     {
-        return $type ===  AddressType::TYPE_BILLING ? $order->getBillingAddress() : $order->getShippingAddress();
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Address::class);
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->orderFactory = $this->objectManager->get(OrderFactory::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->registry->unregister('order_address');
+
+        parent::tearDown();
     }
 }

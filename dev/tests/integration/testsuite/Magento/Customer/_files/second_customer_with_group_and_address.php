@@ -5,30 +5,33 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-declare(strict_types = 1);
+declare(strict_types=1);
 
 use Magento\Customer\Api\AddressRepositoryInterface;
 use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Api\Data\GroupInterfaceFactory;
+use Magento\Customer\Api\GroupRepositoryInterface;
 use Magento\Customer\Model\Address;
 use Magento\Customer\Model\AddressRegistry;
 use Magento\Customer\Model\Customer;
 use Magento\Customer\Model\CustomerRegistry;
+use Magento\Customer\Model\Group;
 use Magento\TestFramework\Helper\Bootstrap;
 
 $objectManager = Bootstrap::getObjectManager();
 
 $groupRepository = $objectManager->create(
-    \Magento\Customer\Api\GroupRepositoryInterface::class
+    GroupRepositoryInterface::class
 );
 
 $groupFactory = $objectManager->create(
-    \Magento\Customer\Api\Data\GroupInterfaceFactory::class
+    GroupInterfaceFactory::class
 );
 $groupDataObject = $groupFactory->create();
 $groupDataObject->setCode('custom_group_2')->setTaxClassId(3);
 $groupRepository->save($groupDataObject);
-/** @var \Magento\Customer\Model\Group $customerGroup */
-$customerGroup = $objectManager->create(\Magento\Customer\Model\Group::class)
+/** @var Group $customerGroup */
+$customerGroup = $objectManager->create(Group::class)
     ->load('custom_group_2', 'customer_group_code');
 
 //Creating customer

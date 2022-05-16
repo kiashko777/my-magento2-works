@@ -8,13 +8,13 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Model\Indexer\Product\Flat\Action;
 
+use Magento\Catalog\Api\CategoryRepositoryInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Block\Product\ListProduct;
 use Magento\Catalog\Model\Indexer\Product\Flat\Processor;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
-use Magento\Catalog\Api\CategoryRepositoryInterface;
 use Magento\Framework\View\LayoutInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Indexer\TestCase;
@@ -48,19 +48,6 @@ class RowsTest extends TestCase
      * @var LayoutInterface
      */
     private $layout;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->processor = $objectManager->get(Processor::class);
-        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
-        $this->categoryRepository = $objectManager->get(CategoryRepositoryInterface::class);
-        $this->productCollectionFactory = $objectManager->get(CollectionFactory::class);
-        $this->layout = $objectManager->get(LayoutInterface::class);
-    }
 
     /**
      * Test update category products
@@ -115,5 +102,18 @@ class RowsTest extends TestCase
 
         $this->assertCount(1, $collection);
         $this->assertEquals($firstProduct->getId(), $collection->getFirstItem()->getId());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->processor = $objectManager->get(Processor::class);
+        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
+        $this->categoryRepository = $objectManager->get(CategoryRepositoryInterface::class);
+        $this->productCollectionFactory = $objectManager->get(CollectionFactory::class);
+        $this->layout = $objectManager->get(LayoutInterface::class);
     }
 }

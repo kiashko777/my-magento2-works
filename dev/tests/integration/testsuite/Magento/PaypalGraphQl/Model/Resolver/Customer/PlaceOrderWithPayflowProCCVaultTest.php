@@ -49,14 +49,6 @@ class PlaceOrderWithPayflowProCCVaultTest extends PaypalPayflowProAbstractTest
      */
     private $quoteIdToMaskedId;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->json = $this->objectManager->get(SerializerInterface::class);
-        $this->quoteIdToMaskedId = $this->objectManager->get(QuoteIdToMaskedQuoteId::class);
-    }
-
     /**
      * Place order use payflowpro method and save cart data to future
      *
@@ -184,7 +176,7 @@ QUERY;
         ];
         $vaultResponse = $this->graphQlRequest->send($secondQuery, [], '', $requestHeaders);
 
-        $responseData =  $this->json->unserialize($vaultResponse->getContent());
+        $responseData = $this->json->unserialize($vaultResponse->getContent());
         $this->assertArrayHasKey('data', $responseData);
         $this->assertTrue(
             isset($responseData['data']['setPaymentMethodOnCart']['cart']['selected_payment_method']['code'])
@@ -359,5 +351,13 @@ QUERY;
         /** @var PaymentTokenRepository $tokenRepository */
         $tokenRepository = $this->objectManager->get(PaymentTokenRepository::class);
         return $tokenRepository->getById($token->getEntityId());
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->json = $this->objectManager->get(SerializerInterface::class);
+        $this->quoteIdToMaskedId = $this->objectManager->get(QuoteIdToMaskedQuoteId::class);
     }
 }

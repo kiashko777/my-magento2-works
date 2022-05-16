@@ -8,10 +8,12 @@ declare(strict_types=1);
 
 namespace Magento\Reports\Controller\Adminhtml\Report\Statistics;
 
+use Magento\TestFramework\TestCase\AbstractBackendController;
+
 /**
  * @magentoAppArea Adminhtml
  */
-class IndexTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class IndexTest extends AbstractBackendController
 {
     /**
      * Test load page

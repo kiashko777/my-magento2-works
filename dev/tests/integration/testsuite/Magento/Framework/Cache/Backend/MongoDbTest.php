@@ -3,54 +3,34 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Cache\Backend;
 
-class MongoDbTest extends \PHPUnit\Framework\TestCase
+use Mongo;
+use PHPUnit\Framework\Constraint\Constraint;
+use PHPUnit\Framework\TestCase;
+use Zend_Cache;
+use Zend_Cache_Exception;
+
+class MongoDbTest extends TestCase
 {
     protected $_connectionString;
 
     protected $_dbName = 'magento_integration_test';
 
     /**
-     * @var \Magento\Framework\Cache\Backend\MongoDb|null
+     * @var MongoDb|null
      */
     protected $_model = null;
-
-    protected function setUp(): void
-    {
-        if (defined('MONGODB_CONNECTION_STRING')) {
-            $this->_connectionString = MONGODB_CONNECTION_STRING;
-        }
-        if (empty($this->_connectionString) || !extension_loaded('mongo')) {
-            $this->markTestSkipped(
-                "Either 'mongo' extension is not loaded or 'MONGODB_CONNECTION_STRING' constant is not defined"
-            );
-        }
-        if (defined('MONGODB_DATABASE_NAME')) {
-            $this->_dbName = MONGODB_DATABASE_NAME;
-        }
-        $this->_model = new \Magento\Framework\Cache\Backend\MongoDb(
-            ['connection_string' => $this->_connectionString, 'db' => $this->_dbName]
-        );
-    }
-
-    protected function tearDown(): void
-    {
-        if (!empty($this->_connectionString) && extension_loaded('mongo')) {
-            $this->_model = null;
-            $connection = new \Mongo($this->_connectionString);
-            $connection->dropDB($this->_dbName);
-        }
-    }
 
     /**
      */
     public function testConstructorException()
     {
-        $this->expectException(\Zend_Cache_Exception::class);
+        $this->expectException(Zend_Cache_Exception::class);
         $this->expectExceptionMessage('\'db\' option is not specified');
 
-        new \Magento\Framework\Cache\Backend\MongoDb();
+        new MongoDb();
     }
 
     public function testGetIds()
@@ -79,6 +59,18 @@ class MongoDbTest extends \PHPUnit\Framework\TestCase
         $this->_prepareCollection();
         $actualIds = $this->_model->getIdsMatchingTags($searchTags);
         $this->assertEquals($expectedIds, $actualIds);
+    }
+
+    /**
+     * Fill the collection with data
+     */
+    protected function _prepareCollection()
+    {
+        $this->_model->save('test data 1', 'test1', ['tag1', 'tag2', 'tag3']);
+        $this->_model->save('test data 2', 'test2', ['tag1', 'tag3']);
+        $this->_model->save('test data 3', 'test3', ['tag2', 'tag1']);
+        $this->_model->save('test data 4', 'test4', ['tag4', 'tag5']);
+        $this->_model->save('test data 5', 'test5', []);
     }
 
     public function getIdsMatchingTagsDataProvider()
@@ -140,10 +132,10 @@ class MongoDbTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @param int $extraLifeTime
-     * @param \PHPUnit\Framework\Constraint\Constraint $constraint
+     * @param Constraint $constraint
      * @dataProvider touchDataProvider
      */
-    public function testTouch($extraLifeTime, \PHPUnit\Framework\Constraint\Constraint $constraint)
+    public function testTouch($extraLifeTime, Constraint $constraint)
     {
         $cacheId = 'test';
         $this->_model->save('test data', $cacheId, [], 2);
@@ -231,19 +223,19 @@ class MongoDbTest extends \PHPUnit\Framework\TestCase
     public function cleanDataProvider()
     {
         return [
-            'clean all cache' => [\Zend_Cache::CLEANING_MODE_ALL, [], []],
+            'clean all cache' => [Zend_Cache::CLEANING_MODE_ALL, [], []],
             'clean cache matching all tags' => [
-                \Zend_Cache::CLEANING_MODE_MATCHING_TAG,
+                Zend_Cache::CLEANING_MODE_MATCHING_TAG,
                 ['tag1', 'tag2'],
                 ['test2', 'test4', 'test5'],
             ],
             'clean cache not matching tags' => [
-                \Zend_Cache::CLEANING_MODE_NOT_MATCHING_TAG,
+                Zend_Cache::CLEANING_MODE_NOT_MATCHING_TAG,
                 ['tag1', 'tag2'],
                 ['test1', 'test2', 'test3'],
             ],
             'clean cache matching any tags' => [
-                \Zend_Cache::CLEANING_MODE_MATCHING_ANY_TAG,
+                Zend_Cache::CLEANING_MODE_MATCHING_ANY_TAG,
                 ['tag1', 'tag2'],
                 ['test4', 'test5'],
             ]
@@ -255,21 +247,36 @@ class MongoDbTest extends \PHPUnit\Framework\TestCase
         $this->_model->save('long-living entity', 'long', [], 1000);
         $this->_model->save('infinite-living entity', 'infinite', [], null);
         $this->_model->save('short-living entity', 'short', [], 0);
-        $this->_model->clean(\Zend_Cache::CLEANING_MODE_OLD);
+        $this->_model->clean(Zend_Cache::CLEANING_MODE_OLD);
         $expectedIds = ['long', 'infinite'];
         $actualIds = $this->_model->getIds();
         $this->assertSame($expectedIds, $actualIds);
     }
 
-    /**
-     * Fill the collection with data
-     */
-    protected function _prepareCollection()
+    protected function setUp(): void
     {
-        $this->_model->save('test data 1', 'test1', ['tag1', 'tag2', 'tag3']);
-        $this->_model->save('test data 2', 'test2', ['tag1', 'tag3']);
-        $this->_model->save('test data 3', 'test3', ['tag2', 'tag1']);
-        $this->_model->save('test data 4', 'test4', ['tag4', 'tag5']);
-        $this->_model->save('test data 5', 'test5', []);
+        if (defined('MONGODB_CONNECTION_STRING')) {
+            $this->_connectionString = MONGODB_CONNECTION_STRING;
+        }
+        if (empty($this->_connectionString) || !extension_loaded('mongo')) {
+            $this->markTestSkipped(
+                "Either 'mongo' extension is not loaded or 'MONGODB_CONNECTION_STRING' constant is not defined"
+            );
+        }
+        if (defined('MONGODB_DATABASE_NAME')) {
+            $this->_dbName = MONGODB_DATABASE_NAME;
+        }
+        $this->_model = new MongoDb(
+            ['connection_string' => $this->_connectionString, 'db' => $this->_dbName]
+        );
+    }
+
+    protected function tearDown(): void
+    {
+        if (!empty($this->_connectionString) && extension_loaded('mongo')) {
+            $this->_model = null;
+            $connection = new Mongo($this->_connectionString);
+            $connection->dropDB($this->_dbName);
+        }
     }
 }

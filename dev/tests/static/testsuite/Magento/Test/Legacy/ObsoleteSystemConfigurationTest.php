@@ -7,13 +7,17 @@
 /**
  * Legacy tests to find obsolete system configuration declaration
  */
+
 namespace Magento\Test\Legacy;
 
-class ObsoleteSystemConfigurationTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\App\Utility\Files;
+use PHPUnit\Framework\TestCase;
+
+class ObsoleteSystemConfigurationTest extends TestCase
 {
     public function testSystemConfigurationDeclaration()
     {
-        $fileList = \Magento\Framework\App\Utility\Files::init()->getConfigFiles(
+        $fileList = Files::init()->getConfigFiles(
             'system.xml',
             ['wsdl.xml', 'wsdl2.xml', 'wsi.xml'],
             false

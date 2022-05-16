@@ -7,48 +7,66 @@
 /**
  * Test class for \Magento\Eav\Block\Adminhtml\Attribute\Edit\Main\AbstractMain
  */
+
 namespace Magento\Eav\Block\Adminhtml\Attribute\Edit\Main;
+
+use Magento\Backend\App\Area\FrontNameResolver;
+use Magento\Backend\Block\Template\Context;
+use Magento\Config\Model\Config\Source\YesnoFactory;
+use Magento\Customer\Model\Attribute;
+use Magento\Eav\Block\Adminhtml\Attribute\PropertyLocker;
+use Magento\Eav\Helper\Data;
+use Magento\Eav\Model\Adminhtml\System\Config\Source\InputtypeFactory;
+use Magento\Eav\Model\Config;
+use Magento\Framework\Data\FormFactory;
+use Magento\Framework\Registry;
+use Magento\Framework\View\DesignInterface;
+use Magento\Framework\View\Layout;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class AbstractMainTest extends \PHPUnit\Framework\TestCase
+class AbstractMainTest extends TestCase
 {
     /**
      * @magentoAppIsolation enabled
      */
     public function testPrepareForm()
     {
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        /** @var $objectManager ObjectManager */
+        $objectManager = Bootstrap::getObjectManager();
 
-        \Magento\TestFramework\Helper\Bootstrap::getInstance()
-            ->loadArea(\Magento\Backend\App\Area\FrontNameResolver::AREA_CODE);
-        $objectManager->get(\Magento\Framework\View\DesignInterface::class)
+        Bootstrap::getInstance()
+            ->loadArea(FrontNameResolver::AREA_CODE);
+        $objectManager->get(DesignInterface::class)
             ->setDefaultDesignTheme();
-        $entityType = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Eav\Model\Config::class)
+        $entityType = Bootstrap::getObjectManager()->get(Config::class)
             ->getEntityType('customer');
-        $model = $objectManager->create(\Magento\Customer\Model\Attribute::class);
+        $model = $objectManager->create(Attribute::class);
         $model->setEntityTypeId($entityType->getId());
-        $objectManager->get(\Magento\Framework\Registry::class)->register('entity_attribute', $model);
+        $objectManager->get(Registry::class)->register('entity_attribute', $model);
 
         $block = $this->getMockForAbstractClass(
-            \Magento\Eav\Block\Adminhtml\Attribute\Edit\Main\AbstractMain::class,
+            AbstractMain::class,
             [
-                $objectManager->get(\Magento\Backend\Block\Template\Context::class),
-                $objectManager->get(\Magento\Framework\Registry::class),
-                $objectManager->get(\Magento\Framework\Data\FormFactory::class),
-                $objectManager->get(\Magento\Eav\Helper\Data::class),
-                $objectManager->get(\Magento\Config\Model\Config\Source\YesnoFactory::class),
-                $objectManager->get(\Magento\Eav\Model\Adminhtml\System\Config\Source\InputtypeFactory::class),
-                $objectManager->get(\Magento\Eav\Block\Adminhtml\Attribute\PropertyLocker::class)
+                $objectManager->get(Context::class),
+                $objectManager->get(Registry::class),
+                $objectManager->get(FormFactory::class),
+                $objectManager->get(Data::class),
+                $objectManager->get(YesnoFactory::class),
+                $objectManager->get(InputtypeFactory::class),
+                $objectManager->get(PropertyLocker::class)
             ]
         )->setLayout(
-            $objectManager->create(\Magento\Framework\View\Layout::class)
+            $objectManager->create(Layout::class)
         );
 
-        $method = new \ReflectionMethod(
-            \Magento\Eav\Block\Adminhtml\Attribute\Edit\Main\AbstractMain::class,
+        $method = new ReflectionMethod(
+            AbstractMain::class,
             '_prepareForm'
         );
         $method->setAccessible(true);

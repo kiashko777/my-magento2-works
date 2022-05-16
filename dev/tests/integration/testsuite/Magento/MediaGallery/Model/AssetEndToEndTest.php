@@ -7,16 +7,16 @@ declare(strict_types=1);
 
 namespace Magento\MediaGallery\Model;
 
-use Magento\MediaGalleryApi\Api\Data\KeywordInterfaceFactory;
 use Magento\MediaGalleryApi\Api\Data\AssetInterfaceFactory;
-use Magento\MediaGalleryApi\Api\Data\AssetKeywordsInterfaceFactory;
 use Magento\MediaGalleryApi\Api\Data\AssetKeywordsInterface;
+use Magento\MediaGalleryApi\Api\Data\AssetKeywordsInterfaceFactory;
+use Magento\MediaGalleryApi\Api\Data\KeywordInterfaceFactory;
+use Magento\MediaGalleryApi\Api\DeleteAssetsByPathsInterface;
 use Magento\MediaGalleryApi\Api\GetAssetsByIdsInterface;
 use Magento\MediaGalleryApi\Api\GetAssetsByPathsInterface;
 use Magento\MediaGalleryApi\Api\GetAssetsKeywordsInterface;
 use Magento\MediaGalleryApi\Api\SaveAssetsInterface;
 use Magento\MediaGalleryApi\Api\SaveAssetsKeywordsInterface;
-use Magento\MediaGalleryApi\Api\DeleteAssetsByPathsInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
 
@@ -69,22 +69,6 @@ class AssetEndToEndTest extends TestCase
      * @var DeleteAssetsByPathsInterface
      */
     private $deleteAssetsByPaths;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->saveAssetsKeywords = Bootstrap::getObjectManager()->get(SaveAssetsKeywordsInterface::class);
-        $this->getAssetsKeywords = Bootstrap::getObjectManager()->get(GetAssetsKeywordsInterface::class);
-        $this->assetsKeywordsFactory = Bootstrap::getObjectManager()->get(AssetKeywordsInterfaceFactory::class);
-        $this->assetFactory = Bootstrap::getObjectManager()->get(AssetInterfaceFactory::class);
-        $this->keywordFactory = Bootstrap::getObjectManager()->get(KeywordInterfaceFactory::class);
-        $this->saveAssets = Bootstrap::getObjectManager()->get(SaveAssetsInterface::class);
-        $this->getAssetsByIds = Bootstrap::getObjectManager()->get(GetAssetsByIdsInterface::class);
-        $this->getAssetsByPath = Bootstrap::getObjectManager()->get(GetAssetsByPathsInterface::class);
-        $this->deleteAssetsByPaths = Bootstrap::getObjectManager()->get(DeleteAssetsByPathsInterface::class);
-    }
 
     /**
      * Testing assets keywords save and get
@@ -147,5 +131,21 @@ class AssetEndToEndTest extends TestCase
         }
 
         $this->deleteAssetsByPaths->execute(['fruit.jpg']);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->saveAssetsKeywords = Bootstrap::getObjectManager()->get(SaveAssetsKeywordsInterface::class);
+        $this->getAssetsKeywords = Bootstrap::getObjectManager()->get(GetAssetsKeywordsInterface::class);
+        $this->assetsKeywordsFactory = Bootstrap::getObjectManager()->get(AssetKeywordsInterfaceFactory::class);
+        $this->assetFactory = Bootstrap::getObjectManager()->get(AssetInterfaceFactory::class);
+        $this->keywordFactory = Bootstrap::getObjectManager()->get(KeywordInterfaceFactory::class);
+        $this->saveAssets = Bootstrap::getObjectManager()->get(SaveAssetsInterface::class);
+        $this->getAssetsByIds = Bootstrap::getObjectManager()->get(GetAssetsByIdsInterface::class);
+        $this->getAssetsByPath = Bootstrap::getObjectManager()->get(GetAssetsByPathsInterface::class);
+        $this->deleteAssetsByPaths = Bootstrap::getObjectManager()->get(DeleteAssetsByPathsInterface::class);
     }
 }

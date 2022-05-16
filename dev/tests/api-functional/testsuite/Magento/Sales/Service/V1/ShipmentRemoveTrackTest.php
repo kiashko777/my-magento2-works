@@ -3,12 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Service\V1;
 
 use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Webapi\Rest\Request;
 use Magento\Sales\Api\Data\ShipmentTrackInterface;
 use Magento\Sales\Api\ShipmentTrackRepositoryInterface;
+use Magento\Sales\Model\Order\Shipment;
 use Magento\Sales\Model\Order\Shipment\Track;
 use Magento\Sales\Model\Order\Shipment\TrackFactory;
 use Magento\Sales\Model\ResourceModel\Order\Shipment\Collection;
@@ -36,17 +39,9 @@ class ShipmentRemoveTrackTest extends WebapiAbstract
     const SHIPMENT_INCREMENT_ID = '100000001';
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
 
     /**
      * Test shipment remove track service
@@ -56,7 +51,7 @@ class ShipmentRemoveTrackTest extends WebapiAbstract
     public function testShipmentRemoveTrack()
     {
         $shipmentCollection = $this->objectManager->get(Collection::class);
-        /** @var \Magento\Sales\Model\Order\Shipment $shipment */
+        /** @var Shipment $shipment */
         $shipment = $shipmentCollection->getFirstItem();
 
         $trackEntity = $this->objectManager->get(TrackFactory::class)
@@ -116,5 +111,13 @@ class ShipmentRemoveTrackTest extends WebapiAbstract
             ->getItems();
 
         self::assertEmpty($items);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

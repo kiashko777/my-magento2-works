@@ -7,19 +7,18 @@ declare(strict_types=1);
 
 namespace Magento\PaypalGraphQl;
 
+use Magento\Config\Model\Config;
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\GraphQl\Controller\GraphQl;
 use Magento\GraphQl\Service\GraphQlRequest;
+use Magento\Payment\Model\Method\Online\GatewayInterface;
 use Magento\Paypal\Model\Payflow\Service\Gateway;
 use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\QuoteFactory;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Config\Model\Config;
-use Magento\Framework\App\Config\ScopeConfigInterface;
-
-use Magento\Payment\Model\Method\Online\GatewayInterface;
 
 /**
  * Abstract class with common logic for Paypal GraphQl tests
@@ -59,10 +58,46 @@ abstract class PaypalPayflowProAbstractTest extends TestCase
         $this->graphQlRequest = $this->objectManager->create(GraphQlRequest::class);
     }
 
+    /**
+     * Get mock of Gateway class
+     *
+     * @return GatewayInterface|MockObject
+     */
+    private function getGatewayMock()
+    {
+        if (empty($this->gatewayMock)) {
+            $this->gatewayMock = $this->getMockBuilder(Gateway::class)
+                ->disableOriginalConstructor()
+                ->setMethods(['postRequest'])
+                ->getMock();
+        }
+        return $this->gatewayMock;
+    }
+
     protected function tearDown(): void
     {
         $this->disablePaypalPaymentMethods();
         $this->objectManager->removeSharedInstance(Gateway::class);
+    }
+
+    /**
+     * Disables list of Paypal payment methods
+     *
+     * @return void
+     */
+    protected function disablePaypalPaymentMethods(): void
+    {
+        $paypalMethods = [
+            'payflowpro',
+        ];
+        $config = $this->objectManager->get(Config::class);
+        $config->setScope(ScopeConfigInterface::SCOPE_TYPE_DEFAULT);
+
+        foreach ($paypalMethods as $method) {
+            $paymentMethodActive = 'payment/' . $method . '/active';
+            $config->setDataByPath($paymentMethodActive, '0');
+            $config->save();
+        }
     }
 
     /**
@@ -95,42 +130,6 @@ abstract class PaypalPayflowProAbstractTest extends TestCase
 
         $config->setDataByPath($paymentMethodActive, '1');
         $config->save();
-    }
-
-    /**
-     * Disables list of Paypal payment methods
-     *
-     * @return void
-     */
-    protected function disablePaypalPaymentMethods(): void
-    {
-        $paypalMethods = [
-            'payflowpro',
-        ];
-        $config = $this->objectManager->get(Config::class);
-        $config->setScope(ScopeConfigInterface::SCOPE_TYPE_DEFAULT);
-
-        foreach ($paypalMethods as $method) {
-            $paymentMethodActive = 'payment/' . $method . '/active';
-            $config->setDataByPath($paymentMethodActive, '0');
-            $config->save();
-        }
-    }
-
-    /**
-     * Get mock of Gateway class
-     *
-     * @return GatewayInterface|MockObject
-     */
-    private function getGatewayMock()
-    {
-        if (empty($this->gatewayMock)) {
-            $this->gatewayMock = $this->getMockBuilder(Gateway::class)
-                ->disableOriginalConstructor()
-                ->setMethods(['postRequest'])
-                ->getMock();
-        }
-        return $this->gatewayMock;
     }
 
     /**

@@ -4,15 +4,26 @@
  * See COPYING.txt for license details.
  */
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\Backend\App\Area\FrontNameResolver;
+use Magento\Catalog\Api\CategoryLinkManagementInterface;
+use Magento\Catalog\Api\CategoryLinkRepositoryInterface;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Catalog\Setup\CategorySetup;
+use Magento\TestFramework\Helper\Bootstrap;
 
-$installer = $objectManager->create(\Magento\Catalog\Setup\CategorySetup::class);
+$objectManager = Bootstrap::getObjectManager();
 
-\Magento\TestFramework\Helper\Bootstrap::getInstance()->loadArea(
-    \Magento\Backend\App\Area\FrontNameResolver::AREA_CODE
+$installer = $objectManager->create(CategorySetup::class);
+
+Bootstrap::getInstance()->loadArea(
+    FrontNameResolver::AREA_CODE
 );
 
-$category = $objectManager->create(\Magento\Catalog\Model\Category::class);
+$category = $objectManager->create(Category::class);
 $category->isObjectNew(true);
 $category->setId(3)
     ->setName('Category 1')
@@ -25,22 +36,22 @@ $category->setId(3)
     ->setPosition(1)
     ->save();
 
-$productRepository = $objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+$productRepository = $objectManager->create(ProductRepositoryInterface::class);
 $categoryLinkRepository = $objectManager->create(
-    \Magento\Catalog\Api\CategoryLinkRepositoryInterface::class,
+    CategoryLinkRepositoryInterface::class,
     [
         'productRepository' => $productRepository
     ]
 );
 $categoryLinkManagement = $objectManager->create(
-    \Magento\Catalog\Api\CategoryLinkManagementInterface::class,
+    CategoryLinkManagementInterface::class,
     [
         'productRepository' => $productRepository,
         'categoryLinkRepository' => $categoryLinkRepository
     ]
 );
 
-$product = $objectManager->create(\Magento\Catalog\Model\Product::class);
+$product = $objectManager->create(Product::class);
 $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setAttributeSetId($installer->getAttributeSetId('catalog_product', 'Default'))
     ->setStoreId(1)
@@ -50,12 +61,12 @@ $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setPrice(10)
     ->setWeight(18)
     ->setStockData(['use_config_manage_stock' => 0])
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->save();
 $categoryLinkManagement->assignProductToCategories($product->getSku(), [3]);
 
-$product =$objectManager->create(\Magento\Catalog\Model\Product::class);
+$product = $objectManager->create(Product::class);
 $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setAttributeSetId($installer->getAttributeSetId('catalog_product', 'Default'))
     ->setStoreId(1)
@@ -65,7 +76,7 @@ $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setPrice(45.67)
     ->setWeight(56)
     ->setStockData(['use_config_manage_stock' => 0])
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->save();
 $categoryLinkManagement->assignProductToCategories($product->getSku(), [3]);

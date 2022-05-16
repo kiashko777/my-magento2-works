@@ -3,9 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Webapi\Routing;
 
-class ServiceVersionV2Test extends \Magento\Webapi\Routing\BaseService
+use Magento\Framework\Webapi\Rest\Request;
+
+class ServiceVersionV2Test extends BaseService
 {
     /**
      * @var string
@@ -23,16 +26,6 @@ class ServiceVersionV2Test extends \Magento\Webapi\Routing\BaseService
     private $restResourcePath;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->version = 'V2';
-        $this->soapService = 'testModule1AllSoapAndRestV2';
-        $this->restResourcePath = "/{$this->version}/testmodule1/";
-    }
-
-    /**
      *  Test to assert overriding of the existing 'Item' api in V2 version of the same service
      */
     public function testItem()
@@ -41,7 +34,7 @@ class ServiceVersionV2Test extends \Magento\Webapi\Routing\BaseService
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => $this->restResourcePath . $itemId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => ['service' => $this->soapService, 'operation' => $this->soapService . 'Item'],
         ];
@@ -63,7 +56,7 @@ class ServiceVersionV2Test extends \Magento\Webapi\Routing\BaseService
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => $this->restResourcePath,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => ['service' => $this->soapService, 'operation' => $this->soapService . 'Items'],
         ];
@@ -90,7 +83,7 @@ class ServiceVersionV2Test extends \Magento\Webapi\Routing\BaseService
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => $this->restResourcePath . $restFilter,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => $this->soapService,
@@ -112,13 +105,13 @@ class ServiceVersionV2Test extends \Magento\Webapi\Routing\BaseService
         return [
             'Both items filter' => [
                 [
-                    ['field' => 'id', 'conditionType' => 'eq','value' => 1],
-                    ['field' => 'id', 'conditionType' => 'eq','value' => 2],
+                    ['field' => 'id', 'conditionType' => 'eq', 'value' => 1],
+                    ['field' => 'id', 'conditionType' => 'eq', 'value' => 2],
                 ],
                 [$firstItem, $secondItem],
             ],
-            'First item filter' => [[['field' => 'id', 'conditionType' => 'eq','value' => 1]], [$firstItem]],
-            'Second item filter' => [[['field' => 'id', 'conditionType' => 'eq','value' => 2]], [$secondItem]],
+            'First item filter' => [[['field' => 'id', 'conditionType' => 'eq', 'value' => 1]], [$firstItem]],
+            'Second item filter' => [[['field' => 'id', 'conditionType' => 'eq', 'value' => 2]], [$secondItem]],
             'Empty filter' => [[], [$firstItem, $secondItem]],
         ];
     }
@@ -132,7 +125,7 @@ class ServiceVersionV2Test extends \Magento\Webapi\Routing\BaseService
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => $this->restResourcePath . $itemId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => ['service' => $this->soapService, 'operation' => $this->soapService . 'Update'],
         ];
@@ -150,12 +143,22 @@ class ServiceVersionV2Test extends \Magento\Webapi\Routing\BaseService
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => $this->restResourcePath . $itemId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
             ],
             'soap' => ['service' => $this->soapService, 'operation' => $this->soapService . 'Delete'],
         ];
         $requestData = ['id' => $itemId, 'name' => 'testName'];
         $item = $this->_webApiCall($serviceInfo, $requestData);
         $this->assertEquals($itemId, $item['id'], "Item delete failed");
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->version = 'V2';
+        $this->soapService = 'testModule1AllSoapAndRestV2';
+        $this->restResourcePath = "/{$this->version}/testmodule1/";
     }
 }

@@ -8,6 +8,7 @@ use Magento\Payment\Helper\Data;
 use Magento\Sales\Api\Data\OrderInterfaceFactory;
 use Magento\Sales\Api\ShipmentCommentRepositoryInterface;
 use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Shipment;
 use Magento\Sales\Model\Order\Shipment\Comment;
 use Magento\Sales\Model\Order\ShipmentFactory;
 use Magento\TestFramework\Helper\Bootstrap;
@@ -30,7 +31,7 @@ foreach ($order->getItems() as $orderItem) {
 $shipment = $objectManager->get(ShipmentFactory::class)->create($order, $items);
 
 $shipment->setPackages([['1'], ['2']]);
-$shipment->setShipmentStatus(\Magento\Sales\Model\Order\Shipment::STATUS_NEW);
+$shipment->setShipmentStatus(Shipment::STATUS_NEW);
 $shipment->save();
 
 $comments = [

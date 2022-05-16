@@ -25,18 +25,6 @@ class ArgumentsSerializationTest extends TestCase
      */
     private $serializer;
 
-    /**
-     * Set up mocks.
-     */
-    protected function setUp(): void
-    {
-        $this->serializer = $this->getMockBuilder(SerializerInterface::class)
-            ->getMock();
-        $this->serializer->expects($this->any())->method('serialize')->willReturnCallback(function ($param) {
-            return json_encode($param);
-        });
-    }
-
     public function testModifyArgumentsDoNotExist()
     {
         $inputConfig = [
@@ -64,5 +52,17 @@ class ArgumentsSerializationTest extends TestCase
 
         $modifier = new ArgumentsSerialization($this->serializer);
         $this->assertEquals($expected, $modifier->modify($inputConfig));
+    }
+
+    /**
+     * Set up mocks.
+     */
+    protected function setUp(): void
+    {
+        $this->serializer = $this->getMockBuilder(SerializerInterface::class)
+            ->getMock();
+        $this->serializer->expects($this->any())->method('serialize')->willReturnCallback(function ($param) {
+            return json_encode($param);
+        });
     }
 }

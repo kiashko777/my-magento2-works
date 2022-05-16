@@ -9,8 +9,10 @@ namespace Magento\GraphQl\DownloadableProduct;
 
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Config\Model\ResourceModel\Config;
 use Magento\Downloadable\Api\Data\LinkInterface;
 use Magento\Downloadable\Api\Data\SampleInterface;
+use Magento\Downloadable\Model\Link;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
@@ -70,10 +72,10 @@ class DownloadableProductViewTest extends GraphQlAbstract
 }
 QUERY;
 
-        /** @var \Magento\Config\Model\ResourceModel\Config $config */
-        $config = ObjectManager::getInstance()->get(\Magento\Config\Model\ResourceModel\Config::class);
+        /** @var Config $config */
+        $config = ObjectManager::getInstance()->get(Config::class);
         $config->saveConfig(
-            \Magento\Downloadable\Model\Link::XML_PATH_CONFIG_IS_SHAREABLE,
+            Link::XML_PATH_CONFIG_IS_SHAREABLE,
             0
         );
         $response = $this->graphQlQuery($query);
@@ -92,6 +94,53 @@ QUERY;
         $this->assertEquals($linksTitle, $response['products']['items'][0]['links_title']);
         $this->assertDownloadableProductLinks($downloadableProduct, $response['products']['items'][0]);
         $this->assertDownloadableProductSamples($downloadableProduct, $response['products']['items'][0]);
+    }
+
+    /**
+     * @param ProductInterface $product
+     * @param array $actualResponse
+     */
+    private function assertDownloadableProductLinks($product, $actualResponse)
+    {
+        $this->assertNotEmpty(
+            $actualResponse['downloadable_product_links'],
+            "Precondition failed: 'downloadable_product_links' must not be empty"
+        );
+        /** @var LinkInterface $downloadableProductLinks */
+        $downloadableProductLinks = $product->getExtensionAttributes()->getDownloadableProductLinks();
+        $downloadableProductLink = $downloadableProductLinks[1];
+        $this->assertNotEmpty($actualResponse['downloadable_product_links'][1]['sample_url']);
+        $this->assertResponseFields(
+            $actualResponse['downloadable_product_links'][1],
+            [
+                'sort_order' => $downloadableProductLink->getSortOrder(),
+                'title' => $downloadableProductLink->getTitle(),
+                'price' => $downloadableProductLink->getPrice()
+            ]
+        );
+    }
+
+    /**
+     * @param ProductInterface $product
+     * @param $actualResponse
+     */
+    private function assertDownloadableProductSamples($product, $actualResponse)
+    {
+        $this->assertNotEmpty(
+            $actualResponse['downloadable_product_samples'],
+            "Precondition failed: 'downloadable_product_samples' must not be empty"
+        );
+        /** @var SampleInterface $downloadableProductSamples */
+        $downloadableProductSamples = $product->getExtensionAttributes()->getDownloadableProductSamples();
+        $downloadableProductSample = $downloadableProductSamples[0];
+        $this->assertNotEmpty($actualResponse['downloadable_product_samples'][0]['sample_url']);
+        $this->assertResponseFields(
+            $actualResponse['downloadable_product_samples'][0],
+            [
+                'title' => $downloadableProductSample->getTitle(),
+                'sort_order' => $downloadableProductSample->getSortOrder()
+            ]
+        );
     }
 
     /**
@@ -151,10 +200,10 @@ QUERY;
          */
         $productRepository = ObjectManager::getInstance()->get(ProductRepositoryInterface::class);
         $downloadableProduct = $productRepository->get($productSku, false, null, true);
-        /** @var \Magento\Config\Model\ResourceModel\Config $config */
-        $config = ObjectManager::getInstance()->get(\Magento\Config\Model\ResourceModel\Config::class);
+        /** @var Config $config */
+        $config = ObjectManager::getInstance()->get(Config::class);
         $config->saveConfig(
-            \Magento\Downloadable\Model\Link::XML_PATH_CONFIG_IS_SHAREABLE,
+            Link::XML_PATH_CONFIG_IS_SHAREABLE,
             0,
             ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
             1
@@ -180,53 +229,6 @@ QUERY;
                 'sort_order' => $downloadableProductLink->getSortOrder(),
                 'title' => $downloadableProductLink->getTitle(),
                 'price' => $downloadableProductLink->getPrice()
-            ]
-        );
-    }
-
-    /**
-     * @param ProductInterface $product
-     * @param  array $actualResponse
-     */
-    private function assertDownloadableProductLinks($product, $actualResponse)
-    {
-        $this->assertNotEmpty(
-            $actualResponse['downloadable_product_links'],
-            "Precondition failed: 'downloadable_product_links' must not be empty"
-        );
-        /** @var LinkInterface $downloadableProductLinks */
-        $downloadableProductLinks = $product->getExtensionAttributes()->getDownloadableProductLinks();
-        $downloadableProductLink = $downloadableProductLinks[1];
-        $this->assertNotEmpty($actualResponse['downloadable_product_links'][1]['sample_url']);
-        $this->assertResponseFields(
-            $actualResponse['downloadable_product_links'][1],
-            [
-                'sort_order' => $downloadableProductLink->getSortOrder(),
-                'title' => $downloadableProductLink->getTitle(),
-                'price' => $downloadableProductLink->getPrice()
-            ]
-        );
-    }
-
-    /**
-     * @param ProductInterface $product
-     * @param $actualResponse
-     */
-    private function assertDownloadableProductSamples($product, $actualResponse)
-    {
-        $this->assertNotEmpty(
-            $actualResponse['downloadable_product_samples'],
-            "Precondition failed: 'downloadable_product_samples' must not be empty"
-        );
-        /** @var SampleInterface $downloadableProductSamples */
-        $downloadableProductSamples = $product->getExtensionAttributes()->getDownloadableProductSamples();
-        $downloadableProductSample = $downloadableProductSamples[0];
-        $this->assertNotEmpty($actualResponse['downloadable_product_samples'][0]['sample_url']);
-        $this->assertResponseFields(
-            $actualResponse['downloadable_product_samples'][0],
-            [
-                'title' => $downloadableProductSample->getTitle(),
-                'sort_order' => $downloadableProductSample->getSortOrder()
             ]
         );
     }

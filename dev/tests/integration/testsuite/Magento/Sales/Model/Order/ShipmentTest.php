@@ -18,12 +18,13 @@ use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Api\ShipmentRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppIsolation enabled
  * @magentoDataFixture Magento/Sales/_files/order.php
  */
-class ShipmentTest extends \PHPUnit\Framework\TestCase
+class ShipmentTest extends TestCase
 {
     /**
      * @var ObjectManager
@@ -34,15 +35,6 @@ class ShipmentTest extends \PHPUnit\Framework\TestCase
      * @var ShipmentRepositoryInterface
      */
     private $shipmentRepository;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->shipmentRepository = $this->objectManager->get(ShipmentRepositoryInterface::class);
-    }
 
     /**
      * Check the correctness and stability of set/get packages of shipment
@@ -62,7 +54,7 @@ class ShipmentTest extends \PHPUnit\Framework\TestCase
         foreach ($order->getItems() as $item) {
             $items[$item->getId()] = $item->getQtyOrdered();
         }
-        /** @var \Magento\Sales\Model\Order\Shipment $shipment */
+        /** @var Shipment $shipment */
         $shipment = $this->objectManager->get(ShipmentFactory::class)->create($order, $items);
 
         $packages = [['1'], ['2']];
@@ -70,6 +62,27 @@ class ShipmentTest extends \PHPUnit\Framework\TestCase
         $shipment->setPackages($packages);
         $saved = $this->shipmentRepository->save($shipment);
         self::assertEquals($packages, $saved->getPackages());
+    }
+
+    /**
+     * Gets order entity by increment id.
+     *
+     * @param string $incrementId
+     * @return OrderInterface
+     */
+    private function getOrder(string $incrementId): OrderInterface
+    {
+        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
+        $searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
+        $searchCriteria = $searchCriteriaBuilder->addFilter('increment_id', $incrementId)
+            ->create();
+
+        /** @var OrderRepositoryInterface $repository */
+        $repository = $this->objectManager->get(OrderRepositoryInterface::class);
+        $items = $repository->getList($searchCriteria)
+            ->getItems();
+
+        return array_pop($items);
     }
 
     /**
@@ -89,7 +102,7 @@ class ShipmentTest extends \PHPUnit\Framework\TestCase
         foreach ($order->getItems() as $item) {
             $items[$item->getId()] = $item->getQtyOrdered();
         }
-        /** @var \Magento\Sales\Model\Order\Shipment $shipment */
+        /** @var Shipment $shipment */
         $shipment = $this->objectManager->get(ShipmentFactory::class)
             ->create($order, $items);
         $shipment->addTrack($track);
@@ -128,27 +141,6 @@ class ShipmentTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Gets order entity by increment id.
-     *
-     * @param string $incrementId
-     * @return OrderInterface
-     */
-    private function getOrder(string $incrementId): OrderInterface
-    {
-        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
-        $searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
-        $searchCriteria = $searchCriteriaBuilder->addFilter('increment_id', $incrementId)
-            ->create();
-
-        /** @var OrderRepositoryInterface $repository */
-        $repository = $this->objectManager->get(OrderRepositoryInterface::class);
-        $items = $repository->getList($searchCriteria)
-            ->getItems();
-
-        return array_pop($items);
-    }
-
-    /**
      * Check that getTracksCollection() returns only order related tracks.
      *
      * @magentoDataFixture Magento/Sales/_files/two_orders_with_order_items.php
@@ -160,7 +152,7 @@ class ShipmentTest extends \PHPUnit\Framework\TestCase
         foreach ($order->getItems() as $item) {
             $items[$item->getId()] = $item->getQtyOrdered();
         }
-        /** @var \Magento\Sales\Model\Order\Shipment $shipment */
+        /** @var Shipment $shipment */
         $shipment = $this->objectManager->get(ShipmentFactory::class)
             ->create($order, $items);
 
@@ -182,7 +174,7 @@ class ShipmentTest extends \PHPUnit\Framework\TestCase
         foreach ($secondOrder->getItems() as $item) {
             $secondOrderItems[$item->getId()] = $item->getQtyOrdered();
         }
-        /** @var \Magento\Sales\Model\Order\Shipment $secondOrderShipment */
+        /** @var Shipment $secondOrderShipment */
         $secondOrderShipment = $this->objectManager->get(ShipmentFactory::class)
             ->create($secondOrder, $secondOrderItems);
 
@@ -201,5 +193,14 @@ class ShipmentTest extends \PHPUnit\Framework\TestCase
             $secondShipmentTrackCollection->getColumnValues('id'),
             [$secondShipmentTrack->getEntityId()]
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->shipmentRepository = $this->objectManager->get(ShipmentRepositoryInterface::class);
     }
 }

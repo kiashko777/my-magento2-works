@@ -46,7 +46,7 @@ return [
         '<label>Test2</label><description>Test2</description></type></config>',
         [
             "Element 'type': Duplicate key-sequence ['test'] in unique identity-constraint"
-                . " 'uniqueCacheName'.\nLine: 1\n"
+            . " 'uniqueCacheName'.\nLine: 1\n"
         ],
     ],
 ];

@@ -3,11 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Config\Model\Config\Processor;
 
 use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class EnvironmentPlaceholderTest extends \PHPUnit\Framework\TestCase
+class EnvironmentPlaceholderTest extends TestCase
 {
     /**
      * @var ObjectManagerInterface
@@ -23,13 +26,6 @@ class EnvironmentPlaceholderTest extends \PHPUnit\Framework\TestCase
      * @var array
      */
     private $env = [];
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->model = $this->objectManager->get(EnvironmentPlaceholder::class);
-        $this->env = $_ENV;
-    }
 
     public function testProcess()
     {
@@ -94,6 +90,13 @@ class EnvironmentPlaceholderTest extends \PHPUnit\Framework\TestCase
             $expected,
             $this->model->process($config)
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->model = $this->objectManager->get(EnvironmentPlaceholder::class);
+        $this->env = $_ENV;
     }
 
     protected function tearDown(): void

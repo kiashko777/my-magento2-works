@@ -8,17 +8,14 @@
 
 namespace Magento\Customer\Model\ResourceModel\Group\Grid;
 
-class ServiceCollectionTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\Exception\LocalizedException;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class ServiceCollectionTest extends TestCase
 {
     /** @var ServiceCollection */
     protected $collection;
-
-    protected function setUp(): void
-    {
-        $this->collection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Model\ResourceModel\Group\Grid\ServiceCollection::class
-        );
-    }
 
     public function testSetOrder()
     {
@@ -100,7 +97,7 @@ class ServiceCollectionTest extends \PHPUnit\Framework\TestCase
      */
     public function testAddToFilterException()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage('The array of fields failed to pass. The array must include at one field.');
 
         $this->collection->addFieldToFilter([], 'not_array');
@@ -110,9 +107,16 @@ class ServiceCollectionTest extends \PHPUnit\Framework\TestCase
      */
     public function testAddToFilterExceptionArrayNotSymmetric()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage('The field array failed to pass. The array must have a matching condition array.');
 
         $this->collection->addFieldToFilter(['field2', 'field2'], ['condition1']);
+    }
+
+    protected function setUp(): void
+    {
+        $this->collection = Bootstrap::getObjectManager()->create(
+            ServiceCollection::class
+        );
     }
 }

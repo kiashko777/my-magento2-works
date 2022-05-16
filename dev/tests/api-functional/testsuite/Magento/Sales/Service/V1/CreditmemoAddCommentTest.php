@@ -3,9 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Service\V1;
 
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\Sales\Api\Data\CreditmemoCommentInterface as Comment;
+use Magento\Sales\Model\ResourceModel\Order\Creditmemo\Collection;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
@@ -29,19 +34,9 @@ class CreditmemoAddCommentTest extends WebapiAbstract
     const CREDITMEMO_INCREMENT_ID = '100000001';
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
-
-    /**
-     * Set up
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * Test creditmemo add comment service
@@ -50,9 +45,9 @@ class CreditmemoAddCommentTest extends WebapiAbstract
      */
     public function testCreditmemoAddComment()
     {
-        /** @var \Magento\Sales\Model\ResourceModel\Order\Creditmemo\Collection $creditmemoCollection */
+        /** @var Collection $creditmemoCollection */
         $creditmemoCollection =
-            $this->objectManager->get(\Magento\Sales\Model\ResourceModel\Order\Creditmemo\Collection::class);
+            $this->objectManager->get(Collection::class);
         $creditmemo = $creditmemoCollection->getFirstItem();
 
         $commentData = [
@@ -68,7 +63,7 @@ class CreditmemoAddCommentTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/creditmemo/' . $creditmemo->getId() . '/comments',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_READ_NAME,
@@ -82,5 +77,15 @@ class CreditmemoAddCommentTest extends WebapiAbstract
         self::assertNotEmpty($result);
         self::assertNotEmpty($result[Comment::ENTITY_ID]);
         self::assertEquals($creditmemo->getId(), $result[Comment::PARENT_ID]);
+    }
+
+    /**
+     * Set up
+     *
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

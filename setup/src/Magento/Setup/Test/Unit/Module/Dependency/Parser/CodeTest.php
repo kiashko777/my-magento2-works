@@ -18,12 +18,6 @@ class CodeTest extends TestCase
      */
     protected $parser;
 
-    protected function setUp(): void
-    {
-        $objectManagerHelper = new ObjectManager($this);
-        $this->parser = $objectManagerHelper->getObject(Code::class);
-    }
-
     /**
      * @param array $options
      * @dataProvider dataProviderWrongOptionFilesForParse
@@ -68,5 +62,11 @@ class CodeTest extends TestCase
             [['declared_namespaces' => 'sting', 'files_for_parse' => [1, 2]]],
             [['there_are_no_declared_namespaces' => [1, 3], 'files_for_parse' => [1, 2]]]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $objectManagerHelper = new ObjectManager($this);
+        $this->parser = $objectManagerHelper->getObject(Code::class);
     }
 }

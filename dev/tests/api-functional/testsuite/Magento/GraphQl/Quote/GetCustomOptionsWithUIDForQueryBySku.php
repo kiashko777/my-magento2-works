@@ -47,29 +47,29 @@ class GetCustomOptionsWithUIDForQueryBySku
                 case 'area':
                     $enteredOptions[] = [
                         'type' => 'field',
-                        'uid' => $this->encodeEnteredOption((int) $customOption->getOptionId()),
+                        'uid' => $this->encodeEnteredOption((int)$customOption->getOptionId()),
                         'value' => 'test'
                     ];
                     break;
                 case 'date':
                     $enteredOptions[] = [
                         'type' => 'date',
-                        'uid' => $this->encodeEnteredOption((int) $customOption->getOptionId()),
+                        'uid' => $this->encodeEnteredOption((int)$customOption->getOptionId()),
                         'value' => '2012-12-12 00:00:00'
                     ];
                     break;
                 case 'drop_down':
                     $optionSelectValues = $customOption->getValues();
                     $selectedOptions[] = $this->encodeSelectedOption(
-                        (int) $customOption->getOptionId(),
-                        (int) reset($optionSelectValues)->getOptionTypeId()
+                        (int)$customOption->getOptionId(),
+                        (int)reset($optionSelectValues)->getOptionTypeId()
                     );
                     break;
                 case 'multiple':
                     foreach ($customOption->getValues() as $optionValue) {
                         $selectedOptions[] = $this->encodeSelectedOption(
-                            (int) $customOption->getOptionId(),
-                            (int) $optionValue->getOptionTypeId()
+                            (int)$customOption->getOptionId(),
+                            (int)$optionValue->getOptionTypeId()
                         );
                     }
                     break;
@@ -83,6 +83,17 @@ class GetCustomOptionsWithUIDForQueryBySku
     }
 
     /**
+     * Returns UID of the entered custom option
+     *
+     * @param int $optionId
+     * @return string
+     */
+    private function encodeEnteredOption(int $optionId): string
+    {
+        return base64_encode("custom-option/$optionId");
+    }
+
+    /**
      * Returns UID of the selected custom option
      *
      * @param int $optionId
@@ -92,16 +103,5 @@ class GetCustomOptionsWithUIDForQueryBySku
     private function encodeSelectedOption(int $optionId, int $optionValueId): string
     {
         return base64_encode("custom-option/$optionId/$optionValueId");
-    }
-
-    /**
-     * Returns UID of the entered custom option
-     *
-     * @param int $optionId
-     * @return string
-     */
-    private function encodeEnteredOption(int $optionId): string
-    {
-        return base64_encode("custom-option/$optionId");
     }
 }

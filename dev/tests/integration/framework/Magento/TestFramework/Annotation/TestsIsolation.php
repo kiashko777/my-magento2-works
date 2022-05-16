@@ -3,12 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Annotation;
 
 use Magento\Framework\App\ObjectManager;
 use Magento\Framework\App\ResourceConnection;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\AssertionFailedError;
+use PHPUnit\Framework\TestCase;
+use Throwable;
+use function array_slice;
+use function sprintf;
 
 /**
  * Validates tests isolation. Makes sure that test does not keep exceed data in DB.
@@ -48,20 +52,6 @@ class TestsIsolation
     ];
 
     /**
-     * Pull data from specific table
-     *
-     * @param string $table
-     * @return array
-     */
-    private function pullDbState(string $table): array
-    {
-        $resource = ObjectManager::getInstance()->get(ResourceConnection::class);
-        $connection = $resource->getConnection();
-        $select = $connection->select()->from($table);
-        return $connection->fetchAll($select);
-    }
-
-    /**
      * Create DB snapshot before test run.
      *
      * @param TestCase $test
@@ -79,6 +69,63 @@ class TestsIsolation
                 $this->saveDbStateBeforeTestRun($test);
             }
         }
+    }
+
+    /**
+     * Check if test isolation is required for given scope of tests.
+     *
+     * @param TestCase $test
+     * @return bool
+     */
+    private function checkIsolationRequired(TestCase $test): bool
+    {
+        $isRequired = false;
+        if (!$test->getTestResultObject()) {
+            return $isRequired;
+        }
+
+        $testFilename = $test->getTestResultObject()->topTestSuite()->getName();
+        foreach ($this->testTypesToCheckIsolation as $testType) {
+            if (false !== strpos($testFilename, sprintf('/dev/tests/%s/', $testType))) {
+                $isRequired = true;
+                break;
+            }
+        }
+
+        return $isRequired;
+    }
+
+    /**
+     * Saving DB snapshot before fixtures applying.
+     *
+     * @param TestCase $test
+     * @return void
+     */
+    private function saveDbStateBeforeTestRun(TestCase $test): void
+    {
+        try {
+            if (empty($this->dbTableState)) {
+                foreach ($this->dbStateTables as $table) {
+                    $this->dbTableState[$table] = $this->pullDbState($table);
+                }
+            }
+        } catch (Throwable $e) {
+            $test->getTestResultObject()->addFailure($test, new AssertionFailedError($e->getMessage()), 0);
+        }
+    }
+
+    /**
+     * Pull data from specific table
+     *
+     * @param string $table
+     * @return array
+     */
+    private function pullDbState(string $table): array
+    {
+        $resource = ObjectManager::getInstance()->get(ResourceConnection::class);
+        $connection = $resource->getConnection();
+        $select = $connection->select()->from($table);
+        return $connection->fetchAll($select);
     }
 
     /**
@@ -102,49 +149,6 @@ class TestsIsolation
     }
 
     /**
-     * Saving DB snapshot before fixtures applying.
-     *
-     * @param TestCase $test
-     * @return void
-     */
-    private function saveDbStateBeforeTestRun(TestCase $test): void
-    {
-        try {
-            if (empty($this->dbTableState)) {
-                foreach ($this->dbStateTables as $table) {
-                    $this->dbTableState[$table] = $this->pullDbState($table);
-                }
-            }
-        } catch (\Throwable $e) {
-            $test->getTestResultObject()->addFailure($test, new AssertionFailedError($e->getMessage()), 0);
-        }
-    }
-
-    /**
-     * Check if test isolation is required for given scope of tests.
-     *
-     * @param TestCase $test
-     * @return bool
-     */
-    private function checkIsolationRequired(TestCase $test): bool
-    {
-        $isRequired = false;
-        if (!$test->getTestResultObject()) {
-            return $isRequired;
-        }
-
-        $testFilename = $test->getTestResultObject()->topTestSuite()->getName();
-        foreach ($this->testTypesToCheckIsolation as $testType) {
-            if (false !== strpos($testFilename, \sprintf('/dev/tests/%s/', $testType))) {
-                $isRequired = true;
-                break;
-            }
-        }
-
-        return $isRequired;
-    }
-
-    /**
      * Check if there's residual data in DB after test execution.
      *
      * @param TestCase $test
@@ -159,7 +163,7 @@ class TestsIsolation
                 if (!empty($diff)) {
                     $isolationProblem[$table] = $diff;
                 }
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $test->getTestResultObject()->addFailure($test, new AssertionFailedError($e->getMessage()), 0);
             }
         }
@@ -186,7 +190,7 @@ class TestsIsolation
     {
         $diff = [];
         if (count($dataBefore) !== count($dataAfter)) {
-            $diff = \array_slice($dataAfter, count($dataBefore));
+            $diff = array_slice($dataAfter, count($dataBefore));
         }
 
         return $diff;

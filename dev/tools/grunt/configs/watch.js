@@ -5,16 +5,16 @@
 
 'use strict';
 
-var combo  = require('./combo'),
+var combo = require('./combo'),
     themes = require('../tools/files-router').get('themes'),
-    _      = require('underscore');
+    _ = require('underscore');
 
 var themeOptions = {};
 
 _.each(themes, function (theme, name) {
     themeOptions[name] = {
         'files': [
-            '<%= combo.autopath(\''+name+'\', path.pub) %>/**/*.less'
+            '<%= combo.autopath(\'' + name + '\', path.pub) %>/**/*.less'
         ],
         'tasks': 'less:' + name
     };

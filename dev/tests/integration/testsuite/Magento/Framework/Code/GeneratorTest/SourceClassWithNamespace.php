@@ -3,8 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Code\GeneratorTest;
 
+use DateTime;
 use Laminas\Code\Generator\ClassGenerator;
 
 /**
@@ -26,9 +28,16 @@ class SourceClassWithNamespace extends ParentClassWithNamespace
     }
 
     /**
+     * Test method
+     */
+    public static function publicChildStatic()
+    {
+    }
+
+    /**
      * Public child method
      *
-     * @param \Laminas\Code\Generator\ClassGenerator $classGenerator
+     * @param ClassGenerator $classGenerator
      * @param string $param1
      * @param string $param2
      * @param string $param3
@@ -39,17 +48,18 @@ class SourceClassWithNamespace extends ParentClassWithNamespace
      */
     public function publicChildMethod(
         ClassGenerator $classGenerator,
-        $param1 = '',
-        $param2 = '\\',
-        $param3 = '\'',
-        array $array = []
-    ) {
+                       $param1 = '',
+                       $param2 = '\\',
+                       $param3 = '\'',
+        array          $array = []
+    )
+    {
     }
 
     /**
      * Public child method with reference
      *
-     * @param \Laminas\Code\Generator\ClassGenerator $classGenerator
+     * @param ClassGenerator $classGenerator
      * @param string $param1
      * @param array $array
      *
@@ -60,56 +70,9 @@ class SourceClassWithNamespace extends ParentClassWithNamespace
     }
 
     /**
-     * Protected child method
-     *
-     * @param \Laminas\Code\Generator\ClassGenerator $classGenerator
-     * @param string $param1
-     * @param string $param2
-     * @param string $param3
-     *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-     */
-    protected function _protectedChildMethod(
-        ClassGenerator $classGenerator,
-        $param1 = '',
-        $param2 = '\\',
-        $param3 = '\''
-    ) {
-    }
-
-    /**
-     * Private child method
-     *
-     * @param \Laminas\Code\Generator\ClassGenerator $classGenerator
-     * @param string $param1
-     * @param string $param2
-     * @param string $param3
-     * @param array $array
-     * @return void
-     *
-     * @SuppressWarnings(PHPMD.UnusedPrivateMethod)
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-     */
-    private function _privateChildMethod(
-        ClassGenerator $classGenerator,
-        $param1 = '',
-        $param2 = '\\',
-        $param3 = '\'',
-        array $array = []
-    ) {
-    }
-
-    /**
      * Test method
      */
     public function publicChildWithoutParameters()
-    {
-    }
-
-    /**
-     * Test method
-     */
-    public static function publicChildStatic()
     {
     }
 
@@ -137,20 +100,21 @@ class SourceClassWithNamespace extends ParentClassWithNamespace
         string $arg2,
         ?int $arg3,
         ?int $arg4 = null
-    ): void {
+    ): void
+    {
     }
 
     /**
      * Test method
      *
-     * @param \DateTime|null $arg1
+     * @param DateTime|null $arg1
      * @param mixed $arg2
      *
      * @return null|string
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    public function public71Another(?\DateTime $arg1, $arg2 = false): ?string
+    public function public71Another(?DateTime $arg1, $arg2 = false): ?string
     {
         // phpstan:ignore
     }
@@ -166,5 +130,47 @@ class SourceClassWithNamespace extends ParentClassWithNamespace
     public function publicWithSelf($arg = false): self
     {
         // phpstan:ignore
+    }
+
+    /**
+     * Protected child method
+     *
+     * @param ClassGenerator $classGenerator
+     * @param string $param1
+     * @param string $param2
+     * @param string $param3
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
+    protected function _protectedChildMethod(
+        ClassGenerator $classGenerator,
+                       $param1 = '',
+                       $param2 = '\\',
+                       $param3 = '\''
+    )
+    {
+    }
+
+    /**
+     * Private child method
+     *
+     * @param ClassGenerator $classGenerator
+     * @param string $param1
+     * @param string $param2
+     * @param string $param3
+     * @param array $array
+     * @return void
+     *
+     * @SuppressWarnings(PHPMD.UnusedPrivateMethod)
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
+    private function _privateChildMethod(
+        ClassGenerator $classGenerator,
+                       $param1 = '',
+                       $param2 = '\\',
+                       $param3 = '\'',
+        array          $array = []
+    )
+    {
     }
 }

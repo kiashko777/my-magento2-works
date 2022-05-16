@@ -5,10 +5,13 @@
  */
 declare(strict_types=1);
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\Framework\Filesystem;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
 $directoryName = 'linked_media';
-/** @var \Magento\Framework\Filesystem $filesystem */
-$filesystem = $objectManager->get(\Magento\Framework\Filesystem::class);
+/** @var Filesystem $filesystem */
+$filesystem = $objectManager->get(Filesystem::class);
 $fullDirectoryPath = $filesystem->getDirectoryRead(Magento\Framework\App\Filesystem\DirectoryList::PUB)
         ->getAbsolutePath() . $directoryName;
 $mediaDirectory = $filesystem->getDirectoryWrite(Magento\Framework\App\Filesystem\DirectoryList::MEDIA);

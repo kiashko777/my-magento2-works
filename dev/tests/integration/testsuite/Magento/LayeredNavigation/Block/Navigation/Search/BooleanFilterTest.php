@@ -7,7 +7,6 @@ declare(strict_types=1);
 
 namespace Magento\LayeredNavigation\Block\Navigation\Search;
 
-use Magento\Catalog\Model\Layer\Filter\AbstractFilter;
 use Magento\Catalog\Model\Layer\Resolver;
 use Magento\LayeredNavigation\Block\Navigation\Category\BooleanFilterTest as CategoryBooleanFilterTest;
 
@@ -33,7 +32,8 @@ class BooleanFilterTest extends CategoryBooleanFilterTest
         array $products,
         array $attributeData,
         array $expectation
-    ): void {
+    ): void
+    {
         $this->getSearchFiltersAndAssert($products, $attributeData, $expectation);
     }
 
@@ -82,11 +82,12 @@ class BooleanFilterTest extends CategoryBooleanFilterTest
      * @return void
      */
     public function testGetActiveFiltersWithCustomAttribute(
-        array $products,
-        array $expectation,
+        array  $products,
+        array  $expectation,
         string $filterValue,
-        int $productsCount
-    ): void {
+        int    $productsCount
+    ): void
+    {
         $this->getSearchActiveFiltersAndAssert($products, $expectation, $filterValue, $productsCount);
     }
 

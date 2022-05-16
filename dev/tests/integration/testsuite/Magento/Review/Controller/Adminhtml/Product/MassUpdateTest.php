@@ -7,13 +7,14 @@ declare(strict_types=1);
 
 namespace Magento\Review\Controller\Adminhtml\Product;
 
-use Magento\Review\Model\Review;
-use Magento\TestFramework\TestCase\AbstractBackendController;
+use Laminas\Http\Request;
 use Magento\Framework\Acl\Builder;
-use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\UrlInterface;
 use Magento\Review\Model\ResourceModel\Review\CollectionFactory;
-use Laminas\Http\Request;
+use Magento\Review\Model\Review;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * Test Mass Update action.
@@ -23,7 +24,7 @@ use Laminas\Http\Request;
 class MassUpdateTest extends AbstractBackendController
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
@@ -41,22 +42,6 @@ class MassUpdateTest extends AbstractBackendController
      * @var CollectionFactory
      */
     private $collectionFactory;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->aclBuilder = $this->objectManager->get(Builder::class);
-        $this->urlBuilder = $this->objectManager->get(UrlInterface::class);
-        $this->collectionFactory = $this->objectManager->get(CollectionFactory::class);
-        $this->aclBuilder->resetRuntimeAcl();
-        $this->httpMethod = Request::METHOD_POST;
-        $this->uri = 'backend/review/product/massUpdateStatus';
-    }
 
     /**
      * Tests Mass Update action without reviews_all resource when manipulating Pending reviews.
@@ -89,5 +74,21 @@ class MassUpdateTest extends AbstractBackendController
         $this->resource = ['Magento_Review::reviews_all', 'Magento_Review::pending'];
 
         parent::testAclNoAccess();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->aclBuilder = $this->objectManager->get(Builder::class);
+        $this->urlBuilder = $this->objectManager->get(UrlInterface::class);
+        $this->collectionFactory = $this->objectManager->get(CollectionFactory::class);
+        $this->aclBuilder->resetRuntimeAcl();
+        $this->httpMethod = Request::METHOD_POST;
+        $this->uri = 'backend/review/product/massUpdateStatus';
     }
 }

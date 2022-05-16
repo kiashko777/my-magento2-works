@@ -3,17 +3,26 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Model\Indexer\Product\Eav\Action;
 
+use LogicException;
+use Magento\Catalog\Block\Product\ListProduct;
+use Magento\Catalog\Model\CategoryFactory;
+use Magento\Catalog\Model\Indexer\Product\Eav\Processor;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\ResourceModel\Eav\Attribute;
+use Magento\Eav\Model\Config;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Indexer\TestCase;
 
 /**
  * Full reindex Test
  */
-class FullTest extends \Magento\TestFramework\Indexer\TestCase
+class FullTest extends TestCase
 {
     /**
-     * @var \Magento\Catalog\Model\Indexer\Product\Eav\Processor
+     * @var Processor
      */
     protected $_processor;
 
@@ -23,18 +32,11 @@ class FullTest extends \Magento\TestFramework\Indexer\TestCase
             ->getApplication()
             ->getDbInstance();
         if (!$db->isDbDumpExists()) {
-            throw new \LogicException('DB dump does not exist.');
+            throw new LogicException('DB dump does not exist.');
         }
         $db->restoreFromDbDump();
 
         parent::setUpBeforeClass();
-    }
-
-    protected function setUp(): void
-    {
-        $this->_processor = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\Indexer\Product\Eav\Processor::class
-        );
     }
 
     /**
@@ -45,26 +47,26 @@ class FullTest extends \Magento\TestFramework\Indexer\TestCase
      */
     public function testReindexAll()
     {
-        /** @var \Magento\Catalog\Model\ResourceModel\Eav\Attribute $attr **/
-        $attr = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Eav\Model\Config::class)
+        /** @var Attribute $attr * */
+        $attr = Bootstrap::getObjectManager()->create(Config::class)
             ->getAttribute('catalog_product', 'weight');
         $attr->setIsFilterable(1)->save();
 
         $this->assertTrue($attr->isIndexable());
 
-        $priceIndexerProcessor = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+        $priceIndexerProcessor = Bootstrap::getObjectManager()->create(
             \Magento\Catalog\Model\Indexer\Product\Price\Processor::class
         );
         $priceIndexerProcessor->reindexAll();
 
         $this->_processor->reindexAll();
 
-        $categoryFactory = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\CategoryFactory::class
+        $categoryFactory = Bootstrap::getObjectManager()->create(
+            CategoryFactory::class
         );
-        /** @var \Magento\Catalog\Block\Product\ListProduct $listProduct */
-        $listProduct = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Block\Product\ListProduct::class
+        /** @var ListProduct $listProduct */
+        $listProduct = Bootstrap::getObjectManager()->create(
+            ListProduct::class
         );
 
         $category = $categoryFactory->create()->load(2);
@@ -75,11 +77,18 @@ class FullTest extends \Magento\TestFramework\Indexer\TestCase
 
         $this->assertCount(1, $productCollection);
 
-        /** @var $product \Magento\Catalog\Model\Product */
+        /** @var $product Product */
         foreach ($productCollection as $product) {
             $this->assertEquals('Simple Products', $product->getName());
             $this->assertEquals('Short description', $product->getShortDescription());
             $this->assertEquals(1, $product->getWeight());
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->_processor = Bootstrap::getObjectManager()->create(
+            Processor::class
+        );
     }
 }

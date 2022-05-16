@@ -3,54 +3,43 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Block\Product\View;
+
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Option;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Registry;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\Catalog\Block\Products\View\Options.
  */
-class OptionsTest extends \PHPUnit\Framework\TestCase
+class OptionsTest extends TestCase
 {
     /**
-     * @var \Magento\Catalog\Block\Product\View\Options
+     * @var Options
      */
     protected $block;
 
     /**
-     * @var \Magento\Catalog\Model\Product
+     * @var Product
      */
     protected $product;
 
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     protected $objectManager;
 
     /**
-     * @var \Magento\Catalog\Api\ProductRepositoryInterface
+     * @var ProductRepositoryInterface
      */
     protected $productRepository;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-
-        $this->productRepository = $this->objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
-
-        try {
-            $this->product = $this->productRepository->get('simple');
-        } catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
-            $this->product = $this->productRepository->get('simple_dropdown_option');
-        }
-
-        $this->objectManager->get(\Magento\Framework\Registry::class)->unregister('current_product');
-        $this->objectManager->get(\Magento\Framework\Registry::class)->register('current_product', $this->product);
-
-        $this->block = $this->objectManager->get(
-            \Magento\Framework\View\LayoutInterface::class
-        )->createBlock(
-            \Magento\Catalog\Block\Product\View\Options::class
-        );
-    }
 
     /**
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
@@ -60,7 +49,7 @@ class OptionsTest extends \PHPUnit\Framework\TestCase
         $this->assertSame($this->product, $this->block->getProduct());
 
         $product = $this->objectManager->create(
-            \Magento\Catalog\Model\Product::class
+            Product::class
         );
         $this->block->setProduct($product);
         $this->assertSame($product, $this->block->getProduct());
@@ -82,7 +71,7 @@ class OptionsTest extends \PHPUnit\Framework\TestCase
         $options = $this->block->getOptions();
         $this->assertNotEmpty($options);
         foreach ($options as $option) {
-            $this->assertInstanceOf(\Magento\Catalog\Model\Product\Option::class, $option);
+            $this->assertInstanceOf(Option::class, $option);
         }
     }
 
@@ -133,5 +122,27 @@ class OptionsTest extends \PHPUnit\Framework\TestCase
                 'name' => 'drop_down option 2',
             ],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+
+        try {
+            $this->product = $this->productRepository->get('simple');
+        } catch (NoSuchEntityException $e) {
+            $this->product = $this->productRepository->get('simple_dropdown_option');
+        }
+
+        $this->objectManager->get(Registry::class)->unregister('current_product');
+        $this->objectManager->get(Registry::class)->register('current_product', $this->product);
+
+        $this->block = $this->objectManager->get(
+            LayoutInterface::class
+        )->createBlock(
+            Options::class
+        );
     }
 }

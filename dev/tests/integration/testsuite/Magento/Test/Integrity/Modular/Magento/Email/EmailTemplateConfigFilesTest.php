@@ -3,9 +3,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Modular\Magento\Email;
 
-class EmailTemplateConfigFilesTest extends \PHPUnit\Framework\TestCase
+use Exception;
+use Magento\Email\Model\Template\Config;
+use Magento\Email\Model\Template\Config\Reader;
+use Magento\Framework\App\Utility\Files;
+use Magento\Framework\Config\Dom;
+use Magento\Framework\Config\Dom\UrnResolver;
+use Magento\Framework\Config\ValidationStateInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class EmailTemplateConfigFilesTest extends TestCase
 {
     /**
      * Test that email template configuration file matches the format
@@ -15,12 +26,12 @@ class EmailTemplateConfigFilesTest extends \PHPUnit\Framework\TestCase
      */
     public function testFileFormat($file)
     {
-        $urnResolver = new \Magento\Framework\Config\Dom\UrnResolver();
+        $urnResolver = new UrnResolver();
         $schemaFile = $urnResolver->getRealPath('urn:magento:module:Magento_Email:etc/email_templates.xsd');
-        $validationStateMock = $this->createMock(\Magento\Framework\Config\ValidationStateInterface::class);
+        $validationStateMock = $this->createMock(ValidationStateInterface::class);
         $validationStateMock->method('isValidationRequired')
             ->willReturn(true);
-        $dom = new \Magento\Framework\Config\Dom(file_get_contents($file), $validationStateMock);
+        $dom = new Dom(file_get_contents($file), $validationStateMock);
         $result = $dom->validate($schemaFile, $errors);
         $this->assertTrue($result, print_r($errors, true));
     }
@@ -30,7 +41,7 @@ class EmailTemplateConfigFilesTest extends \PHPUnit\Framework\TestCase
      */
     public function fileFormatDataProvider()
     {
-        return \Magento\Framework\App\Utility\Files::init()->getConfigFiles('email_templates.xml');
+        return Files::init()->getConfigFiles('email_templates.xml');
     }
 
     /**
@@ -41,9 +52,9 @@ class EmailTemplateConfigFilesTest extends \PHPUnit\Framework\TestCase
      */
     public function testTemplateReference($templateId)
     {
-        /** @var \Magento\Email\Model\Template\Config $emailConfig */
-        $emailConfig = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Email\Model\Template\Config::class
+        /** @var Config $emailConfig */
+        $emailConfig = Bootstrap::getObjectManager()->create(
+            Config::class
         );
 
         $parts = $emailConfig->parseTemplateIdParts($templateId);
@@ -65,9 +76,9 @@ class EmailTemplateConfigFilesTest extends \PHPUnit\Framework\TestCase
     public function templateReferenceDataProvider()
     {
         $data = [];
-        /** @var \Magento\Email\Model\Template\Config $emailConfig */
-        $emailConfig = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Email\Model\Template\Config::class
+        /** @var Config $emailConfig */
+        $emailConfig = Bootstrap::getObjectManager()->create(
+            Config::class
         );
         foreach ($emailConfig->getAvailableTemplates() as $template) {
             $data[$template['value']] = [$template['value']];
@@ -80,16 +91,16 @@ class EmailTemplateConfigFilesTest extends \PHPUnit\Framework\TestCase
      */
     public function testMergedFormat()
     {
-        $validationState = $this->createMock(\Magento\Framework\Config\ValidationStateInterface::class);
+        $validationState = $this->createMock(ValidationStateInterface::class);
         $validationState->expects($this->any())->method('isValidationRequired')->willReturn(true);
-        /** @var \Magento\Email\Model\Template\Config\Reader $reader */
-        $reader = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Email\Model\Template\Config\Reader::class,
+        /** @var Reader $reader */
+        $reader = Bootstrap::getObjectManager()->create(
+            Reader::class,
             ['validationState' => $validationState]
         );
         try {
             $reader->read();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->fail('Merged email templates configuration does not pass XSD validation: ' . $e->getMessage());
         }
     }

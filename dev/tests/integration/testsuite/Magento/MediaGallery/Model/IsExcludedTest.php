@@ -22,14 +22,6 @@ class IsExcludedTest extends TestCase
     private $service;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->service = Bootstrap::getObjectManager()->get(IsPathExcludedInterface::class);
-    }
-
-    /**
      * Testing the excluded paths
      *
      * @param string $path
@@ -54,5 +46,13 @@ class IsExcludedTest extends TestCase
             ['catalog/product/somedir', true],
             ['catalog/category', false]
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->service = Bootstrap::getObjectManager()->get(IsPathExcludedInterface::class);
     }
 }

@@ -36,16 +36,6 @@ class CategoryTest extends TestCase
     private $categoryCollectionFactory;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->indexerProcessor = Bootstrap::getObjectManager()->create(Processor::class);
-        $this->categoryRepository = Bootstrap::getObjectManager()->create(CategoryRepositoryInterface::class);
-        $this->categoryCollectionFactory = Bootstrap::getObjectManager()->create(CategoryCollectionFactory::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/indexer_catalog_category.php
      * @magentoAppArea Adminhtml
      */
@@ -80,5 +70,15 @@ class CategoryTest extends TestCase
         $result = array_slice($collection, 2);
 
         return array_slice($result, 0, $count);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->indexerProcessor = Bootstrap::getObjectManager()->create(Processor::class);
+        $this->categoryRepository = Bootstrap::getObjectManager()->create(CategoryRepositoryInterface::class);
+        $this->categoryCollectionFactory = Bootstrap::getObjectManager()->create(CategoryCollectionFactory::class);
     }
 }

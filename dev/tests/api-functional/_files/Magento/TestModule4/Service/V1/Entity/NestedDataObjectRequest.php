@@ -3,12 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestModule4\Service\V1\Entity;
 
-class NestedDataObjectRequest extends \Magento\Framework\Api\AbstractExtensibleObject
+use Magento\Framework\Api\AbstractExtensibleObject;
+
+class NestedDataObjectRequest extends AbstractExtensibleObject
 {
     /**
-     * @return \Magento\TestModule4\Service\V1\Entity\DataObjectRequest
+     * @return DataObjectRequest
      */
     public function getDetails()
     {
@@ -16,10 +19,10 @@ class NestedDataObjectRequest extends \Magento\Framework\Api\AbstractExtensibleO
     }
 
     /**
-     * @param \Magento\TestModule4\Service\V1\Entity\DataObjectRequest $details
+     * @param DataObjectRequest $details
      * @return $this
      */
-    public function setDetails(\Magento\TestModule4\Service\V1\Entity\DataObjectRequest $details = null)
+    public function setDetails(DataObjectRequest $details = null)
     {
         return $this->setData('details', $details);
     }

@@ -7,7 +7,15 @@
 /**
  * Bootstrap for the integration testing environment
  */
+
 namespace Magento\TestFramework;
+
+use Magento\Framework\Shell;
+use Magento\TestFramework\Bootstrap\DocBlock;
+use Magento\TestFramework\Bootstrap\Environment;
+use Magento\TestFramework\Bootstrap\MemoryFactory;
+use Magento\TestFramework\Bootstrap\Profiler;
+use Magento\TestFramework\Bootstrap\Settings;
 
 class Bootstrap
 {
@@ -27,61 +35,62 @@ class Bootstrap
     const ADMIN_ROLE_NAME = 'Administrators';
 
     /**
-     * @var \Magento\TestFramework\Bootstrap\Settings
+     * @var Settings
      */
     private $_settings;
 
     /**
-     * @var \Magento\TestFramework\Application
+     * @var Application
      */
     private $_application;
 
     /**
-     * @var \Magento\TestFramework\Bootstrap\Environment
+     * @var Environment
      */
     private $_envBootstrap;
 
     /**
-     * @var \Magento\TestFramework\Bootstrap\DocBlock
+     * @var DocBlock
      */
     private $_docBlockBootstrap;
 
     /**
-     * @var \Magento\TestFramework\Bootstrap\Profiler
+     * @var Profiler
      */
     private $_profilerBootstrap;
 
     /**
-     * @var \Magento\Framework\Shell
+     * @var Shell
      */
     private $_shell;
 
     /**
-     * @var \Magento\TestFramework\Bootstrap\MemoryFactory
+     * @var MemoryFactory
      */
     private $memoryFactory;
 
     /**
      * Constructor
      *
-     * @param \Magento\TestFramework\Bootstrap\Settings $settings
-     * @param \Magento\TestFramework\Bootstrap\Environment $envBootstrap
-     * @param \Magento\TestFramework\Bootstrap\DocBlock $docBlockBootstrap
-     * @param \Magento\TestFramework\Bootstrap\Profiler $profilerBootstrap
-     * @param \Magento\Framework\Shell $shell
+     * @param Settings $settings
+     * @param Environment $envBootstrap
+     * @param DocBlock $docBlockBootstrap
+     * @param Profiler $profilerBootstrap
+     * @param Shell $shell
      * @param Application $application
      * @param Bootstrap\MemoryFactory $memoryFactory
      * @internal param string $tmpDir
      */
     public function __construct(
-        \Magento\TestFramework\Bootstrap\Settings $settings,
-        \Magento\TestFramework\Bootstrap\Environment $envBootstrap,
-        \Magento\TestFramework\Bootstrap\DocBlock $docBlockBootstrap,
-        \Magento\TestFramework\Bootstrap\Profiler $profilerBootstrap,
-        \Magento\Framework\Shell $shell,
-        \Magento\TestFramework\Application $application,
-        \Magento\TestFramework\Bootstrap\MemoryFactory $memoryFactory
-    ) {
+        Settings    $settings,
+        Environment $envBootstrap,
+        DocBlock    $docBlockBootstrap,
+        Profiler    $profilerBootstrap,
+        Shell                     $shell,
+        Application                                  $application,
+        MemoryFactory                                $memoryFactory
+    )
+    {
         $this->_settings = $settings;
         $this->_envBootstrap = $envBootstrap;
         $this->_docBlockBootstrap = $docBlockBootstrap;

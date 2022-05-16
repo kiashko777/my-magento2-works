@@ -6,18 +6,22 @@
 
 namespace Magento\Setup\Model;
 
+use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\DB\Adapter\AdapterInterface;
+use SplFixedArray;
+
 /**
  * Encapsulate logic that performs batch insert into table
  */
 class BatchInsert
 {
     /**
-     * @var \Magento\Framework\App\ResourceConnection
+     * @var ResourceConnection
      */
     private $resourceConnection;
 
     /**
-     * @var \Magento\Framework\DB\Adapter\AdapterInterface
+     * @var AdapterInterface
      */
     private $dbConnection;
 
@@ -42,19 +46,20 @@ class BatchInsert
     private $currentStorageIndex = 0;
 
     /**
-     * @param \Magento\Framework\App\ResourceConnection $resourceConnection
+     * @param ResourceConnection $resourceConnection
      * @param string $insertIntoTable
      * @param int $batchSize
      */
     public function __construct(
-        \Magento\Framework\App\ResourceConnection $resourceConnection,
-        $insertIntoTable,
-        $batchSize
-    ) {
+        ResourceConnection $resourceConnection,
+                                                  $insertIntoTable,
+                                                  $batchSize
+    )
+    {
         $this->resourceConnection = $resourceConnection;
         $this->insertIntoTable = $insertIntoTable;
         $this->batchSize = $batchSize;
-        $this->dataStorage = new \SplFixedArray($batchSize);
+        $this->dataStorage = new SplFixedArray($batchSize);
     }
 
     /**
@@ -93,7 +98,7 @@ class BatchInsert
                     $this->dataStorage->toArray()
                 );
 
-            $this->dataStorage = new \SplFixedArray($this->batchSize);
+            $this->dataStorage = new SplFixedArray($this->batchSize);
             $this->currentStorageIndex = 0;
         }
     }
@@ -103,7 +108,7 @@ class BatchInsert
      *
      * Method is required to eliminate multiple calls to ResourceConnection class
      *
-     * @return \Magento\Framework\DB\Adapter\AdapterInterface
+     * @return AdapterInterface
      */
     private function getDbConnection()
     {

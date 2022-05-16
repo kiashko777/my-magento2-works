@@ -3,8 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Api;
 
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 class ProductRepositoryMultiCurrencyTest extends WebapiAbstract
@@ -35,40 +37,27 @@ class ProductRepositoryMultiCurrencyTest extends WebapiAbstract
         $this->assertEquals(20, $product['price']);
     }
 
-    private function saveProduct($product, $storeCode = null)
+    private function assignProductToWebsite($sku, $websiteId)
     {
         $serviceInfo = [
             'rest' => [
-                'resourcePath' => '/V1/products/' . $product['sku'],
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT
+                'resourcePath' => '/V1/products/' . $sku . '/websites',
+                'httpMethod' => Request::HTTP_METHOD_POST
             ],
             'soap' => [
-                'service' => self::PRODUCT_SERVICE_NAME,
+                'service' => self::WEBSITE_LINK_SERVICE_NAME,
                 'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::PRODUCT_SERVICE_NAME . 'Save'
+                'operation' => self::WEBSITE_LINK_SERVICE_NAME . 'save'
             ]
         ];
 
-        $requestData = ['product' => $product];
-        return $this->_webApiCall($serviceInfo, $requestData, null, $storeCode);
-    }
-
-    private function getProduct($sku, $storeCode = null)
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::PRODUCTS_RESOURCE_PATH . '/' . $sku,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET
-            ],
-            'soap' => [
-                'service' => self::PRODUCT_SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::PRODUCT_SERVICE_NAME . 'get'
+        $requestData = [
+            "productWebsiteLink" => [
+                "websiteId" => $websiteId,
+                "sku" => $sku
             ]
         ];
-
-        $requestData = ['sku' => $sku];
-        return $this->_webApiCall($serviceInfo, $requestData, null, $storeCode);
+        $this->assertTrue($this->_webApiCall($serviceInfo, $requestData));
     }
 
     private function getWebsiteId($websiteCode)
@@ -76,7 +65,7 @@ class ProductRepositoryMultiCurrencyTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::WEBSITES_RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET
+                'httpMethod' => Request::HTTP_METHOD_GET
             ],
             'soap' => [
                 'service' => self::WEBSITES_SERVICE_NAME,
@@ -96,26 +85,39 @@ class ProductRepositoryMultiCurrencyTest extends WebapiAbstract
         return $websiteId;
     }
 
-    private function assignProductToWebsite($sku, $websiteId)
+    private function getProduct($sku, $storeCode = null)
     {
         $serviceInfo = [
             'rest' => [
-                'resourcePath' => '/V1/products/' . $sku . '/websites',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST
+                'resourcePath' => self::PRODUCTS_RESOURCE_PATH . '/' . $sku,
+                'httpMethod' => Request::HTTP_METHOD_GET
             ],
             'soap' => [
-                'service' => self::WEBSITE_LINK_SERVICE_NAME,
+                'service' => self::PRODUCT_SERVICE_NAME,
                 'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::WEBSITE_LINK_SERVICE_NAME . 'save'
+                'operation' => self::PRODUCT_SERVICE_NAME . 'get'
             ]
         ];
 
-        $requestData = [
-            "productWebsiteLink" => [
-                "websiteId" => $websiteId,
-                "sku" => $sku
+        $requestData = ['sku' => $sku];
+        return $this->_webApiCall($serviceInfo, $requestData, null, $storeCode);
+    }
+
+    private function saveProduct($product, $storeCode = null)
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => '/V1/products/' . $product['sku'],
+                'httpMethod' => Request::HTTP_METHOD_PUT
+            ],
+            'soap' => [
+                'service' => self::PRODUCT_SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::PRODUCT_SERVICE_NAME . 'Save'
             ]
         ];
-        $this->assertTrue($this->_webApiCall($serviceInfo, $requestData));
+
+        $requestData = ['product' => $product];
+        return $this->_webApiCall($serviceInfo, $requestData, null, $storeCode);
     }
 }

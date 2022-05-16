@@ -4,14 +4,18 @@
  * See COPYING.txt for license details.
  */
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Payment;
+use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var \Magento\Sales\Model\Order\Payment $paymentInfo */
-$paymentInfo = $objectManager->create(\Magento\Sales\Model\Order\Payment::class);
+$objectManager = Bootstrap::getObjectManager();
+
+/** @var Payment $paymentInfo */
+$paymentInfo = $objectManager->create(Payment::class);
 $paymentInfo->setMethod('Cc')->setData('cc_number_enc', '1111111111');
 
-/** @var \Magento\Sales\Model\Order $order */
-$order = $objectManager->create(\Magento\Sales\Model\Order::class);
+/** @var Order $order */
+$order = $objectManager->create(Order::class);
 $order->setIncrementId(
     '100000001'
 )->setPayment(

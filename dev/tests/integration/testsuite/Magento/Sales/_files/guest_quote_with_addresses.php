@@ -6,18 +6,29 @@
 declare(strict_types=1);
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Framework\App\Area;
+use Magento\Quote\Api\CartRepositoryInterface;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\Quote\Address;
+use Magento\Quote\Model\QuoteIdMask;
+use Magento\Quote\Model\QuoteIdMaskFactory;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Sales/_files/address_list.php');
 
-\Magento\TestFramework\Helper\Bootstrap::getInstance()->loadArea(\Magento\Framework\App\Area::AREA_FRONTEND);
+Bootstrap::getInstance()->loadArea(Area::AREA_FRONTEND);
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 /** @var ProductRepositoryInterface $productRepository */
 $productRepository = $objectManager->get(ProductRepositoryInterface::class);
 
-/** @var \Magento\Catalog\Model\Product $product */
-$product = $objectManager->create(\Magento\Catalog\Model\Product::class);
+/** @var Product $product */
+$product = $objectManager->create(Product::class);
 $product->setTypeId('simple')
     ->setAttributeSetId($product->getDefaultAttributeSetId())
     ->setName('Simple Products')
@@ -27,8 +38,8 @@ $product->setTypeId('simple')
     ->setMetaTitle('meta title')
     ->setMetaKeyword('meta keyword')
     ->setMetaDescription('meta description')
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setStockData(
         [
             'qty' => 100,
@@ -51,7 +62,7 @@ $addressData = [
 ];
 
 $billingAddress = $objectManager->create(
-    \Magento\Quote\Model\Quote\Address::class,
+    Address::class,
     ['data' => $addressData]
 );
 $billingAddress->setAddressType('billing');
@@ -59,10 +70,10 @@ $billingAddress->setAddressType('billing');
 $shippingAddress = clone $billingAddress;
 $shippingAddress->setId(null)->setAddressType('shipping');
 
-$store = $objectManager->get(\Magento\Store\Model\StoreManagerInterface::class)->getStore();
+$store = $objectManager->get(StoreManagerInterface::class)->getStore();
 
-/** @var \Magento\Quote\Model\Quote $quote */
-$quote = $objectManager->create(\Magento\Quote\Model\Quote::class);
+/** @var Quote $quote */
+$quote = $objectManager->create(Quote::class);
 $quote->setCustomerIsGuest(true)
     ->setStoreId($store->getId())
     ->setReservedOrderId('guest_quote')
@@ -74,11 +85,11 @@ $quote->getPayment()->setMethod('checkmo');
 $quote->getShippingAddress()->setShippingMethod('flatrate_flatrate')->setCollectShippingRates(true);
 $quote->collectTotals();
 
-$quoteRepository = $objectManager->create(\Magento\Quote\Api\CartRepositoryInterface::class);
+$quoteRepository = $objectManager->create(CartRepositoryInterface::class);
 $quoteRepository->save($quote);
 
-/** @var \Magento\Quote\Model\QuoteIdMask $quoteIdMask */
-$quoteIdMask = $objectManager->create(\Magento\Quote\Model\QuoteIdMaskFactory::class)->create();
+/** @var QuoteIdMask $quoteIdMask */
+$quoteIdMask = $objectManager->create(QuoteIdMaskFactory::class)->create();
 $quoteIdMask->setQuoteId($quote->getId());
 $quoteIdMask->setDataChanges(true);
 $quoteIdMask->save();

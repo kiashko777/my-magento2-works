@@ -3,9 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-/** @var $address \Magento\Sales\Model\Order\Address */
-$address = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Sales\Model\Order\Address::class
+/** @var $address Address */
+
+use Magento\Sales\Model\Order\Address;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$address = Bootstrap::getObjectManager()->create(
+    Address::class
 );
 $address->setRegion(
     'CA'

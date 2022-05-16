@@ -3,12 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Payment\Helper;
 
-use PHPUnit\Framework\TestCase;
 use Magento\OfflinePayments\Block\Info\Checkmo;
 use Magento\Payment\Model\Info;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\Payment\Helper\Data
@@ -19,16 +20,6 @@ class DataTest extends TestCase
      * @var Data
      */
     private $helper;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->helper = Bootstrap::getObjectManager()->get(Data::class);
-    }
 
     /**
      * @return void
@@ -57,5 +48,15 @@ class DataTest extends TestCase
             $result['cashondelivery']['label'],
             'Payment method title is not loaded from store config'
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->helper = Bootstrap::getObjectManager()->get(Data::class);
     }
 }

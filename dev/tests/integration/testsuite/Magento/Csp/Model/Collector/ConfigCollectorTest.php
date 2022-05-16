@@ -12,8 +12,8 @@ use Magento\Csp\Model\Policy\FetchPolicy;
 use Magento\Csp\Model\Policy\FlagPolicy;
 use Magento\Csp\Model\Policy\PluginTypesPolicy;
 use Magento\Csp\Model\Policy\SandboxPolicy;
-use PHPUnit\Framework\TestCase;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test collecting policies from Magento config.
@@ -24,63 +24,6 @@ class ConfigCollectorTest extends TestCase
      * @var ConfigCollector
      */
     private $collector;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->collector = Bootstrap::getObjectManager()->get(ConfigCollector::class);
-    }
-
-    /**
-     * Create expected policy objects.
-     *
-     * @return PolicyInterface[]
-     */
-    private function getExpectedPolicies(): array
-    {
-        return [
-            'child-src' => new FetchPolicy(
-                'child-src',
-                false,
-                ['http://magento.com', 'http://devdocs.magento.com'],
-                ['http', 'https', 'blob'],
-                true,
-                true,
-                false,
-                [],
-                [],
-                true
-            ),
-            'child-src2' => new FetchPolicy('child-src', false, [], [], false, false, true),
-            'connect-src' => new FetchPolicy('connect-src'),
-            'default-src' => new FetchPolicy(
-                'default-src',
-                false,
-                ['http://magento.com', 'http://devdocs.magento.com'],
-                [],
-                true
-            ),
-            'font-src' => new FetchPolicy('font-src', false, [], ['data'], true),
-            'frame-src' => new FetchPolicy('frame-src', false, [], [], true, false, false, [], [], true),
-            'img-src' => new FetchPolicy('img-src', false, [], ['data'], true),
-            'manifest-src' => new FetchPolicy('manifest-src', false, [], [], true),
-            'media-src' => new FetchPolicy('media-src', false, [], [], true),
-            'object-src' => new FetchPolicy('object-src', false, [], [], true),
-            'script-src' => new FetchPolicy('script-src', false, [], [], true, false, false, [], [], false, true),
-            'style-src' => new FetchPolicy('style-src', false, [], [], true),
-            'base-uri' => new FetchPolicy('base-uri', false, [], [], true),
-            'plugin-types' => new PluginTypesPolicy(
-                ['application/x-shockwave-flash', 'application/x-java-applet']
-            ),
-            'sandbox' => new SandboxPolicy(true, true, true, true, false, false, true, true, true, true, true),
-            'form-action' => new FetchPolicy('form-action', false, [], [], true),
-            'frame-ancestors' => new FetchPolicy('frame-ancestors', false, [], [], true),
-            'block-all-mixed-content' => new FlagPolicy('block-all-mixed-content'),
-            'upgrade-insecure-requests' => new FlagPolicy('upgrade-insecure-requests')
-        ];
-    }
 
     /**
      * Test initiating policies from config.
@@ -195,5 +138,62 @@ class ConfigCollectorTest extends TestCase
             $checkedKeys[] = $id;
         }
         $this->assertEmpty(array_diff($expectedPolicyKeys, $checkedKeys));
+    }
+
+    /**
+     * Create expected policy objects.
+     *
+     * @return PolicyInterface[]
+     */
+    private function getExpectedPolicies(): array
+    {
+        return [
+            'child-src' => new FetchPolicy(
+                'child-src',
+                false,
+                ['http://magento.com', 'http://devdocs.magento.com'],
+                ['http', 'https', 'blob'],
+                true,
+                true,
+                false,
+                [],
+                [],
+                true
+            ),
+            'child-src2' => new FetchPolicy('child-src', false, [], [], false, false, true),
+            'connect-src' => new FetchPolicy('connect-src'),
+            'default-src' => new FetchPolicy(
+                'default-src',
+                false,
+                ['http://magento.com', 'http://devdocs.magento.com'],
+                [],
+                true
+            ),
+            'font-src' => new FetchPolicy('font-src', false, [], ['data'], true),
+            'frame-src' => new FetchPolicy('frame-src', false, [], [], true, false, false, [], [], true),
+            'img-src' => new FetchPolicy('img-src', false, [], ['data'], true),
+            'manifest-src' => new FetchPolicy('manifest-src', false, [], [], true),
+            'media-src' => new FetchPolicy('media-src', false, [], [], true),
+            'object-src' => new FetchPolicy('object-src', false, [], [], true),
+            'script-src' => new FetchPolicy('script-src', false, [], [], true, false, false, [], [], false, true),
+            'style-src' => new FetchPolicy('style-src', false, [], [], true),
+            'base-uri' => new FetchPolicy('base-uri', false, [], [], true),
+            'plugin-types' => new PluginTypesPolicy(
+                ['application/x-shockwave-flash', 'application/x-java-applet']
+            ),
+            'sandbox' => new SandboxPolicy(true, true, true, true, false, false, true, true, true, true, true),
+            'form-action' => new FetchPolicy('form-action', false, [], [], true),
+            'frame-ancestors' => new FetchPolicy('frame-ancestors', false, [], [], true),
+            'block-all-mixed-content' => new FlagPolicy('block-all-mixed-content'),
+            'upgrade-insecure-requests' => new FlagPolicy('upgrade-insecure-requests')
+        ];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->collector = Bootstrap::getObjectManager()->get(ConfigCollector::class);
     }
 }

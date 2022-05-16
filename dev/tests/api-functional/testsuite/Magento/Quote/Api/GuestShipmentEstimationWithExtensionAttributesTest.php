@@ -3,12 +3,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Quote\Api;
 
 use Magento\Framework\Api\ExtensibleDataInterface;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Quote\Api\Data\AddressInterface;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\Quote\Address;
+use Magento\Quote\Model\QuoteIdMask;
+use Magento\Quote\Model\QuoteIdMaskFactory;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\WebapiAbstract;
-use Magento\Quote\Api\Data\AddressInterface;
 
 class GuestShipmentEstimationWithExtensionAttributesTest extends WebapiAbstract
 {
@@ -21,11 +28,6 @@ class GuestShipmentEstimationWithExtensionAttributesTest extends WebapiAbstract
      */
     private $objectManager;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
-
     /**
      * @magentoAppIsolation enabled
      * @magentoDbIsolation disabled
@@ -34,17 +36,17 @@ class GuestShipmentEstimationWithExtensionAttributesTest extends WebapiAbstract
      */
     public function testEstimateByExtendedAddress(): void
     {
-        /** @var \Magento\Quote\Model\Quote $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test01', 'reserved_order_id');
         $cartId = $quote->getId();
         if (!$cartId) {
             $this->fail('quote fixture failed');
         }
 
-        /** @var \Magento\Quote\Model\QuoteIdMask $quoteIdMask */
-        $quoteIdMask = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Quote\Model\QuoteIdMaskFactory::class)
+        /** @var QuoteIdMask $quoteIdMask */
+        $quoteIdMask = Bootstrap::getObjectManager()
+            ->create(QuoteIdMaskFactory::class)
             ->create();
         $quoteIdMask->load($cartId, 'quote_id');
         //Use masked cart Id
@@ -52,7 +54,7 @@ class GuestShipmentEstimationWithExtensionAttributesTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/guest-carts/' . $cartId . '/estimate-shipping-methods',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -61,7 +63,7 @@ class GuestShipmentEstimationWithExtensionAttributesTest extends WebapiAbstract
             ],
         ];
         if (TESTS_WEB_API_ADAPTER == self::ADAPTER_SOAP) {
-            /** @var \Magento\Quote\Model\Quote\Address $address */
+            /** @var Address $address */
             $address = $quote->getShippingAddress();
 
             $data = [
@@ -117,5 +119,10 @@ class GuestShipmentEstimationWithExtensionAttributesTest extends WebapiAbstract
             $this->assertEquals("flatrate", $rate['carrier_code']);
             $this->assertEquals(0, $rate['amount']);
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

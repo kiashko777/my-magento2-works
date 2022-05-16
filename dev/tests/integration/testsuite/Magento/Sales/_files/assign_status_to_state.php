@@ -4,9 +4,13 @@
  * See COPYING.txt for license details.
  */
 
-/** @var \Magento\Sales\Model\Order\Status $status */
-$status = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Sales\Model\Order\Status::class
+/** @var Status $status */
+
+use Magento\Sales\Model\Order\Status;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$status = Bootstrap::getObjectManager()->create(
+    Status::class
 );
 $status->setData(
     [

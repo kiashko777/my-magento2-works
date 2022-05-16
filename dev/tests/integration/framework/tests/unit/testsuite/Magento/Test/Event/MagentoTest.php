@@ -7,39 +7,40 @@
 /**
  * Test class for \Magento\TestFramework\Event\Magento.
  */
+
 namespace Magento\Test\Event;
 
-class MagentoTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\Event\Observer;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\TestFramework\Event\Magento;
+use Magento\TestFramework\EventManager;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use stdClass;
+
+class MagentoTest extends TestCase
 {
     /**
-     * @var \Magento\TestFramework\Event\Magento
+     * @var Magento
      */
     protected $_object;
 
     /**
-     * @var \Magento\TestFramework\EventManager|\PHPUnit\Framework\MockObject\MockObject
+     * @var EventManager|MockObject
      */
     protected $_eventManager;
 
-    protected function setUp(): void
-    {
-        $this->_eventManager = $this->getMockBuilder(\Magento\TestFramework\EventManager::class)
-            ->setMethods(['fireEvent'])
-            ->setConstructorArgs([[]])
-            ->getMock();
-        $this->_object = new \Magento\TestFramework\Event\Magento($this->_eventManager);
-    }
-
-    protected function tearDown(): void
-    {
-        \Magento\TestFramework\Event\Magento::setDefaultEventManager(null);
-    }
-
     public function testConstructorDefaultEventManager()
     {
-        \Magento\TestFramework\Event\Magento::setDefaultEventManager($this->_eventManager);
-        $this->_object = new \Magento\TestFramework\Event\Magento();
+        Magento::setDefaultEventManager($this->_eventManager);
+        $this->_object = new Magento();
         $this->testInitStoreAfter();
+    }
+
+    public function testInitStoreAfter()
+    {
+        $this->_eventManager->expects($this->once())->method('fireEvent')->with('initStoreAfter');
+        $this->_object->execute($this->createMock(Observer::class));
     }
 
     /**
@@ -48,19 +49,27 @@ class MagentoTest extends \PHPUnit\Framework\TestCase
      */
     public function testConstructorException($eventManager)
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
 
-        new \Magento\TestFramework\Event\Magento($eventManager);
+        new Magento($eventManager);
     }
 
     public function constructorExceptionDataProvider()
     {
-        return ['no event manager' => [null], 'not an event manager' => [new \stdClass()]];
+        return ['no event manager' => [null], 'not an event manager' => [new stdClass()]];
     }
 
-    public function testInitStoreAfter()
+    protected function setUp(): void
     {
-        $this->_eventManager->expects($this->once())->method('fireEvent')->with('initStoreAfter');
-        $this->_object->execute($this->createMock(\Magento\Framework\Event\Observer::class));
+        $this->_eventManager = $this->getMockBuilder(EventManager::class)
+            ->setMethods(['fireEvent'])
+            ->setConstructorArgs([[]])
+            ->getMock();
+        $this->_object = new Magento($this->_eventManager);
+    }
+
+    protected function tearDown(): void
+    {
+        Magento::setDefaultEventManager(null);
     }
 }

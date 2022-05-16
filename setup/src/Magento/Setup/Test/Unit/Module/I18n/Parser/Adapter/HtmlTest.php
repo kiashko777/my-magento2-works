@@ -22,12 +22,6 @@ class HtmlTest extends TestCase
      */
     private $testFile;
 
-    protected function setUp(): void
-    {
-        $this->testFile = str_replace('\\', '/', realpath(__DIR__)) . '/_files/email.html';
-        $this->model = new Html();
-    }
-
     public function testParse()
     {
         $expectedResult = [
@@ -147,5 +141,11 @@ class HtmlTest extends TestCase
         $this->model->parse($this->testFile);
 
         $this->assertEquals($expectedResult, $this->model->getPhrases());
+    }
+
+    protected function setUp(): void
+    {
+        $this->testFile = str_replace('\\', '/', realpath(__DIR__)) . '/_files/email.html';
+        $this->model = new Html();
     }
 }

@@ -10,6 +10,7 @@ namespace Magento\GroupedProduct\Api;
 
 use Magento\Catalog\Api\ProductLinkManagementInterface;
 use Magento\Framework\Indexer\IndexerRegistry;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Webapi\Rest\Request;
 use Magento\Indexer\Model\Config;
 use Magento\TestFramework\Helper\Bootstrap;
@@ -24,7 +25,7 @@ class ProductLinkRepositoryTest extends WebapiAbstract
     const RESOURCE_PATH_SEARCH = '/V1/search/';
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
 
@@ -37,12 +38,6 @@ class ProductLinkRepositoryTest extends WebapiAbstract
      * @var mixed
      */
     private $indexerRegistry;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->indexerRegistry = $this->objectManager->get(IndexerRegistry::class);
-    }
 
     /**
      * @magentoApiDataFixture Magento/Catalog/_files/product_simple_duplicated.php
@@ -131,99 +126,14 @@ class ProductLinkRepositoryTest extends WebapiAbstract
         $this->restoreIndexMode();
     }
 
-    /**
-     * Verify empty out of stock grouped product is in stock after child has been added.
-     *
-     * @return void
-     * @magentoApiDataFixture Magento/GroupedProduct/_files/empty_grouped_product.php
-     * @magentoApiDataFixture Magento/Catalog/_files/product_virtual.php
-     */
-    public function testGroupedProductIsInStockAfterAddChild(): void
+    private function setIndexScheduled(): void
     {
-        $productSku = 'grouped-product';
-        self::assertFalse($this->isProductInStock($productSku));
-        $items = [
-            'sku' => $productSku,
-            'link_type' => 'associated',
-            'linked_product_type' => 'virtual',
-            'linked_product_sku' => 'virtual-product',
-            'position' => 3,
-            'extension_attributes' => [
-                'qty' => 1,
-            ],
-        ];
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . $productSku . '/links',
-                'httpMethod' => Request::HTTP_METHOD_PUT,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'Save',
-            ],
-        ];
-        $this->_webApiCall($serviceInfo, ['entity' => $items]);
-        self::assertTrue($this->isProductInStock($productSku));
-    }
-
-    /**
-     * Verify in stock grouped product is out stock after children have been removed.
-     *
-     * @return void
-     * @magentoApiDataFixture Magento/GroupedProduct/_files/product_grouped_with_simple.php
-     */
-    public function testGroupedProductIsOutOfStockAfterRemoveChild(): void
-    {
-        $productSku = 'grouped';
-        $childrenSkus = [
-            'simple_11',
-            'simple_22',
-        ];
-        self::assertTrue($this->isProductInStock($productSku));
-
-        foreach ($childrenSkus as $childSku) {
-            $serviceInfo = [
-                'rest' => [
-                    'resourcePath' => self::RESOURCE_PATH . $productSku . '/links/associated/' . $childSku,
-                    'httpMethod' => Request::HTTP_METHOD_DELETE,
-                ],
-                'soap' => [
-                    'service' => self::SERVICE_NAME,
-                    'serviceVersion' => self::SERVICE_VERSION,
-                    'operation' => self::SERVICE_NAME . 'DeleteById',
-                ],
-            ];
-            $requestData = ['sku' => $productSku, 'type' => 'associated', 'linkedProductSku' => $childSku];
-            $this->_webApiCall($serviceInfo, $requestData);
+        $indexerListIds = $this->objectManager->get(Config::class)->getIndexers();
+        foreach ($indexerListIds as $indexerId) {
+            $indexer = $this->indexerRegistry->get($indexerId['indexer_id']);
+            $this->indexersState[$indexerId['indexer_id']] = $indexer->isScheduled();
+            $indexer->setScheduled(true);
         }
-
-        self::assertFalse($this->isProductInStock($productSku));
-    }
-
-
-    /**
-     * Check product stock status.
-     *
-     * @param string $productSku
-     * @return bool
-     */
-    private function isProductInStock(string $productSku): bool
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => '/V1/stockStatuses/' . $productSku,
-                'httpMethod' => Request::HTTP_METHOD_GET,
-            ],
-            'soap' => [
-                'service' => 'catalogInventoryStockRegistryV1',
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => 'catalogInventoryStockRegistryV1getStockStatusBySku',
-            ],
-        ];
-        $result = $this->_webApiCall($serviceInfo, ['productSku' => $productSku]);
-
-        return (bool)$result['stock_status'];
     }
 
     /**
@@ -268,20 +178,110 @@ class ProductLinkRepositoryTest extends WebapiAbstract
         ];
     }
 
-    private function setIndexScheduled(): void
-    {
-        $indexerListIds = $this->objectManager->get(Config::class)->getIndexers();
-        foreach ($indexerListIds as $indexerId) {
-            $indexer = $this->indexerRegistry->get($indexerId['indexer_id']);
-            $this->indexersState[$indexerId['indexer_id']] = $indexer->isScheduled();
-            $indexer->setScheduled(true);
-        }
-    }
-
     private function restoreIndexMode(): void
     {
         foreach ($this->indexersState as $indexerId => $state) {
             $this->indexerRegistry->get($indexerId)->setScheduled($state);
         }
+    }
+
+    /**
+     * Verify empty out of stock grouped product is in stock after child has been added.
+     *
+     * @return void
+     * @magentoApiDataFixture Magento/GroupedProduct/_files/empty_grouped_product.php
+     * @magentoApiDataFixture Magento/Catalog/_files/product_virtual.php
+     */
+    public function testGroupedProductIsInStockAfterAddChild(): void
+    {
+        $productSku = 'grouped-product';
+        self::assertFalse($this->isProductInStock($productSku));
+        $items = [
+            'sku' => $productSku,
+            'link_type' => 'associated',
+            'linked_product_type' => 'virtual',
+            'linked_product_sku' => 'virtual-product',
+            'position' => 3,
+            'extension_attributes' => [
+                'qty' => 1,
+            ],
+        ];
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH . $productSku . '/links',
+                'httpMethod' => Request::HTTP_METHOD_PUT,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'Save',
+            ],
+        ];
+        $this->_webApiCall($serviceInfo, ['entity' => $items]);
+        self::assertTrue($this->isProductInStock($productSku));
+    }
+
+    /**
+     * Check product stock status.
+     *
+     * @param string $productSku
+     * @return bool
+     */
+    private function isProductInStock(string $productSku): bool
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => '/V1/stockStatuses/' . $productSku,
+                'httpMethod' => Request::HTTP_METHOD_GET,
+            ],
+            'soap' => [
+                'service' => 'catalogInventoryStockRegistryV1',
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => 'catalogInventoryStockRegistryV1getStockStatusBySku',
+            ],
+        ];
+        $result = $this->_webApiCall($serviceInfo, ['productSku' => $productSku]);
+
+        return (bool)$result['stock_status'];
+    }
+
+    /**
+     * Verify in stock grouped product is out stock after children have been removed.
+     *
+     * @return void
+     * @magentoApiDataFixture Magento/GroupedProduct/_files/product_grouped_with_simple.php
+     */
+    public function testGroupedProductIsOutOfStockAfterRemoveChild(): void
+    {
+        $productSku = 'grouped';
+        $childrenSkus = [
+            'simple_11',
+            'simple_22',
+        ];
+        self::assertTrue($this->isProductInStock($productSku));
+
+        foreach ($childrenSkus as $childSku) {
+            $serviceInfo = [
+                'rest' => [
+                    'resourcePath' => self::RESOURCE_PATH . $productSku . '/links/associated/' . $childSku,
+                    'httpMethod' => Request::HTTP_METHOD_DELETE,
+                ],
+                'soap' => [
+                    'service' => self::SERVICE_NAME,
+                    'serviceVersion' => self::SERVICE_VERSION,
+                    'operation' => self::SERVICE_NAME . 'DeleteById',
+                ],
+            ];
+            $requestData = ['sku' => $productSku, 'type' => 'associated', 'linkedProductSku' => $childSku];
+            $this->_webApiCall($serviceInfo, $requestData);
+        }
+
+        self::assertFalse($this->isProductInStock($productSku));
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->indexerRegistry = $this->objectManager->get(IndexerRegistry::class);
     }
 }

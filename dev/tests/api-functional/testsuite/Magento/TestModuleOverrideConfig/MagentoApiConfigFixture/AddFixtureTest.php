@@ -26,17 +26,6 @@ class AddFixtureTest extends AbstractOverridesTest
     private $configStorage;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->config = $this->objectManager->get(ScopeConfigInterface::class);
-        $this->configStorage = $this->objectManager->get(ConfigStorage::class);
-    }
-
-    /**
      * Checks that fixture added in test class node successfully applied
      *
      * @return void
@@ -105,5 +94,16 @@ class AddFixtureTest extends AbstractOverridesTest
                 'base'
             )
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->config = $this->objectManager->get(ScopeConfigInterface::class);
+        $this->configStorage = $this->objectManager->get(ConfigStorage::class);
     }
 }

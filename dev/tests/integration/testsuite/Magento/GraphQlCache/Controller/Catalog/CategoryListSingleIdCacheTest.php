@@ -25,7 +25,7 @@ class CategoryListSingleIdCacheTest extends AbstractGraphqlCacheTest
      */
     public function testSecondRequestIsServedFromCache()
     {
-        $categoryId ='333';
+        $categoryId = '333';
         $query
             = <<<QUERY
         {
@@ -38,7 +38,7 @@ class CategoryListSingleIdCacheTest extends AbstractGraphqlCacheTest
            }
        }
 QUERY;
-        $expectedCacheTags = ['cat_c','cat_c_' . $categoryId, 'FPC'];
+        $expectedCacheTags = ['cat_c', 'cat_c_' . $categoryId, 'FPC'];
 
         $response = $this->dispatchGraphQlGETRequest(['query' => $query]);
         $this->assertEquals('MISS', $response->getHeader('X-Magento-Cache-Debug')->getFieldValue());

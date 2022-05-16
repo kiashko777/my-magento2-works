@@ -6,11 +6,17 @@
  * See COPYING.txt for license details.
  */
 
-/** @var $objectManager \Magento\TestFramework\ObjectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-$quote = $objectManager->create(\Magento\Quote\Model\Quote::class);
+/** @var $objectManager ObjectManager */
+
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\QuoteIdMask;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+
+$objectManager = Bootstrap::getObjectManager();
+$quote = $objectManager->create(Quote::class);
 $quote->load('test_order_1_with_payment', 'reserved_order_id')->delete();
 
-/** @var \Magento\Quote\Model\QuoteIdMask $quoteIdMask */
-$quoteIdMask = $objectManager->create(\Magento\Quote\Model\QuoteIdMask::class);
+/** @var QuoteIdMask $quoteIdMask */
+$quoteIdMask = $objectManager->create(QuoteIdMask::class);
 $quoteIdMask->delete($quote->getId());

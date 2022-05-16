@@ -6,9 +6,18 @@
 
 namespace Magento\Setup\Console\Command;
 
+use Exception;
 use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\Console\Cli;
+use Magento\Framework\Indexer\IndexerRegistry;
 use Magento\Framework\Mview\View\CollectionInterface;
+use Magento\Framework\Mview\ViewInterface;
+use Magento\Indexer\Model\Config;
+use Magento\Indexer\Model\Indexer;
+use Magento\Setup\Fixtures\ConfigsApplyFixture;
+use Magento\Setup\Fixtures\Fixture;
 use Magento\Setup\Fixtures\FixtureModel;
+use Magento\Setup\Fixtures\IndexersStatesApplyFixture;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -84,17 +93,17 @@ class GenerateFixturesCommand extends Command
                 $fixture->printInfo($output);
             }
 
-            /** @var \Magento\Setup\Fixtures\ConfigsApplyFixture $configFixture */
+            /** @var ConfigsApplyFixture $configFixture */
             $configFixture = $fixtureModel
-                ->getFixtureByName(\Magento\Setup\Fixtures\ConfigsApplyFixture::class);
+                ->getFixtureByName(ConfigsApplyFixture::class);
             $configFixture && $this->executeFixture($configFixture, $output);
 
-            /** @var $config \Magento\Indexer\Model\Config */
-            $config = $fixtureModel->getObjectManager()->get(\Magento\Indexer\Model\Config::class);
+            /** @var $config Config */
+            $config = $fixtureModel->getObjectManager()->get(Config::class);
             $indexerListIds = $config->getIndexers();
-            /** @var $indexerRegistry \Magento\Framework\Indexer\IndexerRegistry */
+            /** @var $indexerRegistry IndexerRegistry */
             $indexerRegistry = $fixtureModel->getObjectManager()
-                ->create(\Magento\Framework\Indexer\IndexerRegistry::class);
+                ->create(IndexerRegistry::class);
 
             $indexersState = [];
             foreach ($indexerListIds as $indexerId) {
@@ -110,14 +119,14 @@ class GenerateFixturesCommand extends Command
             $this->clearChangelog();
 
             foreach ($indexerListIds as $indexerId) {
-                /** @var $indexer \Magento\Indexer\Model\Indexer */
+                /** @var $indexer Indexer */
                 $indexer = $indexerRegistry->get($indexerId['indexer_id']);
                 $indexer->setScheduled($indexersState[$indexerId['indexer_id']]);
             }
 
-            /** @var \Magento\Setup\Fixtures\IndexersStatesApplyFixture $indexerFixture */
+            /** @var IndexersStatesApplyFixture $indexerFixture */
             $indexerFixture = $fixtureModel
-                ->getFixtureByName(\Magento\Setup\Fixtures\IndexersStatesApplyFixture::class);
+                ->getFixtureByName(IndexersStatesApplyFixture::class);
             $indexerFixture && $this->executeFixture($indexerFixture, $output);
 
             if (!$input->getOption(self::SKIP_REINDEX_OPTION)) {
@@ -128,12 +137,26 @@ class GenerateFixturesCommand extends Command
             $totalResultTime = $totalEndTime - $totalStartTime;
 
             $output->writeln('<info>Total execution time: ' . gmdate('H:i:s', $totalResultTime) . '</info>');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $output->writeln('<error>' . $e->getMessage() . '</error>');
             // we must have an exit code higher than zero to indicate something was wrong
-            return \Magento\Framework\Console\Cli::RETURN_FAILURE;
+            return Cli::RETURN_FAILURE;
         }
-        return \Magento\Framework\Console\Cli::RETURN_SUCCESS;
+        return Cli::RETURN_SUCCESS;
+    }
+
+    /**
+     * @param Fixture $fixture
+     * @param OutputInterface $output
+     */
+    private function executeFixture(Fixture $fixture, OutputInterface $output)
+    {
+        $output->write('<info>' . $fixture->getActionTitle() . '... </info>');
+        $startTime = microtime(true);
+        $fixture->execute($output);
+        $endTime = microtime(true);
+        $resultTime = $endTime - $startTime;
+        $output->writeln('<info> done in ' . gmdate('H:i:s', $resultTime) . '</info>');
     }
 
     /**
@@ -149,25 +172,11 @@ class GenerateFixturesCommand extends Command
         $resource = $this->fixtureModel->getObjectManager()->get(ResourceConnection::class);
 
         foreach ($viewConfig as $view) {
-            /* @var \Magento\Framework\Mview\ViewInterface $view */
+            /* @var ViewInterface $view */
             $changeLogTableName = $resource->getTableName($view->getChangelog()->getName());
             if ($resource->getConnection()->isTableExists($changeLogTableName)) {
                 $resource->getConnection()->truncateTable($changeLogTableName);
             }
         }
-    }
-
-    /**
-     * @param \Magento\Setup\Fixtures\Fixture $fixture
-     * @param OutputInterface $output
-     */
-    private function executeFixture(\Magento\Setup\Fixtures\Fixture $fixture, OutputInterface $output)
-    {
-        $output->write('<info>' . $fixture->getActionTitle() . '... </info>');
-        $startTime = microtime(true);
-        $fixture->execute($output);
-        $endTime = microtime(true);
-        $resultTime = $endTime - $startTime;
-        $output->writeln('<info> done in ' . gmdate('H:i:s', $resultTime) . '</info>');
     }
 }

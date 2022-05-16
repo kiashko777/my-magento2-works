@@ -3,17 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Store;
 
+use Magento\Framework\Event\ManagerInterface;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\App\Config;
 use Magento\TestFramework\ObjectManager;
+use ReflectionClass;
 
 /**
  * Integration tests decoration of store manager
  *
  * @package Magento\TestFramework\Store
  */
-class StoreManager implements \Magento\Store\Model\StoreManagerInterface
+class StoreManager implements StoreManagerInterface
 {
     /**
      * @var \Magento\Store\Model\StoreManager
@@ -21,7 +25,7 @@ class StoreManager implements \Magento\Store\Model\StoreManagerInterface
     protected $decoratedStoreManager;
 
     /**
-     * @var \Magento\Framework\Event\ManagerInterface
+     * @var ManagerInterface
      */
     protected $eventManager;
 
@@ -32,12 +36,13 @@ class StoreManager implements \Magento\Store\Model\StoreManagerInterface
 
     /**
      * @param \Magento\Store\Model\StoreManager $decoratedStoreManager
-     * @param \Magento\Framework\Event\ManagerInterface $eventManager
+     * @param ManagerInterface $eventManager
      */
     public function __construct(
-        \Magento\Store\Model\StoreManager $decoratedStoreManager,
-        \Magento\Framework\Event\ManagerInterface $eventManager
-    ) {
+        \Magento\Store\Model\StoreManager         $decoratedStoreManager,
+        ManagerInterface $eventManager
+    )
+    {
         $this->decoratedStoreManager = $decoratedStoreManager;
         $this->eventManager = $eventManager;
     }
@@ -49,6 +54,17 @@ class StoreManager implements \Magento\Store\Model\StoreManagerInterface
     {
         $this->decoratedStoreManager->setCurrentStore($store);
         $this->dispatchInitCurrentStoreAfterEvent();
+    }
+
+    /**
+     * Dispatch event 'core_app_init_current_store_after'
+     */
+    protected function dispatchInitCurrentStoreAfterEvent()
+    {
+        if (null === $this->fireEventInitCurrentStoreAfter) {
+            $this->fireEventInitCurrentStoreAfter = true;
+            $this->eventManager->dispatch('core_app_init_current_store_after');
+        }
     }
 
     /**
@@ -127,7 +143,7 @@ class StoreManager implements \Magento\Store\Model\StoreManagerInterface
     {
         //In order to restore configFixture values
         $testAppConfig = ObjectManager::getInstance()->get(Config::class);
-        $reflection = new \ReflectionClass($testAppConfig);
+        $reflection = new ReflectionClass($testAppConfig);
         $dataProperty = $reflection->getProperty('data');
         $dataProperty->setAccessible(true);
         $savedConfig = $dataProperty->getValue($testAppConfig);
@@ -166,16 +182,5 @@ class StoreManager implements \Magento\Store\Model\StoreManagerInterface
         $result = $this->decoratedStoreManager->getGroups($withDefault);
         $this->dispatchInitCurrentStoreAfterEvent();
         return $result;
-    }
-
-    /**
-     * Dispatch event 'core_app_init_current_store_after'
-     */
-    protected function dispatchInitCurrentStoreAfterEvent()
-    {
-        if (null === $this->fireEventInitCurrentStoreAfter) {
-            $this->fireEventInitCurrentStoreAfter = true;
-            $this->eventManager->dispatch('core_app_init_current_store_after');
-        }
     }
 }

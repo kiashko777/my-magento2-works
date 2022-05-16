@@ -17,13 +17,6 @@ class FileScannerTest extends TestCase
      */
     private $object;
 
-    protected function setUp(): void
-    {
-        $this->object = new FileScanner(
-            __DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'classes.php'
-        );
-    }
-
     public function testGetClassesReturnsAllClassesAndInterfacesDeclaredInFile()
     {
         $classes = [
@@ -36,5 +29,12 @@ class FileScannerTest extends TestCase
         foreach ($this->object->getClasses() as $key => $class) {
             $this->assertEquals($classes[$key], $class->getName());
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->object = new FileScanner(
+            __DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'classes.php'
+        );
     }
 }

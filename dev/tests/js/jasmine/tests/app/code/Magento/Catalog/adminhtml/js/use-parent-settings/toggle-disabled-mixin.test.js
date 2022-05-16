@@ -69,43 +69,43 @@ define([
 
     describe('toggle-disabled-mixin functionality', function () {
         var dataProvider = [
-                {
-                    defaults: {
-                        useParent: false,
-                        useDefaults: false
-                    },
-                    expected: {
-                        disabled: false
-                    }
+            {
+                defaults: {
+                    useParent: false,
+                    useDefaults: false
                 },
-                {
-                    defaults: {
-                        useParent: true,
-                        useDefaults: false
-                    },
-                    expected: {
-                        disabled: true
-                    }
-                },
-                {
-                    defaults: {
-                        useParent: false,
-                        useDefaults: true
-                    },
-                    expected: {
-                        disabled: true
-                    }
-                },
-                {
-                    defaults: {
-                        useParent: true,
-                        useDefaults: true
-                    },
-                    expected: {
-                        disabled: true
-                    }
+                expected: {
+                    disabled: false
                 }
-            ];
+            },
+            {
+                defaults: {
+                    useParent: true,
+                    useDefaults: false
+                },
+                expected: {
+                    disabled: true
+                }
+            },
+            {
+                defaults: {
+                    useParent: false,
+                    useDefaults: true
+                },
+                expected: {
+                    disabled: true
+                }
+            },
+            {
+                defaults: {
+                    useParent: true,
+                    useDefaults: true
+                },
+                expected: {
+                    disabled: true
+                }
+            }
+        ];
 
         dataProvider.forEach(function (state) {
             describe(JSON.stringify(state.defaults), function () {

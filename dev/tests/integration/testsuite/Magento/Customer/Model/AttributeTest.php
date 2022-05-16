@@ -10,13 +10,16 @@ namespace Magento\Customer\Model;
 use Magento\Eav\Api\AttributeRepositoryInterface;
 use Magento\Eav\Api\Data\AttributeInterface;
 use Magento\Eav\Model\Config;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Entity;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for \Magento\Customer\Model\Attribute.
  */
-class AttributeTest extends \PHPUnit\Framework\TestCase
+class AttributeTest extends TestCase
 {
     /**
      * @var ObjectManagerInterface
@@ -39,19 +42,6 @@ class AttributeTest extends \PHPUnit\Framework\TestCase
     private $customerEntityType;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->model = $this->objectManager->get(Attribute::class);
-        $this->attributeRepository = $this->objectManager->get(AttributeRepositoryInterface::class);
-        $this->customerEntityType = $this->objectManager->get(Config::class)
-            ->getEntityType('customer')
-            ->getId();
-    }
-
-    /**
      * Test Create -> Read -> Update -> Delete attribute operations.
      *
      * @return void
@@ -62,7 +52,7 @@ class AttributeTest extends \PHPUnit\Framework\TestCase
             ->setEntityTypeId($this->customerEntityType)
             ->setFrontendLabel('test')
             ->setIsUserDefined(1);
-        $crud = new \Magento\TestFramework\Entity($this->model, [AttributeInterface::FRONTEND_LABEL => uniqid()]);
+        $crud = new Entity($this->model, [AttributeInterface::FRONTEND_LABEL => uniqid()]);
         $crud->testCrud();
     }
 
@@ -74,7 +64,7 @@ class AttributeTest extends \PHPUnit\Framework\TestCase
     public function testAttributeSaveWithChangedEntityType(): void
     {
         $this->expectException(
-            \Magento\Framework\Exception\LocalizedException::class
+            LocalizedException::class
         );
         $this->expectExceptionMessage('Do not change entity type.');
 
@@ -93,5 +83,18 @@ class AttributeTest extends \PHPUnit\Framework\TestCase
         $attribute = $this->attributeRepository->get($this->customerEntityType, 'user_attribute');
         $attribute->setSortOrder(1250);
         $attribute->save();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->model = $this->objectManager->get(Attribute::class);
+        $this->attributeRepository = $this->objectManager->get(AttributeRepositoryInterface::class);
+        $this->customerEntityType = $this->objectManager->get(Config::class)
+            ->getEntityType('customer')
+            ->getId();
     }
 }

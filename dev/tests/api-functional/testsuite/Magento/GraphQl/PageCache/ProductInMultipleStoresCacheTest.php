@@ -7,6 +7,13 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\PageCache;
 
+use Magento\Catalog\Model\Product;
+use Magento\Config\App\Config\Type\System;
+use Magento\Config\Model\ResourceModel\Config;
+use Magento\Directory\Model\Currency;
+use Magento\Store\Model\ScopeInterface;
+use Magento\Store\Model\Store;
+use Magento\Store\Model\Website;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
 
@@ -17,66 +24,6 @@ use Magento\TestFramework\TestCase\GraphQlAbstract;
  */
 class ProductInMultipleStoresCacheTest extends GraphQlAbstract
 {
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        /** @var \Magento\Store\Model\Store $store */
-        $store =  ObjectManager::getInstance()->get(\Magento\Store\Model\Store::class);
-        $storeCodeFromFixture = 'fixture_second_store';
-
-        /** @var \Magento\Config\Model\ResourceModel\Config $configResource */
-        $configResource = ObjectManager::getInstance()->get(\Magento\Config\Model\ResourceModel\Config::class);
-        /** @var \Magento\Config\App\Config\Type\System $config */
-        $config = ObjectManager::getInstance()->get(\Magento\Config\App\Config\Type\System::class);
-
-        $configResource->saveConfig(
-            \Magento\Directory\Model\Currency::XML_PATH_CURRENCY_DEFAULT,
-            'EUR',
-            \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITES,
-            $store->load($storeCodeFromFixture)->getWebsiteId()
-        );
-
-        // allow USD & EUR currency
-        $configResource->saveConfig(
-            \Magento\Directory\Model\Currency::XML_PATH_CURRENCY_ALLOW,
-            'EUR,USD',
-            \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITES,
-            $store->load($storeCodeFromFixture)->getWebsiteId()
-        );
-
-        // allow USD & EUR currency
-        $configResource->saveConfig(
-            \Magento\Directory\Model\Currency::XML_PATH_CURRENCY_ALLOW,
-            'EUR,USD'
-        );
-
-        // configuration cache clean is required to reload currency setting
-        $config->clean();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        /** @var \Magento\Config\App\Config\Type\System $config */
-        $config = ObjectManager::getInstance()->get(\Magento\Config\App\Config\Type\System::class);
-        /** @var \Magento\Config\Model\ResourceModel\Config $configResource */
-        $configResource = ObjectManager::getInstance()->get(\Magento\Config\Model\ResourceModel\Config::class);
-
-        // restore allow USD currency
-        $configResource->saveConfig(
-            \Magento\Directory\Model\Currency::XML_PATH_CURRENCY_ALLOW,
-            'USD'
-        );
-
-        // configuration cache clean is required to reload currency setting
-        $config->clean();
-        parent::tearDown();
-    }
-
     /**
      * Test a non existing or non existing currency
      *
@@ -201,17 +148,17 @@ QUERY;
 }
 QUERY;
 
-        /** @var \Magento\Store\Model\Store $store */
-        $store =  ObjectManager::getInstance()->get(\Magento\Store\Model\Store::class);
+        /** @var Store $store */
+        $store = ObjectManager::getInstance()->get(Store::class);
         $storeCodeFromFixture = 'fixture_second_store';
         $storeId = $store->load($storeCodeFromFixture)->getStoreId();
 
-        /** @var \Magento\Catalog\Model\Product $product */
-        $product = ObjectManager::getInstance()->get(\Magento\Catalog\Model\Product::class);
+        /** @var Product $product */
+        $product = ObjectManager::getInstance()->get(Product::class);
         $product->load($product->getIdBySku($productSku));
 
-        $website = ObjectManager::getInstance()->get(\Magento\Store\Model\Website::class);
-        /** @var $website \Magento\Store\Model\Website */
+        $website = ObjectManager::getInstance()->get(Website::class);
+        /** @var $website Website */
         $website->load('test', 'code');
         $product->setWebsiteIds([1, $website->getId()]);
 
@@ -309,5 +256,65 @@ QUERY;
             'GraphQL response contains errors: Please correct the target currency'
         );
         $this->graphQlQuery($query, [], '', $headerMap);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        /** @var Store $store */
+        $store = ObjectManager::getInstance()->get(Store::class);
+        $storeCodeFromFixture = 'fixture_second_store';
+
+        /** @var Config $configResource */
+        $configResource = ObjectManager::getInstance()->get(Config::class);
+        /** @var System $config */
+        $config = ObjectManager::getInstance()->get(System::class);
+
+        $configResource->saveConfig(
+            Currency::XML_PATH_CURRENCY_DEFAULT,
+            'EUR',
+            ScopeInterface::SCOPE_WEBSITES,
+            $store->load($storeCodeFromFixture)->getWebsiteId()
+        );
+
+        // allow USD & EUR currency
+        $configResource->saveConfig(
+            Currency::XML_PATH_CURRENCY_ALLOW,
+            'EUR,USD',
+            ScopeInterface::SCOPE_WEBSITES,
+            $store->load($storeCodeFromFixture)->getWebsiteId()
+        );
+
+        // allow USD & EUR currency
+        $configResource->saveConfig(
+            Currency::XML_PATH_CURRENCY_ALLOW,
+            'EUR,USD'
+        );
+
+        // configuration cache clean is required to reload currency setting
+        $config->clean();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        /** @var System $config */
+        $config = ObjectManager::getInstance()->get(System::class);
+        /** @var Config $configResource */
+        $configResource = ObjectManager::getInstance()->get(Config::class);
+
+        // restore allow USD currency
+        $configResource->saveConfig(
+            Currency::XML_PATH_CURRENCY_ALLOW,
+            'USD'
+        );
+
+        // configuration cache clean is required to reload currency setting
+        $config->clean();
+        parent::tearDown();
     }
 }

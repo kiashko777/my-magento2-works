@@ -26,16 +26,6 @@ class AddTest extends AbstractBackendController
     private $defaultCategoryHelper;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->defaultCategoryHelper = $this->_objectManager->get(DefaultCategory::class);
-    }
-
-    /**
      * @return void
      */
     public function testExecuteWithoutParams(): void
@@ -53,5 +43,15 @@ class AddTest extends AbstractBackendController
         $this->getRequest()->setParam('parent', $this->defaultCategoryHelper->getId());
         $this->dispatch('backend/catalog/category/add');
         $this->assertJson($this->getResponse()->getBody());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->defaultCategoryHelper = $this->_objectManager->get(DefaultCategory::class);
     }
 }

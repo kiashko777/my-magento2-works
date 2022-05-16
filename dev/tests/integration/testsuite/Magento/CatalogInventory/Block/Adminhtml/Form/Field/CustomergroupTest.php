@@ -6,19 +6,15 @@
 
 namespace Magento\CatalogInventory\Block\Adminhtml\Form\Field;
 
-class CustomergroupTest extends \PHPUnit\Framework\TestCase
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class CustomergroupTest extends TestCase
 {
     /**
-     * @var \Magento\CatalogInventory\Block\Adminhtml\Form\Field\Customergroup
+     * @var Customergroup
      */
     protected $_block;
-
-    protected function setUp(): void
-    {
-        $this->_block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\CatalogInventory\Block\Adminhtml\Form\Field\Customergroup::class
-        );
-    }
 
     public function testToHtml()
     {
@@ -32,5 +28,12 @@ class CustomergroupTest extends \PHPUnit\Framework\TestCase
             . '</option><option value="1" >General</option><option value="2" >Wholesale</option><option value="3" >'
             . 'Retailer</option></select>';
         $this->assertEquals($expectedResult, $this->_block->_toHtml());
+    }
+
+    protected function setUp(): void
+    {
+        $this->_block = Bootstrap::getObjectManager()->create(
+            Customergroup::class
+        );
     }
 }

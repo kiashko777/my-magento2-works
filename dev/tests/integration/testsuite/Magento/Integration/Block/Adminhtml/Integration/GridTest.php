@@ -8,24 +8,19 @@
 namespace Magento\Integration\Block\Adminhtml\Integration;
 
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\Integration\Block\Adminhtml\Integration\Grid
  *
  * @magentoAppArea Adminhtml
  */
-class GridTest extends \PHPUnit\Framework\TestCase
+class GridTest extends TestCase
 {
     /**
-     * @var \Magento\Integration\Block\Adminhtml\Integration\Grid
+     * @var Grid
      */
     protected $gridBlock;
-
-    protected function setUp(): void
-    {
-        $this->gridBlock = Bootstrap::getObjectManager()
-            ->create(\Magento\Integration\Block\Adminhtml\Integration\Grid::class);
-    }
 
     public function testGetRowClickCallback()
     {
@@ -35,5 +30,11 @@ class GridTest extends \PHPUnit\Framework\TestCase
     public function testGetRowInitCallback()
     {
         $this->assertEquals('', $this->gridBlock->getRowInitCallback());
+    }
+
+    protected function setUp(): void
+    {
+        $this->gridBlock = Bootstrap::getObjectManager()
+            ->create(Grid::class);
     }
 }

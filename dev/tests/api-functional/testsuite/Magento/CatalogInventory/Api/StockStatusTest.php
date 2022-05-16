@@ -3,8 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogInventory\Api;
 
+use Magento\Catalog\Model\Product;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
@@ -24,13 +27,13 @@ class StockStatusTest extends WebapiAbstract
         $productSku = 'simple';
         $objectManager = Bootstrap::getObjectManager();
 
-        /** @var \Magento\Catalog\Model\Product $product */
-        $product = $objectManager->get(\Magento\Catalog\Model\Product::class)->load(1);
+        /** @var Product $product */
+        $product = $objectManager->get(Product::class)->load(1);
         $expectedData = $product->getQuantityAndStockStatus();
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/$productSku",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => 'catalogInventoryStockRegistryV1',

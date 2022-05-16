@@ -7,25 +7,24 @@ declare(strict_types=1);
 
 namespace Magento\Sales\Model\Order;
 
-class ItemRepositoryTest extends \PHPUnit\Framework\TestCase
+use Magento\Catalog\Model\Product\Type;
+use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Sales\Api\Data\OrderItemInterface;
+use Magento\Sales\Api\OrderItemRepositoryInterface;
+use Magento\Sales\Model\Order;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class ItemRepositoryTest extends TestCase
 {
-    /** @var \Magento\Sales\Model\Order */
+    /** @var Order */
     private $order;
 
-    /** @var \Magento\Sales\Api\OrderItemRepositoryInterface */
+    /** @var OrderItemRepositoryInterface */
     private $orderItemRepository;
 
-    /** @var \Magento\Framework\Api\SearchCriteriaBuilder */
+    /** @var SearchCriteriaBuilder */
     private $searchCriteriaBuilder;
-
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-
-        $this->order = $objectManager->create(\Magento\Sales\Model\Order::class);
-        $this->orderItemRepository = $objectManager->create(\Magento\Sales\Api\OrderItemRepositoryInterface::class);
-        $this->searchCriteriaBuilder = $objectManager->create(\Magento\Framework\Api\SearchCriteriaBuilder::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Sales/_files/order_configurable_product.php
@@ -35,9 +34,9 @@ class ItemRepositoryTest extends \PHPUnit\Framework\TestCase
         $this->order->load('100000001', 'increment_id');
 
         foreach ($this->order->getItems() as $item) {
-            if ($item->getProductType() === \Magento\Catalog\Model\Product\Type::TYPE_SIMPLE) {
+            if ($item->getProductType() === Type::TYPE_SIMPLE) {
                 $orderItem = $this->orderItemRepository->get($item->getItemId());
-                $this->assertInstanceOf(\Magento\Sales\Api\Data\OrderItemInterface::class, $orderItem->getParentItem());
+                $this->assertInstanceOf(OrderItemInterface::class, $orderItem->getParentItem());
             }
         }
 
@@ -46,9 +45,18 @@ class ItemRepositoryTest extends \PHPUnit\Framework\TestCase
         );
 
         foreach ($itemList->getItems() as $item) {
-            if ($item->getProductType() === \Magento\Catalog\Model\Product\Type::TYPE_SIMPLE) {
-                $this->assertInstanceOf(\Magento\Sales\Api\Data\OrderItemInterface::class, $item->getParentItem());
+            if ($item->getProductType() === Type::TYPE_SIMPLE) {
+                $this->assertInstanceOf(OrderItemInterface::class, $item->getParentItem());
             }
         }
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+
+        $this->order = $objectManager->create(Order::class);
+        $this->orderItemRepository = $objectManager->create(OrderItemRepositoryInterface::class);
+        $this->searchCriteriaBuilder = $objectManager->create(SearchCriteriaBuilder::class);
     }
 }

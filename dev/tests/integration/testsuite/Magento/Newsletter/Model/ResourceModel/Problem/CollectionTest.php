@@ -6,36 +6,34 @@
 
 namespace Magento\Newsletter\Model\ResourceModel\Problem;
 
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Newsletter\Model\Problem;
+use Magento\Newsletter\Model\Subscriber;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class CollectionTest extends \PHPUnit\Framework\TestCase
+class CollectionTest extends TestCase
 {
     /**
-     * @var \Magento\Newsletter\Model\ResourceModel\Problem\Collection
+     * @var Collection
      */
     protected $_collection;
-
-    protected function setUp(): void
-    {
-        $this->_collection = Bootstrap::getObjectManager()
-            ->create(\Magento\Newsletter\Model\ResourceModel\Problem\Collection::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Newsletter/_files/problems.php
      */
     public function testAddCustomersData()
     {
-        /** @var \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository */
+        /** @var CustomerRepositoryInterface $customerRepository */
         $customerRepository = Bootstrap::getObjectManager()
-            ->create(\Magento\Customer\Api\CustomerRepositoryInterface::class);
+            ->create(CustomerRepositoryInterface::class);
         $customer = $customerRepository->getById(1);
-        /** @var \Magento\Newsletter\Model\Subscriber $subscriber */
+        /** @var Subscriber $subscriber */
         $subscriber = Bootstrap::getObjectManager()
-            ->create(\Magento\Newsletter\Model\Subscriber::class)->loadByEmail($customer->getEmail());
-        /** @var \Magento\Newsletter\Model\Problem $problem */
+            ->create(Subscriber::class)->loadByEmail($customer->getEmail());
+        /** @var Problem $problem */
         $problem = Bootstrap::getObjectManager()
-            ->create(\Magento\Newsletter\Model\Problem::class)->addSubscriberData($subscriber);
+            ->create(Problem::class)->addSubscriberData($subscriber);
 
         $item = $this->_collection->addSubscriberInfo()->load()->getFirstItem();
 
@@ -46,5 +44,11 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($customer->getFirstname(), $item->getCustomerFirstName());
         $this->assertEquals($customer->getLastname(), $item->getCustomerLastName());
         $this->assertStringContainsString($customer->getFirstname(), $item->getCustomerName());
+    }
+
+    protected function setUp(): void
+    {
+        $this->_collection = Bootstrap::getObjectManager()
+            ->create(Collection::class);
     }
 }

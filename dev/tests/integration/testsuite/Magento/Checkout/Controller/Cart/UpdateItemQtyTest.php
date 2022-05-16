@@ -7,14 +7,16 @@ declare(strict_types=1);
 
 namespace Magento\Checkout\Controller\Cart;
 
+use Exception;
+use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product;
 use Magento\Checkout\Model\Session;
-use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Framework\Data\Form\FormKey;
 use Magento\Framework\Serialize\Serializer\Json;
+use Magento\TestFramework\TestCase\AbstractController;
 
-class UpdateItemQtyTest extends \Magento\TestFramework\TestCase\AbstractController
+class UpdateItemQtyTest extends AbstractController
 {
     /**
      * @var Json
@@ -36,16 +38,6 @@ class UpdateItemQtyTest extends \Magento\TestFramework\TestCase\AbstractControll
      */
     private $productRepository;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->json = $this->_objectManager->create(Json::class);
-        $this->formKey = $this->_objectManager->get(FormKey::class);
-        $this->session = $this->_objectManager->create(Session::class);
-        $this->productRepository = $this->_objectManager->create(ProductRepositoryInterface::class);
-    }
-
     /**
      * Tests of cart validation.
      *
@@ -62,7 +54,7 @@ class UpdateItemQtyTest extends \Magento\TestFramework\TestCase\AbstractControll
         try {
             /** @var $product Product */
             $product = $this->productRepository->get('simple');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->fail('No such product entity');
         }
 
@@ -74,7 +66,7 @@ class UpdateItemQtyTest extends \Magento\TestFramework\TestCase\AbstractControll
 
         $request = [];
         if (!empty($requestQuantity) && is_array($requestQuantity)) {
-            $request= [
+            $request = [
                 'form_key' => $this->formKey->getFormKey(),
                 'cart' => [
                     $quoteItem->getId() => $requestQuantity,
@@ -101,7 +93,7 @@ class UpdateItemQtyTest extends \Magento\TestFramework\TestCase\AbstractControll
                 'request' => [],
                 'response' => [
                     'success' => false,
-                    'error_message' => 'Something went wrong while saving the page.'.
+                    'error_message' => 'Something went wrong while saving the page.' .
                         ' Please refresh the page and try again.'
                 ]
             ],
@@ -118,5 +110,15 @@ class UpdateItemQtyTest extends \Magento\TestFramework\TestCase\AbstractControll
                     'error_message' => 'The requested qty is not available']
             ],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->json = $this->_objectManager->create(Json::class);
+        $this->formKey = $this->_objectManager->get(FormKey::class);
+        $this->session = $this->_objectManager->create(Session::class);
+        $this->productRepository = $this->_objectManager->create(ProductRepositoryInterface::class);
     }
 }

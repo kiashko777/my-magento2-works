@@ -35,9 +35,10 @@
 button {
     .lib-button(@_button-margin: 3px);
     border-radius: 3px;
+
     &:active,
     &:focus {
-        box-shadow: inset 0 2px 1px rgba(0,0,0,.12);
+        box-shadow: inset 0 2px 1px rgba(0, 0, 0, .12);
     }
 }
 
@@ -45,10 +46,12 @@ button {
     &.example-button-2 {
         .lib-button-l();
     }
+
     &.example-button-3 {
         .lib-button-s();
         border-radius: 0;
         color: @color-black;
+
         &:hover,
         &.active {
             color: @color-black;
@@ -453,7 +456,7 @@ button {
         @_button-icon-use: true,
         @_button-font-content: @icon-cart,
         @_button-icon-font-position: after
-   );
+    );
 }
 
 //  # Button with fixed width
@@ -516,15 +519,19 @@ button {
     .lib-button-primary(
         @_button-margin: 3px
     );
+
     &:active {
-        box-shadow: inset 0 3px 1px rgba(0,0,0,.29);
+        box-shadow: inset 0 3px 1px rgba(0, 0, 0, .29);
     }
+
     &.example-button-5 {
         .lib-button-l(@_button-l-padding: 7px 35px);
     }
+
     &.example-button-6 {
         .lib-button-s();
         color: @color-white;
+
         &:hover,
         &.active {
             color: @color-white;
@@ -735,8 +742,9 @@ button {
         @_button-border-active: @button-primary__active__border
     );
     border-radius: 3px;
+
     &:active {
-        box-shadow: inset 0 3px 1px rgba(0,0,0,.29);
+        box-shadow: inset 0 3px 1px rgba(0, 0, 0, .29);
     }
 }
 
@@ -756,6 +764,7 @@ button {
 .example-button-8 {
     .lib-button-as-link();
     font-weight: normal;
+
     &:active {
         box-shadow: none;
     }
@@ -834,8 +843,9 @@ button {
     margin: 3px;
     border-radius: 3px;
     font-weight: bold;
+
     &:active {
-        box-shadow: inset 0 3px 1px rgba(0,0,0,.29);
+        box-shadow: inset 0 3px 1px rgba(0, 0, 0, .29);
     }
 }
 
@@ -960,6 +970,7 @@ button {
     .lib-button-l();
     .lib-button-revert-secondary-size();
 }
+
 .example-button-18 {
     .lib-button-revert-secondary-size(
         @_button-font-size: 10px,

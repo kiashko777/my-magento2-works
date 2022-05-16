@@ -20,12 +20,6 @@ class FactoryTest extends TestCase
      */
     protected $factory;
 
-    protected function setUp(): void
-    {
-        $objectManagerHelper = new ObjectManager($this);
-        $this->factory = $objectManagerHelper->getObject(Factory::class);
-    }
-
     /**
      * @param string $expectedInstance
      * @param string $fileName
@@ -62,5 +56,11 @@ class FactoryTest extends TestCase
                 ''
             ],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $objectManagerHelper = new ObjectManager($this);
+        $this->factory = $objectManagerHelper->getObject(Factory::class);
     }
 }

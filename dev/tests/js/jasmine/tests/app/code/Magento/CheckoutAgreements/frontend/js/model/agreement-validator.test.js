@@ -40,7 +40,8 @@ define(['squire', 'jquery'], function (Squire, $) {
         try {
             injector.clean();
             injector.remove();
-        } catch (e) {}
+        } catch (e) {
+        }
     });
 
     describe('Magento_CheckoutAgreements/js/model/agreement-validator', function () {

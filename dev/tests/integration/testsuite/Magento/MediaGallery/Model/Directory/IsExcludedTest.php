@@ -22,14 +22,6 @@ class IsExcludedTest extends TestCase
     private $model;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->model = Bootstrap::getObjectManager()->get(IsExcluded::class);
-    }
-
-    /**
      * @dataProvider directoriesDataProvider
      * @param string $path
      * @param bool $expectedResult
@@ -60,5 +52,13 @@ class IsExcludedTest extends TestCase
                 true
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->model = Bootstrap::getObjectManager()->get(IsExcluded::class);
     }
 }

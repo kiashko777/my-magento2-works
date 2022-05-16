@@ -3,17 +3,23 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Catalog\Api\CategoryLinkManagementInterface;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Category;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/product_simple_with_full_option_set.php');
 
-/** @var \Magento\TestFramework\ObjectManager $objectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+/** @var ObjectManager $objectManager */
+$objectManager = Bootstrap::getObjectManager();
 
-/** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-$productRepository = $objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+/** @var ProductRepositoryInterface $productRepository */
+$productRepository = $objectManager->create(ProductRepositoryInterface::class);
 
-$category = $objectManager->create(\Magento\Catalog\Model\Category::class);
+$category = $objectManager->create(Category::class);
 $category->isObjectNew(true);
 $category->setId(10)
     ->setName('Movable Position 2')
@@ -26,7 +32,7 @@ $category->setId(10)
     ->setPosition(6)
     ->save();
 
-$category = $objectManager->create(\Magento\Catalog\Model\Category::class);
+$category = $objectManager->create(Category::class);
 $category->isObjectNew(true);
 $category->setId(1151)
     ->setName('Filter category')
@@ -65,7 +71,7 @@ foreach ($eavAttributeValues as $attributeCode => $attributeValue) {
 $productRepository->save($product);
 
 /** @var Magento\Catalog\Api\CategoryLinkManagementInterface $linkManagement */
-$categoryLinkManagement = $objectManager->create(\Magento\Catalog\Api\CategoryLinkManagementInterface::class);
+$categoryLinkManagement = $objectManager->create(CategoryLinkManagementInterface::class);
 
 $categoryLinkManagement->assignProductToCategories(
     $product->getSku(),

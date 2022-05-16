@@ -39,17 +39,6 @@ class ImagesTest extends AbstractBackendController
     private $productRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->config = $this->_objectManager->get(Config::class);
-        $this->mediaDirectory = $this->_objectManager->get(Filesystem::class)->getDirectoryWrite(DirectoryList::MEDIA);
-        $this->productRepository = $this->_objectManager->create(ProductRepositoryInterface::class);
-    }
-
-    /**
      * Test save product with default image.
      *
      * @dataProvider simpleProductImagesDataProvider
@@ -71,6 +60,29 @@ class ImagesTest extends AbstractBackendController
             MessageInterface::TYPE_SUCCESS
         );
         $this->assertSuccessfulImageSave($expectation);
+    }
+
+    /**
+     * @param array $expectation
+     * @return void
+     */
+    private function assertSuccessfulImageSave(array $expectation): void
+    {
+        $product = $this->productRepository->get('simple', false, null, true);
+        $galleryImage = reset($product->getData('media_gallery')['images']);
+        $expectedGalleryImage = $expectation['media_gallery_image'];
+        $this->assertEquals($expectedGalleryImage['position'], $galleryImage['position']);
+        $this->assertEquals($expectedGalleryImage['media_type'], $galleryImage['media_type']);
+        $this->assertEquals($expectedGalleryImage['label'], $galleryImage['label']);
+        $this->assertEquals($expectedGalleryImage['disabled'], $galleryImage['disabled']);
+        $this->assertEquals($expectedGalleryImage['file'], $galleryImage['file']);
+        $this->assertEquals($expectation['image'], $product->getData('image'));
+        $this->assertEquals($expectation['small_image'], $product->getData('small_image'));
+        $this->assertEquals($expectation['thumbnail'], $product->getData('thumbnail'));
+        $this->assertEquals($expectation['swatch_image'], $product->getData('swatch_image'));
+        $this->assertFileExists(
+            $this->mediaDirectory->getAbsolutePath($this->config->getBaseMediaPath() . $expectation['image'])
+        );
     }
 
     /**
@@ -121,25 +133,13 @@ class ImagesTest extends AbstractBackendController
     }
 
     /**
-     * @param array $expectation
-     * @return void
+     * @inheritdoc
      */
-    private function assertSuccessfulImageSave(array $expectation): void
+    protected function setUp(): void
     {
-        $product = $this->productRepository->get('simple', false, null, true);
-        $galleryImage = reset($product->getData('media_gallery')['images']);
-        $expectedGalleryImage = $expectation['media_gallery_image'];
-        $this->assertEquals($expectedGalleryImage['position'], $galleryImage['position']);
-        $this->assertEquals($expectedGalleryImage['media_type'], $galleryImage['media_type']);
-        $this->assertEquals($expectedGalleryImage['label'], $galleryImage['label']);
-        $this->assertEquals($expectedGalleryImage['disabled'], $galleryImage['disabled']);
-        $this->assertEquals($expectedGalleryImage['file'], $galleryImage['file']);
-        $this->assertEquals($expectation['image'], $product->getData('image'));
-        $this->assertEquals($expectation['small_image'], $product->getData('small_image'));
-        $this->assertEquals($expectation['thumbnail'], $product->getData('thumbnail'));
-        $this->assertEquals($expectation['swatch_image'], $product->getData('swatch_image'));
-        $this->assertFileExists(
-            $this->mediaDirectory->getAbsolutePath($this->config->getBaseMediaPath() . $expectation['image'])
-        );
+        parent::setUp();
+        $this->config = $this->_objectManager->get(Config::class);
+        $this->mediaDirectory = $this->_objectManager->get(Filesystem::class)->getDirectoryWrite(DirectoryList::MEDIA);
+        $this->productRepository = $this->_objectManager->create(ProductRepositoryInterface::class);
     }
 }

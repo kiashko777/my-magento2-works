@@ -45,6 +45,14 @@ class DateTime extends AbstractBaseAttributeData
     /**
      * @inheritdoc
      */
+    protected function getFrontendInput(): string
+    {
+        return 'datetime';
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function getAttributeDataWithCheckArray(): array
     {
         return array_replace_recursive(
@@ -102,9 +110,24 @@ class DateTime extends AbstractBaseAttributeData
     /**
      * @inheritdoc
      */
-    protected function getFrontendInput(): string
+    protected function getUpdateExpectedData(): array
     {
-        return 'datetime';
+        $updatePostData = $this->getUpdatePostData();
+        unset($updatePostData['default_value_datetime']);
+        return array_merge(
+            $updatePostData,
+            [
+                'frontend_label' => 'Date Time Attribute Update',
+                'attribute_code' => 'datetime_attribute',
+                'default_value' => '2020-02-04 06:30:00',
+                'frontend_class' => null,
+                'is_filterable' => '0',
+                'is_filterable_in_search' => '0',
+                'position' => '0',
+                'is_user_defined' => '1',
+                'backend_type' => 'datetime',
+            ]
+        );
     }
 
     /**
@@ -134,28 +157,5 @@ class DateTime extends AbstractBaseAttributeData
             'used_in_product_listing' => '0',
             'used_for_sort_by' => '1',
         ];
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function getUpdateExpectedData(): array
-    {
-        $updatePostData = $this->getUpdatePostData();
-        unset($updatePostData['default_value_datetime']);
-        return array_merge(
-            $updatePostData,
-            [
-                'frontend_label' => 'Date Time Attribute Update',
-                'attribute_code' => 'datetime_attribute',
-                'default_value' => '2020-02-04 06:30:00',
-                'frontend_class' => null,
-                'is_filterable' => '0',
-                'is_filterable_in_search' => '0',
-                'position' => '0',
-                'is_user_defined' => '1',
-                'backend_type' => 'datetime',
-            ]
-        );
     }
 }

@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\TestFramework\Dependency\Route;
 
+use Exception;
 use Magento\Framework\App\Area;
 use Magento\Framework\App\Utility\Files;
 use Magento\Framework\Component\ComponentFile;
@@ -127,7 +128,7 @@ class RouteMapper
      *
      * @param string $routerId
      * @return array
-     * @throws \Exception
+     * @throws Exception
      */
     public function getRoutes(string $routerId = ''): array
     {
@@ -149,60 +150,10 @@ class RouteMapper
     }
 
     /**
-     * Provide dependencies for a specific URL path
-     *
-     * @param string $routeId
-     * @param string $controllerName
-     * @param string $actionName
-     * @return string[]
-     * @throws NoSuchActionException
-     * @throws \Exception
-     */
-    public function getDependencyByRoutePath(
-        string $routeId,
-        string $controllerName,
-        string $actionName
-    ): array {
-        $routeId = strtolower($routeId);
-        $controllerName = strtolower($controllerName);
-        $actionName = strtolower($actionName);
-
-        if (isset($this->reservedWords[$actionName])) {
-            $actionName .= 'action';
-        }
-
-        $dependencies = [];
-        foreach ($this->getRouterTypes() as $routerId) {
-            if (isset($this->getActionsMap()[$routerId][$routeId][$controllerName][$actionName])) {
-                $dependencies[] = $this->getActionsMap()[$routerId][$routeId][$controllerName][$actionName];
-            }
-        }
-        $dependencies = array_merge([], ...$dependencies);
-
-        if (empty($dependencies)) {
-            throw new NoSuchActionException(implode('/', [$routeId, $controllerName, $actionName]));
-        } else {
-            $dependencies = array_unique($dependencies);
-        }
-        return $dependencies;
-    }
-
-    /**
-     * Provide a list of router type
-     *
-     * @return array
-     * @throws \Exception
-     */
-    private function getRouterTypes()
-    {
-        return array_keys($this->getActionsMap());
-    }
-
-    /**
      * Provide routing declaration
      *
      * @return array
-     * @throws \Exception
+     * @throws Exception
      */
     private function getRoutersMap()
     {
@@ -215,6 +166,24 @@ class RouteMapper
         }
 
         return $this->routers;
+    }
+
+    /**
+     * Prepare the list of routes.xml files (by modules)
+     *
+     * @throws Exception
+     */
+    private function getListRoutesXml()
+    {
+        if (empty($this->routeConfigFiles)) {
+            $files = Files::init()->getConfigFiles('*/routes.xml', [], false, true);
+            /** @var ComponentFile $componentFile */
+            foreach ($files as $componentFile) {
+                $module = str_replace('_', '\\', $componentFile->getComponentName());
+                $this->routeConfigFiles[$module][] = $componentFile->getFullPath();
+            }
+        }
+        return $this->routeConfigFiles;
     }
 
     /**
@@ -246,28 +215,61 @@ class RouteMapper
     }
 
     /**
-     * Prepare the list of routes.xml files (by modules)
+     * Provide dependencies for a specific URL path
      *
-     * @throws \Exception
+     * @param string $routeId
+     * @param string $controllerName
+     * @param string $actionName
+     * @return string[]
+     * @throws NoSuchActionException
+     * @throws Exception
      */
-    private function getListRoutesXml()
+    public function getDependencyByRoutePath(
+        string $routeId,
+        string $controllerName,
+        string $actionName
+    ): array
     {
-        if (empty($this->routeConfigFiles)) {
-            $files = Files::init()->getConfigFiles('*/routes.xml', [], false, true);
-            /** @var ComponentFile $componentFile */
-            foreach ($files as $componentFile) {
-                $module = str_replace('_', '\\', $componentFile->getComponentName());
-                $this->routeConfigFiles[$module][] = $componentFile->getFullPath();
+        $routeId = strtolower($routeId);
+        $controllerName = strtolower($controllerName);
+        $actionName = strtolower($actionName);
+
+        if (isset($this->reservedWords[$actionName])) {
+            $actionName .= 'action';
+        }
+
+        $dependencies = [];
+        foreach ($this->getRouterTypes() as $routerId) {
+            if (isset($this->getActionsMap()[$routerId][$routeId][$controllerName][$actionName])) {
+                $dependencies[] = $this->getActionsMap()[$routerId][$routeId][$controllerName][$actionName];
             }
         }
-        return $this->routeConfigFiles;
+        $dependencies = array_merge([], ...$dependencies);
+
+        if (empty($dependencies)) {
+            throw new NoSuchActionException(implode('/', [$routeId, $controllerName, $actionName]));
+        } else {
+            $dependencies = array_unique($dependencies);
+        }
+        return $dependencies;
+    }
+
+    /**
+     * Provide a list of router type
+     *
+     * @return array
+     * @throws Exception
+     */
+    private function getRouterTypes()
+    {
+        return array_keys($this->getActionsMap());
     }
 
     /**
      * Provide a list of available actions
      *
      * @return array
-     * @throws \Exception
+     * @throws Exception
      */
     private function getActionsMap(): array
     {

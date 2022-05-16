@@ -3,8 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Dependency\Parser\Composer;
 
+use InvalidArgumentException;
 use Magento\Framework\Config\Composer\Package;
 use Magento\Setup\Module\Dependency\ParserInterface;
 
@@ -36,18 +38,29 @@ class Json implements ParserInterface
      *
      * @param array $options
      * @return void
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     protected function checkOptions($options)
     {
         if (!isset(
-            $options['files_for_parse']
-        ) || !is_array(
-            $options['files_for_parse']
-        ) || !$options['files_for_parse']
+                $options['files_for_parse']
+            ) || !is_array(
+                $options['files_for_parse']
+            ) || !$options['files_for_parse']
         ) {
-            throw new \InvalidArgumentException('Parse error: Option "files_for_parse" is wrong.');
+            throw new InvalidArgumentException('Parse error: Option "files_for_parse" is wrong.');
         }
+    }
+
+    /**
+     * Template method. Load module config step
+     *
+     * @param string $file
+     * @return Package
+     */
+    protected function getModuleComposerPackage($file)
+    {
+        return new Package(json_decode(file_get_contents($file)));
     }
 
     /**
@@ -59,6 +72,17 @@ class Json implements ParserInterface
     protected function extractModuleName($package)
     {
         return $this->prepareModuleName((string)$package->get('name'));
+    }
+
+    /**
+     * Prepare module name
+     *
+     * @param string $name
+     * @return string
+     */
+    protected function prepareModuleName($name)
+    {
+        return $name;
     }
 
     /**
@@ -91,27 +115,5 @@ class Json implements ParserInterface
         }
 
         return $dependencies;
-    }
-
-    /**
-     * Template method. Load module config step
-     *
-     * @param string $file
-     * @return Package
-     */
-    protected function getModuleComposerPackage($file)
-    {
-        return new Package(json_decode(file_get_contents($file)));
-    }
-
-    /**
-     * Prepare module name
-     *
-     * @param string $name
-     * @return string
-     */
-    protected function prepareModuleName($name)
-    {
-        return $name;
     }
 }

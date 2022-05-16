@@ -14,6 +14,9 @@ use Magento\Customer\Api\Data\CustomerInterface;
 use Magento\Directory\Model\ResourceModel\Country\Collection;
 use Magento\Framework\Data\Form\Element\AbstractElement;
 use Magento\Framework\Data\Form\Element\Fieldset;
+use Magento\Framework\Data\Form\Element\Select;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Store\Api\Data\StoreInterface;
 use Magento\Store\Api\Data\WebsiteInterface;
 use Magento\Store\Api\StoreRepositoryInterface;
@@ -22,12 +25,13 @@ use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Helper\Xpath;
 use Magento\TestFramework\ObjectManager;
 use PHPUnit\Framework\MockObject\MockObject as MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @magentoAppArea Adminhtml
  */
-class AddressTest extends \PHPUnit\Framework\TestCase
+class AddressTest extends TestCase
 {
     /**
      * @var ObjectManager
@@ -45,24 +49,6 @@ class AddressTest extends \PHPUnit\Framework\TestCase
     private $quoteSession;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-
-        $this->quoteSession = $this->getMockBuilder(QuoteSession::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['getCustomerId', 'getStore', 'getStoreId', 'getQuote'])
-            ->getMock();
-
-        $this->block = $this->objectManager->create(
-            Address::class,
-            ['sessionQuote' => $this->quoteSession]
-        );
-    }
-
-    /**
      * Checks address collection.
      *
      * @magentoDataFixture Magento/Customer/Fixtures/customer_2_addresses.php
@@ -78,6 +64,36 @@ class AddressTest extends \PHPUnit\Framework\TestCase
         $actual = $this->block->getAddressCollection();
         self::assertNotEmpty($actual);
         self::assertEquals($addresses, $actual);
+    }
+
+    /**
+     * Gets website by code.
+     *
+     * @param string $code
+     * @return WebsiteInterface
+     * @throws NoSuchEntityException
+     */
+    private function getWebsite(string $code): WebsiteInterface
+    {
+        /** @var WebsiteRepositoryInterface $repository */
+        $repository = $this->objectManager->get(WebsiteRepositoryInterface::class);
+        return $repository->get($code);
+    }
+
+    /**
+     * Gets customer entity.
+     *
+     * @param string $email
+     * @param int $websiteId
+     * @return CustomerInterface
+     * @throws LocalizedException
+     * @throws NoSuchEntityException
+     */
+    private function getCustomer(string $email, int $websiteId): CustomerInterface
+    {
+        /** @var CustomerRepositoryInterface $repository */
+        $repository = $this->objectManager->get(CustomerRepositoryInterface::class);
+        return $repository->get($email, $websiteId);
     }
 
     /**
@@ -151,6 +167,20 @@ class AddressTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Gets store by code.
+     *
+     * @param string $code
+     * @return StoreInterface
+     * @throws NoSuchEntityException
+     */
+    private function getStore(string $code): StoreInterface
+    {
+        /** @var StoreRepositoryInterface $repository */
+        $repository = $this->objectManager->get(StoreRepositoryInterface::class);
+        return $repository->get($code);
+    }
+
+    /**
      * Checks one line address formatting
      */
     public function testGetAddressAsString()
@@ -211,54 +241,10 @@ class AddressTest extends \PHPUnit\Framework\TestCase
             );
         }
 
-        /** @var \Magento\Framework\Data\Form\Element\Select $countryIdField */
+        /** @var Select $countryIdField */
         $countryIdField = $fieldset->getElements()->searchById('country_id');
         $actual = Xpath::getElementsCountForXpath('//option', $countryIdField->getElementHtml());
         self::assertEquals($this->getNumberOfCountryOptions(), $actual);
-    }
-
-    /**
-     * Gets customer entity.
-     *
-     * @param string $email
-     * @param int $websiteId
-     * @return CustomerInterface
-     * @throws \Magento\Framework\Exception\LocalizedException
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
-     */
-    private function getCustomer(string $email, int $websiteId): CustomerInterface
-    {
-        /** @var CustomerRepositoryInterface $repository */
-        $repository = $this->objectManager->get(CustomerRepositoryInterface::class);
-        return $repository->get($email, $websiteId);
-    }
-
-    /**
-     * Gets website by code.
-     *
-     * @param string $code
-     * @return WebsiteInterface
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
-     */
-    private function getWebsite(string $code): WebsiteInterface
-    {
-        /** @var WebsiteRepositoryInterface $repository */
-        $repository = $this->objectManager->get(WebsiteRepositoryInterface::class);
-        return $repository->get($code);
-    }
-
-    /**
-     * Gets store by code.
-     *
-     * @param string $code
-     * @return StoreInterface
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
-     */
-    private function getStore(string $code): StoreInterface
-    {
-        /** @var StoreRepositoryInterface $repository */
-        $repository = $this->objectManager->get(StoreRepositoryInterface::class);
-        return $repository->get($code);
     }
 
     /**
@@ -269,5 +255,23 @@ class AddressTest extends \PHPUnit\Framework\TestCase
         /** @var Collection $countryCollection */
         $countryCollection = $this->objectManager->create(Collection::class);
         return count($countryCollection->toOptionArray());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->quoteSession = $this->getMockBuilder(QuoteSession::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['getCustomerId', 'getStore', 'getStoreId', 'getQuote'])
+            ->getMock();
+
+        $this->block = $this->objectManager->create(
+            Address::class,
+            ['sessionQuote' => $this->quoteSession]
+        );
     }
 }

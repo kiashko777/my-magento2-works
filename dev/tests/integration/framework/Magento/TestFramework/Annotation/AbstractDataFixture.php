@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\TestFramework\Annotation;
 
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 use PHPUnit\Framework\Exception;
 use PHPUnit\Framework\TestCase;
@@ -58,6 +59,24 @@ abstract class AbstractDataFixture
     }
 
     /**
+     * Get annotation name
+     *
+     * @return string
+     */
+    abstract protected function getAnnotation(): string;
+
+    /**
+     * Get uniq test cache key
+     *
+     * @param TestCase $test
+     * @return string
+     */
+    private function getTestKey(TestCase $test): string
+    {
+        return sprintf('%s::%s', get_class($test), $test->getName());
+    }
+
+    /**
      * Get method annotations.
      *
      * Overwrites class-defined annotations.
@@ -69,6 +88,45 @@ abstract class AbstractDataFixture
     {
         $annotations = $test->getAnnotations();
         return array_replace((array)$annotations['class'], (array)$annotations['method']);
+    }
+
+    /**
+     * Execute fixture scripts if any
+     *
+     * @param array $fixtures
+     * @param TestCase $test
+     * @return void
+     */
+    protected function _applyFixtures(array $fixtures, TestCase $test)
+    {
+        /** @var TestsIsolation $testsIsolation */
+        $testsIsolation = Bootstrap::getObjectManager()->get(
+            TestsIsolation::class
+        );
+        $dbIsolationState = $this->getDbIsolationState($test);
+        $testsIsolation->createDbSnapshot($test, $dbIsolationState);
+
+        /* Execute fixture scripts */
+        foreach ($fixtures as $oneFixture) {
+            $this->_applyOneFixture($oneFixture);
+            $this->_appliedFixtures[] = $oneFixture;
+        }
+        $resolver = Resolver::getInstance();
+        $resolver->setCurrentFixtureType(null);
+    }
+
+    /**
+     * Return is explicit set isolation state
+     *
+     * @param TestCase $test
+     * @return array|null
+     */
+    protected function getDbIsolationState(TestCase $test)
+    {
+        $annotations = $this->getAnnotations($test);
+        return isset($annotations[DbIsolation::MAGENTO_DB_ISOLATION])
+            ? $annotations[DbIsolation::MAGENTO_DB_ISOLATION]
+            : null;
     }
 
     /**
@@ -98,31 +156,6 @@ abstract class AbstractDataFixture
                 $e
             );
         }
-    }
-
-    /**
-     * Execute fixture scripts if any
-     *
-     * @param array $fixtures
-     * @param TestCase $test
-     * @return void
-     */
-    protected function _applyFixtures(array $fixtures, TestCase $test)
-    {
-        /** @var \Magento\TestFramework\Annotation\TestsIsolation $testsIsolation */
-        $testsIsolation = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\TestFramework\Annotation\TestsIsolation::class
-        );
-        $dbIsolationState = $this->getDbIsolationState($test);
-        $testsIsolation->createDbSnapshot($test, $dbIsolationState);
-
-        /* Execute fixture scripts */
-        foreach ($fixtures as $oneFixture) {
-            $this->_applyOneFixture($oneFixture);
-            $this->_appliedFixtures[] = $oneFixture;
-        }
-        $resolver = Resolver::getInstance();
-        $resolver->setCurrentFixtureType(null);
     }
 
     /**
@@ -158,44 +191,12 @@ abstract class AbstractDataFixture
         $resolver->setCurrentFixtureType(null);
 
         if (null !== $test) {
-            /** @var \Magento\TestFramework\Annotation\TestsIsolation $testsIsolation */
-            $testsIsolation = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-                \Magento\TestFramework\Annotation\TestsIsolation::class
+            /** @var TestsIsolation $testsIsolation */
+            $testsIsolation = Bootstrap::getObjectManager()->get(
+                TestsIsolation::class
             );
             $dbIsolationState = $this->getDbIsolationState($test);
             $testsIsolation->checkTestIsolation($test, $dbIsolationState);
         }
     }
-
-    /**
-     * Return is explicit set isolation state
-     *
-     * @param TestCase $test
-     * @return array|null
-     */
-    protected function getDbIsolationState(TestCase $test)
-    {
-        $annotations = $this->getAnnotations($test);
-        return isset($annotations[DbIsolation::MAGENTO_DB_ISOLATION])
-            ? $annotations[DbIsolation::MAGENTO_DB_ISOLATION]
-            : null;
-    }
-
-    /**
-     * Get uniq test cache key
-     *
-     * @param TestCase $test
-     * @return string
-     */
-    private function getTestKey(TestCase $test): string
-    {
-        return sprintf('%s::%s', get_class($test), $test->getName());
-    }
-
-    /**
-     * Get annotation name
-     *
-     * @return string
-     */
-    abstract protected function getAnnotation(): string;
 }

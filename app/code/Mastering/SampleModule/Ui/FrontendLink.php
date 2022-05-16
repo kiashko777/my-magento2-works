@@ -2,8 +2,8 @@
 
 namespace Mastering\SampleModule\Ui\Component;
 
-use Magento\Framework\View\Element\UiComponent\ContextInterface;
 use Magento\Framework\UrlInterface;
+use Magento\Framework\View\Element\UiComponent\ContextInterface;
 use Magento\Ui\Component\AbstractComponent;
 
 class FrontendLink extends AbstractComponent

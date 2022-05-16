@@ -5,13 +5,15 @@
  */
 
 use Magento\Sales\Api\Data\OrderInterfaceFactory;
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Payment;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Sales/_files/order.php');
 
 $objectManager = Bootstrap::getObjectManager();
-/** @var \Magento\Sales\Model\Order $order */
+/** @var Order $order */
 $order = $objectManager->get(OrderInterfaceFactory::class)->create()->loadByIncrementId('100000001');
 
 $payments = [
@@ -45,9 +47,9 @@ $payments = [
 
 /** @var array $payments */
 foreach ($payments as $paymentData) {
-    /** @var $address \Magento\Sales\Model\Order\Payment */
-    $payment = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-        \Magento\Sales\Model\Order\Payment::class
+    /** @var $address Payment */
+    $payment = Bootstrap::getObjectManager()->create(
+        Payment::class
     );
     $payment
         ->setData($paymentData)

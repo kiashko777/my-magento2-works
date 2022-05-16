@@ -6,12 +6,13 @@
 
 namespace Magento\Setup\Fixtures\Quote;
 
+use Magento\Framework\DataObject;
 use Magento\Setup\Fixtures\FixtureModel;
 
 /**
  * Configuration for generating quotes for orders.
  */
-class QuoteConfiguration extends \Magento\Framework\DataObject
+class QuoteConfiguration extends DataObject
 {
     /**
      * Products type for "big" configurable products.

@@ -17,7 +17,8 @@ define([
          * Dummy constructor to use for instantiation
          * @constructor
          */
-        var Constr = function () {};
+        var Constr = function () {
+        };
 
         Constr.prototype = wysiwygAdapter;
 
@@ -62,7 +63,7 @@ define([
 
         describe('without SID in directive query string without secret key', function () {
             var decodedHtml = '<p>' +
-                '<img src="{{media url=&quot;wysiwyg/banana.jpg&quot;}}" alt="" width="612" height="459"></p>',
+                    '<img src="{{media url=&quot;wysiwyg/banana.jpg&quot;}}" alt="" width="612" height="459"></p>',
                 encodedHtml = '<p>' +
                     '<img src="http://example.com/admin/cms/wysiwyg/directive/___directive' +
                     '/e3ttZWRpYSB1cmw9Ind5c2l3eWcvYmFuYW5hLmpwZyJ9fQ%2C%2C" alt="" width="612" height="459">' +
@@ -79,7 +80,7 @@ define([
 
         describe('without SID in directive query string with secret key', function () {
             var decodedHtml = '<p>' +
-                '<img src="{{media url=&quot;wysiwyg/banana.jpg&quot;}}" alt="" width="612" height="459"></p>',
+                    '<img src="{{media url=&quot;wysiwyg/banana.jpg&quot;}}" alt="" width="612" height="459"></p>',
                 encodedHtml = '<p>' +
                     '<img src="http://example.com/admin/cms/wysiwyg/directive/___directive' +
                     '/e3ttZWRpYSB1cmw9Ind5c2l3eWcvYmFuYW5hLmpwZyJ9fQ%2C%2C/key/' +
@@ -100,7 +101,7 @@ define([
 
         describe('with SID in directive query string without secret key', function () {
             var decodedHtml = '<p>' +
-                '<img src="{{media url=&quot;wysiwyg/banana.jpg&quot;}}" alt="" width="612" height="459"></p>',
+                    '<img src="{{media url=&quot;wysiwyg/banana.jpg&quot;}}" alt="" width="612" height="459"></p>',
                 encodedHtml = '<p>' +
                     '<img src="http://example.com/admin/cms/wysiwyg/directive/___directive' +
                     '/e3ttZWRpYSB1cmw9Ind5c2l3eWcvYmFuYW5hLmpwZyJ9fQ%2C%2C?SID=something" ' +
@@ -119,7 +120,7 @@ define([
 
         describe('with SID in directive query string with secret key', function () {
             var decodedHtml = '<p>' +
-                '<img src="{{media url=&quot;wysiwyg/banana.jpg&quot;}}" alt="" width="612" height="459"></p>',
+                    '<img src="{{media url=&quot;wysiwyg/banana.jpg&quot;}}" alt="" width="612" height="459"></p>',
                 encodedHtml = '<p>' +
                     '<img src="http://example.com/admin/cms/wysiwyg/directive/___directive' +
                     '/e3ttZWRpYSB1cmw9Ind5c2l3eWcvYmFuYW5hLmpwZyJ9fQ%2C%2C/key/' +

@@ -7,23 +7,27 @@
 /**
  * Tests usage of \Magento\Framework\View\Element\AbstractBlock
  */
+
 namespace Magento\Test\Legacy\Magento\Core\Block;
 
+use Magento\Framework\App\Utility\AggregateInvoker;
+use Magento\Framework\App\Utility\Classes;
 use Magento\Framework\App\Utility\Files;
+use PHPUnit\Framework\TestCase;
 
-class AbstractBlockTest extends \PHPUnit\Framework\TestCase
+class AbstractBlockTest extends TestCase
 {
     public function testGetChildHtml()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
-            /**
-             * Tests if methods are used with correct count of parameters
-             *
-             * @param string $file
-             */
+        /**
+         * Tests if methods are used with correct count of parameters
+         *
+         * @param string $file
+         */
             function ($file) {
-                $result = \Magento\Framework\App\Utility\Classes::getAllMatches(
+                $result = Classes::getAllMatches(
                     file_get_contents($file),
                     "/(->getChildHtml\([^,()]+, ?[^,()]+,)/i"
                 );
@@ -31,7 +35,7 @@ class AbstractBlockTest extends \PHPUnit\Framework\TestCase
                     $result,
                     "3rd parameter is not needed anymore for getChildHtml() in '{$file}': " . print_r($result, true)
                 );
-                $result = \Magento\Framework\App\Utility\Classes::getAllMatches(
+                $result = Classes::getAllMatches(
                     file_get_contents($file),
                     "/(->getChildChildHtml\([^,()]+, ?[^,()]+, ?[^,()]+,)/i"
                 );

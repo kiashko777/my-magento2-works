@@ -3,25 +3,23 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Model\ResourceModel\Type\Db;
 
-class ConnectionFactoryTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\DB\Adapter\AdapterInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class ConnectionFactoryTest extends TestCase
 {
     /**
      * @var ConnectionFactory
      */
     private $model;
 
-    protected function setUp(): void
-    {
-        $this->model = new ConnectionFactory(
-            \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-        );
-    }
-
     public function testCreate()
     {
-        $dbInstance = \Magento\TestFramework\Helper\Bootstrap::getInstance()
+        $dbInstance = Bootstrap::getInstance()
             ->getBootstrap()
             ->getApplication()
             ->getDbInstance();
@@ -33,6 +31,13 @@ class ConnectionFactoryTest extends \PHPUnit\Framework\TestCase
             'active' => true,
         ];
         $connection = $this->model->create($dbConfig);
-        $this->assertInstanceOf(\Magento\Framework\DB\Adapter\AdapterInterface::class, $connection);
+        $this->assertInstanceOf(AdapterInterface::class, $connection);
+    }
+
+    protected function setUp(): void
+    {
+        $this->model = new ConnectionFactory(
+            Bootstrap::getObjectManager()
+        );
     }
 }

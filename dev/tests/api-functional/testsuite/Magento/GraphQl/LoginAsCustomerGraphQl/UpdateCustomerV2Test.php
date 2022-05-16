@@ -7,9 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\LoginAsCustomerGraphQl;
 
-use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Integration\Api\CustomerTokenServiceInterface;
-use Magento\Framework\Registry;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
 
@@ -22,13 +20,6 @@ class UpdateCustomerV2Test extends GraphQlAbstract
      * @var CustomerTokenServiceInterface
      */
     private $customerTokenService;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
-    }
 
     /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
@@ -71,6 +62,13 @@ QUERY;
     {
         $customerToken = $this->customerTokenService->createCustomerAccessToken($email, $password);
         return ['Authorization' => 'Bearer ' . $customerToken];
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
     }
 
 }

@@ -3,11 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Exception;
 
 use Magento\Framework\Phrase;
+use PHPUnit\Framework\TestCase;
 
-class NoSuchEntityExceptionTest extends \PHPUnit\Framework\TestCase
+class NoSuchEntityExceptionTest extends TestCase
 {
     public function testConstructor()
     {

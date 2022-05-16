@@ -6,64 +6,22 @@
 
 namespace Magento\Customer\Api;
 
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Registry;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\WebapiAbstract;
 
-class AddressRepositoryTest extends \Magento\TestFramework\TestCase\WebapiAbstract
+class AddressRepositoryTest extends WebapiAbstract
 {
     const SOAP_SERVICE_NAME = 'customerAddressRepositoryV1';
     const SOAP_SERVICE_VERSION = 'V1';
 
-    /** @var \Magento\Customer\Api\AddressRepositoryInterface */
+    /** @var AddressRepositoryInterface */
     protected $addressRepository;
 
-    /** @var \Magento\Customer\Api\CustomerRepositoryInterface */
+    /** @var CustomerRepositoryInterface */
     protected $customerRepository;
-
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->customerRepository = $objectManager->get(
-            \Magento\Customer\Api\CustomerRepositoryInterface::class
-        );
-        $this->addressRepository = $objectManager->get(
-            \Magento\Customer\Api\AddressRepositoryInterface::class
-        );
-        parent::setUp();
-    }
-
-    /**
-     * Ensure that fixture customer and his addresses are deleted.
-     */
-    protected function tearDown(): void
-    {
-        /** @var \Magento\Framework\Registry $registry */
-        $registry = Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
-        $registry->unregister('isSecureArea');
-        $registry->register('isSecureArea', true);
-
-        try {
-            $fixtureFirstAddressId = 1;
-            $this->addressRepository->deleteById($fixtureFirstAddressId);
-        } catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
-            /** First address fixture was not used */
-        }
-        try {
-            $fixtureSecondAddressId = 2;
-            $this->addressRepository->deleteById($fixtureSecondAddressId);
-        } catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
-            /** Second address fixture was not used */
-        }
-        try {
-            $fixtureCustomerId = 1;
-            $this->customerRepository->deleteById($fixtureCustomerId);
-        } catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
-            /** Customer fixture was not used */
-        }
-
-        $registry->unregister('isSecureArea');
-        $registry->register('isSecureArea', false);
-        parent::tearDown();
-    }
 
     /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
@@ -75,7 +33,7 @@ class AddressRepositoryTest extends \Magento\TestFramework\TestCase\WebapiAbstra
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => "/V1/customers/addresses/{$fixtureAddressId}",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SOAP_SERVICE_NAME,
@@ -90,33 +48,6 @@ class AddressRepositoryTest extends \Magento\TestFramework\TestCase\WebapiAbstra
             $addressData,
             "Address data is invalid."
         );
-    }
-
-    /**
-     * @magentoApiDataFixture Magento/Customer/_files/customer.php
-     * @magentoApiDataFixture Magento/Customer/_files/customer_address.php
-     */
-    public function testDeleteAddress()
-    {
-        $fixtureAddressId = 1;
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => "/V1/addresses/{$fixtureAddressId}",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
-            ],
-            'soap' => [
-                'service' => self::SOAP_SERVICE_NAME,
-                'serviceVersion' => self::SOAP_SERVICE_VERSION,
-                'operation' => self::SOAP_SERVICE_NAME . 'DeleteById',
-            ],
-        ];
-        $requestData = ['addressId' => $fixtureAddressId];
-        $response = $this->_webApiCall($serviceInfo, $requestData);
-        $this->assertTrue($response, 'Expected response should be true.');
-
-        $this->expectException(\Magento\Framework\Exception\NoSuchEntityException::class);
-        $this->expectExceptionMessage('No such entity with addressId = 1');
-        $this->addressRepository->getById($fixtureAddressId);
     }
 
     /**
@@ -142,6 +73,79 @@ class AddressRepositoryTest extends \Magento\TestFramework\TestCase\WebapiAbstra
             'region' => ['region' => 'Alabama', 'region_id' => 1, 'region_code' => 'AL'],
             'region_id' => 1,
         ];
+    }
+
+    /**
+     * @magentoApiDataFixture Magento/Customer/_files/customer.php
+     * @magentoApiDataFixture Magento/Customer/_files/customer_address.php
+     */
+    public function testDeleteAddress()
+    {
+        $fixtureAddressId = 1;
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => "/V1/addresses/{$fixtureAddressId}",
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
+            ],
+            'soap' => [
+                'service' => self::SOAP_SERVICE_NAME,
+                'serviceVersion' => self::SOAP_SERVICE_VERSION,
+                'operation' => self::SOAP_SERVICE_NAME . 'DeleteById',
+            ],
+        ];
+        $requestData = ['addressId' => $fixtureAddressId];
+        $response = $this->_webApiCall($serviceInfo, $requestData);
+        $this->assertTrue($response, 'Expected response should be true.');
+
+        $this->expectException(NoSuchEntityException::class);
+        $this->expectExceptionMessage('No such entity with addressId = 1');
+        $this->addressRepository->getById($fixtureAddressId);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->customerRepository = $objectManager->get(
+            CustomerRepositoryInterface::class
+        );
+        $this->addressRepository = $objectManager->get(
+            AddressRepositoryInterface::class
+        );
+        parent::setUp();
+    }
+
+    /**
+     * Ensure that fixture customer and his addresses are deleted.
+     */
+    protected function tearDown(): void
+    {
+        /** @var Registry $registry */
+        $registry = Bootstrap::getObjectManager()->get(Registry::class);
+        $registry->unregister('isSecureArea');
+        $registry->register('isSecureArea', true);
+
+        try {
+            $fixtureFirstAddressId = 1;
+            $this->addressRepository->deleteById($fixtureFirstAddressId);
+        } catch (NoSuchEntityException $e) {
+            /** First address fixture was not used */
+        }
+        try {
+            $fixtureSecondAddressId = 2;
+            $this->addressRepository->deleteById($fixtureSecondAddressId);
+        } catch (NoSuchEntityException $e) {
+            /** Second address fixture was not used */
+        }
+        try {
+            $fixtureCustomerId = 1;
+            $this->customerRepository->deleteById($fixtureCustomerId);
+        } catch (NoSuchEntityException $e) {
+            /** Customer fixture was not used */
+        }
+
+        $registry->unregister('isSecureArea');
+        $registry->register('isSecureArea', false);
+        parent::tearDown();
     }
 
     /**

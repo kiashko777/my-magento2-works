@@ -8,6 +8,7 @@ namespace Magento\Setup\Module\Di\App\Task\Operation;
 
 use Magento\Setup\Module\Di\App\Task\OperationInterface;
 use Magento\Setup\Module\Di\Code\Scanner;
+use Magento\Setup\Module\Di\Code\Scanner\ConfigurationScanner;
 
 class ProxyGenerator implements OperationInterface
 {
@@ -22,20 +23,21 @@ class ProxyGenerator implements OperationInterface
     private $data;
 
     /**
-     * @var Scanner\ConfigurationScanner
+     * @var ConfigurationScanner
      */
     private $configurationScanner;
 
     /**
      * @param Scanner\XmlScanner $proxyScanner
-     * @param Scanner\ConfigurationScanner $configurationScanner
+     * @param ConfigurationScanner $configurationScanner
      * @param array $data
      */
     public function __construct(
-        Scanner\XmlScanner $proxyScanner,
-        \Magento\Setup\Module\Di\Code\Scanner\ConfigurationScanner $configurationScanner,
-        $data = []
-    ) {
+        Scanner\XmlScanner                                         $proxyScanner,
+        ConfigurationScanner $configurationScanner,
+                                                                   $data = []
+    )
+    {
         $this->proxyScanner = $proxyScanner;
         $this->data = $data;
         $this->configurationScanner = $configurationScanner;

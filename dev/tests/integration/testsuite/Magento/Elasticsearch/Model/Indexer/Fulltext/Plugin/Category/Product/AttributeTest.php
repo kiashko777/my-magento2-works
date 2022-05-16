@@ -67,36 +67,6 @@ class AttributeTest extends TestCase
     private $attributeRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $connectionManager = Bootstrap::getObjectManager()->get(ConnectionManager::class);
-        $this->client = $connectionManager->getConnection();
-        $this->arrayManager = Bootstrap::getObjectManager()->get(ArrayManager::class);
-        $this->indexNameResolver = Bootstrap::getObjectManager()->get(IndexNameResolver::class);
-        $this->indexerProcessor = Bootstrap::getObjectManager()->get(Processor::class);
-        $this->storeManager = Bootstrap::getObjectManager()->get(StoreManagerInterface::class);
-        $this->installer = Bootstrap::getObjectManager()->get(CategorySetup::class);
-        $this->attributeFactory = Bootstrap::getObjectManager()->get(AttributeFactory::class);
-        $this->attributeRepository = Bootstrap::getObjectManager()->get(ProductAttributeRepositoryInterface::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        parent::tearDown();
-
-        /** @var ProductAttributeInterface $attribute */
-        $attribute = $this->attributeRepository->get('dropdown_attribute');
-        $this->attributeRepository->delete($attribute);
-    }
-
-    /**
      * Check Elasticsearch indexer mapping is updated after creating attribute.
      *
      * @return void
@@ -159,26 +129,26 @@ class AttributeTest extends TestCase
         $entityTypeId = $this->installer->getEntityTypeId(ProductAttributeInterface::ENTITY_TYPE_CODE);
 
         return [
-            'attribute_code'                => 'dropdown_attribute',
-            'entity_type_id'                => $entityTypeId,
-            'is_global'                     => 0,
-            'is_user_defined'               => 1,
-            'frontend_input'                => 'select',
-            'is_unique'                     => 0,
-            'is_required'                   => 0,
-            'is_searchable'                 => 0,
+            'attribute_code' => 'dropdown_attribute',
+            'entity_type_id' => $entityTypeId,
+            'is_global' => 0,
+            'is_user_defined' => 1,
+            'frontend_input' => 'select',
+            'is_unique' => 0,
+            'is_required' => 0,
+            'is_searchable' => 0,
             'is_visible_in_advanced_search' => 0,
-            'is_comparable'                 => 0,
-            'is_filterable'                 => 0,
-            'is_filterable_in_search'       => 0,
-            'is_used_for_promo_rules'       => 0,
-            'is_html_allowed_on_front'      => 1,
-            'is_visible_on_front'           => 1,
-            'used_in_product_listing'       => 1,
-            'used_for_sort_by'              => 0,
-            'frontend_label'                => ['Drop-Down Attribute'],
-            'backend_type'                  => 'varchar',
-            'option'                        => [
+            'is_comparable' => 0,
+            'is_filterable' => 0,
+            'is_filterable_in_search' => 0,
+            'is_used_for_promo_rules' => 0,
+            'is_html_allowed_on_front' => 1,
+            'is_visible_on_front' => 1,
+            'used_in_product_listing' => 1,
+            'used_for_sort_by' => 0,
+            'frontend_label' => ['Drop-Down Attribute'],
+            'backend_type' => 'varchar',
+            'option' => [
                 'value' => [
                     'option_1' => ['Option 1'],
                     'option_2' => ['Option 2'],
@@ -191,5 +161,35 @@ class AttributeTest extends TestCase
                 ],
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $connectionManager = Bootstrap::getObjectManager()->get(ConnectionManager::class);
+        $this->client = $connectionManager->getConnection();
+        $this->arrayManager = Bootstrap::getObjectManager()->get(ArrayManager::class);
+        $this->indexNameResolver = Bootstrap::getObjectManager()->get(IndexNameResolver::class);
+        $this->indexerProcessor = Bootstrap::getObjectManager()->get(Processor::class);
+        $this->storeManager = Bootstrap::getObjectManager()->get(StoreManagerInterface::class);
+        $this->installer = Bootstrap::getObjectManager()->get(CategorySetup::class);
+        $this->attributeFactory = Bootstrap::getObjectManager()->get(AttributeFactory::class);
+        $this->attributeRepository = Bootstrap::getObjectManager()->get(ProductAttributeRepositoryInterface::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+
+        /** @var ProductAttributeInterface $attribute */
+        $attribute = $this->attributeRepository->get('dropdown_attribute');
+        $this->attributeRepository->delete($attribute);
     }
 }

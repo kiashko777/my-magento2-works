@@ -7,12 +7,13 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Quote\Guest;
 
+use Exception;
+use Magento\Quote\Api\GuestCartRepositoryInterface;
 use Magento\Quote\Model\QuoteIdMaskFactory;
-use Magento\Quote\Model\ResourceModel\Quote\CollectionFactory as QuoteCollectionFactory;
 use Magento\Quote\Model\ResourceModel\Quote as QuoteResource;
+use Magento\Quote\Model\ResourceModel\Quote\CollectionFactory as QuoteCollectionFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
-use Magento\Quote\Api\GuestCartRepositoryInterface;
 
 /**
  * Test for empty cart creation mutation
@@ -44,15 +45,6 @@ class CreateEmptyCartTest extends GraphQlAbstract
      */
     private $maskedQuoteId;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->guestCartRepository = $objectManager->get(GuestCartRepositoryInterface::class);
-        $this->quoteCollectionFactory = $objectManager->get(QuoteCollectionFactory::class);
-        $this->quoteResource = $objectManager->get(QuoteResource::class);
-        $this->quoteIdMaskFactory = $objectManager->get(QuoteIdMaskFactory::class);
-    }
-
     public function testCreateEmptyCart()
     {
         $query = $this->getQuery();
@@ -67,6 +59,18 @@ class CreateEmptyCartTest extends GraphQlAbstract
         self::assertNull($guestCart->getCustomer()->getId());
         self::assertEquals('default', $guestCart->getStore()->getCode());
         self::assertEquals('1', $guestCart->getCustomerIsGuest());
+    }
+
+    /**
+     * @return string
+     */
+    private function getQuery(): string
+    {
+        return <<<QUERY
+mutation {
+  createEmptyCart
+}
+QUERY;
     }
 
     /**
@@ -118,7 +122,7 @@ QUERY;
      */
     public function testCreateEmptyCartIfPredefinedCartIdAlreadyExists()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Cart with ID "572cda51902b5b517c0e1a2b2fd004b4" already exists.');
 
         $predefinedCartId = '572cda51902b5b517c0e1a2b2fd004b4';
@@ -138,7 +142,7 @@ QUERY;
      */
     public function testCreateEmptyCartWithWrongPredefinedCartId()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Cart ID length should to be 32 symbols.');
 
         $predefinedCartId = '572';
@@ -151,16 +155,13 @@ QUERY;
         $this->graphQlMutation($query);
     }
 
-    /**
-     * @return string
-     */
-    private function getQuery(): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-mutation {
-  createEmptyCart
-}
-QUERY;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->guestCartRepository = $objectManager->get(GuestCartRepositoryInterface::class);
+        $this->quoteCollectionFactory = $objectManager->get(QuoteCollectionFactory::class);
+        $this->quoteResource = $objectManager->get(QuoteResource::class);
+        $this->quoteIdMaskFactory = $objectManager->get(QuoteIdMaskFactory::class);
     }
 
     protected function tearDown(): void

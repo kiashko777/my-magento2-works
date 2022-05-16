@@ -3,11 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Modular;
 
-use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\App\Utility\Files;
+use Magento\Framework\Config\Dom;
+use Magento\Framework\Config\Dom\UrnResolver;
+use Magento\Framework\Config\ValidationStateInterface;
+use PHPUnit\Framework\TestCase;
 
-class MviewConfigFilesTest extends \PHPUnit\Framework\TestCase
+class MviewConfigFilesTest extends TestCase
 {
     /**
      * Configuration acl file list
@@ -23,12 +28,6 @@ class MviewConfigFilesTest extends \PHPUnit\Framework\TestCase
      */
     protected $schemaFile;
 
-    protected function setUp(): void
-    {
-        $urnResolver = new \Magento\Framework\Config\Dom\UrnResolver();
-        $this->schemaFile = $urnResolver->getRealPath('urn:magento:framework:Mview/etc/mview.xsd');
-    }
-
     /**
      * Test each acl configuration file
      * @param string $file
@@ -36,10 +35,10 @@ class MviewConfigFilesTest extends \PHPUnit\Framework\TestCase
      */
     public function testIndexerConfigFile($file)
     {
-        $validationStateMock = $this->createMock(\Magento\Framework\Config\ValidationStateInterface::class);
+        $validationStateMock = $this->createMock(ValidationStateInterface::class);
         $validationStateMock->method('isValidationRequired')
             ->willReturn(true);
-        $domConfig = new \Magento\Framework\Config\Dom(file_get_contents($file), $validationStateMock);
+        $domConfig = new Dom(file_get_contents($file), $validationStateMock);
         $result = $domConfig->validate($this->schemaFile, $errors);
         $message = "Invalid XML-file: {$file}\n";
         foreach ($errors as $error) {
@@ -53,6 +52,12 @@ class MviewConfigFilesTest extends \PHPUnit\Framework\TestCase
      */
     public function mviewConfigFileDataProvider()
     {
-        return \Magento\Framework\App\Utility\Files::init()->getConfigFiles('mview.xml');
+        return Files::init()->getConfigFiles('mview.xml');
+    }
+
+    protected function setUp(): void
+    {
+        $urnResolver = new UrnResolver();
+        $this->schemaFile = $urnResolver->getRealPath('urn:magento:framework:Mview/etc/mview.xsd');
     }
 }

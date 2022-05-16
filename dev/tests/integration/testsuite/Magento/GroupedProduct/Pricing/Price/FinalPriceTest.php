@@ -6,15 +6,20 @@
 
 namespace Magento\GroupedProduct\Pricing\Price;
 
+use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\Data\ProductTierPriceInterface;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Customer\Model\GroupManagement;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class FinalPriceTest
  *
  * @package Magento\GroupedProduct\Pricing\Price
  */
-class FinalPriceTest extends \PHPUnit\Framework\TestCase
+class FinalPriceTest extends TestCase
 {
     /**
      * @magentoDataFixture Magento/GroupedProduct/_files/product_grouped.php
@@ -23,8 +28,8 @@ class FinalPriceTest extends \PHPUnit\Framework\TestCase
     public function testFinalPrice()
     {
         $productRepository = Bootstrap::getObjectManager()
-            ->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
-        /** @var $product \Magento\Catalog\Model\Product */
+            ->get(ProductRepositoryInterface::class);
+        /** @var $product Product */
         $product = $productRepository->get('grouped-product');
 
         $this->assertEquals(10, $product->getPriceInfo()->getPrice(FinalPrice::PRICE_CODE)->getValue());
@@ -37,14 +42,14 @@ class FinalPriceTest extends \PHPUnit\Framework\TestCase
     public function testFinalPriceWithTierPrice()
     {
         $productRepository = Bootstrap::getObjectManager()
-            ->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+            ->get(ProductRepositoryInterface::class);
         /** @var ProductTierPriceInterface $tierPrice */
         $tierPrice = Bootstrap::getObjectManager()->create(ProductTierPriceInterface::class);
         $tierPrice->setQty(1);
-        $tierPrice->setCustomerGroupId(\Magento\Customer\Model\GroupManagement::CUST_GROUP_ALL);
+        $tierPrice->setCustomerGroupId(GroupManagement::CUST_GROUP_ALL);
         $tierPrice->setValue(5);
 
-        /** @var $simpleProduct \Magento\Catalog\Api\Data\ProductInterface */
+        /** @var $simpleProduct ProductInterface */
         $simpleProduct = $productRepository->get('simple');
         $simpleProduct->setTierPrices(
             [
@@ -53,7 +58,7 @@ class FinalPriceTest extends \PHPUnit\Framework\TestCase
         );
         $productRepository->save($simpleProduct);
 
-        /** @var $product \Magento\Catalog\Model\Product */
+        /** @var $product Product */
         $product = $productRepository->get('grouped-product');
         $this->assertEquals(5, $product->getPriceInfo()->getPrice(FinalPrice::PRICE_CODE)->getValue());
     }
@@ -65,14 +70,14 @@ class FinalPriceTest extends \PHPUnit\Framework\TestCase
     public function testFinalPriceWithSpecialPrice()
     {
         $productRepository = Bootstrap::getObjectManager()
-            ->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+            ->get(ProductRepositoryInterface::class);
 
-        /** @var $simpleProduct \Magento\Catalog\Api\Data\ProductInterface */
+        /** @var $simpleProduct ProductInterface */
         $simpleProduct = $productRepository->get('simple');
         $simpleProduct->setCustomAttribute('special_price', 6);
         $productRepository->save($simpleProduct);
 
-        /** @var $product \Magento\Catalog\Model\Product */
+        /** @var $product Product */
         $product = $productRepository->get('grouped-product');
         $this->assertEquals(6, $product->getPriceInfo()->getPrice(FinalPrice::PRICE_CODE)->getValue());
     }

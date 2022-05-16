@@ -7,27 +7,21 @@ declare(strict_types=1);
 
 namespace Magento\Sales\Model\Service;
 
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Model\Order;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Tests \Magento\Sales\Model\Service\InvoiceService
  */
-class InvoiceServiceTest extends \PHPUnit\Framework\TestCase
+class InvoiceServiceTest extends TestCase
 {
     /**
      * @var InvoiceService
      */
     private $invoiceService;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->invoiceService = Bootstrap::getObjectManager()->create(InvoiceService::class);
-    }
 
     /**
      * @param int $invoiceQty
@@ -97,15 +91,16 @@ class InvoiceServiceTest extends \PHPUnit\Framework\TestCase
      * @param array $qtyInvoiced
      * @param string $errorMsg
      * @return void
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @throws LocalizedException
      * @magentoDataFixture Magento/Sales/_files/order_with_bundle.php
      * @dataProvider bundleProductQtyOrderedDataProvider
      */
     public function testPrepareInvoiceBundleProduct(
-        array $qtyToInvoice,
-        array $qtyInvoiced,
+        array  $qtyToInvoice,
+        array  $qtyInvoiced,
         string $errorMsg
-    ): void {
+    ): void
+    {
         /** @var Order $order */
         $order = Bootstrap::getObjectManager()->create(Order::class)
             ->load('100000001', 'increment_id');
@@ -122,6 +117,26 @@ class InvoiceServiceTest extends \PHPUnit\Framework\TestCase
                 );
             }
         }
+    }
+
+    /**
+     * Associate product qty to invoice to order item id.
+     *
+     * @param Order $order
+     * @param array $qtyToInvoice
+     * @return array
+     */
+    private function getPredefinedQtyToInvoice(Order $order, array $qtyToInvoice): array
+    {
+        $predefinedQtyToInvoice = [];
+
+        foreach ($order->getAllItems() as $orderItem) {
+            if (array_key_exists($orderItem->getSku(), $qtyToInvoice)) {
+                $predefinedQtyToInvoice[$orderItem->getId()] = $qtyToInvoice[$orderItem->getSku()];
+            }
+        }
+
+        return $predefinedQtyToInvoice;
     }
 
     /**
@@ -165,22 +180,10 @@ class InvoiceServiceTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Associate product qty to invoice to order item id.
-     *
-     * @param Order $order
-     * @param array $qtyToInvoice
-     * @return array
+     * @inheritdoc
      */
-    private function getPredefinedQtyToInvoice(Order $order, array $qtyToInvoice): array
+    protected function setUp(): void
     {
-        $predefinedQtyToInvoice = [];
-
-        foreach ($order->getAllItems() as $orderItem) {
-            if (array_key_exists($orderItem->getSku(), $qtyToInvoice)) {
-                $predefinedQtyToInvoice[$orderItem->getId()] = $qtyToInvoice[$orderItem->getSku()];
-            }
-        }
-
-        return $predefinedQtyToInvoice;
+        $this->invoiceService = Bootstrap::getObjectManager()->create(InvoiceService::class);
     }
 }

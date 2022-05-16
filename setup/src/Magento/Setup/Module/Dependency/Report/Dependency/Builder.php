@@ -3,9 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Dependency\Report\Dependency;
 
 use Magento\Setup\Module\Dependency\Report\Builder\AbstractBuilder;
+use Magento\Setup\Module\Dependency\Report\Dependency\Data\Config;
 
 /**
  *  Modules dependencies report builder
@@ -16,7 +18,7 @@ class Builder extends AbstractBuilder
      * Template method. Prepare data for writer step
      *
      * @param array $modulesData
-     * @return \Magento\Setup\Module\Dependency\Report\Dependency\Data\Config
+     * @return Config
      */
     protected function buildData($modulesData)
     {

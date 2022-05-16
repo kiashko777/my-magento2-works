@@ -30,19 +30,6 @@ class TextSwatchAttributeTest extends SelectAttributeTest
     }
 
     /**
-     * @return void
-     */
-    public function testModifyData(): void
-    {
-        $product = $this->getProduct();
-        $optionValue = $this->getOptionValueByLabel('text_swatch_attribute', 'Option 1');
-        $attributeData = ['text_swatch_attribute' => $optionValue];
-        $this->saveProduct($product, $attributeData);
-        $expectedData = $this->addDataNesting($attributeData);
-        $this->callModifyDataAndAssert($product, $expectedData);
-    }
-
-    /**
      * @return array
      */
     private function getAttributeMeta(): array
@@ -61,5 +48,18 @@ class TextSwatchAttributeTest extends SelectAttributeTest
             'options' => $this->getAttributeOptions('text_swatch_attribute'),
             'componentType' => 'field',
         ];
+    }
+
+    /**
+     * @return void
+     */
+    public function testModifyData(): void
+    {
+        $product = $this->getProduct();
+        $optionValue = $this->getOptionValueByLabel('text_swatch_attribute', 'Option 1');
+        $attributeData = ['text_swatch_attribute' => $optionValue];
+        $this->saveProduct($product, $attributeData);
+        $expectedData = $this->addDataNesting($attributeData);
+        $this->callModifyDataAndAssert($product, $expectedData);
     }
 }

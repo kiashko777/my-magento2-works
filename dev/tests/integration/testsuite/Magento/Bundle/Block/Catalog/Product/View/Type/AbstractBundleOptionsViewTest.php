@@ -93,9 +93,10 @@ abstract class AbstractBundleOptionsViewTest extends TestCase
     protected function processMultiSelectionsView(
         string $sku,
         string $optionsSelectLabel,
-        array $expectedSelectionsNames,
-        bool $requiredOption = false
-    ): void {
+        array  $expectedSelectionsNames,
+        bool   $requiredOption = false
+    ): void
+    {
         $product = $this->productRepository->get($sku);
         $result = $this->renderProductOptionsBlock($product);
         $this->assertEquals(
@@ -124,6 +125,51 @@ abstract class AbstractBundleOptionsViewTest extends TestCase
     }
 
     /**
+     * Render bundle product options block
+     *
+     * @param ProductInterface $product
+     * @return string
+     */
+    private function renderProductOptionsBlock(ProductInterface $product): string
+    {
+        $this->registerProduct($product);
+        $page = $this->pageFactory->create();
+        $page->addHandle(['default', 'catalog_product_view', 'catalog_product_view_type_bundle']);
+        $page->getLayout()->generateXml();
+        $block = $page->getLayout()->getBlock('product.info.bundle.options');
+
+        return $block->toHtml();
+    }
+
+    /**
+     * Register product
+     *
+     * @param ProductInterface $product
+     * @return void
+     */
+    private function registerProduct(ProductInterface $product): void
+    {
+        $this->registry->unregister('product');
+        $this->registry->unregister('current_product');
+        $this->registry->register('product', $product);
+        $this->registry->register('current_product', $product);
+    }
+
+    /**
+     * Get required select Xpath
+     *
+     * @return string
+     */
+    abstract protected function getRequiredSelectXpath(): string;
+
+    /**
+     * Get not required select Xpath
+     *
+     * @return string
+     */
+    abstract protected function getNotRequiredSelectXpath(): string;
+
+    /**
      * Process bundle options view with single selection
      *
      * @param string $sku
@@ -146,49 +192,4 @@ abstract class AbstractBundleOptionsViewTest extends TestCase
             'Bundle product options select with single option does not display correctly'
         );
     }
-
-    /**
-     * Register product
-     *
-     * @param ProductInterface $product
-     * @return void
-     */
-    private function registerProduct(ProductInterface $product): void
-    {
-        $this->registry->unregister('product');
-        $this->registry->unregister('current_product');
-        $this->registry->register('product', $product);
-        $this->registry->register('current_product', $product);
-    }
-
-    /**
-     * Render bundle product options block
-     *
-     * @param ProductInterface $product
-     * @return string
-     */
-    private function renderProductOptionsBlock(ProductInterface $product): string
-    {
-        $this->registerProduct($product);
-        $page = $this->pageFactory->create();
-        $page->addHandle(['default', 'catalog_product_view', 'catalog_product_view_type_bundle']);
-        $page->getLayout()->generateXml();
-        $block = $page->getLayout()->getBlock('product.info.bundle.options');
-
-        return $block->toHtml();
-    }
-
-    /**
-     * Get required select Xpath
-     *
-     * @return string
-     */
-    abstract protected function getRequiredSelectXpath(): string;
-
-    /**
-     * Get not required select Xpath
-     *
-     * @return string
-     */
-    abstract protected function getNotRequiredSelectXpath(): string;
 }

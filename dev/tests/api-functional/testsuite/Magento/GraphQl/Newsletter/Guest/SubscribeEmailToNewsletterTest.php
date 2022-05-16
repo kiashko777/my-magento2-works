@@ -22,15 +22,6 @@ class SubscribeEmailToNewsletterTest extends GraphQlAbstract
      */
     private $subscriberResource;
 
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->subscriberResource = $objectManager->get(SubscriberResourceModel::class);
-    }
-
     public function testAddEmailIntoNewsletterSubscription()
     {
         $query = $this->getQuery('guest@example.com');
@@ -39,6 +30,25 @@ class SubscribeEmailToNewsletterTest extends GraphQlAbstract
         self::assertArrayHasKey('subscribeEmailToNewsletter', $response);
         self::assertNotEmpty($response['subscribeEmailToNewsletter']);
         self::assertEquals('SUBSCRIBED', $response['subscribeEmailToNewsletter']['status']);
+    }
+
+    /**
+     * Returns a mutation query
+     *
+     * @param string $email
+     * @return string
+     */
+    private function getQuery(string $email = ''): string
+    {
+        return <<<QUERY
+mutation {
+  subscribeEmailToNewsletter(
+    email: "$email"
+  ) {
+    status
+  }
+}
+QUERY;
     }
 
     public function testNewsletterSubscriptionWithIncorrectEmailFormat()
@@ -80,25 +90,6 @@ class SubscribeEmailToNewsletterTest extends GraphQlAbstract
     }
 
     /**
-     * Returns a mutation query
-     *
-     * @param string $email
-     * @return string
-     */
-    private function getQuery(string $email = ''): string
-    {
-        return <<<QUERY
-mutation {
-  subscribeEmailToNewsletter(
-    email: "$email"
-  ) {
-    status
-  }
-}
-QUERY;
-    }
-
-    /**
      * @inheritDoc
      */
     public function tearDown(): void
@@ -110,5 +101,14 @@ QUERY;
             );
 
         parent::tearDown();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->subscriberResource = $objectManager->get(SubscriberResourceModel::class);
     }
 }

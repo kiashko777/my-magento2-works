@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Sales;
 
+use Exception;
+use Magento\Framework\Exception\AuthenticationException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Integration\Api\CustomerTokenServiceInterface;
 use Magento\Quote\Api\CartRepositoryInterface;
@@ -37,24 +39,6 @@ class ReorderMultipleProductsTest extends GraphQlAbstract
      * @var CustomerTokenServiceInterface
      */
     private $customerTokenService;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
-
-        // be sure previous tests didn't left customer quote
-        /** @var CartRepositoryInterface $cartRepository */
-        $cartRepository = Bootstrap::getObjectManager()->get(CartRepositoryInterface::class);
-        try {
-            $quote = $cartRepository->getForCustomer(self::CUSTOMER_ID);
-            $cartRepository->delete($quote);
-        } catch (NoSuchEntityException $e) {
-        }
-    }
 
     /**
      * @magentoApiDataFixture Magento/Sales/_files/order_with_different_types_of_product.php
@@ -97,8 +81,8 @@ class ReorderMultipleProductsTest extends GraphQlAbstract
                     [
                         'quantity' => 1,
                         'product' => [
-                                'sku' => 'bundle-product-radio-required-option',
-                            ],
+                            'sku' => 'bundle-product-radio-required-option',
+                        ],
                         'bundle_options' => [
                             [
                                 'label' => 'Radio Options',
@@ -131,23 +115,11 @@ class ReorderMultipleProductsTest extends GraphQlAbstract
     }
 
     /**
-     * @param string $email
-     * @param string $password
-     * @return array
-     * @throws \Magento\Framework\Exception\AuthenticationException
-     */
-    private function getCustomerAuthHeaders(string $email, string $password): array
-    {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($email, $password);
-        return ['Authorization' => 'Bearer ' . $customerToken];
-    }
-
-    /**
      * Execute GraphQL Mutation for default customer (make reorder)
      *
      * @param string $orderId
      * @return array|bool|float|int|string
-     * @throws \Exception
+     * @throws Exception
      */
     private function makeReorderForDefaultCustomer(string $orderId = self::ORDER_NUMBER)
     {
@@ -210,5 +182,35 @@ mutation {
   }
 }
 MUTATION;
+    }
+
+    /**
+     * @param string $email
+     * @param string $password
+     * @return array
+     * @throws AuthenticationException
+     */
+    private function getCustomerAuthHeaders(string $email, string $password): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($email, $password);
+        return ['Authorization' => 'Bearer ' . $customerToken];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
+
+        // be sure previous tests didn't left customer quote
+        /** @var CartRepositoryInterface $cartRepository */
+        $cartRepository = Bootstrap::getObjectManager()->get(CartRepositoryInterface::class);
+        try {
+            $quote = $cartRepository->getForCustomer(self::CUSTOMER_ID);
+            $cartRepository->delete($quote);
+        } catch (NoSuchEntityException $e) {
+        }
     }
 }

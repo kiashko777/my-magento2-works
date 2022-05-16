@@ -3,14 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Model;
 
+use Laminas\ServiceManager\ServiceLocatorInterface;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Component\ComponentRegistrar;
 use Magento\Framework\Component\ComponentRegistrarInterface;
 use Magento\Framework\Filesystem;
 use Magento\Framework\Setup\ConfigOptionsListInterface;
-use Laminas\ServiceManager\ServiceLocatorInterface;
+use Magento\Setup\Exception;
 
 /**
  * Collects all ConfigOptionsList class in modules and setup
@@ -62,12 +64,13 @@ class ConfigOptionsListCollector
      * @param ServiceLocatorInterface $serviceLocator
      */
     public function __construct(
-        DirectoryList $directoryList,
-        Filesystem $filesystem,
+        DirectoryList               $directoryList,
+        Filesystem                  $filesystem,
         ComponentRegistrarInterface $componentRegistrar,
-        ObjectManagerProvider $objectManagerProvider,
-        ServiceLocatorInterface $serviceLocator
-    ) {
+        ObjectManagerProvider       $objectManagerProvider,
+        ServiceLocatorInterface     $serviceLocator
+    )
+    {
         $this->directoryList = $directoryList;
         $this->filesystem = $filesystem;
         $this->objectManagerProvider = $objectManagerProvider;
@@ -81,7 +84,7 @@ class ConfigOptionsListCollector
      * These classes should reside in <module>/Setup directories.
      *
      * @return ConfigOptionsListInterface[]
-     * @throws \Magento\Setup\Exception
+     * @throws Exception
      */
     public function collectOptionsLists()
     {
@@ -99,7 +102,7 @@ class ConfigOptionsListCollector
         }
 
         // check Setup
-        $setupOptionsClassName = \Magento\Setup\Model\ConfigOptionsList::class;
+        $setupOptionsClassName = ConfigOptionsList::class;
         if (class_exists($setupOptionsClassName)) {
             $setupOptionsClass = $this->serviceLocator->get($setupOptionsClassName);
             if ($setupOptionsClass instanceof ConfigOptionsListInterface) {

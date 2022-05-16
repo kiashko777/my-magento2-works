@@ -3,22 +3,30 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Backend\Block\Widget\Grid;
+
+use Magento\Backend\Block\Widget\Grid\Massaction\Item;
+use Magento\Framework\View\Element\Template;
+use Magento\Framework\View\Layout;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class ItemTest extends \PHPUnit\Framework\TestCase
+class ItemTest extends TestCase
 {
     public function testGetAdditionalActionBlock()
     {
-        /** @var $layout \Magento\Framework\View\Layout */
-        $layout = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
+        /** @var $layout Layout */
+        $layout = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
         );
-        /** @var $block \Magento\Backend\Block\Widget\Grid\Massaction\Item */
-        $block = $layout->createBlock(\Magento\Backend\Block\Widget\Grid\Massaction\Item::class, 'block');
-        $expected = $layout->addBlock(\Magento\Framework\View\Element\Template::class, 'additional_action', 'block');
+        /** @var $block Item */
+        $block = $layout->createBlock(Item::class, 'block');
+        $expected = $layout->addBlock(Template::class, 'additional_action', 'block');
         $this->assertSame($expected, $block->getAdditionalActionBlock());
     }
 }

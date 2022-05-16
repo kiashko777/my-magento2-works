@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace Magento\Csp;
 
+use Magento\Framework\App\Response\Http;
+use Magento\Framework\App\ResponseInterface;
 use Magento\TestFramework\TestCase\AbstractController;
 
 /**
@@ -14,24 +16,6 @@ use Magento\TestFramework\TestCase\AbstractController;
  */
 class CspTest extends AbstractController
 {
-    /**
-     * Search the whole response for a string.
-     *
-     * @param \Magento\Framework\App\ResponseInterface|\Magento\Framework\App\Response\Http $response
-     * @param string $search
-     * @return bool
-     */
-    private function searchInResponse($response, string $search): bool
-    {
-        foreach ($response->getHeaders() as $header) {
-            if (mb_stripos(mb_strtolower($header->toString()), mb_strtolower($search)) !== false) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     /**
      * Check that configured policies are rendered on frontend.
      *
@@ -67,6 +51,24 @@ class CspTest extends AbstractController
         //Policies configured in cps_whitelist.xml files
         $this->assertTrue($this->searchInResponse($response, 'object-src'));
         $this->assertTrue($this->searchInResponse($response, 'media-src'));
+    }
+
+    /**
+     * Search the whole response for a string.
+     *
+     * @param ResponseInterface|Http $response
+     * @param string $search
+     * @return bool
+     */
+    private function searchInResponse($response, string $search): bool
+    {
+        foreach ($response->getHeaders() as $header) {
+            if (mb_stripos(mb_strtolower($header->toString()), mb_strtolower($search)) !== false) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

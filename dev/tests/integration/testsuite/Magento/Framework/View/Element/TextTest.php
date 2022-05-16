@@ -3,23 +3,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\View\Element;
 
-class TextTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class TextTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\View\Element\Text
+     * @var Text
      */
     protected $_block;
-
-    protected function setUp(): void
-    {
-        $this->_block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
-        )->createBlock(
-            \Magento\Framework\View\Element\Text::class
-        );
-    }
 
     public function testSetGetText()
     {
@@ -46,5 +42,14 @@ class TextTest extends \PHPUnit\Framework\TestCase
     {
         $this->_block->setText('test');
         $this->assertEquals('test', $this->_block->toHtml());
+    }
+
+    protected function setUp(): void
+    {
+        $this->_block = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
+        )->createBlock(
+            Text::class
+        );
     }
 }

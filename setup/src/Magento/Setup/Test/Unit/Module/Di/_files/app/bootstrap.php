@@ -1,4 +1,6 @@
 <?php declare(strict_types=1);
+
+use Magento\Bootstrap\ModelFactory;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
 
 /**
@@ -7,4 +9,4 @@ use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
  */
 
 $objectManager = new ObjectManager($this);
-$bootstrapFactory = $objectManager->getObject(\Magento\Bootstrap\ModelFactory::class);
+$bootstrapFactory = $objectManager->getObject(ModelFactory::class);

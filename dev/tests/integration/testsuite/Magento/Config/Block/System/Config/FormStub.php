@@ -7,12 +7,17 @@
 /**
  * Stub system config form block for integration test
  */
+
 namespace Magento\Config\Block\System\Config;
+
+use Magento\Config\Block\System\Config\Form\Field;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 
 /**
  * @SuppressWarnings(PHPMD.DepthOfInheritance)
  */
-class FormStub extends \Magento\Config\Block\System\Config\Form
+class FormStub extends Form
 {
     /**
      * @var array
@@ -48,16 +53,16 @@ class FormStub extends \Magento\Config\Block\System\Config\Form
     /**
      * Initialize properties of object required for test.
      *
-     * @return \Magento\Config\Block\System\Config\Form
+     * @return Form
      */
     protected function _initObjects()
     {
         $result = parent::_initObjects();
         $this->_configData = $this->_configDataStub;
-        $this->_fieldRenderer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
+        $this->_fieldRenderer = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
         )->createBlock(
-            \Magento\Config\Block\System\Config\Form\Field::class
+            Field::class
         );
 
         return $result;

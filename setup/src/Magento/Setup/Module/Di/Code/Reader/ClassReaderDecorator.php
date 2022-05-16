@@ -6,19 +6,22 @@
 
 namespace Magento\Setup\Module\Di\Code\Reader;
 
+use Magento\Framework\Code\Reader\ClassReader;
+use Magento\Framework\Code\Reader\ClassReaderInterface;
 use Magento\Setup\Module\Di\Compiler\ConstructorArgument;
+use ReflectionException;
 
-class ClassReaderDecorator implements \Magento\Framework\Code\Reader\ClassReaderInterface
+class ClassReaderDecorator implements ClassReaderInterface
 {
     /**
-     * @var \Magento\Framework\Code\Reader\ClassReader
+     * @var ClassReader
      */
     private $classReader;
 
     /**
-     * @param \Magento\Framework\Code\Reader\ClassReader $classReader
+     * @param ClassReader $classReader
      */
-    public function __construct(\Magento\Framework\Code\Reader\ClassReader $classReader)
+    public function __construct(ClassReader $classReader)
     {
         $this->classReader = $classReader;
     }
@@ -28,7 +31,7 @@ class ClassReaderDecorator implements \Magento\Framework\Code\Reader\ClassReader
      *
      * @param string $className
      * @return ConstructorArgument[]|null
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     public function getConstructor($className)
     {

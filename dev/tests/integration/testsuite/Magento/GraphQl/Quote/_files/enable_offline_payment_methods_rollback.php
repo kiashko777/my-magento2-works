@@ -13,7 +13,7 @@ use Magento\Framework\App\Config\Storage\WriterInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 
 $objectManager = Bootstrap::getObjectManager();
-/** @var Writer  $configWriter */
+/** @var Writer $configWriter */
 $configWriter = $objectManager->create(WriterInterface::class);
 
 $configWriter->delete('payment/banktransfer/active');

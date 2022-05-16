@@ -3,27 +3,24 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test;
 
 use Laminas\Stdlib\Parameters;
+use Magento\Framework\App\Request\PathInfoProcessorInterface;
+use Magento\Framework\App\Route\ConfigInterface\Proxy;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Stdlib\Cookie\CookieReaderInterface;
+use Magento\Framework\Stdlib\StringUtils;
+use Magento\TestFramework\Request;
+use PHPUnit\Framework\TestCase;
 
-class RequestTest extends \PHPUnit\Framework\TestCase
+class RequestTest extends TestCase
 {
     /**
-     * @var \Magento\TestFramework\Request
+     * @var Request
      */
     protected $_model = null;
-
-    protected function setUp(): void
-    {
-        $this->_model = new \Magento\TestFramework\Request(
-            $this->createMock(\Magento\Framework\Stdlib\Cookie\CookieReaderInterface::class),
-            $this->createMock(\Magento\Framework\Stdlib\StringUtils::class),
-            $this->createMock(\Magento\Framework\App\Route\ConfigInterface\Proxy::class),
-            $this->createMock(\Magento\Framework\App\Request\PathInfoProcessorInterface::class),
-            $this->createMock(\Magento\Framework\ObjectManagerInterface::class)
-        );
-    }
 
     public function testGetHttpHost()
     {
@@ -44,5 +41,16 @@ class RequestTest extends \PHPUnit\Framework\TestCase
         $this->assertNull($this->_model->getServer('non-existing'));
         $this->assertSame('default', $this->_model->getServer('non-existing', 'default'));
         $this->assertNull($this->_model->getServer('null'));
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = new Request(
+            $this->createMock(CookieReaderInterface::class),
+            $this->createMock(StringUtils::class),
+            $this->createMock(Proxy::class),
+            $this->createMock(PathInfoProcessorInterface::class),
+            $this->createMock(ObjectManagerInterface::class)
+        );
     }
 }

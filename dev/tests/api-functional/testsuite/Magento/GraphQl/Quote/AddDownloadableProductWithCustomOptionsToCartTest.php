@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Quote;
 
+use Exception;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\ObjectManager\ObjectManager;
 use Magento\TestFramework\Helper\Bootstrap;
@@ -31,17 +32,6 @@ class AddDownloadableProductWithCustomOptionsToCartTest extends GraphQlAbstract
      * @var GetCustomOptionsValuesForQueryBySku
      */
     private $getCustomOptionsValuesForQueryBySku;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $this->objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->getCustomOptionsValuesForQueryBySku =
-            $this->objectManager->get(GetCustomOptionsValuesForQueryBySku::class);
-    }
 
     /**
      * @magentoApiDataFixture Magento/Downloadable/_files/product_downloadable_with_custom_options.php
@@ -84,36 +74,12 @@ class AddDownloadableProductWithCustomOptionsToCartTest extends GraphQlAbstract
     }
 
     /**
-     * @magentoApiDataFixture Magento/Downloadable/_files/product_downloadable_with_custom_options.php
-     * @magentoApiDataFixture Magento/Checkout/_files/active_quote.php
-     */
-    public function testAddDownloadableProductWithMissedRequiredOptionsSet()
-    {
-        $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_order_1');
-
-        $sku = 'downloadable-product-with-purchased-separately-links';
-        $qty = 1;
-        $links = $this->getProductsLinks($sku);
-        $linkId = key($links);
-        $customizableOptions = '';
-
-        $query = $this->getQuery($maskedQuoteId, $qty, $sku, $customizableOptions, $linkId);
-
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage(
-            'The product\'s required option(s) weren\'t entered. Make sure the options are entered and try again.'
-        );
-
-        $this->graphQlMutation($query);
-    }
-
-    /**
      * Function returns array of all product's links
      *
      * @param string $sku
      * @return array
      */
-    private function getProductsLinks(string $sku) : array
+    private function getProductsLinks(string $sku): array
     {
         $result = [];
         $productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
@@ -132,22 +98,6 @@ class AddDownloadableProductWithCustomOptionsToCartTest extends GraphQlAbstract
     }
 
     /**
-     * Build the part of expected response.
-     *
-     * @param string $assignedValue
-     * @return array
-     */
-    private function buildExpectedValuesArray(string $assignedValue) : array
-    {
-        $assignedOptionsArray = explode(',', trim($assignedValue, '[]'));
-        $expectedArray = [];
-        foreach ($assignedOptionsArray as $assignedOption) {
-            $expectedArray[] = ['value' => $assignedOption];
-        }
-        return $expectedArray;
-    }
-
-    /**
      * Returns GraphQl query string
      *
      * @param string $maskedQuoteId
@@ -159,20 +109,21 @@ class AddDownloadableProductWithCustomOptionsToCartTest extends GraphQlAbstract
      */
     private function getQuery(
         string $maskedQuoteId,
-        int $qty,
+        int    $qty,
         string $sku,
         string $customizableOptions,
-        $linkId
-    ): string {
+               $linkId
+    ): string
+    {
         $query = <<<MUTATION
 mutation {
     addDownloadableProductsToCart(
         input: {
-            cart_id: "{$maskedQuoteId}", 
+            cart_id: "{$maskedQuoteId}",
             cart_items: [
                 {
                     data: {
-                        quantity: {$qty}, 
+                        quantity: {$qty},
                         sku: "{$sku}"
                     },
                     {$customizableOptions}
@@ -202,5 +153,56 @@ mutation {
 }
 MUTATION;
         return $query;
+    }
+
+    /**
+     * Build the part of expected response.
+     *
+     * @param string $assignedValue
+     * @return array
+     */
+    private function buildExpectedValuesArray(string $assignedValue): array
+    {
+        $assignedOptionsArray = explode(',', trim($assignedValue, '[]'));
+        $expectedArray = [];
+        foreach ($assignedOptionsArray as $assignedOption) {
+            $expectedArray[] = ['value' => $assignedOption];
+        }
+        return $expectedArray;
+    }
+
+    /**
+     * @magentoApiDataFixture Magento/Downloadable/_files/product_downloadable_with_custom_options.php
+     * @magentoApiDataFixture Magento/Checkout/_files/active_quote.php
+     */
+    public function testAddDownloadableProductWithMissedRequiredOptionsSet()
+    {
+        $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_order_1');
+
+        $sku = 'downloadable-product-with-purchased-separately-links';
+        $qty = 1;
+        $links = $this->getProductsLinks($sku);
+        $linkId = key($links);
+        $customizableOptions = '';
+
+        $query = $this->getQuery($maskedQuoteId, $qty, $sku, $customizableOptions, $linkId);
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage(
+            'The product\'s required option(s) weren\'t entered. Make sure the options are entered and try again.'
+        );
+
+        $this->graphQlMutation($query);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $this->objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->getCustomOptionsValuesForQueryBySku =
+            $this->objectManager->get(GetCustomOptionsValuesForQueryBySku::class);
     }
 }

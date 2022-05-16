@@ -3,10 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Service\V1;
 
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Item;
+use Magento\Sales\Model\ResourceModel\Order\Collection;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
@@ -21,22 +27,17 @@ class CreditMemoCreateRefundTest extends WebapiAbstract
     const SERVICE_VERSION = 'V1';
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoApiDataFixture Magento/Sales/_files/invoice.php
      */
     public function testInvoke()
     {
-        /** @var \Magento\Sales\Model\Order $order */
-        $orderCollection = $this->objectManager->get(\Magento\Sales\Model\ResourceModel\Order\Collection::class);
+        /** @var Order $order */
+        $orderCollection = $this->objectManager->get(Collection::class);
         $order = $orderCollection->getFirstItem();
         $items = [];
 
@@ -49,12 +50,12 @@ class CreditMemoCreateRefundTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_READ_NAME,
                 'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_READ_NAME.'refund',
+                'operation' => self::SERVICE_READ_NAME . 'refund',
             ],
         ];
         $data = [
@@ -121,7 +122,7 @@ class CreditMemoCreateRefundTest extends WebapiAbstract
     private function getItemsForRest($order)
     {
         $items = [];
-        /** @var \Magento\Sales\Model\Order\Item $orderItem */
+        /** @var Item $orderItem */
         foreach ($order->getAllItems() as $orderItem) {
             $items[] = [
                 'order_item_id' => $orderItem->getId(),
@@ -137,7 +138,7 @@ class CreditMemoCreateRefundTest extends WebapiAbstract
     private function getItemsForSoap($order)
     {
         $items = [];
-        /** @var \Magento\Sales\Model\Order\Item $orderItem */
+        /** @var Item $orderItem */
         foreach ($order->getAllItems() as $orderItem) {
             $items[] = array_merge($orderItem->getData(), [
                 'order_item_id' => $orderItem->getId(),
@@ -148,5 +149,10 @@ class CreditMemoCreateRefundTest extends WebapiAbstract
             ]);
         }
         return $items;
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

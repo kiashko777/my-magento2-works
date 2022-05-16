@@ -3,11 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestModuleDefaultHydrator\Model;
 
-use Magento\TestModuleDefaultHydrator\Api\CustomerPersistenceInterface;
-use Magento\Framework\EntityManager\EntityManager;
+use Exception;
+use Magento\Customer\Api\Data\CustomerInterface;
 use Magento\Customer\Api\Data\CustomerInterfaceFactory;
+use Magento\Framework\EntityManager\EntityManager;
+use Magento\TestModuleDefaultHydrator\Api\CustomerPersistenceInterface;
 
 class CustomerPersistence implements CustomerPersistenceInterface
 {
@@ -22,9 +25,10 @@ class CustomerPersistence implements CustomerPersistenceInterface
     private $customerDataFactory;
 
     public function __construct(
-        EntityManager $entityManager,
+        EntityManager            $entityManager,
         CustomerInterfaceFactory $customerDataFactory
-    ) {
+    )
+    {
         $this->entityManager = $entityManager;
         $this->customerDataFactory = $customerDataFactory;
     }
@@ -32,7 +36,7 @@ class CustomerPersistence implements CustomerPersistenceInterface
     /**
      * {@inheritdoc}
      */
-    public function save(\Magento\Customer\Api\Data\CustomerInterface $customer)
+    public function save(CustomerInterface $customer)
     {
         return $this->entityManager->save($customer);
     }
@@ -49,7 +53,7 @@ class CustomerPersistence implements CustomerPersistenceInterface
      */
     public function getById($id, $websiteId = null)
     {
-        /** @var \Magento\Customer\Api\Data\CustomerInterface $customer */
+        /** @var CustomerInterface $customer */
         $customer = $this->customerDataFactory->create();
         $entity = $this->entityManager->load($customer, $id);
         return $entity;
@@ -60,12 +64,12 @@ class CustomerPersistence implements CustomerPersistenceInterface
      */
     public function delete($id)
     {
-        /** @var \Magento\Customer\Api\Data\CustomerInterface $customer */
+        /** @var CustomerInterface $customer */
         $customer = $this->customerDataFactory->create();
         $customer = $this->entityManager->load($customer, $id);
         try {
             $this->entityManager->delete($customer);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return false;
         }
         return true;

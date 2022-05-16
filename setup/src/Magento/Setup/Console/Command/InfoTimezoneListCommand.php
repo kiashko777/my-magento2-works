@@ -6,12 +6,13 @@
 
 namespace Magento\Setup\Console\Command;
 
+use Magento\Framework\App\ObjectManager;
+use Magento\Framework\Console\Cli;
+use Magento\Framework\Setup\Lists;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\TableFactory;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Command\Command;
-use Magento\Framework\Setup\Lists;
-use Symfony\Component\Console\Helper\TableFactory;
-use Magento\Framework\App\ObjectManager;
 
 /**
  * Command prints list of available timezones
@@ -65,6 +66,6 @@ class InfoTimezoneListCommand extends Command
         }
 
         $tableHelper->render();
-        return \Magento\Framework\Console\Cli::RETURN_SUCCESS;
+        return Cli::RETURN_SUCCESS;
     }
 }

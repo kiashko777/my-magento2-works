@@ -30,19 +30,6 @@ class DataTest extends TestCase
     private $productRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->helper = $this->objectManager->get(Data::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/second_product_simple.php
      *
      * @return void
@@ -62,5 +49,18 @@ class DataTest extends TestCase
     {
         $result = $this->helper->getProductMediaGallery($this->productRepository->get('simple_with_disabled_img'));
         $this->assertEmpty($result);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->helper = $this->objectManager->get(Data::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
     }
 }

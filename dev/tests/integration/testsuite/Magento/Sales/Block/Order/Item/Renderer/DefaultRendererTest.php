@@ -52,30 +52,6 @@ class DefaultRendererTest extends TestCase
     ];
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(DefaultRenderer::class);
-        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
-        $this->pageFactory = $this->objectManager->get(PageFactory::class);
-        $this->registry = $this->objectManager->get(Registry::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->registry->unregister('current_order');
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Sales/_files/shipment_for_order_with_customer.php
      *
      * @return void
@@ -142,6 +118,34 @@ class DefaultRendererTest extends TestCase
                 sprintf('Item %s wasn\'t found or not equals to %s.', $key, $item->getData($key))
             );
         }
+    }
+
+    /**
+     * Register order in registry.
+     *
+     * @param OrderInterface $order
+     * @return void
+     */
+    private function registerOrder(OrderInterface $order): void
+    {
+        $this->registry->unregister('current_order');
+        $this->registry->register('current_order', $order);
+    }
+
+    /**
+     * Get block.
+     *
+     * @param string $handle
+     * @param string $blockName
+     * @return AbstractBlock
+     */
+    private function getBlock(string $handle, string $blockName): AbstractBlock
+    {
+        $page = $this->pageFactory->create();
+        $page->addHandle(['default', $handle]);
+        $page->getLayout()->generateXml();
+
+        return $page->getLayout()->getBlock($blockName);
     }
 
     /**
@@ -243,30 +247,26 @@ class DefaultRendererTest extends TestCase
     }
 
     /**
-     * Get block.
-     *
-     * @param string $handle
-     * @param string $blockName
-     * @return AbstractBlock
+     * @inheritdoc
      */
-    private function getBlock(string $handle, string $blockName): AbstractBlock
+    protected function setUp(): void
     {
-        $page = $this->pageFactory->create();
-        $page->addHandle(['default', $handle]);
-        $page->getLayout()->generateXml();
+        parent::setUp();
 
-        return $page->getLayout()->getBlock($blockName);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(DefaultRenderer::class);
+        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
+        $this->pageFactory = $this->objectManager->get(PageFactory::class);
+        $this->registry = $this->objectManager->get(Registry::class);
     }
 
     /**
-     * Register order in registry.
-     *
-     * @param OrderInterface $order
-     * @return void
+     * @inheritdoc
      */
-    private function registerOrder(OrderInterface $order): void
+    protected function tearDown(): void
     {
         $this->registry->unregister('current_order');
-        $this->registry->register('current_order', $order);
+
+        parent::tearDown();
     }
 }

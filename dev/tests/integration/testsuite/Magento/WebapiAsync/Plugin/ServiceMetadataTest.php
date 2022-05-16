@@ -3,32 +3,22 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\WebapiAsync\Plugin;
 
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Customer\Api\AccountManagementInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Webapi\Model\ServiceMetadata;
 use Magento\WebapiAsync\Controller\Rest\AsynchronousSchemaRequestProcessor;
 use Magento\WebapiAsync\Controller\Rest\AsynchronousSchemaRequestProcessorMock;
+use PHPUnit\Framework\TestCase;
 
-class ServiceMetadataTest extends \PHPUnit\Framework\TestCase
+class ServiceMetadataTest extends TestCase
 {
     /**
      * @var ServiceMetadata
      */
     private $serviceMetadata;
-
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $objectManager->configure([
-            'preferences' => [
-                AsynchronousSchemaRequestProcessor::class => AsynchronousSchemaRequestProcessorMock::class
-            ]
-        ]);
-
-        $this->serviceMetadata = $objectManager->create(ServiceMetadata::class);
-    }
 
     public function testGetServiceMetadata()
     {
@@ -80,5 +70,17 @@ class ServiceMetadataTest extends \PHPUnit\Framework\TestCase
         ];
         $actual = $this->serviceMetadata->getServiceMetadata('customerAccountManagementV1');
         $this->assertEquals(array_replace_recursive($actual, $expected), $actual);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->configure([
+            'preferences' => [
+                AsynchronousSchemaRequestProcessor::class => AsynchronousSchemaRequestProcessorMock::class
+            ]
+        ]);
+
+        $this->serviceMetadata = $objectManager->create(ServiceMetadata::class);
     }
 }

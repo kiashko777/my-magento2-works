@@ -58,6 +58,72 @@ class SaveTest extends AbstractBackendController
     }
 
     /**
+     * Prepare expected path value array.
+     *
+     * @param string $section
+     * @param array $groups
+     * @return array
+     */
+    private function prepareExpectedPathValue(string $section, array $groups): array
+    {
+        foreach ($groups as $groupId => $groupData) {
+            $groupPath = $section . '/' . $groupId;
+            foreach ($groupData['fields'] as $fieldId => $fieldData) {
+                $path = $groupPath . '/' . $fieldId;
+                $expectedData[$groupPath][$path] = $fieldData['value'];
+            }
+        }
+
+        return $expectedData ?? [];
+    }
+
+    /**
+     * Dispatch request with params
+     *
+     * @param array $params
+     * @param array $postParams
+     * @return void
+     */
+    private function dispatchWithParams(array $params = [], array $postParams = []): void
+    {
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST)
+            ->setParams($params)
+            ->setPostValue($postParams);
+        $this->dispatch('backend/admin/system_config/save');
+    }
+
+    /**
+     * Check that the values for the paths in the config data were saved successfully.
+     *
+     * @param array $expectedPathValue
+     * @return void
+     */
+    private function assertPathValue(array $expectedPathValue): void
+    {
+        $scope = $this->scopeResolverPool->get(ScopeInterface::SCOPE_DEFAULT)->getScope();
+        foreach ($expectedPathValue as $groupPath => $groupData) {
+            $actualPathValue = $this->configLoader->getConfigByPath(
+                $groupPath,
+                $scope->getScopeType(),
+                $scope->getId(),
+                false
+            );
+            foreach ($groupData as $fieldPath => $fieldValue) {
+                $this->assertArrayHasKey(
+                    $fieldPath,
+                    $actualPathValue,
+                    sprintf('The expected config setting was not saved in the database. Path: %s', $fieldPath)
+                );
+                $this->assertEquals(
+                    $fieldValue,
+                    $actualPathValue[$fieldPath],
+                    sprintf('The expected value of the config setting is not correct. Path: %s', $fieldPath)
+                );
+            }
+        }
+    }
+
+    /**
      * @return array
      */
     public function saveConfigDataProvider(): array
@@ -109,71 +175,5 @@ class SaveTest extends AbstractBackendController
                 ],
             ],
         ];
-    }
-
-    /**
-     * Prepare expected path value array.
-     *
-     * @param string $section
-     * @param array $groups
-     * @return array
-     */
-    private function prepareExpectedPathValue(string $section, array $groups): array
-    {
-        foreach ($groups as $groupId => $groupData) {
-            $groupPath = $section . '/' . $groupId;
-            foreach ($groupData['fields'] as $fieldId => $fieldData) {
-                $path = $groupPath . '/' . $fieldId;
-                $expectedData[$groupPath][$path] = $fieldData['value'];
-            }
-        }
-
-        return $expectedData ?? [];
-    }
-
-    /**
-     * Check that the values for the paths in the config data were saved successfully.
-     *
-     * @param array $expectedPathValue
-     * @return void
-     */
-    private function assertPathValue(array $expectedPathValue): void
-    {
-        $scope = $this->scopeResolverPool->get(ScopeInterface::SCOPE_DEFAULT)->getScope();
-        foreach ($expectedPathValue as $groupPath => $groupData) {
-            $actualPathValue = $this->configLoader->getConfigByPath(
-                $groupPath,
-                $scope->getScopeType(),
-                $scope->getId(),
-                false
-            );
-            foreach ($groupData as $fieldPath => $fieldValue) {
-                $this->assertArrayHasKey(
-                    $fieldPath,
-                    $actualPathValue,
-                    sprintf('The expected config setting was not saved in the database. Path: %s', $fieldPath)
-                );
-                $this->assertEquals(
-                    $fieldValue,
-                    $actualPathValue[$fieldPath],
-                    sprintf('The expected value of the config setting is not correct. Path: %s', $fieldPath)
-                );
-            }
-        }
-    }
-
-    /**
-     * Dispatch request with params
-     *
-     * @param array $params
-     * @param array $postParams
-     * @return void
-     */
-    private function dispatchWithParams(array $params = [], array $postParams = []): void
-    {
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST)
-            ->setParams($params)
-            ->setPostValue($postParams);
-        $this->dispatch('backend/admin/system_config/save');
     }
 }

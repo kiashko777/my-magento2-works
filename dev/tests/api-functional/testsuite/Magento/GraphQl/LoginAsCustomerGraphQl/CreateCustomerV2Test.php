@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\LoginAsCustomerGraphQl;
 
+use Exception;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Framework\Registry;
 use Magento\TestFramework\Helper\Bootstrap;
@@ -27,18 +28,10 @@ class CreateCustomerV2Test extends GraphQlAbstract
      */
     private $customerRepository;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->registry = Bootstrap::getObjectManager()->get(Registry::class);
-        $this->customerRepository = Bootstrap::getObjectManager()->get(CustomerRepositoryInterface::class);
-    }
-
     /**
      * Test setting allow_remote_shopping_assistance to true
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function testCreateCustomerAccountWithAllowTrue()
     {
@@ -83,7 +76,7 @@ QUERY;
     /**
      * Test setting allow_remote_shopping_assistance to false
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function testCreateCustomerAccountWithAllowFalse()
     {
@@ -128,7 +121,7 @@ QUERY;
     /**
      * Test omitting allow_remote_shopping_assistance
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function testCreateCustomerAccountWithoutAllow()
     {
@@ -169,12 +162,20 @@ QUERY;
         $this->assertFalse($response['createCustomerV2']['customer']['allow_remote_shopping_assistance']);
     }
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->registry = Bootstrap::getObjectManager()->get(Registry::class);
+        $this->customerRepository = Bootstrap::getObjectManager()->get(CustomerRepositoryInterface::class);
+    }
+
     protected function tearDown(): void
     {
         $newEmail = 'new_customer@example.com';
         try {
             $customer = $this->customerRepository->get($newEmail);
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             return;
         }
 

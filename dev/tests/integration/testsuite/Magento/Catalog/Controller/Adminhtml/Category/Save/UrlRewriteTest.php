@@ -25,15 +25,6 @@ class UrlRewriteTest extends AbstractSaveCategoryTest
     private $urlRewriteCollectionFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->urlRewriteCollectionFactory = $this->_objectManager->get(UrlRewriteCollectionFactory::class);
-    }
-
-    /**
      * @magentoConfigFixture default/catalog/seo/generate_category_product_rewrites 1
      * @dataProvider categoryDataProvider
      * @param array $data
@@ -74,5 +65,14 @@ class UrlRewriteTest extends AbstractSaveCategoryTest
                 ],
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->urlRewriteCollectionFactory = $this->_objectManager->get(UrlRewriteCollectionFactory::class);
     }
 }

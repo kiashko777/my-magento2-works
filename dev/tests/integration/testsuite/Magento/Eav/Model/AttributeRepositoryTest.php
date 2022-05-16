@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Eav\Model;
 
 use Magento\Eav\Api\AttributeRepositoryInterface;
@@ -11,18 +12,14 @@ use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Api\SortOrder;
 use Magento\Framework\Api\SortOrderBuilder;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class AttributeRepositoryTest extends \PHPUnit\Framework\TestCase
+class AttributeRepositoryTest extends TestCase
 {
     /**
      * @var AttributeRepositoryInterface
      */
     private $repository;
-
-    protected function setUp(): void
-    {
-        $this->repository = Bootstrap::getObjectManager()->create(AttributeRepositoryInterface::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Eav/_files/attribute_for_search.php
@@ -70,5 +67,10 @@ class AttributeRepositoryTest extends \PHPUnit\Framework\TestCase
         $items = array_values($searchResult->getItems());
         $this->assertCount(1, $items);
         $this->assertEquals('attribute_for_search_3', $items[0]['attribute_code']);
+    }
+
+    protected function setUp(): void
+    {
+        $this->repository = Bootstrap::getObjectManager()->create(AttributeRepositoryInterface::class);
     }
 }

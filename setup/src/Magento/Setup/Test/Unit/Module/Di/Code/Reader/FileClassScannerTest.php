@@ -42,6 +42,21 @@ PHP
         self::assertEmpty($result);
     }
 
+    /**
+     * Creates file class scanner mock object.
+     *
+     * @return MockObject
+     */
+    private function getScannerMockObject(): MockObject
+    {
+        $scanner = $this->getMockBuilder(FileClassScanner::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['getFileContents'])
+            ->getMock();
+
+        return $scanner;
+    }
+
     public function testGetClassName()
     {
         $scanner = $this->getScannerMockObject();
@@ -322,20 +337,5 @@ PHP
         /* @var $scanner FileClassScanner */
         $result = $scanner->getClassName();
         self::assertEmpty($result);
-    }
-
-    /**
-     * Creates file class scanner mock object.
-     *
-     * @return MockObject
-     */
-    private function getScannerMockObject(): MockObject
-    {
-        $scanner = $this->getMockBuilder(FileClassScanner::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['getFileContents'])
-            ->getMock();
-
-        return $scanner;
     }
 }

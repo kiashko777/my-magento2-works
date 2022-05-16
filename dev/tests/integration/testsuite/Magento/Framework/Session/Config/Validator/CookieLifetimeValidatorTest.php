@@ -5,20 +5,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Session\Config\Validator;
 
-class CookieLifetimeValidatorTest extends \PHPUnit\Framework\TestCase
-{
-    /** @var  \Magento\Framework\Session\Config\Validator\CookieLifetimeValidator   */
-    private $model;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->model = $objectManager->create(
-            \Magento\Framework\Session\Config\Validator\CookieLifetimeValidator::class
-        );
-    }
+class CookieLifetimeValidatorTest extends TestCase
+{
+    /** @var  CookieLifetimeValidator */
+    private $model;
 
     public function testNonNumeric()
     {
@@ -38,5 +34,13 @@ class CookieLifetimeValidatorTest extends \PHPUnit\Framework\TestCase
     public function testZero()
     {
         $this->assertTrue($this->model->isValid(0));
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->model = $objectManager->create(
+            CookieLifetimeValidator::class
+        );
     }
 }

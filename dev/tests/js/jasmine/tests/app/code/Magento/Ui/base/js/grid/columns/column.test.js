@@ -20,7 +20,8 @@ define([
                 bodyTmpl: 'body',
 
                 /** Stub */
-                source: function () {}
+                source: function () {
+                }
             });
         });
 

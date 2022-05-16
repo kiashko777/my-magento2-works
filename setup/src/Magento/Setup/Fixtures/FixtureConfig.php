@@ -6,6 +6,7 @@
 
 namespace Magento\Setup\Fixtures;
 
+use Exception;
 use Magento\Framework\Xml\Parser;
 
 /**
@@ -35,14 +36,14 @@ class FixtureConfig
      * Load config from file
      *
      * @param string $filename
-     * @throws \Exception
-     *
      * @return void
+     * @throws Exception
+     *
      */
     public function loadConfig($filename)
     {
         if (!is_readable($filename)) {
-            throw new \Exception("Profile configuration file `{$filename}` is not readable or does not exists.");
+            throw new Exception("Profile configuration file `{$filename}` is not readable or does not exists.");
         }
         $this->parser->getDom()->load($filename);
         $this->parser->getDom()->xinclude();

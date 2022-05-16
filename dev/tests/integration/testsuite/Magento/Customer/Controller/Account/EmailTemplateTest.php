@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace Magento\Customer\Controller\Account;
 
+use DOMDocument;
+use DOMXPath;
 use Magento\Customer\Model\Session;
 use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Framework\Data\Form\FormKey;
@@ -44,14 +46,6 @@ class EmailTemplateTest extends AbstractController
      */
     private $formKey;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->transportBuilderMock = $this->_objectManager->get(TransportBuilderMock::class);
-        $this->session = $this->_objectManager->get(Session::class);
-        $this->formKey = $this->_objectManager->get(FormKey::class);
-    }
-
     /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
      * @magentoConfigFixture current_store customer/captcha/enable 0
@@ -63,6 +57,37 @@ class EmailTemplateTest extends AbstractController
         $this->dispatch('customer/account/forgotPasswordPost');
 
         $this->assertSameGreeting(self::EXPECTED_GREETING, $this->transportBuilderMock->getSentMessage());
+    }
+
+    /**
+     * Verifies if `<p class="greeting"/>` text contents equals the expected one.
+     *
+     * @param string $expectedGreeting
+     * @param EmailMessage $message
+     */
+    private function assertSameGreeting(string $expectedGreeting, EmailMessage $message)
+    {
+        $messageContent = $this->getMessageRawContent($message);
+        $emailDom = new DOMDocument();
+        $emailDom->loadHTML($messageContent);
+
+        $emailXpath = new DOMXPath($emailDom);
+        $greeting = $emailXpath->query('//p[@class="greeting"]');
+
+        $this->assertSame(1, $greeting->length);
+        $this->assertSame($expectedGreeting, $greeting->item(0)->textContent);
+    }
+
+    /**
+     * Returns raw content of provided message
+     *
+     * @param EmailMessage $message
+     * @return string
+     */
+    private function getMessageRawContent(EmailMessage $message): string
+    {
+        $emailParts = $message->getBody()->getParts();
+        return current($emailParts)->getRawContent();
     }
 
     /**
@@ -87,6 +112,36 @@ class EmailTemplateTest extends AbstractController
         );
 
         $this->assertSameGreeting(self::EXPECTED_GREETING, $this->transportBuilderMock->getSentMessage());
+    }
+
+    /**
+     * Performs Customer log in
+     *
+     * @param int $customerId
+     */
+    private function loginByCustomerId(int $customerId): void
+    {
+        $this->session->loginById($customerId);
+    }
+
+    /**
+     * Wraps Customer Edit POST request
+     *
+     * @param array $customData
+     */
+    private function sendAccountEditRequest(array $customData): void
+    {
+        $basicData = [
+            'form_key' => $this->formKey->getFormKey(),
+            'firstname' => self::FIXTURE_CUSTOMER_FIRSTNAME,
+            'lastname' => self::FIXTURE_CUSTOMER_LASTNAME,
+            'current_password' => self::FIXTURE_CUSTOMER_PASSWORD
+        ];
+
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST)
+            ->setPostValue(array_merge($basicData, $customData));
+
+        $this->dispatch('customer/account/editPost');
     }
 
     /**
@@ -141,64 +196,11 @@ class EmailTemplateTest extends AbstractController
         $this->assertSameGreeting(self::EXPECTED_GREETING, $this->transportBuilderMock->getSentMessage());
     }
 
-    /**
-     * Wraps Customer Edit POST request
-     *
-     * @param array $customData
-     */
-    private function sendAccountEditRequest(array $customData): void
+    protected function setUp(): void
     {
-        $basicData = [
-            'form_key' => $this->formKey->getFormKey(),
-            'firstname' => self::FIXTURE_CUSTOMER_FIRSTNAME,
-            'lastname' => self::FIXTURE_CUSTOMER_LASTNAME,
-            'current_password' => self::FIXTURE_CUSTOMER_PASSWORD
-        ];
-
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST)
-            ->setPostValue(array_merge($basicData, $customData));
-
-        $this->dispatch('customer/account/editPost');
-    }
-
-    /**
-     * Verifies if `<p class="greeting"/>` text contents equals the expected one.
-     *
-     * @param string $expectedGreeting
-     * @param EmailMessage $message
-     */
-    private function assertSameGreeting(string $expectedGreeting, EmailMessage $message)
-    {
-        $messageContent = $this->getMessageRawContent($message);
-        $emailDom = new \DOMDocument();
-        $emailDom->loadHTML($messageContent);
-
-        $emailXpath = new \DOMXPath($emailDom);
-        $greeting = $emailXpath->query('//p[@class="greeting"]');
-
-        $this->assertSame(1, $greeting->length);
-        $this->assertSame($expectedGreeting, $greeting->item(0)->textContent);
-    }
-
-    /**
-     * Returns raw content of provided message
-     *
-     * @param EmailMessage $message
-     * @return string
-     */
-    private function getMessageRawContent(EmailMessage $message): string
-    {
-        $emailParts = $message->getBody()->getParts();
-        return current($emailParts)->getRawContent();
-    }
-
-    /**
-     * Performs Customer log in
-     *
-     * @param int $customerId
-     */
-    private function loginByCustomerId(int $customerId): void
-    {
-        $this->session->loginById($customerId);
+        parent::setUp();
+        $this->transportBuilderMock = $this->_objectManager->get(TransportBuilderMock::class);
+        $this->session = $this->_objectManager->get(Session::class);
+        $this->formKey = $this->_objectManager->get(FormKey::class);
     }
 }

@@ -32,17 +32,6 @@ class OptionsTest extends AbstractRenderCustomOptionsTest
     private $dataObjectFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->helperProduct = $this->objectManager->get(HelperProduct::class);
-        $this->dataObjectFactory = $this->objectManager->get(DataObjectFactory::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/product_without_options_with_stock_data.php
      * @return void
      */
@@ -254,7 +243,8 @@ class OptionsTest extends AbstractRenderCustomOptionsTest
         array $optionData,
         array $optionValueData,
         array $checkArray
-    ): void {
+    ): void
+    {
         $this->assertSelectOptionRenderingOnProduct('simple', $optionData, $optionValueData, $checkArray);
     }
 
@@ -494,11 +484,23 @@ class OptionsTest extends AbstractRenderCustomOptionsTest
     /**
      * @inheritdoc
      */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->helperProduct = $this->objectManager->get(HelperProduct::class);
+        $this->dataObjectFactory = $this->objectManager->get(DataObjectFactory::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
     protected function addOptionToProduct(
         ProductInterface $product,
-        array $optionData,
-        array $optionValueData = []
-    ): ProductInterface {
+        array            $optionData,
+        array            $optionValueData = []
+    ): ProductInterface
+    {
         $product = parent::addOptionToProduct($product, $optionData, $optionValueData);
 
         if (isset($optionData['configure_option_value'])) {
@@ -527,9 +529,10 @@ class OptionsTest extends AbstractRenderCustomOptionsTest
      */
     protected function baseOptionAsserts(
         ProductCustomOptionInterface $option,
-        string $optionHtml,
-        array $checkArray
-    ): void {
+        string                       $optionHtml,
+        array                        $checkArray
+    ): void
+    {
         if (isset($checkArray['contains'])) {
             foreach ($checkArray['contains'] as $needle) {
                 $this->assertStringContainsString($needle, $optionHtml);
@@ -542,9 +545,10 @@ class OptionsTest extends AbstractRenderCustomOptionsTest
      */
     protected function additionalTypeTextAsserts(
         ProductCustomOptionInterface $option,
-        string $optionHtml,
-        array $checkArray
-    ): void {
+        string                       $optionHtml,
+        array                        $checkArray
+    ): void
+    {
         parent::additionalTypeTextAsserts($option, $optionHtml, $checkArray);
 
         if (isset($checkArray['equals_xpath'])) {
@@ -556,13 +560,33 @@ class OptionsTest extends AbstractRenderCustomOptionsTest
     }
 
     /**
+     * Checks that the xpath string is equal to the expected value
+     *
+     * @param ProductCustomOptionInterface $option
+     * @param string $html
+     * @param array $xpathData
+     * @return void
+     */
+    private function assertEqualsXpath(ProductCustomOptionInterface $option, string $html, array $xpathData): void
+    {
+        $args = array_merge([$option->getOptionId()], $xpathData['args'] ?? []);
+        $expected = $xpathData['expected'] ?? 1;
+        $this->assertEquals(
+            $expected,
+            Xpath::getElementsCountForXpath(sprintf($xpathData['xpath'], ...$args), $html),
+            $xpathData['message']
+        );
+    }
+
+    /**
      * @inheritdoc
      */
     protected function additionalTypeSelectAsserts(
         ProductCustomOptionInterface $option,
-        string $optionHtml,
-        array $checkArray
-    ): void {
+        string                       $optionHtml,
+        array                        $checkArray
+    ): void
+    {
         parent::additionalTypeSelectAsserts($option, $optionHtml, $checkArray);
 
         if (isset($checkArray['equals_xpath'])) {
@@ -598,24 +622,5 @@ class OptionsTest extends AbstractRenderCustomOptionsTest
     protected function getOptionsBlockName(): string
     {
         return 'product.composite.fieldset.options';
-    }
-
-    /**
-     * Checks that the xpath string is equal to the expected value
-     *
-     * @param ProductCustomOptionInterface $option
-     * @param string $html
-     * @param array $xpathData
-     * @return void
-     */
-    private function assertEqualsXpath(ProductCustomOptionInterface $option, string $html, array $xpathData): void
-    {
-        $args = array_merge([$option->getOptionId()], $xpathData['args'] ?? []);
-        $expected = $xpathData['expected'] ?? 1;
-        $this->assertEquals(
-            $expected,
-            Xpath::getElementsCountForXpath(sprintf($xpathData['xpath'], ...$args), $html),
-            $xpathData['message']
-        );
     }
 }

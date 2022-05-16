@@ -11,7 +11,9 @@ use Magento\Framework\App\DeploymentConfig;
 use Magento\Framework\Config\Data\ConfigData;
 use Magento\Framework\Config\File\ConfigFilePool;
 use Magento\Framework\Setup\ConfigOptionsListInterface;
+use Magento\Framework\Setup\Option\AbstractConfigOption;
 use Magento\Framework\Setup\Option\SelectConfigOption;
+use function filter_var;
 
 /**
  * Deployment configuration options for the folders.
@@ -50,7 +52,7 @@ class Directory implements ConfigOptionsListInterface
         if (isset($options[self::INPUT_KEY_DOCUMENT_ROOT_IS_PUB])) {
             $configData->set(
                 self::CONFIG_PATH_DOCUMENT_ROOT_IS_PUB,
-                \filter_var($options[self::INPUT_KEY_DOCUMENT_ROOT_IS_PUB], FILTER_VALIDATE_BOOLEAN)
+                filter_var($options[self::INPUT_KEY_DOCUMENT_ROOT_IS_PUB], FILTER_VALIDATE_BOOLEAN)
             );
         }
 
@@ -60,7 +62,7 @@ class Directory implements ConfigOptionsListInterface
     /**
      * Return options from Directory configuration.
      *
-     * @return \Magento\Framework\Setup\Option\AbstractConfigOption[]|SelectConfigOption[]
+     * @return AbstractConfigOption[]|SelectConfigOption[]
      */
     public function getOptions()
     {

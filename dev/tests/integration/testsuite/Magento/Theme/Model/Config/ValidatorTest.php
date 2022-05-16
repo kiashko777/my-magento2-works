@@ -6,60 +6,49 @@
 
 namespace Magento\Theme\Model\Config;
 
+use Magento\Backend\App\Area\FrontNameResolver;
 use Magento\Email\Model\Template;
+use Magento\Framework\App\Area;
+use Magento\Framework\App\AreaList;
+use Magento\Framework\App\State;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Mail\TemplateInterfaceFactory;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Theme\Api\Data\DesignConfigExtensionInterface;
+use Magento\Theme\Api\Data\DesignConfigInterface;
+use Magento\Theme\Model\Data\Design\Config\Data;
+use Magento\Theme\Model\Design\Config\Validator;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class ValidatorTest to test \Magento\Theme\Model\Design\Config\Validator
  */
-class ValidatorTest extends \PHPUnit\Framework\TestCase
+class ValidatorTest extends TestCase
 {
     const TEMPLATE_CODE = 'email_exception_fixture';
 
     /**
-     * @var \Magento\Theme\Model\Design\Config\Validator
+     * @var Validator
      */
     private $model;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     private $templateFactoryMock;
 
     /**
-     * @var \Magento\Email\Model\Template
+     * @var Template
      */
     private $templateModel;
-
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $objectManager->get(\Magento\Framework\App\AreaList::class)
-            ->getArea(\Magento\Backend\App\Area\FrontNameResolver::AREA_CODE)
-            ->load(\Magento\Framework\App\Area::PART_CONFIG);
-        $objectManager->get(\Magento\Framework\App\State::class)
-            ->setAreaCode(\Magento\Backend\App\Area\FrontNameResolver::AREA_CODE);
-
-        $this->templateFactoryMock = $this->getMockBuilder(\Magento\Framework\Mail\TemplateInterfaceFactory::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $this->templateModel = $objectManager->create(\Magento\Email\Model\Template::class);
-        $this->templateModel->load(self::TEMPLATE_CODE, 'template_code');
-        $this->templateFactoryMock->expects($this->once())
-            ->method("create")
-            ->willReturn($this->templateModel);
-        $this->model = $objectManager->create(
-            \Magento\Theme\Model\Design\Config\Validator::class,
-            [ 'templateFactory' => $this->templateFactoryMock ]
-        );
-    }
 
     /**
      * @magentoDataFixture Magento/Email/Model/_files/email_template.php
      */
     public function testValidateHasRecursiveReference()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
 
         if (!$this->templateModel->getId()) {
             $this->fail('Cannot load Template model');
@@ -71,16 +60,16 @@ class ValidatorTest extends \PHPUnit\Framework\TestCase
             'field' => 'email_header_template'
         ];
 
-        $designConfigMock = $this->getMockBuilder(\Magento\Theme\Api\Data\DesignConfigInterface::class)
+        $designConfigMock = $this->getMockBuilder(DesignConfigInterface::class)
             ->disableOriginalConstructor()
             ->setMethods([])
             ->getMock();
         $designConfigExtensionMock =
-            $this->getMockBuilder(\Magento\Theme\Api\Data\DesignConfigExtensionInterface::class)
-            ->disableOriginalConstructor()
-            ->setMethods([])
-            ->getMock();
-        $designElementMock = $this->getMockBuilder(\Magento\Theme\Model\Data\Design\Config\Data::class)
+            $this->getMockBuilder(DesignConfigExtensionInterface::class)
+                ->disableOriginalConstructor()
+                ->setMethods([])
+                ->getMock();
+        $designElementMock = $this->getMockBuilder(Data::class)
             ->disableOriginalConstructor()
             ->setMethods([])
             ->getMock();
@@ -118,16 +107,16 @@ class ValidatorTest extends \PHPUnit\Framework\TestCase
             'field' => 'email_footer_template'
         ];
 
-        $designConfigMock = $this->getMockBuilder(\Magento\Theme\Api\Data\DesignConfigInterface::class)
+        $designConfigMock = $this->getMockBuilder(DesignConfigInterface::class)
             ->disableOriginalConstructor()
             ->setMethods([])
             ->getMock();
         $designConfigExtensionMock =
-            $this->getMockBuilder(\Magento\Theme\Api\Data\DesignConfigExtensionInterface::class)
-            ->disableOriginalConstructor()
-            ->setMethods([])
-            ->getMock();
-        $designElementMock = $this->getMockBuilder(\Magento\Theme\Model\Data\Design\Config\Data::class)
+            $this->getMockBuilder(DesignConfigExtensionInterface::class)
+                ->disableOriginalConstructor()
+                ->setMethods([])
+                ->getMock();
+        $designElementMock = $this->getMockBuilder(Data::class)
             ->disableOriginalConstructor()
             ->setMethods([])
             ->getMock();
@@ -143,5 +132,29 @@ class ValidatorTest extends \PHPUnit\Framework\TestCase
         $designElementMock->expects($this->once())->method('getValue')->willReturn($this->templateModel->getId());
 
         $this->model->validate($designConfigMock);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->get(AreaList::class)
+            ->getArea(FrontNameResolver::AREA_CODE)
+            ->load(Area::PART_CONFIG);
+        $objectManager->get(State::class)
+            ->setAreaCode(FrontNameResolver::AREA_CODE);
+
+        $this->templateFactoryMock = $this->getMockBuilder(TemplateInterfaceFactory::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->templateModel = $objectManager->create(Template::class);
+        $this->templateModel->load(self::TEMPLATE_CODE, 'template_code');
+        $this->templateFactoryMock->expects($this->once())
+            ->method("create")
+            ->willReturn($this->templateModel);
+        $this->model = $objectManager->create(
+            Validator::class,
+            ['templateFactory' => $this->templateFactoryMock]
+        );
     }
 }

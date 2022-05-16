@@ -9,9 +9,11 @@ namespace Magento\Sales\Controller\Adminhtml\Order;
 
 use Magento\Framework\Api\SearchCriteria;
 use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\Message\MessageInterface;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Model\OrderRepository;
 use Magento\TestFramework\Mail\Template\TransportBuilderMock;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 use PHPUnit\Framework\Constraint\StringContains;
 
 /**
@@ -21,37 +23,24 @@ use PHPUnit\Framework\Constraint\StringContains;
  * @magentoAppArea Adminhtml
  * @magentoDataFixture Magento/Sales/_files/order.php
  */
-class EmailTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class EmailTest extends AbstractBackendController
 {
-    /**
-     * @var OrderRepository
-     */
-    private $orderRepository;
-
-    /**
-     * @var TransportBuilderMock
-     */
-    private $transportBuilder;
-
     /**
      * @var string
      */
     protected $resource = 'Magento_Sales::email';
-
     /**
      * @var string
      */
     protected $uri = 'backend/sales/order/email';
-
     /**
-     * @inheritdoc
+     * @var OrderRepository
      */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->orderRepository = $this->_objectManager->get(OrderRepository::class);
-        $this->transportBuilder = $this->_objectManager->get(TransportBuilderMock::class);
-    }
+    private $orderRepository;
+    /**
+     * @var TransportBuilderMock
+     */
+    private $transportBuilder;
 
     /**
      * @return void
@@ -63,7 +52,7 @@ class EmailTest extends \Magento\TestFramework\TestCase\AbstractBackendControlle
 
         $this->assertSessionMessages(
             $this->equalTo([(string)__('You sent the order email.')]),
-            \Magento\Framework\Message\MessageInterface::TYPE_SUCCESS
+            MessageInterface::TYPE_SUCCESS
         );
 
         $redirectUrl = 'sales/order/view/order_id/' . $order->getEntityId();
@@ -83,6 +72,35 @@ class EmailTest extends \Magento\TestFramework\TestCase\AbstractBackendControlle
 
         $this->assertEquals($message->getSubject(), $subject);
         $this->assertThat($message->getBody()->getParts()[0]->getRawContent(), $assert);
+    }
+
+    /**
+     * @return OrderInterface|null
+     */
+    private function prepareRequest()
+    {
+        $order = $this->getOrder('100000001');
+        $this->getRequest()->setParams(['order_id' => $order->getEntityId()]);
+
+        return $order;
+    }
+
+    /**
+     * @param string $incrementalId
+     * @return OrderInterface|null
+     */
+    private function getOrder(string $incrementalId)
+    {
+        /** @var SearchCriteria $searchCriteria */
+        $searchCriteria = $this->_objectManager->create(SearchCriteriaBuilder::class)
+            ->addFilter(OrderInterface::INCREMENT_ID, $incrementalId)
+            ->create();
+
+        $orders = $this->orderRepository->getList($searchCriteria)->getItems();
+        /** @var OrderInterface|null $order */
+        $order = reset($orders);
+
+        return $order;
     }
 
     /**
@@ -106,31 +124,12 @@ class EmailTest extends \Magento\TestFramework\TestCase\AbstractBackendControlle
     }
 
     /**
-     * @param string $incrementalId
-     * @return OrderInterface|null
+     * @inheritdoc
      */
-    private function getOrder(string $incrementalId)
+    protected function setUp(): void
     {
-        /** @var SearchCriteria $searchCriteria */
-        $searchCriteria = $this->_objectManager->create(SearchCriteriaBuilder::class)
-            ->addFilter(OrderInterface::INCREMENT_ID, $incrementalId)
-            ->create();
-
-        $orders = $this->orderRepository->getList($searchCriteria)->getItems();
-        /** @var OrderInterface|null $order */
-        $order = reset($orders);
-
-        return $order;
-    }
-
-    /**
-     * @return OrderInterface|null
-     */
-    private function prepareRequest()
-    {
-        $order = $this->getOrder('100000001');
-        $this->getRequest()->setParams(['order_id' => $order->getEntityId()]);
-
-        return $order;
+        parent::setUp();
+        $this->orderRepository = $this->_objectManager->get(OrderRepository::class);
+        $this->transportBuilder = $this->_objectManager->get(TransportBuilderMock::class);
     }
 }

@@ -15,9 +15,24 @@ use Laminas\Mvc\View\Http\InjectTemplateListener as LaminasInjectTemplateListene
 class InjectTemplateListener extends LaminasInjectTemplateListener
 {
     /**
+     * Inject a template into the view model, if none present
+     *
+     * Template is derived from the controller found in the route match, and,
+     * optionally, the action, if present.
+     *
+     * @param MvcEvent $e
+     * @return void
+     */
+    public function injectTemplate(MvcEvent $e)
+    {
+        $e->getRouteMatch()->setParam('action', null);
+        parent::injectTemplate($e);
+    }
+
+    /**
      * Determine the top-level namespace of the controller
      *
-     * @param  string $controller
+     * @param string $controller
      * @return string
      */
     protected function deriveModuleNamespace($controller)
@@ -51,20 +66,5 @@ class InjectTemplateListener extends LaminasInjectTemplateListener
             return '';
         }
         return implode('/', $subNsArray);
-    }
-
-    /**
-     * Inject a template into the view model, if none present
-     *
-     * Template is derived from the controller found in the route match, and,
-     * optionally, the action, if present.
-     *
-     * @param  MvcEvent $e
-     * @return void
-     */
-    public function injectTemplate(MvcEvent $e)
-    {
-        $e->getRouteMatch()->setParam('action', null);
-        parent::injectTemplate($e);
     }
 }

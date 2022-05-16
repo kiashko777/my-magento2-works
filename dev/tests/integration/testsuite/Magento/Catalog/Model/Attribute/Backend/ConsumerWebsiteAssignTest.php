@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Model\Attribute\Backend;
 
+use Exception;
 use Magento\AsynchronousOperations\Api\Data\OperationInterface as OperationDataInterface;
 use Magento\AsynchronousOperations\Model\ResourceModel\Operation\CollectionFactory;
 use Magento\Catalog\Api\ProductRepositoryInterface;
@@ -21,6 +22,8 @@ use Magento\Store\Api\WebsiteRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\MysqlMq\DeleteTopicRelatedMessages;
 use PHPUnit\Framework\TestCase;
+use Throwable;
+use Zend_Db_Adapter_Exception;
 
 /**
  * Tests for Mysql website assigning consumer
@@ -71,36 +74,6 @@ class ConsumerWebsiteAssignTest extends TestCase
     }
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->consumer = $this->objectManager->get(ConsumerWebsiteAssign::class);
-        $this->queue = $this->objectManager->create(
-            Queue::class,
-            ['queueName' => 'product_action_attribute.website.update']
-        );
-        $this->messageEncoder = $this->objectManager->get(MessageEncoder::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->websiteRepository = $this->objectManager->get(WebsiteRepositoryInterface::class);
-        $this->operationCollectionFactory = $this->objectManager->get(CollectionFactory::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->objectManager->removeSharedInstance(Action::class);
-        self::$deleteTopicRelatedMessages->execute(self::TOPIC_NAME);
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/update_product_website_quene_data.php
      *
      * @return void
@@ -110,6 +83,66 @@ class ConsumerWebsiteAssignTest extends TestCase
         $this->processMessages();
         $this->assertProductWebsites('simple2', ['base', 'test']);
         $this->assertOperation(OperationInterface::STATUS_TYPE_COMPLETE);
+    }
+
+    /**
+     * Process current consumer topic messages
+     *
+     * @return void
+     */
+    private function processMessages(): void
+    {
+        $envelope = $this->queue->dequeue();
+        $decodedMessage = $this->messageEncoder->decode(self::TOPIC_NAME, $envelope->getBody());
+        $this->consumer->process($decodedMessage);
+    }
+
+    /**
+     * Assert product website ids
+     *
+     * @param string $sku
+     * @param array $expectedWebsites
+     * @return void
+     */
+    private function assertProductWebsites(string $sku, array $expectedWebsites): void
+    {
+        $product = $this->productRepository->get($sku, false, null, true);
+        $websitesIds = $product->getWebsiteIds();
+        $this->assertCount(count($expectedWebsites), $websitesIds);
+
+        foreach ($expectedWebsites as $expectedWebsite) {
+            $expectedWebsiteId = $this->websiteRepository->get($expectedWebsite)->getId();
+            $this->assertContains($expectedWebsiteId, $websitesIds);
+        }
+    }
+
+    /**
+     * Assert performed operation
+     *
+     * @param int $status
+     * @param string|null $resultMessage
+     * @return void
+     */
+    private function assertOperation(int $status, ?string $resultMessage = null): void
+    {
+        $operation = $this->getLastTopicOperation();
+        $this->assertNotNull($operation->getData('id'));
+        $this->assertEquals($status, $operation->getStatus());
+        $this->assertEquals($resultMessage, $operation->getResultMessage());
+    }
+
+    /**
+     * Get last current topic related operation
+     *
+     * @return OperationDataInterface
+     */
+    private function getLastTopicOperation(): OperationDataInterface
+    {
+        $collection = $this->operationCollectionFactory->create();
+        $collection->addFieldToFilter('topic_name', self::TOPIC_NAME);
+        $collection->setPageSize(1)->setCurPage($collection->getLastPageNumber());
+
+        return $collection->getLastItem();
     }
 
     /**
@@ -142,15 +175,29 @@ class ConsumerWebsiteAssignTest extends TestCase
      *
      * @magentoDataFixture Magento/Catalog/_files/update_product_website_quene_data.php
      *
-     * @param \Throwable $exception
+     * @param Throwable $exception
      * @param int $code
      * @return void
      */
-    public function testWithException(\Throwable $exception, int $code): void
+    public function testWithException(Throwable $exception, int $code): void
     {
         $this->prepareMock($exception);
         $this->processMessages();
         $this->assertOperation($code, $exception->getMessage());
+    }
+
+    /**
+     * Create mock with provided exception
+     *
+     * @param Throwable $exception
+     * @return void
+     */
+    private function prepareMock(Throwable $exception): void
+    {
+        $object = $this->createPartialMock(Action::class, ['updateWebsites']);
+        $object->method('updateWebsites')->willThrowException($exception);
+        $this->objectManager->addSharedInstance($object, Action::class);
+        $this->consumer = $this->objectManager->create(ConsumerWebsiteAssign::class);
     }
 
     /**
@@ -164,7 +211,7 @@ class ConsumerWebsiteAssignTest extends TestCase
                 'code' => OperationDataInterface::STATUS_TYPE_RETRIABLY_FAILED,
             ],
             'with_db_exception' => [
-                'exception' => new \Zend_Db_Adapter_Exception(
+                'exception' => new Zend_Db_Adapter_Exception(
                     (string)__(
                         'Sorry, something went wrong during product attributes update. Please see log for details.'
                     )
@@ -176,7 +223,7 @@ class ConsumerWebsiteAssignTest extends TestCase
                 'code' => OperationDataInterface::STATUS_TYPE_NOT_RETRIABLY_FAILED,
             ],
             'with_general_exception' => [
-                'exception' => new \Exception(
+                'exception' => new Exception(
                     (string)__(
                         'Sorry, something went wrong during product attributes update. Please see log for details.'
                     )
@@ -187,76 +234,32 @@ class ConsumerWebsiteAssignTest extends TestCase
     }
 
     /**
-     * Assert product website ids
-     *
-     * @param string $sku
-     * @param array $expectedWebsites
-     * @return void
+     * @inheritdoc
      */
-    private function assertProductWebsites(string $sku, array $expectedWebsites): void
+    protected function setUp(): void
     {
-        $product = $this->productRepository->get($sku, false, null, true);
-        $websitesIds = $product->getWebsiteIds();
-        $this->assertCount(count($expectedWebsites), $websitesIds);
+        parent::setUp();
 
-        foreach ($expectedWebsites as $expectedWebsite) {
-            $expectedWebsiteId = $this->websiteRepository->get($expectedWebsite)->getId();
-            $this->assertContains($expectedWebsiteId, $websitesIds);
-        }
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->consumer = $this->objectManager->get(ConsumerWebsiteAssign::class);
+        $this->queue = $this->objectManager->create(
+            Queue::class,
+            ['queueName' => 'product_action_attribute.website.update']
+        );
+        $this->messageEncoder = $this->objectManager->get(MessageEncoder::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->websiteRepository = $this->objectManager->get(WebsiteRepositoryInterface::class);
+        $this->operationCollectionFactory = $this->objectManager->get(CollectionFactory::class);
     }
 
     /**
-     * Process current consumer topic messages
-     *
-     * @return void
+     * @inheritdoc
      */
-    private function processMessages(): void
+    protected function tearDown(): void
     {
-        $envelope = $this->queue->dequeue();
-        $decodedMessage = $this->messageEncoder->decode(self::TOPIC_NAME, $envelope->getBody());
-        $this->consumer->process($decodedMessage);
-    }
+        $this->objectManager->removeSharedInstance(Action::class);
+        self::$deleteTopicRelatedMessages->execute(self::TOPIC_NAME);
 
-    /**
-     * Get last current topic related operation
-     *
-     * @return OperationDataInterface
-     */
-    private function getLastTopicOperation(): OperationDataInterface
-    {
-        $collection = $this->operationCollectionFactory->create();
-        $collection->addFieldToFilter('topic_name', self::TOPIC_NAME);
-        $collection->setPageSize(1)->setCurPage($collection->getLastPageNumber());
-
-        return $collection->getLastItem();
-    }
-
-    /**
-     * Assert performed operation
-     *
-     * @param int $status
-     * @param string|null $resultMessage
-     * @return void
-     */
-    private function assertOperation(int $status, ?string $resultMessage = null): void
-    {
-        $operation = $this->getLastTopicOperation();
-        $this->assertNotNull($operation->getData('id'));
-        $this->assertEquals($status, $operation->getStatus());
-        $this->assertEquals($resultMessage, $operation->getResultMessage());
-    }
-
-    /**
-     * Create mock with provided exception
-     *
-     * @param \Throwable $exception
-     * @return void
-     */
-    private function prepareMock(\Throwable $exception): void
-    {
-        $object = $this->createPartialMock(Action::class, ['updateWebsites']);
-        $object->method('updateWebsites')->willThrowException($exception);
-        $this->objectManager->addSharedInstance($object, Action::class);
-        $this->consumer = $this->objectManager->create(ConsumerWebsiteAssign::class);
+        parent::tearDown();
     }
 }

@@ -8,6 +8,7 @@
  * As far none class is present as separate bundle product,
  * this test is clone of \Magento\Catalog\Model\Products with product type "bundle"
  */
+
 namespace Magento\Bundle\Model;
 
 use Magento\Bundle\Model\Product\Price;
@@ -23,11 +24,12 @@ use Magento\Store\Api\StoreRepositoryInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Entity;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class ProductTest extends \PHPUnit\Framework\TestCase
+class ProductTest extends TestCase
 {
     /**
      * @var Product
@@ -40,22 +42,11 @@ class ProductTest extends \PHPUnit\Framework\TestCase
     private $objectManager;
 
     /**
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-
-        $this->model = $this->objectManager->create(Product::class);
-        $this->model->setTypeId(Type::TYPE_BUNDLE);
-    }
-
-    /**
      * Tests Retrieve ans set type instance of the product
      *
-     * @see \Magento\Catalog\Model\Product::getTypeInstance
-     * @see \Magento\Catalog\Model\Product::setTypeInstance
      * @return void
+     * @see \Magento\Catalog\Model\Product::setTypeInstance
+     * @see \Magento\Catalog\Model\Product::getTypeInstance
      */
     public function testGetSetTypeInstance()
     {
@@ -99,8 +90,8 @@ class ProductTest extends \PHPUnit\Framework\TestCase
     /**
      * Tests Get product price model
      *
-     * @see \Magento\Catalog\Model\Product::getPriceModel
      * @return void
+     * @see \Magento\Catalog\Model\Product::getPriceModel
      */
     public function testGetPriceModel()
     {
@@ -113,8 +104,8 @@ class ProductTest extends \PHPUnit\Framework\TestCase
     /**
      * Tests Check is product composite
      *
-     * @see \Magento\Catalog\Model\Product::isComposite
      * @return void
+     * @see \Magento\Catalog\Model\Product::isComposite
      */
     public function testIsComposite()
     {
@@ -161,16 +152,17 @@ class ProductTest extends \PHPUnit\Framework\TestCase
      * @magentoAppIsolation enabled
      * @magentoDataFixture Magento/Bundle/_files/product.php
      * @dataProvider stockConfigDataProvider
-     * @covers \Magento\Catalog\Model\Product::isSalable
+     * @covers       \Magento\Catalog\Model\Product::isSalable
      */
     public function testIsSalable(
         float $selectionQty,
         float $qty,
-        int $isInStock,
-        bool $manageStock,
-        int $backorders,
-        bool $isSalable
-    ) {
+        int   $isInStock,
+        bool  $manageStock,
+        int   $backorders,
+        bool  $isSalable
+    )
+    {
         $productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
 
         $child = $productRepository->get('simple');
@@ -183,7 +175,7 @@ class ProductTest extends \PHPUnit\Framework\TestCase
         $childStockItem->setBackorders($backorders);
         $productRepository->save($child);
 
-        /** @var \Magento\Catalog\Model\Product $bundle */
+        /** @var Product $bundle */
         $bundle = $productRepository->get('bundle-product');
         foreach ($bundle->getExtensionAttributes()->getBundleProductOptions() as $productOption) {
             foreach ($productOption->getProductLinks() as $productLink) {
@@ -262,10 +254,22 @@ class ProductTest extends \PHPUnit\Framework\TestCase
     private function checkIsSalable(
         float $selectionQty,
         float $qty,
-        int $isInStock,
-        bool $manageStock,
-        int $backorders
-    ): bool {
+        int   $isInStock,
+        bool  $manageStock,
+        int   $backorders
+    ): bool
+    {
         return !$manageStock || ($isInStock && ($backorders || $selectionQty <= $qty));
+    }
+
+    /**
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->model = $this->objectManager->create(Product::class);
+        $this->model->setTypeId(Type::TYPE_BUNDLE);
     }
 }

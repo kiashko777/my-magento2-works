@@ -6,17 +6,21 @@
 
 namespace Magento\Store\App\FrontController\Plugin;
 
+use Laminas\Stdlib\Parameters;
 use Magento\Customer\Model\Session;
 use Magento\Framework\App\Config\ReinitableConfigInterface;
 use Magento\Framework\App\Config\Value;
+use Magento\Framework\App\Http;
 use Magento\Framework\Data\Form\FormKey;
+use Magento\TestFramework\Request;
 use Magento\TestFramework\Response;
-use Laminas\Stdlib\Parameters;
+use Magento\TestFramework\TestCase\AbstractController;
+use ReflectionClass;
 
 /**
  * Tests \Magento\Store\App\FrontController\Plugin\RequestPreprocessor.
  */
-class RequestPreprocessorTest extends \Magento\TestFramework\TestCase\AbstractController
+class RequestPreprocessorTest extends AbstractController
 {
     /**
      * Holder for base url.
@@ -30,24 +34,6 @@ class RequestPreprocessorTest extends \Magento\TestFramework\TestCase\AbstractCo
     private $config;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->config = [];
-    }
-
-    /**
-     * @inheritDoc
-     */
-    protected function tearDown(): void
-    {
-        $this->setConfig($this->config);
-        parent::tearDown();
-    }
-
-    /**
      * Test non-secure POST request is redirected right away on completely secure frontend.
      *
      * @magentoDataFixture Magento/Customer/_files/customer.php
@@ -57,13 +43,107 @@ class RequestPreprocessorTest extends \Magento\TestFramework\TestCase\AbstractCo
     {
         $this->setFrontendCompletelySecure();
         $request = $this->prepareRequest();
-        $app = $this->_objectManager->create(\Magento\Framework\App\Http::class, ['_request' => $request]);
+        $app = $this->_objectManager->create(Http::class, ['_request' => $request]);
         $response = $app->launch();
         $redirectUrl = str_replace('http://', 'https://', $this->baseUrl) .
             'index.php/customer/account/loginPost/';
         $this->assertResponseRedirect($response, $redirectUrl);
         $this->assertFalse($this->_objectManager->get(Session::class)->isLoggedIn());
         $this->setFrontendCompletelySecureRollback();
+    }
+
+    /**
+     * Set use secure on frontend and set base url protocol to https.
+     *
+     * @return void
+     */
+    private function setFrontendCompletelySecure()
+    {
+        $configValue = $this->_objectManager->create(Value::class);
+        $configValue->load('web/unsecure/base_url', 'path');
+        $this->baseUrl = $configValue->getValue() ?: 'http://localhost/';
+        $secureBaseUrl = str_replace('http://', 'https://', $this->baseUrl);
+        if (!$configValue->getPath()) {
+            $configValue->setPath('web/unsecure/base_url');
+        }
+        $configValue->setValue($secureBaseUrl);
+        $configValue->save();
+        $configValue = $this->_objectManager->create(Value::class);
+        $configValue->load('web/secure/use_in_frontend', 'path');
+        if (!$configValue->getPath()) {
+            $configValue->setPath('web/secure/use_in_frontend');
+        }
+        $configValue->setValue(1);
+        $configValue->save();
+        $reinitibleConfig = $this->_objectManager->create(ReinitableConfigInterface::class);
+        $reinitibleConfig->reinit();
+    }
+
+    /**
+     * Prepare secure and non-secure requests for customer login.
+     *
+     * @param bool $isSecure
+     * @return Request
+     */
+    private function prepareRequest(bool $isSecure = false)
+    {
+        $post = new Parameters(
+            [
+                'form_key' => $this->_objectManager->get(FormKey::class)->getFormKey(),
+                'login' => [
+                    'username' => 'customer@example.com',
+                    'password' => 'password'
+                ]
+            ]
+        );
+        $request = $this->getRequest();
+        $request->setMethod(Request::METHOD_POST);
+        $request->setRequestUri('customer/account/loginPost/');
+        $request->setPost($post);
+        if ($isSecure) {
+            $server = new Parameters(
+                [
+                    'HTTPS' => 'on',
+                    'SERVER_PORT' => 443
+                ]
+            );
+            $request->setServer($server);
+        }
+
+        return $request;
+    }
+
+    /**
+     * Assert response is redirect with https protocol.
+     *
+     * @param Response $response
+     * @param string $redirectUrl
+     * @return void
+     */
+    private function assertResponseRedirect(Response $response, string $redirectUrl)
+    {
+        $this->assertTrue($response->isRedirect());
+        $this->assertSame($redirectUrl, $response->getHeader('Location')->getUri());
+    }
+
+    /**
+     * Unset use secure on frontend and set base url protocol to http.
+     *
+     * @return void
+     */
+    private function setFrontendCompletelySecureRollback()
+    {
+        $configValue = $this->_objectManager->create(Value::class);
+        $unsecureBaseUrl = str_replace('https://', 'http://', $this->baseUrl);
+        $configValue->load('web/unsecure/base_url', 'path');
+        $configValue->setValue($unsecureBaseUrl);
+        $configValue->save();
+        $configValue = $this->_objectManager->create(Value::class);
+        $configValue->load('web/secure/use_in_frontend', 'path');
+        $configValue->setValue(0);
+        $configValue->save();
+        $reinitibleConfig = $this->_objectManager->create(ReinitableConfigInterface::class);
+        $reinitibleConfig->reinit();
     }
 
     /**
@@ -104,9 +184,29 @@ class RequestPreprocessorTest extends \Magento\TestFramework\TestCase\AbstractCo
         ];
         $this->setConfig($config);
         $this->setServer($request);
-        $app = $this->_objectManager->create(\Magento\Framework\App\Http::class, ['_request' => $this->getRequest()]);
+        $app = $this->_objectManager->create(Http::class, ['_request' => $this->getRequest()]);
         $this->_response = $app->launch();
         $this->assertRedirect($this->equalTo($redirectUrl));
+    }
+
+    private function setServer(array $server)
+    {
+        $request = $this->getRequest();
+        $properties = [
+            'baseUrl',
+            'basePath',
+            'requestUri',
+            'originalPathInfo',
+            'pathInfo',
+        ];
+        $reflection = new ReflectionClass($request);
+
+        foreach ($properties as $name) {
+            $property = $reflection->getProperty($name);
+            $property->setAccessible(true);
+            $property->setValue($request, null);
+        }
+        $request->setServer(new Parameters($server));
     }
 
     /**
@@ -195,97 +295,21 @@ class RequestPreprocessorTest extends \Magento\TestFramework\TestCase\AbstractCo
     }
 
     /**
-     * Assert response is redirect with https protocol.
-     *
-     * @param Response $response
-     * @param string $redirectUrl
-     * @return void
+     * @inheritDoc
      */
-    private function assertResponseRedirect(Response $response, string $redirectUrl)
+    protected function setUp(): void
     {
-        $this->assertTrue($response->isRedirect());
-        $this->assertSame($redirectUrl, $response->getHeader('Location')->getUri());
+        parent::setUp();
+        $this->config = [];
     }
 
     /**
-     * Prepare secure and non-secure requests for customer login.
-     *
-     * @param bool $isSecure
-     * @return \Magento\TestFramework\Request
+     * @inheritDoc
      */
-    private function prepareRequest(bool $isSecure = false)
+    protected function tearDown(): void
     {
-        $post = new Parameters(
-            [
-                'form_key' => $this->_objectManager->get(FormKey::class)->getFormKey(),
-                'login' => [
-                    'username' => 'customer@example.com',
-                    'password' => 'password'
-                ]
-            ]
-        );
-        $request = $this->getRequest();
-        $request->setMethod(\Magento\TestFramework\Request::METHOD_POST);
-        $request->setRequestUri('customer/account/loginPost/');
-        $request->setPost($post);
-        if ($isSecure) {
-            $server = new Parameters(
-                [
-                    'HTTPS' => 'on',
-                    'SERVER_PORT' => 443
-                ]
-            );
-            $request->setServer($server);
-        }
-
-        return $request;
-    }
-
-    /**
-     * Set use secure on frontend and set base url protocol to https.
-     *
-     * @return void
-     */
-    private function setFrontendCompletelySecure()
-    {
-        $configValue = $this->_objectManager->create(Value::class);
-        $configValue->load('web/unsecure/base_url', 'path');
-        $this->baseUrl = $configValue->getValue() ?: 'http://localhost/';
-        $secureBaseUrl = str_replace('http://', 'https://', $this->baseUrl);
-        if (!$configValue->getPath()) {
-            $configValue->setPath('web/unsecure/base_url');
-        }
-        $configValue->setValue($secureBaseUrl);
-        $configValue->save();
-        $configValue = $this->_objectManager->create(Value::class);
-        $configValue->load('web/secure/use_in_frontend', 'path');
-        if (!$configValue->getPath()) {
-            $configValue->setPath('web/secure/use_in_frontend');
-        }
-        $configValue->setValue(1);
-        $configValue->save();
-        $reinitibleConfig = $this->_objectManager->create(ReinitableConfigInterface::class);
-        $reinitibleConfig->reinit();
-    }
-
-    /**
-     * Unset use secure on frontend and set base url protocol to http.
-     *
-     * @return void
-     */
-    private function setFrontendCompletelySecureRollback()
-    {
-        $configValue = $this->_objectManager->create(Value::class);
-        $unsecureBaseUrl = str_replace('https://', 'http://', $this->baseUrl);
-        $configValue->load('web/unsecure/base_url', 'path');
-        $configValue->setValue($unsecureBaseUrl);
-        $configValue->save();
-        $configValue = $this->_objectManager->create(Value::class);
-        $configValue->load('web/secure/use_in_frontend', 'path');
-        $configValue->setValue(0);
-        $configValue->save();
-        $reinitibleConfig = $this->_objectManager->create(ReinitableConfigInterface::class);
-        $reinitibleConfig->reinit();
+        $this->setConfig($this->config);
+        parent::tearDown();
     }
 
     private function setConfig(array $config): void
@@ -307,25 +331,5 @@ class RequestPreprocessorTest extends \Magento\TestFramework\TestCase\AbstractCo
             }
         }
         $this->_objectManager->create(ReinitableConfigInterface::class)->reinit();
-    }
-
-    private function setServer(array $server)
-    {
-        $request = $this->getRequest();
-        $properties = [
-            'baseUrl',
-            'basePath',
-            'requestUri',
-            'originalPathInfo',
-            'pathInfo',
-        ];
-        $reflection = new \ReflectionClass($request);
-
-        foreach ($properties as $name) {
-            $property = $reflection->getProperty($name);
-            $property->setAccessible(true);
-            $property->setValue($request, null);
-        }
-        $request->setServer(new Parameters($server));
     }
 }

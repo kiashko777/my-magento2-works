@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Block\Product\View\Options\Type;
 
+use DOMDocument;
+use DOMXPath;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Helper\Product as ProductHelper;
 use Magento\Catalog\Model\Product;
@@ -55,48 +57,6 @@ class DateTest extends TestCase
     private $defaultLocale;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
-        $this->productHelper = $objectManager->get(ProductHelper::class);
-        $this->dataObjectFactory = $objectManager->get(DataObjectFactory::class);
-        $layout = $objectManager->get(LayoutInterface::class);
-        $this->localeResolver = $objectManager->get(ResolverInterface::class);
-        $this->defaultLocale = $this->localeResolver->getLocale();
-        $this->block = $layout->createBlock(
-            Date::class,
-            'product.info.options.date',
-            [
-                'data' => [
-                    'template' => 'Magento_Catalog::product/view/options/type/date.phtml'
-                ]
-            ]
-        );
-        $layout->createBlock(
-            Render::class,
-            'product.price.render.default',
-            [
-                'data' => [
-                    'price_render_handle' => 'catalog_product_prices',
-                    'use_link_for_as_low_as' => true,
-                ],
-            ]
-        );
-    }
-
-    /**
-     * @inheritDoc
-     */
-    protected function tearDown(): void
-    {
-        $this->localeResolver->setLocale($this->defaultLocale);
-        parent::tearDown();
-    }
-
-    /**
      * @param array $data
      * @param array $expected
      * @magentoAppArea frontend
@@ -107,39 +67,6 @@ class DateTest extends TestCase
     {
         $this->prepareBlock($data);
         $this->assertXPaths($expected);
-    }
-
-    /**
-     * @param array $data
-     * @param array $expected
-     * @param string|null $locale
-     * @magentoAppArea frontend
-     * @magentoConfigFixture current_store catalog/custom_options/use_calendar 1
-     * @magentoConfigFixture current_store catalog/custom_options/year_range 2020,2030
-     * @dataProvider toHtmlWithCalendarDataProvider
-     */
-    public function testToHtmlWithCalendar(array $data, array $expected, ?string $locale = null): void
-    {
-        if ($locale) {
-            $this->localeResolver->setLocale($locale);
-        }
-        $this->prepareBlock($data);
-        $this->assertXPaths($expected);
-    }
-
-    /**
-     * @param array $expected
-     */
-    private function assertXPaths(array $expected): void
-    {
-        $html = $this->block->toHtml();
-        $domXpath = new \DOMXPath($this->getHtmlDocument($html));
-        foreach ($expected as $xpath => $value) {
-            $xpath = strtr($xpath, ['{id}' => $this->block->getOption()->getId()]);
-            $nodes = $domXpath->query(strtr($xpath, ['{id}' => $this->block->getOption()->getId()]));
-            $this->assertEquals(1, $nodes->count(), 'Cannot find element \'' . $xpath . '"\' in the HTML');
-            $this->assertEquals($value, $nodes->item(0)->getAttribute('value'));
-        }
     }
 
     /**
@@ -181,12 +108,27 @@ class DateTest extends TestCase
     }
 
     /**
-     * @param string $source
-     * @return \DOMDocument
+     * @param array $expected
      */
-    private function getHtmlDocument(string $source): \DOMDocument
+    private function assertXPaths(array $expected): void
     {
-        $page =<<<HTML
+        $html = $this->block->toHtml();
+        $domXpath = new DOMXPath($this->getHtmlDocument($html));
+        foreach ($expected as $xpath => $value) {
+            $xpath = strtr($xpath, ['{id}' => $this->block->getOption()->getId()]);
+            $nodes = $domXpath->query(strtr($xpath, ['{id}' => $this->block->getOption()->getId()]));
+            $this->assertEquals(1, $nodes->count(), 'Cannot find element \'' . $xpath . '"\' in the HTML');
+            $this->assertEquals($value, $nodes->item(0)->getAttribute('value'));
+        }
+    }
+
+    /**
+     * @param string $source
+     * @return DOMDocument
+     */
+    private function getHtmlDocument(string $source): DOMDocument
+    {
+        $page = <<<HTML
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -198,11 +140,29 @@ $source
 </body>
 </html>
 HTML;
-        $domDocument = new \DOMDocument('1.0', 'UTF-8');
+        $domDocument = new DOMDocument('1.0', 'UTF-8');
         libxml_use_internal_errors(true);
         $domDocument->loadHTML($page);
         libxml_use_internal_errors(false);
         return $domDocument;
+    }
+
+    /**
+     * @param array $data
+     * @param array $expected
+     * @param string|null $locale
+     * @magentoAppArea frontend
+     * @magentoConfigFixture current_store catalog/custom_options/use_calendar 1
+     * @magentoConfigFixture current_store catalog/custom_options/year_range 2020,2030
+     * @dataProvider toHtmlWithCalendarDataProvider
+     */
+    public function testToHtmlWithCalendar(array $data, array $expected, ?string $locale = null): void
+    {
+        if ($locale) {
+            $this->localeResolver->setLocale($locale);
+        }
+        $this->prepareBlock($data);
+        $this->assertXPaths($expected);
     }
 
     /**
@@ -323,5 +283,47 @@ HTML;
                 'fr_FR'
             ]
         ];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
+        $this->productHelper = $objectManager->get(ProductHelper::class);
+        $this->dataObjectFactory = $objectManager->get(DataObjectFactory::class);
+        $layout = $objectManager->get(LayoutInterface::class);
+        $this->localeResolver = $objectManager->get(ResolverInterface::class);
+        $this->defaultLocale = $this->localeResolver->getLocale();
+        $this->block = $layout->createBlock(
+            Date::class,
+            'product.info.options.date',
+            [
+                'data' => [
+                    'template' => 'Magento_Catalog::product/view/options/type/date.phtml'
+                ]
+            ]
+        );
+        $layout->createBlock(
+            Render::class,
+            'product.price.render.default',
+            [
+                'data' => [
+                    'price_render_handle' => 'catalog_product_prices',
+                    'use_link_for_as_low_as' => true,
+                ],
+            ]
+        );
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function tearDown(): void
+    {
+        $this->localeResolver->setLocale($this->defaultLocale);
+        parent::tearDown();
     }
 }

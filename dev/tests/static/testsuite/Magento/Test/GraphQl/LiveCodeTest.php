@@ -7,9 +7,9 @@ declare(strict_types=1);
 
 namespace Magento\Test\GraphQl;
 
+use Magento\Test\Php\LiveCodeTest as PHPCodeTest;
 use Magento\TestFramework\CodingStandard\Tool\CodeSniffer;
 use Magento\TestFramework\CodingStandard\Tool\CodeSniffer\Wrapper;
-use Magento\Test\Php\LiveCodeTest as PHPCodeTest;
 use PHPUnit\Framework\TestCase;
 
 /**

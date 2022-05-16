@@ -3,18 +3,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Di\Code\Reader\Decorator;
 
-use Magento\Setup\Module\Di\Code\Reader\ClassesScanner;
-use Magento\Setup\Module\Di\Code\Reader\ClassReaderDecorator;
 use Magento\Framework\Exception\FileSystemException;
+use Magento\Setup\Module\Di\Code\Reader\ClassesScanner;
+use Magento\Setup\Module\Di\Code\Reader\ClassesScannerInterface;
+use Magento\Setup\Module\Di\Code\Reader\ClassReaderDecorator;
 
 /**
  * Class Area
  *
  * @package Magento\Setup\Module\Di\Code\Reader\Decorator
  */
-class Area implements \Magento\Setup\Module\Di\Code\Reader\ClassesScannerInterface
+class Area implements ClassesScannerInterface
 {
     /**
      * @var ClassReaderDecorator
@@ -31,9 +33,10 @@ class Area implements \Magento\Setup\Module\Di\Code\Reader\ClassesScannerInterfa
      * @param ClassReaderDecorator $classReaderDecorator
      */
     public function __construct(
-        ClassesScanner $classesScanner,
+        ClassesScanner       $classesScanner,
         ClassReaderDecorator $classReaderDecorator
-    ) {
+    )
+    {
         $this->classReaderDecorator = $classReaderDecorator;
         $this->classesScanner = $classesScanner;
     }

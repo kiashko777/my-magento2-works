@@ -8,9 +8,9 @@ declare(strict_types=1);
 
 namespace Magento\Backend\Block\Widget;
 
+use Magento\Framework\View\LayoutInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
-use Magento\Framework\View\LayoutInterface;
 
 /**
  * Test for the button widget.
@@ -23,29 +23,6 @@ class ButtonTest extends TestCase
      * @var LayoutInterface
      */
     private $layout;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->layout = $objectManager->get(LayoutInterface::class);
-    }
-
-    /**
-     * Create the block.
-     *
-     * @return Button
-     */
-    private function createBlock(): Button
-    {
-        /** @var Button $block */
-        $block = $this->layout->createBlock(Button::class, 'button_block');
-        $block->setLayout($this->layout);
-
-        return $block;
-    }
 
     /**
      * Test resulting button HTML.
@@ -76,8 +53,31 @@ class ButtonTest extends TestCase
         $this->assertStringContainsString('<span>A button</span>', $html);
         $this->assertStringNotContainsString('onclick=', $html);
         $this->assertStringNotContainsString('style=', $html);
-        $this->assertMatchesRegularExpression('/\<script.*?\>.*?' .preg_quote($block->getOnClick()) .'.*?\<\/script\>/ims', $html);
+        $this->assertMatchesRegularExpression('/\<script.*?\>.*?' . preg_quote($block->getOnClick()) . '.*?\<\/script\>/ims', $html);
         $this->assertStringContainsString('height', $html);
         $this->assertStringContainsString('200px', $html);
+    }
+
+    /**
+     * Create the block.
+     *
+     * @return Button
+     */
+    private function createBlock(): Button
+    {
+        /** @var Button $block */
+        $block = $this->layout->createBlock(Button::class, 'button_block');
+        $block->setLayout($this->layout);
+
+        return $block;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->layout = $objectManager->get(LayoutInterface::class);
     }
 }

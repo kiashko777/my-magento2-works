@@ -32,18 +32,6 @@ class RemoveQuoteItemsTest extends TestCase
     private $getQuoteByReservedOrderId;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productResoure = $this->objectManager->get(ProductResourceModel::class);
-        $this->getQuoteByReservedOrderId = $this->objectManager->get(GetQuoteByReservedOrderId::class);
-    }
-
-    /**
      * @return void
      */
     public function testPluginIsRegistered(): void
@@ -71,5 +59,17 @@ class RemoveQuoteItemsTest extends TestCase
         $quote = $this->getQuoteByReservedOrderId->execute('test_order_with_simple_product_without_address');
         $this->assertNotNull($quote);
         $this->assertEmpty($quote->getItems());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productResoure = $this->objectManager->get(ProductResourceModel::class);
+        $this->getQuoteByReservedOrderId = $this->objectManager->get(GetQuoteByReservedOrderId::class);
     }
 }

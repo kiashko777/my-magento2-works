@@ -3,14 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Store\Model;
 
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class StoreCookieManagerTest extends \PHPUnit\Framework\TestCase
+class StoreCookieManagerTest extends TestCase
 {
     /**
-     * @var \Magento\Store\Model\StoreCookieManager
+     * @var StoreCookieManager
      */
     protected $storeCookieManager;
 
@@ -19,23 +21,10 @@ class StoreCookieManagerTest extends \PHPUnit\Framework\TestCase
      */
     protected $existingCookies;
 
-    protected function setUp(): void
-    {
-        $this->storeCookieManager = Bootstrap::getObjectManager()->create(
-            \Magento\Store\Model\StoreCookieManager::class
-        );
-        $this->existingCookies = $_COOKIE;
-    }
-
-    protected function tearDown(): void
-    {
-        $_COOKIE = $this->existingCookies;
-    }
-
     public function testSetCookie()
     {
         $storeCode = 'store code';
-        $store = $this->createPartialMock(\Magento\Store\Model\Store::class, ['getStorePath', 'getCode']);
+        $store = $this->createPartialMock(Store::class, ['getStorePath', 'getCode']);
         $store->expects($this->once())->method('getStorePath')->willReturn('/');
         $store->expects($this->once())->method('getCode')->willReturn($storeCode);
 
@@ -43,5 +32,18 @@ class StoreCookieManagerTest extends \PHPUnit\Framework\TestCase
         $this->storeCookieManager->setStoreCookie($store);
         $this->assertArrayHasKey(StoreCookieManager::COOKIE_NAME, $_COOKIE);
         $this->assertEquals($storeCode, $_COOKIE[StoreCookieManager::COOKIE_NAME]);
+    }
+
+    protected function setUp(): void
+    {
+        $this->storeCookieManager = Bootstrap::getObjectManager()->create(
+            StoreCookieManager::class
+        );
+        $this->existingCookies = $_COOKIE;
+    }
+
+    protected function tearDown(): void
+    {
+        $_COOKIE = $this->existingCookies;
     }
 }

@@ -3,10 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\I18n\Dictionary\Loader\File;
 
+use DomainException;
+use InvalidArgumentException;
+use Magento\Setup\Module\I18n\Dictionary;
 use Magento\Setup\Module\I18n\Dictionary\Loader\FileInterface;
+use Magento\Setup\Module\I18n\Dictionary\Phrase;
 use Magento\Setup\Module\I18n\Factory;
+use RuntimeException;
 
 /**
  *  Abstract dictionary loader from file
@@ -16,7 +22,7 @@ abstract class AbstractFile implements FileInterface
     /**
      * Domain abstract factory
      *
-     * @var \Magento\Setup\Module\I18n\Factory
+     * @var Factory
      */
     protected $_factory;
 
@@ -77,13 +83,23 @@ abstract class AbstractFile implements FileInterface
      *
      * @param string $file
      * @return void
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     protected function _openFile($file)
     {
         if (false === ($this->_fileHandler = @fopen($file, 'r'))) {
-            throw new \InvalidArgumentException(sprintf('Cannot open dictionary file: "%s".', $file));
+            throw new InvalidArgumentException(sprintf('Cannot open dictionary file: "%s".', $file));
         }
+    }
+
+    /**
+     * Create dictionary
+     *
+     * @return Dictionary
+     */
+    protected function _createDictionary()
+    {
+        return $this->_factory->createDictionary();
     }
 
     /**
@@ -94,6 +110,26 @@ abstract class AbstractFile implements FileInterface
     abstract protected function _readFile();
 
     /**
+     * Create phrase
+     *
+     * @param array $data
+     * @return Phrase
+     * @throws RuntimeException
+     */
+    protected function _createPhrase($data)
+    {
+        try {
+            return $this->_factory->createPhrase($data);
+        } catch (DomainException $e) {
+            throw new RuntimeException(
+                sprintf('Invalid row #%d: "%s".', $this->_position, $e->getMessage())
+                . "\n"
+                . 'Each row has to consist of 4 columns: original phrase, translation, context type, context value'
+            );
+        }
+    }
+
+    /**
      * Close file handler
      *
      * @return void
@@ -101,35 +137,5 @@ abstract class AbstractFile implements FileInterface
     protected function _closeFile()
     {
         fclose($this->_fileHandler);
-    }
-
-    /**
-     * Create dictionary
-     *
-     * @return \Magento\Setup\Module\I18n\Dictionary
-     */
-    protected function _createDictionary()
-    {
-        return $this->_factory->createDictionary();
-    }
-
-    /**
-     * Create phrase
-     *
-     * @param array $data
-     * @return \Magento\Setup\Module\I18n\Dictionary\Phrase
-     * @throws \RuntimeException
-     */
-    protected function _createPhrase($data)
-    {
-        try {
-            return $this->_factory->createPhrase($data);
-        } catch (\DomainException $e) {
-            throw new \RuntimeException(
-                sprintf('Invalid row #%d: "%s".', $this->_position, $e->getMessage())
-                . "\n"
-                . 'Each row has to consist of 4 columns: original phrase, translation, context type, context value'
-            );
-        }
     }
 }

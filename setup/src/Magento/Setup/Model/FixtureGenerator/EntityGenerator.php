@@ -6,6 +6,14 @@
 
 namespace Magento\Setup\Model\FixtureGenerator;
 
+use Exception;
+use Magento\Eav\Api\Data\AttributeInterface;
+use Magento\Eav\Model\ResourceModel\AttributeLoader;
+use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\DB\Adapter\AdapterInterface;
+use Magento\Framework\EntityManager\EntityMetadataInterface;
+use Magento\Framework\EntityManager\MetadataPool;
+use Magento\Framework\EntityManager\Sequence\SequenceRegistry;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\ValidatorException;
 
@@ -37,27 +45,27 @@ class EntityGenerator
     private $entityType;
 
     /**
-     * @var \Magento\Setup\Model\FixtureGenerator\SqlCollector
+     * @var SqlCollector
      */
     private $sqlCollector;
 
     /**
-     * @var \Magento\Framework\App\ResourceConnection
+     * @var ResourceConnection
      */
     private $resourceConnection;
 
     /**
-     * @var \Magento\Eav\Model\ResourceModel\AttributeLoader
+     * @var AttributeLoader
      */
     private $attributeLoader;
 
     /**
-     * @var \Magento\Eav\Api\Data\AttributeInterface[]
+     * @var AttributeInterface[]
      */
     private $attributes;
 
     /**
-     * @var \Magento\Framework\DB\Adapter\AdapterInterface
+     * @var AdapterInterface
      */
     private $connection;
 
@@ -79,17 +87,17 @@ class EntityGenerator
     private $primaryEntityIdTables;
 
     /**
-     * @var \Magento\Framework\EntityManager\MetadataPool
+     * @var MetadataPool
      */
     private $metadataPool;
 
     /**
-     * @var \Magento\Framework\EntityManager\EntityMetadataInterface
+     * @var EntityMetadataInterface
      */
     private $entityMetadata;
 
     /**
-     * @var \Magento\Framework\EntityManager\Sequence\SequenceRegistry
+     * @var SequenceRegistry
      */
     private $sequenceRegistry;
 
@@ -105,24 +113,25 @@ class EntityGenerator
 
     /**
      * @param SqlCollector $sqlCollector
-     * @param \Magento\Eav\Model\ResourceModel\AttributeLoader $attributeLoader
-     * @param \Magento\Framework\App\ResourceConnection $resourceConnection
-     * @param \Magento\Framework\EntityManager\MetadataPool $metadataPool
-     * @param \Magento\Framework\EntityManager\Sequence\SequenceRegistry $sequenceRegistry
+     * @param AttributeLoader $attributeLoader
+     * @param ResourceConnection $resourceConnection
+     * @param MetadataPool $metadataPool
+     * @param SequenceRegistry $sequenceRegistry
      * @param string $entityType
      * @param array $customTableMap
      * @param int $bunchSize
      */
     public function __construct(
-        \Magento\Setup\Model\FixtureGenerator\SqlCollector $sqlCollector,
-        \Magento\Eav\Model\ResourceModel\AttributeLoader $attributeLoader,
-        \Magento\Framework\App\ResourceConnection $resourceConnection,
-        \Magento\Framework\EntityManager\MetadataPool $metadataPool,
-        \Magento\Framework\EntityManager\Sequence\SequenceRegistry $sequenceRegistry,
-        $entityType,
-        $customTableMap = [],
-        $bunchSize = self::SQL_DEFAULT_BUNCH_AMOUNT
-    ) {
+        SqlCollector       $sqlCollector,
+        AttributeLoader    $attributeLoader,
+        ResourceConnection $resourceConnection,
+        MetadataPool       $metadataPool,
+        SequenceRegistry   $sequenceRegistry,
+                           $entityType,
+                           $customTableMap = [],
+                           $bunchSize = self::SQL_DEFAULT_BUNCH_AMOUNT
+    )
+    {
         $this->sqlCollector = $sqlCollector;
         $this->resourceConnection = $resourceConnection;
         $this->attributeLoader = $attributeLoader;
@@ -139,8 +148,8 @@ class EntityGenerator
      * @param TemplateEntityGeneratorInterface $entityGenerator
      * @param int $entitiesAmount
      * @param callable $fixture
-     * @throws LocalizedException
      * @return void
+     * @throws LocalizedException
      */
     public function generate(TemplateEntityGeneratorInterface $entityGenerator, $entitiesAmount, callable $fixture)
     {
@@ -151,7 +160,7 @@ class EntityGenerator
             $this->sqlCollector->disable();
             $entity->delete();
             $this->getConnection()->commit();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->getConnection()->rollBack();
             throw new LocalizedException(
                 __('Cannot generate entities - error occurred during template creation: %1', $e->getMessage()),
@@ -172,6 +181,18 @@ class EntityGenerator
             }
         }
         gc_enable();
+    }
+
+    /**
+     * @return AdapterInterface
+     */
+    private function getConnection()
+    {
+        if (null === $this->connection) {
+            $this->connection = $this->resourceConnection->getConnection();
+        }
+
+        return $this->connection;
     }
 
     /**
@@ -226,66 +247,7 @@ class EntityGenerator
     }
 
     /**
-     * If custom handler passed for table then override binds with it
-     *
-     * @param string $table
-     * @param int $entityId
-     * @param int $entityNumber
-     * @param array $fixtureMap
-     * @param array $binds
-     * @return array
-     */
-    private function bindWithCustomHandler($table, $entityId, $entityNumber, $fixtureMap, $binds)
-    {
-        if (isset($this->customTableMap[$table]['handler'])
-            && is_callable($this->customTableMap[$table]['handler'])
-        ) {
-            $binds = $this->customTableMap[$table]['handler']($entityId, $entityNumber, $fixtureMap, $binds);
-        }
-
-        return $binds;
-    }
-
-    /**
-     * Save entities to DB and reset entities holder
-     *
-     * @param array $map
-     * @return void
-     * @throws LocalizedException
-     */
-    private function saveEntities(array &$map)
-    {
-        $this->getConnection()->beginTransaction();
-        try {
-            foreach ($map as $table => $data) {
-                $this->getConnection()->insertMultiple($table, $data);
-            }
-            $this->getConnection()->commit();
-        } catch (\Exception $e) {
-            $this->getConnection()->rollBack();
-            throw new LocalizedException(
-                __('Cannot save entity. Error occurred: %1', $e->getMessage()),
-                $e
-            );
-        }
-
-        $map = [];
-    }
-
-    /**
-     * @return \Magento\Framework\DB\Adapter\AdapterInterface
-     */
-    private function getConnection()
-    {
-        if (null === $this->connection) {
-            $this->connection = $this->resourceConnection->getConnection();
-        }
-
-        return $this->connection;
-    }
-
-    /**
-     * @return \Magento\Framework\EntityManager\EntityMetadataInterface
+     * @return EntityMetadataInterface
      */
     private function getEntityMetadata()
     {
@@ -294,55 +256,6 @@ class EntityGenerator
         }
 
         return $this->entityMetadata;
-    }
-
-    /**
-     * Get entity table name
-     *
-     * @return string
-     */
-    private function getEntityTable()
-    {
-        if (null === $this->entityTable) {
-            $this->entityTable = $this->getEntityMetadata()->getEntityTable();
-        }
-
-        return $this->entityTable;
-    }
-
-    /**
-     * Get field name for specific table where stored link to primary key of entity table
-     * Find field by FK to entity table
-     *
-     * @param string $table
-     * @return string
-     * @throws ValidatorException
-     */
-    private function getEntityIdField($table)
-    {
-        if (!isset($this->tableToEntityIdMap[$table])) {
-            $foreignKey = null;
-            foreach ($this->primaryEntityIdTables as $primaryTable) {
-                $foreignKey = array_filter(
-                    $this->getConnection()->getForeignKeys($table),
-                    function ($ddl) use ($primaryTable) {
-                        return $ddl['REF_TABLE_NAME'] === $primaryTable
-                        && $ddl['REF_COLUMN_NAME'] === $this->getEntityIdField($primaryTable);
-                    }
-                );
-                if ($foreignKey) {
-                    break;
-                }
-            }
-            if (!$foreignKey) {
-                throw new ValidatorException(
-                    __('The entity ID field for the "%1" table wasn\'t found. Verify the field and try again.', $table)
-                );
-            }
-            $this->tableToEntityIdMap[$table] = current($foreignKey)['COLUMN_NAME'];
-        }
-
-        return $this->tableToEntityIdMap[$table];
     }
 
     /**
@@ -410,26 +323,17 @@ class EntityGenerator
     }
 
     /**
-     * Get EAV attributes metadata for non-static attributes
+     * Get entity table name
      *
-     * @return array
+     * @return string
      */
-    private function getAttributesMetadata()
+    private function getEntityTable()
     {
-        if (null === $this->attributes) {
-            foreach ($this->attributeLoader->getAttributes($this->entityType) as $attribute) {
-                if ($attribute->isStatic()) {
-                    continue;
-                }
-                $this->attributes[$attribute->getBackendTable()][$attribute->getAttributeCode()] = [
-                    'value_field' => 'value',
-                    'link_field' => 'attribute_id',
-                    'attribute_id' => $attribute->getAttributeId(),
-                ];
-            }
+        if (null === $this->entityTable) {
+            $this->entityTable = $this->getEntityMetadata()->getEntityTable();
         }
 
-        return $this->attributes;
+        return $this->entityTable;
     }
 
     /**
@@ -469,16 +373,26 @@ class EntityGenerator
     }
 
     /**
-     * @param string $fixtureField
-     * @param int $entityId
-     * @param int $entityNumber
-     * @param array $fixtureMap
-     * @return mixed|string
+     * Get EAV attributes metadata for non-static attributes
+     *
+     * @return array
      */
-    private function getFixtureValue($fixtureField, $entityId, $entityNumber, array $fixtureMap)
+    private function getAttributesMetadata()
     {
-        $fixture = isset($fixtureMap[$fixtureField]) ? $fixtureMap[$fixtureField] : null;
-        return $fixture ? $this->getBindValue($fixture, $entityId, $entityNumber) : '';
+        if (null === $this->attributes) {
+            foreach ($this->attributeLoader->getAttributes($this->entityType) as $attribute) {
+                if ($attribute->isStatic()) {
+                    continue;
+                }
+                $this->attributes[$attribute->getBackendTable()][$attribute->getAttributeCode()] = [
+                    'value_field' => 'value',
+                    'link_field' => 'attribute_id',
+                    'attribute_id' => $attribute->getAttributeId(),
+                ];
+            }
+        }
+
+        return $this->attributes;
     }
 
     /**
@@ -494,5 +408,100 @@ class EntityGenerator
             : $fixture;
 
         return is_array($bindValue) ? array_shift($bindValue) : $bindValue;
+    }
+
+    /**
+     * @param string $fixtureField
+     * @param int $entityId
+     * @param int $entityNumber
+     * @param array $fixtureMap
+     * @return mixed|string
+     */
+    private function getFixtureValue($fixtureField, $entityId, $entityNumber, array $fixtureMap)
+    {
+        $fixture = isset($fixtureMap[$fixtureField]) ? $fixtureMap[$fixtureField] : null;
+        return $fixture ? $this->getBindValue($fixture, $entityId, $entityNumber) : '';
+    }
+
+    /**
+     * Get field name for specific table where stored link to primary key of entity table
+     * Find field by FK to entity table
+     *
+     * @param string $table
+     * @return string
+     * @throws ValidatorException
+     */
+    private function getEntityIdField($table)
+    {
+        if (!isset($this->tableToEntityIdMap[$table])) {
+            $foreignKey = null;
+            foreach ($this->primaryEntityIdTables as $primaryTable) {
+                $foreignKey = array_filter(
+                    $this->getConnection()->getForeignKeys($table),
+                    function ($ddl) use ($primaryTable) {
+                        return $ddl['REF_TABLE_NAME'] === $primaryTable
+                            && $ddl['REF_COLUMN_NAME'] === $this->getEntityIdField($primaryTable);
+                    }
+                );
+                if ($foreignKey) {
+                    break;
+                }
+            }
+            if (!$foreignKey) {
+                throw new ValidatorException(
+                    __('The entity ID field for the "%1" table wasn\'t found. Verify the field and try again.', $table)
+                );
+            }
+            $this->tableToEntityIdMap[$table] = current($foreignKey)['COLUMN_NAME'];
+        }
+
+        return $this->tableToEntityIdMap[$table];
+    }
+
+    /**
+     * If custom handler passed for table then override binds with it
+     *
+     * @param string $table
+     * @param int $entityId
+     * @param int $entityNumber
+     * @param array $fixtureMap
+     * @param array $binds
+     * @return array
+     */
+    private function bindWithCustomHandler($table, $entityId, $entityNumber, $fixtureMap, $binds)
+    {
+        if (isset($this->customTableMap[$table]['handler'])
+            && is_callable($this->customTableMap[$table]['handler'])
+        ) {
+            $binds = $this->customTableMap[$table]['handler']($entityId, $entityNumber, $fixtureMap, $binds);
+        }
+
+        return $binds;
+    }
+
+    /**
+     * Save entities to DB and reset entities holder
+     *
+     * @param array $map
+     * @return void
+     * @throws LocalizedException
+     */
+    private function saveEntities(array &$map)
+    {
+        $this->getConnection()->beginTransaction();
+        try {
+            foreach ($map as $table => $data) {
+                $this->getConnection()->insertMultiple($table, $data);
+            }
+            $this->getConnection()->commit();
+        } catch (Exception $e) {
+            $this->getConnection()->rollBack();
+            throw new LocalizedException(
+                __('Cannot save entity. Error occurred: %1', $e->getMessage()),
+                $e
+            );
+        }
+
+        $map = [];
     }
 }

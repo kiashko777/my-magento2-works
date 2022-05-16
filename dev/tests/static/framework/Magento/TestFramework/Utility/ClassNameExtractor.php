@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Utility;
 
 class ClassNameExtractor
@@ -19,6 +20,25 @@ class ClassNameExtractor
         $name = $this->getName($fileContent);
         if ($name) {
             return $namespace ? $namespace . '\\' . $name : $name;
+        }
+        return false;
+    }
+
+    /**
+     * Get class namespace
+     *
+     * @param string $fileContent
+     * @return string|bool
+     */
+    public function getNamespace($fileContent)
+    {
+        preg_match_all(
+            '/namespace\s([a-z0-9\\\\]+);/im',
+            $fileContent,
+            $namespaceMatches
+        );
+        if (isset($namespaceMatches[1][0])) {
+            return $namespaceMatches[1][0];
         }
         return false;
     }
@@ -41,25 +61,6 @@ class ClassNameExtractor
             if (isset($classMatches[2][0])) {
                 return $classMatches[2][0];
             }
-        }
-        return false;
-    }
-
-    /**
-     * Get class namespace
-     *
-     * @param string $fileContent
-     * @return string|bool
-     */
-    public function getNamespace($fileContent)
-    {
-        preg_match_all(
-            '/namespace\s([a-z0-9\\\\]+);/im',
-            $fileContent,
-            $namespaceMatches
-        );
-        if (isset($namespaceMatches[1][0])) {
-            return $namespaceMatches[1][0];
         }
         return false;
     }

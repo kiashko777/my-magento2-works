@@ -6,29 +6,25 @@
 
 namespace Magento\Newsletter\Model\ResourceModel;
 
+use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class SubscriberTest extends \PHPUnit\Framework\TestCase
+class SubscriberTest extends TestCase
 {
     /**
-     * @var \Magento\Newsletter\Model\ResourceModel\Subscriber
+     * @var Subscriber
      */
     protected $_resourceModel;
-
-    protected function setUp(): void
-    {
-        $this->_resourceModel = Bootstrap::getObjectManager()
-            ->create(\Magento\Newsletter\Model\ResourceModel\Subscriber::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Newsletter/_files/subscribers.php
      */
     public function testLoadByCustomerDataWithCustomerId()
     {
-        /** @var \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository */
+        /** @var CustomerRepositoryInterface $customerRepository */
         $customerRepository = Bootstrap::getObjectManager()
-            ->create(\Magento\Customer\Api\CustomerRepositoryInterface::class);
+            ->create(CustomerRepositoryInterface::class);
         $customerData = $customerRepository->getById(1);
         $result = $this->_resourceModel->loadByCustomerData($customerData);
 
@@ -42,13 +38,19 @@ class SubscriberTest extends \PHPUnit\Framework\TestCase
      */
     public function testLoadByCustomerDataWithoutCustomerId()
     {
-        /** @var \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository */
+        /** @var CustomerRepositoryInterface $customerRepository */
         $customerRepository = Bootstrap::getObjectManager()
-            ->create(\Magento\Customer\Api\CustomerRepositoryInterface::class);
+            ->create(CustomerRepositoryInterface::class);
         $customerData = $customerRepository->getById(2);
         $result = $this->_resourceModel->loadByCustomerData($customerData);
 
         $this->assertEquals(0, $result['customer_id']);
         $this->assertEquals('customer_two@example.com', $result['subscriber_email']);
+    }
+
+    protected function setUp(): void
+    {
+        $this->_resourceModel = Bootstrap::getObjectManager()
+            ->create(Subscriber::class);
     }
 }

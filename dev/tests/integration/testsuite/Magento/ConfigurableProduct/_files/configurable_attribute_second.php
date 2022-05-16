@@ -4,16 +4,18 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Catalog\Setup\CategorySetup;
 use Magento\Eav\Api\AttributeRepositoryInterface;
+use Magento\Eav\Model\Config;
 use Magento\TestFramework\Helper\Bootstrap;
 
-$eavConfig = Bootstrap::getObjectManager()->get(\Magento\Eav\Model\Config::class);
+$eavConfig = Bootstrap::getObjectManager()->get(Config::class);
 $secondAttribute = $eavConfig->getAttribute('catalog_product', 'test_configurable_second');
 
 $eavConfig->clear();
 
-/** @var $installer \Magento\Catalog\Setup\CategorySetup */
-$installer = Bootstrap::getObjectManager()->create(\Magento\Catalog\Setup\CategorySetup::class);
+/** @var $installer CategorySetup */
+$installer = Bootstrap::getObjectManager()->create(CategorySetup::class);
 
 if (!$secondAttribute->getId()) {
 

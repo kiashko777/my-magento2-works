@@ -54,24 +54,6 @@ class ItemTest extends TestCase
     private $priceIndexerProcessor;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->mutableConfig = $this->objectManager->get(MutableScopeConfigInterface::class);
-        $this->stockItemResource = $this->objectManager->get(ItemResource::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->stockRegistryStorage = $this->objectManager->get(StockRegistryStorage::class);
-        $this->stockIndexerProcessor = $this->objectManager->get(StockProcessor::class);
-        $this->priceIndexerProcessor = $this->objectManager->get(PriceProcessor::class);
-    }
-
-    /**
      * @dataProvider updateSetOutOfStockDataProvider
      * @magentoDataFixture Magento/Catalog/_files/product_simple_duplicated.php
      * @magentoDataFixture Magento/Catalog/_files/product_simple_backorders_no.php
@@ -93,6 +75,22 @@ class ItemTest extends TestCase
         $this->assertProductsStockItem($expectedStockItems);
         $this->assertEquals(StateInterface::STATUS_INVALID, $this->stockIndexerProcessor->getIndexer()->getStatus());
         $this->assertEquals(StateInterface::STATUS_INVALID, $this->priceIndexerProcessor->getIndexer()->getStatus());
+    }
+
+    /**
+     * Assert products stock item
+     *
+     * @param array $expectedStockItems
+     * @return void
+     */
+    private function assertProductsStockItem(array $expectedStockItems): void
+    {
+        $this->stockRegistryStorage->clean();
+        foreach ($expectedStockItems as $sku => $expectedData) {
+            $product = $this->productRepository->get($sku, false, null, true);
+            $stockItem = $product->getExtensionAttributes()->getStockItem();
+            $this->assertEmpty(array_diff_assoc($expectedData, $stockItem->getData()), 'Actual stock item data not equals expected data.');
+        }
     }
 
     /**
@@ -166,6 +164,22 @@ class ItemTest extends TestCase
     }
 
     /**
+     * Update products stock item
+     *
+     * @param array $productsStockData
+     * @return void
+     */
+    private function updateProductsStockItem(array $productsStockData): void
+    {
+        foreach ($productsStockData as $sku => $stockData) {
+            $product = $this->productRepository->get($sku, true, null, true);
+            $stockItem = $product->getExtensionAttributes()->getStockItem();
+            $stockItem->addData($stockData);
+            $this->productRepository->save($product);
+        }
+    }
+
+    /**
      * @return array
      */
     public function updateUpdateSetInStockDataProvider(): array
@@ -220,6 +234,26 @@ class ItemTest extends TestCase
     }
 
     /**
+     * Assert low_stock_date value of products stock item
+     *
+     * @param array $expectedLowStockDate
+     * @return void
+     */
+    private function assertLowStockDate(array $expectedLowStockDate): void
+    {
+        $this->stockRegistryStorage->clean();
+        foreach ($expectedLowStockDate as $sku => $expectedData) {
+            $product = $this->productRepository->get($sku, false, null, true);
+            $stockItem = $product->getExtensionAttributes()->getStockItem();
+            if ($expectedData['is_low_stock_date_null']) {
+                $this->assertNull($stockItem->getLowStockDate());
+            } else {
+                $this->assertNotNull($stockItem->getLowStockDate());
+            }
+        }
+    }
+
+    /**
      * @return array
      */
     public function updateLowStockDateDataProvider(): array
@@ -251,54 +285,20 @@ class ItemTest extends TestCase
     }
 
     /**
-     * Update products stock item
-     *
-     * @param array $productsStockData
-     * @return void
+     * @inheritdoc
      */
-    private function updateProductsStockItem(array $productsStockData): void
+    protected function setUp(): void
     {
-        foreach ($productsStockData as $sku => $stockData) {
-            $product = $this->productRepository->get($sku, true, null, true);
-            $stockItem = $product->getExtensionAttributes()->getStockItem();
-            $stockItem->addData($stockData);
-            $this->productRepository->save($product);
-        }
-    }
+        parent::setUp();
 
-    /**
-     * Assert products stock item
-     *
-     * @param array $expectedStockItems
-     * @return void
-     */
-    private function assertProductsStockItem(array $expectedStockItems): void
-    {
-        $this->stockRegistryStorage->clean();
-        foreach ($expectedStockItems as $sku => $expectedData) {
-            $product = $this->productRepository->get($sku, false, null, true);
-            $stockItem = $product->getExtensionAttributes()->getStockItem();
-            $this->assertEmpty(array_diff_assoc($expectedData, $stockItem->getData()), 'Actual stock item data not equals expected data.');
-        }
-    }
-
-    /**
-     * Assert low_stock_date value of products stock item
-     *
-     * @param array $expectedLowStockDate
-     * @return void
-     */
-    private function assertLowStockDate(array $expectedLowStockDate): void
-    {
-        $this->stockRegistryStorage->clean();
-        foreach ($expectedLowStockDate as $sku => $expectedData) {
-            $product = $this->productRepository->get($sku, false, null, true);
-            $stockItem = $product->getExtensionAttributes()->getStockItem();
-            if ($expectedData['is_low_stock_date_null']) {
-                $this->assertNull($stockItem->getLowStockDate());
-            } else {
-                $this->assertNotNull($stockItem->getLowStockDate());
-            }
-        }
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->mutableConfig = $this->objectManager->get(MutableScopeConfigInterface::class);
+        $this->stockItemResource = $this->objectManager->get(ItemResource::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->stockRegistryStorage = $this->objectManager->get(StockRegistryStorage::class);
+        $this->stockIndexerProcessor = $this->objectManager->get(StockProcessor::class);
+        $this->priceIndexerProcessor = $this->objectManager->get(PriceProcessor::class);
     }
 }

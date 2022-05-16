@@ -31,17 +31,6 @@ class FixturesTest extends FixturesAbstractClass implements FixturesInterface
     private $fixtureCallStorage;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->config = $this->objectManager->get(ScopeConfigInterface::class);
-        $this->fixtureCallStorage = $this->objectManager->get(FixtureCallStorage::class);
-    }
-
-    /**
      * @magentoAdminConfigFixture test_section/test_group/field_2 new_value
      * @magentoAdminConfigFixture test_section/test_group/field_3 new_value
      * @magentoConfigFixture current_store test_section/test_group/field_2 new_value
@@ -60,10 +49,41 @@ class FixturesTest extends FixturesAbstractClass implements FixturesInterface
         array $configs,
         array $storeConfigs,
         array $fixtures
-    ): void {
+    ): void
+    {
         $this->assertConfigFieldValues($configs);
         $this->assertConfigFieldValues($storeConfigs, ScopeInterface::SCOPE_STORES);
         $this->assertUsedFixturesCount($fixtures);
+    }
+
+    /**
+     * Asserts config field values.
+     *
+     * @param array $configs
+     * @param string $scope
+     * @return void
+     */
+    private function assertConfigFieldValues(
+        array  $configs,
+        string $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT
+    ): void
+    {
+        foreach ($configs as $path => $expectedValue) {
+            $this->assertEquals($expectedValue, $this->config->getValue($path, $scope));
+        }
+    }
+
+    /**
+     * Asserts count of used fixtures.
+     *
+     * @param array $fixtures
+     * @return void
+     */
+    private function assertUsedFixturesCount(array $fixtures): void
+    {
+        foreach ($fixtures as $fixture => $count) {
+            $this->assertEquals($count, $this->fixtureCallStorage->getFixturesCount($fixture));
+        }
     }
 
     /**
@@ -81,7 +101,8 @@ class FixturesTest extends FixturesAbstractClass implements FixturesInterface
         array $configs,
         array $storeConfigs,
         array $fixtures
-    ): void {
+    ): void
+    {
         $this->assertConfigFieldValues($configs);
         $this->assertConfigFieldValues($storeConfigs, ScopeInterface::SCOPE_STORES);
         $this->assertUsedFixturesCount($fixtures);
@@ -178,31 +199,13 @@ class FixturesTest extends FixturesAbstractClass implements FixturesInterface
     }
 
     /**
-     * Asserts config field values.
-     *
-     * @param array $configs
-     * @param string $scope
-     * @return void
+     * @inheritdoc
      */
-    private function assertConfigFieldValues(
-        array $configs,
-        string $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT
-    ): void {
-        foreach ($configs as $path => $expectedValue) {
-            $this->assertEquals($expectedValue, $this->config->getValue($path, $scope));
-        }
-    }
-
-    /**
-     * Asserts count of used fixtures.
-     *
-     * @param array $fixtures
-     * @return void
-     */
-    private function assertUsedFixturesCount(array $fixtures): void
+    protected function setUp(): void
     {
-        foreach ($fixtures as $fixture => $count) {
-            $this->assertEquals($count, $this->fixtureCallStorage->getFixturesCount($fixture));
-        }
+        parent::setUp();
+
+        $this->config = $this->objectManager->get(ScopeConfigInterface::class);
+        $this->fixtureCallStorage = $this->objectManager->get(FixtureCallStorage::class);
     }
 }

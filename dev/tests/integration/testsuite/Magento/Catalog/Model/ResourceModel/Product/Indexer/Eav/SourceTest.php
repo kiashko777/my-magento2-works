@@ -3,57 +3,47 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Model\ResourceModel\Product\Indexer\Eav;
 
-use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\Catalog\Model\Product\Attribute\Source\Status;
-use Magento\Eav\Api\Data\AttributeOptionInterface;
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Catalog\_files\MultiselectSourceMock;
 use Magento\Catalog\Api\Data\ProductAttributeInterface;
-use Magento\Store\Model\StoreManagerInterface;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Indexer\Product\Eav\Processor;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\ResourceModel\Eav\Attribute;
+use Magento\Catalog\Model\ResourceModel\Product;
+use Magento\Eav\Api\Data\AttributeOptionInterface;
+use Magento\Eav\Model\Config;
+use Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection;
+use Magento\Framework\DB\Select;
+use Magento\Framework\DB\Sql\Expression;
 use Magento\Store\Api\Data\StoreInterface;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class SourceTest
  * @magentoAppIsolation enabled
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class SourceTest extends \PHPUnit\Framework\TestCase
+class SourceTest extends TestCase
 {
     /**
-     * @var \Magento\Catalog\Model\ResourceModel\Product\Indexer\Eav\Source
+     * @var Source
      */
     protected $source;
 
     /**
-     * @var \Magento\Catalog\Model\ResourceModel\Product
+     * @var Product
      */
     protected $productResource;
 
     /**
-     * @var \Magento\Catalog\Model\Indexer\Product\Eav\Processor
+     * @var Processor
      */
     protected $_eavIndexerProcessor;
-
-    /**
-     * Sets up the fixture, for example, opens a network connection.
-     * This method is called before a test is executed.
-     */
-    protected function setUp(): void
-    {
-        $this->source = Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\ResourceModel\Product\Indexer\Eav\Source::class
-        );
-
-        $this->productResource = Bootstrap::getObjectManager()->get(
-            \Magento\Catalog\Model\ResourceModel\Product::class
-        );
-
-        $this->_eavIndexerProcessor = Bootstrap::getObjectManager()->get(
-            \Magento\Catalog\Model\Indexer\Product\Eav\Processor::class
-        );
-    }
 
     /**
      * Test reindex for configurable product with both disabled and enabled variations.
@@ -67,16 +57,16 @@ class SourceTest extends \PHPUnit\Framework\TestCase
         /** @var ProductRepositoryInterface $productRepository */
         $productRepository = $objectManager->create(ProductRepositoryInterface::class);
 
-        /** @var \Magento\Catalog\Model\ResourceModel\Eav\Attribute $attr **/
-        $attr = Bootstrap::getObjectManager()->get(\Magento\Eav\Model\Config::class)
-           ->getAttribute('catalog_product', 'test_configurable');
+        /** @var Attribute $attr * */
+        $attr = Bootstrap::getObjectManager()->get(Config::class)
+            ->getAttribute('catalog_product', 'test_configurable');
         $attr->setIsFilterable(1)->save();
 
         $this->_eavIndexerProcessor->reindexAll();
 
-        /** @var \Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection $options **/
+        /** @var Collection $options * */
         $options = $objectManager->create(
-            \Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection::class
+            Collection::class
         );
         $options->setAttributeFilter($attr->getId())->load();
         $optionIds = $options->getAllIds();
@@ -91,12 +81,12 @@ class SourceTest extends \PHPUnit\Framework\TestCase
         $result = $connection->fetchAll($select);
         $this->assertCount(2, $result);
 
-        /** @var \Magento\Catalog\Model\Product $product1 **/
+        /** @var \Magento\Catalog\Model\Product $product1 * */
         $product1 = $productRepository->getById(10);
         $product1->setStatus(Status::STATUS_DISABLED);
         $productRepository->save($product1);
 
-        /** @var \Magento\Catalog\Model\Product $product2 **/
+        /** @var \Magento\Catalog\Model\Product $product2 * */
         $product2 = $productRepository->getById(20);
         $product2->setStatus(Status::STATUS_DISABLED);
         $productRepository->save($product2);
@@ -104,19 +94,19 @@ class SourceTest extends \PHPUnit\Framework\TestCase
         $result = $connection->fetchAll($select);
         $this->assertCount(0, $result);
 
-        /** @var \Magento\Catalog\Model\Product $product1 **/
+        /** @var \Magento\Catalog\Model\Product $product1 * */
         $product1 = $productRepository->getById(10);
         $product1->setStatus(Status::STATUS_ENABLED)->setWebsiteIds([]);
         $productRepository->save($product1);
 
-        /** @var \Magento\Catalog\Model\Product $product2 **/
+        /** @var \Magento\Catalog\Model\Product $product2 * */
         $product2 = $productRepository->getById(20);
         $product2->setStatus(Status::STATUS_ENABLED);
         $productRepository->save($product2);
 
         $statusSelect = clone $select;
-        $statusSelect->reset(\Magento\Framework\DB\Select::COLUMNS)
-            ->columns(new \Magento\Framework\DB\Sql\Expression('COUNT(*)'));
+        $statusSelect->reset(Select::COLUMNS)
+            ->columns(new Expression('COUNT(*)'));
         $this->assertEquals(1, $connection->fetchOne($statusSelect));
     }
 
@@ -131,24 +121,24 @@ class SourceTest extends \PHPUnit\Framework\TestCase
         /** @var ProductRepositoryInterface $productRepository */
         $productRepository = $objectManager->create(ProductRepositoryInterface::class);
 
-        /** @var \Magento\Catalog\Model\ResourceModel\Eav\Attribute $attr **/
-        $attr = $objectManager->get(\Magento\Eav\Model\Config::class)
-           ->getAttribute('catalog_product', 'multiselect_attribute');
+        /** @var Attribute $attr * */
+        $attr = $objectManager->get(Config::class)
+            ->getAttribute('catalog_product', 'multiselect_attribute');
 
-        /** @var $options \Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection */
-        $options = $objectManager->create(\Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection::class);
+        /** @var $options Collection */
+        $options = $objectManager->create(Collection::class);
         $options->setAttributeFilter($attr->getId());
         $optionIds = $options->getAllIds();
         $product1Id = $optionIds[0] * 10;
         $product2Id = $optionIds[1] * 10;
 
-        /** @var \Magento\Catalog\Model\Product $product1 **/
+        /** @var \Magento\Catalog\Model\Product $product1 * */
         $product1 = $productRepository->getById($product1Id);
         $product1->setSpecialFromDate(date('Y-m-d H:i:s'));
         $product1->setNewsFromDate(date('Y-m-d H:i:s'));
         $productRepository->save($product1);
 
-        /** @var \Magento\Catalog\Model\Product $product2 **/
+        /** @var \Magento\Catalog\Model\Product $product2 * */
         $product2 = $productRepository->getById($product2Id);
         $product1->setSpecialFromDate(date('Y-m-d H:i:s'));
         $product1->setNewsFromDate(date('Y-m-d H:i:s'));
@@ -176,8 +166,8 @@ class SourceTest extends \PHPUnit\Framework\TestCase
         /** @var StoreInterface $store */
         $store = $objectManager->get(StoreManagerInterface::class)
             ->getStore();
-        /** @var \Magento\Catalog\Model\ResourceModel\Eav\Attribute $attribute **/
-        $attribute = $objectManager->get(\Magento\Eav\Model\Config::class)
+        /** @var Attribute $attribute * */
+        $attribute = $objectManager->get(Config::class)
             ->getAttribute(ProductAttributeInterface::ENTITY_TYPE_CODE, 'dropdown_without_default');
         /** @var AttributeOptionInterface $option */
         $option = $attribute->getOptions()[1];
@@ -187,7 +177,7 @@ class SourceTest extends \PHPUnit\Framework\TestCase
         $expected = [
             'entity_id' => $product->getId(),
             'attribute_id' => $attribute->getId(),
-            'store_id'  => $store->getId(),
+            'store_id' => $store->getId(),
             'value' => $option->getValue(),
             'source_id' => $product->getId(),
         ];
@@ -211,25 +201,25 @@ class SourceTest extends \PHPUnit\Framework\TestCase
         /** @var ProductRepositoryInterface $productRepository */
         $productRepository = $objectManager->create(ProductRepositoryInterface::class);
 
-        /** @var \Magento\Catalog\Model\ResourceModel\Eav\Attribute $attr **/
-        $attr = $objectManager->get(\Magento\Eav\Model\Config::class)
-           ->getAttribute('catalog_product', 'multiselect_attr_with_source');
+        /** @var Attribute $attr * */
+        $attr = $objectManager->get(Config::class)
+            ->getAttribute('catalog_product', 'multiselect_attr_with_source');
 
         /** @var $sourceModel MultiselectSourceMock */
-        $sourceModel = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+        $sourceModel = Bootstrap::getObjectManager()->create(
             MultiselectSourceMock::class
         );
         $options = $sourceModel->getAllOptions();
         $product1Id = $options[0]['value'] * 10;
         $product2Id = $options[1]['value'] * 10;
 
-        /** @var \Magento\Catalog\Model\Product $product1 **/
+        /** @var \Magento\Catalog\Model\Product $product1 * */
         $product1 = $productRepository->getById($product1Id);
         $product1->setSpecialFromDate(date('Y-m-d H:i:s'));
         $product1->setNewsFromDate(date('Y-m-d H:i:s'));
         $productRepository->save($product1);
 
-        /** @var \Magento\Catalog\Model\Product $product2 **/
+        /** @var \Magento\Catalog\Model\Product $product2 * */
         $product2 = $productRepository->getById($product2Id);
         $product1->setSpecialFromDate(date('Y-m-d H:i:s'));
         $product1->setNewsFromDate(date('Y-m-d H:i:s'));
@@ -244,5 +234,24 @@ class SourceTest extends \PHPUnit\Framework\TestCase
 
         $result = $connection->fetchAll($select);
         $this->assertCount(3, $result);
+    }
+
+    /**
+     * Sets up the fixture, for example, opens a network connection.
+     * This method is called before a test is executed.
+     */
+    protected function setUp(): void
+    {
+        $this->source = Bootstrap::getObjectManager()->create(
+            Source::class
+        );
+
+        $this->productResource = Bootstrap::getObjectManager()->get(
+            Product::class
+        );
+
+        $this->_eavIndexerProcessor = Bootstrap::getObjectManager()->get(
+            Processor::class
+        );
     }
 }

@@ -29,14 +29,6 @@ class CreateCustomerAddressTest extends GraphQlAbstract
      */
     private $addressRepository;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
-        $this->addressRepository = Bootstrap::getObjectManager()->get(AddressRepositoryInterface::class);
-    }
-
     /**
      * @magentoApiDataFixture Magento/Customer/_files/customer_without_addresses.php
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
@@ -131,6 +123,57 @@ MUTATION;
         $address->setCustomerId(null);
         $this->assertCustomerAddressesFields($address, $response['createCustomerAddress']);
         $this->assertCustomerAddressesFields($address, $newAddress);
+    }
+
+    /**
+     * @param string $email
+     * @param string $password
+     * @return array
+     */
+    private function getCustomerAuthHeaders(string $email, string $password): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($email, $password);
+        return ['Authorization' => 'Bearer ' . $customerToken];
+    }
+
+    /**
+     * Verify the fields for Customer address
+     *
+     * @param AddressInterface $address
+     * @param array $actualResponse
+     * @param string $countryFieldName
+     */
+    private function assertCustomerAddressesFields(
+        AddressInterface $address,
+        array            $actualResponse
+    ): void
+    {
+        /** @var  $addresses */
+        $assertionMap = [
+            ['response_field' => 'country_code', 'expected_value' => $address->getCountryId()],
+            ['response_field' => 'street', 'expected_value' => $address->getStreet()],
+            ['response_field' => 'company', 'expected_value' => $address->getCompany()],
+            ['response_field' => 'telephone', 'expected_value' => $address->getTelephone()],
+            ['response_field' => 'fax', 'expected_value' => $address->getFax()],
+            ['response_field' => 'postcode', 'expected_value' => $address->getPostcode()],
+            ['response_field' => 'city', 'expected_value' => $address->getCity()],
+            ['response_field' => 'firstname', 'expected_value' => $address->getFirstname()],
+            ['response_field' => 'lastname', 'expected_value' => $address->getLastname()],
+            ['response_field' => 'middlename', 'expected_value' => $address->getMiddlename()],
+            ['response_field' => 'prefix', 'expected_value' => $address->getPrefix()],
+            ['response_field' => 'suffix', 'expected_value' => $address->getSuffix()],
+            ['response_field' => 'vat_id', 'expected_value' => $address->getVatId()],
+            ['response_field' => 'default_shipping', 'expected_value' => (bool)$address->isDefaultShipping()],
+            ['response_field' => 'default_billing', 'expected_value' => (bool)$address->isDefaultBilling()],
+        ];
+        $this->assertResponseFields($actualResponse, $assertionMap);
+        $this->assertIsArray([$actualResponse['region']], "region field must be of an array type.");
+        $assertionRegionMap = [
+            ['response_field' => 'region', 'expected_value' => $address->getRegion()->getRegion()],
+            ['response_field' => 'region_code', 'expected_value' => $address->getRegion()->getRegionCode()],
+            ['response_field' => 'region_id', 'expected_value' => $address->getRegion()->getRegionId()]
+        ];
+        $this->assertResponseFields($actualResponse['region'], $assertionRegionMap);
     }
 
     /**
@@ -302,7 +345,7 @@ MUTATION;
      */
     public function testCreateCustomerAddressIfUserIsNotAuthorized()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The current customer isn\'t authorized.');
 
         $mutation
@@ -339,7 +382,7 @@ MUTATION;
      */
     public function testCreateCustomerAddressWithMissingAttribute()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Required parameters are missing: firstname');
 
         $mutation
@@ -374,7 +417,7 @@ MUTATION;
      */
     public function testCreateCustomerAddressWithMissingInput()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('"input" value should be specified');
 
         $userName = 'customer@example.com';
@@ -814,53 +857,11 @@ MUTATION;
         ];
     }
 
-    /**
-     * Verify the fields for Customer address
-     *
-     * @param AddressInterface $address
-     * @param array $actualResponse
-     * @param string $countryFieldName
-     */
-    private function assertCustomerAddressesFields(
-        AddressInterface $address,
-        array $actualResponse
-    ): void {
-        /** @var  $addresses */
-        $assertionMap = [
-            ['response_field' => 'country_code', 'expected_value' => $address->getCountryId()],
-            ['response_field' => 'street', 'expected_value' => $address->getStreet()],
-            ['response_field' => 'company', 'expected_value' => $address->getCompany()],
-            ['response_field' => 'telephone', 'expected_value' => $address->getTelephone()],
-            ['response_field' => 'fax', 'expected_value' => $address->getFax()],
-            ['response_field' => 'postcode', 'expected_value' => $address->getPostcode()],
-            ['response_field' => 'city', 'expected_value' => $address->getCity()],
-            ['response_field' => 'firstname', 'expected_value' => $address->getFirstname()],
-            ['response_field' => 'lastname', 'expected_value' => $address->getLastname()],
-            ['response_field' => 'middlename', 'expected_value' => $address->getMiddlename()],
-            ['response_field' => 'prefix', 'expected_value' => $address->getPrefix()],
-            ['response_field' => 'suffix', 'expected_value' => $address->getSuffix()],
-            ['response_field' => 'vat_id', 'expected_value' => $address->getVatId()],
-            ['response_field' => 'default_shipping', 'expected_value' => (bool)$address->isDefaultShipping()],
-            ['response_field' => 'default_billing', 'expected_value' => (bool)$address->isDefaultBilling()],
-        ];
-        $this->assertResponseFields($actualResponse, $assertionMap);
-        $this->assertIsArray([$actualResponse['region']], "region field must be of an array type.");
-        $assertionRegionMap = [
-            ['response_field' => 'region', 'expected_value' => $address->getRegion()->getRegion()],
-            ['response_field' => 'region_code', 'expected_value' => $address->getRegion()->getRegionCode()],
-            ['response_field' => 'region_id', 'expected_value' => $address->getRegion()->getRegionId()]
-        ];
-        $this->assertResponseFields($actualResponse['region'], $assertionRegionMap);
-    }
-
-    /**
-     * @param string $email
-     * @param string $password
-     * @return array
-     */
-    private function getCustomerAuthHeaders(string $email, string $password): array
+    protected function setUp(): void
     {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($email, $password);
-        return ['Authorization' => 'Bearer ' . $customerToken];
+        parent::setUp();
+
+        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
+        $this->addressRepository = Bootstrap::getObjectManager()->get(AddressRepositoryInterface::class);
     }
 }

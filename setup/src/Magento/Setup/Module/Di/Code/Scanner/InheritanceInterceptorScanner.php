@@ -3,9 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Di\Code\Scanner;
 
 use Magento\Framework\ObjectManager\InterceptableValidator;
+use ReflectionClass;
 
 class InheritanceInterceptorScanner implements ScannerInterface
 {
@@ -36,7 +38,7 @@ class InheritanceInterceptorScanner implements ScannerInterface
             foreach ($interceptedEntities as $interceptorClass) {
                 $interceptedEntity = substr($interceptorClass, 0, -12);
                 if (is_subclass_of($class, $interceptedEntity) && $this->interceptableValidator->validate($class)) {
-                    $reflectionClass = new \ReflectionClass($class);
+                    $reflectionClass = new ReflectionClass($class);
                     if (!$reflectionClass->isAbstract() && !$reflectionClass->isFinal()) {
                         $output[] = $class . '\\Interceptor';
                     }
@@ -59,7 +61,7 @@ class InheritanceInterceptorScanner implements ScannerInterface
         $interceptedEntitiesFiltered = [];
         foreach ($interceptedEntities as $interceptorClass) {
             $interceptedEntity = substr($interceptorClass, 0, -12);
-            $reflectionInterceptedEntity = new \ReflectionClass($interceptedEntity);
+            $reflectionInterceptedEntity = new ReflectionClass($interceptedEntity);
             if (!$reflectionInterceptedEntity->isAbstract() && !$reflectionInterceptedEntity->isFinal()) {
                 $interceptedEntitiesFiltered[] = $interceptorClass;
             }

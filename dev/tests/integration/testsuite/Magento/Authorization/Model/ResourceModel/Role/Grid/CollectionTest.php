@@ -3,38 +3,44 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Authorization\Model\ResourceModel\Role\Grid;
+
+use Magento\Authorization\Model\Acl\Role\Group;
+use Magento\Reports\Model\Item;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class CollectionTest extends \PHPUnit\Framework\TestCase
+class CollectionTest extends TestCase
 {
     /**
-     * @var \Magento\Authorization\Model\ResourceModel\Role\Grid\Collection
+     * @var Collection
      */
     private $_collection;
-
-    protected function setUp(): void
-    {
-        $this->_collection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Authorization\Model\ResourceModel\Role\Grid\Collection::class
-        );
-    }
 
     public function testGetItems()
     {
         $expectedResult = [
             [
-                'role_type' => \Magento\Authorization\Model\Acl\Role\Group::ROLE_TYPE,
+                'role_type' => Group::ROLE_TYPE,
                 'role_name' => \Magento\TestFramework\Bootstrap::ADMIN_ROLE_NAME,
             ],
         ];
         $actualResult = [];
-        /** @var \Magento\Reports\Model\Item $reportItem */
+        /** @var Item $reportItem */
         foreach ($this->_collection->getItems() as $reportItem) {
             $actualResult[] = array_intersect_key($reportItem->getData(), $expectedResult[0]);
         }
         $this->assertEquals($expectedResult, $actualResult);
+    }
+
+    protected function setUp(): void
+    {
+        $this->_collection = Bootstrap::getObjectManager()->create(
+            Collection::class
+        );
     }
 }

@@ -13,13 +13,13 @@ use Magento\Framework\Serialize\SerializerInterface;
 use Magento\GraphQl\Quote\GetMaskedQuoteIdByReservedOrderId;
 use Magento\GraphQl\Service\GraphQlRequest;
 use Magento\Paypal\Model\Api\Nvp;
+use Magento\Paypal\Model\Api\Type\Factory as ApiFactory;
 use Magento\Paypal\Model\Config;
 use Magento\Paypal\Model\Hostedpro;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Magento\Paypal\Model\Api\Type\Factory as ApiFactory;
 
 /**
  * End to end place order test using hostedpro via graphql endpoint
@@ -44,35 +44,6 @@ class PlaceOrderWithHostedProTest extends TestCase
 
     /** @var Nvp|MockObject */
     private $nvpMock;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->graphQlRequest = $this->objectManager->create(GraphQlRequest::class);
-        $this->json = $this->objectManager->get(SerializerInterface::class);
-        $this->getMaskedQuoteIdByReservedOrderId = $this->objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-
-        $this->nvpMock = $this->getMockBuilder(Nvp::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['call'])
-            ->getMock();
-
-        $apiFactoryMock = $this->getMockBuilder(ApiFactory::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['create'])
-            ->getMock();
-        $apiFactoryMock->method('create')->willReturn($this->nvpMock);
-
-        $this->objectManager->addSharedInstance($apiFactoryMock, ApiFactory::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->objectManager->removeSharedInstance(ApiFactory::class);
-    }
 
     /**
      * Test successful place order with Hosted Pro
@@ -106,7 +77,7 @@ class PlaceOrderWithHostedProTest extends TestCase
               return_url:"paypal/hostedpro/customreturn"
           }
       }
-  }) {    
+  }) {
        cart {
           selected_payment_method {
           code
@@ -180,7 +151,7 @@ QUERY;
             return_url:"paypal/hostedpro/customReturnUrl"
           }
       }
-  }) {    
+  }) {
        cart {
           selected_payment_method {
           code
@@ -241,7 +212,7 @@ QUERY;
             return_url:"http://mysite.com/paypal/hostedpro/customReturnUrl"
           }
       }
-  }) {    
+  }) {
        cart {
           selected_payment_method {
           code
@@ -259,5 +230,34 @@ QUERY;
         $actualError = $responseData['errors'][0];
         $this->assertEquals($expectedExceptionMessage, $actualError['message']);
         $this->assertEquals(GraphQlInputException::EXCEPTION_CATEGORY, $actualError['extensions']['category']);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->graphQlRequest = $this->objectManager->create(GraphQlRequest::class);
+        $this->json = $this->objectManager->get(SerializerInterface::class);
+        $this->getMaskedQuoteIdByReservedOrderId = $this->objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+
+        $this->nvpMock = $this->getMockBuilder(Nvp::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['call'])
+            ->getMock();
+
+        $apiFactoryMock = $this->getMockBuilder(ApiFactory::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['create'])
+            ->getMock();
+        $apiFactoryMock->method('create')->willReturn($this->nvpMock);
+
+        $this->objectManager->addSharedInstance($apiFactoryMock, ApiFactory::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->objectManager->removeSharedInstance(ApiFactory::class);
     }
 }

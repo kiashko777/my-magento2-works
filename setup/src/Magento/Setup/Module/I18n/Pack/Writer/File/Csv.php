@@ -3,7 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\I18n\Pack\Writer\File;
+
+use Magento\Setup\Module\I18n\Dictionary\Phrase;
 
 /**
  * Pack writer csv
@@ -25,7 +28,7 @@ class Csv extends AbstractFile
         }
 
         $writer = $this->_factory->createDictionaryWriter($file);
-        /** @var \Magento\Setup\Module\I18n\Dictionary\Phrase $phrase */
+        /** @var Phrase $phrase */
         foreach ($phrases as $phrase) {
             $phrase->setContextType(null);
             $phrase->setContextValue(null);
@@ -52,7 +55,7 @@ class Csv extends AbstractFile
         foreach ($dictionary->getPhrases() as $phrase) {
             $merged[$phrase->getPhrase()] = $phrase;
         }
-        /** @var \Magento\Setup\Module\I18n\Dictionary\Phrase $phrase */
+        /** @var Phrase $phrase */
         foreach ($phrases as $phrase) {
             $merged[$phrase->getPhrase()] = $phrase;
         }

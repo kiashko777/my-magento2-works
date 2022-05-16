@@ -5,6 +5,9 @@
  */
 
 use Magento\Customer\Model\CustomerRegistry;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\QuoteIdMask;
+use Magento\Quote\Model\QuoteIdMaskFactory;
 use Magento\Store\Api\StoreRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
@@ -19,7 +22,7 @@ $customer = $customerRegistry->retrieve(1);
 /** @var StoreRepositoryInterface $storeRepository */
 $storeRepository = $objectManager->get(StoreRepositoryInterface::class);
 $store = $storeRepository->get('fixture_second_store');
-$quote = $objectManager->create(\Magento\Quote\Model\Quote::class);
+$quote = $objectManager->create(Quote::class);
 $quote->setStoreId($store->getId())
     ->setIsActive(true)
     ->setIsMultiShipping(false)
@@ -27,9 +30,9 @@ $quote->setStoreId($store->getId())
     ->setCustomerId($customer->getId())
     ->save();
 
-/** @var \Magento\Quote\Model\QuoteIdMask $quoteIdMask */
+/** @var QuoteIdMask $quoteIdMask */
 $quoteIdMask = $objectManager
-    ->create(\Magento\Quote\Model\QuoteIdMaskFactory::class)
+    ->create(QuoteIdMaskFactory::class)
     ->create();
 $quoteIdMask->setQuoteId($quote->getId());
 $quoteIdMask->setDataChanges(true);

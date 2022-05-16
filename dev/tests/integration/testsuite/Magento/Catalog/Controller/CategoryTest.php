@@ -63,35 +63,6 @@ class CategoryTest extends AbstractController
     private $categoryCollectionFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->objectManager->configure([
-            'preferences' => [LayoutUpdateManager::class => CategoryLayoutUpdateManager::class]
-        ]);
-
-        $this->categoryCollectionFactory = $this->objectManager->create(CollectionFactory::class);
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->session = $this->objectManager->get(Session::class);
-        $this->httpContext = $this->objectManager->get(Context::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function assert404NotFound()
-    {
-        parent::assert404NotFound();
-
-        $this->assertNull($this->registry->registry('current_category'));
-    }
-
-    /**
      * @return array
      */
     public function getViewActionDataProvider(): array
@@ -170,6 +141,16 @@ class CategoryTest extends AbstractController
     }
 
     /**
+     * @inheritdoc
+     */
+    public function assert404NotFound()
+    {
+        parent::assert404NotFound();
+
+        $this->assertNull($this->registry->registry('current_category'));
+    }
+
+    /**
      * @return void
      */
     public function testViewActionNotExistingCategory(): void
@@ -217,7 +198,7 @@ class CategoryTest extends AbstractController
         //Viewing the category
         $this->dispatch("catalog/category/view/id/$categoryId");
         //Layout handles must contain the file.
-        $handles = Bootstrap::getObjectManager()->get(\Magento\Framework\View\LayoutInterface::class)
+        $handles = Bootstrap::getObjectManager()->get(LayoutInterface::class)
             ->getUpdate()
             ->getHandles();
         $this->assertContains("catalog_category_view_selectable_{$categoryId}_{$file}", $handles);
@@ -289,5 +270,24 @@ class CategoryTest extends AbstractController
         $category->setStoreId($storeId);
 
         return $category;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->objectManager->configure([
+            'preferences' => [LayoutUpdateManager::class => CategoryLayoutUpdateManager::class]
+        ]);
+
+        $this->categoryCollectionFactory = $this->objectManager->create(CollectionFactory::class);
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->session = $this->objectManager->get(Session::class);
+        $this->httpContext = $this->objectManager->get(Context::class);
     }
 }

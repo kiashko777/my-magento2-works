@@ -4,9 +4,17 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Downloadable\Api\Data\LinkInterfaceFactory;
 use Magento\Downloadable\Api\DomainManagerInterface;
+use Magento\Downloadable\Helper\Download;
+use Magento\Downloadable\Model\Link;
+use Magento\TestFramework\Helper\Bootstrap;
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 
 /** @var DomainManagerInterface $domainManager */
 $domainManager = $objectManager->get(DomainManagerInterface::class);
@@ -19,8 +27,8 @@ $domainManager->addDomains(
     ]
 );
 
-/** @var \Magento\Catalog\Model\Product $product */
-$product = $objectManager->create(\Magento\Catalog\Model\Product::class);
+/** @var Product $product */
+$product = $objectManager->create(Product::class);
 $product
     ->setTypeId(\Magento\Downloadable\Model\Product\Type::TYPE_DOWNLOADABLE)
     ->setId(1)
@@ -29,8 +37,8 @@ $product
     ->setName('Downloadable Products')
     ->setSku('downloadable-product')
     ->setPrice(10)
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setLinksPurchasedSeparately(true)
     ->setStockData(
         [
@@ -41,15 +49,15 @@ $product
     );
 
 /**
- * @var \Magento\Downloadable\Api\Data\LinkInterfaceFactory $linkFactory
+ * @var LinkInterfaceFactory $linkFactory
  */
-$linkFactory = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->get(\Magento\Downloadable\Api\Data\LinkInterfaceFactory::class);
+$linkFactory = Bootstrap::getObjectManager()
+    ->get(LinkInterfaceFactory::class);
 $links = [];
 $linkData = [
     'title' => 'Downloadable Products link',
-    'type' => \Magento\Downloadable\Helper\Download::LINK_TYPE_URL,
-    'is_shareable' => \Magento\Downloadable\Model\Link::LINK_SHAREABLE_CONFIG,
+    'type' => Download::LINK_TYPE_URL,
+    'is_shareable' => Link::LINK_SHAREABLE_CONFIG,
     'link_url' => 'http://example.com/downloadable.txt',
     'link_id' => 0,
     'is_delete' => null,
@@ -68,6 +76,6 @@ $extension = $product->getExtensionAttributes();
 $extension->setDownloadableProductLinks($links);
 $product->setExtensionAttributes($extension);
 
-$productRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+$productRepository = Bootstrap::getObjectManager()
+    ->get(ProductRepositoryInterface::class);
 $productRepository->save($product);

@@ -47,19 +47,6 @@ class EditQuoteItemWithCustomOptionsTest extends GraphQlAbstract
     private $quoteResource;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->productCustomOptionsRepository = $objectManager->get(ProductCustomOptionRepositoryInterface::class);
-        $this->quoteFactory = $objectManager->get(QuoteFactory::class);
-        $this->quoteResource = $objectManager->get(QuoteResource::class);
-        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/set_custom_options_simple_product.php
      * @magentoApiDataFixture Magento/GraphQl/Quote/_files/guest/create_empty_cart.php
@@ -81,6 +68,103 @@ class EditQuoteItemWithCustomOptionsTest extends GraphQlAbstract
         self::assertEquals('test', $itemOptionsResponse[1]['values'][0]['value']);
         self::assertEquals('field', $itemOptionsResponse[0]['type']);
         self::assertEquals('area', $itemOptionsResponse[1]['type']);
+    }
+
+    /**
+     * Returns quote item id by product's SKU
+     *
+     * @param string $sku
+     * @return int
+     * @throws NoSuchEntityException
+     */
+    private function getQuoteItemIdBySku(string $sku): int
+    {
+        $quote = $this->quoteFactory->create();
+        $product = $this->productRepository->get($sku);
+        $this->quoteResource->load($quote, 'test_quote', 'reserved_order_id');
+        /** @var Item $quoteItem */
+        $quoteItem = $quote->getItemByProduct($product);
+
+        return (int)$quoteItem->getId();
+    }
+
+    /**
+     * Generate an array with test values for customizable options
+     * based on the option type
+     *
+     * @param string $sku
+     * @return array
+     */
+    private function getCustomOptionsValuesForQuery(string $sku): array
+    {
+        $customOptions = $this->productCustomOptionsRepository->getList($sku);
+        $customOptionsValues = [];
+
+        foreach ($customOptions as $customOption) {
+            $optionType = $customOption->getType();
+            if ($optionType == 'field' || $optionType == 'area') {
+                $customOptionsValues[] = [
+                    'id' => (int)$customOption->getOptionId(),
+                    'value_string' => 'test'
+                ];
+            } elseif ($optionType == 'drop_down') {
+                $optionSelectValues = $customOption->getValues();
+                $customOptionsValues[] = [
+                    'id' => (int)$customOption->getOptionId(),
+                    'value_string' => reset($optionSelectValues)->getOptionTypeId()
+                ];
+            }
+        }
+
+        return $customOptionsValues;
+    }
+
+    /**
+     * Returns GraphQl query for updating items in shopping cart
+     *
+     * @param string $maskedQuoteId
+     * @param int $quoteItemId
+     * @param $customizableOptionsQuery
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId, int $quoteItemId, $customizableOptionsQuery): string
+    {
+        $base64EncodedItemId = base64_encode((string)$quoteItemId);
+        return <<<QUERY
+mutation {
+  updateCartItems(input: {
+    cart_id:"$maskedQuoteId"
+    cart_items: [
+      {
+        cart_item_uid: "$base64EncodedItemId"
+        quantity: 1
+        customizable_options: $customizableOptionsQuery
+      }
+    ]
+  }) {
+    cart {
+      items {
+        quantity
+        product {
+          name
+        }
+        ... on SimpleCartItem {
+          customizable_options {
+            label
+            type
+            customizable_option_uid
+            values {
+              label
+              value
+              customizable_option_value_uid
+            }
+          }
+        }
+      }
+    }
+  }
+}
+QUERY;
     }
 
     /**
@@ -184,99 +268,15 @@ QUERY;
     }
 
     /**
-     * Returns GraphQl query for updating items in shopping cart
-     *
-     * @param string $maskedQuoteId
-     * @param int $quoteItemId
-     * @param $customizableOptionsQuery
-     * @return string
+     * @inheritdoc
      */
-    private function getQuery(string $maskedQuoteId, int $quoteItemId, $customizableOptionsQuery): string
+    protected function setUp(): void
     {
-        $base64EncodedItemId = base64_encode((string) $quoteItemId);
-        return <<<QUERY
-mutation {
-  updateCartItems(input: {
-    cart_id:"$maskedQuoteId"
-    cart_items: [
-      {
-        cart_item_uid: "$base64EncodedItemId"
-        quantity: 1
-        customizable_options: $customizableOptionsQuery
-      }
-    ]
-  }) {
-    cart {
-      items {
-        quantity
-        product {
-          name
-        }
-        ... on SimpleCartItem {
-          customizable_options {
-            label
-            type
-            customizable_option_uid
-            values {
-              label
-              value
-              customizable_option_value_uid
-            }
-          }
-        }
-      }
-    }
-  }
-}
-QUERY;
-    }
-
-    /**
-     * Returns quote item id by product's SKU
-     *
-     * @param string $sku
-     * @return int
-     * @throws NoSuchEntityException
-     */
-    private function getQuoteItemIdBySku(string $sku): int
-    {
-        $quote = $this->quoteFactory->create();
-        $product = $this->productRepository->get($sku);
-        $this->quoteResource->load($quote, 'test_quote', 'reserved_order_id');
-        /** @var Item $quoteItem */
-        $quoteItem = $quote->getItemByProduct($product);
-
-        return (int)$quoteItem->getId();
-    }
-
-    /**
-     * Generate an array with test values for customizable options
-     * based on the option type
-     *
-     * @param string $sku
-     * @return array
-     */
-    private function getCustomOptionsValuesForQuery(string $sku): array
-    {
-        $customOptions = $this->productCustomOptionsRepository->getList($sku);
-        $customOptionsValues = [];
-
-        foreach ($customOptions as $customOption) {
-            $optionType = $customOption->getType();
-            if ($optionType == 'field' || $optionType == 'area') {
-                $customOptionsValues[] = [
-                    'id' => (int) $customOption->getOptionId(),
-                    'value_string' => 'test'
-                ];
-            } elseif ($optionType == 'drop_down') {
-                $optionSelectValues = $customOption->getValues();
-                $customOptionsValues[] = [
-                    'id' => (int) $customOption->getOptionId(),
-                    'value_string' => reset($optionSelectValues)->getOptionTypeId()
-                ];
-            }
-        }
-
-        return $customOptionsValues;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->productCustomOptionsRepository = $objectManager->get(ProductCustomOptionRepositoryInterface::class);
+        $this->quoteFactory = $objectManager->get(QuoteFactory::class);
+        $this->quoteResource = $objectManager->get(QuoteResource::class);
+        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
     }
 }

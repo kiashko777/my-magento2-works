@@ -3,9 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento;
 
-class MemoryUsageTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\Shell;
+use Magento\Framework\Shell\CommandRenderer;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Helper\Memory;
+use PHPUnit\Framework\TestCase;
+
+class MemoryUsageTest extends TestCase
 {
     /**
      * Number of application reinitialization iterations to be conducted by tests
@@ -13,19 +20,9 @@ class MemoryUsageTest extends \PHPUnit\Framework\TestCase
     const APP_REINITIALIZATION_LOOPS = 20;
 
     /**
-     * @var \Magento\TestFramework\Helper\Memory
+     * @var Memory
      */
     protected $_helper;
-
-    protected function setUp(): void
-    {
-        if (defined('HHVM_VERSION')) {
-            $this->markTestSkipped("Test not relevant because no gc in HHVM.");
-        }
-        $this->_helper = new \Magento\TestFramework\Helper\Memory(
-            new \Magento\Framework\Shell(new \Magento\Framework\Shell\CommandRenderer())
-        );
-    }
 
     /**
      * Test that application reinitialization produces no memory leaks
@@ -37,7 +34,7 @@ class MemoryUsageTest extends \PHPUnit\Framework\TestCase
         $this->_deallocateUnusedMemory();
         $actualMemoryUsage = $this->_helper->getRealMemoryUsage();
         for ($i = 0; $i < self::APP_REINITIALIZATION_LOOPS; $i++) {
-            \Magento\TestFramework\Helper\Bootstrap::getInstance()->reinitialize();
+            Bootstrap::getInstance()->reinitialize();
             $this->_deallocateUnusedMemory();
         }
         $actualMemoryUsage = $this->_helper->getRealMemoryUsage() - $actualMemoryUsage;
@@ -69,6 +66,16 @@ class MemoryUsageTest extends \PHPUnit\Framework\TestCase
     {
         // Memory usage limits should not be further increased, corresponding memory leaks have to be fixed instead!
         // @todo fix memory leak and decrease limit to 1 M (in scope of MAGETWO-47693 limit was temporary increased)
-        return \Magento\TestFramework\Helper\Memory::convertToBytes('2M');
+        return Memory::convertToBytes('2M');
+    }
+
+    protected function setUp(): void
+    {
+        if (defined('HHVM_VERSION')) {
+            $this->markTestSkipped("Test not relevant because no gc in HHVM.");
+        }
+        $this->_helper = new Memory(
+            new Shell(new CommandRenderer())
+        );
     }
 }

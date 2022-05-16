@@ -3,15 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Db\Sequence;
 
-use Magento\Framework\App\ResourceConnection;
-use Magento\Framework\Webapi\Exception;
-use Magento\SalesSequence\Model\ResourceModel\Meta as ResourceMetadata;
 use Magento\Framework\App\ResourceConnection as AppResource;
 use Magento\Framework\DB\Ddl\Sequence as DdlSequence;
-use Magento\SalesSequence\Model\ProfileFactory;
+use Magento\Framework\Exception\AlreadyExistsException;
+use Magento\Framework\Webapi\Exception;
 use Magento\SalesSequence\Model\MetaFactory;
+use Magento\SalesSequence\Model\ProfileFactory;
+use Magento\SalesSequence\Model\ResourceModel\Meta as ResourceMetadata;
 
 /**
  * Class Builder
@@ -85,11 +86,12 @@ class Builder extends \Magento\SalesSequence\Model\Builder
      */
     public function __construct(
         ResourceMetadata $resourceMetadata,
-        MetaFactory $metaFactory,
-        ProfileFactory $profileFactory,
-        AppResource $appResource,
-        DdlSequence $ddlSequence
-    ) {
+        MetaFactory      $metaFactory,
+        ProfileFactory   $profileFactory,
+        AppResource      $appResource,
+        DdlSequence      $ddlSequence
+    )
+    {
         $this->resourceMetadata = $resourceMetadata;
         $this->metaFactory = $metaFactory;
         $this->profileFactory = $profileFactory;
@@ -179,45 +181,11 @@ class Builder extends \Magento\SalesSequence\Model\Builder
     }
 
     /**
-     * Validate sequence before save
-     *
-     * @throws \Magento\Framework\Exception\AlreadyExistsException
-     * @return void
-     */
-    protected function validate()
-    {
-        $metadata = $this->resourceMetadata->loadByEntityTypeAndStore(
-            $this->data['entity_type'],
-            $this->data['store_id']
-        );
-        $connection = $this->appResource->getConnection();
-        if ($metadata->getId() && !$connection->isTableExists($this->getSequenceName())) {
-            throw new \Magento\Framework\Exception\AlreadyExistsException(
-                __('Sequence with this metadata already exists')
-            );
-        }
-    }
-
-    /**
-     * @return string
-     */
-    protected function getSequenceName()
-    {
-        return $this->appResource->getTableName(
-            sprintf(
-                'sequence_%s_%s',
-                $this->data['entity_type'],
-                $this->data['store_id']
-            )
-        );
-    }
-
-    /**
      * Create sequence with metadata and profile
      *
-     * @throws \Exception
-     * @throws \Magento\Framework\Exception\AlreadyExistsException
      * @return void
+     * @throws AlreadyExistsException
+     * @throws \Exception
      */
     public function create()
     {
@@ -262,5 +230,39 @@ class Builder extends \Magento\SalesSequence\Model\Builder
             throw $e;
         }
         $this->data = array_flip($this->pattern);
+    }
+
+    /**
+     * Validate sequence before save
+     *
+     * @return void
+     * @throws AlreadyExistsException
+     */
+    protected function validate()
+    {
+        $metadata = $this->resourceMetadata->loadByEntityTypeAndStore(
+            $this->data['entity_type'],
+            $this->data['store_id']
+        );
+        $connection = $this->appResource->getConnection();
+        if ($metadata->getId() && !$connection->isTableExists($this->getSequenceName())) {
+            throw new AlreadyExistsException(
+                __('Sequence with this metadata already exists')
+            );
+        }
+    }
+
+    /**
+     * @return string
+     */
+    protected function getSequenceName()
+    {
+        return $this->appResource->getTableName(
+            sprintf(
+                'sequence_%s_%s',
+                $this->data['entity_type'],
+                $this->data['store_id']
+            )
+        );
     }
 }

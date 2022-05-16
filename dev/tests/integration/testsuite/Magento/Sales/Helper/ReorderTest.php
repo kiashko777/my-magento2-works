@@ -34,29 +34,6 @@ class ReorderTest extends TestCase
     private $customerSession;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->helper = $this->objectManager->get(Reorder::class);
-        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
-        $this->customerSession = $this->objectManager->get(Session::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->customerSession->setCustomerId(null);
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Sales/_files/order.php
      *
      * @return void
@@ -103,5 +80,28 @@ class ReorderTest extends TestCase
     {
         $order = $this->orderFactory->create()->loadByIncrementId('100000001');
         $this->assertFalse($this->helper->canReorder($order->getId()));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->helper = $this->objectManager->get(Reorder::class);
+        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
+        $this->customerSession = $this->objectManager->get(Session::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->customerSession->setCustomerId(null);
+
+        parent::tearDown();
     }
 }

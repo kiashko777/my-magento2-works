@@ -3,7 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Model;
+
+use Magento\Setup\Model\Description\DescriptionGenerator;
 
 /**
  * Class SearchTermDescriptionGenerator
@@ -14,12 +17,12 @@ namespace Magento\Setup\Model;
 class SearchTermDescriptionGenerator implements DescriptionGeneratorInterface
 {
     /**
-     * @var \Magento\Setup\Model\Description\DescriptionGenerator
+     * @var DescriptionGenerator
      */
     private $descriptionGenerator;
 
     /**
-     * @var \Magento\Setup\Model\SearchTermManager
+     * @var SearchTermManager
      */
     private $searchTermManager;
 
@@ -29,13 +32,14 @@ class SearchTermDescriptionGenerator implements DescriptionGeneratorInterface
     private $cachedDescription;
 
     /**
-     * @param \Magento\Setup\Model\Description\DescriptionGenerator $descriptionGenerator
-     * @param \Magento\Setup\Model\SearchTermManager $searchTermManager
+     * @param DescriptionGenerator $descriptionGenerator
+     * @param SearchTermManager $searchTermManager
      */
     public function __construct(
-        \Magento\Setup\Model\Description\DescriptionGenerator $descriptionGenerator,
-        \Magento\Setup\Model\SearchTermManager $searchTermManager
-    ) {
+        DescriptionGenerator $descriptionGenerator,
+        SearchTermManager $searchTermManager
+    )
+    {
         $this->descriptionGenerator = $descriptionGenerator;
         $this->searchTermManager = $searchTermManager;
     }
@@ -49,7 +53,7 @@ class SearchTermDescriptionGenerator implements DescriptionGeneratorInterface
     public function generate($currentProductIndex)
     {
         $description = $this->getDescription();
-        $this->searchTermManager->applySearchTermsToDescription($description, (int) $currentProductIndex);
+        $this->searchTermManager->applySearchTermsToDescription($description, (int)$currentProductIndex);
 
         return $description;
     }

@@ -4,12 +4,17 @@
  * See COPYING.txt for license details.
  */
 
-/** @var $integration \Magento\Integration\Model\Integration */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-$integration = $objectManager->create(\Magento\Integration\Model\Integration::class);
+/** @var $integration Integration */
+
+use Magento\Integration\Api\AuthorizationServiceInterface;
+use Magento\Integration\Model\Integration;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
+$integration = $objectManager->create(Integration::class);
 $integration->setName('Fixture Integration')->save();
 
 /** Grant permissions to integrations */
-/** @var \Magento\Integration\Api\AuthorizationServiceInterface */
-$authorizationService = $objectManager->create(\Magento\Integration\Api\AuthorizationServiceInterface::class);
+/** @var AuthorizationServiceInterface */
+$authorizationService = $objectManager->create(AuthorizationServiceInterface::class);
 $authorizationService->grantAllPermissions($integration->getId());

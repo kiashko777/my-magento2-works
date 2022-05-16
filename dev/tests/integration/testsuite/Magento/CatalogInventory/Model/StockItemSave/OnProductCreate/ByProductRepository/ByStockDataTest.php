@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogInventory\Model\StockItemSave\OnProductCreate\ByProductRepository;
 
 use Magento\Catalog\Api\Data\ProductInterface;
@@ -15,11 +16,12 @@ use Magento\CatalogInventory\Api\Data\StockItemInterface;
 use Magento\CatalogInventory\Model\StockItemSave\StockItemDataChecker;
 use Magento\Framework\Api\DataObjectHelper;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoDbIsolation enabled
  */
-class ByStockDataTest extends \PHPUnit\Framework\TestCase
+class ByStockDataTest extends TestCase
 {
     /**
      * @var ProductInterfaceFactory
@@ -62,22 +64,6 @@ class ByStockDataTest extends \PHPUnit\Framework\TestCase
         StockItemInterface::IS_IN_STOCK => false,
     ];
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->productFactory = $objectManager->get(ProductInterfaceFactory::class);
-        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
-        // prevent internal caching in property
-        $this->productRepository->cleanCache();
-        $this->dataObjectHelper = $objectManager->get(DataObjectHelper::class);
-        $this->stockItemDataChecker = $objectManager->get(StockItemDataChecker::class);
-
-        /** @var CategorySetup $installer */
-        $installer = $objectManager->get(CategorySetup::class);
-        $attributeSetId = $installer->getAttributeSetId('catalog_product', 'Default');
-        $this->productData[ProductInterface::ATTRIBUTE_SET_ID] = $attributeSetId;
-    }
-
     /**
      * Test saving of stock item on product save by 'setStockData' method (deprecated) via product repository
      */
@@ -105,5 +91,21 @@ class ByStockDataTest extends \PHPUnit\Framework\TestCase
         $this->productRepository->save($product);
 
         $this->stockItemDataChecker->checkStockItemData('simpleForByStockDataTest', $this->stockItemData);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->productFactory = $objectManager->get(ProductInterfaceFactory::class);
+        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
+        // prevent internal caching in property
+        $this->productRepository->cleanCache();
+        $this->dataObjectHelper = $objectManager->get(DataObjectHelper::class);
+        $this->stockItemDataChecker = $objectManager->get(StockItemDataChecker::class);
+
+        /** @var CategorySetup $installer */
+        $installer = $objectManager->get(CategorySetup::class);
+        $attributeSetId = $installer->getAttributeSetId('catalog_product', 'Default');
+        $this->productData[ProductInterface::ATTRIBUTE_SET_ID] = $attributeSetId;
     }
 }

@@ -27,15 +27,6 @@ class UpdateCartItemsTest extends GraphQlAbstract
      */
     private $getQuoteItemIdByReservedQuoteIdAndSku;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->getQuoteItemIdByReservedQuoteIdAndSku = $objectManager->get(
-            GetQuoteItemIdByReservedQuoteIdAndSku::class
-        );
-    }
-
     /**
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
      * @magentoApiDataFixture Magento/GraphQl/Quote/_files/guest/create_empty_cart.php
@@ -82,5 +73,14 @@ mutation {
   }
 }
 QUERY;
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->getQuoteItemIdByReservedQuoteIdAndSku = $objectManager->get(
+            GetQuoteItemIdByReservedQuoteIdAndSku::class
+        );
     }
 }

@@ -8,11 +8,11 @@ declare(strict_types=1);
 namespace Magento\GraphQl\Service;
 
 use Magento\Framework\App\Request\Http;
-use Magento\Framework\Serialize\SerializerInterface;
-use Magento\GraphQl\Controller\GraphQl;
 use Magento\Framework\App\Response\Http as HttpResponse;
-use Magento\TestFramework\ObjectManager;
+use Magento\Framework\Serialize\SerializerInterface;
 use Magento\Framework\Webapi\Request;
+use Magento\GraphQl\Controller\GraphQl;
+use Magento\TestFramework\ObjectManager;
 
 /**
  * Service class to simplify GraphQl requests for integration tests
@@ -50,10 +50,11 @@ class GraphQlRequest
      * @param GraphQl $controller
      */
     public function __construct(
-        Http $httpRequest,
+        Http                $httpRequest,
         SerializerInterface $json,
-        GraphQl $controller
-    ) {
+        GraphQl             $controller
+    )
+    {
         $this->httpRequest = $httpRequest;
         $this->json = $json;
         $this->controller = $controller;
@@ -70,10 +71,11 @@ class GraphQlRequest
      */
     public function send(
         string $query,
-        array $variables = [],
+        array  $variables = [],
         string $operation = '',
-        array $headers = []
-    ) {
+        array  $headers = []
+    )
+    {
         $this->httpRequest->setPathInfo($this->controllerPath);
         $this->setQuery($query, $variables, $operation)
             ->setHeaders($headers);
@@ -81,27 +83,6 @@ class GraphQlRequest
         /** @var HttpResponse $response */
         $response = $this->controller->dispatch($this->httpRequest);
         return $response;
-    }
-
-    /**
-     * Set query data on request
-     *
-     * @param string $query
-     * @param array $variables
-     * @param string $operation
-     * @return GraphQlRequest
-     */
-    private function setQuery(string $query, array $variables = [], string $operation = ''): self
-    {
-        if (strpos(trim($query), 'mutation') === 0) {
-            $this->httpRequest->setMethod('POST');
-            $this->setPostContent($query, $variables, $operation);
-        } else {
-            $this->httpRequest->setMethod('GET');
-            $this->setGetContent($query, $variables, $operation);
-        }
-
-        return $this;
     }
 
     /**
@@ -121,6 +102,27 @@ class GraphQlRequest
         }
 
         $this->httpRequest->setHeaders($webApiRequest->getHeaders());
+
+        return $this;
+    }
+
+    /**
+     * Set query data on request
+     *
+     * @param string $query
+     * @param array $variables
+     * @param string $operation
+     * @return GraphQlRequest
+     */
+    private function setQuery(string $query, array $variables = [], string $operation = ''): self
+    {
+        if (strpos(trim($query), 'mutation') === 0) {
+            $this->httpRequest->setMethod('POST');
+            $this->setPostContent($query, $variables, $operation);
+        } else {
+            $this->httpRequest->setMethod('GET');
+            $this->setGetContent($query, $variables, $operation);
+        }
 
         return $this;
     }

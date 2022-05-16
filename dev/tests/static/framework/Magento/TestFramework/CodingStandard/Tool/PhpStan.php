@@ -69,6 +69,18 @@ class PhpStan implements ToolInterface
     }
 
     /**
+     * Get PHPStan CLI command
+     *
+     * @return string
+     */
+    private function getCommand(): string
+    {
+        // phpcs:ignore Magento2.Security.IncludeFile
+        $vendorDir = require BP . '/app/etc/vendor_path.php';
+        return 'php ' . BP . '/' . $vendorDir . '/bin/phpstan';
+    }
+
+    /**
      * @inheritdoc
      * @SuppressWarnings(PHPMD.UnusedLocalVariable)
      */
@@ -92,17 +104,5 @@ class PhpStan implements ToolInterface
         exec($command, $output, $exitCode);
 
         return $exitCode;
-    }
-
-    /**
-     * Get PHPStan CLI command
-     *
-     * @return string
-     */
-    private function getCommand(): string
-    {
-        // phpcs:ignore Magento2.Security.IncludeFile
-        $vendorDir = require BP . '/app/etc/vendor_path.php';
-        return 'php ' . BP . '/' . $vendorDir . '/bin/phpstan';
     }
 }

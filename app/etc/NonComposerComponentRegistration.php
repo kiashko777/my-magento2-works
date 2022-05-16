@@ -9,22 +9,25 @@ declare(strict_types=1);
 namespace Magento\NonComposerComponentRegistration;
 
 use RuntimeException;
+use function array_map;
+use function dirname;
+use function glob;
 
 /**
  * Include files from a list of glob patterns
  */
 (static function (): void {
     $globPatterns = require __DIR__ . '/registration_globlist.php';
-    $baseDir = \dirname(__DIR__, 2) . '/';
+    $baseDir = dirname(__DIR__, 2) . '/';
 
     foreach ($globPatterns as $globPattern) {
         // Sorting is disabled intentionally for performance improvement
-        $files = \glob($baseDir . $globPattern, GLOB_NOSORT);
+        $files = glob($baseDir . $globPattern, GLOB_NOSORT);
         if ($files === false) {
             throw new RuntimeException("glob(): error with '$baseDir$globPattern'");
         }
 
-        \array_map(
+        array_map(
             static function (string $file): void {
                 require_once $file;
             },

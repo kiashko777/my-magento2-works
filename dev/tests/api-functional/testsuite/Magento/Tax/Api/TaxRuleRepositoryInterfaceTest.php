@@ -6,12 +6,22 @@
 
 namespace Magento\Tax\Api;
 
+use Exception;
 use Magento\Framework\Api\FilterBuilder;
 use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\Api\SearchResults;
 use Magento\Framework\Api\SortOrderBuilder;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Tax\Api\Data\TaxClassInterface;
+use Magento\Tax\Api\Data\TaxRateInterface;
+use Magento\Tax\Model\Calculation;
+use Magento\Tax\Model\Calculation\Rate;
+use Magento\Tax\Model\Calculation\Rule;
+use Magento\Tax\Model\ClassModel;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 use Magento\Webapi\Model\Rest\Config as HttpConstants;
+use SoapFault;
 
 /**
  * Tax Rule Repository API test
@@ -23,13 +33,13 @@ class TaxRuleRepositoryInterfaceTest extends WebapiAbstract
     const SERVICE_VERSION = "V1";
     const RESOURCE_PATH = "/V1/taxRules";
 
-    /** @var \Magento\Tax\Model\Calculation\Rate[] */
+    /** @var Rate[] */
     private $fixtureTaxRates;
 
-    /** @var \Magento\Tax\Model\ClassModel[] */
+    /** @var ClassModel[] */
     private $fixtureTaxClasses;
 
-    /** @var \Magento\Tax\Model\Calculation\Rule[] */
+    /** @var Rule[] */
     private $fixtureTaxRules;
 
     /** @var FilterBuilder */
@@ -38,68 +48,14 @@ class TaxRuleRepositoryInterfaceTest extends WebapiAbstract
     /** @var SearchCriteriaBuilder */
     private $searchCriteriaBuilder;
 
-    /** @var  \Magento\Tax\Api\Data\TaxClassInterface | \Magento\Tax\Model\ClassModel */
+    /** @var  TaxClassInterface | ClassModel */
     private $taxClass;
 
-    /** @var  \Magento\Tax\Api\Data\TaxRateInterface | \Magento\Tax\Model\Calculation\Rate */
+    /** @var  TaxRateInterface | Rate */
     private $taxRate;
 
     /** @var  SortOrderBuilder */
     private $sortOrderBuilder;
-
-    /**
-     * Execute per test initialization.
-     */
-    protected function setUp(): void
-    {
-        $this->searchCriteriaBuilder = Bootstrap::getObjectManager()->create(
-            \Magento\Framework\Api\SearchCriteriaBuilder::class
-        );
-        $this->filterBuilder = Bootstrap::getObjectManager()->create(
-            \Magento\Framework\Api\FilterBuilder::class
-        );
-        $objectManager = Bootstrap::getObjectManager();
-
-        $this->searchCriteriaBuilder = $objectManager->create(
-            \Magento\Framework\Api\SearchCriteriaBuilder::class
-        );
-        $this->filterBuilder = $objectManager->create(
-            \Magento\Framework\Api\FilterBuilder::class
-        );
-        $this->sortOrderBuilder = $objectManager->create(
-            SortOrderBuilder::class
-        );
-        $this->taxClass = $objectManager->create(
-            \Magento\Tax\Api\Data\TaxClassInterface::class
-        );
-
-        $this->taxRate = $objectManager->create(
-            \Magento\Tax\Api\Data\TaxRateInterface::class
-        );
-
-        /** Initialize tax classes, tax rates and tax rules defined in fixture Magento/Tax/_files/tax_classes.php */
-        $this->getFixtureTaxRates();
-        $this->getFixtureTaxClasses();
-        $this->getFixtureTaxRules();
-    }
-
-    protected function tearDown(): void
-    {
-        $taxRules = $this->getFixtureTaxRules();
-        if (count($taxRules)) {
-            $taxRates = $this->getFixtureTaxRates();
-            $taxClasses = $this->getFixtureTaxClasses();
-            foreach ($taxRules as $taxRule) {
-                $taxRule->delete();
-            }
-            foreach ($taxRates as $taxRate) {
-                $taxRate->delete();
-            }
-            foreach ($taxClasses as $taxClass) {
-                $taxClass->delete();
-            }
-        }
-    }
 
     /**
      * @magentoApiDataFixture Magento/Tax/_files/tax_classes.php
@@ -111,7 +67,7 @@ class TaxRuleRepositoryInterfaceTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/$taxRuleId",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -123,8 +79,8 @@ class TaxRuleRepositoryInterfaceTest extends WebapiAbstract
         $result = $this->_webApiCall($serviceInfo, $requestData);
         $this->assertTrue($result);
         /** Ensure that tax rule was actually removed from DB */
-        /** @var \Magento\Tax\Model\Calculation\Rule $taxRule */
-        $taxRate = Bootstrap::getObjectManager()->create(\Magento\Tax\Model\Calculation\Rate::class);
+        /** @var Rule $taxRule */
+        $taxRate = Bootstrap::getObjectManager()->create(Rate::class);
         $this->assertNull($taxRate->load($taxRuleId)->getId(), 'Tax rule was not deleted from DB.');
     }
 
@@ -159,8 +115,8 @@ class TaxRuleRepositoryInterfaceTest extends WebapiAbstract
         unset($taxRuleData['id']);
         $this->assertEquals($requestData['rule'], $taxRuleData, "Tax rule is created with invalid data.");
         /** Ensure that tax rule was actually created in DB */
-        /** @var \Magento\Tax\Model\Calculation\Rule $taxRule */
-        $taxRule = Bootstrap::getObjectManager()->create(\Magento\Tax\Model\Calculation\Rule::class);
+        /** @var Rule $taxRule */
+        $taxRule = Bootstrap::getObjectManager()->create(Rule::class);
         $this->assertEquals($taxRuleId, $taxRule->load($taxRuleId)->getId(), 'Tax rule was not created in DB.');
         $taxRule->delete();
     }
@@ -193,12 +149,12 @@ class TaxRuleRepositoryInterfaceTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, $requestData);
             $this->fail('Did not throw expected InputException');
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString(
                 'No such entity with customer_tax_class_ids = %fieldValue',
                 $e->getMessage()
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->assertStringContainsString(
                 'No such entity with customer_tax_class_ids = %fieldValue',
                 $e->getMessage()
@@ -224,7 +180,7 @@ class TaxRuleRepositoryInterfaceTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -236,21 +192,21 @@ class TaxRuleRepositoryInterfaceTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, $requestData);
             $this->fail('Expected exception was not raised');
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString(
                 $expectedMessage,
                 $e->getMessage(),
                 'SoapFault does not contain expected message.'
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $errorObj = $this->processRestExceptionResult($e);
             $this->assertEquals($expectedMessage, $errorObj['message']);
             $this->assertEquals(['Code'], $errorObj['parameters']);
         }
 
         // Clean up the new tax rule so it won't affect other tests
-        /** @var \Magento\Tax\Model\Calculation\Rule $taxRule */
-        $taxRule = Bootstrap::getObjectManager()->create(\Magento\Tax\Model\Calculation\Rule::class);
+        /** @var Rule $taxRule */
+        $taxRule = Bootstrap::getObjectManager()->create(Rule::class);
         $taxRule->load($newTaxRuleData['id']);
         $taxRule->delete();
     }
@@ -266,7 +222,7 @@ class TaxRuleRepositoryInterfaceTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/$taxRuleId",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -309,7 +265,7 @@ class TaxRuleRepositoryInterfaceTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/search' . '?' . http_build_query($requestData),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -318,7 +274,7 @@ class TaxRuleRepositoryInterfaceTest extends WebapiAbstract
             ],
         ];
 
-        /** @var \Magento\Framework\Api\SearchResults $searchResults */
+        /** @var SearchResults $searchResults */
         $searchResults = $this->_webApiCall($serviceInfo, $requestData);
 
         $this->assertEquals(1, $searchResults['total_count']);
@@ -343,7 +299,7 @@ class TaxRuleRepositoryInterfaceTest extends WebapiAbstract
      */
     public function testSearchTaxRulesCodeWithJoins()
     {
-        $customerTaxClass =  clone $this->taxClass->load('CustomerTaxClass2', 'class_name');
+        $customerTaxClass = clone $this->taxClass->load('CustomerTaxClass2', 'class_name');
         $productTaxClass = clone $this->taxClass->load('Taxable Goods', 'class_name');
         $taxRate = $this->taxRate->load('*', 'code');
 
@@ -375,7 +331,7 @@ class TaxRuleRepositoryInterfaceTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/search' . '?' . http_build_query($requestData),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -384,7 +340,7 @@ class TaxRuleRepositoryInterfaceTest extends WebapiAbstract
             ],
         ];
 
-        /** @var \Magento\Framework\Api\SearchResults $searchResults */
+        /** @var SearchResults $searchResults */
         $searchResults = $this->_webApiCall($serviceInfo, $requestData);
 
         $this->assertEquals(2, $searchResults['total_count']);
@@ -420,7 +376,7 @@ class TaxRuleRepositoryInterfaceTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/$taxRuleId",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -432,7 +388,7 @@ class TaxRuleRepositoryInterfaceTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, $requestData);
             $this->fail('Expected exception was not raised');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $expectedMessage = 'No such entity with %fieldName = %fieldValue';
 
             $this->assertStringContainsString(
@@ -464,7 +420,7 @@ class TaxRuleRepositoryInterfaceTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -475,11 +431,11 @@ class TaxRuleRepositoryInterfaceTest extends WebapiAbstract
         $this->_webApiCall($serviceInfo, $requestData);
         $expectedRuleData = $requestData['rule'];
         /** Ensure that tax rule was actually updated in DB */
-        /** @var \Magento\Tax\Model\Calculation $taxCalculation */
-        $taxCalculation = Bootstrap::getObjectManager()->create(\Magento\Tax\Model\Calculation::class);
-        /** @var \Magento\Tax\Model\Calculation\Rule $taxRule */
+        /** @var Calculation $taxCalculation */
+        $taxCalculation = Bootstrap::getObjectManager()->create(Calculation::class);
+        /** @var Rule $taxRule */
         $taxRule = Bootstrap::getObjectManager()->create(
-            \Magento\Tax\Model\Calculation\Rule::class,
+            Rule::class,
             ['calculation' => $taxCalculation]
         );
         $taxRuleModel = $taxRule->load($fixtureRule->getId());
@@ -533,7 +489,7 @@ class TaxRuleRepositoryInterfaceTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -544,7 +500,7 @@ class TaxRuleRepositoryInterfaceTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, $requestData);
             $this->fail('Expected exception was not raised');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $expectedMessage = 'No such entity with %fieldName = %fieldValue';
 
             $this->assertStringContainsString(
@@ -571,7 +527,7 @@ class TaxRuleRepositoryInterfaceTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/search' . '?' . http_build_query($requestData),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -586,9 +542,45 @@ class TaxRuleRepositoryInterfaceTest extends WebapiAbstract
     }
 
     /**
+     * Execute per test initialization.
+     */
+    protected function setUp(): void
+    {
+        $this->searchCriteriaBuilder = Bootstrap::getObjectManager()->create(
+            SearchCriteriaBuilder::class
+        );
+        $this->filterBuilder = Bootstrap::getObjectManager()->create(
+            FilterBuilder::class
+        );
+        $objectManager = Bootstrap::getObjectManager();
+
+        $this->searchCriteriaBuilder = $objectManager->create(
+            SearchCriteriaBuilder::class
+        );
+        $this->filterBuilder = $objectManager->create(
+            FilterBuilder::class
+        );
+        $this->sortOrderBuilder = $objectManager->create(
+            SortOrderBuilder::class
+        );
+        $this->taxClass = $objectManager->create(
+            TaxClassInterface::class
+        );
+
+        $this->taxRate = $objectManager->create(
+            TaxRateInterface::class
+        );
+
+        /** Initialize tax classes, tax rates and tax rules defined in fixture Magento/Tax/_files/tax_classes.php */
+        $this->getFixtureTaxRates();
+        $this->getFixtureTaxClasses();
+        $this->getFixtureTaxRules();
+    }
+
+    /**
      * Get tax rates created in Magento\Tax\_files\tax_classes.php
      *
-     * @return \Magento\Tax\Model\Calculation\Rate[]
+     * @return Rate[]
      */
     private function getFixtureTaxRates()
     {
@@ -597,8 +589,8 @@ class TaxRuleRepositoryInterfaceTest extends WebapiAbstract
             if ($this->getFixtureTaxRules()) {
                 $taxRateIds = (array)$this->getFixtureTaxRules()[0]->getRates();
                 foreach ($taxRateIds as $taxRateId) {
-                    /** @var \Magento\Tax\Model\Calculation\Rate $taxRate */
-                    $taxRate = Bootstrap::getObjectManager()->create(\Magento\Tax\Model\Calculation\Rate::class);
+                    /** @var Rate $taxRate */
+                    $taxRate = Bootstrap::getObjectManager()->create(Rate::class);
                     $this->fixtureTaxRates[] = $taxRate->load($taxRateId);
                 }
             }
@@ -607,9 +599,31 @@ class TaxRuleRepositoryInterfaceTest extends WebapiAbstract
     }
 
     /**
+     * Get tax rule created in Magento\Tax\_files\tax_classes.php
+     *
+     * @return Rule[]
+     */
+    private function getFixtureTaxRules()
+    {
+        if ($this->fixtureTaxRules === null) {
+            $this->fixtureTaxRules = [];
+            $taxRuleCodes = ['Test Rule Duplicate', 'Test Rule'];
+            foreach ($taxRuleCodes as $taxRuleCode) {
+                /** @var Rule $taxRule */
+                $taxRule = Bootstrap::getObjectManager()->create(Rule::class);
+                $taxRule->load($taxRuleCode, 'code');
+                if ($taxRule->getId()) {
+                    $this->fixtureTaxRules[] = $taxRule;
+                }
+            }
+        }
+        return $this->fixtureTaxRules;
+    }
+
+    /**
      * Get tax classes created in Magento\Tax\_files\tax_classes.php
      *
-     * @return \Magento\Tax\Model\ClassModel[]
+     * @return ClassModel[]
      */
     private function getFixtureTaxClasses()
     {
@@ -621,8 +635,8 @@ class TaxRuleRepositoryInterfaceTest extends WebapiAbstract
                     (array)$this->getFixtureTaxRules()[0]->getProductTaxClasses()
                 );
                 foreach ($taxClassIds as $taxClassId) {
-                    /** @var \Magento\Tax\Model\ClassModel $taxClass */
-                    $taxClass = Bootstrap::getObjectManager()->create(\Magento\Tax\Model\ClassModel::class);
+                    /** @var ClassModel $taxClass */
+                    $taxClass = Bootstrap::getObjectManager()->create(ClassModel::class);
                     $this->fixtureTaxClasses[] = $taxClass->load($taxClassId);
                 }
             }
@@ -630,25 +644,21 @@ class TaxRuleRepositoryInterfaceTest extends WebapiAbstract
         return $this->fixtureTaxClasses;
     }
 
-    /**
-     * Get tax rule created in Magento\Tax\_files\tax_classes.php
-     *
-     * @return \Magento\Tax\Model\Calculation\Rule[]
-     */
-    private function getFixtureTaxRules()
+    protected function tearDown(): void
     {
-        if ($this->fixtureTaxRules === null) {
-            $this->fixtureTaxRules = [];
-            $taxRuleCodes = ['Test Rule Duplicate', 'Test Rule'];
-            foreach ($taxRuleCodes as $taxRuleCode) {
-                /** @var \Magento\Tax\Model\Calculation\Rule $taxRule */
-                $taxRule = Bootstrap::getObjectManager()->create(\Magento\Tax\Model\Calculation\Rule::class);
-                $taxRule->load($taxRuleCode, 'code');
-                if ($taxRule->getId()) {
-                    $this->fixtureTaxRules[] = $taxRule;
-                }
+        $taxRules = $this->getFixtureTaxRules();
+        if (count($taxRules)) {
+            $taxRates = $this->getFixtureTaxRates();
+            $taxClasses = $this->getFixtureTaxClasses();
+            foreach ($taxRules as $taxRule) {
+                $taxRule->delete();
+            }
+            foreach ($taxRates as $taxRate) {
+                $taxRate->delete();
+            }
+            foreach ($taxClasses as $taxClass) {
+                $taxClass->delete();
             }
         }
-        return $this->fixtureTaxRules;
     }
 }

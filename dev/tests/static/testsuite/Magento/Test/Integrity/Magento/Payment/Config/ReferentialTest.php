@@ -5,9 +5,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Magento\Payment\Config;
 
-class ReferentialTest extends \PHPUnit\Framework\TestCase
+use DOMDocument;
+use DOMXPath;
+use Magento\Framework\App\Utility\Files;
+use PHPUnit\Framework\TestCase;
+
+class ReferentialTest extends TestCase
 {
     /**
      * @var string[] $usedGroups all payment groups used in store configuration
@@ -31,18 +37,18 @@ class ReferentialTest extends \PHPUnit\Framework\TestCase
         /**
          * @var string[] $configFiles
          */
-        $configFiles = \Magento\Framework\App\Utility\Files::init()->getConfigFiles('config.xml', [], false);
+        $configFiles = Files::init()->getConfigFiles('config.xml', [], false);
         /**
          * @var string $file
          */
         foreach ($configFiles as $file) {
             /**
-             * @var \DOMDocument $dom
+             * @var DOMDocument $dom
              */
-            $dom = new \DOMDocument();
+            $dom = new DOMDocument();
             $dom->loadXML(file_get_contents($file));
 
-            $xpath = new \DOMXPath($dom);
+            $xpath = new DOMXPath($dom);
             foreach ($xpath->query('/config/*/payment/*/group') as $group) {
                 if (!in_array($group->nodeValue, self::$_usedGroups)) {
                     self::$_usedGroups[] = $group->nodeValue;
@@ -59,18 +65,18 @@ class ReferentialTest extends \PHPUnit\Framework\TestCase
         /**
          * @var string[] $configFiles
          */
-        $configFiles = \Magento\Framework\App\Utility\Files::init()->getConfigFiles('payment.xml', [], false);
+        $configFiles = Files::init()->getConfigFiles('payment.xml', [], false);
         /**
          * @var string $file
          */
         foreach ($configFiles as $file) {
             /**
-             * @var \DOMDocument $dom
+             * @var DOMDocument $dom
              */
-            $dom = new \DOMDocument();
+            $dom = new DOMDocument();
             $dom->loadXML(file_get_contents($file));
 
-            $xpath = new \DOMXPath($dom);
+            $xpath = new DOMXPath($dom);
             foreach ($xpath->query('/payment/groups/group') as $group) {
                 $id = $group->attributes->getNamedItem('id')->nodeValue;
                 if (!in_array($id, self::$_registeredGroups)) {

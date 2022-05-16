@@ -6,22 +6,19 @@
 
 namespace Magento\Theme\Model\Design;
 
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Theme\Model\Design\Config\Storage;
+use PHPUnit\Framework\TestCase;
+
 /**
  * Test for \Magento\Theme\Model\Design\Config\Storage.
  */
-class ConfigTest extends \PHPUnit\Framework\TestCase
+class ConfigTest extends TestCase
 {
     /**
-     * @var \Magento\Theme\Model\Design\Config\Storage
+     * @var Storage
      */
     private $storage;
-
-    protected function setUp(): void
-    {
-        $this->storage = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Theme\Model\Design\Config\Storage::class
-        );
-    }
 
     /**
      * Test design/header/welcome if it is saved in db as empty(null) it should be shown on backend as empty.
@@ -36,5 +33,12 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
                 $this->assertSame('', $configData->getValue());
             }
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->storage = Bootstrap::getObjectManager()->create(
+            Storage::class
+        );
     }
 }

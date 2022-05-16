@@ -15,8 +15,8 @@ define([
 
         beforeEach(function () {
             date = new Date({
-                    dataScope: 'abstract'
-                });
+                dataScope: 'abstract'
+            });
         });
 
         describe('initConfig method', function () {

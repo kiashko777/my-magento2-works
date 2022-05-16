@@ -21,16 +21,6 @@ class AddFixtureTest extends AbstractOverridesTest
     private $fixtureCallStorage;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->fixtureCallStorage = $this->objectManager->get(FixtureCallStorage::class);
-    }
-
-    /**
      * Checks that fixture can be added
      *
      * @return void
@@ -41,5 +31,15 @@ class AddFixtureTest extends AbstractOverridesTest
             1,
             $this->fixtureCallStorage->getFixturesCount('fixture1_second_module.php')
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->fixtureCallStorage = $this->objectManager->get(FixtureCallStorage::class);
     }
 }

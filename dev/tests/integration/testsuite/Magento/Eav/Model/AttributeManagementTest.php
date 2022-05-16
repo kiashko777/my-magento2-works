@@ -6,23 +6,25 @@
 
 namespace Magento\Eav\Model;
 
-class AttributeManagementTest extends \PHPUnit\Framework\TestCase
+use Magento\Catalog\Api\Data\CategoryAttributeInterface;
+use Magento\Catalog\Api\Data\ProductAttributeInterface;
+use Magento\Eav\Api\AttributeManagementInterface;
+use Magento\Eav\Model\Entity\Attribute\AbstractAttribute;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class AttributeManagementTest extends TestCase
 {
     /**
-     * @var \Magento\Eav\Api\AttributeManagementInterface
+     * @var AttributeManagementInterface
      */
     private $model;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->model = $this->objectManager->create(\Magento\Eav\Api\AttributeManagementInterface::class);
-    }
 
     /**
      * Verify that collection in service used correctly
@@ -30,20 +32,20 @@ class AttributeManagementTest extends \PHPUnit\Framework\TestCase
     public function testGetList()
     {
         $productAttributeSetId = $this->getAttributeSetId(
-            \Magento\Catalog\Api\Data\ProductAttributeInterface::ENTITY_TYPE_CODE
+            ProductAttributeInterface::ENTITY_TYPE_CODE
         );
         $productAttributes = $this->model->getAttributes(
-            \Magento\Catalog\Api\Data\ProductAttributeInterface::ENTITY_TYPE_CODE,
+            ProductAttributeInterface::ENTITY_TYPE_CODE,
             $productAttributeSetId
         );
         // Verify that result contains only product attributes
         $this->verifyAttributeSetIds($productAttributes, $productAttributeSetId);
 
         $categoryAttributeSetId = $this->getAttributeSetId(
-            \Magento\Catalog\Api\Data\CategoryAttributeInterface::ENTITY_TYPE_CODE
+            CategoryAttributeInterface::ENTITY_TYPE_CODE
         );
         $categoryAttributes = $this->model->getAttributes(
-            \Magento\Catalog\Api\Data\CategoryAttributeInterface::ENTITY_TYPE_CODE,
+            CategoryAttributeInterface::ENTITY_TYPE_CODE,
             $categoryAttributeSetId
         );
         // Verify that result contains only category attributes
@@ -56,8 +58,8 @@ class AttributeManagementTest extends \PHPUnit\Framework\TestCase
      */
     private function getAttributeSetId($entityTypeCode)
     {
-        /** @var \Magento\Eav\Model\Config $eavConfig */
-        $eavConfig = $this->objectManager->create(\Magento\Eav\Model\Config::class);
+        /** @var Config $eavConfig */
+        $eavConfig = $this->objectManager->create(Config::class);
         return $eavConfig->getEntityType($entityTypeCode)->getDefaultAttributeSetId();
     }
 
@@ -68,9 +70,15 @@ class AttributeManagementTest extends \PHPUnit\Framework\TestCase
      */
     private function verifyAttributeSetIds(array $items, $attributeSetId)
     {
-        /** @var \Magento\Eav\Model\Entity\Attribute\AbstractAttribute $item */
+        /** @var AbstractAttribute $item */
         foreach ($items as $item) {
             $this->assertEquals($attributeSetId, $item->getAttributeSetId());
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->model = $this->objectManager->create(AttributeManagementInterface::class);
     }
 }

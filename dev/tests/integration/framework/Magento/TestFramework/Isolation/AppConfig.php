@@ -8,6 +8,7 @@ namespace Magento\TestFramework\Isolation;
 
 use Magento\TestFramework\App\Config;
 use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
 /**
  * A listener that watches for integrity of app configuration
@@ -25,11 +26,11 @@ class AppConfig
      * Assumption: this is done once right before executing very first test suite.
      * It is assumed that deployment configuration is valid at this point
      *
-     * @param \PHPUnit\Framework\TestCase $test
+     * @param TestCase $test
      * @return void
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    public function startTest(\PHPUnit\Framework\TestCase $test)
+    public function startTest(TestCase $test)
     {
         $this->getTestAppConfig()->clean();
     }

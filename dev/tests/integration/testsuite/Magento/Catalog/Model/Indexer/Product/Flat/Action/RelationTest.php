@@ -8,20 +8,23 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Model\Indexer\Product\Flat\Action;
 
+use Exception;
+use Magento\Catalog\Helper\Product\Flat\Indexer;
+use Magento\Catalog\Model\Indexer\Product\Flat\Action\Full as FlatIndexerFull;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\DB\Adapter\AdapterInterface;
-use Magento\Store\Model\StoreManagerInterface;
-use Magento\Catalog\Model\Indexer\Product\Flat\Action\Full as FlatIndexerFull;
-use Magento\Catalog\Helper\Product\Flat\Indexer;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Indexer\TestCase;
+use Zend_Db_Statement_Exception;
 
 /**
  * Test relation customization
  *
  * @magentoDbIsolation disabled
  */
-class RelationTest extends \Magento\TestFramework\Indexer\TestCase
+class RelationTest extends TestCase
 {
     /**
      * @var FlatIndexerFull
@@ -51,51 +54,19 @@ class RelationTest extends \Magento\TestFramework\Indexer\TestCase
     private $productIndexerHelper;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-
-        $this->productIndexerHelper = $objectManager->create(
-            Indexer::class,
-            ['addChildData' => true]
-        );
-        $this->indexer = $objectManager->create(
-            FlatIndexerFull::class,
-            [
-                'productHelper' => $this->productIndexerHelper,
-            ]
-        );
-        $this->storeManager = $objectManager->get(StoreManagerInterface::class);
-        $this->connection = $objectManager->get(ResourceConnection::class)->getConnection();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        foreach ($this->flatUpdated as $flatTable) {
-            $this->connection->dropColumn($flatTable, 'child_id');
-            $this->connection->dropColumn($flatTable, 'is_child');
-        }
-    }
-
-    /**
      * Test that SQL generated for relation customization is valid
      *
      * @return void
      * @throws LocalizedException
-     * @throws \Exception
+     * @throws Exception
      */
-    public function testExecute() : void
+    public function testExecute(): void
     {
         $this->addChildColumns();
         try {
             $result = $this->indexer->execute();
         } catch (LocalizedException $e) {
-            if ($e->getPrevious() instanceof \Zend_Db_Statement_Exception) {
+            if ($e->getPrevious() instanceof Zend_Db_Statement_Exception) {
                 $this->fail($e->getMessage());
             }
             throw $e;
@@ -144,6 +115,38 @@ class RelationTest extends \Magento\TestFramework\Indexer\TestCase
 
                 $this->flatUpdated[] = $flatTable;
             }
+        }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+
+        $this->productIndexerHelper = $objectManager->create(
+            Indexer::class,
+            ['addChildData' => true]
+        );
+        $this->indexer = $objectManager->create(
+            FlatIndexerFull::class,
+            [
+                'productHelper' => $this->productIndexerHelper,
+            ]
+        );
+        $this->storeManager = $objectManager->get(StoreManagerInterface::class);
+        $this->connection = $objectManager->get(ResourceConnection::class)->getConnection();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        foreach ($this->flatUpdated as $flatTable) {
+            $this->connection->dropColumn($flatTable, 'child_id');
+            $this->connection->dropColumn($flatTable, 'is_child');
         }
     }
 }

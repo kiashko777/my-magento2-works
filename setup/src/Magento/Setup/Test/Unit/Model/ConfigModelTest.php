@@ -56,25 +56,6 @@ class ConfigModelTest extends TestCase
      */
     private $configOptionsList;
 
-    protected function setUp(): void
-    {
-        $this->collector = $this->createMock(ConfigOptionsListCollector::class);
-        $this->writer = $this->createMock(Writer::class);
-        $this->deploymentConfig = $this->createMock(DeploymentConfig::class);
-        $this->configOptionsList = $this->createMock(ConfigOptionsList::class);
-        $this->configData = $this->createMock(ConfigData::class);
-        $this->filePermissions = $this->createMock(FilePermissions::class);
-
-        $this->deploymentConfig->expects($this->any())->method('get');
-
-        $this->configModel = new ConfigModel(
-            $this->collector,
-            $this->writer,
-            $this->deploymentConfig,
-            $this->filePermissions
-        );
-    }
-
     public function testValidate()
     {
         $option = $this->createMock(TextConfigOption::class);
@@ -190,5 +171,24 @@ class ConfigModelTest extends TestCase
         $this->filePermissions->expects($this->once())->method('getMissingWritablePathsForInstallation')
             ->willReturn(['/a/ro/dir', '/media']);
         $this->configModel->process([]);
+    }
+
+    protected function setUp(): void
+    {
+        $this->collector = $this->createMock(ConfigOptionsListCollector::class);
+        $this->writer = $this->createMock(Writer::class);
+        $this->deploymentConfig = $this->createMock(DeploymentConfig::class);
+        $this->configOptionsList = $this->createMock(ConfigOptionsList::class);
+        $this->configData = $this->createMock(ConfigData::class);
+        $this->filePermissions = $this->createMock(FilePermissions::class);
+
+        $this->deploymentConfig->expects($this->any())->method('get');
+
+        $this->configModel = new ConfigModel(
+            $this->collector,
+            $this->writer,
+            $this->deploymentConfig,
+            $this->filePermissions
+        );
     }
 }

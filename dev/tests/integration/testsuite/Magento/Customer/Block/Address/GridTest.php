@@ -6,48 +6,30 @@
 
 namespace Magento\Customer\Block\Address;
 
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Api\Data\AddressInterface;
+use Magento\Customer\Helper\Session\CurrentCustomer;
+use Magento\Customer\Model\CustomerRegistry;
+use Magento\Framework\View\Element\BlockInterface;
+use Magento\Framework\View\LayoutInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Integration tests for the \Magento\Customer\Block\Address\Grid class
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class GridTest extends \PHPUnit\Framework\TestCase
+class GridTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\View\LayoutInterface
-     */
-    private $layout;
-
-    /**
-     * @var \Magento\Customer\Helper\Session\CurrentCustomer
+     * @var CurrentCustomer
      */
     protected $currentCustomer;
-
-    protected function setUp(): void
-    {
-        /** @var \PHPUnit\Framework\MockObject\MockObject $blockMock */
-        $blockMock = $this->getMockBuilder(
-            \Magento\Framework\View\Element\BlockInterface::class
-        )->disableOriginalConstructor()->setMethods(
-            ['setTitle', 'toHtml']
-        )->getMock();
-        $blockMock->expects($this->any())->method('setTitle');
-
-        $this->currentCustomer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Customer\Helper\Session\CurrentCustomer::class);
-        $this->layout = Bootstrap::getObjectManager()->get(\Magento\Framework\View\LayoutInterface::class);
-        $this->layout->setBlock('head', $blockMock);
-    }
-
-    protected function tearDown(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var \Magento\Customer\Model\CustomerRegistry $customerRegistry */
-        $customerRegistry = $objectManager->get(\Magento\Customer\Model\CustomerRegistry::class);
-        // Cleanup customer from registry
-        $customerRegistry->remove(1);
-    }
+    /**
+     * @var LayoutInterface
+     */
+    private $layout;
 
     /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
@@ -64,6 +46,22 @@ class GridTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Create address book block for customer
+     *
+     * @param int $customerId
+     * @return BlockInterface
+     */
+    private function createBlockForCustomer($customerId)
+    {
+        $this->currentCustomer->setCustomerId($customerId);
+        return $this->layout->createBlock(
+            Grid::class,
+            '',
+            ['currentCustomer' => $this->currentCustomer]
+        );
+    }
+
+    /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
      * @magentoDataFixture Magento/Customer/_files/customer_two_addresses.php
      * @magentoAppIsolation enabled
@@ -74,7 +72,7 @@ class GridTest extends \PHPUnit\Framework\TestCase
         $this->assertNotNull($gridBlock->getAdditionalAddresses());
         $this->assertCount(1, $gridBlock->getAdditionalAddresses());
         $this->assertInstanceOf(
-            \Magento\Customer\Api\Data\AddressInterface::class,
+            AddressInterface::class,
             $gridBlock->getAdditionalAddresses()[0]
         );
         $this->assertEquals(2, $gridBlock->getAdditionalAddresses()[0]->getId());
@@ -116,26 +114,35 @@ class GridTest extends \PHPUnit\Framework\TestCase
         $gridBlock = $this->createBlockForCustomer(1);
         /** @var CustomerRepositoryInterface $customerRepository */
         $customerRepository = Bootstrap::getObjectManager()->get(
-            \Magento\Customer\Api\CustomerRepositoryInterface::class
+            CustomerRepositoryInterface::class
         );
         $customer = $customerRepository->getById(1);
         $object = $gridBlock->getCustomer();
         $this->assertEquals($customer, $object);
     }
 
-    /**
-     * Create address book block for customer
-     *
-     * @param int $customerId
-     * @return \Magento\Framework\View\Element\BlockInterface
-     */
-    private function createBlockForCustomer($customerId)
+    protected function setUp(): void
     {
-        $this->currentCustomer->setCustomerId($customerId);
-        return $this->layout->createBlock(
-            \Magento\Customer\Block\Address\Grid::class,
-            '',
-            ['currentCustomer' => $this->currentCustomer]
-        );
+        /** @var MockObject $blockMock */
+        $blockMock = $this->getMockBuilder(
+            BlockInterface::class
+        )->disableOriginalConstructor()->setMethods(
+            ['setTitle', 'toHtml']
+        )->getMock();
+        $blockMock->expects($this->any())->method('setTitle');
+
+        $this->currentCustomer = Bootstrap::getObjectManager()
+            ->get(CurrentCustomer::class);
+        $this->layout = Bootstrap::getObjectManager()->get(LayoutInterface::class);
+        $this->layout->setBlock('head', $blockMock);
+    }
+
+    protected function tearDown(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var CustomerRegistry $customerRegistry */
+        $customerRegistry = $objectManager->get(CustomerRegistry::class);
+        // Cleanup customer from registry
+        $customerRegistry->remove(1);
     }
 }

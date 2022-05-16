@@ -3,19 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Tax\Model\ResourceModel\Calculation\Rule;
 
-class CollectionTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Tax\Model\ClassModel;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
+
+class CollectionTest extends TestCase
 {
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     protected $_objectManager;
-
-    protected function setUp(): void
-    {
-        $this->_objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * Test setClassTypeFilter with correct Class Type
@@ -29,7 +31,7 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
     public function testSetClassTypeFilter($classType, $elementId, $expected)
     {
         $collection = $this->_objectManager->create(
-            \Magento\Tax\Model\ResourceModel\Calculation\Rule\Collection::class
+            Collection::class
         );
         $collection->setClassTypeFilter($classType, $elementId);
         $this->assertMatchesRegularExpression($expected, (string)$collection->getSelect());
@@ -39,12 +41,12 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
     {
         return [
             [
-                \Magento\Tax\Model\ClassModel::TAX_CLASS_TYPE_PRODUCT,
+                ClassModel::TAX_CLASS_TYPE_PRODUCT,
                 1,
                 '/`?cd`?\.`?product_tax_class_id`? = [\S]{0,1}1[\S]{0,1}/',
             ],
             [
-                \Magento\Tax\Model\ClassModel::TAX_CLASS_TYPE_CUSTOMER,
+                ClassModel::TAX_CLASS_TYPE_CUSTOMER,
                 1,
                 '/`?cd`?\.`?customer_tax_class_id`? = [\S]{0,1}1[\S]{0,1}/'
             ]
@@ -57,11 +59,16 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
      */
     public function testSetClassTypeFilterWithWrongType()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
 
         $collection = $this->_objectManager->create(
-            \Magento\Tax\Model\ResourceModel\Calculation\Rule\Collection::class
+            Collection::class
         );
         $collection->setClassTypeFilter('WrongType', 1);
+    }
+
+    protected function setUp(): void
+    {
+        $this->_objectManager = Bootstrap::getObjectManager();
     }
 }

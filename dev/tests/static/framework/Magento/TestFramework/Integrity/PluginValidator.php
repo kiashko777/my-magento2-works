@@ -3,11 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Integrity;
 
 use Magento\Framework\Exception\ValidatorException;
 use Magento\Framework\Interception\Code\InterfaceValidator;
 use Magento\Framework\Phrase;
+use ReflectionClass;
 
 class PluginValidator
 {
@@ -44,7 +46,7 @@ class PluginValidator
      */
     private function validateClassNameMatchesCase($className)
     {
-        $declarationName = (new \ReflectionClass($className))->getName();
+        $declarationName = (new ReflectionClass($className))->getName();
 
         if (ltrim($className, '\\') != ltrim($declarationName)) {
             throw new ValidatorException(

@@ -41,17 +41,6 @@ class GetProductReviewsTest extends GraphQlAbstract
     private $registry;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-        $this->reviewCollectionFactory = $objectManager->get(ReviewCollectionFactory::class);
-        $this->registry = $objectManager->get(Registry::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Review/_files/set_position_and_add_store_to_all_ratings.php
      */
     public function testProductReviewRatingsMetadata()
@@ -79,16 +68,16 @@ QUERY;
                     [
                         'value_id' => 'MTE=',
                         'value' => "1"
-                    ],[
+                    ], [
                         'value_id' => 'MTI=',
                         'value' => "2"
-                    ],[
+                    ], [
                         'value_id' => 'MTM=',
                         'value' => "3"
-                    ],[
+                    ], [
                         'value_id' => 'MTQ=',
                         'value' => "4"
-                    ],[
+                    ], [
                         'value_id' => 'MTU=',
                         'value' => "5"
                     ]
@@ -100,16 +89,16 @@ QUERY;
                     [
                         'value_id' => 'MQ==',
                         'value' => "1"
-                    ],[
+                    ], [
                         'value_id' => 'Mg==',
                         'value' => "2"
-                    ],[
+                    ], [
                         'value_id' => 'Mw==',
                         'value' => "3"
-                    ],[
+                    ], [
                         'value_id' => 'NA==',
                         'value' => "4"
-                    ],[
+                    ], [
                         'value_id' => 'NQ==',
                         'value' => "5"
                     ]
@@ -121,16 +110,16 @@ QUERY;
                     [
                         'value_id' => 'Ng==',
                         'value' => "1"
-                    ],[
+                    ], [
                         'value_id' => 'Nw==',
                         'value' => "2"
-                    ],[
+                    ], [
                         'value_id' => 'OA==',
                         'value' => "3"
-                    ],[
+                    ], [
                         'value_id' => 'OQ==',
                         'value' => "4"
-                    ],[
+                    ], [
                         'value_id' => 'MTA=',
                         'value' => "5"
                     ]
@@ -231,7 +220,7 @@ QUERY;
                 [
                     'name' => 'Quality',
                     'value' => 2
-                ],[
+                ], [
                     'name' => 'Value',
                     'value' => 2
                 ]
@@ -244,6 +233,21 @@ QUERY;
         self::assertArrayHasKey('items', $response['customer']['reviews']);
         self::assertNotEmpty($response['customer']['reviews']['items']);
         self::assertEquals($expectedFirstItem, $response['customer']['reviews']['items'][0]);
+    }
+
+    /**
+     * @param string $username
+     * @param string $password
+     *
+     * @return array
+     *
+     * @throws AuthenticationException
+     */
+    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
+
+        return ['Authorization' => 'Bearer ' . $customerToken];
     }
 
     /**
@@ -268,17 +272,13 @@ QUERY;
     }
 
     /**
-     * @param string $username
-     * @param string $password
-     *
-     * @return array
-     *
-     * @throws AuthenticationException
+     * @inheritdoc
      */
-    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
+    protected function setUp(): void
     {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
-
-        return ['Authorization' => 'Bearer ' . $customerToken];
+        $objectManager = Bootstrap::getObjectManager();
+        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
+        $this->reviewCollectionFactory = $objectManager->get(ReviewCollectionFactory::class);
+        $this->registry = $objectManager->get(Registry::class);
     }
 }

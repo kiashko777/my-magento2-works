@@ -7,29 +7,27 @@
 
 namespace Magento\Catalog\Api;
 
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Option;
+use Magento\Catalog\Model\ProductFactory;
 use Magento\Catalog\Model\ProductRepository;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 class ProductCustomOptionRepositoryTest extends WebapiAbstract
 {
+    const SERVICE_NAME = 'catalogProductCustomOptionRepositoryV1';
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
-
-    const SERVICE_NAME = 'catalogProductCustomOptionRepositoryV1';
-
     /**
-     * @var \Magento\Catalog\Model\ProductFactory
+     * @var ProductFactory
      */
     protected $productFactory;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->productFactory = $this->objectManager->get(\Magento\Catalog\Model\ProductFactory::class);
-    }
 
     /**
      * @magentoApiDataFixture Magento/Catalog/_files/product_with_options.php
@@ -40,16 +38,16 @@ class ProductCustomOptionRepositoryTest extends WebapiAbstract
         $sku = 'simple';
         /** @var ProductRepository $productRepository */
         $productRepository = $this->objectManager->create(
-            \Magento\Catalog\Model\ProductRepository::class
+            ProductRepository::class
         );
-        /** @var  \Magento\Catalog\Model\Product $product */
+        /** @var  Product $product */
         $product = $productRepository->get($sku, false, null, true);
         $customOptions = $product->getOptions();
         $optionId = array_pop($customOptions)->getId();
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => "/V1/products/$sku/options/$optionId",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -58,7 +56,7 @@ class ProductCustomOptionRepositoryTest extends WebapiAbstract
             ],
         ];
         $this->assertTrue($this->_webApiCall($serviceInfo, ['sku' => $sku, 'optionId' => $optionId]));
-        /** @var  \Magento\Catalog\Model\Product $product */
+        /** @var  Product $product */
         $product = $productRepository->get($sku, false, null, true);
         $this->assertNull($product->getOptionById($optionId));
         $this->assertCount(9, $product->getOptions());
@@ -71,16 +69,16 @@ class ProductCustomOptionRepositoryTest extends WebapiAbstract
     public function testGet()
     {
         $productSku = 'simple';
-        /** @var \Magento\Catalog\Api\ProductCustomOptionRepositoryInterface $service */
+        /** @var ProductCustomOptionRepositoryInterface $service */
         $service = Bootstrap::getObjectManager()
-            ->get(\Magento\Catalog\Api\ProductCustomOptionRepositoryInterface::class);
+            ->get(ProductCustomOptionRepositoryInterface::class);
         $options = $service->getList('simple');
         $option = current($options);
         $optionId = $option->getOptionId();
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/products/' . $productSku . "/options/" . $optionId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -107,7 +105,7 @@ class ProductCustomOptionRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/products/' . $productSku . "/options",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -146,9 +144,9 @@ class ProductCustomOptionRepositoryTest extends WebapiAbstract
     public function testSave($optionData)
     {
         $productSku = 'simple';
-        /** @var \Magento\Catalog\Model\ProductRepository $productRepository */
+        /** @var ProductRepository $productRepository */
         $productRepository = $this->objectManager->create(
-            \Magento\Catalog\Model\ProductRepository::class
+            ProductRepository::class
         );
 
         $optionDataPost = $optionData;
@@ -156,7 +154,7 @@ class ProductCustomOptionRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/products/options',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -208,7 +206,7 @@ class ProductCustomOptionRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => "/V1/products/options",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -254,7 +252,7 @@ class ProductCustomOptionRepositoryTest extends WebapiAbstract
         $productSku = 'simple';
         /** @var ProductRepository $productRepository */
         $productRepository = $this->objectManager->create(
-            \Magento\Catalog\Model\ProductRepository::class
+            ProductRepository::class
         );
 
         $options = $productRepository->get($productSku, true)->getOptions();
@@ -275,7 +273,7 @@ class ProductCustomOptionRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/products/options/' . $optionId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -303,7 +301,7 @@ class ProductCustomOptionRepositoryTest extends WebapiAbstract
      * @param string $optionType
      * @param bool $includedExisting
      * @param int $expectedOptionValuesCount
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @throws NoSuchEntityException
      * @magentoApiDataFixture Magento/Catalog/_files/product_with_options.php
      * @magentoAppIsolation enabled
      * @dataProvider validOptionDataProvider
@@ -322,12 +320,12 @@ class ProductCustomOptionRepositoryTest extends WebapiAbstract
 
         /** @var ProductRepository $productRepository */
         $productRepository = $this->objectManager->create(
-            \Magento\Catalog\Model\ProductRepository::class
+            ProductRepository::class
         );
-        /** @var  \Magento\Catalog\Model\Product $product */
+        /** @var  Product $product */
         $product = $productRepository->get('simple', false, null, true);
 
-        /**@var $option \Magento\Catalog\Model\Product\Option */
+        /**@var $option Option */
         foreach ($product->getOptions() as $option) {
             if ($option->getType() == $optionType) {
                 $fixtureOption = $option;
@@ -363,7 +361,7 @@ class ProductCustomOptionRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/products/options/' . $fixtureOption->getId(),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -375,7 +373,7 @@ class ProductCustomOptionRepositoryTest extends WebapiAbstract
             $data['option_id'] = $fixtureOption->getId();
             $valueObject = $this->_webApiCall(
                 $serviceInfo,
-                [ 'option_id' => $fixtureOption->getId(), 'option' => $data]
+                ['option_id' => $fixtureOption->getId(), 'option' => $data]
             );
         } else {
             $valueObject = $this->_webApiCall($serviceInfo, ['option' => $data]);
@@ -430,7 +428,7 @@ class ProductCustomOptionRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/products/options/' . $optionId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
         ];
 
@@ -446,5 +444,11 @@ class ProductCustomOptionRepositoryTest extends WebapiAbstract
     public function optionNegativeUpdateDataProvider()
     {
         return include '_files/product_options_update_negative.php';
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productFactory = $this->objectManager->get(ProductFactory::class);
     }
 }

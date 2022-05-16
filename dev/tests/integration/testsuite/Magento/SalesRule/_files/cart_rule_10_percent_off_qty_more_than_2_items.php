@@ -7,6 +7,9 @@ declare(strict_types=1);
 
 use Magento\Customer\Model\GroupManagement;
 use Magento\SalesRule\Model\Rule;
+use Magento\SalesRule\Model\Rule\Condition\Combine;
+use Magento\SalesRule\Model\Rule\Condition\Product;
+use Magento\SalesRule\Model\Rule\Condition\Product\Found;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 
@@ -40,33 +43,33 @@ $salesRule->setData(
 
 $salesRule->getConditions()->loadArray(
     [
-    'type' => \Magento\SalesRule\Model\Rule\Condition\Combine::class,
-    'attribute' => null,
-    'operator' => null,
-    'value' => '1',
-    'is_value_processed' => null,
-    'aggregator' => 'all',
-    'conditions' =>
-        [
+        'type' => Combine::class,
+        'attribute' => null,
+        'operator' => null,
+        'value' => '1',
+        'is_value_processed' => null,
+        'aggregator' => 'all',
+        'conditions' =>
             [
-                'type' => \Magento\SalesRule\Model\Rule\Condition\Product\Found::class,
-                'attribute' => null,
-                'operator' => null,
-                'value' => '1',
-                'is_value_processed' => null,
-                'aggregator' => 'all',
-                'conditions' =>
-                    [
+                [
+                    'type' => Found::class,
+                    'attribute' => null,
+                    'operator' => null,
+                    'value' => '1',
+                    'is_value_processed' => null,
+                    'aggregator' => 'all',
+                    'conditions' =>
                         [
-                            'type' => \Magento\SalesRule\Model\Rule\Condition\Product::class,
-                            'attribute' => 'quote_item_qty',
-                            'operator' => '>=',
-                            'value' => '2',
-                            'is_value_processed' => false,
+                            [
+                                'type' => Product::class,
+                                'attribute' => 'quote_item_qty',
+                                'operator' => '>=',
+                                'value' => '2',
+                                'is_value_processed' => false,
+                            ],
                         ],
-                    ],
+                ],
             ],
-        ],
     ]
 );
 

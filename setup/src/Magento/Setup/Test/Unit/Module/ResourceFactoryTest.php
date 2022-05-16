@@ -21,6 +21,14 @@ class ResourceFactoryTest extends TestCase
      */
     private $resourceFactory;
 
+    public function testCreate()
+    {
+        $resource = $this->resourceFactory->create(
+            $this->createMock(DeploymentConfig::class)
+        );
+        $this->assertInstanceOf(ResourceConnection::class, $resource);
+    }
+
     protected function setUp(): void
     {
         $serviceLocatorMock = $this->getMockBuilder(ServiceLocatorInterface::class)
@@ -33,13 +41,5 @@ class ResourceFactoryTest extends TestCase
             ->with(ConnectionFactory::class)
             ->willReturn($connectionFactory);
         $this->resourceFactory = new ResourceFactory($serviceLocatorMock);
-    }
-
-    public function testCreate()
-    {
-        $resource = $this->resourceFactory->create(
-            $this->createMock(DeploymentConfig::class)
-        );
-        $this->assertInstanceOf(ResourceConnection::class, $resource);
     }
 }

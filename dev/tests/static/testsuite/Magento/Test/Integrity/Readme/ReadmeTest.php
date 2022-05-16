@@ -7,11 +7,14 @@
 /**
  * Test to ensure that readme file present in specified directories
  */
+
 namespace Magento\Test\Integrity\Readme;
 
+use Magento\Framework\App\Utility\AggregateInvoker;
 use Magento\Framework\App\Utility\Files;
+use PHPUnit\Framework\TestCase;
 
-class ReadmeTest extends \PHPUnit\Framework\TestCase
+class ReadmeTest extends TestCase
 {
     const README_FILENAME = 'README.md';
 
@@ -25,19 +28,13 @@ class ReadmeTest extends \PHPUnit\Framework\TestCase
     /** @var array */
     private $scanList = [];
 
-    protected function setUp(): void
-    {
-        $this->blacklist = $this->getPaths(__DIR__ . '/' . self::BLACKLIST_FILES_PATTERN);
-        $this->scanList = $this->getPaths(__DIR__ . '/' . self::SCAN_LIST_FILE);
-    }
-
     public function testReadmeFiles()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
-            /**
-             * @param string $dir
-             */
+        /**
+         * @param string $dir
+         */
             function ($dir) {
                 $file = $dir . DIRECTORY_SEPARATOR . self::README_FILENAME;
                 $this->assertFileExists(
@@ -71,6 +68,12 @@ class ReadmeTest extends \PHPUnit\Framework\TestCase
     private function isInBlacklist($path)
     {
         return in_array($path, $this->blacklist);
+    }
+
+    protected function setUp(): void
+    {
+        $this->blacklist = $this->getPaths(__DIR__ . '/' . self::BLACKLIST_FILES_PATTERN);
+        $this->scanList = $this->getPaths(__DIR__ . '/' . self::SCAN_LIST_FILE);
     }
 
     /**

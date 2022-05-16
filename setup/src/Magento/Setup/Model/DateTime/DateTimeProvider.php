@@ -3,8 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Model\DateTime;
 
+use Magento\Framework\Stdlib\DateTime\DateTime;
 use Magento\Setup\Model\ObjectManagerProvider;
 
 /**
@@ -29,7 +31,7 @@ class DateTimeProvider
     /**
      * DateTime instance
      *
-     * @var \Magento\Framework\Stdlib\DateTime\DateTime
+     * @var DateTime
      */
     private $dateTime;
 
@@ -48,13 +50,13 @@ class DateTimeProvider
     /**
      * Get instance of DateTime
      *
-     * @return \Magento\Framework\Stdlib\DateTime\DateTime
+     * @return DateTime
      */
     public function get()
     {
         if (!$this->dateTime) {
             $this->dateTime = $this->objectManagerProvider->get()->create(
-                \Magento\Framework\Stdlib\DateTime\DateTime::class,
+                DateTime::class,
                 ['localeDate' => $this->tzProvider->get()]
             );
         }

@@ -40,6 +40,43 @@ class ProductViewTest extends TestCase
     private $productRepository;
 
     /**
+     * @return void
+     */
+    public function testSendFriendLinkDisabled(): void
+    {
+        $this->registerProduct('simple2');
+        $this->assertEmpty($this->block->toHtml());
+    }
+
+    /**
+     * Register product by sku
+     *
+     * @param string $sku
+     * @return ProductInterface
+     */
+    private function registerProduct(string $sku): ProductInterface
+    {
+        $product = $this->productRepository->get($sku);
+        $this->registry->unregister('product');
+        $this->registry->register('product', $product);
+
+        return $product;
+    }
+
+    /**
+     * @magentoConfigFixture current_store sendfriend/email/enabled 1
+     *
+     * @return void
+     */
+    public function testSendFriendLinkEnabled(): void
+    {
+        $product = $this->registerProduct('simple2');
+        $html = $this->block->toHtml();
+        $this->assertStringContainsString('sendfriend/product/send/id/' . $product->getId(), $html);
+        $this->assertEquals('Email', trim(strip_tags($html)));
+    }
+
+    /**
      * @inheritdoc
      */
     protected function setUp(): void
@@ -63,42 +100,5 @@ class ProductViewTest extends TestCase
         parent::tearDown();
 
         $this->registry->unregister('product');
-    }
-
-    /**
-     * @return void
-     */
-    public function testSendFriendLinkDisabled(): void
-    {
-        $this->registerProduct('simple2');
-        $this->assertEmpty($this->block->toHtml());
-    }
-
-    /**
-     * @magentoConfigFixture current_store sendfriend/email/enabled 1
-     *
-     * @return void
-     */
-    public function testSendFriendLinkEnabled(): void
-    {
-        $product = $this->registerProduct('simple2');
-        $html = $this->block->toHtml();
-        $this->assertStringContainsString('sendfriend/product/send/id/' . $product->getId(), $html);
-        $this->assertEquals('Email', trim(strip_tags($html)));
-    }
-
-    /**
-     * Register product by sku
-     *
-     * @param string $sku
-     * @return ProductInterface
-     */
-    private function registerProduct(string $sku): ProductInterface
-    {
-        $product = $this->productRepository->get($sku);
-        $this->registry->unregister('product');
-        $this->registry->register('product', $product);
-
-        return $product;
     }
 }

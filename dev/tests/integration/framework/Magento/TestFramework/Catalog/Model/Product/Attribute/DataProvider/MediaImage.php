@@ -41,6 +41,14 @@ class MediaImage extends AbstractBaseAttributeData
     /**
      * @inheritdoc
      */
+    protected function getFrontendInput(): string
+    {
+        return 'media_image';
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function getAttributeDataWithCheckArray(): array
     {
         $result = parent::getAttributeDataWithCheckArray();
@@ -69,31 +77,6 @@ class MediaImage extends AbstractBaseAttributeData
                 ],
             ]
         );
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function getFrontendInput(): string
-    {
-        return 'media_image';
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function getUpdatePostData(): array
-    {
-        return [
-            'frontend_label' => [
-                Store::DEFAULT_STORE_ID => 'Decimal Attribute Update',
-            ],
-            'frontend_input' => 'media_image',
-            'is_global' => ScopedAttributeInterface::SCOPE_WEBSITE,
-            'is_used_in_grid' => '1',
-            'is_visible_in_grid' => '1',
-            'is_filterable_in_grid' => '1',
-        ];
     }
 
     /**
@@ -128,5 +111,22 @@ class MediaImage extends AbstractBaseAttributeData
                 'frontend_model' => Image::class,
             ]
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function getUpdatePostData(): array
+    {
+        return [
+            'frontend_label' => [
+                Store::DEFAULT_STORE_ID => 'Decimal Attribute Update',
+            ],
+            'frontend_input' => 'media_image',
+            'is_global' => ScopedAttributeInterface::SCOPE_WEBSITE,
+            'is_used_in_grid' => '1',
+            'is_visible_in_grid' => '1',
+            'is_filterable_in_grid' => '1',
+        ];
     }
 }

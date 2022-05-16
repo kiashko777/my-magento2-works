@@ -19,12 +19,6 @@ class JsonTest extends TestCase
      */
     protected $parser;
 
-    protected function setUp(): void
-    {
-        $objectManagerHelper = new ObjectManager($this);
-        $this->parser = $objectManagerHelper->getObject(Json::class);
-    }
-
     /**
      * @param array $options
      * @dataProvider dataProviderWrongOptionFilesForParse
@@ -46,5 +40,11 @@ class JsonTest extends TestCase
             [['files_for_parse' => 'string']],
             [['there_are_no_files_for_parse' => [1, 3]]]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $objectManagerHelper = new ObjectManager($this);
+        $this->parser = $objectManagerHelper->getObject(Json::class);
     }
 }

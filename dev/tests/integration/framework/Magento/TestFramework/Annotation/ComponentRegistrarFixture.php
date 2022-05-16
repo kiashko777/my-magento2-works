@@ -6,9 +6,15 @@
 
 namespace Magento\TestFramework\Annotation;
 
+use FilesystemIterator;
+use InvalidArgumentException;
+use Magento\Framework\Component\ComponentRegistrar;
+use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use ReflectionClass;
 use RegexIterator;
+use SplFileInfo;
 
 /**
  * Implementation of the @magentoComponentsDir DocBlock annotation
@@ -23,7 +29,7 @@ class ComponentRegistrarFixture
     /**#@+
      * Properties of components registrar
      */
-    const REGISTRAR_CLASS = \Magento\Framework\Component\ComponentRegistrar::class;
+    const REGISTRAR_CLASS = ComponentRegistrar::class;
     const PATHS_FIELD = 'paths';
     /**#@-*/
 
@@ -54,33 +60,20 @@ class ComponentRegistrarFixture
     /**
      * Handler for 'startTest' event
      *
-     * @param \PHPUnit\Framework\TestCase $test
+     * @param TestCase $test
      * @return void
      */
-    public function startTest(\PHPUnit\Framework\TestCase $test)
+    public function startTest(TestCase $test)
     {
         $this->registerComponents($test);
     }
 
     /**
-     * Handler for 'endTest' event
-     *
-     * @param \PHPUnit\Framework\TestCase $test
-     * @return void
-     *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-     */
-    public function endTest(\PHPUnit\Framework\TestCase $test)
-    {
-        $this->restoreComponents();
-    }
-
-    /**
      * Register fixture components
      *
-     * @param \PHPUnit\Framework\TestCase $test
+     * @param TestCase $test
      */
-    private function registerComponents(\PHPUnit\Framework\TestCase $test)
+    private function registerComponents(TestCase $test)
     {
         $annotations = $test->getAnnotations();
         $componentAnnotations = [];
@@ -94,7 +87,7 @@ class ComponentRegistrarFixture
             return;
         }
         $componentAnnotations = array_unique($componentAnnotations);
-        $reflection = new \ReflectionClass(self::REGISTRAR_CLASS);
+        $reflection = new ReflectionClass(self::REGISTRAR_CLASS);
         $paths = $reflection->getProperty(self::PATHS_FIELD);
         $paths->setAccessible(true);
         $this->origComponents = $paths->getValue();
@@ -102,18 +95,18 @@ class ComponentRegistrarFixture
         foreach ($componentAnnotations as $fixturePath) {
             $fixturesDir = $this->fixtureBaseDir . '/' . $fixturePath;
             if (!file_exists($fixturesDir)) {
-                throw new \InvalidArgumentException(
+                throw new InvalidArgumentException(
                     self::ANNOTATION_NAME . " fixture '$fixturePath' does not exist"
                 );
             }
             $iterator = new RegexIterator(
                 new RecursiveIteratorIterator(
-                    new RecursiveDirectoryIterator($fixturesDir, \FilesystemIterator::SKIP_DOTS)
+                    new RecursiveDirectoryIterator($fixturesDir, FilesystemIterator::SKIP_DOTS)
                 ),
                 '/^.+\/registration\.php$/'
             );
             /**
-             * @var \SplFileInfo $registrationFile
+             * @var SplFileInfo $registrationFile
              */
             foreach ($iterator as $registrationFile) {
                 require $registrationFile->getRealPath();
@@ -122,12 +115,25 @@ class ComponentRegistrarFixture
     }
 
     /**
+     * Handler for 'endTest' event
+     *
+     * @param TestCase $test
+     * @return void
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
+    public function endTest(TestCase $test)
+    {
+        $this->restoreComponents();
+    }
+
+    /**
      * Restore registered components list to the original
      */
     private function restoreComponents()
     {
         if (null !== $this->origComponents) {
-            $reflection = new \ReflectionClass(self::REGISTRAR_CLASS);
+            $reflection = new ReflectionClass(self::REGISTRAR_CLASS);
             $paths = $reflection->getProperty(self::PATHS_FIELD);
             $paths->setAccessible(true);
             $paths->setValue($this->origComponents);

@@ -8,14 +8,14 @@
 
 namespace Magento\TestModule3\Service\V1;
 
+use Exception;
 use Magento\Framework\Exception\AuthorizationException;
 use Magento\Framework\Exception\InputException;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
-use Magento\TestModule3\Service\V1\Entity\Parameter;
 use Magento\TestModule3\Service\V1\Entity\ParameterFactory;
 
-class Error implements \Magento\TestModule3\Service\V1\ErrorInterface
+class Error implements ErrorInterface
 {
     /**
      * @var ParameterFactory
@@ -84,7 +84,7 @@ class Error implements \Magento\TestModule3\Service\V1\ErrorInterface
      */
     public function otherException()
     {
-        throw new \Exception('Non service exception', 5678);
+        throw new Exception('Non service exception', 5678);
     }
 
     /**

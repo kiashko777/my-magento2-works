@@ -6,13 +6,19 @@
 
 namespace Magento\Tax\Api;
 
+use Exception;
 use Magento\Framework\Api\FilterBuilder;
 use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\Api\SearchResults;
 use Magento\Framework\Api\SortOrder;
 use Magento\Framework\Api\SortOrderBuilder;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\Tax\Model\Calculation\Rate;
+use Magento\Tax\Model\Calculation\Rule;
+use Magento\Tax\Model\ClassModel;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
+use SoapFault;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
@@ -23,17 +29,17 @@ class TaxRateRepositoryTest extends WebapiAbstract
     const SERVICE_VERSION = "V1";
     const RESOURCE_PATH = "/V1/taxRates";
 
-    /** @var \Magento\Tax\Model\Calculation\Rate[] */
+    /** @var Rate[] */
     private $fixtureTaxRates;
 
-    /** @var \Magento\Tax\Model\ClassModel[] */
+    /** @var ClassModel[] */
     private $fixtureTaxClasses;
 
-    /** @var \Magento\Tax\Model\Calculation\Rule[] */
+    /** @var Rule[] */
     private $fixtureTaxRules;
 
     /**
-     * @var \Magento\Tax\Api\TaxRateRepositoryInterface
+     * @var TaxRateRepositoryInterface
      */
     private $taxRateService;
 
@@ -49,54 +55,9 @@ class TaxRateRepositoryTest extends WebapiAbstract
     /**
      * Other rates created during tests, to be deleted in tearDown()
      *
-     * @var \Magento\Tax\Model\Calculation\Rate[]
+     * @var Rate[]
      */
     private $otherRates = [];
-
-    /**
-     * Execute per test initialization.
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->taxRateService = $objectManager->get(\Magento\Tax\Api\TaxRateRepositoryInterface::class);
-        $this->searchCriteriaBuilder = $objectManager->create(
-            \Magento\Framework\Api\SearchCriteriaBuilder::class
-        );
-        $this->filterBuilder = $objectManager->create(
-            \Magento\Framework\Api\FilterBuilder::class
-        );
-        $this->sortOrderBuilder = $objectManager->create(
-            \Magento\Framework\Api\SortOrderBuilder::class
-        );
-        /** Initialize tax classes, tax rates and tax rules defined in fixture Magento/Tax/_files/tax_classes.php */
-        $this->getFixtureTaxRates();
-        $this->getFixtureTaxClasses();
-        $this->getFixtureTaxRules();
-    }
-
-    protected function tearDown(): void
-    {
-        $taxRules = $this->getFixtureTaxRules();
-        if (count($taxRules)) {
-            $taxRates = $this->getFixtureTaxRates();
-            $taxClasses = $this->getFixtureTaxClasses();
-            foreach ($taxRules as $taxRule) {
-                $taxRule->delete();
-            }
-            foreach ($taxRates as $taxRate) {
-                $taxRate->delete();
-            }
-            foreach ($taxClasses as $taxClass) {
-                $taxClass->delete();
-            }
-        }
-        if (count($this->otherRates)) {
-            foreach ($this->otherRates as $taxRate) {
-                $taxRate->delete();
-            }
-        }
-    }
 
     public function testCreateTaxRateExistingCode()
     {
@@ -114,7 +75,7 @@ class TaxRateRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -125,13 +86,13 @@ class TaxRateRepositoryTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, $data);
             $this->fail('Expected exception was not raised');
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString(
                 $expectedMessage,
                 $e->getMessage(),
                 'SoapFault does not contain expected message.'
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $errorObj = $this->processRestExceptionResult($e);
             $this->assertEquals($expectedMessage, $errorObj['message']);
             $this->assertEquals(['Code'], $errorObj['parameters']);
@@ -152,7 +113,7 @@ class TaxRateRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -163,13 +124,13 @@ class TaxRateRepositoryTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, $data);
             $this->fail('Expected exception was not raised');
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString(
                 'SOAP-ERROR: Encoding: object has no \'rate\' property',
                 $e->getMessage(),
                 'SoapFault does not contain expected message.'
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $errorObj = $this->processRestExceptionResult($e);
             $this->assertEquals('"%fieldName" is required. Enter and try again.', $errorObj['message']);
             $this->assertEquals(['fieldName' => 'percentage_rate'], $errorObj['parameters']);
@@ -191,7 +152,7 @@ class TaxRateRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -203,8 +164,8 @@ class TaxRateRepositoryTest extends WebapiAbstract
         $this->assertArrayHasKey('id', $result);
         $taxRateId = $result['id'];
         /** Ensure that tax rate was actually created in DB */
-        /** @var \Magento\Tax\Model\Calculation\Rate $taxRate */
-        $taxRate = Bootstrap::getObjectManager()->create(\Magento\Tax\Model\Calculation\Rate::class);
+        /** @var Rate $taxRate */
+        $taxRate = Bootstrap::getObjectManager()->create(Rate::class);
         $this->assertEquals($taxRateId, $taxRate->load($taxRateId)->getId(), 'Tax rate was not created in  DB.');
         $taxRate->delete();
     }
@@ -226,7 +187,7 @@ class TaxRateRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -238,8 +199,8 @@ class TaxRateRepositoryTest extends WebapiAbstract
         $this->assertArrayHasKey('id', $result);
         $taxRateId = $result['id'];
         /** Ensure that tax rate was actually created in DB */
-        /** @var \Magento\Tax\Model\Calculation\Rate $taxRate */
-        $taxRate = Bootstrap::getObjectManager()->create(\Magento\Tax\Model\Calculation\Rate::class);
+        /** @var Rate $taxRate */
+        $taxRate = Bootstrap::getObjectManager()->create(Rate::class);
         $this->assertEquals($taxRateId, $taxRate->load($taxRateId)->getId(), 'Tax rate was not created in  DB.');
         $this->assertEquals('17-25', $taxRate->getTaxPostcode(), 'Zip range is not saved in DB.');
         $taxRate->delete();
@@ -260,7 +221,7 @@ class TaxRateRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -272,8 +233,8 @@ class TaxRateRepositoryTest extends WebapiAbstract
         $this->assertArrayHasKey('id', $result);
         $taxRateId = $result['id'];
         /** Ensure that tax rate was actually created in DB */
-        /** @var \Magento\Tax\Model\Calculation\Rate $taxRate */
-        $taxRate = Bootstrap::getObjectManager()->create(\Magento\Tax\Model\Calculation\Rate::class);
+        /** @var Rate $taxRate */
+        $taxRate = Bootstrap::getObjectManager()->create(Rate::class);
         $taxModel = $taxRate->load($taxRateId);
         $this->assertEquals($taxRateId, $taxModel->getId(), 'Tax rate was not created in DB.');
         $this->assertEquals(0, $taxModel->getRate(), 'Tax rate value is wrong.');
@@ -301,7 +262,7 @@ class TaxRateRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -312,8 +273,8 @@ class TaxRateRepositoryTest extends WebapiAbstract
         $this->_webApiCall($serviceInfo, $data);
         $expectedRateData = $data['tax_rate'];
         /** Ensure that tax rate was actually updated in DB */
-        /** @var \Magento\Tax\Model\Calculation\Rate $taxRate */
-        $taxRate = Bootstrap::getObjectManager()->create(\Magento\Tax\Model\Calculation\Rate::class);
+        /** @var Rate $taxRate */
+        $taxRate = Bootstrap::getObjectManager()->create(Rate::class);
         $taxRateModel = $taxRate->load($fixtureRate->getId());
         $this->assertEquals($expectedRateData['id'], $taxRateModel->getId(), 'Tax rate was not updated in  DB.');
         $this->assertEquals(
@@ -355,7 +316,7 @@ class TaxRateRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -366,7 +327,7 @@ class TaxRateRepositoryTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, $data);
             $this->fail('Expected exception was not raised');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $expectedMessage = 'No such entity with %fieldName = %fieldValue';
 
             $this->assertStringContainsString(
@@ -383,7 +344,7 @@ class TaxRateRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/$taxRateId",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -412,7 +373,7 @@ class TaxRateRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/$taxRateId",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -423,7 +384,7 @@ class TaxRateRepositoryTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, ['rateId' => $taxRateId]);
             $this->fail('Expected exception was not raised');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $expectedMessage = 'No such entity with %fieldName = %fieldValue';
 
             $this->assertStringContainsString(
@@ -450,7 +411,7 @@ class TaxRateRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/$taxRateId",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -462,8 +423,8 @@ class TaxRateRepositoryTest extends WebapiAbstract
         $result = $this->_webApiCall($serviceInfo, ['rateId' => $taxRateId]);
         $this->assertTrue($result);
         /** Ensure that tax rate was actually removed from DB */
-        /** @var \Magento\Tax\Model\Calculation\Rate $taxRate */
-        $taxRate = Bootstrap::getObjectManager()->create(\Magento\Tax\Model\Calculation\Rate::class);
+        /** @var Rate $taxRate */
+        $taxRate = Bootstrap::getObjectManager()->create(Rate::class);
         $this->assertNull($taxRate->load($taxRateId)->getId(), 'Tax rate was not deleted from DB.');
     }
 
@@ -479,7 +440,7 @@ class TaxRateRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/$taxRateId",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -490,7 +451,7 @@ class TaxRateRepositoryTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, ['rateId' => $taxRateId]);
             $this->fail('Expected exception was not raised');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $expectedMessage = "The tax rate can't be removed because it exists in a tax rule.";
 
             $this->assertStringContainsString(
@@ -517,7 +478,7 @@ class TaxRateRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/search' . '?' . http_build_query($requestData),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -526,7 +487,7 @@ class TaxRateRepositoryTest extends WebapiAbstract
             ],
         ];
 
-        /** @var \Magento\Framework\Api\SearchResults $searchResults */
+        /** @var SearchResults $searchResults */
         $searchResults = $this->_webApiCall($serviceInfo, $requestData);
 
         $this->assertEquals(1, $searchResults['total_count']);
@@ -538,12 +499,78 @@ class TaxRateRepositoryTest extends WebapiAbstract
                 'tax_region_id' => (int)$rates['codeUs12']->getTaxRegionId(),
                 'region_name' => 'CA',
                 'tax_postcode' => $rates['codeUs12']->getTaxPostcode(),
-                'code' =>  $rates['codeUs12']->getCode(),
-                'rate' => ((float) $rates['codeUs12']->getRate()),
+                'code' => $rates['codeUs12']->getCode(),
+                'rate' => ((float)$rates['codeUs12']->getRate()),
                 'titles' => [],
             ],
         ];
         $this->assertEquals($expectedRuleData, $searchResults['items']);
+    }
+
+    /**
+     * Creates rates for search tests.
+     *
+     * @return Rate[]
+     */
+    private function setupTaxRatesForSearch()
+    {
+        $objectManager = Bootstrap::getObjectManager();
+
+        $taxRateUs12 = [
+            'tax_country_id' => 'US',
+            'tax_region_id' => 12,
+            'tax_postcode' => '*',
+            'code' => 'codeUs12',
+            'rate' => 22,
+            'region_name' => 'CA',
+        ];
+        $rates['codeUs12'] = $objectManager->create(Rate::class)
+            ->setData($taxRateUs12)
+            ->save();
+
+        $taxRateUs14 = [
+            'tax_country_id' => 'US',
+            'tax_region_id' => 14,
+            'tax_postcode' => '*',
+            'code' => 'codeUs14',
+            'rate' => 22,
+        ];
+        $rates['codeUs14'] = $objectManager->create(Rate::class)
+            ->setData($taxRateUs14)
+            ->save();
+        $taxRateBr13 = [
+            'tax_country_id' => 'BR',
+            'tax_region_id' => 13,
+            'tax_postcode' => '*',
+            'code' => 'codeBr13',
+            'rate' => 7.5,
+        ];
+        $rates['codeBr13'] = $objectManager->create(Rate::class)
+            ->setData($taxRateBr13)
+            ->save();
+
+        $taxRateCz1 = [
+            'tax_country_id' => 'CZ',
+            'tax_postcode' => '110 00',
+            'code' => 'codeCz1',
+            'rate' => 1.1,
+        ];
+        $rates['codeCz1'] = $objectManager->create(Rate::class)
+            ->setData($taxRateCz1)
+            ->save();
+        $taxRateCz2 = [
+            'tax_country_id' => 'CZ',
+            'tax_postcode' => '250 00',
+            'code' => 'codeCz2',
+            'rate' => 2.2,
+        ];
+        $rates['codeCz2'] = $objectManager->create(Rate::class)
+            ->setData($taxRateCz2)
+            ->save();
+
+        // Set class variable so rates will be deleted on tearDown()
+        $this->otherRates = $rates;
+        return $rates;
     }
 
     public function testSearchTaxRatesCz()
@@ -578,7 +605,7 @@ class TaxRateRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/search' . '?' . http_build_query($requestData),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -587,7 +614,7 @@ class TaxRateRepositoryTest extends WebapiAbstract
             ],
         ];
 
-        /** @var \Magento\Framework\Api\SearchResults $searchResults */
+        /** @var SearchResults $searchResults */
         $searchResults = $this->_webApiCall($serviceInfo, $requestData);
 
         $this->assertEquals(2, $searchResults['total_count']);
@@ -597,8 +624,8 @@ class TaxRateRepositoryTest extends WebapiAbstract
                 'id' => (int)$rates['codeCz2']->getId(),
                 'tax_country_id' => $rates['codeCz2']->getTaxCountryId(),
                 'tax_postcode' => $rates['codeCz2']->getTaxPostcode(),
-                'code' =>  $rates['codeCz2']->getCode(),
-                'rate' =>  ((float) $rates['codeCz2']->getRate()),
+                'code' => $rates['codeCz2']->getCode(),
+                'rate' => ((float)$rates['codeCz2']->getRate()),
                 'tax_region_id' => 0,
                 'titles' => [],
             ],
@@ -607,7 +634,7 @@ class TaxRateRepositoryTest extends WebapiAbstract
                 'tax_country_id' => $rates['codeCz1']->getTaxCountryId(),
                 'tax_postcode' => $rates['codeCz1']->getTaxPostcode(),
                 'code' => $rates['codeCz1']->getCode(),
-                'rate' => ((float) $rates['codeCz1']->getRate()),
+                'rate' => ((float)$rates['codeCz1']->getRate()),
                 'tax_region_id' => 0,
                 'titles' => [],
             ],
@@ -616,9 +643,31 @@ class TaxRateRepositoryTest extends WebapiAbstract
     }
 
     /**
+     * Execute per test initialization.
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->taxRateService = $objectManager->get(TaxRateRepositoryInterface::class);
+        $this->searchCriteriaBuilder = $objectManager->create(
+            SearchCriteriaBuilder::class
+        );
+        $this->filterBuilder = $objectManager->create(
+            FilterBuilder::class
+        );
+        $this->sortOrderBuilder = $objectManager->create(
+            SortOrderBuilder::class
+        );
+        /** Initialize tax classes, tax rates and tax rules defined in fixture Magento/Tax/_files/tax_classes.php */
+        $this->getFixtureTaxRates();
+        $this->getFixtureTaxClasses();
+        $this->getFixtureTaxRules();
+    }
+
+    /**
      * Get tax rates created in Magento\Tax\_files\tax_classes.php
      *
-     * @return \Magento\Tax\Model\Calculation\Rate[]
+     * @return Rate[]
      */
     private function getFixtureTaxRates()
     {
@@ -627,8 +676,8 @@ class TaxRateRepositoryTest extends WebapiAbstract
             if ($this->getFixtureTaxRules()) {
                 $taxRateIds = (array)$this->getFixtureTaxRules()[0]->getRates();
                 foreach ($taxRateIds as $taxRateId) {
-                    /** @var \Magento\Tax\Model\Calculation\Rate $taxRate */
-                    $taxRate = Bootstrap::getObjectManager()->create(\Magento\Tax\Model\Calculation\Rate::class);
+                    /** @var Rate $taxRate */
+                    $taxRate = Bootstrap::getObjectManager()->create(Rate::class);
                     $this->fixtureTaxRates[] = $taxRate->load($taxRateId);
                 }
             }
@@ -637,9 +686,31 @@ class TaxRateRepositoryTest extends WebapiAbstract
     }
 
     /**
+     * Get tax rule created in Magento\Tax\_files\tax_classes.php
+     *
+     * @return Rule[]
+     */
+    private function getFixtureTaxRules()
+    {
+        if ($this->fixtureTaxRules === null) {
+            $this->fixtureTaxRules = [];
+            $taxRuleCodes = ['Test Rule Duplicate', 'Test Rule'];
+            foreach ($taxRuleCodes as $taxRuleCode) {
+                /** @var Rule $taxRule */
+                $taxRule = Bootstrap::getObjectManager()->create(Rule::class);
+                $taxRule->load($taxRuleCode, 'code');
+                if ($taxRule->getId()) {
+                    $this->fixtureTaxRules[] = $taxRule;
+                }
+            }
+        }
+        return $this->fixtureTaxRules;
+    }
+
+    /**
      * Get tax classes created in Magento\Tax\_files\tax_classes.php
      *
-     * @return \Magento\Tax\Model\ClassModel[]
+     * @return ClassModel[]
      */
     private function getFixtureTaxClasses()
     {
@@ -651,8 +722,8 @@ class TaxRateRepositoryTest extends WebapiAbstract
                     (array)$this->getFixtureTaxRules()[0]->getProductTaxClasses()
                 );
                 foreach ($taxClassIds as $taxClassId) {
-                    /** @var \Magento\Tax\Model\ClassModel $taxClass */
-                    $taxClass = Bootstrap::getObjectManager()->create(\Magento\Tax\Model\ClassModel::class);
+                    /** @var ClassModel $taxClass */
+                    $taxClass = Bootstrap::getObjectManager()->create(ClassModel::class);
                     $this->fixtureTaxClasses[] = $taxClass->load($taxClassId);
                 }
             }
@@ -660,91 +731,26 @@ class TaxRateRepositoryTest extends WebapiAbstract
         return $this->fixtureTaxClasses;
     }
 
-    /**
-     * Get tax rule created in Magento\Tax\_files\tax_classes.php
-     *
-     * @return \Magento\Tax\Model\Calculation\Rule[]
-     */
-    private function getFixtureTaxRules()
+    protected function tearDown(): void
     {
-        if ($this->fixtureTaxRules === null) {
-            $this->fixtureTaxRules = [];
-            $taxRuleCodes = ['Test Rule Duplicate', 'Test Rule'];
-            foreach ($taxRuleCodes as $taxRuleCode) {
-                /** @var \Magento\Tax\Model\Calculation\Rule $taxRule */
-                $taxRule = Bootstrap::getObjectManager()->create(\Magento\Tax\Model\Calculation\Rule::class);
-                $taxRule->load($taxRuleCode, 'code');
-                if ($taxRule->getId()) {
-                    $this->fixtureTaxRules[] = $taxRule;
-                }
+        $taxRules = $this->getFixtureTaxRules();
+        if (count($taxRules)) {
+            $taxRates = $this->getFixtureTaxRates();
+            $taxClasses = $this->getFixtureTaxClasses();
+            foreach ($taxRules as $taxRule) {
+                $taxRule->delete();
+            }
+            foreach ($taxRates as $taxRate) {
+                $taxRate->delete();
+            }
+            foreach ($taxClasses as $taxClass) {
+                $taxClass->delete();
             }
         }
-        return $this->fixtureTaxRules;
-    }
-
-    /**
-     * Creates rates for search tests.
-     *
-     * @return \Magento\Tax\Model\Calculation\Rate[]
-     */
-    private function setupTaxRatesForSearch()
-    {
-        $objectManager = Bootstrap::getObjectManager();
-
-        $taxRateUs12 = [
-            'tax_country_id' => 'US',
-            'tax_region_id' => 12,
-            'tax_postcode' => '*',
-            'code' => 'codeUs12',
-            'rate' => 22,
-            'region_name' => 'CA',
-        ];
-        $rates['codeUs12'] = $objectManager->create(\Magento\Tax\Model\Calculation\Rate::class)
-            ->setData($taxRateUs12)
-            ->save();
-
-        $taxRateUs14 = [
-            'tax_country_id' => 'US',
-            'tax_region_id' => 14,
-            'tax_postcode' => '*',
-            'code' => 'codeUs14',
-            'rate' => 22,
-        ];
-        $rates['codeUs14'] = $objectManager->create(\Magento\Tax\Model\Calculation\Rate::class)
-            ->setData($taxRateUs14)
-            ->save();
-        $taxRateBr13 = [
-            'tax_country_id' => 'BR',
-            'tax_region_id' => 13,
-            'tax_postcode' => '*',
-            'code' => 'codeBr13',
-            'rate' => 7.5,
-        ];
-        $rates['codeBr13'] = $objectManager->create(\Magento\Tax\Model\Calculation\Rate::class)
-            ->setData($taxRateBr13)
-            ->save();
-
-        $taxRateCz1 = [
-            'tax_country_id' => 'CZ',
-            'tax_postcode' => '110 00',
-            'code' => 'codeCz1',
-            'rate' => 1.1,
-        ];
-        $rates['codeCz1'] = $objectManager->create(\Magento\Tax\Model\Calculation\Rate::class)
-            ->setData($taxRateCz1)
-            ->save();
-        $taxRateCz2 = [
-            'tax_country_id' => 'CZ',
-            'tax_postcode' => '250 00',
-            'code' => 'codeCz2',
-            'rate' => 2.2,
-        ];
-        $rates['codeCz2'] = $objectManager->create(\Magento\Tax\Model\Calculation\Rate::class)
-            ->setData($taxRateCz2)
-            ->save();
-
-        // Set class variable so rates will be deleted on tearDown()
-        $this->otherRates = $rates;
-        return $rates;
+        if (count($this->otherRates)) {
+            foreach ($this->otherRates as $taxRate) {
+                $taxRate->delete();
+            }
+        }
     }
 }

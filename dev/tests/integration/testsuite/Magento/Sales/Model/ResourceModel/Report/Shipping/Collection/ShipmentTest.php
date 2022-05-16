@@ -3,8 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Model\ResourceModel\Report\Shipping\Collection;
 
+use IntlDateFormatter;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Stdlib\DateTime\DateTime;
 use Magento\Framework\Stdlib\DateTime\DateTimeFactory;
@@ -29,17 +31,6 @@ class ShipmentTest extends TestCase
      */
     private $objectManager;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->collection = $this->objectManager->create(
-            Shipment::class
-        );
-        $this->collection->setPeriod('day')
-            ->setDateRange(null, null)
-            ->addStoreFilter([1]);
-    }
-
     /**
      * @magentoDataFixture Magento/Sales/_files/order_shipping.php
      * @magentoDataFixture Magento/Sales/_files/order_from_past.php
@@ -59,8 +50,8 @@ class ShipmentTest extends TestCase
         $timezone = $this->objectManager->create(TimezoneInterface::class);
         $shipmentCreatedAt = $timezone->formatDateTime(
             $shipmentCreatedAt,
-            \IntlDateFormatter::SHORT,
-            \IntlDateFormatter::NONE,
+            IntlDateFormatter::SHORT,
+            IntlDateFormatter::NONE,
             null,
             null,
             'yyyy-MM-dd'
@@ -115,5 +106,16 @@ class ShipmentTest extends TestCase
         $orderCreatedAt = $connection->fetchOne($updatedRow);
 
         $this->assertEquals($order->getCreatedAt(), $orderCreatedAt);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->collection = $this->objectManager->create(
+            Shipment::class
+        );
+        $this->collection->setPeriod('day')
+            ->setDateRange(null, null)
+            ->addStoreFilter([1]);
     }
 }

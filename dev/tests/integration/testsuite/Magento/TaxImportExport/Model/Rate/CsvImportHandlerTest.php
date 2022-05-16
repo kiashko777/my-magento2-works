@@ -3,25 +3,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TaxImportExport\Model\Rate;
 
-class CsvImportHandlerTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Tax\Model\Calculation\Rate;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class CsvImportHandlerTest extends TestCase
 {
     /**
-     * @var \Magento\TaxImportExport\Model\Rate\CsvImportHandler
+     * @var CsvImportHandler
      */
     protected $_importHandler;
-
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->_importHandler = $objectManager->create(\Magento\TaxImportExport\Model\Rate\CsvImportHandler::class);
-    }
-
-    protected function tearDown(): void
-    {
-        $this->_importHandler = null;
-    }
 
     /**
      * @magentoDbIsolation enabled
@@ -31,10 +26,10 @@ class CsvImportHandlerTest extends \PHPUnit\Framework\TestCase
         $importFileName = __DIR__ . '/_files/correct_rates_import_file.csv';
         $this->_importHandler->importFromCsvFile(['tmp_name' => $importFileName]);
 
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
         // assert that both tax rates, specified in import file, have been imported correctly
         $importedRuleCA = $objectManager->create(
-            \Magento\Tax\Model\Calculation\Rate::class
+            Rate::class
         )->loadByCode(
             'US-CA-*-Rate Import Test'
         );
@@ -44,7 +39,7 @@ class CsvImportHandlerTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('*', $importedRuleCA->getTaxPostcode());
 
         $importedRuleFL = $objectManager->create(
-            \Magento\Tax\Model\Calculation\Rate::class
+            Rate::class
         )->loadByCode(
             'US-FL-*-Rate Import Test'
         );
@@ -59,10 +54,21 @@ class CsvImportHandlerTest extends \PHPUnit\Framework\TestCase
      */
     public function testImportFromCsvFileThrowsExceptionWhenCountryCodeIsInvalid()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage('Country code is invalid: ZZ');
 
         $importFileName = __DIR__ . '/_files/rates_import_file_incorrect_country.csv';
         $this->_importHandler->importFromCsvFile(['tmp_name' => $importFileName]);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->_importHandler = $objectManager->create(CsvImportHandler::class);
+    }
+
+    protected function tearDown(): void
+    {
+        $this->_importHandler = null;
     }
 }

@@ -3,50 +3,56 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Model\Entity;
 
-class HydratorTest extends \PHPUnit\Framework\TestCase
+use Magento\Catalog\Api\Data\ProductExtension;
+use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Api\Data\ProductLinkInterface;
+use Magento\CatalogInventory\Api\Data\StockItemInterface;
+use Magento\Framework\Api\AttributeInterface;
+use Magento\Framework\EntityManager\Hydrator;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class HydratorTest extends TestCase
 {
     const CUSTOM_ATTRIBUTE_CODE = 'description';
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
-
     public function testExtractAndHydrate()
     {
-        /** @var \Magento\Framework\EntityManager\Hydrator $hydrator */
-        $hydrator = $this->objectManager->create(\Magento\Framework\EntityManager\Hydrator::class);
+        /** @var Hydrator $hydrator */
+        $hydrator = $this->objectManager->create(Hydrator::class);
 
-        /** @var \Magento\Framework\Api\AttributeInterface $customAttribute */
-        $customAttribute = $this->objectManager->create(\Magento\Framework\Api\AttributeInterface::class);
+        /** @var AttributeInterface $customAttribute */
+        $customAttribute = $this->objectManager->create(AttributeInterface::class);
         $customAttribute->setAttributeCode(self::CUSTOM_ATTRIBUTE_CODE)
             ->setValue('Products description');
 
-        /** @var \Magento\CatalogInventory\Api\Data\StockItemInterface $extensionAttribute */
+        /** @var StockItemInterface $extensionAttribute */
         $stockItem = $this->objectManager->create(
-            \Magento\CatalogInventory\Api\Data\StockItemInterface::class
+            StockItemInterface::class
         );
         $stockItem->setProductId(1)
             ->setQty(100);
 
-        /** @var \Magento\Catalog\Api\Data\ProductExtension $productExtension */
-        $productExtension = $this->objectManager->create(\Magento\Catalog\Api\Data\ProductExtension::class);
+        /** @var ProductExtension $productExtension */
+        $productExtension = $this->objectManager->create(ProductExtension::class);
         $productExtension->setStockItem($stockItem);
 
-        /** @var \Magento\Catalog\Api\Data\ProductLinkInterface $productLink */
-        $productLink = $this->objectManager->create(\Magento\Catalog\Api\Data\ProductLinkInterface::class);
+        /** @var ProductLinkInterface $productLink */
+        $productLink = $this->objectManager->create(ProductLinkInterface::class);
         $productLink->setSku('sku')
             ->setLinkedProductSku('linked-sku');
 
-        /** @var \Magento\Catalog\Api\Data\ProductInterface $product */
-        $product = $this->objectManager->create(\Magento\Catalog\Api\Data\ProductInterface::class);
+        /** @var ProductInterface $product */
+        $product = $this->objectManager->create(ProductInterface::class);
         $product->setSku('sku')
             ->setName('Products name')
             ->setCustomAttributes([self::CUSTOM_ATTRIBUTE_CODE => $customAttribute])
@@ -54,11 +60,16 @@ class HydratorTest extends \PHPUnit\Framework\TestCase
             ->setProductLinks([$productLink]);
 
         $productData = $hydrator->extract($product);
-        /** @var \Magento\Catalog\Api\Data\ProductInterface $newProduct */
-        $newProduct = $this->objectManager->create(\Magento\Catalog\Api\Data\ProductInterface::class);
+        /** @var ProductInterface $newProduct */
+        $newProduct = $this->objectManager->create(ProductInterface::class);
         $newProduct = $hydrator->hydrate($newProduct, $productData);
         $newProductData = $hydrator->extract($newProduct);
 
         $this->assertEquals($productData, $newProductData);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

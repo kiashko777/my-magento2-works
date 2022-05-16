@@ -32,17 +32,6 @@ class AddressSaveTest extends AbstractBackendController
     private $orderAddressRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->orderFactory = $this->_objectManager->get(OrderInterfaceFactory::class);
-        $this->orderAddressRepository = $this->_objectManager->get(OrderAddressRepositoryInterface::class);
-    }
-
-    /**
      * @dataProvider addressTypeProvider
      *
      * @magentoDataFixture Magento/Sales/_files/order.php
@@ -75,6 +64,52 @@ class AddressSaveTest extends AbstractBackendController
             $this->stringContains(sprintf('sales/order/view/order_id/%s/', $order->getId()))
         );
         $this->assertAddressData($addressId, $data);
+    }
+
+    /**
+     * Get address id by address type
+     *
+     * @param OrderInterface $order
+     * @param string $type
+     * @return int
+     */
+    private function getAddressIdByType(OrderInterface $order, string $type): int
+    {
+        return $type === AddressType::TYPE_BILLING
+            ? (int)$order->getBillingAddressId()
+            : (int)$order->getShippingAddressId();
+    }
+
+    /**
+     * Dispatch with params
+     *
+     * @param array $params
+     * @param array $post
+     * @return void
+     */
+    private function dispatchWithParams(array $params, array $post): void
+    {
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
+        $this->getRequest()->setParams($params);
+        $this->getRequest()->setPostValue($post);
+        $this->dispatch('backend/sales/order/addressSave');
+    }
+
+    /**
+     * Check updated address data
+     *
+     * @param int $addressId
+     * @param array $expectedData
+     * @return void
+     */
+    private function assertAddressData(int $addressId, array $expectedData): void
+    {
+        $address = $this->orderAddressRepository->get($addressId);
+        foreach ($expectedData as $key => $value) {
+            $key === OrderAddressInterface::STREET
+                ? $this->assertEquals(reset($value), $address->getData($key))
+                : $this->assertEquals($value, $address->getData($key));
+        }
     }
 
     /**
@@ -121,48 +156,13 @@ class AddressSaveTest extends AbstractBackendController
     }
 
     /**
-     * Check updated address data
-     *
-     * @param int $addressId
-     * @param array $expectedData
-     * @return void
+     * @inheritdoc
      */
-    private function assertAddressData(int $addressId, array $expectedData): void
+    protected function setUp(): void
     {
-        $address = $this->orderAddressRepository->get($addressId);
-        foreach ($expectedData as $key => $value) {
-            $key === OrderAddressInterface::STREET
-                ? $this->assertEquals(reset($value), $address->getData($key))
-                : $this->assertEquals($value, $address->getData($key));
-        }
-    }
+        parent::setUp();
 
-    /**
-     * Get address id by address type
-     *
-     * @param OrderInterface $order
-     * @param string $type
-     * @return int
-     */
-    private function getAddressIdByType(OrderInterface $order, string $type): int
-    {
-        return $type === AddressType::TYPE_BILLING
-            ? (int)$order->getBillingAddressId()
-            : (int)$order->getShippingAddressId();
-    }
-
-    /**
-     * Dispatch with params
-     *
-     * @param array $params
-     * @param array $post
-     * @return void
-     */
-    private function dispatchWithParams(array $params, array $post): void
-    {
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
-        $this->getRequest()->setParams($params);
-        $this->getRequest()->setPostValue($post);
-        $this->dispatch('backend/sales/order/addressSave');
+        $this->orderFactory = $this->_objectManager->get(OrderInterfaceFactory::class);
+        $this->orderAddressRepository = $this->_objectManager->get(OrderAddressRepositoryInterface::class);
     }
 }

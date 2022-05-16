@@ -4,16 +4,18 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Setup\Controller\Index;
+
 return [
     'router' => [
         'routes' => [
             'literal' => [
-                'type'    => 'Literal',
+                'type' => 'Literal',
                 'options' => [
-                    'route'    => '/',
+                    'route' => '/',
                     'defaults' => [
-                        'controller' => \Magento\Setup\Controller\Index::class,
-                        'action'     => 'index',
+                        'controller' => Index::class,
+                        'action' => 'index',
                     ],
                 ],
             ],

@@ -9,8 +9,8 @@ namespace Magento\GraphQl\Quote;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
-use Magento\Quote\Model\ResourceModel\Quote as QuoteResource;
 use Magento\Quote\Model\QuoteFactory;
+use Magento\Quote\Model\ResourceModel\Quote as QuoteResource;
 
 /**
  * Get quote item id by reserved order id and product sku
@@ -38,10 +38,11 @@ class GetQuoteItemIdByReservedQuoteIdAndSku
      * @param ProductRepositoryInterface $productRepository
      */
     public function __construct(
-        QuoteFactory $quoteFactory,
-        QuoteResource $quoteResource,
+        QuoteFactory               $quoteFactory,
+        QuoteResource              $quoteResource,
         ProductRepositoryInterface $productRepository
-    ) {
+    )
+    {
         $this->quoteFactory = $quoteFactory;
         $this->quoteResource = $quoteResource;
         $this->productRepository = $productRepository;

@@ -7,15 +7,15 @@ declare(strict_types=1);
 
 namespace Magento\SendFriend\Controller\Product;
 
+use Magento\Captcha\Helper\Data as CaptchaHelper;
 use Magento\Captcha\Model\DefaultModel;
-use Magento\TestFramework\TestCase\AbstractController;
-use Magento\Framework\Data\Form\FormKey;
 use Magento\Customer\Api\AccountManagementInterface;
 use Magento\Customer\Model\Session;
-use Psr\Log\LoggerInterface;
+use Magento\Framework\Data\Form\FormKey;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Message\MessageInterface;
-use Magento\Captcha\Helper\Data as CaptchaHelper;
+use Magento\TestFramework\TestCase\AbstractController;
+use Psr\Log\LoggerInterface;
 
 /**
  * Class CustomerSendmailTest
@@ -41,24 +41,6 @@ class CustomerSendmailTest extends AbstractController
      * @var CaptchaHelper
      */
     private $captchaHelper;
-
-    /**
-     * @throws LocalizedException
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->accountManagement = $this->_objectManager->create(AccountManagementInterface::class);
-        $this->formKey = $this->_objectManager->create(FormKey::class);
-        $logger = $this->getMockForAbstractClass(LoggerInterface::class);
-        $this->session = $this->_objectManager->create(
-            Session::class,
-            [$logger]
-        );
-        $this->captchaHelper = $this->_objectManager->create(CaptchaHelper::class);
-        $customer = $this->accountManagement->authenticate('customer@example.com', 'password');
-        $this->session->setCustomerDataAsLoggedIn($customer);
-    }
 
     /**
      * @magentoConfigFixture default_store sendfriend/email/enabled 1
@@ -172,5 +154,23 @@ class CustomerSendmailTest extends AbstractController
             $this->equalTo(['The link to a friend was sent.']),
             MessageInterface::TYPE_SUCCESS
         );
+    }
+
+    /**
+     * @throws LocalizedException
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->accountManagement = $this->_objectManager->create(AccountManagementInterface::class);
+        $this->formKey = $this->_objectManager->create(FormKey::class);
+        $logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->session = $this->_objectManager->create(
+            Session::class,
+            [$logger]
+        );
+        $this->captchaHelper = $this->_objectManager->create(CaptchaHelper::class);
+        $customer = $this->accountManagement->authenticate('customer@example.com', 'password');
+        $this->session->setCustomerDataAsLoggedIn($customer);
     }
 }

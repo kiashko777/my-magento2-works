@@ -14,7 +14,7 @@ use Magento\Directory\Model\ResourceModel\Currency;
  */
 class RemoveCurrencyRateByCode
 {
-    /** @var Currency  */
+    /** @var Currency */
     private $currencyResource;
 
     /**

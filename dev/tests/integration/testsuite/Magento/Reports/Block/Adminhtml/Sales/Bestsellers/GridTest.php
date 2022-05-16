@@ -3,31 +3,36 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Reports\Block\Adminhtml\Sales\Bestsellers;
+
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class GridTest extends \PHPUnit\Framework\TestCase
+class GridTest extends TestCase
 {
     /**
-     * @var \Magento\Reports\Block\Adminhtml\Sales\Bestsellers\Grid
+     * @var Grid
      */
     protected $_block;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->_block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
-        )->createBlock(
-            \Magento\Reports\Block\Adminhtml\Sales\Bestsellers\Grid::class
-        );
-    }
 
     public function testGetResourceCollectionName()
     {
         $collectionName = $this->_block->getResourceCollectionName();
         $this->assertTrue(class_exists($collectionName));
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->_block = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
+        )->createBlock(
+            Grid::class
+        );
     }
 }

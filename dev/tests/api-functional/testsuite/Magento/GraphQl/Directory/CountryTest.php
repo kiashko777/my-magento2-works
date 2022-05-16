@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Directory;
 
+use Exception;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
 
 /**
@@ -50,7 +51,7 @@ QUERY;
      */
     public function testGetCountryNotFoundException()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('GraphQL response contains errors: The country isn\'t available.');
 
         $query = <<<QUERY
@@ -77,7 +78,7 @@ QUERY;
      */
     public function testMissedInputParameterException()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Country "id" value should be specified');
 
         $query = <<<QUERY

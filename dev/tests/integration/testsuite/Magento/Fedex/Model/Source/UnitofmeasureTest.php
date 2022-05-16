@@ -6,13 +6,16 @@
 
 namespace Magento\Fedex\Model\Source;
 
-class UnitofmeasureTest extends \PHPUnit\Framework\TestCase
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class UnitofmeasureTest extends TestCase
 {
     public function testToOptionArray()
     {
-        /** @var $model \Magento\Fedex\Model\Source\Unitofmeasure */
-        $model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Fedex\Model\Source\Unitofmeasure::class
+        /** @var $model Unitofmeasure */
+        $model = Bootstrap::getObjectManager()->create(
+            Unitofmeasure::class
         );
         $result = $model->toOptionArray();
         $this->assertCount(2, $result);

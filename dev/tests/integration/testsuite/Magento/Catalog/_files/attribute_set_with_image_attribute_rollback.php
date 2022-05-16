@@ -4,8 +4,14 @@
  * See COPYING.txt for license details.
  */
 
-/** @var $product \Magento\Catalog\Model\Product */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+/** @var $product Product */
+
+use Magento\Catalog\Model\Product;
+use Magento\Eav\Model\Entity\Attribute\Set;
+use Magento\Eav\Model\ResourceModel\Entity\Attribute\Set\Collection;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
 
 $entityType = $objectManager->create(\Magento\Eav\Model\Entity\Type::class)->loadByCode('catalog_product');
 
@@ -24,16 +30,16 @@ if ($attribute->getId()) {
 
 // remove attribute set
 
-/** @var \Magento\Eav\Model\ResourceModel\Entity\Attribute\Set\Collection $attributeSetCollection */
+/** @var Collection $attributeSetCollection */
 $attributeSetCollection = $objectManager->create(
-    \Magento\Eav\Model\ResourceModel\Entity\Attribute\Set\Collection::class
+    Collection::class
 );
 $attributeSetCollection->addFilter('attribute_set_name', 'attribute_set_with_media_attribute');
 $attributeSetCollection->addFilter('entity_type_id', $entityType->getId());
 $attributeSetCollection->setOrder('attribute_set_id'); // descending is default value
 $attributeSetCollection->setPageSize(1);
 
-/** @var \Magento\Eav\Model\Entity\Attribute\Set $attributeSet */
+/** @var Set $attributeSet */
 $attributeSet = $attributeSetCollection->getFirstItem();
 if ($attributeSet->getId()) {
     $attributeSet->delete();

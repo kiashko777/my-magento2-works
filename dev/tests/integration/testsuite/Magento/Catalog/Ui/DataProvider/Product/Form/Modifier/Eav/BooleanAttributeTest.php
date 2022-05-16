@@ -30,6 +30,31 @@ class BooleanAttributeTest extends AbstractEavTest
     }
 
     /**
+     * @return array
+     */
+    private function getAttributeMeta(): array
+    {
+        return [
+            'dataType' => 'boolean',
+            'formElement' => 'checkbox',
+            'visible' => '1',
+            'required' => '0',
+            'label' => 'Boolean Attribute',
+            'code' => 'boolean_attribute',
+            'source' => 'product-details',
+            'scopeLabel' => '[STORE VIEW]',
+            'globalScope' => false,
+            'sortOrder' => '__placeholder__',
+            'componentType' => 'field',
+            'prefer' => 'toggle',
+            'valueMap' => [
+                'true' => '1',
+                'false' => '0',
+            ]
+        ];
+    }
+
+    /**
      * @magentoDataFixture Magento/Catalog/_files/product_boolean_attribute.php
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
      * @return void
@@ -57,30 +82,5 @@ class BooleanAttributeTest extends AbstractEavTest
             'boolean_attribute'
         );
         $this->callModifyMetaAndAssert($this->getNewProduct(), $expectedMeta);
-    }
-
-    /**
-     * @return array
-     */
-    private function getAttributeMeta(): array
-    {
-        return [
-            'dataType' => 'boolean',
-            'formElement' => 'checkbox',
-            'visible' => '1',
-            'required' => '0',
-            'label' => 'Boolean Attribute',
-            'code' => 'boolean_attribute',
-            'source' => 'product-details',
-            'scopeLabel' => '[STORE VIEW]',
-            'globalScope' => false,
-            'sortOrder' => '__placeholder__',
-            'componentType' => 'field',
-            'prefer' => 'toggle',
-            'valueMap' => [
-                'true' => '1',
-                'false' => '0',
-            ]
-        ];
     }
 }

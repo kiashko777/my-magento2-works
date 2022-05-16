@@ -6,48 +6,35 @@
 
 namespace Magento\Backend\Model\Auth;
 
+use Magento\Backend\App\Area\FrontNameResolver;
+use Magento\Backend\Model\Auth;
+use Magento\Framework\Config\ScopeInterface;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Bootstrap as TestHelper;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  * @magentoAppIsolation enabled
  * @magentoDbIsolation enabled
  */
-class SessionTest extends \PHPUnit\Framework\TestCase
+class SessionTest extends TestCase
 {
     /**
-     * @var \Magento\Backend\Model\Auth
+     * @var Auth
      */
     private $auth;
 
     /**
-     * @var \Magento\Backend\Model\Auth\Session
+     * @var Session
      */
     private $authSession;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->objectManager->get(\Magento\Framework\Config\ScopeInterface::class)
-            ->setCurrentScope(\Magento\Backend\App\Area\FrontNameResolver::AREA_CODE);
-        $this->auth = $this->objectManager->create(\Magento\Backend\Model\Auth::class);
-        $this->authSession = $this->objectManager->create(\Magento\Backend\Model\Auth\Session::class);
-        $this->auth->setAuthStorage($this->authSession);
-        $this->auth->logout();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->auth = null;
-        $this->objectManager->get(\Magento\Framework\Config\ScopeInterface::class)->setCurrentScope(null);
-    }
 
     /**
      * @dataProvider loginDataProvider
@@ -66,5 +53,23 @@ class SessionTest extends \PHPUnit\Framework\TestCase
     public function loginDataProvider()
     {
         return [[false], [true]];
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->objectManager->get(ScopeInterface::class)
+            ->setCurrentScope(FrontNameResolver::AREA_CODE);
+        $this->auth = $this->objectManager->create(Auth::class);
+        $this->authSession = $this->objectManager->create(Session::class);
+        $this->auth->setAuthStorage($this->authSession);
+        $this->auth->logout();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->auth = null;
+        $this->objectManager->get(ScopeInterface::class)->setCurrentScope(null);
     }
 }

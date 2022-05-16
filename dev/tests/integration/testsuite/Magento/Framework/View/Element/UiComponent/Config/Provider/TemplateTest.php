@@ -6,48 +6,36 @@
 
 namespace Magento\Framework\View\Element\UiComponent\Config\Provider;
 
-use \Magento\TestFramework\Helper\Bootstrap;
-use Magento\TestFramework\Helper\CacheCleaner;
+use Magento\Framework\App\Arguments\ValidationState;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\View\DesignInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Theme\Model\Theme\Registration;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoComponentsDir Magento/Framework/View/_files/UiComponent/theme
  * @magentoAppIsolation enabled
  * @magentoDbIsolation enabled
  */
-class TemplateTest extends \PHPUnit\Framework\TestCase
+class TemplateTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
     /**
-     * @var \Magento\Framework\View\Element\UiComponent\Config\Provider\Template
+     * @var Template
      */
     private $model;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->registerThemes();
-        $this->objectManager->addSharedInstance(
-            $this->objectManager->create(
-                \Magento\Framework\App\Arguments\ValidationState::class,
-                ['appMode' => 'default']
-            ),
-            \Magento\Framework\App\Arguments\ValidationState::class
-        );
-        $this->model = $this->objectManager->create(
-            \Magento\Framework\View\Element\UiComponent\Config\Provider\Template::class
-        );
-    }
 
     public function testGetTemplate()
     {
         $expected = file_get_contents(__DIR__ . '/../../../../_files/UiComponent/expected/config.xml');
 
-        \Magento\TestFramework\Helper\Bootstrap::getInstance()->loadArea('Adminhtml');
-        $this->objectManager->get(\Magento\Framework\View\DesignInterface::class)
+        Bootstrap::getInstance()->loadArea('Adminhtml');
+        $this->objectManager->get(DesignInterface::class)
             ->setDesignTheme('FrameworkViewUiComponent/default');
 
         $resultOne = $this->model->getTemplate('test.xml');
@@ -57,14 +45,30 @@ class TemplateTest extends \PHPUnit\Framework\TestCase
         $this->assertXmlStringEqualsXmlString($expected, $resultTwo);
     }
 
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->registerThemes();
+        $this->objectManager->addSharedInstance(
+            $this->objectManager->create(
+                ValidationState::class,
+                ['appMode' => 'default']
+            ),
+            ValidationState::class
+        );
+        $this->model = $this->objectManager->create(
+            Template::class
+        );
+    }
+
     /**
      * Register themes in the fixture folder
      */
     protected function registerThemes()
     {
-        /** @var \Magento\Theme\Model\Theme\Registration $registration */
+        /** @var Registration $registration */
         $registration = $this->objectManager->get(
-            \Magento\Theme\Model\Theme\Registration::class
+            Registration::class
         );
         $registration->register();
     }
@@ -72,7 +76,7 @@ class TemplateTest extends \PHPUnit\Framework\TestCase
     protected function tearDown(): void
     {
         $this->objectManager->removeSharedInstance(
-            \Magento\Framework\App\Arguments\ValidationState::class
+            ValidationState::class
         );
     }
 }

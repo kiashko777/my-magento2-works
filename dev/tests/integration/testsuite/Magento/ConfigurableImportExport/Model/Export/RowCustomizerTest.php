@@ -3,37 +3,35 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\ConfigurableImportExport\Model\Export;
+
+use Magento\Catalog\Model\ResourceModel\Product\Collection;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class RowCustomizerTest extends \PHPUnit\Framework\TestCase
+class RowCustomizerTest extends TestCase
 {
     /**
-     * @var \Magento\ConfigurableImportExport\Model\Export\RowCustomizer
+     * @var RowCustomizer
      */
     private $model;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->model = $this->objectManager->create(
-            \Magento\ConfigurableImportExport\Model\Export\RowCustomizer::class
-        );
-    }
 
     /**
      * @magentoDataFixture Magento/ConfigurableProduct/_files/product_configurable.php
      */
     public function testPrepareData()
     {
-        $collection = $this->objectManager->get(\Magento\Catalog\Model\ResourceModel\Product\Collection::class);
+        $collection = $this->objectManager->get(Collection::class);
         $select = (string)$collection->getSelect();
         $this->model->prepareData($collection, [1, 2, 3, 4]);
         $this->assertEquals($select, (string)$collection->getSelect());
@@ -47,6 +45,14 @@ class RowCustomizerTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(
             'test_configurable=Test Configurable',
             $result['configurable_variation_labels']
+        );
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->model = $this->objectManager->create(
+            RowCustomizer::class
         );
     }
 }

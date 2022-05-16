@@ -36,14 +36,6 @@ class DeclarativeSchemaBuilderTest extends SetupTestCase
      */
     private $cliCommad;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->schemaConfig = $objectManager->create(SchemaConfig::class);
-        $this->moduleManager = $objectManager->get(TestModuleManager::class);
-        $this->cliCommad = $objectManager->get(CliCommand::class);
-    }
-
     /**
      * Tests primary key constraint conversion from XML and renamed functionality.
      *
@@ -82,5 +74,13 @@ class DeclarativeSchemaBuilderTest extends SetupTestCase
         $foreignKey = $testTable->getConstraintByName('TEST_TABLE_TINYINT_REFERENCE_TABLE_TINYINT_REF');
         self::assertEquals('NO ACTION', $foreignKey->getOnDelete());
         self::assertEquals('tinyint_ref', $foreignKey->getReferenceColumn()->getName());
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->schemaConfig = $objectManager->create(SchemaConfig::class);
+        $this->moduleManager = $objectManager->get(TestModuleManager::class);
+        $this->cliCommad = $objectManager->get(CliCommand::class);
     }
 }

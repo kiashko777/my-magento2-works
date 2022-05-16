@@ -6,72 +6,50 @@
 
 namespace Magento\Persistent\Model;
 
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Helper\View;
 use Magento\Customer\Model\Context;
+use Magento\Framework\Escaper;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Sales\Block\Reorder\Sidebar;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class ObserverTest extends \PHPUnit\Framework\TestCase
+class ObserverTest extends TestCase
 {
     /**
-     * @var \Magento\Customer\Helper\View
+     * @var View
      */
     protected $_customerViewHelper;
 
     /**
-     * @var \Magento\Framework\Escaper
+     * @var Escaper
      */
     protected $_escaper;
 
     /**
-     * @var \Magento\Customer\Api\CustomerRepositoryInterface
+     * @var CustomerRepositoryInterface
      */
     protected $customerRepository;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $_objectManager;
 
     /**
-     * @var \Magento\Persistent\Model\Observer
+     * @var Observer
      */
     protected $_observer;
 
     /**
-     * @var \Magento\Checkout\Model\Session | \PHPUnit\Framework\MockObject\MockObject
+     * @var \Magento\Checkout\Model\Session | MockObject
      */
     protected $_checkoutSession;
-
-    protected function setUp(): void
-    {
-        $this->_objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-
-        $this->_customerViewHelper = $this->_objectManager->create(
-            \Magento\Customer\Helper\View::class
-        );
-        $this->_escaper = $this->_objectManager->create(
-            \Magento\Framework\Escaper::class
-        );
-
-        $this->customerRepository = $this->_objectManager->create(
-            \Magento\Customer\Api\CustomerRepositoryInterface::class
-        );
-
-        $this->_checkoutSession = $this->getMockBuilder(
-            \Magento\Checkout\Model\Session::class
-        )->disableOriginalConstructor()->setMethods([])->getMock();
-
-        $this->_observer = $this->_objectManager->create(
-            \Magento\Persistent\Model\Observer::class,
-            [
-                'escaper' => $this->_escaper,
-                'customerViewHelper' => $this->_customerViewHelper,
-                'customerRepository' => $this->customerRepository,
-                'checkoutSession' => $this->_checkoutSession
-            ]
-        );
-    }
 
     /**
      * @magentoAppArea frontend
@@ -82,7 +60,7 @@ class ObserverTest extends \PHPUnit\Framework\TestCase
         $httpContext = new \Magento\Framework\App\Http\Context();
         $httpContext->setValue(Context::CONTEXT_AUTH, 1, 1);
         $block = $this->_objectManager->create(
-            \Magento\Sales\Block\Reorder\Sidebar::class,
+            Sidebar::class,
             [
                 'httpContext' => $httpContext
             ]
@@ -90,5 +68,35 @@ class ObserverTest extends \PHPUnit\Framework\TestCase
         $this->_observer->emulateWelcomeBlock($block);
 
         $this->assertEquals('&nbsp;', $block->getWelcome());
+    }
+
+    protected function setUp(): void
+    {
+        $this->_objectManager = Bootstrap::getObjectManager();
+
+        $this->_customerViewHelper = $this->_objectManager->create(
+            View::class
+        );
+        $this->_escaper = $this->_objectManager->create(
+            Escaper::class
+        );
+
+        $this->customerRepository = $this->_objectManager->create(
+            CustomerRepositoryInterface::class
+        );
+
+        $this->_checkoutSession = $this->getMockBuilder(
+            \Magento\Checkout\Model\Session::class
+        )->disableOriginalConstructor()->setMethods([])->getMock();
+
+        $this->_observer = $this->_objectManager->create(
+            Observer::class,
+            [
+                'escaper' => $this->_escaper,
+                'customerViewHelper' => $this->_customerViewHelper,
+                'customerRepository' => $this->customerRepository,
+                'checkoutSession' => $this->_checkoutSession
+            ]
+        );
     }
 }

@@ -5,16 +5,66 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Magento\Framework\Search;
 
-class RequestConfigTest extends \Magento\TestFramework\Integrity\AbstractConfig
+use Magento\Framework\Config\Dom\UrnResolver;
+use Magento\TestFramework\Integrity\AbstractConfig;
+
+class RequestConfigTest extends AbstractConfig
 {
-    /** @var \Magento\Framework\Config\Dom\UrnResolver */
+    /** @var UrnResolver */
     protected $urnResolver;
+
+    /**
+     * @param null $expectedErrors
+     */
+    public function testSchemaUsingInvalidXml($expectedErrors = null)
+    {
+        $expectedErrors = array_filter(
+            explode(
+                "\n",
+                "
+No match found for key-sequence ['suggested_search_container'] of keyref 'requestQueryReference'.
+Element 'queryReference': No match found for key-sequence ['fulltext_search_query4'] of keyref 'queryReference'.
+"
+            )
+        );
+        parent::testSchemaUsingInvalidXml($expectedErrors);
+    }
+
+    /**
+     * @param null $expectedErrors
+     */
+    public function testFileSchemaUsingInvalidXml($expectedErrors = null)
+    {
+        $expectedErrors = array_filter(
+            explode(
+                "\n",
+                "
+Element 'dimensions': Missing child element(s). Expected is ( dimension ).
+Element 'queryReference': The attribute 'clause' is required but missing.
+Element 'queryReference': The attribute 'ref' is required but missing.
+Element 'filterReference': The attribute 'clause' is required but missing.
+Element 'filterReference': The attribute 'ref' is required but missing.
+Element 'filter': The attribute 'field' is required but missing.
+Element 'metric', attribute 'type': [facet 'enumeration'] " .
+                "The value 'sumasdasd' is not an element of the set {'sum', 'count', 'min', 'max', 'avg'}.
+Element 'metric', attribute 'type': 'sumasdasd' is not a valid value of the local atomic type.
+Element 'bucket': Missing child element(s). Expected is one of ( metrics, ranges )."
+            )
+        );
+        parent::testFileSchemaUsingInvalidXml($expectedErrors);
+    }
+
+    public function testSchemaUsingValidXml()
+    {
+        parent::testSchemaUsingValidXml();
+    }
 
     protected function setUp(): void
     {
-        $this->urnResolver = new \Magento\Framework\Config\Dom\UrnResolver();
+        $this->urnResolver = new UrnResolver();
     }
 
     /**
@@ -68,47 +118,6 @@ class RequestConfigTest extends \Magento\TestFramework\Integrity\AbstractConfig
     }
 
     /**
-     * @param null $expectedErrors
-     */
-    public function testSchemaUsingInvalidXml($expectedErrors = null)
-    {
-        $expectedErrors = array_filter(
-            explode(
-                "\n",
-                "
-No match found for key-sequence ['suggested_search_container'] of keyref 'requestQueryReference'.
-Element 'queryReference': No match found for key-sequence ['fulltext_search_query4'] of keyref 'queryReference'.
-"
-            )
-        );
-        parent::testSchemaUsingInvalidXml($expectedErrors);
-    }
-
-    /**
-     * @param null $expectedErrors
-     */
-    public function testFileSchemaUsingInvalidXml($expectedErrors = null)
-    {
-        $expectedErrors = array_filter(
-            explode(
-                "\n",
-                "
-Element 'dimensions': Missing child element(s). Expected is ( dimension ).
-Element 'queryReference': The attribute 'clause' is required but missing.
-Element 'queryReference': The attribute 'ref' is required but missing.
-Element 'filterReference': The attribute 'clause' is required but missing.
-Element 'filterReference': The attribute 'ref' is required but missing.
-Element 'filter': The attribute 'field' is required but missing.
-Element 'metric', attribute 'type': [facet 'enumeration'] " .
-                "The value 'sumasdasd' is not an element of the set {'sum', 'count', 'min', 'max', 'avg'}.
-Element 'metric', attribute 'type': 'sumasdasd' is not a valid value of the local atomic type.
-Element 'bucket': Missing child element(s). Expected is one of ( metrics, ranges )."
-            )
-        );
-        parent::testFileSchemaUsingInvalidXml($expectedErrors);
-    }
-
-    /**
      * Returns the name of the xml files to validate
      *
      * @return string
@@ -126,10 +135,5 @@ Element 'bucket': Missing child element(s). Expected is one of ( metrics, ranges
     protected function _getKnownInvalidPartialXml()
     {
         return __DIR__ . '/_files/request/invalid_partial.xml';
-    }
-
-    public function testSchemaUsingValidXml()
-    {
-        parent::testSchemaUsingValidXml();
     }
 }

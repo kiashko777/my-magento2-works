@@ -35,15 +35,6 @@ class ReorderTest extends TestCase
     private $model;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->model =$this->objectManager->get(Create::class);
-    }
-
-    /**
      * Check Custom Price after reordering with Configurable product.
      *
      * @return void
@@ -85,5 +76,14 @@ class ReorderTest extends TestCase
             self::assertEquals($firstOrderItem->getId(), $orderItem->getParentItemId());
             self::assertEquals(0, (int)$orderItem->getPrice());
         }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->model = $this->objectManager->get(Create::class);
     }
 }

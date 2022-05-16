@@ -33,18 +33,6 @@ class DeleteTest extends AbstractBackendController
     private $collectionFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->getBlockByIdentifier = $this->_objectManager->get(GetBlockByIdentifierInterface::class);
-        $this->storeManager = $this->_objectManager->get(StoreManagerInterface::class);
-        $this->collectionFactory = $this->_objectManager->get(CollectionFactory::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Cms/_files/block_default_store.php
      *
      * @return void
@@ -63,5 +51,17 @@ class DeleteTest extends AbstractBackendController
         $this->assertRedirect($this->stringContains('cms/block/index'));
         $collection = $this->collectionFactory->getReport('cms_block_listing_data_source');
         $this->assertNull($collection->getItemByColumnValue(BlockInterface::IDENTIFIER, 'default_store_block'));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->getBlockByIdentifier = $this->_objectManager->get(GetBlockByIdentifierInterface::class);
+        $this->storeManager = $this->_objectManager->get(StoreManagerInterface::class);
+        $this->collectionFactory = $this->_objectManager->get(CollectionFactory::class);
     }
 }

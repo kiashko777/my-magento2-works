@@ -26,7 +26,7 @@ if (isset($_SERVER['INTEGRATION_TEST_PARAMS'])) {
 try {
     require $_SERVER['INTEGRATION_TESTS_CLI_AUTOLOADER'] ??
         ($_SERVER['MAGE_DIRS']['base']['path'] . '/app/bootstrap.php');
-} catch (\Exception $e) {
+} catch (Exception $e) {
     echo 'Autoload error: ' . $e->getMessage();
     exit(1);
 }
@@ -39,7 +39,7 @@ try {
         $application = new Cli('Magento CLI');
     }
     $application->run();
-} catch (\Exception $e) {
+} catch (Exception $e) {
     while ($e) {
         echo $e->getMessage();
         echo $e->getTraceAsString();

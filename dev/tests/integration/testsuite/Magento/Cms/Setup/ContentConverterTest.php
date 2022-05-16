@@ -3,19 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Cms\Setup;
 
-class ContentConverterTest extends \Magento\TestFramework\TestCase\AbstractController
-{
-    /** @var \Magento\Cms\Setup\ContentConverter */
-    private $converter;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractController;
 
-    protected function setUp(): void
-    {
-        $this->converter = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Cms\Setup\ContentConverter::class
-        );
-    }
+class ContentConverterTest extends AbstractController
+{
+    /** @var ContentConverter */
+    private $converter;
 
     /**
      * @param string $value
@@ -71,5 +68,12 @@ class ContentConverterTest extends \Magento\TestFramework\TestCase\AbstractContr
                 $someContent . $jsonEncodedWidgetContent . $someContent,
             ],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->converter = Bootstrap::getObjectManager()->create(
+            ContentConverter::class
+        );
     }
 }

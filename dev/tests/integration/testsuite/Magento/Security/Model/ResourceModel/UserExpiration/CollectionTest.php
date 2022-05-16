@@ -8,37 +8,32 @@ declare(strict_types=1);
 
 namespace Magento\Security\Model\ResourceModel\UserExpiration;
 
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\User\Model\User;
+use PHPUnit\Framework\TestCase;
+
 /**
  * Test UserExpiration collection filters.
  */
-class CollectionTest extends \PHPUnit\Framework\TestCase
+class CollectionTest extends TestCase
 {
     /**
-     * @var \Magento\Security\Model\ResourceModel\UserExpiration\CollectionFactory
+     * @var CollectionFactory
      */
     protected $collectionModelFactory;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
-
-    /**
-     * Set up
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->collectionModelFactory = $this->objectManager
-            ->create(\Magento\Security\Model\ResourceModel\UserExpiration\CollectionFactory::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Security/_files/expired_users.php
      */
     public function testAddExpiredActiveUsersFilter()
     {
-        /** @var \Magento\Security\Model\ResourceModel\UserExpiration\Collection $collectionModel */
+        /** @var Collection $collectionModel */
         $collectionModel = $this->collectionModelFactory->create();
         $collectionModel->addActiveExpiredUsersFilter();
         static::assertEquals(1, $collectionModel->getSize());
@@ -50,10 +45,10 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
     public function testAddUserIdsFilter()
     {
         $adminUserNameFromFixture = 'adminUserExpired';
-        $user = $this->objectManager->create(\Magento\User\Model\User::class);
+        $user = $this->objectManager->create(User::class);
         $user->loadByUsername($adminUserNameFromFixture);
 
-        /** @var \Magento\Security\Model\ResourceModel\UserExpiration\Collection $collectionModel */
+        /** @var Collection $collectionModel */
         $collectionModel = $this->collectionModelFactory->create()->addUserIdsFilter([$user->getId()]);
         static::assertEquals(1, $collectionModel->getSize());
     }
@@ -64,11 +59,21 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
     public function testAddExpiredRecordsForUserFilter()
     {
         $adminUserNameFromFixture = 'adminUserExpired';
-        $user = $this->objectManager->create(\Magento\User\Model\User::class);
+        $user = $this->objectManager->create(User::class);
         $user->loadByUsername($adminUserNameFromFixture);
 
-        /** @var \Magento\Security\Model\ResourceModel\UserExpiration\Collection $collectionModel */
+        /** @var Collection $collectionModel */
         $collectionModel = $this->collectionModelFactory->create()->addExpiredRecordsForUserFilter($user->getId());
         static::assertEquals(1, $collectionModel->getSize());
+    }
+
+    /**
+     * Set up
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->collectionModelFactory = $this->objectManager
+            ->create(CollectionFactory::class);
     }
 }

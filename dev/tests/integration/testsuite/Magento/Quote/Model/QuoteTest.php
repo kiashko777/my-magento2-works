@@ -17,6 +17,7 @@ use Magento\Customer\Model\GroupManagement;
 use Magento\Customer\Model\ResourceModel\Customer as CustomerResourceModel;
 use Magento\Framework\Api\DataObjectHelper;
 use Magento\Framework\Api\ExtensibleDataObjectConverter;
+use Magento\Framework\DataObject;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Quote\Api\Data\AddressInterface;
@@ -79,41 +80,6 @@ class QuoteTest extends TestCase
 
     /** @var ExtensibleDataObjectConverter */
     private $extensibleDataObjectConverter;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->getQuoteByReservedOrderId = $this->objectManager->get(GetQuoteByReservedOrderId::class);
-        $this->quoteFactory = $this->objectManager->get(QuoteFactory::class);
-        $this->dataObjectHelper = $this->objectManager->get(DataObjectHelper::class);
-        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
-        $this->customerDataFactory = $this->objectManager->get(CustomerInterfaceFactory::class);
-        $this->customerFactory = $this->objectManager->get(CustomerFactory::class);
-        $this->addressFactory = $this->objectManager->get(AddressInterfaceFactory::class);
-        $this->itemFactory = $this->objectManager->get(CartItemInterfaceFactory::class);
-        $this->customerResourceModel = $this->objectManager->get(CustomerResourceModel::class);
-        $this->groupFactory = $this->objectManager->get(GroupFactory::class);
-        $this->extensibleDataObjectConverter = $this->objectManager->get(ExtensibleDataObjectConverter::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        if ($this->customerIdToDelete) {
-            $this->customerRepository->deleteById($this->customerIdToDelete);
-        }
-
-        parent::tearDown();
-    }
 
     /**
      * @magentoDataFixture Magento/Catalog/_files/product_virtual.php
@@ -184,6 +150,33 @@ class QuoteTest extends TestCase
         $this->assertEquals($expected[CustomerInterface::FIRSTNAME], $quote->getCustomerFirstname());
         $this->assertEquals($expected[CustomerInterface::LASTNAME], $quote->getCustomerLastname());
         $this->assertEquals($expected[CustomerInterface::MIDDLENAME], $quote->getCustomerMiddlename());
+    }
+
+    /**
+     * @return array
+     */
+    private function getCustomerDataArray(): array
+    {
+        return [
+            CustomerInterface::CONFIRMATION => 'test',
+            CustomerInterface::CREATED_AT => '2/3/2014',
+            CustomerInterface::CREATED_IN => 'Default',
+            CustomerInterface::DEFAULT_BILLING => 'test',
+            CustomerInterface::DEFAULT_SHIPPING => 'test',
+            CustomerInterface::DOB => '2014-02-03 00:00:00',
+            CustomerInterface::EMAIL => 'qa@example.com',
+            CustomerInterface::FIRSTNAME => 'Joe',
+            CustomerInterface::GENDER => 0,
+            CustomerInterface::GROUP_ID => GroupManagement::NOT_LOGGED_IN_ID,
+            CustomerInterface::ID => 1,
+            CustomerInterface::LASTNAME => 'Dou',
+            CustomerInterface::MIDDLENAME => 'Ivan',
+            CustomerInterface::PREFIX => 'Dr.',
+            CustomerInterface::STORE_ID => 1,
+            CustomerInterface::SUFFIX => 'Jr.',
+            CustomerInterface::TAXVAT => 1,
+            CustomerInterface::WEBSITE_ID => 1,
+        ];
     }
 
     /**
@@ -288,6 +281,52 @@ class QuoteTest extends TestCase
     }
 
     /**
+     * Prepare quote for testing assignCustomerWithAddressChange method.
+     * Customer with two addresses created. First address is default billing, second is default shipping.
+     *
+     * @param CartInterface $quote
+     * @return CustomerInterface
+     */
+    private function prepareQuoteForTestAssignCustomerWithAddressChange(CartInterface $quote): CustomerInterface
+    {
+        $fixtureCustomerId = 1;
+        $fixtureSecondAddressId = 2;
+        $customer = $this->customerFactory->create();
+        $this->customerResourceModel->load($customer, $fixtureCustomerId);
+        $customer->setDefaultShipping($fixtureSecondAddressId);
+        $this->customerResourceModel->save($customer);
+        $customerData = $customer->getDataModel();
+        $this->assertEmpty(
+            $quote->getBillingAddress()->getId(),
+            "Precondition failed: billing address should be empty."
+        );
+        $this->assertEmpty(
+            $quote->getShippingAddress()->getId(),
+            "Precondition failed: shipping address should be empty."
+        );
+
+        return $customerData;
+    }
+
+    /**
+     * Assert address in quote.
+     *
+     * @param array $expectedAddress
+     * @param AddressInterface $quoteAddress
+     * @return void
+     */
+    private function assertQuoteAddress(array $expectedAddress, AddressInterface $quoteAddress): void
+    {
+        foreach ($expectedAddress as $field => $value) {
+            $this->assertEquals(
+                $value,
+                $quoteAddress->getData($field),
+                sprintf('"%s" value in quote %s address is invalid.', $field, $quoteAddress->getAddressType())
+            );
+        }
+    }
+
+    /**
      * Billing and shipping address arguments are passed, customer has default billing and shipping addresses.
      *
      * @magentoDataFixture Magento/Customer/_files/customer.php
@@ -368,7 +407,7 @@ class QuoteTest extends TestCase
             'qty' => 1,
             'id' => 0,
         ];
-        $updateParams = new \Magento\Framework\DataObject($params);
+        $updateParams = new DataObject($params);
         $quote->updateItem($updateParams['id'], $updateParams);
         $quote->setTotalsCollectedFlag(false)->collectTotals();
         $this->assertEquals(1, $quote->getItemsQty());
@@ -448,7 +487,8 @@ class QuoteTest extends TestCase
         ?int $customerOrderGiftMessageId,
         ?int $expectedItemGiftMessageId,
         ?int $expectedOrderGiftMessageId
-    ): void {
+    ): void
+    {
         $product = $this->productRepository->get('simple', false, null, true);
         $guestQuote = $this->getQuoteByReservedOrderId->execute('test01');
         $guestQuote->setGiftMessageId($guestOrderGiftMessageId);
@@ -666,79 +706,6 @@ class QuoteTest extends TestCase
     }
 
     /**
-     * Assert address in quote.
-     *
-     * @param array $expectedAddress
-     * @param AddressInterface $quoteAddress
-     * @return void
-     */
-    private function assertQuoteAddress(array $expectedAddress, AddressInterface $quoteAddress): void
-    {
-        foreach ($expectedAddress as $field => $value) {
-            $this->assertEquals(
-                $value,
-                $quoteAddress->getData($field),
-                sprintf('"%s" value in quote %s address is invalid.', $field, $quoteAddress->getAddressType())
-            );
-        }
-    }
-
-    /**
-     * Prepare quote for testing assignCustomerWithAddressChange method.
-     * Customer with two addresses created. First address is default billing, second is default shipping.
-     *
-     * @param CartInterface $quote
-     * @return CustomerInterface
-     */
-    private function prepareQuoteForTestAssignCustomerWithAddressChange(CartInterface $quote): CustomerInterface
-    {
-        $fixtureCustomerId = 1;
-        $fixtureSecondAddressId = 2;
-        $customer = $this->customerFactory->create();
-        $this->customerResourceModel->load($customer, $fixtureCustomerId);
-        $customer->setDefaultShipping($fixtureSecondAddressId);
-        $this->customerResourceModel->save($customer);
-        $customerData = $customer->getDataModel();
-        $this->assertEmpty(
-            $quote->getBillingAddress()->getId(),
-            "Precondition failed: billing address should be empty."
-        );
-        $this->assertEmpty(
-            $quote->getShippingAddress()->getId(),
-            "Precondition failed: shipping address should be empty."
-        );
-
-        return $customerData;
-    }
-
-    /**
-     * @return array
-     */
-    private function getCustomerDataArray(): array
-    {
-        return [
-            CustomerInterface::CONFIRMATION => 'test',
-            CustomerInterface::CREATED_AT => '2/3/2014',
-            CustomerInterface::CREATED_IN => 'Default',
-            CustomerInterface::DEFAULT_BILLING => 'test',
-            CustomerInterface::DEFAULT_SHIPPING => 'test',
-            CustomerInterface::DOB => '2014-02-03 00:00:00',
-            CustomerInterface::EMAIL => 'qa@example.com',
-            CustomerInterface::FIRSTNAME => 'Joe',
-            CustomerInterface::GENDER => 0,
-            CustomerInterface::GROUP_ID => GroupManagement::NOT_LOGGED_IN_ID,
-            CustomerInterface::ID => 1,
-            CustomerInterface::LASTNAME => 'Dou',
-            CustomerInterface::MIDDLENAME => 'Ivan',
-            CustomerInterface::PREFIX => 'Dr.',
-            CustomerInterface::STORE_ID => 1,
-            CustomerInterface::SUFFIX => 'Jr.',
-            CustomerInterface::TAXVAT => 1,
-            CustomerInterface::WEBSITE_ID => 1,
-        ];
-    }
-
-    /**
      * @magentoConfigFixture current_store sales/minimum_order/active 1
      * @magentoConfigFixture current_store sales/minimum_order/amount 5
      * @magentoConfigFixture current_store sales/minimum_order/tax_including 1
@@ -752,7 +719,7 @@ class QuoteTest extends TestCase
      */
     public function testValidateMinimumAmountWithPriceInclTaxAndDiscount()
     {
-        /** @var $quote \Magento\Quote\Model\Quote */
+        /** @var $quote Quote */
         $quote = $this->getQuoteByReservedOrderId->execute('test_order_with_taxable_product');
         $quote->setCouponCode('CART_FIXED_DISCOUNT_5');
         $quote->collectTotals();
@@ -760,5 +727,40 @@ class QuoteTest extends TestCase
         $this->assertEquals(9.3, $quote->getShippingAddress()->getBaseSubtotal());
         $this->assertEquals(5, $quote->getShippingAddress()->getBaseGrandTotal());
         $this->assertTrue($quote->validateMinimumAmount());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->getQuoteByReservedOrderId = $this->objectManager->get(GetQuoteByReservedOrderId::class);
+        $this->quoteFactory = $this->objectManager->get(QuoteFactory::class);
+        $this->dataObjectHelper = $this->objectManager->get(DataObjectHelper::class);
+        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
+        $this->customerDataFactory = $this->objectManager->get(CustomerInterfaceFactory::class);
+        $this->customerFactory = $this->objectManager->get(CustomerFactory::class);
+        $this->addressFactory = $this->objectManager->get(AddressInterfaceFactory::class);
+        $this->itemFactory = $this->objectManager->get(CartItemInterfaceFactory::class);
+        $this->customerResourceModel = $this->objectManager->get(CustomerResourceModel::class);
+        $this->groupFactory = $this->objectManager->get(GroupFactory::class);
+        $this->extensibleDataObjectConverter = $this->objectManager->get(ExtensibleDataObjectConverter::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        if ($this->customerIdToDelete) {
+            $this->customerRepository->deleteById($this->customerIdToDelete);
+        }
+
+        parent::tearDown();
     }
 }

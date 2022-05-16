@@ -8,9 +8,13 @@
  * Create dummy user
  */
 
-\Magento\TestFramework\Helper\Bootstrap::getInstance()
-    ->loadArea(\Magento\Backend\App\Area\FrontNameResolver::AREA_CODE);
-$user = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\User\Model\User::class);
+use Magento\Backend\App\Area\FrontNameResolver;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\User\Model\User;
+
+Bootstrap::getInstance()
+    ->loadArea(FrontNameResolver::AREA_CODE);
+$user = Bootstrap::getObjectManager()->create(User::class);
 $user->setFirstname(
     'Dummy'
 )->setLastname(
@@ -23,9 +27,9 @@ $user->setFirstname(
     'dummy_password1'
 )->save();
 
-\Magento\TestFramework\Helper\Bootstrap::getInstance()
-    ->loadArea(\Magento\Backend\App\Area\FrontNameResolver::AREA_CODE);
-$user = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\User\Model\User::class);
+Bootstrap::getInstance()
+    ->loadArea(FrontNameResolver::AREA_CODE);
+$user = Bootstrap::getObjectManager()->create(User::class);
 $user->setFirstname(
     'CreateDate'
 )->setLastname(
@@ -37,7 +41,7 @@ $user->setFirstname(
 )->setPassword(
     'dummy_password2'
 )->save();
-$user = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\User\Model\User::class);
+$user = Bootstrap::getObjectManager()->create(User::class);
 $user->loadByUsername('user_created_date');
 $user->setCreated('2010-01-06 00:00:00');
 $user->save();

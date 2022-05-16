@@ -19,7 +19,8 @@ define([
                         return cartData;
                     }).and.callThrough(),
                     reload: jasmine.createSpy(),
-                    getInitCustomerData: function () {}
+                    getInitCustomerData: function () {
+                    }
                 }
             },
             deferred,
@@ -37,7 +38,8 @@ define([
             try {
                 injector.clean();
                 injector.remove();
-            } catch (e) {}
+            } catch (e) {
+            }
 
             cartData({});
         });

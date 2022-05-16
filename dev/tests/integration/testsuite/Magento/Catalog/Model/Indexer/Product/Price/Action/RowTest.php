@@ -3,32 +3,30 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Model\Indexer\Product\Price\Action;
+
+use Magento\Catalog\Block\Product\ListProduct;
+use Magento\Catalog\Model\CategoryFactory;
+use Magento\Catalog\Model\Indexer\Product\Price\Processor;
+use Magento\Catalog\Model\Product;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class RowTest
  */
-class RowTest extends \PHPUnit\Framework\TestCase
+class RowTest extends TestCase
 {
     /**
-     * @var \Magento\Catalog\Model\Product
+     * @var Product
      */
     protected $_product;
 
     /**
-     * @var \Magento\Catalog\Model\Indexer\Product\Price\Processor
+     * @var Processor
      */
     protected $_processor;
-
-    protected function setUp(): void
-    {
-        $this->_product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\Product::class
-        );
-        $this->_processor = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\Indexer\Product\Price\Processor::class
-        );
-    }
 
     /**
      * @magentoDbIsolation disabled
@@ -37,11 +35,11 @@ class RowTest extends \PHPUnit\Framework\TestCase
      */
     public function testProductUpdate()
     {
-        $categoryFactory = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\CategoryFactory::class
+        $categoryFactory = Bootstrap::getObjectManager()->create(
+            CategoryFactory::class
         );
-        $listProduct = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Block\Product\ListProduct::class
+        $listProduct = Bootstrap::getObjectManager()->create(
+            ListProduct::class
         );
 
         $this->_processor->getIndexer()->setScheduled(false);
@@ -57,10 +55,20 @@ class RowTest extends \PHPUnit\Framework\TestCase
         $productCollection = $layer->getProductCollection();
 
         $this->assertEquals(1, $productCollection->count());
-        /** @var $product \Magento\Catalog\Model\Product */
+        /** @var $product Product */
         foreach ($productCollection as $product) {
             $this->assertEquals($this->_product->getId(), $product->getId());
             $this->assertEquals($this->_product->getPrice(), $product->getPrice());
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->_product = Bootstrap::getObjectManager()->create(
+            Product::class
+        );
+        $this->_processor = Bootstrap::getObjectManager()->create(
+            Processor::class
+        );
     }
 }

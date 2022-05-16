@@ -19,7 +19,6 @@ use Magento\Framework\DataObjectFactory;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Serialize\SerializerInterface;
 use Magento\Framework\View\LayoutInterface;
-use Magento\Store\Api\WebsiteRepositoryInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
@@ -78,25 +77,6 @@ class ConfigurableTest extends TestCase
 
     /** @var DataObjectFactory */
     private $dataObjectFactory;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->serializer = $this->objectManager->get(SerializerInterface::class);
-        $this->searchBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->productResource = $this->objectManager->create(ProductResource::class);
-        $this->product = $this->productRepository->get('configurable');
-        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Configurable::class);
-        $this->block->setProduct($this->product);
-        $this->helperProduct = $this->objectManager->get(HelperProduct::class);
-        $this->dataObjectFactory = $this->objectManager->get(DataObjectFactory::class);
-    }
 
     /**
      * @return void
@@ -219,6 +199,19 @@ class ConfigurableTest extends TestCase
     }
 
     /**
+     * Returns products by ids list.
+     *
+     * @param array $productIds
+     * @return ProductInterface[]
+     */
+    private function getProducts(array $productIds): array
+    {
+        $criteria = $this->searchBuilder->addFilter('entity_id', $productIds, 'in')
+            ->create();
+        return $this->productRepository->getList($criteria)->getItems();
+    }
+
+    /**
      * @dataProvider expectedDataProvider
      *
      * @param string $label
@@ -234,31 +227,6 @@ class ConfigurableTest extends TestCase
         $config = $this->serializer->unserialize($this->block->getJsonConfig())['attributes'] ?? null;
         $this->assertNotNull($config);
         $this->assertConfig(reset($config), $expectedConfig);
-    }
-
-    /**
-     * @return array
-     */
-    public function expectedDataProvider(): array
-    {
-        return [
-            [
-                'label' => 'Test Configurable',
-                'config_data' => [
-                    'label' => 'Test Configurable',
-                    'options' => [
-                        [
-                            'label' => 'Option 1',
-                            'sku' => 'simple_10',
-                        ],
-                        [
-                            'label' => 'Option 2',
-                            'sku' => 'simple_20',
-                        ],
-                    ],
-                ],
-            ],
-        ];
     }
 
     /**
@@ -287,15 +255,46 @@ class ConfigurableTest extends TestCase
     }
 
     /**
-     * Returns products by ids list.
-     *
-     * @param array $productIds
-     * @return ProductInterface[]
+     * @return array
      */
-    private function getProducts(array $productIds): array
+    public function expectedDataProvider(): array
     {
-        $criteria = $this->searchBuilder->addFilter('entity_id', $productIds, 'in')
-            ->create();
-        return $this->productRepository->getList($criteria)->getItems();
+        return [
+            [
+                'label' => 'Test Configurable',
+                'config_data' => [
+                    'label' => 'Test Configurable',
+                    'options' => [
+                        [
+                            'label' => 'Option 1',
+                            'sku' => 'simple_10',
+                        ],
+                        [
+                            'label' => 'Option 2',
+                            'sku' => 'simple_20',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->serializer = $this->objectManager->get(SerializerInterface::class);
+        $this->searchBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->productResource = $this->objectManager->create(ProductResource::class);
+        $this->product = $this->productRepository->get('configurable');
+        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Configurable::class);
+        $this->block->setProduct($this->product);
+        $this->helperProduct = $this->objectManager->get(HelperProduct::class);
+        $this->dataObjectFactory = $this->objectManager->get(DataObjectFactory::class);
     }
 }

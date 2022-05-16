@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Magento\Config\Model\Config\Structure\Reader;
 
 use Magento\Config\Model\Config\Structure\Reader;
+use Magento\Framework\Exception\LocalizedException;
 
 /**
  * Class ReaderStub used for testing protected Reader::_readFiles() method.
@@ -19,7 +20,7 @@ class ReaderStub extends Reader
      *
      * @param array $fileList
      * @return array
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @throws LocalizedException
      */
     public function readFiles(array $fileList)
     {

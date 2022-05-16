@@ -29,15 +29,6 @@ class TextTest extends TestCase
     private $objectManager;
 
     /**
-     * {@inheritDoc}
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->optionText = $this->objectManager->create(Text::class);
-    }
-
-    /**
      * Check if newline symbols are normalized in option value
      *
      * @dataProvider optionValueDataProvider
@@ -46,10 +37,11 @@ class TextTest extends TestCase
      * @param string $expectedOptionValue
      */
     public function testNormalizeNewlineSymbols(
-        array $productOptionData,
+        array  $productOptionData,
         string $optionValue,
         string $expectedOptionValue
-    ) {
+    )
+    {
         $productOption = $this->objectManager->create(
             Option::class,
             ['data' => $productOptionData]
@@ -75,5 +67,14 @@ class TextTest extends TestCase
             [self::STUB_OPTION_DATA, "string \n\r string", "string \n string"],
             [self::STUB_OPTION_DATA, "string \r string", "string \n string"]
         ];
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->optionText = $this->objectManager->create(Text::class);
     }
 }

@@ -720,14 +720,14 @@ define([
 
     describe('Testing less-than-equals-to', function () {
         it('less-than-equals-to', function () {
-            var elm1 =  $('<input type="text" value="6" id="element1" />'),
-                elm2 =  $('<input type="text" value="5" id="element2" />'),
-                elm3 =  $('<input type="text" id="element3" />'),
-                elm4 =  $('<input type="text" value=5 id="element4" />'),
-                elm5 =  $('<input type="text" id="element6" />'),
-                elm6 =  $('<input type="text" value=6 id="element5" />'),
-                elm7 =  $('<input type="text" value=20 id="element7" />'),
-                elm8 =  $('<input type="text" value=100 id="element8" />');
+            var elm1 = $('<input type="text" value="6" id="element1" />'),
+                elm2 = $('<input type="text" value="5" id="element2" />'),
+                elm3 = $('<input type="text" id="element3" />'),
+                elm4 = $('<input type="text" value=5 id="element4" />'),
+                elm5 = $('<input type="text" id="element6" />'),
+                elm6 = $('<input type="text" value=6 id="element5" />'),
+                elm7 = $('<input type="text" value=20 id="element7" />'),
+                elm8 = $('<input type="text" value=100 id="element8" />');
 
             expect($.validator.methods['less-than-equals-to']
                 .call($.validator.prototype, elm1[0].value, elm1, elm2)).toEqual(false);
@@ -745,14 +745,14 @@ define([
 
     describe('Testing greater-than-equals-to', function () {
         it('greater-than-equals-to', function () {
-            var elm1 =  $('<input type="text" value=6 id="element1" />'),
-                elm2 =  $('<input type="text" value=7 id="element2" />'),
-                elm3 =  $('<input type="text" id="element3" />'),
-                elm4 =  $('<input type="text" value=5 id="element4" />'),
-                elm5 =  $('<input type="text" id="element6" />'),
-                elm6 =  $('<input type="text" value=6 id="element5" />'),
-                elm7 =  $('<input type="text" value=100 id="element7" />'),
-                elm8 =  $('<input type="text" value=20 id="element8" />');
+            var elm1 = $('<input type="text" value=6 id="element1" />'),
+                elm2 = $('<input type="text" value=7 id="element2" />'),
+                elm3 = $('<input type="text" id="element3" />'),
+                elm4 = $('<input type="text" value=5 id="element4" />'),
+                elm5 = $('<input type="text" id="element6" />'),
+                elm6 = $('<input type="text" value=6 id="element5" />'),
+                elm7 = $('<input type="text" value=100 id="element7" />'),
+                elm8 = $('<input type="text" value=20 id="element8" />');
 
             expect($.validator.methods['greater-than-equals-to']
                 .call($.validator.prototype, elm1[0].value, elm1, elm2)).toEqual(false);
@@ -944,9 +944,9 @@ define([
     describe('Testing validate-cc-exp', function () {
         it('validate-cc-exp', function () {
             var year = $('<input id="year" type="text" value="4916808263499650"/>'),
-                currentTime  = new Date(),
+                currentTime = new Date(),
                 currentMonth = currentTime.getMonth() + 1,
-                currentYear  = currentTime.getFullYear();
+                currentYear = currentTime.getFullYear();
 
             year.val(currentYear);
 

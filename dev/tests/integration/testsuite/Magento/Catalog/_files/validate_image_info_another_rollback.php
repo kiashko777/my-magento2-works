@@ -13,7 +13,7 @@ use Magento\TestFramework\Helper\Bootstrap;
 
 $objectManager = Bootstrap::getObjectManager();
 
-/** @var \Magento\Framework\Filesystem $filesystem */
+/** @var Filesystem $filesystem */
 $filesystem = $objectManager->create(Filesystem::class);
 
 /** @var Config $config */

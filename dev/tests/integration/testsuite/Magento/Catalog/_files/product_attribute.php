@@ -5,7 +5,10 @@
  */
 
 /** @var \Magento\Catalog\Model\ResourceModel\Eav\Attribute $attribute */
-$attribute = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
+
+use Magento\TestFramework\Helper\Bootstrap;
+
+$attribute = Bootstrap::getObjectManager()
     ->create(\Magento\Catalog\Model\ResourceModel\Eav\Attribute::class);
 $attribute->setAttributeCode('test_attribute_code_333')
     ->setEntityTypeId(4)

@@ -3,25 +3,23 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Swatches\Model;
 
-class SwatchAttributeCodesTest extends \PHPUnit\Framework\TestCase
+use Magento\Catalog\Model\ResourceModel\Eav\Attribute;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class SwatchAttributeCodesTest extends TestCase
 {
-    /** @var  \Magento\Swatches\Model\SwatchAttributeCodes */
+    /** @var  SwatchAttributeCodes */
     private $swatchAttributeCodes;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->swatchAttributeCodes = $this->objectManager->create(
-            \Magento\Swatches\Model\SwatchAttributeCodes::class
-        );
-    }
 
     /**
      * @magentoDbIsolation enabled
@@ -30,7 +28,7 @@ class SwatchAttributeCodesTest extends \PHPUnit\Framework\TestCase
     public function testGetCodes()
     {
         $attribute = $this->objectManager
-            ->create(\Magento\Catalog\Model\ResourceModel\Eav\Attribute::class)
+            ->create(Attribute::class)
             ->load('color_swatch', 'attribute_code');
         $expected = [
             $attribute->getAttributeId() => $attribute->getAttributeCode()
@@ -38,5 +36,13 @@ class SwatchAttributeCodesTest extends \PHPUnit\Framework\TestCase
         $swatchAttributeCodes = $this->swatchAttributeCodes->getCodes();
 
         $this->assertEquals($expected, $swatchAttributeCodes);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->swatchAttributeCodes = $this->objectManager->create(
+            SwatchAttributeCodes::class
+        );
     }
 }

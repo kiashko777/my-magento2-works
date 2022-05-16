@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Vault\Model;
 
 use Magento\Framework\Api\FilterBuilder;
@@ -10,13 +11,15 @@ use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Api\SortOrderBuilder;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
+use Magento\Vault\Api\Data\PaymentTokenSearchResultsInterface;
+use PHPUnit\Framework\TestCase;
 
 /**
  * PaymentTokenRepositoryTest contains tests for Vault token repository
  *
  * @magentoDbIsolation enabled
  */
-class PaymentTokenRepositoryTest extends \PHPUnit\Framework\TestCase
+class PaymentTokenRepositoryTest extends TestCase
 {
     /**
      * @var PaymentTokenRepository
@@ -42,15 +45,6 @@ class PaymentTokenRepositoryTest extends \PHPUnit\Framework\TestCase
      * @var ObjectManager
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->repository = $this->objectManager->create(PaymentTokenRepository::class);
-        $this->searchCriteriaBuilder = $this->objectManager->create(SearchCriteriaBuilder::class);
-        $this->filterBuilder = $this->objectManager->get(FilterBuilder::class);
-        $this->sortOrderBuilder = $this->objectManager->get(SortOrderBuilder::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Vault/_files/payment_tokens.php
@@ -79,7 +73,7 @@ class PaymentTokenRepositoryTest extends \PHPUnit\Framework\TestCase
         $this->searchCriteriaBuilder->addFilters([$filter3]);
         $this->searchCriteriaBuilder->addSortOrder($sortOrder);
         $searchCriteria = $this->searchCriteriaBuilder->create();
-        /** @var \Magento\Vault\Api\Data\PaymentTokenSearchResultsInterface $result */
+        /** @var PaymentTokenSearchResultsInterface $result */
         $result = $this->repository->getList($searchCriteria);
         $items = $result->getItems();
         $this->assertCount(2, $items);
@@ -107,5 +101,14 @@ class PaymentTokenRepositoryTest extends \PHPUnit\Framework\TestCase
         static::assertEquals('public_hash', $deletedToken->getPublicHash());
         static::assertFalse($deletedToken->getIsActive());
         static::assertFalse($deletedToken->getIsVisible());
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->repository = $this->objectManager->create(PaymentTokenRepository::class);
+        $this->searchCriteriaBuilder = $this->objectManager->create(SearchCriteriaBuilder::class);
+        $this->filterBuilder = $this->objectManager->get(FilterBuilder::class);
+        $this->sortOrderBuilder = $this->objectManager->get(SortOrderBuilder::class);
     }
 }

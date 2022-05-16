@@ -8,9 +8,9 @@ declare(strict_types=1);
 
 namespace Magento\Sniffs\Html;
 
+use Magento\TestFramework\CodingStandard\Tool\CodeSniffer;
 use Magento\TestFramework\CodingStandard\Tool\CodeSniffer\HtmlWrapper;
 use PHPUnit\Framework\TestCase;
-use Magento\TestFramework\CodingStandard\Tool\CodeSniffer;
 
 /**
  * Test an html sniff on real files.

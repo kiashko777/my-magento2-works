@@ -67,7 +67,7 @@ class RelationsCollector
             $this->relations = ObjectManager::getInstance()->create(Runtime::class);
         }
 
-        return  $this->relations;
+        return $this->relations;
     }
 
     /**
@@ -82,6 +82,6 @@ class RelationsCollector
             $this->internalParents[] = TestCase::class;
         }
 
-        return  $this->internalParents;
+        return $this->internalParents;
     }
 }

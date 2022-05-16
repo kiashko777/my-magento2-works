@@ -14,24 +14,27 @@ use PHPUnit\Framework\TestCase;
 class CollectionTest extends TestCase
 {
     /**
+     * Instance name
+     */
+    const INSTANCE_1 = 'Class_Name_1';
+    /**
+     * Instance name
+     */
+    const INSTANCE_2 = 'Class_Name_2';
+    /**
      * @var Collection
      */
     private $model;
-
     /**
      * @var Collection|MockObject
      */
     private $collectionMock;
 
-    /**
-     * Instance name
-     */
-    const INSTANCE_1 = 'Class_Name_1';
-
-    /**
-     * Instance name
-     */
-    const INSTANCE_2 = 'Class_Name_2';
+    public function testAddDefinition()
+    {
+        $this->model->addDefinition(self::INSTANCE_1, $this->getArgument());
+        $this->assertEquals($this->getExpectedDefinition(), $this->model->getCollection());
+    }
 
     /**
      * Returns initialized argument data
@@ -51,19 +54,6 @@ class CollectionTest extends TestCase
     private function getExpectedDefinition()
     {
         return [self::INSTANCE_1 => $this->getArgument()];
-    }
-
-    protected function setUp(): void
-    {
-        $this->collectionMock = $this->getMockBuilder(Collection::class)
-            ->setMethods([])->getMock();
-        $this->model = new Collection();
-    }
-
-    public function testAddDefinition()
-    {
-        $this->model->addDefinition(self::INSTANCE_1, $this->getArgument());
-        $this->assertEquals($this->getExpectedDefinition(), $this->model->getCollection());
     }
 
     public function testInitialize()
@@ -100,5 +90,12 @@ class CollectionTest extends TestCase
             [self::INSTANCE_1 => $this->getArgument(), self::INSTANCE_2 => $this->getArgument()],
             $this->model->getCollection()
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->collectionMock = $this->getMockBuilder(Collection::class)
+            ->setMethods([])->getMock();
+        $this->model = new Collection();
     }
 }

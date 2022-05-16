@@ -28,17 +28,6 @@ class AlertsTest extends TestCase
     private $stockAlertsModifier;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->stockAlertsModifier = $this->objectManager->get(Alerts::class);
-    }
-
-    /**
      * @magentoConfigFixture current_store catalog/productalert/allow_stock 1
      * @magentoConfigFixture current_store catalog/productalert/allow_price 1
      *
@@ -58,5 +47,16 @@ class AlertsTest extends TestCase
             1,
             Xpath::getElementsCountForXpath("//div[@data-grid-id='alertPrice']", $priceContent)
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->stockAlertsModifier = $this->objectManager->get(Alerts::class);
     }
 }

@@ -10,12 +10,12 @@ define([
     'use strict';
 
     describe('mage/template', function () {
-        var templateString  = 'Hello, <%= target %>',
-            templateData    = {
+        var templateString = 'Hello, <%= target %>',
+            templateData = {
                 target: 'Magento User'
             },
-            expectedString  = 'Hello, Magento User',
-            templateNode    = $('<script id="hello" type="text/x-magento-template">' + templateString + '</script>');
+            expectedString = 'Hello, Magento User',
+            templateNode = $('<script id="hello" type="text/x-magento-template">' + templateString + '</script>');
 
         beforeAll(function () {
             templateNode.appendTo(document.body);

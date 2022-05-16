@@ -23,15 +23,6 @@ class SetShippingMethodsOnCartTest extends GraphQlAbstract
     private $getMaskedQuoteIdByReservedOrderId;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
      * @magentoApiDataFixture Magento/GraphQl/Quote/_files/guest/create_empty_cart.php
      * @magentoApiDataFixture Magento/GraphQl/Quote/_files/add_simple_product.php
@@ -80,6 +71,47 @@ class SetShippingMethodsOnCartTest extends GraphQlAbstract
     }
 
     /**
+     * @param string $maskedQuoteId
+     * @param string $shippingMethodCode
+     * @param string $shippingCarrierCode
+     * @return string
+     */
+    private function getQuery(
+        string $maskedQuoteId,
+        string $shippingMethodCode,
+        string $shippingCarrierCode
+    ): string
+    {
+        return <<<QUERY
+mutation {
+  setShippingMethodsOnCart(input:
+    {
+      cart_id: "$maskedQuoteId",
+      shipping_methods: [{
+        carrier_code: "$shippingCarrierCode"
+        method_code: "$shippingMethodCode"
+      }]
+    }) {
+    cart {
+      shipping_addresses {
+        selected_shipping_method {
+          carrier_code
+          method_code
+          carrier_title
+          method_title
+          amount {
+            value
+            currency
+          }
+        }
+      }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
      * Shipping address for quote will be created automatically BUT with NULL values (considered that address
      * is not set)
      *
@@ -92,7 +124,7 @@ class SetShippingMethodsOnCartTest extends GraphQlAbstract
      */
     public function testSetShippingMethodOnCartWithSimpleProductAndWithoutAddress()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The shipping address is missing. Set the address and try again.');
 
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
@@ -164,7 +196,7 @@ class SetShippingMethodsOnCartTest extends GraphQlAbstract
         $query = <<<QUERY
 mutation {
   setShippingMethodsOnCart(input:  {
-   {$input}     
+   {$input}
   }) {
     cart {
       shipping_addresses {
@@ -247,7 +279,7 @@ QUERY;
      */
     public function testSetMultipleShippingMethods()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('You cannot specify multiple shipping methods.');
 
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
@@ -255,7 +287,7 @@ QUERY;
         $query = <<<QUERY
 mutation {
   setShippingMethodsOnCart(input:  {
-   cart_id: "{$maskedQuoteId}", 
+   cart_id: "{$maskedQuoteId}",
    shipping_methods: [
         {
             carrier_code: "flatrate"
@@ -291,7 +323,7 @@ QUERY;
      */
     public function testSetShippingMethodToCustomerCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
 
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
         $carrierCode = 'flatrate';
@@ -316,7 +348,7 @@ QUERY;
      */
     public function testSetShippingMethodOnAnEmptyCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The shipping method can\'t be set for an empty cart. Add an item to cart and try again.');
 
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
@@ -332,42 +364,11 @@ QUERY;
     }
 
     /**
-     * @param string $maskedQuoteId
-     * @param string $shippingMethodCode
-     * @param string $shippingCarrierCode
-     * @return string
+     * @inheritdoc
      */
-    private function getQuery(
-        string $maskedQuoteId,
-        string $shippingMethodCode,
-        string $shippingCarrierCode
-    ): string {
-        return <<<QUERY
-mutation {
-  setShippingMethodsOnCart(input: 
+    protected function setUp(): void
     {
-      cart_id: "$maskedQuoteId", 
-      shipping_methods: [{
-        carrier_code: "$shippingCarrierCode"
-        method_code: "$shippingMethodCode"
-      }]
-    }) {
-    cart {
-      shipping_addresses {
-        selected_shipping_method {
-          carrier_code
-          method_code
-          carrier_title
-          method_title
-          amount {
-            value
-            currency
-          }
-        }
-      }
-    }
-  }
-}
-QUERY;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
     }
 }

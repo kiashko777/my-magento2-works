@@ -4,13 +4,22 @@
  * See COPYING.txt for license details.
  */
 
-/** @var $objectManager \Magento\Framework\ObjectManagerInterface */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-$objectManager->get(\Magento\Framework\App\AreaList::class)
-    ->getArea(\Magento\Backend\App\Area\FrontNameResolver::AREA_CODE)
-    ->load(\Magento\Framework\App\Area::PART_CONFIG);
-/** @var $theme \Magento\Framework\View\Design\ThemeInterface */
-$theme = $objectManager->create(\Magento\Framework\View\Design\ThemeInterface::class);
+/** @var $objectManager ObjectManagerInterface */
+
+use Magento\Backend\App\Area\FrontNameResolver;
+use Magento\Framework\App\Area;
+use Magento\Framework\App\AreaList;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\View\Design\ThemeInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Widget\Model\Layout\Update;
+
+$objectManager = Bootstrap::getObjectManager();
+$objectManager->get(AreaList::class)
+    ->getArea(FrontNameResolver::AREA_CODE)
+    ->load(Area::PART_CONFIG);
+/** @var $theme ThemeInterface */
+$theme = $objectManager->create(ThemeInterface::class);
 $theme->setThemePath(
     'test/test'
 )->setArea(
@@ -18,11 +27,11 @@ $theme->setThemePath(
 )->setThemeTitle(
     'Test Theme'
 )->setType(
-    \Magento\Framework\View\Design\ThemeInterface::TYPE_VIRTUAL
+    ThemeInterface::TYPE_VIRTUAL
 )->save();
 
-/** @var $updateNotTemporary \Magento\Widget\Model\Layout\Update */
-$updateNotTemporary = $objectManager->create(\Magento\Widget\Model\Layout\Update::class);
+/** @var $updateNotTemporary Update */
+$updateNotTemporary = $objectManager->create(Update::class);
 $updateNotTemporary->setHandle(
     'test_handle'
 )->setXml(
@@ -33,8 +42,8 @@ $updateNotTemporary->setHandle(
     $theme->getId()
 )->save();
 
-/** @var $updateTemporary \Magento\Widget\Model\Layout\Update */
-$updateTemporary = $objectManager->create(\Magento\Widget\Model\Layout\Update::class);
+/** @var $updateTemporary Update */
+$updateTemporary = $objectManager->create(Update::class);
 $updateTemporary->setHandle(
     'test_handle'
 )->setIsTemporary(

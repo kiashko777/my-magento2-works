@@ -4,17 +4,24 @@
  * See COPYING.txt for license details.
  */
 
-/** @var \Magento\Framework\ObjectManagerInterface $objectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+/** @var ObjectManagerInterface $objectManager */
 
-/** @var \Magento\Customer\Model\AttributeFactory $attributeFactory */
-$attributeFactory = $objectManager->create(\Magento\Customer\Model\AttributeFactory::class);
+use Magento\Customer\Model\AttributeFactory;
+use Magento\Customer\Setup\CustomerSetup;
+use Magento\Eav\Api\AttributeRepositoryInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var \Magento\Eav\Api\AttributeRepositoryInterface $attributeRepository */
-$attributeRepository =  $objectManager->create(\Magento\Eav\Api\AttributeRepositoryInterface::class);
+$objectManager = Bootstrap::getObjectManager();
 
-/** @var \Magento\Customer\Setup\CustomerSetup $setupResource */
-$setupResource = $objectManager->create(\Magento\Customer\Setup\CustomerSetup::class);
+/** @var AttributeFactory $attributeFactory */
+$attributeFactory = $objectManager->create(AttributeFactory::class);
+
+/** @var AttributeRepositoryInterface $attributeRepository */
+$attributeRepository = $objectManager->create(AttributeRepositoryInterface::class);
+
+/** @var CustomerSetup $setupResource */
+$setupResource = $objectManager->create(CustomerSetup::class);
 
 $attributeNames = ['custom_attribute1', 'custom_attribute2'];
 foreach ($attributeNames as $attributeName) {

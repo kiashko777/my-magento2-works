@@ -49,28 +49,6 @@ class InterceptionConfigurationBuilderTest extends TestCase
      */
     private $interceptableValidator;
 
-    protected function setUp(): void
-    {
-        $this->interceptionConfig =
-            $this->createPartialMock(Config::class, ['hasPlugins']);
-        $this->pluginList = $this->createPartialMock(
-            PluginList::class,
-            ['setInterceptedClasses', 'setScopePriorityScheme', 'getPluginsConfig']
-        );
-        $this->cacheManager = $this->createMock(Manager::class);
-        $this->interceptableValidator =
-            $this->createMock(InterceptableValidator::class);
-
-        $this->typeReader = $this->createPartialMock(Type::class, ['isConcrete']);
-        $this->model = new InterceptionConfigurationBuilder(
-            $this->interceptionConfig,
-            $this->pluginList,
-            $this->typeReader,
-            $this->cacheManager,
-            $this->interceptableValidator
-        );
-    }
-
     /**
      * @dataProvider getInterceptionConfigurationDataProvider
      */
@@ -119,5 +97,27 @@ class InterceptionConfigurationBuilderTest extends TestCase
             [['plugin' => ['instance' => 'someinstance']]],
             [['plugin' => ['instance' => 'someinstance'], 'plugin2' => ['instance' => 'someinstance']]]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->interceptionConfig =
+            $this->createPartialMock(Config::class, ['hasPlugins']);
+        $this->pluginList = $this->createPartialMock(
+            PluginList::class,
+            ['setInterceptedClasses', 'setScopePriorityScheme', 'getPluginsConfig']
+        );
+        $this->cacheManager = $this->createMock(Manager::class);
+        $this->interceptableValidator =
+            $this->createMock(InterceptableValidator::class);
+
+        $this->typeReader = $this->createPartialMock(Type::class, ['isConcrete']);
+        $this->model = new InterceptionConfigurationBuilder(
+            $this->interceptionConfig,
+            $this->pluginList,
+            $this->typeReader,
+            $this->cacheManager,
+            $this->interceptableValidator
+        );
     }
 }

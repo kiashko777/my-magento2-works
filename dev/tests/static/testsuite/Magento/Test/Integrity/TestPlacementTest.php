@@ -7,12 +7,14 @@
 /**
  * Test to ensure that readme file present in specified directories
  */
+
 namespace Magento\Test\Integrity;
 
-use Magento\Framework\App\Utility\Files;
-use \Magento\Framework\App\Bootstrap;
+use Magento\Framework\App\Bootstrap;
+use Magento\Framework\Data\Collection\Filesystem;
+use PHPUnit\Framework\TestCase;
 
-class TestPlacementTest extends \PHPUnit\Framework\TestCase
+class TestPlacementTest extends TestCase
 {
     /** @var array */
     private $scanList = ['dev/tests/unit/testsuite/Magento'];
@@ -22,16 +24,11 @@ class TestPlacementTest extends \PHPUnit\Framework\TestCase
      */
     private $root;
 
-    protected function setUp(): void
-    {
-        $this->root = BP;
-    }
-
     public function testUnitTestFilesPlacement()
     {
         $objectManager = Bootstrap::create(BP, $_SERVER)->getObjectManager();
-        /** @var \Magento\Framework\Data\Collection\Filesystem $filesystem */
-        $filesystem = $objectManager->get(\Magento\Framework\Data\Collection\Filesystem::class);
+        /** @var Filesystem $filesystem */
+        $filesystem = $objectManager->get(Filesystem::class);
         $filesystem->setCollectDirs(false)
             ->setCollectFiles(true)
             ->setCollectRecursively(true);
@@ -58,5 +55,10 @@ class TestPlacementTest extends \PHPUnit\Framework\TestCase
                 . implode("\n", $fileList)
             );
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->root = BP;
     }
 }

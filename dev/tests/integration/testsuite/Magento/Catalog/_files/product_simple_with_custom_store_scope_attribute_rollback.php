@@ -5,11 +5,13 @@
  */
 declare(strict_types=1);
 
-use Magento\Framework\Registry;
-use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Catalog\Api\Data\ProductAttributeInterface;
+use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Api\ProductAttributeRepositoryInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
-use Magento\Catalog\Api\ProductAttributeRepositoryInterface;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
 
 /** @var Magento\Framework\ObjectManagerInterface $objectManager */
 $objectManager = Bootstrap::getObjectManager();
@@ -24,14 +26,14 @@ $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
 try {
-    /** @var \Magento\Catalog\Api\Data\ProductInterface $product */
+    /** @var ProductInterface $product */
     $product = $productRepository->get('simple_with_store_scoped_custom_attribute');
     $productRepository->delete($product);
 } catch (NoSuchEntityException $e) {
 }
 
 try {
-    /** @var \Magento\Catalog\Api\Data\ProductAttributeInterface $attribute */
+    /** @var ProductAttributeInterface $attribute */
     $attribute = $attributeRepository->get('store_scoped_attribute_code');
     $attributeRepository->delete($attribute);
 } catch (NoSuchEntityException $e) {

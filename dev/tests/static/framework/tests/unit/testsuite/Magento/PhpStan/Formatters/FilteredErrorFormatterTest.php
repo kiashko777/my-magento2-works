@@ -3,7 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Magento\PhpStan\Formatters;
 
@@ -33,10 +33,11 @@ class FilteredErrorFormatterTest extends ErrorFormatterTestCase
      */
     public function testFormatErrors(
         string $message,
-        int $exitCode,
-        array $fileErrors,
+        int    $exitCode,
+        array  $fileErrors,
         string $expected
-    ): void {
+    ): void
+    {
         $formatter = new FilteredErrorFormatter(
             new FuzzyRelativePathHelper(self::DIRECTORY_PATH, [], '/'),
             false,

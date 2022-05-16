@@ -6,9 +6,9 @@
 declare(strict_types=1);
 
 use Magento\Customer\Api\CustomerRepositoryInterface;
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Customer\Api\Data\CustomerInterface;
 use Magento\Eav\Model\Config as EavModelConfig;
+use Magento\TestFramework\Helper\Bootstrap;
 
 $objectManager = Bootstrap::getObjectManager();
 
@@ -18,9 +18,9 @@ $customerRepository = $objectManager->create(CustomerRepositoryInterface::class)
 for ($i = 1; $i <= 5; $i++) {
     try {
         /** @var CustomerInterface $customer */
-        $customer = $customerRepository->get('customer'.$i.'@example.com');
+        $customer = $customerRepository->get('customer' . $i . '@example.com');
         $customerRepository->delete($customer);
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
     }
 }
 

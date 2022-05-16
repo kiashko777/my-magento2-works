@@ -3,19 +3,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Model\Order;
 
+use Magento\Sales\Model\Order;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class AddressTest extends \PHPUnit\Framework\TestCase
+class AddressTest extends TestCase
 {
     /** @var Address */
     protected $_model;
-
-    protected function setUp(): void
-    {
-        $this->_model = Bootstrap::getObjectManager()->create(\Magento\Sales\Model\Order\Address::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Sales/_files/order.php
@@ -24,8 +22,8 @@ class AddressTest extends \PHPUnit\Framework\TestCase
      */
     public function testSave()
     {
-        /** @var \Magento\Sales\Model\Order $order */
-        $order = Bootstrap::getObjectManager()->create(\Magento\Sales\Model\Order::class);
+        /** @var Order $order */
+        $order = Bootstrap::getObjectManager()->create(Order::class);
         $order->loadByIncrementId('100000001');
         $this->_model->setOrder($order);
         $this->_model->setEmail('co@co.co');
@@ -40,5 +38,10 @@ class AddressTest extends \PHPUnit\Framework\TestCase
         $this->_model->setRegionId(1);
         $this->_model->save();
         $this->assertEquals($order->getId(), $this->_model->getParentId());
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()->create(Address::class);
     }
 }

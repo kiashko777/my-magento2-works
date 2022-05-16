@@ -3,13 +3,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Cms\Api;
 
 use Magento\Cms\Api\Data\BlockInterface;
+use Magento\Cms\Api\Data\BlockInterfaceFactory;
+use Magento\Framework\Api\DataObjectHelper;
 use Magento\Framework\Api\FilterBuilder;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Api\SortOrder;
 use Magento\Framework\Api\SortOrderBuilder;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Reflection\DataObjectProcessor;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
@@ -23,53 +29,29 @@ class BlockRepositoryTest extends WebapiAbstract
     const RESOURCE_PATH = '/V1/cmsBlock';
 
     /**
-     * @var \Magento\Cms\Api\Data\BlockInterfaceFactory
+     * @var BlockInterfaceFactory
      */
     protected $blockFactory;
 
     /**
-     * @var \Magento\Cms\Api\BlockRepositoryInterface
+     * @var BlockRepositoryInterface
      */
     protected $blockRepository;
 
     /**
-     * @var \Magento\Framework\Api\DataObjectHelper
+     * @var DataObjectHelper
      */
     protected $dataObjectHelper;
 
     /**
-     * @var \Magento\Framework\Reflection\DataObjectProcessor
+     * @var DataObjectProcessor
      */
     protected $dataObjectProcessor;
 
     /**
-     * @var \Magento\Cms\Api\Data\BlockInterface|null
+     * @var BlockInterface|null
      */
     protected $currentBlock;
-
-    /**
-     * Execute per test initialization.
-     */
-    protected function setUp(): void
-    {
-        $this->blockFactory = Bootstrap::getObjectManager()->create(\Magento\Cms\Api\Data\BlockInterfaceFactory::class);
-        $this->blockRepository = Bootstrap::getObjectManager()
-            ->create(\Magento\Cms\Api\BlockRepositoryInterface::class);
-        $this->dataObjectHelper = Bootstrap::getObjectManager()->create(\Magento\Framework\Api\DataObjectHelper::class);
-        $this->dataObjectProcessor = Bootstrap::getObjectManager()
-            ->create(\Magento\Framework\Reflection\DataObjectProcessor::class);
-    }
-
-    /**
-     * Clear temporary data
-     */
-    protected function tearDown(): void
-    {
-        if ($this->currentBlock) {
-            $this->blockRepository->delete($this->currentBlock);
-            $this->currentBlock = null;
-        }
-    }
 
     /**
      * Test get \Magento\Cms\Api\Data\BlockInterface
@@ -78,7 +60,7 @@ class BlockRepositoryTest extends WebapiAbstract
     {
         $blockTitle = 'Block title';
         $blockIdentifier = 'block-title';
-        /** @var  \Magento\Cms\Api\Data\BlockInterface $blockDataObject */
+        /** @var  BlockInterface $blockDataObject */
         $blockDataObject = $this->blockFactory->create();
         $blockDataObject->setTitle($blockTitle)
             ->setIdentifier($blockIdentifier);
@@ -87,7 +69,7 @@ class BlockRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/' . $this->currentBlock->getId(),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -111,7 +93,7 @@ class BlockRepositoryTest extends WebapiAbstract
     {
         $blockTitle = 'Block title';
         $blockIdentifier = 'block-title';
-        /** @var  \Magento\Cms\Api\Data\BlockInterface $blockDataObject */
+        /** @var  BlockInterface $blockDataObject */
         $blockDataObject = $this->blockFactory->create();
         $blockDataObject->setTitle($blockTitle)
             ->setIdentifier($blockIdentifier);
@@ -119,7 +101,7 @@ class BlockRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -129,9 +111,9 @@ class BlockRepositoryTest extends WebapiAbstract
         ];
 
         $requestData = ['block' => [
-                BlockInterface::IDENTIFIER => $blockDataObject->getIdentifier(),
-                BlockInterface::TITLE      => $blockDataObject->getTitle(),
-            ],
+            BlockInterface::IDENTIFIER => $blockDataObject->getIdentifier(),
+            BlockInterface::TITLE => $blockDataObject->getTitle(),
+        ],
         ];
         $block = $this->_webApiCall($serviceInfo, $requestData);
         $this->assertNotNull($block['id']);
@@ -149,7 +131,7 @@ class BlockRepositoryTest extends WebapiAbstract
         $blockTitle = 'Block title';
         $newBlockTitle = 'New Block title';
         $blockIdentifier = 'block-title';
-        /** @var  \Magento\Cms\Api\Data\BlockInterface $blockDataObject */
+        /** @var  BlockInterface $blockDataObject */
         $blockDataObject = $this->blockFactory->create();
         $blockDataObject->setTitle($blockTitle)
             ->setIdentifier($blockIdentifier);
@@ -157,17 +139,17 @@ class BlockRepositoryTest extends WebapiAbstract
         $this->dataObjectHelper->populateWithArray(
             $this->currentBlock,
             [BlockInterface::TITLE => $newBlockTitle],
-            \Magento\Cms\Api\Data\BlockInterface::class
+            BlockInterface::class
         );
         $blockData = $this->dataObjectProcessor->buildOutputDataArray(
             $this->currentBlock,
-            \Magento\Cms\Api\Data\BlockInterface::class
+            BlockInterface::class
         );
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -188,11 +170,11 @@ class BlockRepositoryTest extends WebapiAbstract
      */
     public function testDelete()
     {
-        $this->expectException(\Magento\Framework\Exception\NoSuchEntityException::class);
+        $this->expectException(NoSuchEntityException::class);
 
         $blockTitle = 'Block title';
         $blockIdentifier = 'block-title';
-        /** @var  \Magento\Cms\Api\Data\BlockInterface $blockDataObject */
+        /** @var  BlockInterface $blockDataObject */
         $blockDataObject = $this->blockFactory->create();
         $blockDataObject->setTitle($blockTitle)
             ->setIdentifier($blockIdentifier);
@@ -201,7 +183,7 @@ class BlockRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/' . $this->currentBlock->getId(),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -266,7 +248,7 @@ class BlockRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/search" . '?' . http_build_query($requestData),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -304,16 +286,40 @@ class BlockRepositoryTest extends WebapiAbstract
         $blocksData['third'][BlockInterface::IS_ACTIVE] = true;
 
         foreach ($blocksData as $key => $blockData) {
-            /** @var  \Magento\Cms\Api\Data\BlockInterface $blockDataObject */
+            /** @var  BlockInterface $blockDataObject */
             $blockDataObject = $this->blockFactory->create();
             $this->dataObjectHelper->populateWithArray(
                 $blockDataObject,
                 $blockData,
-                \Magento\Cms\Api\Data\BlockInterface::class
+                BlockInterface::class
             );
             $result[$key] = $this->blockRepository->save($blockDataObject);
         }
 
         return $result;
+    }
+
+    /**
+     * Execute per test initialization.
+     */
+    protected function setUp(): void
+    {
+        $this->blockFactory = Bootstrap::getObjectManager()->create(BlockInterfaceFactory::class);
+        $this->blockRepository = Bootstrap::getObjectManager()
+            ->create(BlockRepositoryInterface::class);
+        $this->dataObjectHelper = Bootstrap::getObjectManager()->create(DataObjectHelper::class);
+        $this->dataObjectProcessor = Bootstrap::getObjectManager()
+            ->create(DataObjectProcessor::class);
+    }
+
+    /**
+     * Clear temporary data
+     */
+    protected function tearDown(): void
+    {
+        if ($this->currentBlock) {
+            $this->blockRepository->delete($this->currentBlock);
+            $this->currentBlock = null;
+        }
     }
 }

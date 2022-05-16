@@ -10,6 +10,7 @@ namespace Magento\TestFramework\Workaround\Override\Config;
 use Magento\Framework\Component\ComponentRegistrar;
 use Magento\Framework\Component\DirSearch;
 use Magento\Framework\View\Design\ThemeInterface;
+use Magento\Framework\View\File;
 use Magento\Framework\View\File\CollectorInterface;
 use Magento\Framework\View\File\Factory as FileFactory;
 
@@ -30,9 +31,10 @@ class FileCollector implements CollectorInterface
      * @param FileFactory $fileFactory
      */
     public function __construct(
-        DirSearch $dirSearch,
+        DirSearch   $dirSearch,
         FileFactory $fileFactory
-    ) {
+    )
+    {
         $this->componentDirSearch = $dirSearch;
         $this->fileFactory = $fileFactory;
     }
@@ -40,10 +42,10 @@ class FileCollector implements CollectorInterface
     /**
      * Retrieve files
      *
-     * @param \Magento\Framework\View\Design\ThemeInterface $theme
+     * @param ThemeInterface $theme
      * @param string $filePath
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-     * @return \Magento\Framework\View\File[]
+     * @return File[]
      */
     public function getFiles(ThemeInterface $theme, $filePath)
     {

@@ -8,7 +8,9 @@ declare(strict_types=1);
 namespace Magento\Framework\GraphQl;
 
 use Magento\Framework\App\Cache;
+use Magento\Framework\Config\FileResolverInterface;
 use Magento\Framework\GraphQl\Config\Config;
+use Magento\Framework\GraphQl\Config\Data;
 use Magento\Framework\GraphQl\Config\Data\Argument;
 use Magento\Framework\GraphQl\Config\Data\Enum;
 use Magento\Framework\GraphQl\Config\Data\Field;
@@ -16,49 +18,19 @@ use Magento\Framework\GraphQl\Config\Data\StructureInterface;
 use Magento\Framework\GraphQl\Config\Data\Type;
 use Magento\Framework\GraphQl\Config\Element\EnumValue;
 use Magento\Framework\GraphQl\Config\Element\InterfaceType;
+use Magento\Framework\GraphQlSchemaStitching\GraphQlReader;
+use Magento\Framework\GraphQlSchemaStitching\Reader;
 use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test of schema configuration reading and parsing
  */
-class GraphQlConfigTest extends \PHPUnit\Framework\TestCase
+class GraphQlConfigTest extends TestCase
 {
-   /** @var \Magento\Framework\GraphQl\Config  */
+    /** @var \Magento\Framework\GraphQl\Config */
     private $model;
-
-    protected function setUp(): void
-    {
-        /** @var ObjectManagerInterface $objectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-       /** @var Cache $cache */
-        $cache = $objectManager->get(Cache::class);
-        $cache->clean();
-        $fileResolverMock = $this->getMockBuilder(
-            \Magento\Framework\Config\FileResolverInterface::class
-        )->disableOriginalConstructor()->getMock();
-        $filePath1 = __DIR__ . '/_files/schemaC.graphqls';
-        $filePath2 = __DIR__ . '/_files/schemaD.graphqls';
-        $fileList = [
-            $filePath1 => file_get_contents($filePath1),
-            $filePath2 => file_get_contents($filePath2)
-        ];
-        $fileResolverMock->expects($this->any())->method('get')->willReturn($fileList);
-        $graphQlReader = $objectManager->create(
-            \Magento\Framework\GraphQlSchemaStitching\GraphQlReader::class,
-            ['fileResolver' => $fileResolverMock]
-        );
-        $reader = $objectManager->create(
-            // phpstan:ignore
-            \Magento\Framework\GraphQlSchemaStitching\Reader::class,
-            ['readers' => ['graphql_reader' => $graphQlReader]]
-        );
-        $data = $objectManager->create(
-            // phpstan:ignore
-            \Magento\Framework\GraphQl\Config\Data ::class,
-            ['reader' => $reader]
-        );
-         $this->model = $objectManager->create(\Magento\Framework\GraphQl\Config::class, ['data' =>$data]);
-    }
 
     /**
      * tests GraphQl type's structure object
@@ -91,15 +63,15 @@ class GraphQlConfigTest extends \PHPUnit\Framework\TestCase
             $queryFieldArguments = $queryFields[$fieldKey]->getArguments();
             foreach (array_keys($queryFieldArguments) as $argumentKey) {
                 $argumentAssertionMap = [
-                   ['response_field' => 'name', 'expected_value' => $queryFieldArguments[$argumentKey]->getName()],
-                   ['response_field' => 'type', 'expected_value' => $queryFieldArguments[$argumentKey]->getTypeName()],
-                   ['response_field' => 'description', 'expected_value' => $queryFieldArguments[$argumentKey]
-                       ->getDescription()],
-                   ['response_field' => 'required', 'expected_value' => $queryFieldArguments[$argumentKey]
-                       ->isRequired()],
-                   ['response_field' => 'isList', 'expected_value' => $queryFieldArguments[$argumentKey]->isList()],
-                   ['response_field' => 'itemsRequired', 'expected_value' => $queryFieldArguments[$argumentKey]
-                       ->areItemsRequired()]
+                    ['response_field' => 'name', 'expected_value' => $queryFieldArguments[$argumentKey]->getName()],
+                    ['response_field' => 'type', 'expected_value' => $queryFieldArguments[$argumentKey]->getTypeName()],
+                    ['response_field' => 'description', 'expected_value' => $queryFieldArguments[$argumentKey]
+                        ->getDescription()],
+                    ['response_field' => 'required', 'expected_value' => $queryFieldArguments[$argumentKey]
+                        ->isRequired()],
+                    ['response_field' => 'isList', 'expected_value' => $queryFieldArguments[$argumentKey]->isList()],
+                    ['response_field' => 'itemsRequired', 'expected_value' => $queryFieldArguments[$argumentKey]
+                        ->areItemsRequired()]
                 ];
                 $this->assertResponseFields(
                     $expectedOutputArray['Query']['fields'][$fieldKey]['arguments'][$argumentKey],
@@ -108,6 +80,34 @@ class GraphQlConfigTest extends \PHPUnit\Framework\TestCase
                 $this->assertEquals(
                     $expectedOutputArray['Query']['fields'][$fieldKey]['arguments'][$argumentKey]['defaultValue'],
                     $queryFieldArguments[$argumentKey]->getDefaultValue()
+                );
+            }
+        }
+    }
+
+    /**
+     * @param array $actualResponse
+     * @param array $assertionMap ['response_field_name' => 'response_field_value', ...]
+     *                         OR [['response_field' => $field, 'expected_value' => $value], ...]
+     */
+    private function assertResponseFields($actualResponse, $assertionMap)
+    {
+        foreach ($assertionMap as $key => $assertionData) {
+            $expectedValue = isset($assertionData['expected_value'])
+                ? $assertionData['expected_value']
+                : $assertionData;
+            $responseField = isset($assertionData['response_field']) ? $assertionData['response_field'] : $key;
+            $this->assertNotNull(
+                $expectedValue,
+                "Value of '{$responseField}' field must not be NULL"
+            );
+            $optionalField = isset($assertionData['optional']) ? $assertionData['optional'] : false;
+            if (!$optionalField || isset($actualResponse[$responseField])) {
+                $this->assertEquals(
+                    $expectedValue,
+                    $actualResponse[$responseField],
+                    "Value of '{$responseField}' field in response does not match expected value: "
+                    . var_export($expectedValue, true)
                 );
             }
         }
@@ -155,7 +155,7 @@ class GraphQlConfigTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($outputInterface->getName(), $typeThatImplements);
         $outputInterfaceValues = $outputInterface->getInterfaces();
         /** @var \Magento\Framework\GraphQl\Config\Element\Field $outputInterfaceFields */
-        $outputInterfaceFields =$outputInterface->getFields();
+        $outputInterfaceFields = $outputInterface->getFields();
         foreach (array_keys($outputInterfaceValues) as $outputInterfaceValue) {
             $this->assertEquals(
                 $expectedOutputArray['ProductLinks']['interfaces'][$outputInterfaceValue]['interface'],
@@ -189,7 +189,7 @@ class GraphQlConfigTest extends \PHPUnit\Framework\TestCase
 
     public function testGraphQlInterfaceConfigElement()
     {
-        $interfaceType ='ProductLinksInterface';
+        $interfaceType = 'ProductLinksInterface';
         /** @var InterfaceType $outputConfigElement */
         $outputConfigElement = $this->model->getConfigElement($interfaceType);
         $expectedOutput = require __DIR__ . '/_files/query_array_output.php';
@@ -204,32 +204,38 @@ class GraphQlConfigTest extends \PHPUnit\Framework\TestCase
         );
     }
 
-    /**
-     * @param array $actualResponse
-     * @param array $assertionMap ['response_field_name' => 'response_field_value', ...]
-     *                         OR [['response_field' => $field, 'expected_value' => $value], ...]
-     */
-    private function assertResponseFields($actualResponse, $assertionMap)
+    protected function setUp(): void
     {
-        foreach ($assertionMap as $key => $assertionData) {
-            $expectedValue = isset($assertionData['expected_value'])
-                ? $assertionData['expected_value']
-                : $assertionData;
-            $responseField = isset($assertionData['response_field']) ? $assertionData['response_field'] : $key;
-            $this->assertNotNull(
-                $expectedValue,
-                "Value of '{$responseField}' field must not be NULL"
-            );
-            $optionalField = isset($assertionData['optional']) ? $assertionData['optional'] : false;
-            if (!$optionalField || isset($actualResponse[$responseField])) {
-                $this->assertEquals(
-                    $expectedValue,
-                    $actualResponse[$responseField],
-                    "Value of '{$responseField}' field in response does not match expected value: "
-                    . var_export($expectedValue, true)
-                );
-            }
-        }
+        /** @var ObjectManagerInterface $objectManager */
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var Cache $cache */
+        $cache = $objectManager->get(Cache::class);
+        $cache->clean();
+        $fileResolverMock = $this->getMockBuilder(
+            FileResolverInterface::class
+        )->disableOriginalConstructor()->getMock();
+        $filePath1 = __DIR__ . '/_files/schemaC.graphqls';
+        $filePath2 = __DIR__ . '/_files/schemaD.graphqls';
+        $fileList = [
+            $filePath1 => file_get_contents($filePath1),
+            $filePath2 => file_get_contents($filePath2)
+        ];
+        $fileResolverMock->expects($this->any())->method('get')->willReturn($fileList);
+        $graphQlReader = $objectManager->create(
+            GraphQlReader::class,
+            ['fileResolver' => $fileResolverMock]
+        );
+        $reader = $objectManager->create(
+        // phpstan:ignore
+            Reader::class,
+            ['readers' => ['graphql_reader' => $graphQlReader]]
+        );
+        $data = $objectManager->create(
+        // phpstan:ignore
+            Data ::class,
+            ['reader' => $reader]
+        );
+        $this->model = $objectManager->create(\Magento\Framework\GraphQl\Config::class, ['data' => $data]);
     }
 
     /**
@@ -238,7 +244,7 @@ class GraphQlConfigTest extends \PHPUnit\Framework\TestCase
     protected function tearDown(): void
     {
         /** @var ObjectManagerInterface $objectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
         /** @var Cache $cache */
         $cache = $objectManager->get(Cache::class);
         $cache->clean();

@@ -8,29 +8,26 @@
 
 namespace Magento\Webapi\Routing;
 
-use Magento\TestFramework\Helper\Bootstrap;
+use Exception;
+use Magento\Framework\App\State;
 use Magento\Framework\Webapi\Exception as WebapiException;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\WebapiAbstract;
 
-class RestErrorHandlingTest extends \Magento\TestFramework\TestCase\WebapiAbstract
+class RestErrorHandlingTest extends WebapiAbstract
 {
     /**
      * @var string
      */
     protected $mode;
 
-    protected function setUp(): void
-    {
-        $this->_markTestAsRestOnly();
-        $this->mode = Bootstrap::getObjectManager()->get(\Magento\Framework\App\State::class)->getMode();
-        parent::setUp();
-    }
-
     public function testSuccess()
     {
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/errortest/success',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
         ];
 
@@ -46,7 +43,7 @@ class RestErrorHandlingTest extends \Magento\TestFramework\TestCase\WebapiAbstra
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/errortest/notfound',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
         ];
 
@@ -56,50 +53,6 @@ class RestErrorHandlingTest extends \Magento\TestFramework\TestCase\WebapiAbstra
             ['resourceY'],
             WebapiException::HTTP_NOT_FOUND,
             'Resource with ID "%1" not found.'
-        );
-    }
-
-    public function testUnauthorized()
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => '/V1/errortest/unauthorized',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
-            ],
-        ];
-
-        // \Magento\Framework\Api\AuthorizationException
-        $this->_errorTest(
-            $serviceInfo,
-            [],
-            WebapiException::HTTP_UNAUTHORIZED,
-            "The consumer isn't authorized to access %1.",
-            ['resourceN']
-        );
-    }
-
-    public function testOtherException()
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => '/V1/errortest/otherException',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
-            ],
-        ];
-
-        /* TODO : Fix as part MAGETWO-31330
-        $expectedMessage = $this->mode == \Magento\Framework\App\State::MODE_DEVELOPER
-            ? 'Non service exception'
-            : 'Internal Error. Details are available in Magento log file. Report ID: webapi-XXX';
-        */
-        $expectedMessage = 'Internal Error. Details are available in Magento log file. Report ID: webapi-XXX';
-        $this->_errorTest(
-            $serviceInfo,
-            [],
-            WebapiException::HTTP_INTERNAL_ERROR,
-            $expectedMessage,
-            null,
-            'Magento\TestModule3\Service\V1\Error->otherException()' // Check if trace contains proper error source
         );
     }
 
@@ -120,10 +73,11 @@ class RestErrorHandlingTest extends \Magento\TestFramework\TestCase\WebapiAbstra
         $errorMessage,
         $parameters = [],
         $traceString = null
-    ) {
+    )
+    {
         try {
             $this->_webApiCall($serviceInfo, $data);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->assertEquals($httpStatus, $e->getCode(), 'Checking HTTP status code');
 
             $body = json_decode($e->getMessage(), true);
@@ -153,10 +107,61 @@ class RestErrorHandlingTest extends \Magento\TestFramework\TestCase\WebapiAbstra
                 $this->assertEquals($parameters, $body['parameters'], 'Checking body parameters');
             }
 
-            if ($this->mode == \Magento\Framework\App\State::MODE_DEVELOPER && $traceString) {
+            if ($this->mode == State::MODE_DEVELOPER && $traceString) {
                 // TODO : Fix as part MAGETWO-31330
                 //$this->assertContains($traceString, $body['trace'], 'Trace information is incorrect.');
             }
         }
+    }
+
+    public function testUnauthorized()
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => '/V1/errortest/unauthorized',
+                'httpMethod' => Request::HTTP_METHOD_GET,
+            ],
+        ];
+
+        // \Magento\Framework\Api\AuthorizationException
+        $this->_errorTest(
+            $serviceInfo,
+            [],
+            WebapiException::HTTP_UNAUTHORIZED,
+            "The consumer isn't authorized to access %1.",
+            ['resourceN']
+        );
+    }
+
+    public function testOtherException()
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => '/V1/errortest/otherException',
+                'httpMethod' => Request::HTTP_METHOD_GET,
+            ],
+        ];
+
+        /* TODO : Fix as part MAGETWO-31330
+        $expectedMessage = $this->mode == \Magento\Framework\App\State::MODE_DEVELOPER
+            ? 'Non service exception'
+            : 'Internal Error. Details are available in Magento log file. Report ID: webapi-XXX';
+        */
+        $expectedMessage = 'Internal Error. Details are available in Magento log file. Report ID: webapi-XXX';
+        $this->_errorTest(
+            $serviceInfo,
+            [],
+            WebapiException::HTTP_INTERNAL_ERROR,
+            $expectedMessage,
+            null,
+            'Magento\TestModule3\Service\V1\Error->otherException()' // Check if trace contains proper error source
+        );
+    }
+
+    protected function setUp(): void
+    {
+        $this->_markTestAsRestOnly();
+        $this->mode = Bootstrap::getObjectManager()->get(State::class)->getMode();
+        parent::setUp();
     }
 }

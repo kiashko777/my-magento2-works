@@ -33,6 +33,29 @@ class OrderButtonTest extends TestCase
     private $registry;
 
     /**
+     * @return void
+     */
+    public function testGetButtonDataWithoutCustomer(): void
+    {
+        $this->assertEmpty($this->button->getButtonData());
+    }
+
+    /**
+     * @magentoDataFixture Magento/Customer/_files/customer.php
+     *
+     * @return void
+     */
+    public function testGetButtonDataWithCustomer(): void
+    {
+        $this->registry->unregister(RegistryConstants::CURRENT_CUSTOMER_ID);
+        $this->registry->register(RegistryConstants::CURRENT_CUSTOMER_ID, 1);
+        $data = $this->button->getButtonData();
+        $this->assertNotEmpty($data);
+        $this->assertEquals(__('Create Order'), $data['label']);
+        $this->assertStringContainsString('sales/order_create/start/customer_id/1/', $data['on_click']);
+    }
+
+    /**
      * @inheritdoc
      */
     protected function setUp(): void
@@ -56,28 +79,5 @@ class OrderButtonTest extends TestCase
         $this->registry->unregister(RegistryConstants::CURRENT_CUSTOMER_ID);
 
         parent::tearDown();
-    }
-
-    /**
-     * @return void
-     */
-    public function testGetButtonDataWithoutCustomer(): void
-    {
-        $this->assertEmpty($this->button->getButtonData());
-    }
-
-    /**
-     * @magentoDataFixture Magento/Customer/_files/customer.php
-     *
-     * @return void
-     */
-    public function testGetButtonDataWithCustomer(): void
-    {
-        $this->registry->unregister(RegistryConstants::CURRENT_CUSTOMER_ID);
-        $this->registry->register(RegistryConstants::CURRENT_CUSTOMER_ID, 1);
-        $data = $this->button->getButtonData();
-        $this->assertNotEmpty($data);
-        $this->assertEquals(__('Create Order'), $data['label']);
-        $this->assertStringContainsString('sales/order_create/start/customer_id/1/', $data['on_click']);
     }
 }

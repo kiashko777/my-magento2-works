@@ -8,7 +8,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
 use Magento\Quote\Model\QuoteFactory;
+use Magento\Quote\Model\QuoteIdMask;
+use Magento\Quote\Model\QuoteIdMaskFactory;
 use Magento\Quote\Model\ResourceModel\Quote as QuoteResource;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
@@ -28,7 +34,7 @@ $quote->load('test_order_1', 'reserved_order_id');
 $quote->removeAllItems();
 $quote->setReservedOrderId('test_order_item_with_items');
 
-$product = $objectManager->create(\Magento\Catalog\Model\Product::class);
+$product = $objectManager->create(Product::class);
 $product->isObjectNew(true);
 $product->setTypeId(
     \Magento\Catalog\Model\Product\Type::TYPE_SIMPLE
@@ -53,15 +59,15 @@ $product->setTypeId(
 )->setCategoryIds(
     [3]
 )->setVisibility(
-    \Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH
+    Visibility::VISIBILITY_BOTH
 )->setStatus(
-    \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED
+    Status::STATUS_ENABLED
 )->save();
 
 $quote->addProduct($product->load($product->getIdBySku('simple_cat_3')), 1);
 
-/** @var $product \Magento\Catalog\Model\Product */
-$product = $objectManager->create(\Magento\Catalog\Model\Product::class);
+/** @var $product Product */
+$product = $objectManager->create(Product::class);
 $product->isObjectNew(true);
 $product->setTypeId(
     \Magento\Catalog\Model\Product\Type::TYPE_SIMPLE
@@ -86,9 +92,9 @@ $product->setTypeId(
 )->setCategoryIds(
     [4]
 )->setVisibility(
-    \Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH
+    Visibility::VISIBILITY_BOTH
 )->setStatus(
-    \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED
+    Status::STATUS_ENABLED
 )->save();
 
 $quote->addProduct($product->load($product->getIdBySku('simple_cat_4')), 1);
@@ -96,9 +102,9 @@ $quote->addProduct($product->load($product->getIdBySku('simple_cat_4')), 1);
 //save quote with id
 $quote->collectTotals()->save();
 
-/** @var \Magento\Quote\Model\QuoteIdMask $quoteIdMask */
+/** @var QuoteIdMask $quoteIdMask */
 $quoteIdMask = $objectManager
-    ->create(\Magento\Quote\Model\QuoteIdMaskFactory::class)
+    ->create(QuoteIdMaskFactory::class)
     ->create();
 $quoteIdMask->setQuoteId($quote->getId());
 $quoteIdMask->setDataChanges(true);

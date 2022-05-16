@@ -6,19 +6,24 @@
 
 namespace Magento\AdvancedPricingImportExport\Model\Export;
 
+use LogicException;
+use Magento\AdvancedPricingImportExport\Model\Export\AdvancedPricing as ExportAdvancedPricing;
+use Magento\AdvancedPricingImportExport\Model\Import\AdvancedPricing as ImportAdvancedPricing;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Customer\Model\Group;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\File\Csv;
-use Magento\TestFramework\Indexer\TestCase;
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Framework\Filesystem;
-use Magento\AdvancedPricingImportExport\Model\Export\AdvancedPricing as ExportAdvancedPricing;
-use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\Catalog\Model\Product;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Registry;
 use Magento\ImportExport\Model\Export\Adapter\Csv as ExportAdapterCsv;
-use Magento\AdvancedPricingImportExport\Model\Import\AdvancedPricing as ImportAdvancedPricing;
-use Magento\ImportExport\Model\Import\Source\Csv as ImportSourceCsv;
 use Magento\ImportExport\Model\Import;
+use Magento\ImportExport\Model\Import\Source\Csv as ImportSourceCsv;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Indexer\TestCase;
+use function sprintf;
 
 /**
  * Test for \Magento\AdvancedPricingImportExport\Model\Export\AdvancedPricing
@@ -32,7 +37,7 @@ class AdvancedPricingTest extends TestCase
     protected $model;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
 
@@ -49,7 +54,7 @@ class AdvancedPricingTest extends TestCase
             ->getApplication()
             ->getDbInstance();
         if (!$db->isDbDumpExists()) {
-            throw new \LogicException('DB dump does not exist.');
+            throw new LogicException('DB dump does not exist.');
         }
         $db->restoreFromDbDump();
 
@@ -57,15 +62,6 @@ class AdvancedPricingTest extends TestCase
     }
 
     // @codingStandardsIgnoreEnd
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->fileSystem = $this->objectManager->get(Filesystem::class);
-        $this->model = $this->objectManager->create(ExportAdvancedPricing::class);
-    }
 
     /**
      * @magentoAppArea Adminhtml
@@ -109,6 +105,25 @@ class AdvancedPricingTest extends TestCase
     }
 
     /**
+     * @param string $csvFile
+     * @return string
+     */
+    private function exportData($csvFile)
+    {
+        $this->model->setWriter(
+            Bootstrap::getObjectManager()
+                ->create(
+                    ExportAdapterCsv::class,
+                    ['fileSystem' => $this->fileSystem, 'destination' => $csvFile]
+                )
+        );
+        $exportContent = $this->model->export();
+        $this->assertNotEmpty($exportContent);
+
+        return $exportContent;
+    }
+
+    /**
      * Assert for correct tier prices discount types.
      *
      * @param string $exportContent
@@ -124,6 +139,79 @@ class AdvancedPricingTest extends TestCase
             '10.0000,50.00,Discount',
             $exportContent
         );
+    }
+
+    /**
+     * @param string $csvFile
+     */
+    private function importData($csvFile)
+    {
+        /** @var ImportAdvancedPricing $importModel */
+        $importModel = $this->objectManager->create(ImportAdvancedPricing::class);
+        $directory = $this->fileSystem->getDirectoryWrite(DirectoryList::VAR_DIR);
+        $source = $this->objectManager->create(
+            ImportSourceCsv::class,
+            [
+                'file' => $csvFile,
+                'directory' => $directory
+            ]
+        );
+        $errors = $importModel->setParameters(
+            [
+                'behavior' => Import::BEHAVIOR_APPEND,
+                'entity' => 'advanced_pricing'
+            ]
+        )->setSource(
+            $source
+        )->validateData();
+
+        $this->assertTrue(
+            $errors->getErrorsCount() == 0,
+            'Advanced Pricing import error, imported from file:' . $csvFile
+        );
+        $importModel->importData();
+    }
+
+    private function assertEqualsOtherThanSkippedAttributes($expected, $actual, $skippedAttributes)
+    {
+        foreach ($expected as $key => $value) {
+            if (in_array($key, $skippedAttributes)) {
+                continue;
+            } else {
+                $this->assertEquals(
+                    $value,
+                    $actual[$key],
+                    'Assert value at key - ' . $key . ' failed'
+                );
+            }
+        }
+    }
+
+    /**
+     * Cleanup test by removing imported product.
+     *
+     * @param string[] $skus
+     * @return void
+     */
+    private function removeImportedProducts(array $skus): void
+    {
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+        $registry = $this->objectManager->get(Registry::class);
+        /** @var ProductRepositoryInterface $productRepository */
+        $registry->unregister('isSecureArea');
+        $registry->register('isSecureArea', true);
+
+        foreach ($skus as $sku) {
+            try {
+                $productRepository->deleteById($sku);
+            } catch (NoSuchEntityException $e) {
+                // product already deleted
+            }
+        }
+
+        $registry->unregister('isSecureArea');
+        $registry->register('isSecureArea', false);
     }
 
     /**
@@ -182,11 +270,11 @@ class AdvancedPricingTest extends TestCase
         $csvfile = uniqid('importexport_') . '.csv';
         $exportContent = $this->exportData($csvfile);
         $this->assertStringContainsString(
-            \sprintf('%s,"All Websites [USD]","ALL GROUPS",10.0000,3.00,Discount', $secondSimpleSku),
+            sprintf('%s,"All Websites [USD]","ALL GROUPS",10.0000,3.00,Discount', $secondSimpleSku),
             $exportContent
         );
         $this->assertStringContainsString(
-            \sprintf('%s,"All Websites [USD]",General,5.0000,95.000000,Fixed', $simpleSku),
+            sprintf('%s,"All Websites [USD]",General,5.0000,95.000000,Fixed', $simpleSku),
             $exportContent
         );
         $this->updateTierPriceDataInCsv($csvfile);
@@ -215,7 +303,7 @@ class AdvancedPricingTest extends TestCase
         );
 
         $this->assertSame(
-            ['0', \Magento\Customer\Model\Group::CUST_GROUP_ALL],
+            ['0', Group::CUST_GROUP_ALL],
             [
                 $secondProductTierPrices[0]->getExtensionAttributes()->getWebsiteId(),
                 $secondProductTierPrices[0]->getCustomerGroupId(),
@@ -275,95 +363,12 @@ class AdvancedPricingTest extends TestCase
         $csv->appendData($varDirectory->getAbsolutePath($csvfile), $csvNewData);
     }
 
-    /**
-     * @param string $csvFile
-     * @return string
-     */
-    private function exportData($csvFile)
+    protected function setUp(): void
     {
-        $this->model->setWriter(
-            Bootstrap::getObjectManager()
-                ->create(
-                    ExportAdapterCsv::class,
-                    ['fileSystem' => $this->fileSystem, 'destination' => $csvFile]
-                )
-        );
-        $exportContent = $this->model->export();
-        $this->assertNotEmpty($exportContent);
+        parent::setUp();
 
-        return $exportContent;
-    }
-
-    /**
-     * @param string $csvFile
-     */
-    private function importData($csvFile)
-    {
-        /** @var ImportAdvancedPricing $importModel */
-        $importModel = $this->objectManager->create(ImportAdvancedPricing::class);
-        $directory = $this->fileSystem->getDirectoryWrite(DirectoryList::VAR_DIR);
-        $source = $this->objectManager->create(
-            ImportSourceCsv::class,
-            [
-                'file' => $csvFile,
-                'directory' => $directory
-            ]
-        );
-        $errors = $importModel->setParameters(
-            [
-                'behavior' => Import::BEHAVIOR_APPEND,
-                'entity' => 'advanced_pricing'
-            ]
-        )->setSource(
-            $source
-        )->validateData();
-
-        $this->assertTrue(
-            $errors->getErrorsCount() == 0,
-            'Advanced Pricing import error, imported from file:' . $csvFile
-        );
-        $importModel->importData();
-    }
-
-    private function assertEqualsOtherThanSkippedAttributes($expected, $actual, $skippedAttributes)
-    {
-        foreach ($expected as $key => $value) {
-            if (in_array($key, $skippedAttributes)) {
-                continue;
-            } else {
-                $this->assertEquals(
-                    $value,
-                    $actual[$key],
-                    'Assert value at key - ' . $key . ' failed'
-                );
-            }
-        }
-    }
-
-    /**
-     * Cleanup test by removing imported product.
-     *
-     * @param string[] $skus
-     * @return void
-     */
-    private function removeImportedProducts(array $skus): void
-    {
-        /** @var ProductRepositoryInterface $productRepository */
-        $productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
-        $registry = $this->objectManager->get(\Magento\Framework\Registry::class);
-        /** @var ProductRepositoryInterface $productRepository */
-        $registry->unregister('isSecureArea');
-        $registry->register('isSecureArea', true);
-
-        foreach ($skus as $sku) {
-            try {
-                $productRepository->deleteById($sku);
-            } catch (NoSuchEntityException $e) {
-                // product already deleted
-            }
-        }
-
-        $registry->unregister('isSecureArea');
-        $registry->register('isSecureArea', false);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->fileSystem = $this->objectManager->get(Filesystem::class);
+        $this->model = $this->objectManager->create(ExportAdvancedPricing::class);
     }
 }

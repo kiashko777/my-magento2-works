@@ -3,29 +3,31 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Deploy\Console\Command\App;
 
+use Magento\Deploy\Model\DeploymentConfig\Hash;
 use Magento\Framework\App\CacheInterface;
+use Magento\Framework\App\Config\ReinitableConfigInterface;
 use Magento\Framework\App\DeploymentConfig;
+use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Config\File\ConfigFilePool;
+use Magento\Framework\Console\Cli;
+use Magento\Framework\Filesystem;
 use Magento\Framework\Flag;
 use Magento\Framework\FlagFactory;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Store\Model\GroupFactory;
 use Magento\Store\Model\StoreFactory;
 use Magento\Store\Model\WebsiteFactory;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Framework\ObjectManagerInterface;
-use Magento\Framework\Console\Cli;
-use Magento\Framework\Filesystem;
-use Magento\Framework\App\Filesystem\DirectoryList;
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
-use Magento\Deploy\Model\DeploymentConfig\Hash;
-use Magento\Framework\App\Config\ReinitableConfigInterface;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class ConfigImportCommandTest extends \PHPUnit\Framework\TestCase
+class ConfigImportCommandTest extends TestCase
 {
     /**
      * @var ObjectManagerInterface
@@ -81,48 +83,6 @@ class ConfigImportCommandTest extends \PHPUnit\Framework\TestCase
      * @var ReinitableConfigInterface
      */
     private $appConfig;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->reader = $this->objectManager->get(DeploymentConfig\Reader::class);
-        $this->writer = $this->objectManager->get(DeploymentConfig\Writer::class);
-        $this->filesystem = $this->objectManager->get(Filesystem::class);
-        $this->configFilePool = $this->objectManager->get(ConfigFilePool::class);
-        $this->hash = $this->objectManager->get(Hash::class);
-        $this->flagFactory = $this->objectManager->get(FlagFactory::class);
-        $this->cacheManager = $this->objectManager->get(CacheInterface::class);
-        $this->appConfig = $this->objectManager->get(ReinitableConfigInterface::class);
-
-        // Snapshot of configuration.
-        $this->config = $this->loadConfig();
-        $this->envConfig = $this->loadEnvConfig();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->filesystem->getDirectoryWrite(DirectoryList::CONFIG)->writeFile(
-            $this->configFilePool->getPath(ConfigFilePool::APP_CONFIG),
-            "<?php\n return array();\n"
-        );
-        $this->filesystem->getDirectoryWrite(DirectoryList::CONFIG)->writeFile(
-            $this->configFilePool->getPath(ConfigFilePool::APP_ENV),
-            "<?php\n return array();\n"
-        );
-
-        $this->writer->saveConfig([ConfigFilePool::APP_CONFIG => $this->config]);
-        $this->writer->saveConfig([ConfigFilePool::APP_ENV => $this->envConfig]);
-
-        $flag = $this->getFlag();
-        $flag->getResource()->delete($flag);
-        $this->appConfig->reinit();
-    }
 
     /**
      * @magentoDbIsolation enabled
@@ -224,6 +184,44 @@ class ConfigImportCommandTest extends \PHPUnit\Framework\TestCase
         $this->assertNull($store->getId());
         $this->assertNull($website->getId());
         $this->assertNull($group->getId());
+    }
+
+    /**
+     * Saves new data.
+     *
+     * @param array $originalData
+     * @param array $newData
+     */
+    public function writeConfig(array $originalData, array $newData)
+    {
+        $this->filesystem->getDirectoryWrite(DirectoryList::CONFIG)->writeFile(
+            $this->configFilePool->getPath(ConfigFilePool::APP_CONFIG),
+            "<?php\n return array();\n"
+        );
+
+        $newData = array_replace_recursive(
+            $originalData,
+            $newData
+        );
+        $this->writer->saveConfig([ConfigFilePool::APP_CONFIG => $newData], true);
+    }
+
+    /**
+     * Runs ConfigImportCommand and asserts that command run successfully
+     *
+     * @param $commandTester
+     */
+    private function runConfigImportCommand($commandTester)
+    {
+        $this->appConfig->reinit();
+        $commandTester->execute([], ['interactive' => false]);
+
+        $this->assertStringContainsString(
+            'Processing configurations data from configuration file...',
+            $commandTester->getDisplay()
+        );
+        $this->assertStringContainsString('Stores were processed', $commandTester->getDisplay());
+        $this->assertSame(Cli::RETURN_SUCCESS, $commandTester->getStatusCode());
     }
 
     /**
@@ -342,34 +340,23 @@ class ConfigImportCommandTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Saves new data.
-     *
-     * @param array $originalData
-     * @param array $newData
+     * @inheritdoc
      */
-    public function writeConfig(array $originalData, array $newData)
+    protected function setUp(): void
     {
-        $this->filesystem->getDirectoryWrite(DirectoryList::CONFIG)->writeFile(
-            $this->configFilePool->getPath(ConfigFilePool::APP_CONFIG),
-            "<?php\n return array();\n"
-        );
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->reader = $this->objectManager->get(DeploymentConfig\Reader::class);
+        $this->writer = $this->objectManager->get(DeploymentConfig\Writer::class);
+        $this->filesystem = $this->objectManager->get(Filesystem::class);
+        $this->configFilePool = $this->objectManager->get(ConfigFilePool::class);
+        $this->hash = $this->objectManager->get(Hash::class);
+        $this->flagFactory = $this->objectManager->get(FlagFactory::class);
+        $this->cacheManager = $this->objectManager->get(CacheInterface::class);
+        $this->appConfig = $this->objectManager->get(ReinitableConfigInterface::class);
 
-        $newData = array_replace_recursive(
-            $originalData,
-            $newData
-        );
-        $this->writer->saveConfig([ConfigFilePool::APP_CONFIG => $newData], true);
-    }
-
-    /**
-     * @return Flag
-     */
-    private function getFlag()
-    {
-        $flag = $this->flagFactory->create();
-        $flag->getResource()->load($flag, Hash::CONFIG_KEY, 'flag_code');
-
-        return $flag;
+        // Snapshot of configuration.
+        $this->config = $this->loadConfig();
+        $this->envConfig = $this->loadEnvConfig();
     }
 
     /**
@@ -389,20 +376,35 @@ class ConfigImportCommandTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Runs ConfigImportCommand and asserts that command run successfully
-     *
-     * @param $commandTester
+     * @inheritdoc
      */
-    private function runConfigImportCommand($commandTester)
+    protected function tearDown(): void
     {
-        $this->appConfig->reinit();
-        $commandTester->execute([], ['interactive' => false]);
-
-        $this->assertStringContainsString(
-            'Processing configurations data from configuration file...',
-            $commandTester->getDisplay()
+        $this->filesystem->getDirectoryWrite(DirectoryList::CONFIG)->writeFile(
+            $this->configFilePool->getPath(ConfigFilePool::APP_CONFIG),
+            "<?php\n return array();\n"
         );
-        $this->assertStringContainsString('Stores were processed', $commandTester->getDisplay());
-        $this->assertSame(Cli::RETURN_SUCCESS, $commandTester->getStatusCode());
+        $this->filesystem->getDirectoryWrite(DirectoryList::CONFIG)->writeFile(
+            $this->configFilePool->getPath(ConfigFilePool::APP_ENV),
+            "<?php\n return array();\n"
+        );
+
+        $this->writer->saveConfig([ConfigFilePool::APP_CONFIG => $this->config]);
+        $this->writer->saveConfig([ConfigFilePool::APP_ENV => $this->envConfig]);
+
+        $flag = $this->getFlag();
+        $flag->getResource()->delete($flag);
+        $this->appConfig->reinit();
+    }
+
+    /**
+     * @return Flag
+     */
+    private function getFlag()
+    {
+        $flag = $this->flagFactory->create();
+        $flag->getResource()->load($flag, Hash::CONFIG_KEY, 'flag_code');
+
+        return $flag;
     }
 }

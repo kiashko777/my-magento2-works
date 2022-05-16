@@ -33,14 +33,6 @@ class GetPayflowLinkTokenTest extends TestCase
     /** @var GetMaskedQuoteIdByReservedOrderId */
     private $getMaskedQuoteIdByReservedOrderId;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $this->objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->json = $this->objectManager->get(SerializerInterface::class);
-        $this->graphQlRequest = $this->objectManager->create(GraphQlRequest::class);
-    }
-
     /**
      * Test get payflowLink secure token
      *
@@ -49,7 +41,7 @@ class GetPayflowLinkTokenTest extends TestCase
      * @magentoDataFixture Magento/Paypal/_files/order_payflow_link_with_payment.php
      * @return void
      */
-    public function testResolvePayflowLinkToken() : void
+    public function testResolvePayflowLinkToken(): void
     {
         $reservedQuoteId = 'test_quote';
         $cartId = $this->getMaskedQuoteIdByReservedOrderId->execute($reservedQuoteId);
@@ -77,5 +69,13 @@ QUERY;
         $this->assertArrayHasKey('secure_token_id', $payflowLinkTokenResponse);
         $this->assertEquals('TEST', $payflowLinkTokenResponse['mode']);
         $this->assertEquals('https://pilot-payflowlink.paypal.com', $payflowLinkTokenResponse['paypal_url']);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $this->objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->json = $this->objectManager->get(SerializerInterface::class);
+        $this->graphQlRequest = $this->objectManager->create(GraphQlRequest::class);
     }
 }

@@ -24,6 +24,20 @@ class LogoTest extends TestCase
     private $block;
 
     /**
+     * @magentoAppArea frontend
+     * @magentoConfigFixture current_store design/header/logo_width 260
+     * @magentoConfigFixture current_store design/header/logo_height 240
+     */
+    public function testStoreLogoSize()
+    {
+        $xpath = '//a[@class="logo"]/img';
+        $elements = Xpath::getElementsForXpath($xpath, $this->block->toHtml());
+        $this->assertGreaterThan(0, $elements->count(), 'Cannot find element \'' . $xpath . '"\' in the HTML');
+        $this->assertEquals(260, $elements->item(0)->getAttribute('width'));
+        $this->assertEquals(240, $elements->item(0)->getAttribute('height'));
+    }
+
+    /**
      * @inheritdoc
      */
     protected function setUp(): void
@@ -41,19 +55,5 @@ class LogoTest extends TestCase
                     ]
                 ]
             );
-    }
-
-    /**
-     * @magentoAppArea frontend
-     * @magentoConfigFixture current_store design/header/logo_width 260
-     * @magentoConfigFixture current_store design/header/logo_height 240
-     */
-    public function testStoreLogoSize()
-    {
-        $xpath = '//a[@class="logo"]/img';
-        $elements = Xpath::getElementsForXpath($xpath, $this->block->toHtml());
-        $this->assertGreaterThan(0, $elements->count(), 'Cannot find element \'' . $xpath . '"\' in the HTML');
-        $this->assertEquals(260, $elements->item(0)->getAttribute('width'));
-        $this->assertEquals(240, $elements->item(0)->getAttribute('height'));
     }
 }

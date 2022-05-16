@@ -20,12 +20,6 @@ class SearchConfigOptionsListTest extends TestCase
      */
     private $searchConfigOptionsList;
 
-    protected function setup(): void
-    {
-        $objectManager = new ObjectManager($this);
-        $this->searchConfigOptionsList = $objectManager->getObject(SearchConfigOptionsList::class);
-    }
-
     public function testGetOptionsList()
     {
         $optionsList = $this->searchConfigOptionsList->getOptionsList();
@@ -66,5 +60,11 @@ class SearchConfigOptionsListTest extends TestCase
         $this->assertArrayHasKey(7, $optionsList);
         $this->assertInstanceOf(TextConfigOption::class, $optionsList[7]);
         $this->assertEquals('elasticsearch-timeout', $optionsList[7]->getName());
+    }
+
+    protected function setup(): void
+    {
+        $objectManager = new ObjectManager($this);
+        $this->searchConfigOptionsList = $objectManager->getObject(SearchConfigOptionsList::class);
     }
 }

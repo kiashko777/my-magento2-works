@@ -16,6 +16,7 @@ use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 use Magento\UrlRewrite\Model\ResourceModel\UrlRewriteCollectionFactory;
 use PHPUnit\Framework\TestCase;
+use Zend_Db_Expr;
 
 /**
  * Test cases related to assign/unassign product to/from category.
@@ -53,31 +54,6 @@ class CategoryLinkManagementTest extends TestCase
     private $categoryLinkManagement;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->tableMaintainer = $this->objectManager->get(TableMaintainer::class);
-        $this->storeRepository = $this->objectManager->get(StoreRepositoryInterface::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->categoryResourceModel = $this->objectManager->get(CategoryResourceModel::class);
-        $this->categoryLinkManagement = $this->objectManager->create(CategoryLinkManagementInterface::class);
-        $this->productRepository->cleanCache();
-        parent::setUp();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->objectManager->removeSharedInstance(CategoryLinkRepository::class);
-        $this->objectManager->removeSharedInstance(CategoryRepository::class);
-        parent::tearDown();
-    }
-
-    /**
      * Assert that product correctly assigned to category and index table contain indexed data.
      *
      * @magentoDataFixture Magento/Catalog/_files/second_product_simple.php
@@ -95,6 +71,56 @@ class CategoryLinkManagementTest extends TestCase
         $this->categoryLinkManagement->assignProductToCategories('simple2', [333]);
         $this->assertEquals(1, $this->getCategoryProductRelationRecordsCount((int)$product->getId(), [333]));
         $this->assertEquals(1, $this->getCategoryProductIndexRecordsCount((int)$product->getId(), [333]));
+    }
+
+    /**
+     * Return count of product which assigned to provided categories.
+     *
+     * @param int $productId
+     * @param int[] $categoryIds
+     * @return int
+     */
+    private function getCategoryProductRelationRecordsCount(int $productId, array $categoryIds): int
+    {
+        $select = $this->categoryResourceModel->getConnection()->select();
+        $select->from(
+            $this->categoryResourceModel->getCategoryProductTable(),
+            [
+                'row_count' => new Zend_Db_Expr('COUNT(*)')
+            ]
+        );
+        $select->where('product_id = ?', $productId);
+        $select->where('category_id IN (?)', $categoryIds);
+
+        return (int)$this->categoryResourceModel->getConnection()->fetchOne($select);
+    }
+
+    /**
+     * Return count of products which added to index table with all provided category ids.
+     *
+     * @param int $productId
+     * @param array $categoryIds
+     * @param string $storeCode
+     * @return int
+     */
+    private function getCategoryProductIndexRecordsCount(
+        int    $productId,
+        array  $categoryIds,
+        string $storeCode = 'default'
+    ): int
+    {
+        $storeId = (int)$this->storeRepository->get($storeCode)->getId();
+        $select = $this->categoryResourceModel->getConnection()->select();
+        $select->from(
+            $this->tableMaintainer->getMainTable($storeId),
+            [
+                'row_count' => new Zend_Db_Expr('COUNT(*)')
+            ]
+        );
+        $select->where('product_id = ?', $productId);
+        $select->where('category_id IN (?)', $categoryIds);
+
+        return (int)$this->categoryResourceModel->getConnection()->fetchOne($select);
     }
 
     /**
@@ -177,51 +203,27 @@ class CategoryLinkManagementTest extends TestCase
     }
 
     /**
-     * Return count of product which assigned to provided categories.
-     *
-     * @param int $productId
-     * @param int[] $categoryIds
-     * @return int
+     * @inheritdoc
      */
-    private function getCategoryProductRelationRecordsCount(int $productId, array $categoryIds): int
+    protected function setUp(): void
     {
-        $select = $this->categoryResourceModel->getConnection()->select();
-        $select->from(
-            $this->categoryResourceModel->getCategoryProductTable(),
-            [
-                'row_count' => new \Zend_Db_Expr('COUNT(*)')
-            ]
-        );
-        $select->where('product_id = ?', $productId);
-        $select->where('category_id IN (?)', $categoryIds);
-
-        return (int)$this->categoryResourceModel->getConnection()->fetchOne($select);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->tableMaintainer = $this->objectManager->get(TableMaintainer::class);
+        $this->storeRepository = $this->objectManager->get(StoreRepositoryInterface::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->categoryResourceModel = $this->objectManager->get(CategoryResourceModel::class);
+        $this->categoryLinkManagement = $this->objectManager->create(CategoryLinkManagementInterface::class);
+        $this->productRepository->cleanCache();
+        parent::setUp();
     }
 
     /**
-     * Return count of products which added to index table with all provided category ids.
-     *
-     * @param int $productId
-     * @param array $categoryIds
-     * @param string $storeCode
-     * @return int
+     * @inheritdoc
      */
-    private function getCategoryProductIndexRecordsCount(
-        int $productId,
-        array $categoryIds,
-        string $storeCode = 'default'
-    ): int {
-        $storeId = (int)$this->storeRepository->get($storeCode)->getId();
-        $select = $this->categoryResourceModel->getConnection()->select();
-        $select->from(
-            $this->tableMaintainer->getMainTable($storeId),
-            [
-                'row_count' => new \Zend_Db_Expr('COUNT(*)')
-            ]
-        );
-        $select->where('product_id = ?', $productId);
-        $select->where('category_id IN (?)', $categoryIds);
-
-        return (int)$this->categoryResourceModel->getConnection()->fetchOne($select);
+    protected function tearDown(): void
+    {
+        $this->objectManager->removeSharedInstance(CategoryLinkRepository::class);
+        $this->objectManager->removeSharedInstance(CategoryRepository::class);
+        parent::tearDown();
     }
 }

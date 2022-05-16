@@ -14,8 +14,8 @@ use Magento\Framework\File\Size;
 use Magento\Framework\Filesystem;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 use Zend_Validate;
 use Zend_Validate_File_ExcludeExtension;
 use Zend_Validate_File_Extension;
@@ -23,7 +23,6 @@ use Zend_Validate_File_FilesSize;
 use Zend_Validate_File_ImageSize;
 
 /**
-
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 class ValidatorInfoTest extends TestCase
@@ -45,25 +44,6 @@ class ValidatorInfoTest extends TestCase
      * @var ValidateFactory|MockObject
      */
     protected $validateFactoryMock;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        /** @var Size $fileSize */
-        $fileSize = $this->objectManager->create(Size::class);
-        $this->maxFileSizeInMb = $fileSize->getMaxFileSizeInMb();
-
-        $this->validateFactoryMock = $this->createPartialMock(ValidateFactory::class, ['create']);
-        $this->model = $this->objectManager->create(
-            ValidatorInfo::class,
-            [
-                'validateFactory' => $this->validateFactoryMock,
-            ]
-        );
-    }
 
     /**
      * @magentoDataFixture Magento/Catalog/_files/validate_image_info.php
@@ -93,6 +73,65 @@ class ValidatorInfoTest extends TestCase
         $this->validateFactoryMock->expects($this->once())->method('create')->willReturn($validateMock);
 
         $this->model->validate($this->getOptionValue(), $this->getProductOption());
+    }
+
+    /**
+     * @param string|null $fileName
+     * @return array
+     */
+    protected function getOptionValue(?string $fileName = 'magento_small_image.jpg'): array
+    {
+        /** @var Config $config */
+        $config = $this->objectManager->get(Config::class);
+        $file = $config->getBaseTmpMediaPath() . '/' . $fileName;
+
+        /** @var Filesystem $filesystem */
+        $filesystem = $this->objectManager->get(Filesystem::class);
+        $tmpDirectory = $filesystem->getDirectoryRead(DirectoryList::MEDIA);
+        $filePath = $tmpDirectory->getAbsolutePath($file);
+
+        return [
+            'title' => 'test.jpg',
+            'quote_path' => $file,
+            'order_path' => $file,
+            'secret_key' => substr(hash('sha256', file_get_contents($filePath)), 0, 20)
+        ];
+    }
+
+    /**
+     * @param array $options
+     * @return Option
+     */
+    protected function getProductOption(array $options = []): Option
+    {
+        $data = [
+            'option_id' => '1',
+            'product_id' => '4',
+            'type' => 'file',
+            'is_require' => '1',
+            'sku' => null,
+            'max_characters' => null,
+            'file_extension' => null,
+            'image_size_x' => '2000',
+            'image_size_y' => '2000',
+            'sort_order' => '0',
+            'default_title' => 'MediaOption',
+            'store_title' => null,
+            'title' => 'MediaOption',
+            'default_price' => '5.0000',
+            'default_price_type' => 'fixed',
+            'store_price' => null,
+            'store_price_type' => null,
+            'price' => '5.0000',
+            'price_type' => 'fixed',
+        ];
+
+        return $this->objectManager->create(
+            Option::class,
+            [
+                'data' => array_merge($data, $options)
+            ]
+        );
     }
 
     /**
@@ -149,61 +188,21 @@ class ValidatorInfoTest extends TestCase
     }
 
     /**
-     * @param array $options
-     * @return Option
+     * @inheritdoc
      */
-    protected function getProductOption(array $options = []): Option
+    protected function setUp(): void
     {
-        $data = [
-            'option_id' => '1',
-            'product_id' => '4',
-            'type' => 'file',
-            'is_require' => '1',
-            'sku' => null,
-            'max_characters' => null,
-            'file_extension' => null,
-            'image_size_x' => '2000',
-            'image_size_y' => '2000',
-            'sort_order' => '0',
-            'default_title' => 'MediaOption',
-            'store_title' => null,
-            'title' => 'MediaOption',
-            'default_price' => '5.0000',
-            'default_price_type' => 'fixed',
-            'store_price' => null,
-            'store_price_type' => null,
-            'price' => '5.0000',
-            'price_type' => 'fixed',
-        ];
+        $this->objectManager = Bootstrap::getObjectManager();
+        /** @var Size $fileSize */
+        $fileSize = $this->objectManager->create(Size::class);
+        $this->maxFileSizeInMb = $fileSize->getMaxFileSizeInMb();
 
-        return $this->objectManager->create(
-            Option::class,
+        $this->validateFactoryMock = $this->createPartialMock(ValidateFactory::class, ['create']);
+        $this->model = $this->objectManager->create(
+            ValidatorInfo::class,
             [
-                'data' => array_merge($data, $options)
+                'validateFactory' => $this->validateFactoryMock,
             ]
         );
-    }
-
-    /**
-     * @param string|null $fileName
-     * @return array
-     */
-    protected function getOptionValue(?string $fileName = 'magento_small_image.jpg'): array
-    {
-        /** @var Config $config */
-        $config = $this->objectManager->get(Config::class);
-        $file = $config->getBaseTmpMediaPath() . '/' . $fileName;
-
-        /** @var Filesystem $filesystem */
-        $filesystem = $this->objectManager->get(Filesystem::class);
-        $tmpDirectory = $filesystem->getDirectoryRead(DirectoryList::MEDIA);
-        $filePath = $tmpDirectory->getAbsolutePath($file);
-
-        return [
-            'title' => 'test.jpg',
-            'quote_path' => $file,
-            'order_path' => $file,
-            'secret_key' => substr(hash('sha256', file_get_contents($filePath)), 0, 20)
-        ];
     }
 }

@@ -6,6 +6,8 @@
 
 namespace Magento\Setup\Module\Di\Code\Reader;
 
+use Laminas\Code\Exception\RuntimeException;
+
 /**
  * FileScanner code reader
  *
@@ -28,7 +30,7 @@ class FileScanner extends \Laminas\Code\Scanner\FileScanner
         }
 
         if (!$this->tokens) {
-            throw new \Laminas\Code\Exception\RuntimeException('No tokens were provided');
+            throw new RuntimeException('No tokens were provided');
         }
 
         /**

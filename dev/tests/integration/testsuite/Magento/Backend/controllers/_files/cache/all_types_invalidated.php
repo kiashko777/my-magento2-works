@@ -4,8 +4,12 @@
  * See COPYING.txt for license details.
  */
 
-/** @var $cacheTypeList \Magento\Framework\App\Cache\TypeListInterface */
-$cacheTypeList = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Framework\App\Cache\TypeListInterface::class
+/** @var $cacheTypeList TypeListInterface */
+
+use Magento\Framework\App\Cache\TypeListInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$cacheTypeList = Bootstrap::getObjectManager()->create(
+    TypeListInterface::class
 );
 $cacheTypeList->invalidate(array_keys($cacheTypeList->getTypes()));

@@ -36,28 +36,6 @@ class WishlistTest extends TestCase
     private $customerSession;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->page = $this->objectManager->create(Page::class);
-        $this->customerSession = $this->objectManager->get(Session::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->customerSession->setCustomerId(null);
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoConfigFixture current_store wishlist/wishlist_link/use_qty 0
      * @magentoDataFixture Magento/Wishlist/_files/wishlist_with_product_qty_three.php
      *
@@ -72,6 +50,22 @@ class WishlistTest extends TestCase
             Xpath::getElementsCountForXpath(sprintf(self::ITEMS_COUNT_XPATH, 1), $pagerBlockHtml),
             "Element items count wasn't found."
         );
+    }
+
+    /**
+     * Get wish list block.
+     *
+     * @return Wishlist
+     */
+    private function getWishListBlock(): Wishlist
+    {
+        $this->page->addHandle([
+            'default',
+            'wishlist_index_index',
+        ]);
+        $this->page->getLayout()->generateXml();
+
+        return $this->page->getLayout()->getBlock('customer.wishlist');
     }
 
     /**
@@ -112,18 +106,24 @@ class WishlistTest extends TestCase
     }
 
     /**
-     * Get wish list block.
-     *
-     * @return Wishlist
+     * @inheritdoc
      */
-    private function getWishListBlock(): Wishlist
+    protected function setUp(): void
     {
-        $this->page->addHandle([
-            'default',
-            'wishlist_index_index',
-        ]);
-        $this->page->getLayout()->generateXml();
+        parent::setUp();
 
-        return $this->page->getLayout()->getBlock('customer.wishlist');
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->page = $this->objectManager->create(Page::class);
+        $this->customerSession = $this->objectManager->get(Session::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->customerSession->setCustomerId(null);
+
+        parent::tearDown();
     }
 }

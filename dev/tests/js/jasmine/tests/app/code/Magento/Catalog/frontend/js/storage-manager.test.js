@@ -40,7 +40,8 @@ define([
         try {
             injector.clean();
             injector.remove();
-        } catch (e) {}
+        } catch (e) {
+        }
     });
 
     describe('Magento_Catalog/js/storage-manager', function () {

@@ -8,11 +8,11 @@ declare(strict_types=1);
 namespace Magento\GraphQl\Customer;
 
 use Exception;
-use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Api\AddressRepositoryInterface;
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Integration\Api\CustomerTokenServiceInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
-use Magento\Integration\Api\CustomerTokenServiceInterface;
 
 /**
  * Delete customer address tests
@@ -39,16 +39,6 @@ class DeleteCustomerAddressTest extends GraphQlAbstract
      */
     private $lockCustomer;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
-        $this->customerRepository = Bootstrap::getObjectManager()->get(CustomerRepositoryInterface::class);
-        $this->addressRepository = Bootstrap::getObjectManager()->get(AddressRepositoryInterface::class);
-        $this->lockCustomer = Bootstrap::getObjectManager()->get(LockCustomer::class);
-    }
-
     /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      * @magentoApiDataFixture Magento/Customer/_files/customer_two_addresses.php
@@ -71,10 +61,21 @@ MUTATION;
     }
 
     /**
+     * @param string $email
+     * @param string $password
+     * @return array
+     */
+    private function getCustomerAuthHeaders(string $email, string $password): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($email, $password);
+        return ['Authorization' => 'Bearer ' . $customerToken];
+    }
+
+    /**
      */
     public function testDeleteCustomerAddressIfUserIsNotAuthorized()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The current customer isn\'t authorized.');
 
         $addressId = 1;
@@ -94,7 +95,7 @@ MUTATION;
      */
     public function testDeleteDefaultShippingCustomerAddress()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Customer Address 2 is set as default shipping address and can not be deleted');
 
         $userName = 'customer@example.com';
@@ -121,7 +122,7 @@ MUTATION;
      */
     public function testDeleteDefaultBillingCustomerAddress()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Customer Address 2 is set as default billing address and can not be deleted');
 
         $userName = 'customer@example.com';
@@ -147,7 +148,7 @@ MUTATION;
      */
     public function testDeleteNonExistCustomerAddress()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Could not find a address with ID "9999"');
 
         $userName = 'customer@example.com';
@@ -169,7 +170,7 @@ MUTATION;
      */
     public function testDeleteCustomerAddressWithMissingData()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Syntax Error: Expected Name, found )');
 
         $userName = 'customer@example.com';
@@ -191,7 +192,7 @@ MUTATION;
      */
     public function testDeleteCustomerAddressWithIncorrectIdType()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Expected type Int!, found "".');
 
         $this->markTestSkipped(
@@ -215,7 +216,7 @@ MUTATION;
      */
     public function testDeleteAnotherCustomerAddress()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Current customer does not have permission to address with ID "2"');
 
         $userName = 'customer_two@example.com';
@@ -238,7 +239,7 @@ MUTATION;
      */
     public function testDeleteCustomerAddressIfAccountIsLocked()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The account is locked');
 
         $this->markTestIncomplete('https://github.com/magento/graphql-ce/issues/750');
@@ -258,14 +259,13 @@ MUTATION;
         $this->graphQlMutation($mutation, [], '', $this->getCustomerAuthHeaders($userName, $password));
     }
 
-    /**
-     * @param string $email
-     * @param string $password
-     * @return array
-     */
-    private function getCustomerAuthHeaders(string $email, string $password): array
+    protected function setUp(): void
     {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($email, $password);
-        return ['Authorization' => 'Bearer ' . $customerToken];
+        parent::setUp();
+
+        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
+        $this->customerRepository = Bootstrap::getObjectManager()->get(CustomerRepositoryInterface::class);
+        $this->addressRepository = Bootstrap::getObjectManager()->get(AddressRepositoryInterface::class);
+        $this->lockCustomer = Bootstrap::getObjectManager()->get(LockCustomer::class);
     }
 }

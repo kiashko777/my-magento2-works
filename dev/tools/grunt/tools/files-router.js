@@ -63,7 +63,7 @@ module.exports = {
 
         if (userConfig && userConfig[alias]) {
             return require(getFullPath(userConfig[alias]));
-        } else if (tmp = getFile(defaultConfig[alias] + '.loc') ||  getFile(defaultConfig[alias])) {
+        } else if (tmp = getFile(defaultConfig[alias] + '.loc') || getFile(defaultConfig[alias])) {
             return tmp;
         } else {
             throw new Error('Cannot find file. Alias "' + alias + '" not set. ' +

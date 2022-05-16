@@ -13,6 +13,15 @@ use PHPUnit\Framework\TestCase;
 
 class DependencyTest extends TestCase
 {
+    public function testGetLib()
+    {
+        $lib = 'lib';
+
+        $dependency = $this->createDependency($lib, 0);
+
+        $this->assertEquals($lib, $dependency->getLib());
+    }
+
     /**
      * @param string $lib
      * @param int $count
@@ -25,15 +34,6 @@ class DependencyTest extends TestCase
             Dependency::class,
             ['lib' => $lib, 'count' => $count]
         );
-    }
-
-    public function testGetLib()
-    {
-        $lib = 'lib';
-
-        $dependency = $this->createDependency($lib, 0);
-
-        $this->assertEquals($lib, $dependency->getLib());
     }
 
     public function testGetCount()

@@ -4,6 +4,9 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Sales\Model\Order\Address;
+use Magento\TestFramework\Helper\Bootstrap;
+
 $addresses = [
     [
         'telephone' => 3234676,
@@ -57,9 +60,9 @@ $addresses = [
 
 /** @var array $addresses */
 foreach ($addresses as $addressData) {
-    /** @var $address \Magento\Sales\Model\Order\Address */
-    $address = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-        \Magento\Sales\Model\Order\Address::class
+    /** @var $address Address */
+    $address = Bootstrap::getObjectManager()->create(
+        Address::class
     );
     $address
         ->setData($addressData)

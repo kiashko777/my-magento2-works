@@ -5,21 +5,25 @@
  */
 declare(strict_types=1);
 
+use Magento\Catalog\Model\Product\Attribute\Repository;
+use Magento\Eav\Api\Data\AttributeInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var $attributeRepository \Magento\Catalog\Model\Product\Attribute\Repository */
-$attributeRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->get(\Magento\Catalog\Model\Product\Attribute\Repository::class);
+/** @var $attributeRepository Repository */
+$attributeRepository = Bootstrap::getObjectManager()
+    ->get(Repository::class);
 
 try {
-    /** @var $attribute \Magento\Eav\Api\Data\AttributeInterface */
+    /** @var $attribute AttributeInterface */
     $attribute = $attributeRepository->get('test_attribute_code_333');
     $attributeRepository->save($attribute->setIsUserDefined(1));
     // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock.DetectedCatch
 } catch (NoSuchEntityException $e) {
 }
-/** @var \Magento\Framework\Registry $registry */
-$registry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
+/** @var Registry $registry */
+$registry = Bootstrap::getObjectManager()->get(Registry::class);
 
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
@@ -30,7 +34,7 @@ try {
         $attribute->delete();
     }
     // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock.DetectedCatch
-} catch (\Exception $e) {
+} catch (Exception $e) {
 }
 
 $registry->unregister('isSecureArea');

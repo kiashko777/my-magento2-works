@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 namespace Magento\TestFramework\Serialize;
 
+use InvalidArgumentException;
 use Magento\Framework\Serialize\SerializerInterface;
 
 /**
@@ -21,7 +22,7 @@ class Serializer implements SerializerInterface
     public function serialize($data)
     {
         if (is_resource($data)) {
-            throw new \InvalidArgumentException('Unable to serialize value.');
+            throw new InvalidArgumentException('Unable to serialize value.');
         }
 
         // phpcs:ignore Magento2.Security.InsecureFunction
@@ -34,12 +35,12 @@ class Serializer implements SerializerInterface
     public function unserialize($string)
     {
         if (false === $string || null === $string || '' === $string) {
-            throw new \InvalidArgumentException('Unable to unserialize value.');
+            throw new InvalidArgumentException('Unable to unserialize value.');
         }
         set_error_handler(
             function () {
                 restore_error_handler();
-                throw new \InvalidArgumentException('Unable to unserialize value, string is corrupted.');
+                throw new InvalidArgumentException('Unable to unserialize value, string is corrupted.');
             },
             E_NOTICE
         );

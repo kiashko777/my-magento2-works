@@ -3,24 +3,47 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Block\Adminhtml\Product\Helper\Form;
 
-class WeightTest extends \PHPUnit\Framework\TestCase
+use Magento\Bundle\Model\Product\Type;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Type\Simple;
+use Magento\Catalog\Model\Product\Type\Virtual;
+use Magento\Framework\Data\FormFactory;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class WeightTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $_objectManager;
 
     /**
-     * @var \Magento\Framework\Data\FormFactory
+     * @var FormFactory
      */
     protected $_formFactory;
 
-    protected function setUp(): void
+    /**
+     * @return array
+     */
+    public static function virtualTypesDataProvider()
     {
-        $this->_objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->_formFactory = $this->_objectManager->create(\Magento\Framework\Data\FormFactory::class);
+        return [
+            [Virtual::class],
+            [\Magento\Downloadable\Model\Product\Type::class]
+        ];
+    }
+
+    /**
+     * @return array
+     */
+    public static function physicalTypesDataProvider()
+    {
+        return [[Simple::class], [Type::class]];
     }
 
     /**
@@ -29,11 +52,11 @@ class WeightTest extends \PHPUnit\Framework\TestCase
      */
     public function testProductWithoutWeight($type)
     {
-        /** @var $currentProduct \Magento\Catalog\Model\Product */
-        $currentProduct = $this->_objectManager->create(\Magento\Catalog\Model\Product::class);
+        /** @var $currentProduct Product */
+        $currentProduct = $this->_objectManager->create(Product::class);
         $currentProduct->setTypeInstance($this->_objectManager->create($type));
-        /** @var $block \Magento\Catalog\Block\Adminhtml\Product\Helper\Form\Weight */
-        $block = $this->_objectManager->create(\Magento\Catalog\Block\Adminhtml\Product\Helper\Form\Weight::class);
+        /** @var $block Weight */
+        $block = $this->_objectManager->create(Weight::class);
         $form = $this->_formFactory->create();
         $form->setDataObject($currentProduct);
         $block->setForm($form);
@@ -46,28 +69,17 @@ class WeightTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @return array
-     */
-    public static function virtualTypesDataProvider()
-    {
-        return [
-            [\Magento\Catalog\Model\Product\Type\Virtual::class],
-            [\Magento\Downloadable\Model\Product\Type::class]
-        ];
-    }
-
-    /**
      * @param string $type
      * @dataProvider physicalTypesDataProvider
      */
     public function testProductHasWeight($type)
     {
-        /** @var $currentProduct \Magento\Catalog\Model\Product */
-        $currentProduct = $this->_objectManager->create(\Magento\Catalog\Model\Product::class);
+        /** @var $currentProduct Product */
+        $currentProduct = $this->_objectManager->create(Product::class);
         $currentProduct->setTypeInstance($this->_objectManager->create($type));
 
-        /** @var $block \Magento\Catalog\Block\Adminhtml\Product\Helper\Form\Weight */
-        $block = $this->_objectManager->create(\Magento\Catalog\Block\Adminhtml\Product\Helper\Form\Weight::class);
+        /** @var $block Weight */
+        $block = $this->_objectManager->create(Weight::class);
         $form = $this->_formFactory->create();
         $form->setDataObject($currentProduct);
         $block->setForm($form);
@@ -78,11 +90,9 @@ class WeightTest extends \PHPUnit\Framework\TestCase
         );
     }
 
-    /**
-     * @return array
-     */
-    public static function physicalTypesDataProvider()
+    protected function setUp(): void
     {
-        return [[\Magento\Catalog\Model\Product\Type\Simple::class], [\Magento\Bundle\Model\Product\Type::class]];
+        $this->_objectManager = Bootstrap::getObjectManager();
+        $this->_formFactory = $this->_objectManager->create(FormFactory::class);
     }
 }

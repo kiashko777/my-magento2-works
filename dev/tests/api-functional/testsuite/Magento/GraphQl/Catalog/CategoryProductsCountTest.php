@@ -51,21 +51,6 @@ class CategoryProductsCountTest extends GraphQlAbstract
     private $categoryLinkManagement;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $objectManager = ObjectManager::getInstance();
-        $this->productRepository = $objectManager->create(ProductRepositoryInterface::class);
-        $this->resourceConfig = $objectManager->get(Config::class);
-        $this->scopeConfig = $objectManager->get(ScopeConfigInterface::class);
-        $this->reinitConfig = $objectManager->get(ReinitableConfigInterface::class);
-        $this->categoryLinkManagement = $objectManager->get(CategoryLinkManagementInterface::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Catalog/_files/product_simple.php
      */
     public function testCategoryWithSaleableProduct()
@@ -277,5 +262,20 @@ QUERY;
         $response = $this->graphQlQuery($query);
 
         self::assertEquals(0, $response['category']['product_count']);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $objectManager = ObjectManager::getInstance();
+        $this->productRepository = $objectManager->create(ProductRepositoryInterface::class);
+        $this->resourceConfig = $objectManager->get(Config::class);
+        $this->scopeConfig = $objectManager->get(ScopeConfigInterface::class);
+        $this->reinitConfig = $objectManager->get(ReinitableConfigInterface::class);
+        $this->categoryLinkManagement = $objectManager->get(CategoryLinkManagementInterface::class);
     }
 }

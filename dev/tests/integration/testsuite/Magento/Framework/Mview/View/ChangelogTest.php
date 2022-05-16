@@ -3,20 +3,28 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Mview\View;
 
+use Exception;
 use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\DB\Adapter\AdapterInterface;
+use Magento\Framework\DB\Ddl\Table;
+use Magento\Framework\Exception\RuntimeException;
 use Magento\Framework\Mview\View;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test Class for \Magento\Framework\Mview\View\Changelog
  *
  * @magentoDbIsolation disabled
  */
-class ChangelogTest extends \PHPUnit\Framework\TestCase
+class ChangelogTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
 
@@ -28,7 +36,7 @@ class ChangelogTest extends \PHPUnit\Framework\TestCase
     /**
      * Write connection adapter
      *
-     * @var \Magento\Framework\DB\Adapter\AdapterInterface
+     * @var AdapterInterface
      */
     protected $connection;
 
@@ -36,32 +44,6 @@ class ChangelogTest extends \PHPUnit\Framework\TestCase
      * @var Changelog
      */
     protected $model;
-
-    /**
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->resource = $this->objectManager->get(ResourceConnection::class);
-        $this->connection = $this->resource->getConnection();
-
-        $this->model = $this->objectManager->create(
-            Changelog::class,
-            ['resource' => $this->resource]
-        );
-        $this->model->setViewId('test_view_id_1');
-        $this->model->create();
-    }
-
-    /**
-     * @return void
-     * @throws ChangelogTableNotExistsException
-     */
-    protected function tearDown(): void
-    {
-        $this->model->drop();
-    }
 
     /**
      * Test for create() and drop() methods
@@ -89,7 +71,7 @@ class ChangelogTest extends \PHPUnit\Framework\TestCase
      * Test for getVersion() method
      *
      * @return void
-     * @throws \Exception
+     * @throws Exception
      */
     public function testGetVersion()
     {
@@ -111,7 +93,7 @@ class ChangelogTest extends \PHPUnit\Framework\TestCase
      *
      * @return void
      * @throws ChangelogTableNotExistsException
-     * @throws \Magento\Framework\Exception\RuntimeException
+     * @throws RuntimeException
      */
     public function testClear()
     {
@@ -122,32 +104,6 @@ class ChangelogTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(1, $this->model->getVersion());
         $this->model->clear(1);
         $this->assertEquals(1, $this->model->getVersion()); //the same that a table is empty
-    }
-
-    /**
-     * Create entity table for MView
-     *
-     * @param string $tableName
-     * @return void
-     */
-    private function createEntityTable(string $tableName)
-    {
-        $table = $this->resource->getConnection()->newTable(
-            $tableName
-        )->addColumn(
-            'entity_id',
-            \Magento\Framework\DB\Ddl\Table::TYPE_INTEGER,
-            null,
-            ['identity' => true, 'unsigned' => true, 'nullable' => false, 'primary' => true],
-            'Version ID'
-        )->addColumn(
-            'additional_column',
-            \Magento\Framework\DB\Ddl\Table::TYPE_INTEGER,
-            null,
-            ['unsigned' => true, 'nullable' => false, 'default' => '0'],
-            'Entity ID'
-        );
-        $this->resource->getConnection()->createTable($table);
     }
 
     public function testAdditionalColumns()
@@ -173,11 +129,37 @@ class ChangelogTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Create entity table for MView
+     *
+     * @param string $tableName
+     * @return void
+     */
+    private function createEntityTable(string $tableName)
+    {
+        $table = $this->resource->getConnection()->newTable(
+            $tableName
+        )->addColumn(
+            'entity_id',
+            Table::TYPE_INTEGER,
+            null,
+            ['identity' => true, 'unsigned' => true, 'nullable' => false, 'primary' => true],
+            'Version ID'
+        )->addColumn(
+            'additional_column',
+            Table::TYPE_INTEGER,
+            null,
+            ['unsigned' => true, 'nullable' => false, 'default' => '0'],
+            'Entity ID'
+        );
+        $this->resource->getConnection()->createTable($table);
+    }
+
+    /**
      * Test for getList() method
      *
      * @return void
      * @throws ChangelogTableNotExistsException
-     * @throws \Magento\Framework\Exception\RuntimeException
+     * @throws RuntimeException
      */
     public function testGetList()
     {
@@ -201,5 +183,31 @@ class ChangelogTest extends \PHPUnit\Framework\TestCase
         $this->assertCount(1, $this->model->getList(0, 2));//distinct entity_ids
         $this->assertCount(1, $this->model->getList(2, 3));//distinct entity_ids
         $this->assertCount(0, $this->model->getList(4, 3));//because fromVersionId > toVersionId
+    }
+
+    /**
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->resource = $this->objectManager->get(ResourceConnection::class);
+        $this->connection = $this->resource->getConnection();
+
+        $this->model = $this->objectManager->create(
+            Changelog::class,
+            ['resource' => $this->resource]
+        );
+        $this->model->setViewId('test_view_id_1');
+        $this->model->create();
+    }
+
+    /**
+     * @return void
+     * @throws ChangelogTableNotExistsException
+     */
+    protected function tearDown(): void
+    {
+        $this->model->drop();
     }
 }

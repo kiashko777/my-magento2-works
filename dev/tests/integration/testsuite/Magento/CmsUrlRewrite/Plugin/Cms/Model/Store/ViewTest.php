@@ -68,20 +68,6 @@ class ViewTest extends TestCase
     private $cmsPageUrlPathGenerator;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->urlFinder = $this->objectManager->create(UrlFinderInterface::class);
-        $this->storeFactory = $this->objectManager->create(StoreFactory::class);
-        $this->urlPersist = $this->objectManager->create(UrlPersistInterface::class);
-        $this->urlRewriteFactory = $this->objectManager->create(UrlRewriteFactory::class);
-        $this->pageRepository = $this->objectManager->create(PageRepositoryInterface::class);
-        $this->cmsPageUrlPathGenerator = $this->objectManager->create(CmsPageUrlPathGenerator::class);
-    }
-
-    /**
      * Test of replacing cms page url rewrites on create and delete store
      *
      * @magentoDataFixture Magento/Cms/_files/two_cms_page_with_same_url_for_different_stores.php
@@ -99,23 +85,6 @@ class ViewTest extends TestCase
     }
 
     /**
-     * Assert url rewrites count by store id and request path
-     *
-     * @param int $storeId
-     * @param string $requestPath
-     * @param int $expectedCount
-     */
-    private function assertUrlRewritesCount(int $storeId, string $requestPath, int $expectedCount): void
-    {
-        $data = [
-            UrlRewrite::REQUEST_PATH => $requestPath,
-            UrlRewrite::STORE_ID => $storeId
-        ];
-        $urlRewrites = $this->urlFinder->findAllByData($data);
-        $this->assertCount($expectedCount, $urlRewrites);
-    }
-
-    /**
      * Create test store
      */
     private function createStore(): int
@@ -130,17 +99,20 @@ class ViewTest extends TestCase
     }
 
     /**
-     * Delete test store
+     * Assert url rewrites count by store id and request path
      *
      * @param int $storeId
+     * @param string $requestPath
+     * @param int $expectedCount
      */
-    private function deleteStore(int $storeId): void
+    private function assertUrlRewritesCount(int $storeId, string $requestPath, int $expectedCount): void
     {
-        $store = $this->storeFactory->create();
-        $store->load($storeId);
-        if ($store !== null) {
-            $store->delete();
-        }
+        $data = [
+            UrlRewrite::REQUEST_PATH => $requestPath,
+            UrlRewrite::STORE_ID => $storeId
+        ];
+        $urlRewrites = $this->urlFinder->findAllByData($data);
+        $this->assertCount($expectedCount, $urlRewrites);
     }
 
     /**
@@ -186,5 +158,33 @@ class ViewTest extends TestCase
         if ($store !== null) {
             $store->save();
         }
+    }
+
+    /**
+     * Delete test store
+     *
+     * @param int $storeId
+     */
+    private function deleteStore(int $storeId): void
+    {
+        $store = $this->storeFactory->create();
+        $store->load($storeId);
+        if ($store !== null) {
+            $store->delete();
+        }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->urlFinder = $this->objectManager->create(UrlFinderInterface::class);
+        $this->storeFactory = $this->objectManager->create(StoreFactory::class);
+        $this->urlPersist = $this->objectManager->create(UrlPersistInterface::class);
+        $this->urlRewriteFactory = $this->objectManager->create(UrlRewriteFactory::class);
+        $this->pageRepository = $this->objectManager->create(PageRepositoryInterface::class);
+        $this->cmsPageUrlPathGenerator = $this->objectManager->create(CmsPageUrlPathGenerator::class);
     }
 }

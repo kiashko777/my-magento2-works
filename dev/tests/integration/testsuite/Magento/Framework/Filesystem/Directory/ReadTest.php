@@ -5,16 +5,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Filesystem\Directory;
 
 use Magento\Framework\Exception\ValidatorException;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class ReadTest
  * Test for Magento\Framework\Filesystem\Directory\Read class
  */
-class ReadTest extends \PHPUnit\Framework\TestCase
+class ReadTest extends TestCase
 {
     /**
      * Test instance of Read
@@ -23,6 +25,22 @@ class ReadTest extends \PHPUnit\Framework\TestCase
     {
         $dir = $this->getDirectoryInstance('foo');
         $this->assertTrue($dir instanceof ReadInterface);
+    }
+
+    /**
+     * Get readable file instance
+     * Get full path for files located in _files directory
+     *
+     * @param string $path
+     * @return Read
+     */
+    private function getDirectoryInstance($path)
+    {
+        $fullPath = __DIR__ . '/../_files/' . $path;
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var ReadFactory $directoryFactory */
+        $directoryFactory = $objectManager->create(ReadFactory::class);
+        return $directoryFactory->create($fullPath);
     }
 
     /**
@@ -531,22 +549,6 @@ class ReadTest extends \PHPUnit\Framework\TestCase
             $exceptions++;
         }
         $this->assertEquals(3, $exceptions);
-    }
-
-    /**
-     * Get readable file instance
-     * Get full path for files located in _files directory
-     *
-     * @param string $path
-     * @return Read
-     */
-    private function getDirectoryInstance($path)
-    {
-        $fullPath = __DIR__ . '/../_files/' . $path;
-        $objectManager = Bootstrap::getObjectManager();
-        /** @var \Magento\Framework\Filesystem\Directory\ReadFactory $directoryFactory */
-        $directoryFactory = $objectManager->create(\Magento\Framework\Filesystem\Directory\ReadFactory::class);
-        return $directoryFactory->create($fullPath);
     }
 
     /**

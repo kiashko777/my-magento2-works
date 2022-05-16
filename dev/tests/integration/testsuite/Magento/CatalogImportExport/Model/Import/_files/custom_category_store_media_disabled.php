@@ -5,10 +5,18 @@
  */
 declare(strict_types=1);
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\Catalog\Model\Category;
+use Magento\Eav\Model\AttributeSetManagement;
+use Magento\Eav\Model\Entity\Attribute\Set;
+use Magento\Store\Model\Store;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\Store\Model\Website;
+use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var $category \Magento\Catalog\Model\Category */
-$category = $objectManager->create(\Magento\Catalog\Model\Category::class);
+$objectManager = Bootstrap::getObjectManager();
+
+/** @var $category Category */
+$category = $objectManager->create(Category::class);
 $category->isObjectNew(true);
 $category->setName('MV')
     ->setParentId(2)
@@ -17,15 +25,15 @@ $category->setName('MV')
     ->setPosition(1)
     ->save();
 
-$website = $objectManager->create(\Magento\Store\Model\Website::class);
+$website = $objectManager->create(Website::class);
 $website->setData(['code' => 'mascota', 'name' => 'mascota', 'default_group_id' => '1', 'is_default' => '0']);
 $website->save();
 
-$groupId = $objectManager->get(\Magento\Store\Model\StoreManagerInterface::class)
+$groupId = $objectManager->get(StoreManagerInterface::class)
     ->getWebsite()
     ->getDefaultGroupId();
 
-$store = $objectManager->create(\Magento\Store\Model\Store::class)
+$store = $objectManager->create(Store::class)
     ->setCode('mascota')
     ->setWebsiteId($website->getId())
     ->setGroupId($groupId)
@@ -34,16 +42,16 @@ $store = $objectManager->create(\Magento\Store\Model\Store::class)
     ->save();
 
 $entityTypeCode = 'catalog_product';
-$entityType     = $objectManager->create(\Magento\Eav\Model\Entity\Type::class)->loadByCode($entityTypeCode);
-$defaultSetId   = $entityType->getDefaultAttributeSetId();
+$entityType = $objectManager->create(\Magento\Eav\Model\Entity\Type::class)->loadByCode($entityTypeCode);
+$defaultSetId = $entityType->getDefaultAttributeSetId();
 
-$attributeSet = $objectManager->create(\Magento\Eav\Model\Entity\Attribute\Set::class);
+$attributeSet = $objectManager->create(Set::class);
 $data = [
-    'attribute_set_name'    => 'vinos',
-    'entity_type_id'        => $entityType->getId(),
-    'sort_order'            => 200,
+    'attribute_set_name' => 'vinos',
+    'entity_type_id' => $entityType->getId(),
+    'sort_order' => 200,
 ];
 $attributeSet->setData($data);
 
-$objectManager->create(\Magento\Eav\Model\AttributeSetManagement::class)
+$objectManager->create(AttributeSetManagement::class)
     ->create($entityTypeCode, $attributeSet, $defaultSetId);

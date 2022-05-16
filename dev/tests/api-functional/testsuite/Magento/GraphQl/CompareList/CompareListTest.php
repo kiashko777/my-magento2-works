@@ -31,12 +31,6 @@ class CompareListTest extends GraphQlAbstract
      */
     private $customerTokenService;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
-        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
-    }
     /**
      * Create compare list without product
      */
@@ -45,6 +39,36 @@ class CompareListTest extends GraphQlAbstract
         $response = $this->createCompareList();
         $uid = $response['createCompareList']['uid'];
         $this->uidAssertion($uid);
+    }
+
+    /**
+     * Create compare list
+     *
+     * @return array
+     */
+    private function createCompareList(): array
+    {
+        $mutation = <<<MUTATION
+mutation{
+  createCompareList {
+	 uid
+	 item_count
+	 attributes{code label}
+  }
+}
+MUTATION;
+        return $this->graphQlMutation($mutation);
+    }
+
+    /**
+     * Assert UID
+     *
+     * @param string $uid
+     */
+    private function uidAssertion(string $uid)
+    {
+        $this->assertIsString($uid);
+        $this->assertEquals(32, strlen($uid));
     }
 
     /**
@@ -57,7 +81,7 @@ class CompareListTest extends GraphQlAbstract
         $product1 = $this->productRepository->get(self::PRODUCT_SKU_1);
         $product2 = $this->productRepository->get(self::PRODUCT_SKU_2);
 
-        $mutation =  <<<MUTATION
+        $mutation = <<<MUTATION
 mutation{
   createCompareList(input:{products: [{$product1->getId()}, {$product2->getId()}]}){
 	 uid
@@ -76,6 +100,19 @@ MUTATION;
     }
 
     /**
+     * Assert products
+     *
+     * @param array $items
+     */
+    private function itemsAssertion(array $items)
+    {
+        $this->assertArrayHasKey(0, $items);
+        $this->assertArrayHasKey(1, $items);
+        $this->assertEquals(self::PRODUCT_SKU_1, $items[0]['product']['sku']);
+        $this->assertEquals(self::PRODUCT_SKU_2, $items[1]['product']['sku']);
+    }
+
+    /**
      * Add products to compare list
      *
      * @magentoApiDataFixture Magento/Catalog/_files/multiple_products.php
@@ -84,30 +121,58 @@ MUTATION;
     {
         $compareList = $this->createCompareList();
         $uid = $compareList['createCompareList']['uid'];
-        $this->assertEquals(0, $compareList['createCompareList']['item_count'],'Incorrect count');
+        $this->assertEquals(0, $compareList['createCompareList']['item_count'], 'Incorrect count');
         $this->uidAssertion($uid);
         $response = $this->addProductsToCompareList($uid);
         $resultUid = $response['addProductsToCompareList']['uid'];
         $this->uidAssertion($resultUid);
         $this->itemsAssertion($response['addProductsToCompareList']['items']);
-        $this->assertEquals(2, $response['addProductsToCompareList']['item_count'],'Incorrect count');
+        $this->assertEquals(2, $response['addProductsToCompareList']['item_count'], 'Incorrect count');
         $this->assertResponseFields(
             $response['addProductsToCompareList']['attributes'],
             [
                 [
-                    'code'=> 'sku',
-                    'label'=> 'SKU'
+                    'code' => 'sku',
+                    'label' => 'SKU'
                 ],
                 [
-                    'code'=> 'description',
-                    'label'=> 'Description'
+                    'code' => 'description',
+                    'label' => 'Description'
                 ],
                 [
-                    'code'=> 'short_description',
-                    'label'=> 'Short Description'
+                    'code' => 'short_description',
+                    'label' => 'Short Description'
                 ]
             ]
         );
+    }
+
+    /**
+     * Add products to compare list
+     *
+     * @param $uid
+     *
+     * @return array
+     */
+    private function addProductsToCompareList($uid): array
+    {
+        $product1 = $this->productRepository->get(self::PRODUCT_SKU_1);
+        $product2 = $this->productRepository->get(self::PRODUCT_SKU_2);
+        $addProductsToCompareList = <<<MUTATION
+mutation{
+    addProductsToCompareList(input: { uid: "{$uid}", products: [{$product1->getId()}, {$product2->getId()}]}) {
+        uid
+        item_count
+        attributes{code label}
+        items {
+            product {
+                sku
+            }
+        }
+    }
+}
+MUTATION;
+        return $this->graphQlMutation($addProductsToCompareList);
     }
 
     /**
@@ -124,7 +189,7 @@ MUTATION;
         $this->itemsAssertion($addProducts['addProductsToCompareList']['items']);
         $this->assertCount(2, $addProducts['addProductsToCompareList']['items']);
         $product = $this->productRepository->get(self::PRODUCT_SKU_1);
-        $removeFromCompareList =  <<<MUTATION
+        $removeFromCompareList = <<<MUTATION
 mutation{
   removeProductsFromCompareList(input: {uid: "{$uid}", products: [{$product->getId()}]}) {
     uid
@@ -152,7 +217,7 @@ MUTATION;
         $this->uidAssertion($uid);
         $addProducts = $this->addProductsToCompareList($uid);
         $this->itemsAssertion($addProducts['addProductsToCompareList']['items']);
-        $query =  <<<QUERY
+        $query = <<<QUERY
 {
   compareList(uid: "{$uid}") {
     uid
@@ -180,7 +245,7 @@ QUERY;
         $this->uidAssertion($uid);
         $addProducts = $this->addProductsToCompareList($uid);
         $this->itemsAssertion($addProducts['addProductsToCompareList']['items']);
-        $deleteCompareList =  <<<MUTATION
+        $deleteCompareList = <<<MUTATION
 mutation{
   deleteCompareList(uid:"{$uid}") {
     result
@@ -267,6 +332,20 @@ MUTATION;
     }
 
     /**
+     * Get customer Header
+     *
+     * @param string $email
+     * @param string $password
+     *
+     * @return array
+     */
+    private function getCustomerAuthHeaders(string $email, string $password): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($email, $password);
+        return ['Authorization' => 'Bearer ' . $customerToken];
+    }
+
+    /**
      * Assign compare list of one customer to another customer
      *
      * @magentoApiDataFixture Magento/Catalog/_files/multiple_products.php
@@ -301,7 +380,7 @@ MUTATION;
             $this->getCustomerAuthHeaders('customer_two@example.com', 'password')
         );
 
-        $deleteCompareList =  <<<MUTATION
+        $deleteCompareList = <<<MUTATION
 mutation{
   deleteCompareList(uid:"{$uidcustomer2}") {
     result
@@ -321,42 +400,9 @@ MUTATION;
 
     }
 
-    /**
-     * Get customer Header
-     *
-     * @param string $email
-     * @param string $password
-     *
-     * @return array
-     */
-    private function getCustomerAuthHeaders(string $email, string $password): array
-    {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($email, $password);
-        return ['Authorization' => 'Bearer ' . $customerToken];
-    }
-
-    /**
-     * Create compare list
-     *
-     * @return array
-     */
-    private function createCompareList(): array
-    {
-        $mutation =  <<<MUTATION
-mutation{
-  createCompareList {
-	 uid
-	 item_count
-	 attributes{code label}
-  }
-}
-MUTATION;
-        return $this->graphQlMutation($mutation);
-    }
-
     private function createCompareListForCustomer(string $username, string $password): string
     {
-        $compareListCustomer =  <<<MUTATION
+        $compareListCustomer = <<<MUTATION
 mutation{
   createCompareList {
 	 uid
@@ -373,55 +419,10 @@ MUTATION;
         return $response['createCompareList']['uid'];
     }
 
-    /**
-     * Add products to compare list
-     *
-     * @param $uid
-     *
-     * @return array
-     */
-    private function addProductsToCompareList($uid): array
+    protected function setUp(): void
     {
-        $product1 = $this->productRepository->get(self::PRODUCT_SKU_1);
-        $product2 = $this->productRepository->get(self::PRODUCT_SKU_2);
-        $addProductsToCompareList =  <<<MUTATION
-mutation{
-    addProductsToCompareList(input: { uid: "{$uid}", products: [{$product1->getId()}, {$product2->getId()}]}) {
-        uid
-        item_count
-        attributes{code label}
-        items {
-            product {
-                sku
-            }
-        }
-    }
-}
-MUTATION;
-        return $this->graphQlMutation($addProductsToCompareList);
-    }
-
-    /**
-     * Assert UID
-     *
-     * @param string $uid
-     */
-    private function uidAssertion(string $uid)
-    {
-        $this->assertIsString($uid);
-        $this->assertEquals(32, strlen($uid));
-    }
-
-    /**
-     * Assert products
-     *
-     * @param array $items
-     */
-    private function itemsAssertion(array $items)
-    {
-        $this->assertArrayHasKey(0, $items);
-        $this->assertArrayHasKey(1, $items);
-        $this->assertEquals(self::PRODUCT_SKU_1, $items[0]['product']['sku']);
-        $this->assertEquals(self::PRODUCT_SKU_2, $items[1]['product']['sku']);
+        $objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
+        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
     }
 }

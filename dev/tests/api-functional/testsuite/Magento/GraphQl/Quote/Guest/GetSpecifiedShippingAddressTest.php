@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Quote\Guest;
 
+use Exception;
 use Magento\GraphQl\Quote\GetMaskedQuoteIdByReservedOrderId;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
@@ -20,15 +21,6 @@ class GetSpecifiedShippingAddressTest extends GraphQlAbstract
      * @var GetMaskedQuoteIdByReservedOrderId
      */
     private $getMaskedQuoteIdByReservedOrderId;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-    }
 
     /**
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
@@ -69,6 +61,40 @@ class GetSpecifiedShippingAddressTest extends GraphQlAbstract
     }
 
     /**
+     * @param string $maskedQuoteId
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId): string
+    {
+        return <<<QUERY
+{
+  cart(cart_id: "$maskedQuoteId") {
+    shipping_addresses {
+      firstname
+      lastname
+      company
+      street
+      city
+      region
+      {
+        code
+        label
+      }
+      postcode
+      country
+      {
+        code
+        label
+      }
+      telephone
+      __typename
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
      * @magentoApiDataFixture Magento/GraphQl/Quote/_files/guest/create_empty_cart.php
      * @magentoApiDataFixture Magento/GraphQl/Quote/_files/add_simple_product.php
@@ -89,7 +115,7 @@ class GetSpecifiedShippingAddressTest extends GraphQlAbstract
      */
     public function testGetShippingAddressOfNonExistentCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Could not find a cart with ID "non_existent_masked_id"');
 
         $maskedQuoteId = 'non_existent_masked_id';
@@ -117,36 +143,11 @@ class GetSpecifiedShippingAddressTest extends GraphQlAbstract
     }
 
     /**
-     * @param string $maskedQuoteId
-     * @return string
+     * @inheritdoc
      */
-    private function getQuery(string $maskedQuoteId): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-{
-  cart(cart_id: "$maskedQuoteId") {
-    shipping_addresses {
-      firstname
-      lastname
-      company
-      street
-      city
-      region 
-      {
-        code
-        label
-      }
-      postcode
-      country 
-      {
-        code
-        label
-      }
-      telephone
-      __typename
-    }
-  }
-}
-QUERY;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
     }
 }

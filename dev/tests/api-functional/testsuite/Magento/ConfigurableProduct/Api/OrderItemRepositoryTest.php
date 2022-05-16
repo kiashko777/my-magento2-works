@@ -3,8 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\ConfigurableProduct\Api;
 
+use Magento\Framework\Api\FilterBuilder;
+use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Item;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 class OrderItemRepositoryTest extends WebapiAbstract
@@ -17,29 +25,24 @@ class OrderItemRepositoryTest extends WebapiAbstract
     const ORDER_INCREMENT_ID = '100000001';
 
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoApiDataFixture Magento/ConfigurableProduct/_files/order_item_with_configurable_and_options.php
      */
     public function testGet()
     {
-        /** @var \Magento\Sales\Model\Order $order */
-        $order = $this->objectManager->create(\Magento\Sales\Model\Order::class);
+        /** @var Order $order */
+        $order = $this->objectManager->create(Order::class);
         $order->loadByIncrementId(self::ORDER_INCREMENT_ID);
         $orderItem = current($order->getItems());
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/' . $orderItem->getId(),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -55,18 +58,42 @@ class OrderItemRepositoryTest extends WebapiAbstract
     }
 
     /**
+     * @param Item $orderItem
+     * @param array $response
+     * @return void
+     */
+    protected function assertOrderItem(Item $orderItem, array $response)
+    {
+        $expected = $orderItem->getBuyRequest()->getSuperAttribute();
+
+        $this->assertArrayHasKey('product_option', $response);
+        $this->assertArrayHasKey('extension_attributes', $response['product_option']);
+        $this->assertArrayHasKey('configurable_item_options', $response['product_option']['extension_attributes']);
+
+        $actualOptions = $response['product_option']['extension_attributes']['configurable_item_options'];
+
+        $this->assertIsArray($actualOptions);
+        $this->assertIsArray($actualOptions[0]);
+        $this->assertArrayHasKey('option_id', $actualOptions[0]);
+        $this->assertArrayHasKey('option_value', $actualOptions[0]);
+
+        $this->assertEquals(key($expected), $actualOptions[0]['option_id']);
+        $this->assertEquals(current($expected), $actualOptions[0]['option_value']);
+    }
+
+    /**
      * @magentoApiDataFixture Magento/ConfigurableProduct/_files/order_item_with_configurable_and_options.php
      */
     public function testGetList()
     {
-        /** @var \Magento\Sales\Model\Order $order */
-        $order = $this->objectManager->create(\Magento\Sales\Model\Order::class);
+        /** @var Order $order */
+        $order = $this->objectManager->create(Order::class);
         $order->loadByIncrementId(self::ORDER_INCREMENT_ID);
 
-        /** @var $searchCriteriaBuilder  \Magento\Framework\Api\SearchCriteriaBuilder */
-        $searchCriteriaBuilder = $this->objectManager->create(\Magento\Framework\Api\SearchCriteriaBuilder::class);
-        /** @var $filterBuilder  \Magento\Framework\Api\FilterBuilder */
-        $filterBuilder = $this->objectManager->create(\Magento\Framework\Api\FilterBuilder::class);
+        /** @var $searchCriteriaBuilder  SearchCriteriaBuilder */
+        $searchCriteriaBuilder = $this->objectManager->create(SearchCriteriaBuilder::class);
+        /** @var $filterBuilder  FilterBuilder */
+        $filterBuilder = $this->objectManager->create(FilterBuilder::class);
 
         $searchCriteriaBuilder->addFilters(
             [
@@ -81,7 +108,7 @@ class OrderItemRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '?' . http_build_query($requestData),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -99,27 +126,8 @@ class OrderItemRepositoryTest extends WebapiAbstract
         $this->assertOrderItem(current($order->getItems()), $response['items'][0]);
     }
 
-    /**
-     * @param \Magento\Sales\Model\Order\Item $orderItem
-     * @param array $response
-     * @return void
-     */
-    protected function assertOrderItem(\Magento\Sales\Model\Order\Item $orderItem, array $response)
+    protected function setUp(): void
     {
-        $expected = $orderItem->getBuyRequest()->getSuperAttribute();
-
-        $this->assertArrayHasKey('product_option', $response);
-        $this->assertArrayHasKey('extension_attributes', $response['product_option']);
-        $this->assertArrayHasKey('configurable_item_options', $response['product_option']['extension_attributes']);
-
-        $actualOptions = $response['product_option']['extension_attributes']['configurable_item_options'];
-
-        $this->assertIsArray($actualOptions);
-        $this->assertIsArray($actualOptions[0]);
-        $this->assertArrayHasKey('option_id', $actualOptions[0]);
-        $this->assertArrayHasKey('option_value', $actualOptions[0]);
-
-        $this->assertEquals(key($expected), $actualOptions[0]['option_id']);
-        $this->assertEquals(current($expected), $actualOptions[0]['option_value']);
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

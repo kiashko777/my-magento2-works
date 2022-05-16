@@ -14,6 +14,7 @@ use Magento\Eav\Api\Data\AttributeOptionInterface;
 use Magento\Framework\App\ObjectManager;
 use Magento\Framework\Setup\ModuleDataSetupInterface;
 use PHPUnit\Framework\TestCase;
+use ReflectionObject;
 
 /**
  * Tests coverage for \Magento\Eav\Setup\AddOptionToAttribute
@@ -45,19 +46,23 @@ class AddOptionToAttributeTest extends TestCase
      */
     private $setup;
 
-    protected function setUp(): void
+    /**
+     * @magentoDataFixture Magento/Eav/_files/attribute_with_options.php
+     */
+    public function testAddNewOptions()
     {
-        $objectManager = ObjectManager::getInstance();
-
-        $this->operation = $objectManager->get(AddOptionToAttribute::class);
-        /** @var ModuleDataSetupInterface $setup */
-        $this->setup = $objectManager->get(ModuleDataSetupInterface::class);
-        /** @var AttributeRepositoryInterface attrRepo */
-        $this->attrRepo = $objectManager->get(AttributeRepositoryInterface::class);
-        /** @var EavSetup $eavSetup */
-        $this->eavSetup = $objectManager->get(EavSetupFactory::class)
-                                        ->create(['setup' => $this->setup]);
-        $this->attributeId = $this->eavSetup->getAttributeId(Product::ENTITY, 'zzz');
+        $optionsBefore = $this->getAttributeOptions(false);
+        $this->operation->execute(
+            [
+                'values' => ['new1', 'new2'],
+                'attribute_id' => $this->attributeId
+            ]
+        );
+        $optionsAfter = $this->getAttributeOptions(false);
+        $this->assertEquals(count($optionsBefore) + 2, count($optionsAfter));
+        foreach ($optionsBefore as $option) {
+            $this->assertContainsEquals($option, $optionsAfter);
+        }
     }
 
     /**
@@ -83,25 +88,6 @@ class AddOptionToAttributeTest extends TestCase
         return $fetchPairs
             ? $this->setup->getConnection()->fetchPairs($select)
             : $this->setup->getConnection()->fetchAll($select);
-    }
-
-    /**
-     * @magentoDataFixture Magento/Eav/_files/attribute_with_options.php
-     */
-    public function testAddNewOptions()
-    {
-        $optionsBefore = $this->getAttributeOptions(false);
-        $this->operation->execute(
-            [
-                'values' => ['new1', 'new2'],
-                'attribute_id' => $this->attributeId
-            ]
-        );
-        $optionsAfter = $this->getAttributeOptions(false);
-        $this->assertEquals(count($optionsBefore) + 2, count($optionsAfter));
-        foreach ($optionsBefore as $option) {
-            $this->assertContainsEquals($option, $optionsAfter);
-        }
     }
 
     /**
@@ -226,13 +212,28 @@ class AddOptionToAttributeTest extends TestCase
         $this->assertSame(array_slice($optionsBefore, 1), array_slice($optionsAfter, 1));
     }
 
+    protected function setUp(): void
+    {
+        $objectManager = ObjectManager::getInstance();
+
+        $this->operation = $objectManager->get(AddOptionToAttribute::class);
+        /** @var ModuleDataSetupInterface $setup */
+        $this->setup = $objectManager->get(ModuleDataSetupInterface::class);
+        /** @var AttributeRepositoryInterface attrRepo */
+        $this->attrRepo = $objectManager->get(AttributeRepositoryInterface::class);
+        /** @var EavSetup $eavSetup */
+        $this->eavSetup = $objectManager->get(EavSetupFactory::class)
+            ->create(['setup' => $this->setup]);
+        $this->attributeId = $this->eavSetup->getAttributeId(Product::ENTITY, 'zzz');
+    }
+
     /**
      * @inheritDoc
      */
     protected function tearDown(): void
     {
         parent::tearDown();
-        $reflection = new \ReflectionObject($this);
+        $reflection = new ReflectionObject($this);
         foreach ($reflection->getProperties() as $property) {
             if (!$property->isStatic() && 0 !== strpos($property->getDeclaringClass()->getName(), 'PHPUnit')) {
                 $property->setAccessible(true);

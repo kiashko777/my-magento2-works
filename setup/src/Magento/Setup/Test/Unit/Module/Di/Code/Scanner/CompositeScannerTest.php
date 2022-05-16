@@ -18,11 +18,6 @@ class CompositeScannerTest extends TestCase
      */
     protected $_model;
 
-    protected function setUp(): void
-    {
-        $this->_model = new CompositeScanner();
-    }
-
     public function testScan()
     {
         $phpFiles = ['one/file/php', 'two/file/php'];
@@ -61,5 +56,10 @@ class CompositeScannerTest extends TestCase
         $expected = [$scannerPhpExpected, $scannerXmlExpected];
 
         $this->assertEquals($expected, array_values($actual));
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = new CompositeScanner();
     }
 }

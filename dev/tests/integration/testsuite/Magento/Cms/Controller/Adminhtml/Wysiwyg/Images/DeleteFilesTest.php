@@ -8,26 +8,31 @@ declare(strict_types=1);
 
 namespace Magento\Cms\Controller\Adminhtml\Wysiwyg\Images;
 
+use Magento\Cms\Helper\Wysiwyg\Images;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Exception\FileSystemException;
+use Magento\Framework\Filesystem;
 use Magento\Framework\Filesystem\Directory\DenyListPathValidator;
 use Magento\Framework\Filesystem\Directory\WriteFactory;
 use Magento\Framework\Filesystem\Directory\WriteInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for \Magento\Cms\Controller\Adminhtml\Wysiwyg\Images\DeleteFiles class.
  *
  * @magentoAppArea Adminhtml
  */
-class DeleteFilesTest extends \PHPUnit\Framework\TestCase
+class DeleteFilesTest extends TestCase
 {
     /**
-     * @var \Magento\Cms\Controller\Adminhtml\Wysiwyg\Images\DeleteFiles
+     * @var DeleteFiles
      */
     private $model;
 
     /**
-     * @var  \Magento\Cms\Helper\Wysiwyg\Images
+     * @var  Images
      */
     private $imagesHelper;
 
@@ -47,12 +52,12 @@ class DeleteFilesTest extends \PHPUnit\Framework\TestCase
     private $fileName = 'magento_small_image.jpg';
 
     /**
-     * @var \Magento\Framework\Filesystem
+     * @var Filesystem
      */
     private $filesystem;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
@@ -68,35 +73,16 @@ class DeleteFilesTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @inheritdoc
-     * @throws FileSystemException
      */
-    protected function setUp(): void
+    public static function tearDownAfterClass(): void
     {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $directoryName = 'directory1';
-        $this->directoryList = $this->objectManager->get(DirectoryList::class);
-        $this->filesystem = $this->objectManager->get(\Magento\Framework\Filesystem::class);
-        /** @var \Magento\Cms\Helper\Wysiwyg\Images $imagesHelper */
-        $this->imagesHelper = $this->objectManager->get(\Magento\Cms\Helper\Wysiwyg\Images::class);
-        $this->mediaDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::MEDIA);
-        $this->fullDirectoryPath = $this->imagesHelper->getStorageRoot() . $directoryName;
-        $this->mediaDirectory->create($this->mediaDirectory->getRelativePath($this->fullDirectoryPath));
-        $filePath =  $this->fullDirectoryPath . DIRECTORY_SEPARATOR . $this->fileName;
-        $fixtureDir = realpath(__DIR__ . '/../../../../../Catalog/_files');
-        copy($fixtureDir . '/' . $this->fileName, $filePath);
-        $path = $this->fullDirectoryPath . '/.htaccess';
-        $denyListPathValidator = $this->objectManager
-            ->create(DenyListPathValidator::class, ['driver' => $this->mediaDirectory->getDriver()]);
-        $denyListPathValidator->addException($path);
-        $bypassDenyListWriteFactory = $this->objectManager->create(WriteFactory::class, [
-            'denyListPathValidator' => $denyListPathValidator
-        ]);
-        $this->bypassDenyListWrite = $bypassDenyListWriteFactory
-            ->create($this->directoryList->getPath(DirectoryList::MEDIA));
-        if (!$this->bypassDenyListWrite->isFile($path)) {
-            $this->bypassDenyListWrite->writeFile($path, "Order deny,allow\nDeny from all");
+        $filesystem = Bootstrap::getObjectManager()
+            ->get(Filesystem::class);
+        /** @var WriteInterface $directory */
+        $directory = $filesystem->getDirectoryWrite(DirectoryList::MEDIA);
+        if ($directory->isExist('wysiwyg')) {
+            $directory->delete('wysiwyg');
         }
-        $this->model = $this->objectManager->get(\Magento\Cms\Controller\Adminhtml\Wysiwyg\Images\DeleteFiles::class);
     }
 
     /**
@@ -109,7 +95,7 @@ class DeleteFilesTest extends \PHPUnit\Framework\TestCase
      */
     public function testExecute(string $filename)
     {
-        $filePath =  $this->fullDirectoryPath . DIRECTORY_SEPARATOR . $filename;
+        $filePath = $this->fullDirectoryPath . DIRECTORY_SEPARATOR . $filename;
         $fixtureDir = realpath(__DIR__ . '/../../../../../Catalog/_files');
         copy($fixtureDir . '/' . $this->fileName, $filePath);
 
@@ -193,7 +179,7 @@ class DeleteFilesTest extends \PHPUnit\Framework\TestCase
         $directoryName = 'linked_media';
         $fullDirectoryPath = $this->filesystem->getDirectoryRead(DirectoryList::PUB)
                 ->getAbsolutePath() . DIRECTORY_SEPARATOR . $directoryName;
-        $filePath =  $fullDirectoryPath . DIRECTORY_SEPARATOR . $this->fileName;
+        $filePath = $fullDirectoryPath . DIRECTORY_SEPARATOR . $this->fileName;
         $fixtureDir = realpath(__DIR__ . '/../../../../../Catalog/_files');
         copy($fixtureDir . '/' . $this->fileName, $filePath);
 
@@ -207,15 +193,34 @@ class DeleteFilesTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @inheritdoc
+     * @throws FileSystemException
      */
-    public static function tearDownAfterClass(): void
+    protected function setUp(): void
     {
-        $filesystem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\Filesystem::class);
-        /** @var WriteInterface $directory */
-        $directory = $filesystem->getDirectoryWrite(DirectoryList::MEDIA);
-        if ($directory->isExist('wysiwyg')) {
-            $directory->delete('wysiwyg');
+        $this->objectManager = Bootstrap::getObjectManager();
+        $directoryName = 'directory1';
+        $this->directoryList = $this->objectManager->get(DirectoryList::class);
+        $this->filesystem = $this->objectManager->get(Filesystem::class);
+        /** @var Images $imagesHelper */
+        $this->imagesHelper = $this->objectManager->get(Images::class);
+        $this->mediaDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::MEDIA);
+        $this->fullDirectoryPath = $this->imagesHelper->getStorageRoot() . $directoryName;
+        $this->mediaDirectory->create($this->mediaDirectory->getRelativePath($this->fullDirectoryPath));
+        $filePath = $this->fullDirectoryPath . DIRECTORY_SEPARATOR . $this->fileName;
+        $fixtureDir = realpath(__DIR__ . '/../../../../../Catalog/_files');
+        copy($fixtureDir . '/' . $this->fileName, $filePath);
+        $path = $this->fullDirectoryPath . '/.htaccess';
+        $denyListPathValidator = $this->objectManager
+            ->create(DenyListPathValidator::class, ['driver' => $this->mediaDirectory->getDriver()]);
+        $denyListPathValidator->addException($path);
+        $bypassDenyListWriteFactory = $this->objectManager->create(WriteFactory::class, [
+            'denyListPathValidator' => $denyListPathValidator
+        ]);
+        $this->bypassDenyListWrite = $bypassDenyListWriteFactory
+            ->create($this->directoryList->getPath(DirectoryList::MEDIA));
+        if (!$this->bypassDenyListWrite->isFile($path)) {
+            $this->bypassDenyListWrite->writeFile($path, "Order deny,allow\nDeny from all");
         }
+        $this->model = $this->objectManager->get(DeleteFiles::class);
     }
 }

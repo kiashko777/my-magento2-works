@@ -9,9 +9,9 @@ var tasks = [],
     _ = require('underscore');
 
 function init(grunt, options) {
-    var _                   = require('underscore'),
-        stripJsonComments   = require('strip-json-comments'),
-        path                = require('path'),
+    var _ = require('underscore'),
+        stripJsonComments = require('strip-json-comments'),
+        path = require('path'),
         config,
         themes,
         file;

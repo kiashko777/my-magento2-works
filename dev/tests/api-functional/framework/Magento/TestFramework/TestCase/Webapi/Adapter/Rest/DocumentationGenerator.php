@@ -6,6 +6,8 @@
 
 namespace Magento\TestFramework\TestCase\Webapi\Adapter\Rest;
 
+use RuntimeException;
+
 /**
  * Generator for documentation
  *
@@ -28,7 +30,7 @@ class DocumentationGenerator
             return;
         }
         if (!is_writable(dirname($filePath))) {
-            throw new \RuntimeException('Cannot write to documentation directory.');
+            throw new RuntimeException('Cannot write to documentation directory.');
         } elseif (file_exists($filePath)) {
             $fileContent = file_get_contents($filePath);
             $endHtml = $this->generateHtmlFooter();
@@ -135,6 +137,27 @@ HTML;
     }
 
     /**
+     * Retrieve parameters of response/request
+     *
+     * @param array|string $parameters
+     * @return string
+     */
+    protected function retrieveParametersAsHtml($parameters)
+    {
+        $parametersAsHtml = '';
+        if (is_array($parameters)) {
+            foreach (array_keys($parameters) as $parameter) {
+                $parametersAsHtml = $parametersAsHtml . '<li><strong>' . $parameter .
+                    '</strong> (<em>Change type manually!</em>) TBD.</li>';
+            }
+        } else {
+            $parametersAsHtml = '<li><strong>' . 'scalar_value' .
+                '</strong> (<em>Change type manually!</em>) TBD.</li>';
+        }
+        return $parametersAsHtml;
+    }
+
+    /**
      * Generate the end html text;
      *
      * @return string
@@ -185,7 +208,7 @@ HTML;
      * Generate a name of file
      *
      * @return string|null
-     * @throws \RuntimeException
+     * @throws RuntimeException
      */
     protected function generateFileName()
     {
@@ -206,7 +229,7 @@ HTML;
         }
         if (!file_exists($pathToFile)) {
             if (!mkdir($pathToFile, 0755, true)) {
-                throw new \RuntimeException('Unable to create missing directory for REST documentation generation');
+                throw new RuntimeException('Unable to create missing directory for REST documentation generation');
             }
         }
         if ($fileName !== null) {
@@ -214,26 +237,5 @@ HTML;
             return $filePath;
         }
         return null;
-    }
-
-    /**
-     * Retrieve parameters of response/request
-     *
-     * @param array|string $parameters
-     * @return string
-     */
-    protected function retrieveParametersAsHtml($parameters)
-    {
-        $parametersAsHtml = '';
-        if (is_array($parameters)) {
-            foreach (array_keys($parameters) as $parameter) {
-                $parametersAsHtml = $parametersAsHtml . '<li><strong>' . $parameter .
-                    '</strong> (<em>Change type manually!</em>) TBD.</li>';
-            }
-        } else {
-            $parametersAsHtml = '<li><strong>' . 'scalar_value' .
-                '</strong> (<em>Change type manually!</em>) TBD.</li>';
-        }
-        return $parametersAsHtml;
     }
 }

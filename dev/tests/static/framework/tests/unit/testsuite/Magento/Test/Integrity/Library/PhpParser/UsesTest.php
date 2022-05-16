@@ -3,26 +3,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Library\PhpParser;
 
 use Magento\TestFramework\Integrity\Library\PhpParser\Uses;
+use PHPUnit\Framework\TestCase;
 
 /**
  */
-class UsesTest extends \PHPUnit\Framework\TestCase
+class UsesTest extends TestCase
 {
     /**
      * @var Uses
      */
     protected $uses;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->uses = new Uses();
-    }
 
     /**
      * Covered hasUses method
@@ -178,5 +172,13 @@ class UsesTest extends \PHPUnit\Framework\TestCase
                 ],
             ]
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->uses = new Uses();
     }
 }

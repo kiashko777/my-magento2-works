@@ -8,8 +8,8 @@ declare(strict_types=1);
 namespace Magento\Sales\Controller\Adminhtml\Order\Creditmemo;
 
 use Magento\Sales\Api\Data\CreditmemoInterface;
-use Magento\Sales\Model\ResourceModel\Order\Creditmemo\CollectionFactory;
 use Magento\Sales\Controller\Adminhtml\Order\ExportBase;
+use Magento\Sales\Model\ResourceModel\Order\Creditmemo\CollectionFactory;
 
 /**
  * Tests for creditmemo export via admin grids.
@@ -20,15 +20,6 @@ class ExportTest extends ExportBase
      * @var CollectionFactory
      */
     private $creditmemoCollectionFactory;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->creditmemoCollectionFactory = $this->_objectManager->get(CollectionFactory::class);
-    }
 
     /**
      * @magentoDbIsolation disabled
@@ -44,9 +35,10 @@ class ExportTest extends ExportBase
      */
     public function testExportCreditmemo(
         string $format,
-        bool $addIdToUrl,
+        bool   $addIdToUrl,
         string $namespace
-    ): void {
+    ): void
+    {
         $order = $this->getOrder('200000001');
         $url = $this->getExportUrl($format, $addIdToUrl ? (int)$order->getId() : null);
         $response = $this->dispatchExport(
@@ -65,6 +57,22 @@ class ExportTest extends ExportBase
             $this->prepareDate($order->getCreatedAt(), 'America/Chicago'),
             $exportedCreditmemo['Order Date']
         );
+    }
+
+    /**
+     * Returns creditmemo by increment id.
+     *
+     * @param string $incrementId
+     * @return CreditmemoInterface
+     */
+    private function getCreditmemo(string $incrementId): CreditmemoInterface
+    {
+        /** @var CreditmemoInterface $creditmemo */
+        $creditmemo = $this->creditmemoCollectionFactory->create()
+            ->addAttributeToFilter(CreditmemoInterface::INCREMENT_ID, $incrementId)
+            ->getFirstItem();
+
+        return $creditmemo;
     }
 
     /**
@@ -97,18 +105,11 @@ class ExportTest extends ExportBase
     }
 
     /**
-     * Returns creditmemo by increment id.
-     *
-     * @param string $incrementId
-     * @return CreditmemoInterface
+     * @inheritdoc
      */
-    private function getCreditmemo(string $incrementId): CreditmemoInterface
+    protected function setUp(): void
     {
-        /** @var CreditmemoInterface $creditmemo */
-        $creditmemo = $this->creditmemoCollectionFactory->create()
-            ->addAttributeToFilter(CreditmemoInterface::INCREMENT_ID, $incrementId)
-            ->getFirstItem();
-
-        return $creditmemo;
+        parent::setUp();
+        $this->creditmemoCollectionFactory = $this->_objectManager->get(CollectionFactory::class);
     }
 }

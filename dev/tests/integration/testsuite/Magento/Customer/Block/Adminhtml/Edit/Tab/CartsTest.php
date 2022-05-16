@@ -6,37 +6,32 @@
 
 namespace Magento\Customer\Block\Adminhtml\Edit\Tab;
 
+use Magento\Backend\Block\Template\Context;
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\View\LayoutInterface;
+use Magento\Store\Model\StoreManager;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
 /**
  * Magento\Customer\Block\Adminhtml\Edit\Tab\Carts
  *
  * @magentoAppArea Adminhtml
  */
-class CartsTest extends \PHPUnit\Framework\TestCase
+class CartsTest extends TestCase
 {
     /** @var Carts */
     private $_block;
 
-    /** @var \Magento\Customer\Api\CustomerRepositoryInterface */
+    /** @var CustomerRepositoryInterface */
     private $_customerRepository;
 
-    /** @var \Magento\Backend\Block\Template\Context */
+    /** @var Context */
     private $_context;
 
-    /** @var \Magento\Framework\ObjectManagerInterface */
+    /** @var ObjectManagerInterface */
     private $_objectManager;
-
-    protected function setUp(): void
-    {
-        $this->_objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->_customerRepository = $this->_objectManager->get(
-            \Magento\Customer\Api\CustomerRepositoryInterface::class
-        );
-        $storeManager = $this->_objectManager->get(\Magento\Store\Model\StoreManager::class);
-        $this->_context = $this->_objectManager->create(
-            \Magento\Backend\Block\Template\Context::class,
-            ['storeManager' => $storeManager]
-        );
-    }
 
     /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
@@ -48,9 +43,9 @@ class CartsTest extends \PHPUnit\Framework\TestCase
         $this->_context->getBackendSession()->setCustomerData($data);
 
         $this->_block = $this->_objectManager->get(
-            \Magento\Framework\View\LayoutInterface::class
+            LayoutInterface::class
         )->createBlock(
-            \Magento\Customer\Block\Adminhtml\Edit\Tab\Carts::class,
+            Carts::class,
             '',
             ['context' => $this->_context]
         );
@@ -74,9 +69,9 @@ class CartsTest extends \PHPUnit\Framework\TestCase
         $this->_context->getBackendSession()->setCustomerData($data);
 
         $this->_block = $this->_objectManager->get(
-            \Magento\Framework\View\LayoutInterface::class
+            LayoutInterface::class
         )->createBlock(
-            \Magento\Customer\Block\Adminhtml\Edit\Tab\Carts::class,
+            Carts::class,
             '',
             ['context' => $this->_context]
         );
@@ -91,6 +86,19 @@ class CartsTest extends \PHPUnit\Framework\TestCase
         $this->assertStringContainsString(
             'backend\u002Fcustomer\u002Fcart_product_composite_cart\u002Fupdate\u002Fkey',
             $html
+        );
+    }
+
+    protected function setUp(): void
+    {
+        $this->_objectManager = Bootstrap::getObjectManager();
+        $this->_customerRepository = $this->_objectManager->get(
+            CustomerRepositoryInterface::class
+        );
+        $storeManager = $this->_objectManager->get(StoreManager::class);
+        $this->_context = $this->_objectManager->create(
+            Context::class,
+            ['storeManager' => $storeManager]
         );
     }
 }

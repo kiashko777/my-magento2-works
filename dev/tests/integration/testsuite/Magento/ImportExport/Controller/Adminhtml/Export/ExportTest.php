@@ -40,30 +40,6 @@ class ExportTest extends AbstractBackendController
     private $deleteTopicRelatedMessages;
 
     /**
-     * @inheridoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->queueManagement = $this->_objectManager->get(QueueManagement::class);
-        $this->queueMessageResource = $this->_objectManager->get(Message::class);
-        $this->json = $this->_objectManager->get(SerializerInterface::class);
-        $this->deleteTopicRelatedMessages = $this->_objectManager->get(DeleteTopicRelatedMessages::class);
-        $this->deleteTopicRelatedMessages->execute(self::TOPIC_NAME);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->deleteTopicRelatedMessages->execute(self::TOPIC_NAME);
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoConfigFixture default_store admin/security/use_form_key 1
      *
      * @return void
@@ -95,5 +71,29 @@ class ExportTest extends AbstractBackendController
         $actualFilter = $this->json->unserialize($body['export_filter']);
         $this->assertCount(1, $actualFilter);
         $this->assertEquals($filter, reset($actualFilter));
+    }
+
+    /**
+     * @inheridoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->queueManagement = $this->_objectManager->get(QueueManagement::class);
+        $this->queueMessageResource = $this->_objectManager->get(Message::class);
+        $this->json = $this->_objectManager->get(SerializerInterface::class);
+        $this->deleteTopicRelatedMessages = $this->_objectManager->get(DeleteTopicRelatedMessages::class);
+        $this->deleteTopicRelatedMessages->execute(self::TOPIC_NAME);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->deleteTopicRelatedMessages->execute(self::TOPIC_NAME);
+
+        parent::tearDown();
     }
 }

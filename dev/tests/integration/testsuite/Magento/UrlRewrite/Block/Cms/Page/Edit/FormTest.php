@@ -3,41 +3,46 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\UrlRewrite\Block\Cms\Page\Edit;
+
+use Magento\Cms\Model\Page;
+use Magento\Framework\View\Layout;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for \Magento\UrlRewrite\Block\Cms\Page\Edit\FormTest
  * @magentoAppArea Adminhtml
  */
-class FormTest extends \PHPUnit\Framework\TestCase
+class FormTest extends TestCase
 {
     /**
-     * Get form instance
+     * Data provider for testing formPostInit
+     * 1) Cms page is selected
      *
-     * @param array $args
-     * @return \Magento\Framework\Data\Form
+     * @static
+     * @return array
+     * phpcs:disable Magento2.Functions.StaticFunction
      */
-    protected function _getFormInstance($args = [])
+    public static function formPostInitDataProvider()
     {
-        /** @var $layout \Magento\Framework\View\Layout */
-        $layout = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
-        );
-        /** @var $block \Magento\UrlRewrite\Block\Cms\Page\Edit\Form */
-        $block = $layout->createBlock(
-            \Magento\UrlRewrite\Block\Cms\Page\Edit\Form::class,
-            'block',
-            ['data' => $args]
-        );
-        $block->setTemplate(null);
-        $block->toHtml();
-        return $block->getForm();
+        return [
+            [
+                ['page_id' => 3, 'identifier' => 'cms-page'],
+                'cms_page/3',
+                'cms-page',
+                'cms/page/view/page_id/3',
+            ]
+        ];
     }
 
     /**
      * Check _formPostInit set expected fields values
      *
-     * @covers \Magento\UrlRewrite\Block\Cms\Page\Edit\Form::_formPostInit
+     * @covers       \Magento\UrlRewrite\Block\Cms\Page\Edit\Form::_formPostInit
      *
      * @dataProvider formPostInitDataProvider
      *
@@ -52,8 +57,8 @@ class FormTest extends \PHPUnit\Framework\TestCase
     {
         $args = [];
         if ($cmsPageData) {
-            $args['cms_page'] = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-                \Magento\Cms\Model\Page::class,
+            $args['cms_page'] = Bootstrap::getObjectManager()->create(
+                Page::class,
                 ['data' => $cmsPageData]
             );
         }
@@ -64,6 +69,29 @@ class FormTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($targetPath, $form->getElement('target_path')->getValue());
 
         $this->assertTrue($form->getElement('target_path')->getData('disabled'));
+    }
+
+    /**
+     * Get form instance
+     *
+     * @param array $args
+     * @return \Magento\Framework\Data\Form
+     */
+    protected function _getFormInstance($args = [])
+    {
+        /** @var $layout Layout */
+        $layout = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
+        );
+        /** @var $block Form */
+        $block = $layout->createBlock(
+            Form::class,
+            'block',
+            ['data' => $args]
+        );
+        $block->setTemplate(null);
+        $block->toHtml();
+        return $block->getForm();
     }
 
     /**
@@ -89,6 +117,32 @@ class FormTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Get CMS page model mock
+     *
+     * @param $stores
+     * @return MockObject|Page
+     */
+    protected function _getCmsPageWithStoresMock($stores)
+    {
+        $resourceMock = $this->getMockBuilder(
+            \Magento\Cms\Model\ResourceModel\Page::class
+        )->setMethods(
+            ['lookupStoreIds']
+        )->disableOriginalConstructor()->getMock();
+        $resourceMock->expects($this->any())->method('lookupStoreIds')->willReturn($stores);
+
+        $cmsPageMock = $this->getMockBuilder(
+            Page::class
+        )->setMethods(
+            ['getResource', 'getId']
+        )->disableOriginalConstructor()->getMock();
+        $cmsPageMock->expects($this->any())->method('getId')->willReturn(1);
+        $cmsPageMock->expects($this->any())->method('getResource')->willReturn($resourceMock);
+
+        return $cmsPageMock;
+    }
+
+    /**
      * Check exception is thrown when product does not associated with stores
      *
      * @magentoAppIsolation enabled
@@ -103,51 +157,5 @@ class FormTest extends \PHPUnit\Framework\TestCase
             'Please assign a website to the selected CMS page.',
             $form->getElement('store_id')->getAfterElementHtml()
         );
-    }
-
-    /**
-     * Data provider for testing formPostInit
-     * 1) Cms page is selected
-     *
-     * @static
-     * @return array
-     * phpcs:disable Magento2.Functions.StaticFunction
-     */
-    public static function formPostInitDataProvider()
-    {
-        return [
-            [
-                ['page_id' => 3, 'identifier' => 'cms-page'],
-                'cms_page/3',
-                'cms-page',
-                'cms/page/view/page_id/3',
-            ]
-        ];
-    }
-
-    /**
-     * Get CMS page model mock
-     *
-     * @param $stores
-     * @return \PHPUnit\Framework\MockObject\MockObject|\Magento\Cms\Model\Page
-     */
-    protected function _getCmsPageWithStoresMock($stores)
-    {
-        $resourceMock = $this->getMockBuilder(
-            \Magento\Cms\Model\ResourceModel\Page::class
-        )->setMethods(
-            ['lookupStoreIds']
-        )->disableOriginalConstructor()->getMock();
-        $resourceMock->expects($this->any())->method('lookupStoreIds')->willReturn($stores);
-
-        $cmsPageMock = $this->getMockBuilder(
-            \Magento\Cms\Model\Page::class
-        )->setMethods(
-            ['getResource', 'getId']
-        )->disableOriginalConstructor()->getMock();
-        $cmsPageMock->expects($this->any())->method('getId')->willReturn(1);
-        $cmsPageMock->expects($this->any())->method('getResource')->willReturn($resourceMock);
-
-        return $cmsPageMock;
     }
 }

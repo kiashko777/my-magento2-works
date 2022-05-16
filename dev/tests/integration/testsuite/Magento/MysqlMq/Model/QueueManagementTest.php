@@ -7,10 +7,14 @@ declare(strict_types=1);
 
 namespace Magento\MysqlMq\Model;
 
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
 /**
  * Test for Queue Management class.
  */
-class QueueManagementTest extends \PHPUnit\Framework\TestCase
+class QueueManagementTest extends TestCase
 {
     /**
      * @var QueueManagement
@@ -18,15 +22,9 @@ class QueueManagementTest extends \PHPUnit\Framework\TestCase
     protected $queueManagement;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->queueManagement = $this->objectManager->create(QueueManagement::class);
-    }
 
     /**
      * @magentoDataFixture Magento/MysqlMq/_files/queues.php
@@ -92,7 +90,7 @@ class QueueManagementTest extends \PHPUnit\Framework\TestCase
             $message[QueueManagement::MESSAGE_STATUS]
         );
 
-        $message= array_shift($messages);
+        $message = array_shift($messages);
         $this->assertEquals('topic2', $message[QueueManagement::MESSAGE_TOPIC]);
         $this->assertEquals('messageBody2', $message[QueueManagement::MESSAGE_BODY]);
         $this->assertEquals('queue1', $message[QueueManagement::MESSAGE_QUEUE_NAME]);
@@ -105,7 +103,7 @@ class QueueManagementTest extends \PHPUnit\Framework\TestCase
         $messages = $this->queueManagement->readMessages('queue2', $maxMessagesNumber);
         $this->assertCount($maxMessagesNumber, $messages);
 
-        $message= array_shift($messages);
+        $message = array_shift($messages);
         $this->assertEquals('topic2', $message[QueueManagement::MESSAGE_TOPIC]);
         $this->assertEquals('messageBody2', $message[QueueManagement::MESSAGE_BODY]);
         $this->assertEquals('queue2', $message[QueueManagement::MESSAGE_QUEUE_NAME]);
@@ -193,5 +191,11 @@ class QueueManagementTest extends \PHPUnit\Framework\TestCase
             $message = array_shift($messages);
             $this->assertEquals($messageRelationId, $message[QueueManagement::MESSAGE_QUEUE_RELATION_ID]);
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->queueManagement = $this->objectManager->create(QueueManagement::class);
     }
 }

@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Helper;
 
 use DOMDocument;
@@ -23,7 +24,7 @@ class Xpath
      */
     public static function getElementsCountForXpath($xpath, $html)
     {
-        $nodes = self::getElementsForXpath((string) $xpath, (string) $html);
+        $nodes = self::getElementsForXpath((string)$xpath, (string)$html);
         return $nodes->length;
     }
 
@@ -41,6 +42,17 @@ class Xpath
     }
 
     /**
+     * Get dom xpath instance
+     *
+     * @param string $html
+     * @return DOMXPath
+     */
+    public static function getDOMXpath(string $html): DOMXPath
+    {
+        return new DOMXPath(self::getDOMDocument($html));
+    }
+
+    /**
      * Get dom document instance
      *
      * @param string $html
@@ -53,16 +65,5 @@ class Xpath
         $domDocument->loadHTML($html);
         libxml_use_internal_errors(false);
         return $domDocument;
-    }
-
-    /**
-     * Get dom xpath instance
-     *
-     * @param string $html
-     * @return DOMXPath
-     */
-    public static function getDOMXpath(string $html): DOMXPath
-    {
-        return new DOMXPath(self::getDOMDocument($html));
     }
 }

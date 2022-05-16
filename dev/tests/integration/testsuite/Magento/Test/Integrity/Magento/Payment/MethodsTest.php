@@ -7,22 +7,37 @@
 /**
  * Locate all payment methods in the system and verify declaration of their blocks
  */
+
 namespace Magento\Test\Integrity\Magento\Payment;
 
+use Exception;
+use FilesystemIterator;
 use Magento\Framework\App\State;
+use Magento\Framework\View\Element\BlockFactory;
+use Magento\Framework\View\Element\Template;
+use Magento\Payment\Helper\Data;
+use Magento\Payment\Model\Info;
+use Magento\Payment\Model\Method\Substitution;
+use Magento\Payment\Model\MethodInterface;
+use Magento\Store\Model\Store;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use RegexIterator;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class MethodsTest extends \PHPUnit\Framework\TestCase
+class MethodsTest extends TestCase
 {
     /**
      * @param string $methodClass
      * @param string $code
      * @dataProvider paymentMethodDataProvider
      * @magentoAppArea frontend
-     * @throws \Exception on various assertion failures
+     * @throws Exception on various assertion failures
      */
     public function testPaymentMethod($code, $methodClass)
     {
@@ -30,14 +45,14 @@ class MethodsTest extends \PHPUnit\Framework\TestCase
             return;
         }
         Bootstrap::getObjectManager()->configure($this->getTestConfiguration());
-        /** @var $blockFactory \Magento\Framework\View\Element\BlockFactory */
+        /** @var $blockFactory BlockFactory */
         $blockFactory = Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\Element\BlockFactory::class
+            BlockFactory::class
         );
         $storeId = Bootstrap::getObjectManager()->get(
-            \Magento\Store\Model\StoreManagerInterface::class
+            StoreManagerInterface::class
         )->getStore()->getId();
-        /** @var $model \Magento\Payment\Model\MethodInterface */
+        /** @var $model MethodInterface */
         if (empty($methodClass)) {
             /**
              * Note that $code is not whatever the payment method getCode() returns
@@ -45,9 +60,9 @@ class MethodsTest extends \PHPUnit\Framework\TestCase
             $this->fail("Model of '{$code}' payment method is not found.");
         }
         $model = Bootstrap::getObjectManager()->create($methodClass);
-        if ($code == \Magento\Payment\Model\Method\Substitution::CODE) {
+        if ($code == Substitution::CODE) {
             $paymentInfo = $this->getMockBuilder(
-                \Magento\Payment\Model\Info::class
+                Info::class
             )->disableOriginalConstructor()->setMethods(
                 []
             )->getMock();
@@ -60,32 +75,32 @@ class MethodsTest extends \PHPUnit\Framework\TestCase
             );
             $model->setInfoInstance($paymentInfo);
         }
-        Bootstrap::getObjectManager()->get(\Magento\Framework\App\State::class)
+        Bootstrap::getObjectManager()->get(State::class)
             ->setMode(State::MODE_DEVELOPER);
         $this->assertNotEmpty($model->getTitle());
         foreach ([$model->getFormBlockType(), $model->getInfoBlockType()] as $blockClass) {
             $message = "Block class: {$blockClass}";
-            /** @var $block \Magento\Framework\View\Element\Template */
+            /** @var $block Template */
             $block = $blockFactory->createBlock($blockClass);
             $block->setArea('frontend');
             $this->assertFileExists((string)$block->getTemplateFile(), $message);
             if ($model->canUseInternal()) {
                 try {
                     Bootstrap::getObjectManager()->get(
-                        \Magento\Store\Model\StoreManagerInterface::class
+                        StoreManagerInterface::class
                     )->getStore()->setId(
-                        \Magento\Store\Model\Store::DEFAULT_STORE_ID
+                        Store::DEFAULT_STORE_ID
                     );
                     $block->setArea('Adminhtml');
                     $this->assertFileExists((string)$block->getTemplateFile(), $message);
                     Bootstrap::getObjectManager()->get(
-                        \Magento\Store\Model\StoreManagerInterface::class
+                        StoreManagerInterface::class
                     )->getStore()->setId(
                         $storeId
                     );
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     Bootstrap::getObjectManager()->get(
-                        \Magento\Store\Model\StoreManagerInterface::class
+                        StoreManagerInterface::class
                     )->getStore()->setId(
                         $storeId
                     );
@@ -93,41 +108,8 @@ class MethodsTest extends \PHPUnit\Framework\TestCase
                 }
             }
         }
-        Bootstrap::getObjectManager()->get(\Magento\Framework\App\State::class)
+        Bootstrap::getObjectManager()->get(State::class)
             ->setMode(State::MODE_DEFAULT);
-    }
-
-    /**
-     * @return array
-     */
-    public function paymentMethodDataProvider()
-    {
-        /** @var $helper \Magento\Payment\Helper\Data */
-        $helper = Bootstrap::getObjectManager()->get(\Magento\Payment\Helper\Data::class);
-        $result = [];
-        foreach ($helper->getPaymentMethods() as $code => $method) {
-            $result[] = [$code, $method['model']];
-        }
-        return $result;
-    }
-
-    /**
-     * @param string $path
-     * @return \RegexIterator
-     */
-    private function collectFiles($path)
-    {
-        $ds = preg_quote(DIRECTORY_SEPARATOR);
-        $flags = \FilesystemIterator::CURRENT_AS_FILEINFO
-            | \FilesystemIterator::SKIP_DOTS;
-        $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path, $flags));
-
-        return new \RegexIterator(
-            $iterator,
-            '#' . $ds . 'etc' . $ds . 'di\.php$#',
-            \RegexIterator::MATCH,
-            \RegexIterator::USE_KEY
-        );
     }
 
     /**
@@ -144,6 +126,39 @@ class MethodsTest extends \PHPUnit\Framework\TestCase
             $result = array_replace_recursive($result, $config);
         }
 
+        return $result;
+    }
+
+    /**
+     * @param string $path
+     * @return RegexIterator
+     */
+    private function collectFiles($path)
+    {
+        $ds = preg_quote(DIRECTORY_SEPARATOR);
+        $flags = FilesystemIterator::CURRENT_AS_FILEINFO
+            | FilesystemIterator::SKIP_DOTS;
+        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path, $flags));
+
+        return new RegexIterator(
+            $iterator,
+            '#' . $ds . 'etc' . $ds . 'di\.php$#',
+            RegexIterator::MATCH,
+            RegexIterator::USE_KEY
+        );
+    }
+
+    /**
+     * @return array
+     */
+    public function paymentMethodDataProvider()
+    {
+        /** @var $helper Data */
+        $helper = Bootstrap::getObjectManager()->get(Data::class);
+        $result = [];
+        foreach ($helper->getPaymentMethods() as $code => $method) {
+            $result[] = [$code, $method['model']];
+        }
         return $result;
     }
 }

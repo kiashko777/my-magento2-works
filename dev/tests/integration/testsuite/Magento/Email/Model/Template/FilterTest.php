@@ -3,40 +3,42 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Email\Model\Template;
 
+use Magento\Backend\Model\Url;
 use Magento\Framework\App\Area;
 use Magento\Framework\App\State;
 use Magento\Framework\App\TemplateTypesInterface;
 use Magento\Framework\Phrase;
+use Magento\Framework\Phrase\Renderer\Translate;
+use Magento\Framework\Phrase\RendererInterface;
 use Magento\Framework\View\Asset\ContentProcessorInterface;
+use Magento\Framework\View\DesignInterface;
+use Magento\Framework\View\Layout;
+use Magento\Framework\View\LayoutInterface;
 use Magento\Setup\Module\I18n\Locale;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 use Magento\Theme\Block\Html\Footer;
+use Magento\Theme\Model\Theme\Registration;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppIsolation enabled
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class FilterTest extends \PHPUnit\Framework\TestCase
+class FilterTest extends TestCase
 {
     /**
-     * @var \Magento\Email\Model\Template\Filter
+     * @var Filter
      */
     protected $model;
 
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-
-        $this->model = $this->objectManager->create(
-            \Magento\Email\Model\Template\Filter::class
-        );
-    }
 
     /**
      * Isolation level has been raised in order to flush themes configuration in-memory cache
@@ -85,7 +87,7 @@ class FilterTest extends \PHPUnit\Framework\TestCase
         $this->assertStringMatchesFormat('http://example.com/%stranslation/ajax/index/', $url);
 
         $this->model->setStoreId(0);
-        $backendUrlModel = $this->objectManager->create(\Magento\Backend\Model\Url::class);
+        $backendUrlModel = $this->objectManager->create(Url::class);
         $this->model->setUrlModel($backendUrlModel);
         $url = $this->model->storeDirective(
             ['{{store url="translation/ajax/index"}}', 'store', ' url="translation/ajax/index"']
@@ -105,15 +107,15 @@ class FilterTest extends \PHPUnit\Framework\TestCase
      */
     public function testLayoutDirective($area, $directiveParams, $expectedOutput)
     {
-        /** @var \Magento\Theme\Model\Theme\Registration $registration */
-        $registration = $this->objectManager->get(\Magento\Theme\Model\Theme\Registration::class);
+        /** @var Registration $registration */
+        $registration = $this->objectManager->get(Registration::class);
         $registration->register();
-        $this->model = $this->objectManager->create(\Magento\Email\Model\Template\Filter::class);
-        \Magento\TestFramework\Helper\Bootstrap::getInstance()->loadArea($area);
-        /** @var $layout \Magento\Framework\View\LayoutInterface */
-        $layout = $this->objectManager->create(\Magento\Framework\View\Layout::class);
-        $this->objectManager->addSharedInstance($layout, \Magento\Framework\View\Layout::class);
-        $this->objectManager->get(\Magento\Framework\View\DesignInterface::class)
+        $this->model = $this->objectManager->create(Filter::class);
+        Bootstrap::getInstance()->loadArea($area);
+        /** @var $layout LayoutInterface */
+        $layout = $this->objectManager->create(Layout::class);
+        $this->objectManager->addSharedInstance($layout, Layout::class);
+        $this->objectManager->get(DesignInterface::class)
             ->setDesignTheme('Magento_EmailTest/default');
 
         $actualOutput = $this->model->layoutDirective(
@@ -177,8 +179,8 @@ class FilterTest extends \PHPUnit\Framework\TestCase
         }
 
         $this->objectManager->addSharedInstance($translator, \Magento\Framework\Translate::class);
-        $this->objectManager->removeSharedInstance(\Magento\Framework\Phrase\Renderer\Translate::class);
-        Phrase::setRenderer($this->objectManager->create(\Magento\Framework\Phrase\RendererInterface::class));
+        $this->objectManager->removeSharedInstance(Translate::class);
+        Phrase::setRenderer($this->objectManager->create(RendererInterface::class));
 
         $this->assertEquals($expectedResult, $this->model->filter($directive));
 
@@ -278,9 +280,9 @@ class FilterTest extends \PHPUnit\Framework\TestCase
      */
     public function testCssDirective($templateType, $directiveParams, $expectedOutput)
     {
-        /** @var \Magento\Theme\Model\Theme\Registration $registration */
+        /** @var Registration $registration */
         $registration = $this->objectManager->get(
-            \Magento\Theme\Model\Theme\Registration::class
+            Registration::class
         );
         $registration->register();
         $this->setUpDesignParams();
@@ -294,6 +296,21 @@ class FilterTest extends \PHPUnit\Framework\TestCase
         } else {
             $this->assertSame($expectedOutput, $output);
         }
+    }
+
+    /**
+     * Setup the design params
+     */
+    protected function setUpDesignParams()
+    {
+        $themeCode = 'Vendor_EmailTest/custom_theme';
+        $this->model->setDesignParams(
+            [
+                'area' => Area::AREA_FRONTEND,
+                'theme' => $themeCode,
+                'locale' => Locale::DEFAULT_SYSTEM_LOCALE,
+            ]
+        );
     }
 
     /**
@@ -363,10 +380,11 @@ class FilterTest extends \PHPUnit\Framework\TestCase
         $productionMode = false,
         $plainTemplateMode = false,
         $isChildTemplateMode = false
-    ) {
-        /** @var \Magento\Theme\Model\Theme\Registration $registration */
+    )
+    {
+        /** @var Registration $registration */
         $registration = $this->objectManager->get(
-            \Magento\Theme\Model\Theme\Registration::class
+            Registration::class
         );
         $registration->register();
         $this->setUpDesignParams();
@@ -375,7 +393,7 @@ class FilterTest extends \PHPUnit\Framework\TestCase
         $this->model->setIsChildTemplate($isChildTemplateMode);
 
         $appMode = $productionMode ? State::MODE_PRODUCTION : State::MODE_DEVELOPER;
-        $this->objectManager->get(\Magento\Framework\App\State::class)->setMode($appMode);
+        $this->objectManager->get(State::class)->setMode($appMode);
 
         $this->assertStringContainsString($expectedOutput, $this->model->filter($templateText));
     }
@@ -439,9 +457,9 @@ class FilterTest extends \PHPUnit\Framework\TestCase
      */
     public function testInlinecssDirectiveThrowsExceptionWhenMissingParameter($templateText)
     {
-        /** @var \Magento\Theme\Model\Theme\Registration $registration */
+        /** @var Registration $registration */
         $registration = $this->objectManager->get(
-            \Magento\Theme\Model\Theme\Registration::class
+            Registration::class
         );
         $registration->register();
         $this->setUpDesignParams();
@@ -464,18 +482,12 @@ class FilterTest extends \PHPUnit\Framework\TestCase
         ];
     }
 
-    /**
-     * Setup the design params
-     */
-    protected function setUpDesignParams()
+    protected function setUp(): void
     {
-        $themeCode = 'Vendor_EmailTest/custom_theme';
-        $this->model->setDesignParams(
-            [
-                'area' => Area::AREA_FRONTEND,
-                'theme' => $themeCode,
-                'locale' => Locale::DEFAULT_SYSTEM_LOCALE,
-            ]
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->model = $this->objectManager->create(
+            Filter::class
         );
     }
 }

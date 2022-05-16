@@ -7,6 +7,8 @@
 declare(strict_types=1);
 
 use Magento\Store\Api\WebsiteRepositoryInterface;
+use Magento\Store\Model\Group;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
@@ -18,13 +20,13 @@ $websiteRepository = $objectManager->get(WebsiteRepositoryInterface::class);
 $website = $websiteRepository->get('test');
 
 /**
- * @var \Magento\Store\Model\Group $storeGroup
+ * @var Group $storeGroup
  */
-$storeGroup = $objectManager->create(\Magento\Store\Model\Group::class);
+$storeGroup = $objectManager->create(Group::class);
 $storeGroup->setCode('some_group')
     ->setName('custom store group')
     ->setWebsite($website);
 $storeGroup->save($storeGroup);
 
 /* Refresh stores memory cache */
-$objectManager->get(\Magento\Store\Model\StoreManagerInterface::class)->reinitStores();
+$objectManager->get(StoreManagerInterface::class)->reinitStores();

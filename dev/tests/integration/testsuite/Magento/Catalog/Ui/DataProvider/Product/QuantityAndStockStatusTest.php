@@ -7,13 +7,12 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Ui\DataProvider\Product;
 
-use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\CatalogInventory\Api\StockRegistryInterface;
 use Magento\CatalogInventory\Model\Stock\StockItemRepository;
 use Magento\CatalogInventory\Ui\DataProvider\Product\AddQuantityAndStockStatusFieldToCollection;
-use PHPUnit\Framework\TestCase;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\CatalogInventory\Api\StockItemCriteriaInterface;
-use Magento\CatalogInventory\Api\StockRegistryInterface;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Quantity and stock status test
@@ -26,17 +25,9 @@ class QuantityAndStockStatusTest extends TestCase
     private static $quantityAndStockStatus = 'quantity_and_stock_status';
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
 
     /**
      * Test product stock status in the products grid column
@@ -75,5 +66,13 @@ class QuantityAndStockStatusTest extends TestCase
         $dataProviderStockStatus = $data['items'][0][self::$quantityAndStockStatus];
 
         $this->assertEquals($dataProviderStockStatus, $savedStockStatus);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

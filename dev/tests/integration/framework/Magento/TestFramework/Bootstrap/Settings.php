@@ -6,6 +6,8 @@
 
 namespace Magento\TestFramework\Bootstrap;
 
+use InvalidArgumentException;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Filesystem\Glob;
 
 /**
@@ -32,15 +34,27 @@ class Settings
      *
      * @param string $baseDir
      * @param array $settings
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     public function __construct($baseDir, array $settings)
     {
         if (!is_dir($baseDir)) {
-            throw new \InvalidArgumentException("Base path '{$baseDir}' has to be an existing directory.");
+            throw new InvalidArgumentException("Base path '{$baseDir}' has to be an existing directory.");
         }
         $this->_baseDir = realpath($baseDir);
         $this->_settings = $settings;
+    }
+
+    /**
+     * Interpret a setting value as a switch and return TRUE when it equals to the string "enabled" or FALSE otherwise
+     *
+     * @param string $settingName
+     * @return bool
+     * @SuppressWarnings(PHPMD.BooleanGetMethodName)
+     */
+    public function getAsBoolean($settingName)
+    {
+        return $this->get($settingName) === 'enabled';
     }
 
     /**
@@ -56,15 +70,26 @@ class Settings
     }
 
     /**
-     * Interpret a setting value as a switch and return TRUE when it equals to the string "enabled" or FALSE otherwise
+     * Interpret a setting value as a file optionally falling back to the '.dist' file and return absolute path to it
      *
      * @param string $settingName
-     * @return bool
-     * @SuppressWarnings(PHPMD.BooleanGetMethodName)
+     * @return string
+     * @throws LocalizedException
      */
-    public function getAsBoolean($settingName)
+    public function getAsConfigFile($settingName)
     {
-        return $this->get($settingName) === 'enabled';
+        $result = $this->getAsFile($settingName);
+        if ($result !== '') {
+            if (!is_file($result) && substr($result, -5) != '.dist') {
+                $result .= '.dist';
+            }
+            if (is_file($result)) {
+                return $result;
+            }
+        }
+        throw new LocalizedException(
+            __("Setting '%1' specifies the non-existing file '%2'.", $settingName, $result)
+        );
     }
 
     /**
@@ -84,26 +109,14 @@ class Settings
     }
 
     /**
-     * Interpret a setting value as a file optionally falling back to the '.dist' file and return absolute path to it
+     * Return an absolute path by a relative one without checking its validity
      *
-     * @param string $settingName
+     * @param string $relativePath
      * @return string
-     * @throws \Magento\Framework\Exception\LocalizedException
      */
-    public function getAsConfigFile($settingName)
+    protected function _resolvePath($relativePath)
     {
-        $result = $this->getAsFile($settingName);
-        if ($result !== '') {
-            if (!is_file($result) && substr($result, -5) != '.dist') {
-                $result .= '.dist';
-            }
-            if (is_file($result)) {
-                return $result;
-            }
-        }
-        throw new \Magento\Framework\Exception\LocalizedException(
-            __("Setting '%1' specifies the non-existing file '%2'.", $settingName, $result)
-        );
+        return $this->_baseDir . '/' . $relativePath;
     }
 
     /**
@@ -119,17 +132,6 @@ class Settings
             return $this->_resolvePathPattern($settingValue);
         }
         return [];
-    }
-
-    /**
-     * Return an absolute path by a relative one without checking its validity
-     *
-     * @param string $relativePath
-     * @return string
-     */
-    protected function _resolvePath($relativePath)
-    {
-        return $this->_baseDir . '/' . $relativePath;
     }
 
     /**

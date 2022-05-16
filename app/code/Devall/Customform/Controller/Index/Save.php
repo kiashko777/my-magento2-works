@@ -2,12 +2,11 @@
 
 namespace Devall\Customform\Controller\Index;
 
-use Magento\Framework\App\Action\Context;
 use Devall\Customform\Model\CustomformFactory;
-use Magento\Framework\App\Filesystem\DirectoryList;
-use Magento\MediaStorage\Model\File\UploaderFactory;
-use Magento\Framework\Image\AdapterFactory;
+use Magento\Framework\App\Action\Context;
 use Magento\Framework\Filesystem;
+use Magento\Framework\Image\AdapterFactory;
+use Magento\MediaStorage\Model\File\UploaderFactory;
 
 class Save extends \Magento\Framework\App\Action\Action
 {

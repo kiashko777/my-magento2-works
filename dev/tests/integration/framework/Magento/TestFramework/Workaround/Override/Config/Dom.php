@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace Magento\TestFramework\Workaround\Override\Config;
 
+use DOMElement;
+use DOMXPath;
 use Magento\Framework\Config\Dom as ParentDom;
 
 /**
@@ -17,7 +19,7 @@ class Dom extends ParentDom
     /**
      * @inheritdoc
      */
-    protected function _mergeNode(\DOMElement $node, $parentPath)
+    protected function _mergeNode(DOMElement $node, $parentPath)
     {
         $path = $this->_getNodePathByParent($node, $parentPath);
         $matchedNodes = $this->getMatchedNodes($path);
@@ -31,7 +33,7 @@ class Dom extends ParentDom
             }
             /* recursive merge for all child nodes */
             foreach ($node->childNodes as $childNode) {
-                if ($childNode instanceof \DOMElement) {
+                if ($childNode instanceof DOMElement) {
                     $this->_mergeNode($childNode, $path);
                 }
             }
@@ -51,7 +53,7 @@ class Dom extends ParentDom
      */
     private function getMatchedNodes(string $nodePath): array
     {
-        $xPath = new \DOMXPath($this->dom);
+        $xPath = new DOMXPath($this->dom);
         if ($this->rootNamespace) {
             $xPath->registerNamespace(self::ROOT_NAMESPACE_PREFIX, $this->rootNamespace);
         }

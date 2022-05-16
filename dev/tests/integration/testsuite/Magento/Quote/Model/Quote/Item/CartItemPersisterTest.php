@@ -41,20 +41,6 @@ class CartItemPersisterTest extends TestCase
     private $getQuoteByReservedOrderId;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->model = $this->objectManager->get(CartItemPersister::class);
-        $this->quoteFactory = $this->objectManager->get(CartInterfaceFactory::class);
-        $this->itemFactory = $this->objectManager->get(CartItemInterfaceFactory::class);
-        $this->getQuoteByReservedOrderId = $this->objectManager->get(GetQuoteByReservedOrderId::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/simple_product_disabled.php
      *
      * @return void
@@ -129,5 +115,19 @@ class CartItemPersisterTest extends TestCase
         $item->setQty(9999)->setSku($quoteItem->getSku())->setItemId($quoteItem->getItemId());
         $this->expectExceptionObject(new LocalizedException(__('The requested qty is not available')));
         $this->model->save($quote, $item);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->model = $this->objectManager->get(CartItemPersister::class);
+        $this->quoteFactory = $this->objectManager->get(CartInterfaceFactory::class);
+        $this->itemFactory = $this->objectManager->get(CartItemInterfaceFactory::class);
+        $this->getQuoteByReservedOrderId = $this->objectManager->get(GetQuoteByReservedOrderId::class);
     }
 }

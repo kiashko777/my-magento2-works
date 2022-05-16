@@ -8,18 +8,25 @@
  * Products generation to test base data
  */
 
-\Magento\TestFramework\Helper\Bootstrap::getInstance()->reinitialize();
+use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Catalog\Setup\CategorySetup;
+use Magento\TestFramework\Helper\Bootstrap;
+
+Bootstrap::getInstance()->reinitialize();
 $testCases = include __DIR__ . '/_algorithm_base_data.php';
 
-/** @var $installer \Magento\Catalog\Setup\CategorySetup */
-$installer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Catalog\Setup\CategorySetup::class
+/** @var $installer CategorySetup */
+$installer = Bootstrap::getObjectManager()->create(
+    CategorySetup::class
 );
 /**
  * After installation system has two categories: root one with ID:1 and Default category with ID:2
  */
-/** @var $category \Magento\Catalog\Model\Category */
-$category = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Category::class);
+/** @var $category Category */
+$category = Bootstrap::getObjectManager()->create(Category::class);
 $category->isObjectNew(true);
 $category->setId(
     3
@@ -43,8 +50,8 @@ $category->setId(
 
 $lastProductId = 0;
 foreach ($testCases as $index => $testCase) {
-    $category = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-        \Magento\Catalog\Model\Category::class
+    $category = Bootstrap::getObjectManager()->create(
+        Category::class
     );
     $position = $index + 1;
     $categoryId = $index + 4;
@@ -74,8 +81,8 @@ foreach ($testCases as $index => $testCase) {
     )->save();
 
     foreach ($testCase[0] as $price) {
-        $product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\Product::class
+        $product = Bootstrap::getObjectManager()->create(
+            Product::class
         );
         $productId = $lastProductId + 1;
         $product->setId(
@@ -105,9 +112,9 @@ foreach ($testCases as $index => $testCase) {
         )->setCategoryIds(
             [$categoryId]
         )->setVisibility(
-            \Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH
+            Visibility::VISIBILITY_BOTH
         )->setStatus(
-            \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED
+            Status::STATUS_ENABLED
         )->save();
         ++$lastProductId;
     }

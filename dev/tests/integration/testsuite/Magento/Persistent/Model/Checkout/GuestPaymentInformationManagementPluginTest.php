@@ -6,10 +6,34 @@
 
 namespace Magento\Persistent\Model\Checkout;
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Checkout\Api\Data\TotalsInformationInterface;
+use Magento\Checkout\Api\TotalsInformationManagementInterface;
+use Magento\Checkout\Model\GuestPaymentInformationManagement;
+use Magento\Checkout\Model\Session;
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Model\CustomerFactory;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Quote\Api\BillingAddressManagementInterface;
+use Magento\Quote\Api\CartItemRepositoryInterface;
+use Magento\Quote\Api\CartManagementInterface;
+use Magento\Quote\Api\CartRepositoryInterface;
+use Magento\Quote\Api\Data\AddressInterface;
+use Magento\Quote\Api\Data\CartItemInterface;
+use Magento\Quote\Api\Data\PaymentInterface;
+use Magento\Quote\Api\PaymentMethodManagementInterface;
+use Magento\Quote\Api\ShippingMethodManagementInterface;
+use Magento\Quote\Model\QuoteIdMask;
+use Magento\Quote\Model\QuoteIdMaskFactory;
+use Magento\Quote\Model\ShippingAddressManagementInterface;
+use Magento\Sales\Api\OrderRepositoryInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class GuestPaymentInformationManagementPluginTest extends \PHPUnit\Framework\TestCase
+class GuestPaymentInformationManagementPluginTest extends TestCase
 {
     /**
      * @var \Magento\Persistent\Helper\Session
@@ -22,94 +46,64 @@ class GuestPaymentInformationManagementPluginTest extends \PHPUnit\Framework\Tes
     protected $customerSession;
 
     /**
-     * @var \Magento\Checkout\Model\Session
+     * @var Session
      */
     protected $checkoutSession;
 
     /**
-     * @var \Magento\Quote\Api\CartRepositoryInterface
+     * @var CartRepositoryInterface
      */
     protected $cartRepository;
 
     /**
-     * @var \Magento\Quote\Api\CartManagementInterface
+     * @var CartManagementInterface
      */
     protected $cartManagement;
 
     /**
-     * @var \Magento\Customer\Api\CustomerRepositoryInterface
+     * @var CustomerRepositoryInterface
      */
     protected $customerFactory;
 
     /**
-     * @var \Magento\Quote\Api\CartItemRepositoryInterface
+     * @var CartItemRepositoryInterface
      */
     protected $cartItemRepository;
 
     /**
-     * @var \Magento\Quote\Model\QuoteIdMask
+     * @var QuoteIdMask
      */
     protected $quoteIdMaskFactory;
 
     /**
-     * @var \Magento\Quote\Api\PaymentMethodManagementInterface
+     * @var PaymentMethodManagementInterface
      */
     protected $paymentMethodManagement;
 
     /**
-     * @var \Magento\Quote\Api\BillingAddressManagementInterface
+     * @var BillingAddressManagementInterface
      */
     protected $billingAddressManagement;
 
     /**
-     * @var \Magento\Quote\Model\ShippingAddressManagementInterface
+     * @var ShippingAddressManagementInterface
      */
     protected $shippingAddressManagement;
 
     /**
-     * @var \Magento\Quote\Api\ShippingMethodManagementInterface
+     * @var ShippingMethodManagementInterface
      */
     protected $shippingEstimateManagement;
 
     /**
-     * @var \Magento\Checkout\Api\TotalsInformationManagementInterface
+     * @var TotalsInformationManagementInterface
      */
     protected $totalsInformationManagement;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->customerSession = $this->objectManager->get(\Magento\Customer\Model\Session::class);
-        $this->persistentSessionHelper = $this->objectManager->create(\Magento\Persistent\Helper\Session::class);
-        $this->customerFactory = $this->objectManager->create(
-            \Magento\Customer\Model\CustomerFactory::class
-        );
-        $this->checkoutSession = $this->objectManager->create(\Magento\Checkout\Model\Session::class);
-        $this->cartRepository = $this->objectManager->create(\Magento\Quote\Api\CartRepositoryInterface::class);
-        $this->cartManagement = $this->objectManager->create(\Magento\Quote\Api\CartManagementInterface::class);
-        $this->cartItemRepository = $this->objectManager->create(\Magento\Quote\Api\CartItemRepositoryInterface::class);
-        $this->quoteIdMaskFactory = $this->objectManager->create(\Magento\Quote\Model\QuoteIdMaskFactory::class);
-        $this->paymentMethodManagement = $this->objectManager->create(
-            \Magento\Quote\Api\PaymentMethodManagementInterface::class
-        );
-        $this->billingAddressManagement = $this->objectManager->create(
-            \Magento\Quote\Api\BillingAddressManagementInterface::class
-        );
-        $this->shippingEstimateManagement = $this->objectManager->create(
-            \Magento\Quote\Api\ShippingMethodManagementInterface::class
-        );
-        $this->totalsInformationManagement = $this->objectManager->create(
-            \Magento\Checkout\Api\TotalsInformationManagementInterface::class
-        );
-        $this->shippingAddressManagement = $this->objectManager->create(
-            \Magento\Quote\Model\ShippingAddressManagementInterface::class
-        );
-    }
 
     /**
      * Test builds out a persistent customer shopping cart, emulates a
@@ -135,30 +129,30 @@ class GuestPaymentInformationManagementPluginTest extends \PHPUnit\Framework\Tes
         $guestEmail = 'guest@example.com';
 
         //Retrieve customer from repository
-        /** @var \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository */
-        $customerRepository = $this->objectManager->create(\Magento\Customer\Api\CustomerRepositoryInterface::class);
+        /** @var CustomerRepositoryInterface $customerRepository */
+        $customerRepository = $this->objectManager->create(CustomerRepositoryInterface::class);
         $customer = $customerRepository->getById(1);
         $this->customerSession->loginById($customer->getId());
 
         //Retrieve product from repository
-        /** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-        $productRepository = $this->objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
         $product = $productRepository->getById(1);
         $product->setOptions(null);
         $productRepository->save($product);
 
         //Add item to newly created customer cart
         $cartId = $this->cartManagement->createEmptyCartForCustomer($customer->getId());
-        /** @var \Magento\Quote\Api\Data\CartItemInterface $quoteItem */
-        $quoteItem = $this->objectManager->create(\Magento\Quote\Api\Data\CartItemInterface::class);
+        /** @var CartItemInterface $quoteItem */
+        $quoteItem = $this->objectManager->create(CartItemInterface::class);
         $quoteItem->setQuoteId($cartId);
         $quoteItem->setProduct($product);
         $quoteItem->setQty(2);
         $this->cartItemRepository->save($quoteItem);
 
         //Fill out address data
-        /** @var \Magento\Quote\Api\Data\AddressInterface $billingAddress */
-        $billingAddress = $this->objectManager->create(\Magento\Quote\Api\Data\AddressInterface::class);
+        /** @var AddressInterface $billingAddress */
+        $billingAddress = $this->objectManager->create(AddressInterface::class);
         $billingAddress->setFirstname('guestFirst');
         $billingAddress->setLastname('guestLast');
         $billingAddress->setEmail($guestEmail);
@@ -168,8 +162,8 @@ class GuestPaymentInformationManagementPluginTest extends \PHPUnit\Framework\Tes
         $billingAddress->setPostcode('14325');
         $billingAddress->setRegionId(12);
         $billingAddress->setCountryId('US');
-        /** @var \Magento\Quote\Api\Data\AddressInterface $shippingAddress */
-        $shippingAddress = $this->objectManager->create(\Magento\Quote\Api\Data\AddressInterface::class);
+        /** @var AddressInterface $shippingAddress */
+        $shippingAddress = $this->objectManager->create(AddressInterface::class);
         $shippingAddress->setFirstname('guestFirst');
         $shippingAddress->setLastname('guestLast');
         $shippingAddress->setEmail(null);
@@ -184,16 +178,16 @@ class GuestPaymentInformationManagementPluginTest extends \PHPUnit\Framework\Tes
         $shippingAddress = $this->shippingAddressManagement->get($cartId);
 
         //Determine shipping options and collect totals
-        /** @var \Magento\Checkout\Api\Data\TotalsInformationInterface $totals */
-        $totals = $this->objectManager->create(\Magento\Checkout\Api\Data\TotalsInformationInterface::class);
+        /** @var TotalsInformationInterface $totals */
+        $totals = $this->objectManager->create(TotalsInformationInterface::class);
         $totals->setAddress($shippingAddress);
         $totals->setShippingCarrierCode('flatrate');
         $totals->setShippingMethodCode('flatrate');
         $this->totalsInformationManagement->calculate($cartId, $totals);
 
         //Select payment method
-        /** @var \Magento\Quote\Api\Data\PaymentInterface $payment */
-        $payment = $this->objectManager->create(\Magento\Quote\Api\Data\PaymentInterface::class);
+        /** @var PaymentInterface $payment */
+        $payment = $this->objectManager->create(PaymentInterface::class);
         $payment->setMethod('checkmo');
         $this->paymentMethodManagement->set($cartId, $payment);
         $quote = $this->cartRepository->get($cartId);
@@ -209,7 +203,7 @@ class GuestPaymentInformationManagementPluginTest extends \PHPUnit\Framework\Tes
         $this->customerSession->setIsCustomerEmulated(true)->expireSessionCookie();
 
         //Grab masked quote Id to pass to payment manager
-        /** @var $quoteIdMask \Magento\Quote\Model\QuoteIdMask */
+        /** @var $quoteIdMask QuoteIdMask */
         $quoteIdMask = $this->quoteIdMaskFactory->create()->load(
             $this->checkoutSession->getQuote()->getId(),
             'quote_id'
@@ -217,9 +211,9 @@ class GuestPaymentInformationManagementPluginTest extends \PHPUnit\Framework\Tes
         $maskedCartId = $quoteIdMask->getMaskedId();
 
         //Submit order as expired/emulated customer
-        /** @var \Magento\Checkout\Model\GuestPaymentInformationManagement $paymentManagement */
+        /** @var GuestPaymentInformationManagement $paymentManagement */
         $paymentManagement = $this->objectManager->create(
-            \Magento\Checkout\Model\GuestPaymentInformationManagement::class
+            GuestPaymentInformationManagement::class
         );
 
         //Grab created order data
@@ -229,11 +223,41 @@ class GuestPaymentInformationManagementPluginTest extends \PHPUnit\Framework\Tes
             $quote->getPayment(),
             $billingAddress
         );
-        /** @var \Magento\Sales\Api\OrderRepositoryInterface $orderRepo */
-        $orderRepo = $this->objectManager->create(\Magento\Sales\Api\OrderRepositoryInterface::class);
+        /** @var OrderRepositoryInterface $orderRepo */
+        $orderRepo = $this->objectManager->create(OrderRepositoryInterface::class);
         $order = $orderRepo->get($orderId);
 
         //Assert order tied to guest email
         $this->assertEquals($guestEmail, $order->getCustomerEmail());
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->customerSession = $this->objectManager->get(\Magento\Customer\Model\Session::class);
+        $this->persistentSessionHelper = $this->objectManager->create(\Magento\Persistent\Helper\Session::class);
+        $this->customerFactory = $this->objectManager->create(
+            CustomerFactory::class
+        );
+        $this->checkoutSession = $this->objectManager->create(Session::class);
+        $this->cartRepository = $this->objectManager->create(CartRepositoryInterface::class);
+        $this->cartManagement = $this->objectManager->create(CartManagementInterface::class);
+        $this->cartItemRepository = $this->objectManager->create(CartItemRepositoryInterface::class);
+        $this->quoteIdMaskFactory = $this->objectManager->create(QuoteIdMaskFactory::class);
+        $this->paymentMethodManagement = $this->objectManager->create(
+            PaymentMethodManagementInterface::class
+        );
+        $this->billingAddressManagement = $this->objectManager->create(
+            BillingAddressManagementInterface::class
+        );
+        $this->shippingEstimateManagement = $this->objectManager->create(
+            ShippingMethodManagementInterface::class
+        );
+        $this->totalsInformationManagement = $this->objectManager->create(
+            TotalsInformationManagementInterface::class
+        );
+        $this->shippingAddressManagement = $this->objectManager->create(
+            ShippingAddressManagementInterface::class
+        );
     }
 }

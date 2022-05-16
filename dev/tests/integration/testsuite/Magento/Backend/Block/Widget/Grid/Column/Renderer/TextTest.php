@@ -3,16 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Backend\Block\Widget\Grid\Column\Renderer;
 
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\TestFramework\ObjectManager;
 use Magento\Backend\Block\Widget\Grid\Column;
 use Magento\Framework\DataObject;
 use Magento\Framework\Phrase;
 use Magento\Framework\Phrase\RendererInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
-class TextTest extends \PHPUnit\Framework\TestCase
+class TextTest extends TestCase
 {
     /**
      * @var ObjectManager
@@ -23,27 +25,6 @@ class TextTest extends \PHPUnit\Framework\TestCase
      * @var RendererInterface
      */
     private $origRenderer;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->origRenderer = Phrase::getRenderer();
-        /** @var RendererInterface|PHPUnit\Framework\MockObject_MockObject $rendererMock */
-        $rendererMock = $this->getMockForAbstractClass(RendererInterface::class);
-        $rendererMock->expects($this->any())
-            ->method('render')
-            ->willReturnCallback(
-                function ($input) {
-                    return end($input) . ' translated';
-                }
-            );
-        Phrase::setRenderer($rendererMock);
-    }
-
-    protected function tearDown(): void
-    {
-        Phrase::setRenderer($this->origRenderer);
-    }
 
     /**
      * @param array $columnData
@@ -138,5 +119,26 @@ class TextTest extends \PHPUnit\Framework\TestCase
                 'Doesn&#039;t need to be translated'
             ]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->origRenderer = Phrase::getRenderer();
+        /** @var RendererInterface|PHPUnit\Framework\MockObject_MockObject $rendererMock */
+        $rendererMock = $this->getMockForAbstractClass(RendererInterface::class);
+        $rendererMock->expects($this->any())
+            ->method('render')
+            ->willReturnCallback(
+                function ($input) {
+                    return end($input) . ' translated';
+                }
+            );
+        Phrase::setRenderer($rendererMock);
+    }
+
+    protected function tearDown(): void
+    {
+        Phrase::setRenderer($this->origRenderer);
     }
 }

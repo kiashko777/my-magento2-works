@@ -3,13 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Model;
 
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Setup\Fixtures\FixtureConfig;
-use Magento\Setup\Model\Description\DescriptionSentenceGeneratorFactory;
-use Magento\Setup\Model\Description\DescriptionParagraphGeneratorFactory;
+use Magento\Setup\Model\Description\DescriptionGenerator;
 use Magento\Setup\Model\Description\DescriptionGeneratorFactory;
+use Magento\Setup\Model\Description\DescriptionParagraphGeneratorFactory;
+use Magento\Setup\Model\Description\DescriptionSentenceGeneratorFactory;
+use Magento\Setup\Model\Description\MixinManager;
 use Magento\Setup\Model\DictionaryFactory;
 use Magento\Setup\Model\SearchTermManagerFactory;
 
@@ -21,27 +24,27 @@ use Magento\Setup\Model\SearchTermManagerFactory;
 class SearchTermDescriptionGeneratorFactory
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
     /**
-     * @var \Magento\Setup\Fixtures\FixtureConfig
+     * @var FixtureConfig
      */
     private $fixtureConfig;
 
     /**
-     * @var \Magento\Setup\Model\Description\DescriptionSentenceGeneratorFactory
+     * @var DescriptionSentenceGeneratorFactory
      */
     private $sentenceGeneratorFactory;
 
     /**
-     * @var \Magento\Setup\Model\Description\DescriptionParagraphGeneratorFactory
+     * @var DescriptionParagraphGeneratorFactory
      */
     private $paragraphGeneratorFactory;
 
     /**
-     * @var \Magento\Setup\Model\Description\DescriptionGeneratorFactory
+     * @var DescriptionGeneratorFactory
      */
     private $descriptionGeneratorFactory;
 
@@ -67,14 +70,15 @@ class SearchTermDescriptionGeneratorFactory
      * @param SearchTermManagerFactory|null $searchTermManagerFactory
      */
     public function __construct(
-        ObjectManagerInterface $objectManager,
-        FixtureConfig $fixtureConfig,
-        DescriptionSentenceGeneratorFactory $descriptionSentenceGeneratorFactory = null,
+        ObjectManagerInterface               $objectManager,
+        FixtureConfig                        $fixtureConfig,
+        DescriptionSentenceGeneratorFactory  $descriptionSentenceGeneratorFactory = null,
         DescriptionParagraphGeneratorFactory $descriptionParagraphGeneratorFactory = null,
-        DescriptionGeneratorFactory $descriptionGeneratorFactory = null,
-        DictionaryFactory $dictionaryFactory = null,
-        SearchTermManagerFactory $searchTermManagerFactory = null
-    ) {
+        DescriptionGeneratorFactory          $descriptionGeneratorFactory = null,
+        DictionaryFactory                    $dictionaryFactory = null,
+        SearchTermManagerFactory             $searchTermManagerFactory = null
+    )
+    {
         $this->objectManager = $objectManager;
         $this->fixtureConfig = $fixtureConfig;
         $this->sentenceGeneratorFactory = $descriptionSentenceGeneratorFactory
@@ -103,7 +107,8 @@ class SearchTermDescriptionGeneratorFactory
         $searchTermsConfig,
         $totalProductsCount,
         $defaultDescription = ''
-    ) {
+    )
+    {
         $this->updateSearchTermConfig($searchTermsConfig);
         if (empty($descriptionConfig) || empty($searchTermsConfig)) {
             return $this->objectManager->create(
@@ -111,7 +116,7 @@ class SearchTermDescriptionGeneratorFactory
                 ['defaultDescription' => $defaultDescription]
             );
         }
-        return $this->objectManager->create(\Magento\Setup\Model\SearchTermDescriptionGenerator::class, [
+        return $this->objectManager->create(SearchTermDescriptionGenerator::class, [
             'descriptionGenerator' => $this->buildDescriptionGenerator($descriptionConfig),
             'searchTermManager' => $this->buildSearchTermManager($searchTermsConfig, $totalProductsCount)
         ]);
@@ -144,7 +149,7 @@ class SearchTermDescriptionGeneratorFactory
      * Builder for DescriptionGenerator
      *
      * @param array $descriptionConfig
-     * @return \Magento\Setup\Model\Description\DescriptionGenerator
+     * @return DescriptionGenerator
      */
     private function buildDescriptionGenerator(array $descriptionConfig)
     {
@@ -162,7 +167,7 @@ class SearchTermDescriptionGeneratorFactory
 
         $descriptionGenerator = $this->descriptionGeneratorFactory->create([
             'paragraphGenerator' => $paragraphGenerator,
-            'mixinManager' => $this->objectManager->create(\Magento\Setup\Model\Description\MixinManager::class),
+            'mixinManager' => $this->objectManager->create(MixinManager::class),
             'descriptionConfig' => $descriptionConfig
         ]);
 
@@ -174,7 +179,7 @@ class SearchTermDescriptionGeneratorFactory
      *
      * @param array $searchTermsConfig
      * @param int $totalProductsCount
-     * @return \Magento\Setup\Model\SearchTermManager
+     * @return SearchTermManager
      */
     private function buildSearchTermManager(array $searchTermsConfig, $totalProductsCount)
     {

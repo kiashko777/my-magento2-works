@@ -3,27 +3,25 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\PageCache\Model\System\Config\Backend;
 
-class TtlTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class TtlTest extends TestCase
 {
     /**
-     * @var \Magento\PageCache\Model\System\Config\Backend\Ttl
+     * @var Ttl
      */
     protected $_model;
 
     /**
-     * @var \Magento\Framework\App\Config\ScopeConfigInterface
+     * @var ScopeConfigInterface
      */
     protected $_config;
-
-    protected function setUp(): void
-    {
-        $this->_config = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Framework\App\Config\ScopeConfigInterface::class);
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\PageCache\Model\System\Config\Backend\Ttl::class);
-    }
 
     /**
      * @dataProvider beforeSaveDataProvider
@@ -34,6 +32,18 @@ class TtlTest extends \PHPUnit\Framework\TestCase
     public function testBeforeSave($value, $path)
     {
         $this->_prepareData($value, $path);
+    }
+
+    /**
+     * @param $value
+     * @param $path
+     */
+    protected function _prepareData($value, $path)
+    {
+        $this->_model->setValue($value);
+        $this->_model->setPath($path);
+        $this->_model->setField($path);
+        $this->_model->save();
     }
 
     public function beforeSaveDataProvider()
@@ -52,7 +62,7 @@ class TtlTest extends \PHPUnit\Framework\TestCase
      */
     public function testBeforeSaveWithException($value, $path)
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->_prepareData($value, $path);
     }
 
@@ -64,15 +74,11 @@ class TtlTest extends \PHPUnit\Framework\TestCase
         ];
     }
 
-    /**
-     * @param $value
-     * @param $path
-     */
-    protected function _prepareData($value, $path)
+    protected function setUp(): void
     {
-        $this->_model->setValue($value);
-        $this->_model->setPath($path);
-        $this->_model->setField($path);
-        $this->_model->save();
+        $this->_config = Bootstrap::getObjectManager()
+            ->create(ScopeConfigInterface::class);
+        $this->_model = Bootstrap::getObjectManager()
+            ->create(Ttl::class);
     }
 }

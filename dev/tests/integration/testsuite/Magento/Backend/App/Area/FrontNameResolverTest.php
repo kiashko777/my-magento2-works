@@ -8,8 +8,9 @@ declare(strict_types=1);
 
 namespace Magento\Backend\App\Area;
 
-use PHPUnit\Framework\TestCase;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
@@ -17,7 +18,7 @@ use Magento\TestFramework\Helper\Bootstrap;
 class FrontNameResolverTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
 
@@ -25,6 +26,15 @@ class FrontNameResolverTest extends TestCase
      * @var FrontNameResolver
      */
     protected $model;
+
+    /**
+     * @magentoDbIsolation enabled
+     * @magentoConfigFixture current_store web/unsecure/base_url http://example.com/
+     */
+    public function testIsHostBackend()
+    {
+        $this->assertTrue($this->model->isHostBackend());
+    }
 
     /**
      * @inheritDoc
@@ -36,14 +46,5 @@ class FrontNameResolverTest extends TestCase
             FrontNameResolver::class
         );
         $_SERVER['HTTP_HOST'] = 'localhost';
-    }
-
-    /**
-     * @magentoDbIsolation enabled
-     * @magentoConfigFixture current_store web/unsecure/base_url http://example.com/
-     */
-    public function testIsHostBackend()
-    {
-        $this->assertTrue($this->model->isHostBackend());
     }
 }

@@ -3,26 +3,22 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\I18n\Parser\Adapter;
+
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \Magento\Setup\Module\I18n\Parser\Adapter\Js
  *
  */
-class JsTest extends \PHPUnit\Framework\TestCase
+class JsTest extends TestCase
 {
     /**
      * @var Js
      */
     protected $jsPhraseCollector;
-
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->jsPhraseCollector = $objectManager->create(
-            \Magento\Setup\Module\I18n\Parser\Adapter\Js::class
-        );
-    }
 
     public function testParse()
     {
@@ -49,5 +45,13 @@ class JsTest extends \PHPUnit\Framework\TestCase
             ]
         ];
         $this->assertEquals($expectation, $this->jsPhraseCollector->getPhrases());
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->jsPhraseCollector = $objectManager->create(
+            Js::class
+        );
     }
 }

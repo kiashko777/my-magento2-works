@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Pricing\Render\FinalPriceBox;
 
 use Magento\Catalog\Api\Data\ProductInterface;
@@ -12,11 +13,13 @@ use Magento\Catalog\Pricing\Render\FinalPriceBox;
 use Magento\Framework\Pricing\Render\Amount;
 use Magento\Framework\Pricing\Render\RendererPool;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Helper\Xpath;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test price rendering according to is_product_list flag
  */
-class RenderingBasedOnIsProductListFlagTest extends \PHPUnit\Framework\TestCase
+class RenderingBasedOnIsProductListFlagTest extends TestCase
 {
     /**
      * @var ProductInterface
@@ -37,6 +40,73 @@ class RenderingBasedOnIsProductListFlagTest extends \PHPUnit\Framework\TestCase
      * @var FinalPriceBox
      */
     private $finalPriceBox;
+
+    /**
+     * Test when is_product_list flag is not specified. Regular and Special price should be rendered
+     *
+     * @magentoDataFixture Magento/Catalog/_files/product_special_price.php
+     * @magentoAppArea frontend
+     */
+    public function testRenderingByDefault()
+    {
+        $html = $this->finalPriceBox->toHtml();
+        self::assertStringContainsString('5.99', $html);
+        $this->assertGreaterThanOrEqual(
+            1,
+            Xpath::getElementsCountForXpath(
+                '//*[contains(@class,"special-price")]',
+                $html
+            )
+        );
+        $this->assertGreaterThanOrEqual(
+            1,
+            Xpath::getElementsCountForXpath(
+                '//*[contains(@class,"old-price")]',
+                $html
+            )
+        );
+    }
+
+    /**
+     * Test when is_product_list flag is specified. Regular and Special price should be rendered with any flag value
+     * For example should be rendered for product page and for list of products
+     *
+     * @param bool $flag
+     * @magentoDataFixture Magento/Catalog/_files/product_special_price.php
+     * @magentoAppArea frontend
+     * @dataProvider isProductListDataProvider
+     */
+    public function testRenderingAccordingToIsProductListFlag($flag)
+    {
+        $this->finalPriceBox->setData('is_product_list', $flag);
+        $html = $this->finalPriceBox->toHtml();
+        self::assertStringContainsString('5.99', $html);
+        $this->assertGreaterThanOrEqual(
+            1,
+            Xpath::getElementsCountForXpath(
+                '//*[contains(@class,"special-price")]',
+                $html
+            )
+        );
+        $this->assertGreaterThanOrEqual(
+            1,
+            Xpath::getElementsCountForXpath(
+                '//*[contains(@class,"old-price")]',
+                $html
+            )
+        );
+    }
+
+    /**
+     * @return array
+     */
+    public function isProductListDataProvider()
+    {
+        return [
+            'is_not_product_list' => [false],
+            'is_product_list' => [true],
+        ];
+    }
 
     protected function setUp(): void
     {
@@ -62,72 +132,5 @@ class RenderingBasedOnIsProductListFlagTest extends \PHPUnit\Framework\TestCase
             'rendererPool' => $this->rendererPool,
         ]);
         $this->finalPriceBox->setTemplate('Magento_Catalog::product/price/final_price.phtml');
-    }
-
-    /**
-     * Test when is_product_list flag is not specified. Regular and Special price should be rendered
-     *
-     * @magentoDataFixture Magento/Catalog/_files/product_special_price.php
-     * @magentoAppArea frontend
-     */
-    public function testRenderingByDefault()
-    {
-        $html = $this->finalPriceBox->toHtml();
-        self::assertStringContainsString('5.99', $html);
-        $this->assertGreaterThanOrEqual(
-            1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
-                '//*[contains(@class,"special-price")]',
-                $html
-            )
-        );
-        $this->assertGreaterThanOrEqual(
-            1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
-                '//*[contains(@class,"old-price")]',
-                $html
-            )
-        );
-    }
-
-    /**
-     * Test when is_product_list flag is specified. Regular and Special price should be rendered with any flag value
-     * For example should be rendered for product page and for list of products
-     *
-     * @param bool $flag
-     * @magentoDataFixture Magento/Catalog/_files/product_special_price.php
-     * @magentoAppArea frontend
-     * @dataProvider isProductListDataProvider
-     */
-    public function testRenderingAccordingToIsProductListFlag($flag)
-    {
-        $this->finalPriceBox->setData('is_product_list', $flag);
-        $html = $this->finalPriceBox->toHtml();
-        self::assertStringContainsString('5.99', $html);
-        $this->assertGreaterThanOrEqual(
-            1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
-                '//*[contains(@class,"special-price")]',
-                $html
-            )
-        );
-        $this->assertGreaterThanOrEqual(
-            1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
-                '//*[contains(@class,"old-price")]',
-                $html
-            )
-        );
-    }
-
-    /**
-     * @return array
-     */
-    public function isProductListDataProvider()
-    {
-        return [
-            'is_not_product_list' => [false],
-            'is_product_list' => [true],
-        ];
     }
 }

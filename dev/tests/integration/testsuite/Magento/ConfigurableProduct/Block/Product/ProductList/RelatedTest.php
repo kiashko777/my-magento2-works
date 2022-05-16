@@ -13,7 +13,6 @@ use Magento\Catalog\Block\Product\ProductList\Related;
 
 /**
  * Check the correct behavior of related products on the configurable product view page
-
  * @magentoDbIsolation disabled
  * @magentoAppArea frontend
  */
@@ -23,17 +22,6 @@ class RelatedTest extends AbstractLinksTest
      * @var Related
      */
     protected $block;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->block = $this->layout->createBlock(Related::class);
-        $this->linkType = 'related';
-    }
 
     /**
      * @magentoDataFixture Magento/Catalog/_files/second_product_simple.php
@@ -82,10 +70,20 @@ class RelatedTest extends AbstractLinksTest
         );
         $this->block->setProduct($this->productRepository->get('configurable'));
         $this->assertEquals(
-            ['simple-156', 'simple-249','wrong-simple'],
+            ['simple-156', 'simple-249', 'wrong-simple'],
             $this->getActualLinks($this->getLinkedItems()),
             'Expected linked products do not match actual linked products!'
         );
+    }
+
+    /**
+     * Returns linked products from block.
+     *
+     * @return ProductInterface[]
+     */
+    protected function getLinkedItems(): array
+    {
+        return $this->block->getItems()->getItems();
     }
 
     /**
@@ -103,12 +101,13 @@ class RelatedTest extends AbstractLinksTest
     }
 
     /**
-     * Returns linked products from block.
-     *
-     * @return ProductInterface[]
+     * @inheritdoc
      */
-    protected function getLinkedItems(): array
+    protected function setUp(): void
     {
-        return $this->block->getItems()->getItems();
+        parent::setUp();
+
+        $this->block = $this->layout->createBlock(Related::class);
+        $this->linkType = 'related';
     }
 }

@@ -53,17 +53,9 @@ class SearchTermManagerTest extends TestCase
         ]
     ];
 
-    protected function setUp(): void
-    {
-        $this->searchTermManager = new SearchTermManager(
-            $this->searchTermConfiguration,
-            $this->totalProductsCount
-        );
-    }
-
     public function testSearchTermApplied()
     {
-        for ($productIndex=1; $productIndex<=$this->totalProductsCount; $productIndex++) {
+        for ($productIndex = 1; $productIndex <= $this->totalProductsCount; $productIndex++) {
             $description = 'Fleet: ';
             $this->searchTermManager->applySearchTermsToDescription($description, $productIndex);
 
@@ -77,5 +69,13 @@ class SearchTermManagerTest extends TestCase
         foreach ($this->searchTermConfiguration as $searchTerm) {
             $this->assertEquals($searchTerm['count'], $this->searchTermsUsage[$searchTerm['term']]['used']);
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->searchTermManager = new SearchTermManager(
+            $this->searchTermConfiguration,
+            $this->totalProductsCount
+        );
     }
 }

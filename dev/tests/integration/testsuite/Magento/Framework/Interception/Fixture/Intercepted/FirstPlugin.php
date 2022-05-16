@@ -3,8 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Interception\Fixture\Intercepted;
 
+use Closure;
 use Magento\Framework\Interception\Fixture\Intercepted;
 
 class FirstPlugin
@@ -17,7 +19,7 @@ class FirstPlugin
     /**
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    public function aroundC(Intercepted $subject, \Closure $next, $param1)
+    public function aroundC(Intercepted $subject, Closure $next, $param1)
     {
         return '<F:C>' . $next($param1) . '</F:C>';
     }
@@ -25,7 +27,7 @@ class FirstPlugin
     /**
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    public function aroundD(Intercepted $subject, \Closure $next, $param1)
+    public function aroundD(Intercepted $subject, Closure $next, $param1)
     {
         $this->_counter++;
         return '<F:D>' . $this->_counter . ': ' . $next($param1) . '</F:D>';
@@ -34,7 +36,7 @@ class FirstPlugin
     /**
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    public function aroundK(Intercepted $subject, \Closure $next, $param1)
+    public function aroundK(Intercepted $subject, Closure $next, $param1)
     {
         $result = $subject->C($param1);
         return '<F:K>' . $subject->F($result) . '</F:K>';
@@ -51,7 +53,7 @@ class FirstPlugin
     /**
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    public function aroundG(Intercepted $subject, \Closure $next, $param1)
+    public function aroundG(Intercepted $subject, Closure $next, $param1)
     {
         return $next('<F:G>' . $param1 . '</F:G>');
     }
@@ -75,7 +77,7 @@ class FirstPlugin
     /**
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    public function aroundV(Intercepted $subject, \Closure $next, $param1)
+    public function aroundV(Intercepted $subject, Closure $next, $param1)
     {
         return '<F:V>' . $param1 . '<F:V/>';
     }
@@ -91,7 +93,7 @@ class FirstPlugin
     /**
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    public function aroundW(Intercepted $subject, \Closure $next, $param1)
+    public function aroundW(Intercepted $subject, Closure $next, $param1)
     {
         return '<F:W>' . $param1 . '<F:W/>';
     }
@@ -115,7 +117,7 @@ class FirstPlugin
     /**
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    public function aroundY(Intercepted $subject, \Closure $next, $param1)
+    public function aroundY(Intercepted $subject, Closure $next, $param1)
     {
         return '<F:Y>' . $param1 . '<F:Y/>';
     }

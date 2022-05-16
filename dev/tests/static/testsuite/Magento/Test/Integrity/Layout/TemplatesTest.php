@@ -5,11 +5,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Layout;
 
+use Magento\Framework\App\Utility\Classes;
 use Magento\Framework\App\Utility\Files;
+use PHPUnit\Framework\TestCase;
 
-class TemplatesTest extends \PHPUnit\Framework\TestCase
+class TemplatesTest extends TestCase
 {
     /**
      * @var array
@@ -43,6 +46,34 @@ class TemplatesTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Initialize array with the Virtual types for blocks
+     *
+     * Contains just those occurrences where base type and virtual type are located in different modules
+     */
+    private static function getBlockVirtualTypesWithDifferentModule()
+    {
+        $virtual = Classes::getVirtualClasses();
+        foreach ($virtual as $className => $resolvedName) {
+            if (strpos($resolvedName, 'Block') !== false) {
+                $matches = [];
+                preg_match('/([A-Za-z0-9]+\\\\[A-Za-z0-9]+).*/', $className, $matches);
+                if (count($matches) > 1) {
+                    $oldModule = $matches[1];
+                } else {
+                    $oldModule = $className;
+                }
+
+                $matches = [];
+                preg_match('/([A-Za-z0-9]+\\\\[A-Za-z0-9]+).*/', $resolvedName, $matches);
+                $newModule = $matches[1];
+                if ($oldModule != $newModule) {
+                    self::$blockVirtualTypes[$className] = $resolvedName;
+                }
+            }
+        }
+    }
+
+    /**
      * Test that references to template files follows canonical format.
      *
      * path/to/template.phtml Format is prohibited.
@@ -68,41 +99,13 @@ class TemplatesTest extends \PHPUnit\Framework\TestCase
         }
         if (count($errors) > 0) {
             $message = 'Failed to assert that the template reference follows the canonical format '
-                     . 'Vendor' . '_' . 'Module::path/to/template.phtml. Following files haven\'t pass verification:'
-                     . PHP_EOL;
+                . 'Vendor' . '_' . 'Module::path/to/template.phtml. Following files haven\'t pass verification:'
+                . PHP_EOL;
             foreach ($errors as $file => $wrongTemplates) {
                 $message .= $file . ':' . PHP_EOL;
                 $message .= '- ' . implode(PHP_EOL . '- ', $wrongTemplates) . PHP_EOL;
             }
             $this->fail($message);
-        }
-    }
-
-    /**
-     * Initialize array with the Virtual types for blocks
-     *
-     * Contains just those occurrences where base type and virtual type are located in different modules
-     */
-    private static function getBlockVirtualTypesWithDifferentModule()
-    {
-        $virtual = \Magento\Framework\App\Utility\Classes::getVirtualClasses();
-        foreach ($virtual as $className => $resolvedName) {
-            if (strpos($resolvedName, 'Block') !== false) {
-                $matches = [];
-                preg_match('/([A-Za-z0-9]+\\\\[A-Za-z0-9]+).*/', $className, $matches);
-                if (count($matches) > 1) {
-                    $oldModule = $matches[1];
-                } else {
-                    $oldModule = $className;
-                }
-
-                $matches = [];
-                preg_match('/([A-Za-z0-9]+\\\\[A-Za-z0-9]+).*/', $resolvedName, $matches);
-                $newModule = $matches[1];
-                if ($oldModule != $newModule) {
-                    self::$blockVirtualTypes[$className] = $resolvedName;
-                }
-            }
         }
     }
 }

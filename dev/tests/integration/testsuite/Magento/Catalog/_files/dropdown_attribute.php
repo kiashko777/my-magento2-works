@@ -6,38 +6,42 @@
 
 /* Create attribute */
 /** @var $attribute \Magento\Catalog\Model\ResourceModel\Eav\Attribute */
-$attribute = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+
+use Magento\Catalog\Setup\CategorySetup;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$attribute = Bootstrap::getObjectManager()->create(
     \Magento\Catalog\Model\ResourceModel\Eav\Attribute::class
 );
 
 if (!$attribute->loadByCode(4, 'dropdown_attribute')->getId()) {
-    /** @var $installer \Magento\Catalog\Setup\CategorySetup */
-    $installer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-        \Magento\Catalog\Setup\CategorySetup::class
+    /** @var $installer CategorySetup */
+    $installer = Bootstrap::getObjectManager()->create(
+        CategorySetup::class
     );
 
     $attribute->setData(
         [
-            'attribute_code'                => 'dropdown_attribute',
-            'entity_type_id'                => $installer->getEntityTypeId('catalog_product'),
-            'is_global'                     => 0,
-            'is_user_defined'               => 1,
-            'frontend_input'                => 'select',
-            'is_unique'                     => 0,
-            'is_required'                   => 0,
-            'is_searchable'                 => 0,
+            'attribute_code' => 'dropdown_attribute',
+            'entity_type_id' => $installer->getEntityTypeId('catalog_product'),
+            'is_global' => 0,
+            'is_user_defined' => 1,
+            'frontend_input' => 'select',
+            'is_unique' => 0,
+            'is_required' => 0,
+            'is_searchable' => 0,
             'is_visible_in_advanced_search' => 0,
-            'is_comparable'                 => 0,
-            'is_filterable'                 => 0,
-            'is_filterable_in_search'       => 0,
-            'is_used_for_promo_rules'       => 0,
-            'is_html_allowed_on_front'      => 1,
-            'is_visible_on_front'           => 1,
-            'used_in_product_listing'       => 1,
-            'used_for_sort_by'              => 0,
-            'frontend_label'                => ['Drop-Down Attribute'],
-            'backend_type'                  => 'varchar',
-            'option'                        => [
+            'is_comparable' => 0,
+            'is_filterable' => 0,
+            'is_filterable_in_search' => 0,
+            'is_used_for_promo_rules' => 0,
+            'is_html_allowed_on_front' => 1,
+            'is_visible_on_front' => 1,
+            'used_in_product_listing' => 1,
+            'used_for_sort_by' => 0,
+            'frontend_label' => ['Drop-Down Attribute'],
+            'backend_type' => 'varchar',
+            'option' => [
                 'value' => [
                     'option_1' => ['Option 1'],
                     'option_2' => ['Option 2'],

@@ -20,17 +20,6 @@ class UpsellTest extends AbstractLinksTest
     protected $block;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->block = $this->layout->createBlock(Upsell::class);
-        $this->linkType = 'upsell';
-    }
-
-    /**
      * Checks for a up-sell product when block code is generated
      *
      * @magentoDataFixture Magento/Catalog/_files/products_upsell.php
@@ -136,5 +125,16 @@ class UpsellTest extends AbstractLinksTest
             $this->getActualLinks($items),
             'Expected up-sell products do not match actual up-sell products!'
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->block = $this->layout->createBlock(Upsell::class);
+        $this->linkType = 'upsell';
     }
 }

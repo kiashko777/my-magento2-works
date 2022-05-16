@@ -5,6 +5,7 @@
  */
 declare(strict_types=1);
 
+use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Status;
 use Magento\TestFramework\Helper\Bootstrap;
 
@@ -15,4 +16,4 @@ $data = [
     'label' => 'Custom Complete Status',
 ];
 $orderStatus->setData($data)->save();
-$orderStatus->assignState(\Magento\Sales\Model\Order::STATE_COMPLETE, false, true);
+$orderStatus->assignState(Order::STATE_COMPLETE, false, true);

@@ -6,12 +6,11 @@
 
 namespace Magento\Setup\Model;
 
+use Laminas\ServiceManager\ServiceLocatorInterface;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Setup\Mvc\Bootstrap\InitParamListener;
 use PHPUnit\Framework\TestCase;
-use PHPUnit\Framework\MockObject\MockObject;
 use Symfony\Component\Console\Application;
-use Laminas\ServiceManager\ServiceLocatorInterface;
 
 /**
  * Tests ObjectManagerProvider
@@ -29,6 +28,16 @@ class ObjectManagerProviderTest extends TestCase
     private $locator;
 
     /**
+     * Tests the same instance of ObjectManagerInterface should be provided by the ObjectManagerProvider
+     */
+    public function testGet()
+    {
+        $objectManager = $this->object->get();
+        $this->assertInstanceOf(ObjectManagerInterface::class, $objectManager);
+        $this->assertSame($objectManager, $this->object->get());
+    }
+
+    /**
      * @inheritDoc
      */
     protected function setUp(): void
@@ -43,15 +52,5 @@ class ObjectManagerProviderTest extends TestCase
                     [Application::class, $this->getMockForAbstractClass(Application::class)],
                 ]
             );
-    }
-
-    /**
-     * Tests the same instance of ObjectManagerInterface should be provided by the ObjectManagerProvider
-     */
-    public function testGet()
-    {
-        $objectManager = $this->object->get();
-        $this->assertInstanceOf(ObjectManagerInterface::class, $objectManager);
-        $this->assertSame($objectManager, $this->object->get());
     }
 }

@@ -6,10 +6,12 @@
 
 namespace Magento\Reports\Controller\Adminhtml\Report\Product;
 
+use Magento\TestFramework\TestCase\AbstractBackendController;
+
 /**
  * @magentoAppArea Adminhtml
  */
-class SoldTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class SoldTest extends AbstractBackendController
 {
     public function testExecute()
     {

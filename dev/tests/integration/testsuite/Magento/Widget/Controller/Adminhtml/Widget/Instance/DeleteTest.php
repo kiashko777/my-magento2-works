@@ -26,16 +26,6 @@ class DeleteTest extends AbstractBackendController
     private $widgetCollection;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->widgetCollection = $this->_objectManager->get(CollectionFactory::class)->create();
-    }
-
-    /**
      * @magentoDataFixture Magento/Widget/_files/new_widget.php
      *
      * @return void
@@ -52,5 +42,15 @@ class DeleteTest extends AbstractBackendController
             MessageInterface::TYPE_SUCCESS
         );
         $this->assertRedirect($this->stringContains('admin/widget_instance/index'));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->widgetCollection = $this->_objectManager->get(CollectionFactory::class)->create();
     }
 }

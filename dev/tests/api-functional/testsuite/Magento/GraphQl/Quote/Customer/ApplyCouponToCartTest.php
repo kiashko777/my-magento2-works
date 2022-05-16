@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Quote\Customer;
 
+use Exception;
 use Magento\Framework\Exception\AuthenticationException;
 use Magento\GraphQl\Quote\GetMaskedQuoteIdByReservedOrderId;
 use Magento\Integration\Api\CustomerTokenServiceInterface;
@@ -28,13 +29,6 @@ class ApplyCouponToCartTest extends GraphQlAbstract
      */
     private $getMaskedQuoteIdByReservedOrderId;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-    }
-
     /**
      * @magentoApiDataFixture Magento/Checkout/_files/discount_10percent_generalusers.php
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
@@ -54,6 +48,41 @@ class ApplyCouponToCartTest extends GraphQlAbstract
     }
 
     /**
+     * @param string $maskedQuoteId
+     * @param string $couponCode
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId, string $couponCode): string
+    {
+        return <<<QUERY
+mutation {
+  applyCouponToCart(input: {cart_id: "$maskedQuoteId", coupon_code: "$couponCode"}) {
+    cart {
+      applied_coupon {
+        code
+      }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
+     * Retrieve customer authorization headers
+     *
+     * @param string $username
+     * @param string $password
+     * @return array
+     * @throws AuthenticationException
+     */
+    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
+        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
+        return $headerMap;
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Checkout/_files/discount_10percent_generalusers.php
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
@@ -62,7 +91,7 @@ class ApplyCouponToCartTest extends GraphQlAbstract
      */
     public function testApplyCouponTwice()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('A coupon is already applied to the cart. Please remove it to apply another');
 
         $couponCode = '2?ds5!2d';
@@ -84,7 +113,7 @@ class ApplyCouponToCartTest extends GraphQlAbstract
      */
     public function testApplyCouponToCartWithoutItems()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Cart does not contain products.');
 
         $couponCode = '2?ds5!2d';
@@ -102,7 +131,7 @@ class ApplyCouponToCartTest extends GraphQlAbstract
      */
     public function testApplyCouponToGuestCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
 
         $couponCode = '2?ds5!2d';
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
@@ -122,7 +151,7 @@ class ApplyCouponToCartTest extends GraphQlAbstract
      */
     public function testApplyCouponToAnotherCustomerCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
 
         $couponCode = '2?ds5!2d';
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
@@ -140,7 +169,7 @@ class ApplyCouponToCartTest extends GraphQlAbstract
      */
     public function testApplyNonExistentCouponToCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The coupon code isn\'t valid. Verify the code and try again.');
 
         $couponCode = 'non_existent_coupon_code';
@@ -158,7 +187,7 @@ class ApplyCouponToCartTest extends GraphQlAbstract
      */
     public function testApplyCouponToNonExistentCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
 
         $couponCode = '2?ds5!2d';
         $maskedQuoteId = 'non_existent_masked_id';
@@ -180,7 +209,7 @@ class ApplyCouponToCartTest extends GraphQlAbstract
      */
     public function testApplyCouponWhichIsNotApplicable()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The coupon code isn\'t valid. Verify the code and try again.');
 
         $couponCode = '2?ds5!2d';
@@ -190,38 +219,10 @@ class ApplyCouponToCartTest extends GraphQlAbstract
         $this->graphQlMutation($query, [], '', $this->getHeaderMap());
     }
 
-    /**
-     * Retrieve customer authorization headers
-     *
-     * @param string $username
-     * @param string $password
-     * @return array
-     * @throws AuthenticationException
-     */
-    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
+    protected function setUp(): void
     {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
-        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
-        return $headerMap;
-    }
-
-    /**
-     * @param string $maskedQuoteId
-     * @param string $couponCode
-     * @return string
-     */
-    private function getQuery(string $maskedQuoteId, string $couponCode): string
-    {
-        return <<<QUERY
-mutation {
-  applyCouponToCart(input: {cart_id: "$maskedQuoteId", coupon_code: "$couponCode"}) {
-    cart {
-      applied_coupon {
-        code
-      }
-    }
-  }
-}
-QUERY;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
     }
 }

@@ -13,21 +13,6 @@ use PHPUnit\Framework\TestCase;
 class PatternTest extends TestCase
 {
     /**
-     * Get pattern object
-     *
-     * @param array $patternData
-     *
-     * @return Pattern
-     */
-    protected function getPattern($patternData)
-    {
-        $pattern = new Pattern();
-        $pattern->setHeaders(array_keys($patternData[0]));
-        $pattern->setRowsSet($patternData);
-        return $pattern;
-    }
-
-    /**
      * Data source for pattern
      *
      * @return array
@@ -51,11 +36,11 @@ class PatternTest extends TestCase
                         'name' => 'yyy %s'
                     ],
                 ],
-                'expectedCount'      => 3,
+                'expectedCount' => 3,
                 'expectedRowsResult' => [
                     ['id' => '1', 'name' => 'Static', 'calculated' => 10],
-                    ['id' => '',  'name' => 'xxx 1',  'calculated' => ''],
-                    ['id' => '',  'name' => 'yyy 1',  'calculated' => ''],
+                    ['id' => '', 'name' => 'xxx 1', 'calculated' => ''],
+                    ['id' => '', 'name' => 'yyy 1', 'calculated' => ''],
                 ],
             ],
             1 => [
@@ -94,5 +79,20 @@ class PatternTest extends TestCase
         foreach ($expectedRowsResult as $key => $expectedRow) {
             $this->assertEquals($expectedRow, $pattern->getRow(floor($key / $pattern->getRowsCount()) + 1, $key));
         }
+    }
+
+    /**
+     * Get pattern object
+     *
+     * @param array $patternData
+     *
+     * @return Pattern
+     */
+    protected function getPattern($patternData)
+    {
+        $pattern = new Pattern();
+        $pattern->setHeaders(array_keys($patternData[0]));
+        $pattern->setRowsSet($patternData);
+        return $pattern;
     }
 }

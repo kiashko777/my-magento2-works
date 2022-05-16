@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace Magento\Sales\Controller\Adminhtml\Order;
 
+use DateTime;
+use DateTimeZone;
 use Magento\Framework\App\Request\Http;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Api\Data\OrderInterfaceFactory;
@@ -127,8 +129,8 @@ class ExportBase extends AbstractBackendController
      */
     protected function prepareDate(string $date, string $timezone): string
     {
-        $date = new \DateTime($date, new \DateTimeZone('UTC'));
-        $date->setTimezone(new \DateTimeZone($timezone));
+        $date = new DateTime($date, new DateTimeZone('UTC'));
+        $date->setTimezone(new DateTimeZone($timezone));
 
         return $date->format('M j, Y h:i:s A');
     }

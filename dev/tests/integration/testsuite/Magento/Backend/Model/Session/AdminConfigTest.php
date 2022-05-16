@@ -3,8 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Backend\Model\Session;
 
+use Magento\Backend\App\Area\FrontNameResolver;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -12,25 +16,16 @@ use PHPUnit\Framework\TestCase;
  *
  * @magentoAppArea Adminhtml
  */
-class AdminConfigTest extends \PHPUnit\Framework\TestCase
+class AdminConfigTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        \Magento\TestFramework\Helper\Bootstrap::getInstance()
-            ->loadArea(\Magento\Backend\App\Area\FrontNameResolver::AREA_CODE);
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
-
     public function testConstructor()
     {
-        $model = $this->objectManager->create(\Magento\Backend\Model\Session\AdminConfig::class);
+        $model = $this->objectManager->create(AdminConfig::class);
         $this->assertEquals('/index.php/backend', $model->getCookiePath());
     }
 
@@ -42,9 +37,18 @@ class AdminConfigTest extends \PHPUnit\Framework\TestCase
     {
         $sessionName = 'adminHtmlSession';
         $adminConfig = $this->objectManager->create(
-            \Magento\Backend\Model\Session\AdminConfig::class,
+            AdminConfig::class,
             ['sessionName' => $sessionName]
         );
         $this->assertSame($sessionName, $adminConfig->getName());
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Bootstrap::getInstance()
+            ->loadArea(FrontNameResolver::AREA_CODE);
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

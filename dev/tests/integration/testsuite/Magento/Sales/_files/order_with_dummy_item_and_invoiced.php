@@ -5,7 +5,10 @@
  */
 
 use Magento\Sales\Api\Data\OrderInterfaceFactory;
+use Magento\Sales\Api\Data\OrderItemInterface;
 use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Item;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Sales/_files/order.php');
@@ -14,25 +17,25 @@ $order = $objectManager->get(OrderInterfaceFactory::class)->create()->loadByIncr
 
 $orderItems = [
     [
-        \Magento\Sales\Api\Data\OrderItemInterface::PRODUCT_ID   => 2,
-        \Magento\Sales\Api\Data\OrderItemInterface::BASE_PRICE   => 100,
-        \Magento\Sales\Api\Data\OrderItemInterface::ORDER_ID     => $order->getId(),
-        \Magento\Sales\Api\Data\OrderItemInterface::QTY_ORDERED  => 2,
-        \Magento\Sales\Api\Data\OrderItemInterface::QTY_INVOICED => 2,
-        \Magento\Sales\Api\Data\OrderItemInterface::PRICE        => 100,
-        \Magento\Sales\Api\Data\OrderItemInterface::ROW_TOTAL    => 102,
-        \Magento\Sales\Api\Data\OrderItemInterface::PRODUCT_TYPE => 'bundle',
-        'children'                                               => [
+        OrderItemInterface::PRODUCT_ID => 2,
+        OrderItemInterface::BASE_PRICE => 100,
+        OrderItemInterface::ORDER_ID => $order->getId(),
+        OrderItemInterface::QTY_ORDERED => 2,
+        OrderItemInterface::QTY_INVOICED => 2,
+        OrderItemInterface::PRICE => 100,
+        OrderItemInterface::ROW_TOTAL => 102,
+        OrderItemInterface::PRODUCT_TYPE => 'bundle',
+        'children' => [
             [
-                \Magento\Sales\Api\Data\OrderItemInterface::PRODUCT_ID   => 13,
-                \Magento\Sales\Api\Data\OrderItemInterface::ORDER_ID     => $order->getId(),
-                \Magento\Sales\Api\Data\OrderItemInterface::QTY_ORDERED  => 2,
-                \Magento\Sales\Api\Data\OrderItemInterface::QTY_INVOICED => 2,
-                \Magento\Sales\Api\Data\OrderItemInterface::BASE_PRICE   => 90,
-                \Magento\Sales\Api\Data\OrderItemInterface::PRICE        => 90,
-                \Magento\Sales\Api\Data\OrderItemInterface::ROW_TOTAL    => 92,
-                \Magento\Sales\Api\Data\OrderItemInterface::PRODUCT_TYPE => 'simple',
-                'product_options'                                        => [
+                OrderItemInterface::PRODUCT_ID => 13,
+                OrderItemInterface::ORDER_ID => $order->getId(),
+                OrderItemInterface::QTY_ORDERED => 2,
+                OrderItemInterface::QTY_INVOICED => 2,
+                OrderItemInterface::BASE_PRICE => 90,
+                OrderItemInterface::PRICE => 90,
+                OrderItemInterface::ROW_TOTAL => 92,
+                OrderItemInterface::PRODUCT_TYPE => 'simple',
+                'product_options' => [
                     'bundle_selection_attributes' => '{"qty":2}',
                 ],
             ]
@@ -52,16 +55,16 @@ saveOrderItems($orderItems);
  * Save Order Items.
  *
  * @param array $orderItems
- * @param \Magento\Sales\Model\Order\Item|null $parentOrderItem [optional]
+ * @param Item|null $parentOrderItem [optional]
  * @return void
  */
 function saveOrderItems(array $orderItems, $parentOrderItem = null)
 {
     /** @var array $orderItemData */
     foreach ($orderItems as $orderItemData) {
-        /** @var $orderItem \Magento\Sales\Model\Order\Item */
-        $orderItem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Sales\Model\Order\Item::class
+        /** @var $orderItem Item */
+        $orderItem = Bootstrap::getObjectManager()->create(
+            Item::class
         );
         if (null !== $parentOrderItem) {
             $orderItemData['parent_item'] = $parentOrderItem;

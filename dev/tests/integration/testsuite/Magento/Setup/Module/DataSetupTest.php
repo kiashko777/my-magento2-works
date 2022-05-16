@@ -3,23 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module;
 
+use Magento\Framework\DB\Adapter\TableNotFoundException;
+use Magento\Framework\Setup\DataCacheInterface;
 use Magento\Framework\Setup\ModuleDataSetupInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class DataSetupTest extends \PHPUnit\Framework\TestCase
+class DataSetupTest extends TestCase
 {
     /**
      * @var ModuleDataSetupInterface
      */
     protected $_model;
-
-    protected function setUp(): void
-    {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Setup\Module\DataSetup::class
-        );
-    }
 
     public function testUpdateTableRow()
     {
@@ -40,7 +38,7 @@ class DataSetupTest extends \PHPUnit\Framework\TestCase
 
     public function testDeleteTableRow()
     {
-        $this->expectException(\Magento\Framework\DB\Adapter\TableNotFoundException::class);
+        $this->expectException(TableNotFoundException::class);
 
         $this->_model->deleteTableRow('setup/module', 'module', 'integration_test_fixture_setup');
     }
@@ -50,7 +48,7 @@ class DataSetupTest extends \PHPUnit\Framework\TestCase
      */
     public function testUpdateTableRowNameConversion()
     {
-        $this->expectException(\Magento\Framework\DB\Adapter\TableNotFoundException::class);
+        $this->expectException(TableNotFoundException::class);
 
         $original = $this->_model->getTableRow('setup_module', 'module', 'core_setup', 'schema_version');
         $this->_model->updateTableRow('setup/module', 'module', 'core_setup', 'schema_version', $original);
@@ -64,6 +62,13 @@ class DataSetupTest extends \PHPUnit\Framework\TestCase
 
     public function testGetSetupCache()
     {
-        $this->assertInstanceOf(\Magento\Framework\Setup\DataCacheInterface::class, $this->_model->getSetupCache());
+        $this->assertInstanceOf(DataCacheInterface::class, $this->_model->getSetupCache());
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()->create(
+            DataSetup::class
+        );
     }
 }

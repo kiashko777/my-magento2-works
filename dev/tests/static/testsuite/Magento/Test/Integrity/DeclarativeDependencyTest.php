@@ -29,37 +29,18 @@ class DeclarativeDependencyTest extends TestCase
     private $dependencyProvider;
 
     /**
-     * Sets up data
-     *
-     * @throws InspectionException
-     */
-    protected function setUp(): void
-    {
-        $root = BP;
-        $rootJson = $this->readJsonFile($root . '/composer.json', true);
-        if (preg_match('/magento\/project-*/', $rootJson['name']) == 1) {
-            // The Dependency test is skipped for vendor/magento build
-            self::markTestSkipped(
-                'MAGETWO-43654: The build is running from vendor/magento. DependencyTest is skipped.'
-            );
-        }
-        $objectManager = ObjectManager::getInstance();
-        $this->dependencyProvider = $objectManager->create(DeclarativeSchemaDependencyProvider::class);
-    }
-
-    /**
      * @throws LocalizedException
      */
     public function testUndeclaredDependencies()
     {
         $invoker = new AggregateInvoker($this);
         $invoker(
-            /**
-             * Check undeclared modules dependencies for specified file
-             *
-             * @param string $fileType
-             * @param string $file
-             */
+        /**
+         * Check undeclared modules dependencies for specified file
+         *
+         * @param string $fileType
+         * @param string $file
+         */
             function ($file) {
                 $componentRegistrar = new ComponentRegistrar();
                 $foundModuleName = '';
@@ -91,22 +72,6 @@ class DeclarativeDependencyTest extends TestCase
     }
 
     /**
-     * Convert file list to data provider structure.
-     *
-     * @param string[] $files
-     * @return array
-     */
-    private function prepareFiles(array $files): array
-    {
-        $result = [];
-        foreach ($files as $relativePath => $file) {
-            $absolutePath = reset($file);
-            $result[$relativePath] = [$absolutePath];
-        }
-        return $result;
-    }
-
-    /**
      * Retrieve error message for dependency.
      *
      * @param string $id
@@ -131,6 +96,41 @@ class DeclarativeDependencyTest extends TestCase
         }
 
         return $message;
+    }
+
+    /**
+     * Convert file list to data provider structure.
+     *
+     * @param string[] $files
+     * @return array
+     */
+    private function prepareFiles(array $files): array
+    {
+        $result = [];
+        foreach ($files as $relativePath => $file) {
+            $absolutePath = reset($file);
+            $result[$relativePath] = [$absolutePath];
+        }
+        return $result;
+    }
+
+    /**
+     * Sets up data
+     *
+     * @throws InspectionException
+     */
+    protected function setUp(): void
+    {
+        $root = BP;
+        $rootJson = $this->readJsonFile($root . '/composer.json', true);
+        if (preg_match('/magento\/project-*/', $rootJson['name']) == 1) {
+            // The Dependency test is skipped for vendor/magento build
+            self::markTestSkipped(
+                'MAGETWO-43654: The build is running from vendor/magento. DependencyTest is skipped.'
+            );
+        }
+        $objectManager = ObjectManager::getInstance();
+        $this->dependencyProvider = $objectManager->create(DeclarativeSchemaDependencyProvider::class);
     }
 
     /**

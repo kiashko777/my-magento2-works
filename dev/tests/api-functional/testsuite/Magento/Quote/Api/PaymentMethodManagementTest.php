@@ -3,38 +3,42 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Quote\Api;
 
-class PaymentMethodManagementTest extends \Magento\TestFramework\TestCase\WebapiAbstract
+use Exception;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Integration\Api\CustomerTokenServiceInterface;
+use Magento\Quote\Model\Quote;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use Magento\TestFramework\TestCase\WebapiAbstract;
+
+class PaymentMethodManagementTest extends WebapiAbstract
 {
     const SERVICE_VERSION = 'V1';
     const SERVICE_NAME = 'quotePaymentMethodManagementV1';
     const RESOURCE_PATH = '/V1/carts/';
 
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoApiDataFixture Magento/Checkout/_files/quote_with_payment_saved.php
      */
     public function testReSetPayment()
     {
-        /** @var \Magento\Quote\Model\Quote  $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_1_with_payment', 'reserved_order_id');
         $cartId = $quote->getId();
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $cartId . '/selected-payment-method',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -59,15 +63,15 @@ class PaymentMethodManagementTest extends \Magento\TestFramework\TestCase\Webapi
      */
     public function testSetPaymentWithVirtualProduct()
     {
-        /** @var \Magento\Quote\Model\Quote  $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_with_virtual_product', 'reserved_order_id');
         $cartId = $quote->getId();
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $cartId . '/selected-payment-method',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -91,15 +95,15 @@ class PaymentMethodManagementTest extends \Magento\TestFramework\TestCase\Webapi
      */
     public function testSetPaymentWithSimpleProduct()
     {
-        /** @var \Magento\Quote\Model\Quote  $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_1', 'reserved_order_id');
         $cartId = $quote->getId();
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $cartId . '/selected-payment-method',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -124,18 +128,18 @@ class PaymentMethodManagementTest extends \Magento\TestFramework\TestCase\Webapi
      */
     public function testSetPaymentWithSimpleProductWithoutAddress()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The shipping address is missing. Set the address and try again.');
 
-        /** @var \Magento\Quote\Model\Quote  $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_with_simple_product_without_address', 'reserved_order_id');
         $cartId = $quote->getId();
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $cartId . '/selected-payment-method',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -159,15 +163,15 @@ class PaymentMethodManagementTest extends \Magento\TestFramework\TestCase\Webapi
      */
     public function testGetList()
     {
-        /** @var \Magento\Quote\Model\Quote  $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_1', 'reserved_order_id');
         $cartId = $quote->getId();
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $cartId . '/payment-methods',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -193,15 +197,15 @@ class PaymentMethodManagementTest extends \Magento\TestFramework\TestCase\Webapi
      */
     public function testGet()
     {
-        /** @var \Magento\Quote\Model\Quote $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_1_with_payment', 'reserved_order_id');
         $cartId = $quote->getId();
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $cartId . '/selected-payment-method',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -222,20 +226,28 @@ class PaymentMethodManagementTest extends \Magento\TestFramework\TestCase\Webapi
     }
 
     /**
+     * @return array
+     */
+    protected function getPaymentMethodFieldsForAssert()
+    {
+        return ['method', 'po_number', 'additional_data'];
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Checkout/_files/quote_with_address_saved.php
      */
     public function testGetListMine()
     {
         $this->_markTestAsRestOnly();
 
-        /** @var \Magento\Quote\Model\Quote $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_1', 'reserved_order_id');
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . 'mine/payment-methods',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
                 'token' => $this->getCustomerToken()
             ]
         ];
@@ -252,20 +264,35 @@ class PaymentMethodManagementTest extends \Magento\TestFramework\TestCase\Webapi
     }
 
     /**
+     * Get customer ID token
+     *
+     * @return string
+     */
+    protected function getCustomerToken()
+    {
+        /** @var CustomerTokenServiceInterface $customerTokenService */
+        $customerTokenService = $this->objectManager->create(
+            CustomerTokenServiceInterface::class
+        );
+        $token = $customerTokenService->createCustomerAccessToken('customer@example.com', 'password');
+        return $token;
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Checkout/_files/quote_with_payment_saved.php
      */
     public function testGetMine()
     {
         $this->_markTestAsRestOnly();
 
-        /** @var \Magento\Quote\Model\Quote $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_1_with_payment', 'reserved_order_id');
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . 'mine/selected-payment-method',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
                 'token' => $this->getCustomerToken()
             ]
         ];
@@ -286,14 +313,14 @@ class PaymentMethodManagementTest extends \Magento\TestFramework\TestCase\Webapi
     {
         $this->_markTestAsRestOnly();
 
-        /** @var \Magento\Quote\Model\Quote $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_1', 'reserved_order_id');
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . 'mine/selected-payment-method',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
                 'token' => $this->getCustomerToken()
             ]
         ];
@@ -308,26 +335,8 @@ class PaymentMethodManagementTest extends \Magento\TestFramework\TestCase\Webapi
         $this->assertNotNull($this->_webApiCall($serviceInfo, $requestData));
     }
 
-    /**
-     * @return array
-     */
-    protected function getPaymentMethodFieldsForAssert()
+    protected function setUp(): void
     {
-        return ['method', 'po_number', 'additional_data'];
-    }
-
-    /**
-     * Get customer ID token
-     *
-     * @return string
-     */
-    protected function getCustomerToken()
-    {
-        /** @var \Magento\Integration\Api\CustomerTokenServiceInterface $customerTokenService */
-        $customerTokenService = $this->objectManager->create(
-            \Magento\Integration\Api\CustomerTokenServiceInterface::class
-        );
-        $token = $customerTokenService->createCustomerAccessToken('customer@example.com', 'password');
-        return $token;
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Catalog;
 
+use Exception;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\TestFramework\ObjectManager;
@@ -64,6 +65,22 @@ QUERY;
     }
 
     /**
+     * @param ProductInterface $product
+     * @param array $actualResponse
+     */
+    private function assertBaseFields($product, $actualResponse)
+    {
+        $assertionMap = [
+            ['response_field' => 'id', 'expected_value' => $product->getId()],
+            ['response_field' => 'name', 'expected_value' => $product->getName()],
+            ['response_field' => 'sku', 'expected_value' => $product->getSku()],
+            ['response_field' => 'type_id', 'expected_value' => $product->getTypeId()]
+        ];
+
+        $this->assertResponseFields($actualResponse, $assertionMap);
+    }
+
+    /**
      *
      * @magentoApiDataFixture Magento/Catalog/_files/product_virtual.php
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
@@ -96,26 +113,10 @@ QUERY;
 }
 QUERY;
 
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage(
             'GraphQL response contains errors: Cannot query field "weight" on type "VirtualProduct"'
         );
         $this->graphQlQuery($query);
-    }
-
-    /**
-     * @param ProductInterface $product
-     * @param array $actualResponse
-     */
-    private function assertBaseFields($product, $actualResponse)
-    {
-        $assertionMap = [
-            ['response_field' => 'id', 'expected_value' => $product->getId()],
-            ['response_field' => 'name', 'expected_value' => $product->getName()],
-            ['response_field' => 'sku', 'expected_value' => $product->getSku()],
-            ['response_field' => 'type_id', 'expected_value' => $product->getTypeId()]
-        ];
-
-        $this->assertResponseFields($actualResponse, $assertionMap);
     }
 }

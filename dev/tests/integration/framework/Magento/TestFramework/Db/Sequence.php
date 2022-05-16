@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Db;
 
 use Magento\Framework\App\ResourceConnection as AppResource;
@@ -40,7 +41,8 @@ class Sequence
     public function __construct(
         AppResource $appResource,
         DdlSequence $ddlSequence
-    ) {
+    )
+    {
         $this->appResource = $appResource;
         $this->ddlSequence = $ddlSequence;
     }

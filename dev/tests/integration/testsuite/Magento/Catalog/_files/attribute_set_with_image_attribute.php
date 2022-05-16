@@ -4,14 +4,19 @@
  * See COPYING.txt for license details.
  */
 
-/** @var $product \Magento\Catalog\Model\Product */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+/** @var $product Product */
 
-/** @var \Magento\Eav\Model\Entity\Attribute\Set $attributeSet */
-$attributeSet = $objectManager->create(\Magento\Eav\Model\Entity\Attribute\Set::class);
+use Magento\Catalog\Model\Product;
+use Magento\Eav\Model\Entity\Attribute\Set;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
+
+/** @var Set $attributeSet */
+$attributeSet = $objectManager->create(Set::class);
 
 $entityType = $objectManager->create(\Magento\Eav\Model\Entity\Type::class)->loadByCode('catalog_product');
-$defaultSetId = $objectManager->create(\Magento\Catalog\Model\Product::class)->getDefaultAttributeSetid();
+$defaultSetId = $objectManager->create(Product::class)->getDefaultAttributeSetid();
 
 $data = [
     'attribute_set_name' => 'attribute_set_with_media_attribute',

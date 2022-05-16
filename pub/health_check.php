@@ -8,7 +8,15 @@
  * phpcs:disable PSR1.Files.SideEffects
  * phpcs:disable Squiz.Functions.GlobalFunction
  */
+
+use Magento\Framework\App\Bootstrap;
+use Magento\Framework\App\Cache\Frontend\Factory;
+use Magento\Framework\App\DeploymentConfig;
+use Magento\Framework\App\ObjectManagerFactory;
 use Magento\Framework\Config\ConfigOptionsListConstants;
+use Magento\Framework\DB\Adapter\Pdo\Mysql;
+use Magento\Framework\ObjectManagerInterface;
+use Psr\Log\LoggerInterface;
 
 // phpcs:ignore Magento2.Functions.DiscouragedFunction
 register_shutdown_function("fatalErrorHandler");
@@ -16,15 +24,15 @@ register_shutdown_function("fatalErrorHandler");
 try {
     // phpcs:ignore Magento2.Security.IncludeFile
     require __DIR__ . '/../app/bootstrap.php';
-    /** @var \Magento\Framework\App\ObjectManagerFactory $objectManagerFactory */
-    $objectManagerFactory = \Magento\Framework\App\Bootstrap::createObjectManagerFactory(BP, []);
-    /** @var \Magento\Framework\ObjectManagerInterface $objectManager */
+    /** @var ObjectManagerFactory $objectManagerFactory */
+    $objectManagerFactory = Bootstrap::createObjectManagerFactory(BP, []);
+    /** @var ObjectManagerInterface $objectManager */
     $objectManager = $objectManagerFactory->create([]);
-    /** @var \Magento\Framework\App\DeploymentConfig $deploymentConfig */
-    $deploymentConfig = $objectManager->get(\Magento\Framework\App\DeploymentConfig::class);
-    /** @var \Psr\Log\LoggerInterface $logger */
-    $logger = $objectManager->get(\Psr\Log\LoggerInterface::class);
-} catch (\Exception $e) {
+    /** @var DeploymentConfig $deploymentConfig */
+    $deploymentConfig = $objectManager->get(DeploymentConfig::class);
+    /** @var LoggerInterface $logger */
+    $logger = $objectManager->get(LoggerInterface::class);
+} catch (Exception $e) {
     http_response_code(500);
     // phpcs:ignore Magento2.Security.LanguageConstruct
     exit(1);
@@ -33,13 +41,13 @@ try {
 // check mysql connectivity
 foreach ($deploymentConfig->get(ConfigOptionsListConstants::CONFIG_PATH_DB_CONNECTIONS) as $connectionData) {
     try {
-        /** @var \Magento\Framework\DB\Adapter\Pdo\Mysql $dbAdapter */
+        /** @var Mysql $dbAdapter */
         $dbAdapter = $objectManager->create(
-            \Magento\Framework\DB\Adapter\Pdo\Mysql::class,
+            Mysql::class,
             ['config' => $connectionData]
         );
         $dbAdapter->getConnection();
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         http_response_code(500);
         $logger->error("MySQL connection failed: " . $e->getMessage());
         // phpcs:ignore Magento2.Security.LanguageConstruct
@@ -63,12 +71,12 @@ if ($cacheConfigs) {
         }
         $cacheBackendClass = $cacheConfig[ConfigOptionsListConstants::CONFIG_PATH_BACKEND];
         try {
-            /** @var \Magento\Framework\App\Cache\Frontend\Factory $cacheFrontendFactory */
+            /** @var Factory $cacheFrontendFactory */
             $cacheFrontendFactory = $objectManager->get(Magento\Framework\App\Cache\Frontend\Factory::class);
-            /** @var \Zend_Cache_Backend_Interface $backend */
+            /** @var Zend_Cache_Backend_Interface $backend */
             $backend = $cacheFrontendFactory->create($cacheConfig);
             $backend->test('test_cache_id');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             http_response_code(500);
             $logger->error("Cache storage is not accessible");
             // phpcs:ignore Magento2.Security.LanguageConstruct

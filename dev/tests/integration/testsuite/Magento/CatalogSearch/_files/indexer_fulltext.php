@@ -4,11 +4,18 @@
  * See COPYING.txt for license details.
  */
 
-/** @var $category \Magento\Catalog\Model\Category */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+/** @var $category Category */
 
-/** @var $productFirst \Magento\Catalog\Model\Product */
-$productFirst = $objectManager->create(\Magento\Catalog\Model\Product::class);
+use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
+
+/** @var $productFirst Product */
+$productFirst = $objectManager->create(Product::class);
 $productFirst->setTypeId('simple')
     ->setAttributeSetId(4)
     ->setWebsiteIds([1])
@@ -19,13 +26,13 @@ $productFirst->setTypeId('simple')
     ->setMetaTitle('first meta title')
     ->setMetaKeyword('first meta keyword')
     ->setMetaDescription('first meta description')
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setStockData(['use_config_manage_stock' => 0])
     ->save();
 
-/** @var $productFirst \Magento\Catalog\Model\Product */
-$productSecond = $objectManager->create(\Magento\Catalog\Model\Product::class);
+/** @var $productFirst Product */
+$productSecond = $objectManager->create(Product::class);
 $productSecond->setTypeId('simple')
     ->setAttributeSetId(4)
     ->setWebsiteIds([1])
@@ -36,13 +43,13 @@ $productSecond->setTypeId('simple')
     ->setMetaTitle('second meta title')
     ->setMetaKeyword('second meta keyword')
     ->setMetaDescription('second meta description')
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setStockData(['use_config_manage_stock' => 0])
     ->save();
 
-/** @var $productFirst \Magento\Catalog\Model\Product */
-$productThird = $objectManager->create(\Magento\Catalog\Model\Product::class);
+/** @var $productFirst Product */
+$productThird = $objectManager->create(Product::class);
 $productThird->setTypeId('simple')
     ->setAttributeSetId(4)
     ->setWebsiteIds([1])
@@ -53,13 +60,13 @@ $productThird->setTypeId('simple')
     ->setMetaTitle('third meta title')
     ->setMetaKeyword('third meta keyword')
     ->setMetaDescription('third meta description')
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setStockData(['use_config_manage_stock' => 0])
     ->save();
 
-/** @var $productFirst \Magento\Catalog\Model\Product */
-$productFourth = $objectManager->create(\Magento\Catalog\Model\Product::class);
+/** @var $productFirst Product */
+$productFourth = $objectManager->create(Product::class);
 $productFourth->setTypeId('simple')
     ->setAttributeSetId(4)
     ->setWebsiteIds([1])
@@ -70,13 +77,13 @@ $productFourth->setTypeId('simple')
     ->setMetaTitle('fourth meta title')
     ->setMetaKeyword('fourth meta keyword')
     ->setMetaDescription('fourth meta description')
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setStockData(['use_config_manage_stock' => 0])
     ->save();
 
-/** @var $productFirst \Magento\Catalog\Model\Product */
-$productFifth = $objectManager->create(\Magento\Catalog\Model\Product::class);
+/** @var $productFirst Product */
+$productFifth = $objectManager->create(Product::class);
 $productFifth->setTypeId('simple')
     ->setAttributeSetId(4)
     ->setWebsiteIds([1])
@@ -87,7 +94,7 @@ $productFifth->setTypeId('simple')
     ->setMetaTitle('fifth meta title')
     ->setMetaKeyword('fifth meta keyword')
     ->setMetaDescription('fifth meta description')
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setStockData(['use_config_manage_stock' => 0])
     ->save();

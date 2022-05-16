@@ -5,42 +5,44 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Reflection;
 
-use Magento\TestFramework\Helper\CacheCleaner;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class MethodsMapTest extends \PHPUnit\Framework\TestCase
+class MethodsMapTest extends TestCase
 {
-    /** @var \Magento\Framework\Reflection\MethodsMap */
+    /** @var MethodsMap */
     private $object;
-
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->object = $objectManager->create(
-            \Magento\Framework\Reflection\MethodsMap::class
-        );
-    }
 
     public function testGetMethodsMap()
     {
-        $data = $this->object->getMethodsMap(\Magento\Framework\Reflection\MethodsMap::class);
+        $data = $this->object->getMethodsMap(MethodsMap::class);
         $this->assertArrayHasKey('getMethodsMap', $data);
-        $cachedData = $this->object->getMethodsMap(\Magento\Framework\Reflection\MethodsMap::class);
+        $cachedData = $this->object->getMethodsMap(MethodsMap::class);
         $this->assertEquals($data, $cachedData);
     }
 
     public function testGetMethodParams()
     {
         $data = $this->object->getMethodParams(
-            \Magento\Framework\Reflection\MethodsMap::class,
+            MethodsMap::class,
             'getMethodParams'
         );
         $this->assertCount(2, $data);
         $cachedData = $this->object->getMethodParams(
-            \Magento\Framework\Reflection\MethodsMap::class,
+            MethodsMap::class,
             'getMethodParams'
         );
         $this->assertEquals($data, $cachedData);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->object = $objectManager->create(
+            MethodsMap::class
+        );
     }
 }

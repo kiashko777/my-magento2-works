@@ -3,18 +3,24 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Wishlist\Block\Customer\Wishlist;
 
-class ItemsTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Wishlist\Block\Customer\Wishlist\Item\Column;
+use PHPUnit\Framework\TestCase;
+
+class ItemsTest extends TestCase
 {
     public function testGetColumns()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
         $layout = $objectManager->get(
-            \Magento\Framework\View\LayoutInterface::class
+            LayoutInterface::class
         );
-        $block = $layout->addBlock(\Magento\Wishlist\Block\Customer\Wishlist\Items::class, 'test');
-        $child = $this->getMockBuilder(\Magento\Wishlist\Block\Customer\Wishlist\Item\Column::class)
+        $block = $layout->addBlock(Items::class, 'test');
+        $child = $this->getMockBuilder(Column::class)
             ->setMethods(['isEnabled'])
             ->disableOriginalConstructor()
             ->getMock();

@@ -7,19 +7,16 @@ declare(strict_types=1);
 
 namespace Magento\Framework\Encryption;
 
-class ModelTest extends \PHPUnit\Framework\TestCase
+use Exception;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class ModelTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Encryption\Encryptor
+     * @var Encryptor
      */
     protected $_model;
-
-    protected function setUp(): void
-    {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\Encryption\Encryptor::class
-        );
-    }
 
     public function testEncryptDecrypt()
     {
@@ -53,7 +50,7 @@ class ModelTest extends \PHPUnit\Framework\TestCase
      */
     public function testValidateKeyInvalid()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
 
         $invalidKey = '----    ';
         $this->_model->validateKey($invalidKey);
@@ -66,5 +63,12 @@ class ModelTest extends \PHPUnit\Framework\TestCase
 
         $this->assertIsString($hash);
         $this->assertTrue($this->_model->validateHash($password, $hash));
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Encryptor::class
+        );
     }
 }

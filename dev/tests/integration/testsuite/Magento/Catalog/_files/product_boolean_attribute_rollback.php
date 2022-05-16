@@ -4,9 +4,9 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Catalog\Model\ResourceModel\Eav\Attribute;
 use Magento\Framework\Registry;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Catalog\Model\ResourceModel\Eav\Attribute;
 
 $objectManager = Bootstrap::getObjectManager();
 

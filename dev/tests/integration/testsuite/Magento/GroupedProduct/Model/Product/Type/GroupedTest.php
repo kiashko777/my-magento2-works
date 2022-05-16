@@ -3,46 +3,39 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\GroupedProduct\Model\Product\Type;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Type;
 use Magento\CatalogInventory\Model\Configuration;
 use Magento\Framework\App\Config\ReinitableConfigInterface;
 use Magento\Framework\App\Config\Value;
+use Magento\Framework\DataObject;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class GroupedTest extends \PHPUnit\Framework\TestCase
+class GroupedTest extends TestCase
 {
+    /**
+     * @var ObjectManagerInterface
+     */
+    protected $objectManager;
+    /**
+     * @var Type
+     */
+    protected $_productType;
     /**
      * @var ReinitableConfigInterface
      */
     private $reinitableConfig;
 
-    /**
-     * @var \Magento\Framework\ObjectManagerInterface
-     */
-    protected $objectManager;
-
-    /**
-     * @var \Magento\Catalog\Model\Product\Type
-     */
-    protected $_productType;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->_productType = $this->objectManager->get(\Magento\Catalog\Model\Product\Type::class);
-        $this->reinitableConfig = $this->objectManager->get(ReinitableConfigInterface::class);
-    }
-
-    protected function tearDown(): void
-    {
-        $this->dropConfigValue(Configuration::XML_PATH_SHOW_OUT_OF_STOCK);
-    }
-
     public function testFactory()
     {
-        $product = new \Magento\Framework\DataObject();
+        $product = new DataObject();
         $product->setTypeId(Grouped::TYPE_CODE);
         $type = $this->_productType->factory($product);
         $this->assertInstanceOf(Grouped::class, $type);
@@ -105,7 +98,7 @@ class GroupedTest extends \PHPUnit\Framework\TestCase
     public function testPrepareProduct()
     {
         $buyRequest = $this->objectManager->create(
-            \Magento\Framework\DataObject::class,
+            DataObject::class,
             ['data' => ['value' => ['qty' => 2]]]
         );
         /** @var ProductRepositoryInterface $productRepository */
@@ -121,7 +114,7 @@ class GroupedTest extends \PHPUnit\Framework\TestCase
         ];
         $expectedData = [
             Grouped::PROCESS_MODE_FULL => [
-                1  => '{"super_product_config":{"product_type":"grouped","product_id":"'
+                1 => '{"super_product_config":{"product_type":"grouped","product_id":"'
                     . $product->getId() . '"}}',
                 21 => '{"super_product_config":{"product_type":"grouped","product_id":"'
                     . $product->getId() . '"}}',
@@ -159,7 +152,7 @@ class GroupedTest extends \PHPUnit\Framework\TestCase
     public function testOutOfStockSubProduct(bool $outOfStockShown, array $data, array $expected)
     {
         $this->changeConfigValue(Configuration::XML_PATH_SHOW_OUT_OF_STOCK, $outOfStockShown);
-        $buyRequest = new \Magento\Framework\DataObject($data);
+        $buyRequest = new DataObject($data);
         $productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
         /** @var Product $product */
         $product = $productRepository->get('grouped-product');
@@ -179,6 +172,25 @@ class GroupedTest extends \PHPUnit\Framework\TestCase
                 "Failed asserting that Products Cart Quantity matches expected"
             );
         }
+    }
+
+    /**
+     * Write config value to database.
+     *
+     * @param string $path
+     * @param string $value
+     * @param string $scope
+     * @param int $scopeId
+     */
+    private function changeConfigValue(string $path, string $value, string $scope = 'default', int $scopeId = 0)
+    {
+        $configValue = $this->objectManager->create(Value::class);
+        $configValue->setPath($path)
+            ->setValue($value)
+            ->setScope($scope)
+            ->setScopeId($scopeId)
+            ->save();
+        $this->reinitConfig();
     }
 
     /**
@@ -248,23 +260,16 @@ class GroupedTest extends \PHPUnit\Framework\TestCase
         ];
     }
 
-    /**
-     * Write config value to database.
-     *
-     * @param string $path
-     * @param string $value
-     * @param string $scope
-     * @param int $scopeId
-     */
-    private function changeConfigValue(string $path, string $value, string $scope = 'default', int $scopeId = 0)
+    protected function setUp(): void
     {
-        $configValue = $this->objectManager->create(Value::class);
-        $configValue->setPath($path)
-            ->setValue($value)
-            ->setScope($scope)
-            ->setScopeId($scopeId)
-            ->save();
-        $this->reinitConfig();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->_productType = $this->objectManager->get(Type::class);
+        $this->reinitableConfig = $this->objectManager->get(ReinitableConfigInterface::class);
+    }
+
+    protected function tearDown(): void
+    {
+        $this->dropConfigValue(Configuration::XML_PATH_SHOW_OUT_OF_STOCK);
     }
 
     /**
@@ -278,7 +283,7 @@ class GroupedTest extends \PHPUnit\Framework\TestCase
         try {
             $configValue->load($path, 'path');
             $configValue->delete();
-        } catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+        } catch (NoSuchEntityException $e) {
             // do nothing
         }
         $this->reinitConfig();

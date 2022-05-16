@@ -3,33 +3,28 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\UrlRewrite\Block\Edit;
+
+use Magento\Backend\Block\Store\Switcher\Form\Renderer\Fieldset\Element;
+use Magento\Backend\Model\Session;
+use Magento\Framework\Data\Form\Element\AbstractElement;
+use Magento\Framework\Data\Form\Element\Hidden;
+use Magento\Framework\Data\Form\Element\Select;
+use Magento\Framework\DataObject;
+use Magento\Framework\View\Layout;
+use Magento\Framework\View\LayoutInterface;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\Store\Model\System\Store;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for \Magento\UrlRewrite\Block\Edit\FormTest
  * @magentoAppArea Adminhtml
  */
-class FormTest extends \PHPUnit\Framework\TestCase
+class FormTest extends TestCase
 {
-    /**
-     * Get form instance
-     *
-     * @param array $args
-     * @return \Magento\Framework\Data\Form
-     */
-    protected function _getFormInstance($args = [])
-    {
-        /** @var $layout \Magento\Framework\View\Layout */
-        $layout = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
-        );
-        /** @var $block \Magento\UrlRewrite\Block\Edit\Form */
-        $block = $layout->createBlock(\Magento\UrlRewrite\Block\Edit\Form::class, 'block', ['data' => $args]);
-        $block->setTemplate(null);
-        $block->toHtml();
-        return $block->getForm();
-    }
-
     /**
      * Test that form was prepared correctly
      * @magentoAppIsolation enabled
@@ -37,7 +32,7 @@ class FormTest extends \PHPUnit\Framework\TestCase
     public function testPrepareForm()
     {
         // Test form was configured correctly
-        $form = $this->_getFormInstance(['url_rewrite' => new \Magento\Framework\DataObject(['id' => 3])]);
+        $form = $this->_getFormInstance(['url_rewrite' => new DataObject(['id' => 3])]);
         $this->assertInstanceOf(\Magento\Framework\Data\Form::class, $form);
         $this->assertNotEmpty($form->getAction());
         $this->assertEquals('edit_form', $form->getId());
@@ -61,6 +56,25 @@ class FormTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Get form instance
+     *
+     * @param array $args
+     * @return \Magento\Framework\Data\Form
+     */
+    protected function _getFormInstance($args = [])
+    {
+        /** @var $layout Layout */
+        $layout = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
+        );
+        /** @var $block Form */
+        $block = $layout->createBlock(Form::class, 'block', ['data' => $args]);
+        $block->setTemplate(null);
+        $block->toHtml();
+        return $block->getForm();
+    }
+
+    /**
      * Check session data restoring
      * @magentoAppIsolation enabled
      */
@@ -76,13 +90,13 @@ class FormTest extends \PHPUnit\Framework\TestCase
             'redirect_type' => 'redirect_type',
             'description' => 'description',
         ];
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Backend\Model\Session::class
+        Bootstrap::getObjectManager()->create(
+            Session::class
         )->setUrlRewriteData(
             $sessionValues
         );
         // Re-init form to use newly set session data
-        $form = $this->_getFormInstance(['url_rewrite' => new \Magento\Framework\DataObject()]);
+        $form = $this->_getFormInstance(['url_rewrite' => new DataObject()]);
 
         // Check that all fields values are restored from session
         foreach ($sessionValues as $field => $value) {
@@ -98,14 +112,14 @@ class FormTest extends \PHPUnit\Framework\TestCase
      */
     public function testStoreElementSingleStore()
     {
-        $form = $this->_getFormInstance(['url_rewrite' => new \Magento\Framework\DataObject(['id' => 3])]);
-        /** @var $storeElement \Magento\Framework\Data\Form\Element\AbstractElement */
+        $form = $this->_getFormInstance(['url_rewrite' => new DataObject(['id' => 3])]);
+        /** @var $storeElement AbstractElement */
         $storeElement = $form->getElement('store_id');
-        $this->assertInstanceOf(\Magento\Framework\Data\Form\Element\Hidden::class, $storeElement);
+        $this->assertInstanceOf(Hidden::class, $storeElement);
 
         // Check that store value set correctly
-        $defaultStore = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Store\Model\StoreManagerInterface::class
+        $defaultStore = Bootstrap::getObjectManager()->get(
+            StoreManagerInterface::class
         )->getStore(
             true
         )->getId();
@@ -120,22 +134,22 @@ class FormTest extends \PHPUnit\Framework\TestCase
      */
     public function testStoreElementMultiStores()
     {
-        $form = $this->_getFormInstance(['url_rewrite' => new \Magento\Framework\DataObject(['id' => 3])]);
-        /** @var $storeElement \Magento\Framework\Data\Form\Element\AbstractElement */
+        $form = $this->_getFormInstance(['url_rewrite' => new DataObject(['id' => 3])]);
+        /** @var $storeElement AbstractElement */
         $storeElement = $form->getElement('store_id');
 
         // Check store selection elements has correct type
-        $this->assertInstanceOf(\Magento\Framework\Data\Form\Element\Select::class, $storeElement);
+        $this->assertInstanceOf(Select::class, $storeElement);
 
         // Check store selection elements has correct renderer
         $this->assertInstanceOf(
-            \Magento\Backend\Block\Store\Switcher\Form\Renderer\Fieldset\Element::class,
+            Element::class,
             $storeElement->getRenderer()
         );
 
         // Check store elements has expected values
-        $storesList = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Store\Model\System\Store::class
+        $storesList = Bootstrap::getObjectManager()->get(
+            Store::class
         )->getStoreValuesForForm();
         $this->assertIsArray($storeElement->getValues());
         $this->assertNotEmpty($storeElement->getValues());
@@ -163,13 +177,13 @@ class FormTest extends \PHPUnit\Framework\TestCase
     {
         return [
             [
-                new \Magento\Framework\DataObject(),
+                new DataObject(),
                 [
                     'store_id' => false,
                 ],
             ],
             [
-                new \Magento\Framework\DataObject(['id' => 3, 'is_autogenerated' => true]),
+                new DataObject(['id' => 3, 'is_autogenerated' => true]),
                 [
                     'store_id' => true,
                 ]

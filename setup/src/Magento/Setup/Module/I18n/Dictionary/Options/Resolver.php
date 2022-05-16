@@ -3,9 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\I18n\Dictionary\Options;
 
-use Magento\Framework\App\Filesystem\DirectoryList;
+use InvalidArgumentException;
 use Magento\Framework\Component\ComponentRegistrar;
 
 /**
@@ -42,9 +43,10 @@ class Resolver implements ResolverInterface
      */
     public function __construct(
         ComponentRegistrar $componentRegistrar,
-        $directory,
-        $withContext
-    ) {
+                           $directory,
+                           $withContext
+    )
+    {
         $this->componentRegistrar = $componentRegistrar;
         $this->directory = $directory;
         $this->withContext = $withContext;
@@ -107,24 +109,6 @@ class Resolver implements ResolverInterface
     }
 
     /**
-     * @param array $directories
-     * @return void
-     * @throws \InvalidArgumentException
-     */
-    protected function isValidPaths($directories)
-    {
-        foreach ($directories as $path) {
-            if (!is_dir($path)) {
-                if ($this->withContext) {
-                    throw new \InvalidArgumentException('Specified path is not a Magento root directory');
-                } else {
-                    throw new \InvalidArgumentException('Specified path doesn\'t exist');
-                }
-            }
-        }
-    }
-
-    /**
      * Get the given type component directories
      *
      * @param string $componentType
@@ -137,5 +121,23 @@ class Resolver implements ResolverInterface
             $dirs[] = $componentDir . '/';
         }
         return $dirs;
+    }
+
+    /**
+     * @param array $directories
+     * @return void
+     * @throws InvalidArgumentException
+     */
+    protected function isValidPaths($directories)
+    {
+        foreach ($directories as $path) {
+            if (!is_dir($path)) {
+                if ($this->withContext) {
+                    throw new InvalidArgumentException('Specified path is not a Magento root directory');
+                } else {
+                    throw new InvalidArgumentException('Specified path doesn\'t exist');
+                }
+            }
+        }
     }
 }

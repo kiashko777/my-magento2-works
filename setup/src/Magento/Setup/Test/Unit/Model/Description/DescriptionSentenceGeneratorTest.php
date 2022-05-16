@@ -34,15 +34,6 @@ class DescriptionSentenceGeneratorTest extends TestCase
         ]
     ];
 
-    protected function setUp(): void
-    {
-        $this->dictionaryMock = $this->createMock(Dictionary::class);
-        $this->sentenceGenerator = new DescriptionSentenceGenerator(
-            $this->dictionaryMock,
-            $this->sentenceConfig
-        );
-    }
-
     public function testSentenceGeneration()
     {
         $this->dictionaryMock
@@ -61,6 +52,15 @@ class DescriptionSentenceGeneratorTest extends TestCase
         $this->assertEquals(
             'Lorem ipsum dolor sit amet consectetur adipiscing.',
             $this->sentenceGenerator->generate()
+        );
+    }
+
+    protected function setUp(): void
+    {
+        $this->dictionaryMock = $this->createMock(Dictionary::class);
+        $this->sentenceGenerator = new DescriptionSentenceGenerator(
+            $this->dictionaryMock,
+            $this->sentenceConfig
         );
     }
 }

@@ -15,22 +15,6 @@ namespace Magento\Catalog\Model\Product\Attribute\Save;
 class AttributeTextTest extends AbstractAttributeTest
 {
     /**
-     * @inheritdoc
-     */
-    protected function getAttributeCode(): string
-    {
-        return 'varchar_attribute';
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function getDefaultAttributeValue(): string
-    {
-        return 'default text value';
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/product_varchar_attribute.php
      * @magentoDataFixture Magento/Catalog/_files/second_product_simple.php
      * @magentoDataFixture Magento/Catalog/_files/product_simple_out_of_stock.php
@@ -66,5 +50,21 @@ class AttributeTextTest extends AbstractAttributeTest
                 'second_product_sku' => 'simple-out-of-stock',
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function getAttributeCode(): string
+    {
+        return 'varchar_attribute';
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function getDefaultAttributeValue(): string
+    {
+        return 'default text value';
     }
 }

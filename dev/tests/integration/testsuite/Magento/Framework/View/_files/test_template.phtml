@@ -3,6 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\BlockInterface;
+
 ?>
 <?php
 // phpcs:disable
@@ -11,8 +15,9 @@
 /**
  * Template meant for testing.
  *
- * @var \Magento\Framework\View\Element\BlockInterface $block
- * @var \Magento\Framework\Escaper $escaper
+ * @var BlockInterface $block
+ * @var Escaper $escaper
  */
 ?>
-<p>This template has access to <?= $escaper->escapeHtml('<b>$escaper</b>') ?> and $block &quot;<?= $block->toHtml() ?>&quot;</p>
+<p>This template has access to <?= $escaper->escapeHtml('<b>$escaper</b>') ?> and $block &quot;<?= $block->toHtml() ?>
+    &quot;</p>

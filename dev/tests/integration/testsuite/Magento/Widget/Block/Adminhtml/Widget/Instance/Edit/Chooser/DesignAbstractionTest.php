@@ -3,53 +3,71 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Widget\Block\Adminhtml\Widget\Instance\Edit\Chooser;
+
+use Magento\Backend\App\Area\FrontNameResolver;
+use Magento\Framework\App\State;
+use Magento\Framework\View\Element\Template\Context;
+use Magento\Framework\View\Layout\ProcessorFactory;
+use Magento\Framework\View\Layout\ProcessorInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Theme\Model\ResourceModel\Theme\CollectionFactory;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class DesignAbstractionTest extends \PHPUnit\Framework\TestCase
+class DesignAbstractionTest extends TestCase
 {
     /**
-     * @var \Magento\Widget\Block\Adminhtml\Widget\Instance\Edit\Chooser\DesignAbstraction|
+     * @var DesignAbstraction|
      *      \PHPUnit\Framework\MockObject\MockObject
      */
     protected $_block;
+
+    public function testToHtml()
+    {
+        $this->assertXmlStringEqualsXmlFile(
+            __DIR__ . '/_files/design-abstraction_select.html',
+            $this->_block->toHtml()
+        );
+    }
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
         $layoutUtility = new \Magento\Framework\View\Utility\Layout($this);
-        $appState = $objectManager->get(\Magento\Framework\App\State::class);
-        $appState->setAreaCode(\Magento\Backend\App\Area\FrontNameResolver::AREA_CODE);
-        $processorMock = $this->getMockBuilder(\Magento\Framework\View\Layout\ProcessorInterface::class)
+        $appState = $objectManager->get(State::class);
+        $appState->setAreaCode(FrontNameResolver::AREA_CODE);
+        $processorMock = $this->getMockBuilder(ProcessorInterface::class)
             ->setMethods(['isPageLayoutDesignAbstraction'])
             ->getMockForAbstractClass();
         $processorMock->expects($this->exactly(2))->method('isPageLayoutDesignAbstraction')->willReturnCallback(
 
-                function ($abstraction) {
-                    return $abstraction['design_abstraction'] === 'page_layout';
-                }
+            function ($abstraction) {
+                return $abstraction['design_abstraction'] === 'page_layout';
+            }
 
         );
         $processorFactoryMock =
-            $this->createPartialMock(\Magento\Framework\View\Layout\ProcessorFactory::class, ['create']);
+            $this->createPartialMock(ProcessorFactory::class, ['create']);
         $processorFactoryMock->expects($this->exactly(2))->method('create')->willReturnCallback(
 
-                function ($data) use ($processorMock, $layoutUtility) {
-                    return $data === [] ? $processorMock : $layoutUtility->getLayoutUpdateFromFixture(
-                        glob(__DIR__ . '/_files/layout/*.xml')
-                    );
-                }
+            function ($data) use ($processorMock, $layoutUtility) {
+                return $data === [] ? $processorMock : $layoutUtility->getLayoutUpdateFromFixture(
+                    glob(__DIR__ . '/_files/layout/*.xml')
+                );
+            }
 
         );
 
         $this->_block = new DesignAbstraction(
-            $objectManager->get(\Magento\Framework\View\Element\Template\Context::class),
+            $objectManager->get(Context::class),
             $processorFactoryMock,
-            $objectManager->get(\Magento\Theme\Model\ResourceModel\Theme\CollectionFactory::class),
+            $objectManager->get(CollectionFactory::class),
             $appState,
             [
                 'name' => 'design_abstractions',
@@ -57,14 +75,6 @@ class DesignAbstractionTest extends \PHPUnit\Framework\TestCase
                 'class' => 'design-abstraction-select',
                 'title' => 'Design Abstraction Select'
             ]
-        );
-    }
-
-    public function testToHtml()
-    {
-        $this->assertXmlStringEqualsXmlFile(
-            __DIR__ . '/_files/design-abstraction_select.html',
-            $this->_block->toHtml()
         );
     }
 }

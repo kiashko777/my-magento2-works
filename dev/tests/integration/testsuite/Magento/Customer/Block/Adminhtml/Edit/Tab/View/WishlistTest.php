@@ -32,28 +32,6 @@ class WishlistTest extends TestCase
     private $block;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Wishlist::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->registry->unregister(RegistryConstants::CURRENT_CUSTOMER_ID);
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Wishlist/_files/wishlist.php
      *
      * @return void
@@ -74,5 +52,27 @@ class WishlistTest extends TestCase
     {
         $this->registry->unregister(RegistryConstants::CURRENT_CUSTOMER_ID);
         $this->registry->register(RegistryConstants::CURRENT_CUSTOMER_ID, $customerId);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Wishlist::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->registry->unregister(RegistryConstants::CURRENT_CUSTOMER_ID);
+
+        parent::tearDown();
     }
 }

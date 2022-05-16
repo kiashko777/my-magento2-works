@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Backend\Model;
 
 use Magento\Framework\App\RequestInterface;
@@ -11,13 +12,14 @@ use Magento\Framework\Escaper;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Session\SessionManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\Backend\Model\UrlInterface.
  *
  * @magentoAppArea Adminhtml
  */
-class UrlTest extends \PHPUnit\Framework\TestCase
+class UrlTest extends TestCase
 {
     /**
      * @var RequestInterface
@@ -35,16 +37,6 @@ class UrlTest extends \PHPUnit\Framework\TestCase
     private $objectManager;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->request = $this->objectManager->get(RequestInterface::class);
-        $this->_model = $this->objectManager->create(UrlInterface::class);
-    }
-
-    /**
      * App isolation is enabled to protect next tests from polluted registry by getUrl().
      *
      * @param string $routePath
@@ -58,10 +50,11 @@ class UrlTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetUrl(
         string $routePath,
-        array $requestParams,
+        array  $requestParams,
         string $expectedResult,
-        $routeParams = null
-    ): void {
+               $routeParams = null
+    ): void
+    {
         $this->request->setParams($requestParams);
         $url = $this->_model->getUrl($routePath, $routeParams);
 
@@ -82,12 +75,12 @@ class UrlTest extends \PHPUnit\Framework\TestCase
             [
                 'routePath' => 'Adminhtml/auth/login',
                 'requestParams' => [],
-                'expectedResult'=> 'admin/auth/login/key/',
+                'expectedResult' => 'admin/auth/login/key/',
             ],
             [
                 'routePath' => 'Adminhtml/auth/login',
                 'requestParams' => [],
-                'expectedResult'=> '/param1/a1==/',
+                'expectedResult' => '/param1/a1==/',
                 'routeParams' => [
                     '_escape_params' => false,
                     'param1' => 'a1==',
@@ -96,7 +89,7 @@ class UrlTest extends \PHPUnit\Framework\TestCase
             [
                 'routePath' => 'Adminhtml/auth/login',
                 'requestParams' => [],
-                'expectedResult'=> '/param1/a1==/',
+                'expectedResult' => '/param1/a1==/',
                 'routeParams' => [
                     '_escape_params' => false,
                     'param1' => 'a1==',
@@ -105,7 +98,7 @@ class UrlTest extends \PHPUnit\Framework\TestCase
             [
                 'routePath' => 'Adminhtml/auth/login',
                 'requestParams' => ['param2' => 'a2=='],
-                'expectedResult'=> '/param2/a2==/',
+                'expectedResult' => '/param2/a2==/',
                 'routeParams' => [
                     '_current' => true,
                     '_escape_params' => false,
@@ -241,5 +234,15 @@ class UrlTest extends \PHPUnit\Framework\TestCase
 
         $this->_model->setNoSecret(false);
         $this->assertTrue($this->_model->useSecretKey());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->request = $this->objectManager->get(RequestInterface::class);
+        $this->_model = $this->objectManager->create(UrlInterface::class);
     }
 }

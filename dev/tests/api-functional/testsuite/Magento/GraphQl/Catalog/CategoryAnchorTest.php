@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Catalog;
 
+use Exception;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
@@ -56,14 +57,6 @@ class CategoryAnchorTest extends GraphQlAbstract
     private $objectManager;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
-
-    /**
      * Verify that request returns correct values for given category
      *
      * @magentoApiDataFixture Magento/Catalog/_files/category_anchor.php
@@ -71,7 +64,7 @@ class CategoryAnchorTest extends GraphQlAbstract
      * @param string $storeCode
      * @param array $category
      * @return void
-     * @throws \Exception
+     * @throws Exception
      * @dataProvider categoryAnchorDataProvider
      */
     public function testCategoryAnchor(string $query, string $storeCode, array $category): void
@@ -154,5 +147,13 @@ class CategoryAnchorTest extends GraphQlAbstract
     }
 }
 QUERY;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

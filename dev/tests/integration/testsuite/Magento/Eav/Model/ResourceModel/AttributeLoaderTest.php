@@ -6,38 +6,23 @@
 
 namespace Magento\Eav\Model\ResourceModel;
 
+use Magento\Eav\Model\Entity\Type;
 use Magento\Framework\EntityManager\MetadataPool;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Indexer\TestCase;
+use ReflectionObject;
 
 /**
  * @magentoAppIsolation enabled
  * @magentoDbIsolation enabled
  * @magentoDataFixture Magento/Eav/_files/attribute_for_search.php
  */
-class AttributeLoaderTest extends \Magento\TestFramework\Indexer\TestCase
+class AttributeLoaderTest extends TestCase
 {
     /**
      * @var AttributeLoader
      */
     private $attributeLoader;
-
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $metadataPool = $objectManager->create(
-            MetadataPool::class,
-            [
-                'metadata' => [
-                    'Test\Entity\Type' => [
-                        'entityTableName' => 'test_entity',
-                        'eavEntityType' => 'test',
-                        'identifierField' => 'entity_id',
-                    ]
-                ]
-            ]
-        );
-        $this->attributeLoader = $objectManager->create(AttributeLoader::class, ['metadataPool' => $metadataPool]);
-    }
 
     /**
      * @param string[] $expectedAttributeCodes
@@ -59,8 +44,8 @@ class AttributeLoaderTest extends \Magento\TestFramework\Indexer\TestCase
 
     public function getAttributesDataProvider()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $entityType = $objectManager->create(\Magento\Eav\Model\Entity\Type::class)
+        $objectManager = Bootstrap::getObjectManager();
+        $entityType = $objectManager->create(Type::class)
             ->loadByCode('order');
         $attributeSetId = $entityType->getDefaultAttributeSetId();
 
@@ -82,13 +67,31 @@ class AttributeLoaderTest extends \Magento\TestFramework\Indexer\TestCase
         ];
     }
 
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $metadataPool = $objectManager->create(
+            MetadataPool::class,
+            [
+                'metadata' => [
+                    'Test\Entity\Type' => [
+                        'entityTableName' => 'test_entity',
+                        'eavEntityType' => 'test',
+                        'identifierField' => 'entity_id',
+                    ]
+                ]
+            ]
+        );
+        $this->attributeLoader = $objectManager->create(AttributeLoader::class, ['metadataPool' => $metadataPool]);
+    }
+
     /**
      * @inheritDoc
      */
     protected function tearDown(): void
     {
         parent::tearDown();
-        $reflection = new \ReflectionObject($this);
+        $reflection = new ReflectionObject($this);
         foreach ($reflection->getProperties() as $property) {
             if (!$property->isStatic() && 0 !== strpos($property->getDeclaringClass()->getName(), 'PHPUnit')) {
                 $property->setAccessible(true);

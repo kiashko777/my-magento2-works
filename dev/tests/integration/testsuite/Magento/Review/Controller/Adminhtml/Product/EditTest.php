@@ -7,12 +7,13 @@ declare(strict_types=1);
 
 namespace Magento\Review\Controller\Adminhtml\Product;
 
-use Magento\Review\Model\Review;
-use Magento\TestFramework\TestCase\AbstractBackendController;
 use Magento\Framework\Acl\Builder;
-use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\UrlInterface;
 use Magento\Review\Model\ResourceModel\Review\CollectionFactory;
+use Magento\Review\Model\Review;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * Test Edit action.
@@ -22,7 +23,7 @@ use Magento\Review\Model\ResourceModel\Review\CollectionFactory;
 class EditTest extends AbstractBackendController
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
@@ -40,20 +41,6 @@ class EditTest extends AbstractBackendController
      * @var CollectionFactory
      */
     private $collectionFactory;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->aclBuilder = $this->objectManager->get(Builder::class);
-        $this->urlBuilder = $this->objectManager->get(UrlInterface::class);
-        $this->collectionFactory = $this->objectManager->get(CollectionFactory::class);
-        $this->aclBuilder->resetRuntimeAcl();
-    }
 
     /**
      * Tests Edit action without reviews_all resource when manipulating Pending review.
@@ -87,5 +74,19 @@ class EditTest extends AbstractBackendController
         $this->uri = 'backend/review/product/edit/id/' . 'doesn\'t matter';
 
         parent::testAclNoAccess();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->aclBuilder = $this->objectManager->get(Builder::class);
+        $this->urlBuilder = $this->objectManager->get(UrlInterface::class);
+        $this->collectionFactory = $this->objectManager->get(CollectionFactory::class);
+        $this->aclBuilder->resetRuntimeAcl();
     }
 }

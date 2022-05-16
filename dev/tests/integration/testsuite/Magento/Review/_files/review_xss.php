@@ -3,29 +3,34 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Review\Model\Review;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/product_simple_xss.php');
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-$productRepository = $objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+$objectManager = Bootstrap::getObjectManager();
+$productRepository = $objectManager->create(ProductRepositoryInterface::class);
 $product = $productRepository->get('product-with-xss');
 
-$review = $objectManager->create(\Magento\Review\Model\Review::class);
+$review = $objectManager->create(Review::class);
 $review->setEntityId(
-    $review->getEntityIdByCode(\Magento\Review\Model\Review::ENTITY_PRODUCT_CODE)
+    $review->getEntityIdByCode(Review::ENTITY_PRODUCT_CODE)
 )->setEntityPkValue(
     $product->getId()
 )->setStatusId(
-    \Magento\Review\Model\Review::STATUS_PENDING
+    Review::STATUS_PENDING
 )->setStoreId(
-    \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-        \Magento\Store\Model\StoreManagerInterface::class
+    Bootstrap::getObjectManager()->get(
+        StoreManagerInterface::class
     )->getStore()->getId()
 )->setStores(
     [
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Store\Model\StoreManagerInterface::class
+        Bootstrap::getObjectManager()->get(
+            StoreManagerInterface::class
         )->getStore()->getId()
     ]
 )->setNickname(

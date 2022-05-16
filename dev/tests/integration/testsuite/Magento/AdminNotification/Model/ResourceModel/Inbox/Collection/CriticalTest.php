@@ -3,21 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\AdminNotification\Model\ResourceModel\Inbox\Collection;
 
-class CriticalTest extends \PHPUnit\Framework\TestCase
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class CriticalTest extends TestCase
 {
     /**
-     * @var \Magento\AdminNotification\Model\ResourceModel\Inbox\Collection\Critical
+     * @var Critical
      */
     protected $_model;
-
-    protected function setUp(): void
-    {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\AdminNotification\Model\ResourceModel\Inbox\Collection\Critical::class
-        );
-    }
 
     /**
      * @magentoDataFixture Magento/AdminNotification/_files/notifications.php
@@ -26,5 +23,12 @@ class CriticalTest extends \PHPUnit\Framework\TestCase
     {
         $items = array_values($this->_model->getItems());
         $this->assertEquals('Unread Critical 3', $items[0]->getTitle());
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Critical::class
+        );
     }
 }

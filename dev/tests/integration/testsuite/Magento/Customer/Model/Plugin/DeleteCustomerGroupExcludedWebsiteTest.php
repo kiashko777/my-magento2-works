@@ -7,24 +7,26 @@ declare(strict_types=1);
 
 namespace Magento\Customer\Model\Plugin;
 
+use Magento\Customer\Api\Data\GroupExtensionInterfaceFactory;
 use Magento\Customer\Api\Data\GroupInterfaceFactory;
 use Magento\Customer\Api\GroupRepositoryInterface;
 use Magento\Customer\Model\ResourceModel\GroupExcludedWebsite;
 use Magento\Framework\Api\SearchCriteriaBuilder;
-use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Registry;
 use Magento\Store\Api\WebsiteRepositoryInterface;
 use Magento\Store\Model\ResourceModel\Website as WebsiteResourceModel;
 use Magento\Store\Model\Website;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Framework\Registry;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Checks that removal of website also deletes it from the customer group excluded website table.
  * @magentoAppArea Adminhtml
  */
-class DeleteCustomerGroupExcludedWebsiteTest extends \PHPUnit\Framework\TestCase
+class DeleteCustomerGroupExcludedWebsiteTest extends TestCase
 {
     private const GROUP_CODE = 'Humans';
     private const STORE_WEBSITE_CODE = 'custom_website';
@@ -44,7 +46,7 @@ class DeleteCustomerGroupExcludedWebsiteTest extends \PHPUnit\Framework\TestCase
     /** @var ResourceConnection */
     private $resourceConnection;
 
-    /** @var \Magento\Customer\Api\Data\GroupExtensionInterfaceFactory */
+    /** @var GroupExtensionInterfaceFactory */
     private $groupExtensionInterfaceFactory;
 
     /** @var WebsiteRepositoryInterface */
@@ -52,42 +54,6 @@ class DeleteCustomerGroupExcludedWebsiteTest extends \PHPUnit\Framework\TestCase
 
     /** @var Registry */
     private $registry;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->groupRepository = $this->objectManager->create(GroupRepositoryInterface::class);
-        $this->groupFactory = $this->objectManager->create(GroupInterfaceFactory::class);
-        $this->websiteResourceModel = $this->objectManager->get(WebsiteResourceModel::class);
-        $this->resourceConnection = $this->objectManager->get(ResourceConnection::class);
-        $this->groupExtensionInterfaceFactory = $this->objectManager
-            ->get(\Magento\Customer\Api\Data\GroupExtensionInterfaceFactory::class);
-        $this->websiteRepository = $this->objectManager->create(WebsiteRepositoryInterface::class);
-        $this->registry = $this->objectManager->create(Registry::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        /** Marks area as secure so Products repository would allow group removal */
-        $isSecuredAreaSystemState = $this->registry->registry('isSecuredArea');
-        $this->registry->unregister('isSecureArea');
-        $this->registry->register('isSecureArea', true);
-
-        /** Remove customer group */
-        $groupId = $this->findGroupIdWithCode(self::GROUP_CODE);
-        $group = $this->groupRepository->getById($groupId);
-        $this->groupRepository->delete($group);
-
-        /** Revert mark area secured */
-        $this->registry->unregister('isSecuredArea');
-        $this->registry->register('isSecuredArea', $isSecuredAreaSystemState);
-    }
 
     /**
      * Test that deletion of website also deletes this website from customer group excluded websites.
@@ -135,8 +101,8 @@ class DeleteCustomerGroupExcludedWebsiteTest extends \PHPUnit\Framework\TestCase
         $registry->unregister('isSecureArea');
         $registry->register('isSecureArea', true);
         /** Remove website by id */
-        /** @var \Magento\Store\Model\Website $website */
-        $website = $this->objectManager->create(\Magento\Store\Model\Website::class);
+        /** @var Website $website */
+        $website = $this->objectManager->create(Website::class);
         $website->load((int)$websiteId);
         $website->delete();
 
@@ -152,6 +118,42 @@ class DeleteCustomerGroupExcludedWebsiteTest extends \PHPUnit\Framework\TestCase
             ->where('website_id = ?', $websiteId);
         $excludedWebsites = $connection->fetchAll($selectExcludedWebsite);
         self::assertCount(0, $excludedWebsites);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->groupRepository = $this->objectManager->create(GroupRepositoryInterface::class);
+        $this->groupFactory = $this->objectManager->create(GroupInterfaceFactory::class);
+        $this->websiteResourceModel = $this->objectManager->get(WebsiteResourceModel::class);
+        $this->resourceConnection = $this->objectManager->get(ResourceConnection::class);
+        $this->groupExtensionInterfaceFactory = $this->objectManager
+            ->get(GroupExtensionInterfaceFactory::class);
+        $this->websiteRepository = $this->objectManager->create(WebsiteRepositoryInterface::class);
+        $this->registry = $this->objectManager->create(Registry::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        /** Marks area as secure so Products repository would allow group removal */
+        $isSecuredAreaSystemState = $this->registry->registry('isSecuredArea');
+        $this->registry->unregister('isSecureArea');
+        $this->registry->register('isSecureArea', true);
+
+        /** Remove customer group */
+        $groupId = $this->findGroupIdWithCode(self::GROUP_CODE);
+        $group = $this->groupRepository->getById($groupId);
+        $this->groupRepository->delete($group);
+
+        /** Revert mark area secured */
+        $this->registry->unregister('isSecuredArea');
+        $this->registry->register('isSecuredArea', $isSecuredAreaSystemState);
     }
 
     /**

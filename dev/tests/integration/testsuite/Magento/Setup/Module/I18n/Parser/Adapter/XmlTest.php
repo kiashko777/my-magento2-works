@@ -3,26 +3,22 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\I18n\Parser\Adapter;
+
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \Magento\Setup\Module\I18n\Parser\Adapter\Xml
  *
  */
-class XmlTest extends \PHPUnit\Framework\TestCase
+class XmlTest extends TestCase
 {
     /**
      * @var Xml
      */
     protected $xmlPhraseCollector;
-
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->xmlPhraseCollector = $objectManager->create(
-            \Magento\Setup\Module\I18n\Parser\Adapter\Xml::class
-        );
-    }
 
     public function testParse()
     {
@@ -67,5 +63,13 @@ class XmlTest extends \PHPUnit\Framework\TestCase
             ]
         ];
         $this->assertEquals($expectation, $this->xmlPhraseCollector->getPhrases());
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->xmlPhraseCollector = $objectManager->create(
+            Xml::class
+        );
     }
 }

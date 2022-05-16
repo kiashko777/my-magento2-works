@@ -4,7 +4,9 @@
  * See COPYING.txt for license details.
  */
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
 
 /** @var Magento\Customer\Model\Attribute $attribute1 */
 $attribute1 = $objectManager->create(\Magento\Customer\Model\Attribute::class);

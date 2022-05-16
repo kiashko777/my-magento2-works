@@ -10,8 +10,8 @@ namespace Magento\SalesRule\Controller\Adminhtml\Promo\Quote\ExportCoupons;
 use Magento\Framework\App\ResourceConnection;
 use Magento\SalesRule\Model\ResourceModel\Rule\Collection as RuleCollection;
 use Magento\SalesRule\Model\Rule;
-use Magento\TestFramework\TestCase\AbstractBackendController;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * Test export coupon xml
@@ -43,13 +43,15 @@ class ExportCouponsXmlTest extends AbstractBackendController
     private $resourceConnection;
 
     /**
-     * @inheritdoc
+     * Test export xml
+     *
+     * @return void
      */
-    protected function setUp(): void
+    public function testExportCsv(): void
     {
-        parent::setUp();
-        $this->resourceConnection = Bootstrap::getObjectManager()->get(ResourceConnection::class);
-        $this->initSalesRule();
+        $this->prepareRequest();
+        $this->dispatch($this->uri);
+        $this->assertStringNotContainsString('404 Error', $this->getResponse()->getBody());
     }
 
     /**
@@ -63,19 +65,6 @@ class ExportCouponsXmlTest extends AbstractBackendController
         if (count($couponList)) {
             $this->getRequest()->setParams(['internal_ids' => $couponList[0]])->setMethod('POST');
         }
-    }
-
-    /**
-     * Init current sales rule
-     *
-     * @return void
-     */
-    private function initSalesRule(): void
-    {
-        /** @var RuleCollection $collection */
-        $collection = Bootstrap::getObjectManager()->create(RuleCollection::class);
-        $collection->addFieldToFilter('name', 'Rule with coupon list');
-        $this->salesRule = $collection->getFirstItem();
     }
 
     /**
@@ -95,14 +84,25 @@ class ExportCouponsXmlTest extends AbstractBackendController
     }
 
     /**
-     * Test export xml
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->resourceConnection = Bootstrap::getObjectManager()->get(ResourceConnection::class);
+        $this->initSalesRule();
+    }
+
+    /**
+     * Init current sales rule
      *
      * @return void
      */
-    public function testExportCsv(): void
+    private function initSalesRule(): void
     {
-        $this->prepareRequest();
-        $this->dispatch($this->uri);
-        $this->assertStringNotContainsString('404 Error', $this->getResponse()->getBody());
+        /** @var RuleCollection $collection */
+        $collection = Bootstrap::getObjectManager()->create(RuleCollection::class);
+        $collection->addFieldToFilter('name', 'Rule with coupon list');
+        $this->salesRule = $collection->getFirstItem();
     }
 }

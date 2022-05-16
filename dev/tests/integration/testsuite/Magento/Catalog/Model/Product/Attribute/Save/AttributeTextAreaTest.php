@@ -15,22 +15,6 @@ namespace Magento\Catalog\Model\Product\Attribute\Save;
 class AttributeTextAreaTest extends AbstractAttributeTest
 {
     /**
-     * @inheritdoc
-     */
-    protected function getAttributeCode(): string
-    {
-        return 'text_attribute';
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function getDefaultAttributeValue(): string
-    {
-        return 'default text area value';
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/product_text_attribute.php
      * @magentoDataFixture Magento/Catalog/_files/second_product_simple.php
      * @magentoDataFixture Magento/Catalog/_files/product_simple_out_of_stock.php
@@ -66,5 +50,21 @@ class AttributeTextAreaTest extends AbstractAttributeTest
                 'second_product_sku' => 'simple-out-of-stock',
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function getAttributeCode(): string
+    {
+        return 'text_attribute';
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function getDefaultAttributeValue(): string
+    {
+        return 'default text area value';
     }
 }

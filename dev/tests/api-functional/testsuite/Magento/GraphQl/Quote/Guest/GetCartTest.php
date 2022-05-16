@@ -27,12 +27,6 @@ class GetCartTest extends GraphQlAbstract
      */
     private $getMaskedQuoteIdByReservedOrderId;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-    }
-
     /**
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
      * @magentoApiDataFixture Magento/Catalog/_files/product_virtual.php
@@ -63,6 +57,34 @@ class GetCartTest extends GraphQlAbstract
     }
 
     /**
+     * @param string $maskedQuoteId
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId): string
+    {
+        return <<<QUERY
+{
+  cart(cart_id: "{$maskedQuoteId}") {
+    id
+    items {
+      id
+      quantity
+      product {
+        sku
+      }
+      prices {
+        price {
+          value
+          currency
+        }
+      }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
      * _security
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      * @magentoApiDataFixture Magento/GraphQl/Quote/_files/customer/create_empty_cart.php
@@ -82,7 +104,7 @@ class GetCartTest extends GraphQlAbstract
      */
     public function testGetCartIfCartIdIsEmpty()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Required parameter "cart_id" is missing');
 
         $maskedQuoteId = '';
@@ -95,7 +117,7 @@ class GetCartTest extends GraphQlAbstract
      */
     public function testGetCartIfCartIdIsMissed()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage(
             'Field "cart" argument "cart_id" of type "String!" is required but not provided.'
         );
@@ -115,7 +137,7 @@ QUERY;
      */
     public function testGetNonExistentCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Could not find a cart with ID "non_existent_masked_id"');
 
         $maskedQuoteId = 'non_existent_masked_id';
@@ -131,7 +153,7 @@ QUERY;
      */
     public function testGetInactiveCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The cart isn\'t active.');
 
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
@@ -197,7 +219,7 @@ QUERY;
         $store = $objectManager->create(Store::class);
         $store->load('fixture_second_store', 'code');
         if ($storeId = $store->load('fixture_second_store', 'code')->getId()) {
-            /** @var \Magento\Config\Model\ResourceModel\Config $configResource */
+            /** @var Config $configResource */
             $configResource = $objectManager->get(Config::class);
             $configResource->saveConfig(
                 Currency::XML_PATH_CURRENCY_ALLOW,
@@ -229,7 +251,7 @@ QUERY;
      */
     public function testGetCartWithDifferentStoreDifferentWebsite()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Can\'t assign cart to store in different website.');
 
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_order_1');
@@ -246,7 +268,7 @@ QUERY;
      */
     public function testGetCartWithNotExistingStore()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Requested store is not found');
 
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_order_1_not_default_store_guest');
@@ -257,31 +279,9 @@ QUERY;
         $this->graphQlQuery($query, [], '', $headerMap);
     }
 
-    /**
-     * @param string $maskedQuoteId
-     * @return string
-     */
-    private function getQuery(string $maskedQuoteId): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-{
-  cart(cart_id: "{$maskedQuoteId}") {
-    id
-    items {
-      id
-      quantity
-      product {
-        sku
-      }
-      prices {
-        price {
-          value
-          currency
-        }
-      }
-    }
-  }
-}
-QUERY;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
     }
 }

@@ -8,6 +8,20 @@ declare(strict_types=1);
 namespace Magento\Catalog\Model\Product\Attribute\Backend;
 
 use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Api\Data\ProductTierPriceInterfaceFactory;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Type;
+use Magento\Catalog\Model\ProductRepository;
+use Magento\Eav\Model\Config;
+use Magento\Framework\DataObject;
+use Magento\Framework\EntityManager\MetadataPool;
+use Magento\Framework\Exception\CouldNotSaveException;
+use Magento\Framework\Exception\InputException;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Exception\StateException;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\Catalog\Model\Products\Attribute\Backend\Tierprice.
@@ -15,55 +29,29 @@ use Magento\Catalog\Api\Data\ProductInterface;
  * @magentoDataFixture Magento/Catalog/_files/product_simple.php
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class TierpriceTest extends \PHPUnit\Framework\TestCase
+class TierpriceTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\EntityManager\MetadataPool
+     * @var MetadataPool
      */
     protected $metadataPool;
 
     /**
-     * @var \Magento\Catalog\Model\ProductRepository
+     * @var ProductRepository
      */
     protected $productRepository;
-
     /**
-     * @var \Magento\Catalog\Api\Data\ProductTierPriceInterfaceFactory
+     * @var Tierprice
+     */
+    protected $_model;
+    /**
+     * @var ProductTierPriceInterfaceFactory
      */
     private $tierPriceFactory;
 
-    /**
-     * @var \Magento\Catalog\Model\Product\Attribute\Backend\Tierprice
-     */
-    protected $_model;
-
-    protected function setUp(): void
-    {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\Product\Attribute\Backend\Tierprice::class
-        );
-        $this->productRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\ProductRepository::class
-        );
-        $this->metadataPool = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\EntityManager\MetadataPool::class
-        );
-        $this->tierPriceFactory = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Catalog\Api\Data\ProductTierPriceInterfaceFactory::class);
-
-        $this->_model->setAttribute(
-            \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-                \Magento\Eav\Model\Config::class
-            )->getAttribute(
-                'catalog_product',
-                'tier_price'
-            )
-        );
-    }
-
     public function testValidate()
     {
-        $product = new \Magento\Framework\DataObject();
+        $product = new DataObject();
         $product->setTierPrice(
             [
                 ['website_id' => 0, 'cust_group' => 1, 'price_qty' => 2, 'price' => 8],
@@ -81,9 +69,9 @@ class TierpriceTest extends \PHPUnit\Framework\TestCase
      */
     public function testValidateDuplicate(array $tierPricesData)
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
 
-        $product = new \Magento\Framework\DataObject();
+        $product = new DataObject();
         $product->setTierPrice($tierPricesData);
 
         $this->_model->validate($product);
@@ -116,9 +104,9 @@ class TierpriceTest extends \PHPUnit\Framework\TestCase
      */
     public function testValidateDuplicateWebsite()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
 
-        $product = new \Magento\Framework\DataObject();
+        $product = new DataObject();
         $product->setTierPrice(
             [
                 ['website_id' => 0, 'cust_group' => 1, 'price_qty' => 2.2, 'price' => 8],
@@ -134,9 +122,9 @@ class TierpriceTest extends \PHPUnit\Framework\TestCase
      */
     public function testValidatePercentage()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
 
-        $product = new \Magento\Framework\DataObject();
+        $product = new DataObject();
         $product->setTierPrice(
             [
                 ['website_id' => 0, 'cust_group' => 1, 'price_qty' => 2, 'percentage_value' => 101],
@@ -157,7 +145,7 @@ class TierpriceTest extends \PHPUnit\Framework\TestCase
             ['website_id' => 1, 'cust_group' => 1, 'price_qty' => '5.40', 'price' => 2],
         ];
 
-        $newData = $this->_model->preparePriceData($data, \Magento\Catalog\Model\Product\Type::TYPE_SIMPLE, 1);
+        $newData = $this->_model->preparePriceData($data, Type::TYPE_SIMPLE, 1);
         $this->assertCount(4, $newData);
         $this->assertArrayHasKey('1-2', $newData);
         $this->assertArrayHasKey('1-5', $newData);
@@ -167,9 +155,9 @@ class TierpriceTest extends \PHPUnit\Framework\TestCase
 
     public function testAfterLoad()
     {
-        /** @var $product \Magento\Catalog\Model\Product */
-        $product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\Product::class
+        /** @var $product Product */
+        $product = Bootstrap::getObjectManager()->create(
+            Product::class
         );
         $fixtureProduct = $this->productRepository->get('simple');
         $product->setId($fixtureProduct->getId());
@@ -185,14 +173,14 @@ class TierpriceTest extends \PHPUnit\Framework\TestCase
      * @dataProvider saveExistingProductDataProvider
      * @param array $tierPricesData
      * @param int $tierPriceCount
-     * @throws \Magento\Framework\Exception\CouldNotSaveException
-     * @throws \Magento\Framework\Exception\InputException
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
-     * @throws \Magento\Framework\Exception\StateException
+     * @throws CouldNotSaveException
+     * @throws InputException
+     * @throws NoSuchEntityException
+     * @throws StateException
      */
     public function testSaveExistingProduct(array $tierPricesData, int $tierPriceCount): void
     {
-        /** @var $product \Magento\Catalog\Model\Product */
+        /** @var $product Product */
         $product = $this->productRepository->get('simple', true);
         $tierPrices = [];
         foreach ($tierPricesData as $tierPrice) {
@@ -222,7 +210,7 @@ class TierpriceTest extends \PHPUnit\Framework\TestCase
                         'website_id' => 0,
                         'customer_group_id' => 0,
                         'qty' => 10,
-                        'extension_attributes' => new \Magento\Framework\DataObject(['percentage_value' => 50])
+                        'extension_attributes' => new DataObject(['percentage_value' => 50])
                     ],
                 ],
                 5,
@@ -237,7 +225,7 @@ class TierpriceTest extends \PHPUnit\Framework\TestCase
                         'website_id' => 0,
                         'customer_group_id' => 0,
                         'qty' => 10,
-                        'extension_attributes' => new \Magento\Framework\DataObject(['percentage_value' => 10])
+                        'extension_attributes' => new DataObject(['percentage_value' => 10])
                     ],
                 ],
                 5,
@@ -251,7 +239,7 @@ class TierpriceTest extends \PHPUnit\Framework\TestCase
                         'website_id' => 0,
                         'customer_group_id' => 0,
                         'qty' => 10,
-                        'extension_attributes' => new \Magento\Framework\DataObject(['percentage_value' => 50])
+                        'extension_attributes' => new DataObject(['percentage_value' => 50])
                     ],
                 ],
                 4,
@@ -266,13 +254,13 @@ class TierpriceTest extends \PHPUnit\Framework\TestCase
                         'website_id' => 0,
                         'customer_group_id' => 32000,
                         'qty' => 20,
-                        'extension_attributes' => new \Magento\Framework\DataObject(['percentage_value' => 90])
+                        'extension_attributes' => new DataObject(['percentage_value' => 90])
                     ],
                     [
                         'website_id' => 0,
                         'customer_group_id' => 0,
                         'qty' => 10,
-                        'extension_attributes' => new \Magento\Framework\DataObject(['percentage_value' => 50])
+                        'extension_attributes' => new DataObject(['percentage_value' => 50])
                     ],
                 ],
                 6,
@@ -285,18 +273,18 @@ class TierpriceTest extends \PHPUnit\Framework\TestCase
      * @dataProvider saveNewProductDataProvider
      * @param array $tierPricesData
      * @param int $tierPriceCount
-     * @throws \Magento\Framework\Exception\CouldNotSaveException
-     * @throws \Magento\Framework\Exception\InputException
-     * @throws \Magento\Framework\Exception\LocalizedException
-     * @throws \Magento\Framework\Exception\StateException
+     * @throws CouldNotSaveException
+     * @throws InputException
+     * @throws LocalizedException
+     * @throws StateException
      */
     public function testSaveNewProduct(array $tierPricesData, int $tierPriceCount): void
     {
-        /** @var $product \Magento\Catalog\Model\Product */
-        $product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Catalog\Model\Product::class);
+        /** @var $product Product */
+        $product = Bootstrap::getObjectManager()
+            ->create(Product::class);
         $product->isObjectNew(true);
-        $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
+        $product->setTypeId(Type::TYPE_SIMPLE)
             ->setAttributeSetId(4)
             ->setName('Simple Products New')
             ->setSku('simple product new')
@@ -330,11 +318,35 @@ class TierpriceTest extends \PHPUnit\Framework\TestCase
                         'website_id' => 0,
                         'customer_group_id' => 0,
                         'qty' => 10,
-                        'extension_attributes' => new \Magento\Framework\DataObject(['percentage_value' => 50])
+                        'extension_attributes' => new DataObject(['percentage_value' => 50])
                     ],
                 ],
                 6,
             ],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Tierprice::class
+        );
+        $this->productRepository = Bootstrap::getObjectManager()->create(
+            ProductRepository::class
+        );
+        $this->metadataPool = Bootstrap::getObjectManager()->create(
+            MetadataPool::class
+        );
+        $this->tierPriceFactory = Bootstrap::getObjectManager()
+            ->create(ProductTierPriceInterfaceFactory::class);
+
+        $this->_model->setAttribute(
+            Bootstrap::getObjectManager()->get(
+                Config::class
+            )->getAttribute(
+                'catalog_product',
+                'tier_price'
+            )
+        );
     }
 }

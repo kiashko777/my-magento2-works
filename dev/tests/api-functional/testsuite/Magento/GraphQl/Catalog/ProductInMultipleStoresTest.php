@@ -7,6 +7,9 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Catalog;
 
+use Exception;
+use Magento\Catalog\Model\Product;
+use Magento\Store\Model\Store;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
 
@@ -51,13 +54,13 @@ class ProductInMultipleStoresTest extends GraphQlAbstract
 }
 QUERY;
 
-        /** @var \Magento\Store\Model\Store $store */
-        $store =  ObjectManager::getInstance()->get(\Magento\Store\Model\Store::class);
+        /** @var Store $store */
+        $store = ObjectManager::getInstance()->get(Store::class);
         $storeCodeFromFixture = 'fixture_second_store';
         $storeId = $store->load($storeCodeFromFixture)->getStoreId();
 
-        /** @var \Magento\Catalog\Model\Product $product */
-        $product = ObjectManager::getInstance()->get(\Magento\Catalog\Model\Product::class);
+        /** @var Product $product */
+        $product = ObjectManager::getInstance()->get(Product::class);
         $product->load($product->getIdBySku($productSku));
 
         //use case for custom store
@@ -93,7 +96,7 @@ QUERY;
         // use case for invalid storeCode
         $nonExistingStoreCode = "non_existent_store";
         $headerMapInvalidStoreCode = ['Store' => $nonExistingStoreCode];
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Requested store is not found');
         $this->graphQlQuery($query, [], '', $headerMapInvalidStoreCode);
     }

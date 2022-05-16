@@ -27,12 +27,6 @@ class DbSchemaUpgradeCommandTest extends TestCase
      */
     private $deploymentConfig;
 
-    protected function setUp(): void
-    {
-        $this->installerFactory = $this->createMock(InstallerFactory::class);
-        $this->deploymentConfig = $this->createMock(DeploymentConfig::class);
-    }
-
     /**
      * @dataProvider executeDataProvider
      * @param $options
@@ -86,5 +80,11 @@ class DbSchemaUpgradeCommandTest extends TestCase
             'No information is available: the Magento application is not installed.%w',
             $commandTester->getDisplay()
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->installerFactory = $this->createMock(InstallerFactory::class);
+        $this->deploymentConfig = $this->createMock(DeploymentConfig::class);
     }
 }

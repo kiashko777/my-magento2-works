@@ -3,7 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Model\Customer;
+
+use Magento\Customer\Model\ResourceModel\Group\CollectionFactory;
+use Magento\Setup\Model\Address\AddressDataGenerator;
 
 /**
  * Generate customer data for customer fixture
@@ -16,12 +20,12 @@ class CustomerDataGenerator
     private $config;
 
     /**
-     * @var \Magento\Setup\Model\Address\AddressDataGenerator
+     * @var AddressDataGenerator
      */
     private $addressDataGenerator;
 
     /**
-     * @var \Magento\Customer\Model\ResourceModel\Group\CollectionFactory
+     * @var CollectionFactory
      */
     private $groupCollectionFactory;
 
@@ -31,15 +35,16 @@ class CustomerDataGenerator
     private $customerGroupIds;
 
     /**
-     * @param \Magento\Customer\Model\ResourceModel\Group\CollectionFactory $groupCollectionFactory
-     * @param \Magento\Setup\Model\Address\AddressDataGenerator $addressDataGenerator
+     * @param CollectionFactory $groupCollectionFactory
+     * @param AddressDataGenerator $addressDataGenerator
      * @param array $config
      */
     public function __construct(
-        \Magento\Customer\Model\ResourceModel\Group\CollectionFactory $groupCollectionFactory,
-        \Magento\Setup\Model\Address\AddressDataGenerator $addressDataGenerator,
-        array $config
-    ) {
+        CollectionFactory $groupCollectionFactory,
+        AddressDataGenerator             $addressDataGenerator,
+        array                                                         $config
+    )
+    {
         $this->groupCollectionFactory = $groupCollectionFactory;
         $this->addressDataGenerator = $addressDataGenerator;
         $this->config = $config;

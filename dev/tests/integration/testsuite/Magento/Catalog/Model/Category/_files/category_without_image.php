@@ -7,8 +7,14 @@
 /**
  * After installation system has two categories: root one with ID:1 and Default category with ID:2
  */
-/** @var $category \Magento\Catalog\Model\Category */
-$category = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Category::class);
+/** @var $category Category */
+
+use Magento\Catalog\Model\Category;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+
+$category = Bootstrap::getObjectManager()->create(Category::class);
 $category->setName(
     'Category Without Image 1'
 )->setParentId(
@@ -23,6 +29,6 @@ $category->setName(
     true
 )->save();
 
-/** @var $objectManager \Magento\TestFramework\ObjectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-$objectManager->get(\Magento\Framework\Registry::class)->register('_fixture/Magento\Catalog\Model\Category', $category);
+/** @var $objectManager ObjectManager */
+$objectManager = Bootstrap::getObjectManager();
+$objectManager->get(Registry::class)->register('_fixture/Magento\Catalog\Model\Category', $category);

@@ -52,19 +52,6 @@ class DeleteTest extends AbstractBackendController
     private $productRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->getAttributeSetByName = $this->_objectManager->get(GetAttributeSetByName::class);
-        $this->product = $this->_objectManager->get(ProductInterface::class);
-        $this->attributeSetRepository = $this->_objectManager->get(AttributeSetRepositoryInterface::class);
-        $this->escaper = $this->_objectManager->get(Escaper::class);
-        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
-    }
-
-    /**
      * Assert that default attribute set is not deleted.
      *
      * @return void
@@ -86,6 +73,20 @@ class DeleteTest extends AbstractBackendController
     }
 
     /**
+     * Perform "catalog/product_set/delete" controller dispatch.
+     *
+     * @param int $attributeSetId
+     * @return void
+     */
+    private function performDeleteAttributeSetRequest(int $attributeSetId): void
+    {
+        $this->getRequest()
+            ->setParam('id', $attributeSetId)
+            ->setMethod(HttpRequest::METHOD_POST);
+        $this->dispatch('backend/catalog/product_set/delete/');
+    }
+
+    /**
      * Assert that custom attribute set deleting properly.
      *
      * @magentoDataFixture Magento/Eav/_files/empty_attribute_set.php
@@ -95,6 +96,23 @@ class DeleteTest extends AbstractBackendController
     public function testDeleteCustomAttributeSetById(): void
     {
         $this->deleteAttributeSetByNameAndAssert('empty_attribute_set');
+    }
+
+    /**
+     * Perform request to delete attribute set and assert that attribute set is deleted.
+     *
+     * @param string $attributeSetName
+     * @return void
+     */
+    private function deleteAttributeSetByNameAndAssert(string $attributeSetName): void
+    {
+        $attributeSet = $this->getAttributeSetByName->execute($attributeSetName);
+        $this->performDeleteAttributeSetRequest((int)$attributeSet->getAttributeSetId());
+        $this->assertSessionMessages(
+            $this->equalTo([(string)__('The attribute set has been removed.')]),
+            MessageInterface::TYPE_SUCCESS
+        );
+        $this->assertNull($this->getAttributeSetByName->execute($attributeSetName));
     }
 
     /**
@@ -116,33 +134,15 @@ class DeleteTest extends AbstractBackendController
     }
 
     /**
-     * Perform request to delete attribute set and assert that attribute set is deleted.
-     *
-     * @param string $attributeSetName
-     * @return void
+     * @inheritdoc
      */
-    private function deleteAttributeSetByNameAndAssert(string $attributeSetName): void
+    protected function setUp(): void
     {
-        $attributeSet = $this->getAttributeSetByName->execute($attributeSetName);
-        $this->performDeleteAttributeSetRequest((int)$attributeSet->getAttributeSetId());
-        $this->assertSessionMessages(
-            $this->equalTo([(string)__('The attribute set has been removed.')]),
-            MessageInterface::TYPE_SUCCESS
-        );
-        $this->assertNull($this->getAttributeSetByName->execute($attributeSetName));
-    }
-
-    /**
-     * Perform "catalog/product_set/delete" controller dispatch.
-     *
-     * @param int $attributeSetId
-     * @return void
-     */
-    private function performDeleteAttributeSetRequest(int $attributeSetId): void
-    {
-        $this->getRequest()
-            ->setParam('id', $attributeSetId)
-            ->setMethod(HttpRequest::METHOD_POST);
-        $this->dispatch('backend/catalog/product_set/delete/');
+        parent::setUp();
+        $this->getAttributeSetByName = $this->_objectManager->get(GetAttributeSetByName::class);
+        $this->product = $this->_objectManager->get(ProductInterface::class);
+        $this->attributeSetRepository = $this->_objectManager->get(AttributeSetRepositoryInterface::class);
+        $this->escaper = $this->_objectManager->get(Escaper::class);
+        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
     }
 }

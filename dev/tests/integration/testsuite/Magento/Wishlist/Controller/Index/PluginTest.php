@@ -7,11 +7,11 @@ declare(strict_types=1);
 
 namespace Magento\Wishlist\Controller\Index;
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Framework\Message\MessageInterface;
 use Magento\TestFramework\TestCase\AbstractController;
-use Magento\Customer\Model\Session as CustomerSession;
-use Magento\Catalog\Api\ProductRepositoryInterface;
 
 /**
  * Test for wishlist plugin before dispatch
@@ -30,28 +30,6 @@ class PluginTest extends AbstractController
      * @var ProductRepositoryInterface
      */
     private $productRepository;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->customerSession = $this->_objectManager->get(CustomerSession::class);
-        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->customerSession->logout();
-        $this->customerSession = null;
-
-        parent::tearDown();
-    }
 
     /**
      * Test for adding product to wishlist with invalidate credentials
@@ -91,5 +69,27 @@ class PluginTest extends AbstractController
         $this->customerSession->setCustomerId(1);
         $this->dispatch('wishlist/index/index');
         $this->assert404NotFound();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->customerSession = $this->_objectManager->get(CustomerSession::class);
+        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->customerSession->logout();
+        $this->customerSession = null;
+
+        parent::tearDown();
     }
 }

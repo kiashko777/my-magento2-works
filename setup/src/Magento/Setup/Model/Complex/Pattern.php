@@ -6,6 +6,8 @@
 
 namespace Magento\Setup\Model\Complex;
 
+use Exception;
+
 /**
  * Complex pattern class for complex generator (used for creating configurable products)
  *
@@ -35,40 +37,17 @@ class Pattern
     protected $_position = 0;
 
     /**
-     * Set headers
-     *
-     * @param array $headers
-     *
-     * @return Pattern
-     */
-    public function setHeaders(array $headers)
-    {
-        $this->_headers = $headers;
-        return $this;
-    }
-
-    /**
-     * Get headers array
-     *
-     * @return array
-     */
-    public function getHeaders()
-    {
-        return $this->_headers;
-    }
-
-    /**
      * Set combined rows set
      *
      * @param array $rowsSet
      *
      * @return Pattern
-     * @throws \Exception
+     * @throws Exception
      */
     public function setRowsSet(array $rowsSet)
     {
         if (!count($rowsSet)) {
-            throw new \Exception("Rows set must contain at least 1 array representing a row pattern");
+            throw new Exception("Rows set must contain at least 1 array representing a row pattern");
         }
         $this->_rowsSet = $rowsSet;
         if (!isset($this->_headers)) {
@@ -113,6 +92,29 @@ class Pattern
             }
         }
         return $row;
+    }
+
+    /**
+     * Get headers array
+     *
+     * @return array
+     */
+    public function getHeaders()
+    {
+        return $this->_headers;
+    }
+
+    /**
+     * Set headers
+     *
+     * @param array $headers
+     *
+     * @return Pattern
+     */
+    public function setHeaders(array $headers)
+    {
+        $this->_headers = $headers;
+        return $this;
     }
 
     /**

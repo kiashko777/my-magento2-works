@@ -7,6 +7,7 @@
 
 namespace Magento\Catalog\Api;
 
+use Exception;
 use Magento\Authorization\Model\Role;
 use Magento\Authorization\Model\RoleFactory;
 use Magento\Authorization\Model\Rules;
@@ -15,12 +16,14 @@ use Magento\Catalog\Api\Data\CategoryInterface;
 use Magento\Catalog\Model\Attribute\ScopeOverriddenValue;
 use Magento\Catalog\Model\Category;
 use Magento\CatalogUrlRewrite\Model\CategoryUrlRewriteGenerator;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\Integration\Api\AdminTokenServiceInterface;
 use Magento\Store\Model\Store;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 use Magento\UrlRewrite\Model\Storage\DbStorage;
 use Magento\UrlRewrite\Service\V1\Data\UrlRewrite;
+use Throwable;
 
 /**
  * Test repository web API.
@@ -55,18 +58,6 @@ class CategoryRepositoryTest extends WebapiAbstract
     private $createdCategories;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->roleFactory = Bootstrap::getObjectManager()->get(RoleFactory::class);
-        $this->rulesFactory = Bootstrap::getObjectManager()->get(RulesFactory::class);
-        $this->adminTokens = Bootstrap::getObjectManager()->get(AdminTokenServiceInterface::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Catalog/_files/category_backend.php
      */
     public function testGet()
@@ -95,15 +86,6 @@ class CategoryRepositoryTest extends WebapiAbstract
         $this->assertEquals($expected, $result);
     }
 
-    public function testInfoNoSuchEntityException()
-    {
-        try {
-            $this->getInfoCategory(-1);
-        } catch (\Exception $e) {
-            $this->assertStringContainsString('No such entity with %fieldName = %fieldValue', $e->getMessage());
-        }
-    }
-
     /**
      * Load category data.
      *
@@ -115,7 +97,7 @@ class CategoryRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/' . $id,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -124,6 +106,15 @@ class CategoryRepositoryTest extends WebapiAbstract
             ],
         ];
         return $this->_webApiCall($serviceInfo, ['categoryId' => $id]);
+    }
+
+    public function testInfoNoSuchEntityException()
+    {
+        try {
+            $this->getInfoCategory(-1);
+        } catch (Exception $e) {
+            $this->assertStringContainsString('No such entity with %fieldName = %fieldValue', $e->getMessage());
+        }
     }
 
     /**
@@ -146,6 +137,61 @@ class CategoryRepositoryTest extends WebapiAbstract
         $this->createdCategories = [$result['id']];
     }
 
+    protected function getSimpleCategoryData($categoryData = [])
+    {
+        return [
+            'parent_id' => '2',
+            'name' => isset($categoryData['name'])
+                ? $categoryData['name'] : uniqid('Category-', true),
+            'is_active' => '1',
+            'include_in_menu' => '1',
+            'available_sort_by' => ['position', 'name'],
+            'custom_attributes' => [
+                ['attribute_code' => 'url_key', 'value' => ''],
+                ['attribute_code' => 'description', 'value' => 'Custom description'],
+                ['attribute_code' => 'meta_title', 'value' => ''],
+                ['attribute_code' => 'meta_keywords', 'value' => ''],
+                ['attribute_code' => 'meta_description', 'value' => ''],
+                ['attribute_code' => 'display_mode', 'value' => 'PRODUCTS'],
+                ['attribute_code' => 'landing_page', 'value' => '0'],
+                ['attribute_code' => 'is_anchor', 'value' => '0'],
+                ['attribute_code' => 'custom_use_parent_settings', 'value' => '0'],
+                ['attribute_code' => 'custom_apply_to_products', 'value' => '0'],
+                ['attribute_code' => 'custom_design', 'value' => ''],
+                ['attribute_code' => 'custom_design_from', 'value' => ''],
+                ['attribute_code' => 'custom_design_to', 'value' => ''],
+                ['attribute_code' => 'page_layout', 'value' => ''],
+            ]
+        ];
+    }
+
+    /**
+     * Create category process
+     *
+     * @param array $category
+     * @param string|null $token
+     * @return array
+     */
+    protected function createCategory(array $category, ?string $token = null)
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH,
+                'httpMethod' => Request::HTTP_METHOD_POST
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => 'V1',
+                'operation' => self::SERVICE_NAME . 'Save',
+            ],
+        ];
+        if ($token) {
+            $serviceInfo['rest']['token'] = $serviceInfo['soap']['token'] = $token;
+        }
+        $requestData = ['category' => $category];
+        return $this->_webApiCall($serviceInfo, $requestData);
+    }
+
     /**
      * @magentoApiDataFixture Magento/Catalog/_files/category.php
      */
@@ -158,7 +204,7 @@ class CategoryRepositoryTest extends WebapiAbstract
             UrlRewrite::ENTITY_ID => $categoryId,
             UrlRewrite::ENTITY_TYPE => CategoryUrlRewriteGenerator::ENTITY_TYPE
         ];
-        /** @var \Magento\UrlRewrite\Service\V1\Data\UrlRewrite $urlRewrite */
+        /** @var UrlRewrite $urlRewrite */
         $urlRewrite = $storage->findOneByData($data);
 
         // Assert that a url rewrite is auto-generated for the category created from the data fixture
@@ -173,11 +219,33 @@ class CategoryRepositoryTest extends WebapiAbstract
         $this->assertNull($storage->findOneByData($data));
     }
 
+    /**
+     * @param int $id
+     * @return bool
+     * @throws Exception
+     */
+    protected function deleteCategory($id)
+    {
+        $serviceInfo =
+            [
+                'rest' => [
+                    'resourcePath' => self::RESOURCE_PATH . '/' . $id,
+                    'httpMethod' => Request::HTTP_METHOD_DELETE,
+                ],
+                'soap' => [
+                    'service' => self::SERVICE_NAME,
+                    'serviceVersion' => 'V1',
+                    'operation' => self::SERVICE_NAME . 'DeleteByIdentifier',
+                ],
+            ];
+        return $this->_webApiCall($serviceInfo, ['categoryId' => $id]);
+    }
+
     public function testDeleteNoSuchEntityException()
     {
         try {
             $this->deleteCategory(-1);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->assertStringContainsString('No such entity with %fieldName = %fieldValue', $e->getMessage());
         }
     }
@@ -191,7 +259,7 @@ class CategoryRepositoryTest extends WebapiAbstract
      */
     public function testDeleteSystemOrRoot(int $categoryId, string $exceptionMsg): void
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage($exceptionMsg);
 
         $this->deleteCategory($categoryId);
@@ -254,6 +322,36 @@ class CategoryRepositoryTest extends WebapiAbstract
         $this->assertEquals("Update Category Test", $category->getName());
         $this->assertEquals("Update Category Description Test", $category->getDescription());
         $this->createdCategories = [$categoryId];
+    }
+
+    /**
+     * Update given category via web API.
+     *
+     * @param int $id
+     * @param array $data
+     * @param string|null $token
+     * @return array
+     */
+    protected function updateCategory($id, $data, ?string $token = null)
+    {
+        $serviceInfo =
+            [
+                'rest' => [
+                    'resourcePath' => self::RESOURCE_PATH . '/' . $id,
+                    'httpMethod' => Request::HTTP_METHOD_PUT,
+                ],
+                'soap' => [
+                    'service' => self::SERVICE_NAME,
+                    'serviceVersion' => 'V1',
+                    'operation' => self::SERVICE_NAME . 'Save',
+                ],
+            ];
+        if ($token) {
+            $serviceInfo['rest']['token'] = $serviceInfo['soap']['token'] = $token;
+        }
+        $data['id'] = $id;
+
+        return $this->_webApiCall($serviceInfo, ['id' => $id, 'category' => $data]);
     }
 
     /**
@@ -360,155 +458,12 @@ class CategoryRepositoryTest extends WebapiAbstract
         $this->deleteCategory($categoryId);
     }
 
-    protected function getSimpleCategoryData($categoryData = [])
-    {
-        return [
-            'parent_id' => '2',
-            'name' => isset($categoryData['name'])
-                ? $categoryData['name'] : uniqid('Category-', true),
-            'is_active' => '1',
-            'include_in_menu' => '1',
-            'available_sort_by' => ['position', 'name'],
-            'custom_attributes' => [
-                ['attribute_code' => 'url_key', 'value' => ''],
-                ['attribute_code' => 'description', 'value' => 'Custom description'],
-                ['attribute_code' => 'meta_title', 'value' => ''],
-                ['attribute_code' => 'meta_keywords', 'value' => ''],
-                ['attribute_code' => 'meta_description', 'value' => ''],
-                ['attribute_code' => 'display_mode', 'value' => 'PRODUCTS'],
-                ['attribute_code' => 'landing_page', 'value' => '0'],
-                ['attribute_code' => 'is_anchor', 'value' => '0'],
-                ['attribute_code' => 'custom_use_parent_settings', 'value' => '0'],
-                ['attribute_code' => 'custom_apply_to_products', 'value' => '0'],
-                ['attribute_code' => 'custom_design', 'value' => ''],
-                ['attribute_code' => 'custom_design_from', 'value' => ''],
-                ['attribute_code' => 'custom_design_to', 'value' => ''],
-                ['attribute_code' => 'page_layout', 'value' => ''],
-            ]
-        ];
-    }
-
-    /**
-     * Create category process
-     *
-     * @param array $category
-     * @param string|null $token
-     * @return array
-     */
-    protected function createCategory(array $category, ?string $token = null)
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => 'V1',
-                'operation' => self::SERVICE_NAME . 'Save',
-            ],
-        ];
-        if ($token) {
-            $serviceInfo['rest']['token'] = $serviceInfo['soap']['token'] = $token;
-        }
-        $requestData = ['category' => $category];
-        return $this->_webApiCall($serviceInfo, $requestData);
-    }
-
-    /**
-     * @param int $id
-     * @return bool
-     * @throws \Exception
-     */
-    protected function deleteCategory($id)
-    {
-        $serviceInfo =
-            [
-                'rest' => [
-                    'resourcePath' => self::RESOURCE_PATH . '/' . $id,
-                    'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
-                ],
-                'soap' => [
-                    'service' => self::SERVICE_NAME,
-                    'serviceVersion' => 'V1',
-                    'operation' => self::SERVICE_NAME . 'DeleteByIdentifier',
-                ],
-            ];
-        return $this->_webApiCall($serviceInfo, ['categoryId' => $id]);
-    }
-
-    /**
-     * Update given category via web API.
-     *
-     * @param int $id
-     * @param array $data
-     * @param string|null $token
-     * @return array
-     */
-    protected function updateCategory($id, $data, ?string $token = null)
-    {
-        $serviceInfo =
-            [
-                'rest' => [
-                    'resourcePath' => self::RESOURCE_PATH . '/' . $id,
-                    'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
-                ],
-                'soap' => [
-                    'service' => self::SERVICE_NAME,
-                    'serviceVersion' => 'V1',
-                    'operation' => self::SERVICE_NAME . 'Save',
-                ],
-            ];
-        if ($token) {
-            $serviceInfo['rest']['token'] = $serviceInfo['soap']['token'] = $token;
-        }
-        $data['id'] = $id;
-
-        return $this->_webApiCall($serviceInfo, ['id' => $id, 'category' => $data]);
-    }
-
-    /**
-     * Update admin role resources list.
-     *
-     * @param string $roleName
-     * @param string[] $resources
-     * @return void
-     */
-    private function updateRoleResources(string $roleName, array $resources): void
-    {
-        /** @var Role $role */
-        $role = $this->roleFactory->create();
-        $role->load($roleName, 'role_name');
-        /** @var Rules $rules */
-        $rules = $this->rulesFactory->create();
-        $rules->setRoleId($role->getId());
-        $rules->setResources($resources);
-        $rules->saveRel();
-    }
-
-    /**
-     * Extract error returned by the server.
-     *
-     * @param \Throwable $exception
-     * @return string
-     */
-    private function extractCallExceptionMessage(\Throwable $exception): string
-    {
-        if ($restResponse = json_decode($exception->getMessage(), true)) {
-            //REST
-            return $restResponse['message'];
-        } else {
-            //SOAP
-            return $exception->getMessage();
-        }
-    }
-
     /**
      * Test design settings authorization
      *
      * @magentoApiDataFixture Magento/User/_files/user_with_custom_role.php
-     * @throws \Throwable
      * @return void
+     * @throws Throwable
      */
     public function testSaveDesign(): void
     {
@@ -528,7 +483,7 @@ class CategoryRepositoryTest extends WebapiAbstract
         $exceptionMessage = null;
         try {
             $this->createCategory($categoryData, $token);
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             $exceptionMessage = $this->extractCallExceptionMessage($exception);
         }
         //We don't have the permissions.
@@ -579,12 +534,48 @@ class CategoryRepositoryTest extends WebapiAbstract
         $exceptionMessage = null;
         try {
             $this->updateCategory($categoryData['id'], $categoryData, $token);
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             $exceptionMessage = $this->extractCallExceptionMessage($exception);
         }
         //We don't have permissions to do that.
         $this->assertEquals('Not allowed to edit the category\'s design attributes', $exceptionMessage);
         $this->createdCategories = [$result['id']];
+    }
+
+    /**
+     * Update admin role resources list.
+     *
+     * @param string $roleName
+     * @param string[] $resources
+     * @return void
+     */
+    private function updateRoleResources(string $roleName, array $resources): void
+    {
+        /** @var Role $role */
+        $role = $this->roleFactory->create();
+        $role->load($roleName, 'role_name');
+        /** @var Rules $rules */
+        $rules = $this->rulesFactory->create();
+        $rules->setRoleId($role->getId());
+        $rules->setResources($resources);
+        $rules->saveRel();
+    }
+
+    /**
+     * Extract error returned by the server.
+     *
+     * @param Throwable $exception
+     * @return string
+     */
+    private function extractCallExceptionMessage(Throwable $exception): string
+    {
+        if ($restResponse = json_decode($exception->getMessage(), true)) {
+            //REST
+            return $restResponse['message'];
+        } else {
+            //SOAP
+            return $exception->getMessage();
+        }
     }
 
     /**
@@ -639,15 +630,16 @@ class CategoryRepositoryTest extends WebapiAbstract
      * @return array
      */
     protected function updateCategoryForSpecificStore(
-        int $id,
-        array $data,
+        int     $id,
+        array   $data,
         ?string $token = null,
-        string $storeCode = 'default'
-    ) {
+        string  $storeCode = 'default'
+    )
+    {
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/' . $id,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -661,6 +653,18 @@ class CategoryRepositoryTest extends WebapiAbstract
         $data['id'] = $id;
 
         return $this->_webApiCall($serviceInfo, ['id' => $id, 'category' => $data], null, $storeCode);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->roleFactory = Bootstrap::getObjectManager()->get(RoleFactory::class);
+        $this->rulesFactory = Bootstrap::getObjectManager()->get(RulesFactory::class);
+        $this->adminTokens = Bootstrap::getObjectManager()->get(AdminTokenServiceInterface::class);
     }
 
     /**

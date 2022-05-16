@@ -13,7 +13,7 @@ use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/category_with_different_price_products.php');
 Resolver::getInstance()->requireDataFixture('Magento/Store/_files/second_website_with_two_stores.php');
 
-$objectManager =  Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 /** @var ProductRepositoryInterface $productRepository */
 $productRepository = $objectManager->get(ProductRepositoryInterface::class);
 $productRepository->cleanCache();

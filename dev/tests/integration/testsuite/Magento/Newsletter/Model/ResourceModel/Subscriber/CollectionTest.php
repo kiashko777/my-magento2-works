@@ -6,18 +6,16 @@
 
 namespace Magento\Newsletter\Model\ResourceModel\Subscriber;
 
-class CollectionTest extends \PHPUnit\Framework\TestCase
+use Magento\Newsletter\Model\Subscriber;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class CollectionTest extends TestCase
 {
     /**
-     * @var \Magento\Newsletter\Model\ResourceModel\Subscriber\Collection
+     * @var Collection
      */
     protected $_collectionModel;
-
-    protected function setUp(): void
-    {
-        $this->_collectionModel = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Newsletter\Model\ResourceModel\Subscriber\Collection::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Newsletter/_files/subscribers.php
@@ -26,7 +24,7 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
     {
         $this->_collectionModel->showCustomerInfo()->load();
 
-        /** @var \Magento\Newsletter\Model\Subscriber[] $subscribers */
+        /** @var Subscriber[] $subscribers */
         $subscribers = $this->_collectionModel->getItems();
         $this->assertCount(3, $subscribers);
 
@@ -40,5 +38,11 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
                 $this->assertNull($subscriber->getLastname(), $subscriber->getSubscriberEmail());
             }
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->_collectionModel = Bootstrap::getObjectManager()
+            ->create(Collection::class);
     }
 }

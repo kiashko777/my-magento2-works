@@ -10,6 +10,7 @@ namespace Magento\Setup\Test\Unit\Controller;
 use Laminas\View\Model\ViewModel;
 use Magento\Framework\App\ProductMetadata;
 use Magento\Setup\Controller\Index;
+use Magento\Setup\Model\License;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -30,23 +31,6 @@ class IndexTest extends TestCase
      */
     private $controller;
 
-    protected function setUp(): void
-    {
-        /** @var ProductMetadata|MockObject $productMetadataMock */
-        $productMetadataMock =  $this->getMockBuilder(ProductMetadata::class)
-            ->onlyMethods(['getVersion'])
-            ->disableOriginalConstructor()
-            ->getMock();
-        $productMetadataMock->expects($this->once())
-            ->method('getVersion')
-            ->willReturn(self::TEST_PRODUCT_VERSION);
-
-        $licenseModel = $this->createMock(\Magento\Setup\Model\License::class);
-        $licenseModel->expects($this->once())->method('getContents')->willReturn(self::TEST_LICENSE);
-
-        $this->controller = new Index($productMetadataMock, $licenseModel);
-    }
-
     public function testIndexAction(): void
     {
         $viewModel = $this->controller->indexAction();
@@ -63,5 +47,22 @@ class IndexTest extends TestCase
         //license
         $this->assertArrayHasKey('license', $viewModel->getVariables());
         $this->assertEquals(self::TEST_LICENSE, $variables['license']);
+    }
+
+    protected function setUp(): void
+    {
+        /** @var ProductMetadata|MockObject $productMetadataMock */
+        $productMetadataMock = $this->getMockBuilder(ProductMetadata::class)
+            ->onlyMethods(['getVersion'])
+            ->disableOriginalConstructor()
+            ->getMock();
+        $productMetadataMock->expects($this->once())
+            ->method('getVersion')
+            ->willReturn(self::TEST_PRODUCT_VERSION);
+
+        $licenseModel = $this->createMock(License::class);
+        $licenseModel->expects($this->once())->method('getContents')->willReturn(self::TEST_LICENSE);
+
+        $this->controller = new Index($productMetadataMock, $licenseModel);
     }
 }

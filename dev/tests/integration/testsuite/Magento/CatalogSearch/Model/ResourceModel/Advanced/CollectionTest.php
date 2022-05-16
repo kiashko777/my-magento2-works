@@ -3,32 +3,25 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogSearch\Model\ResourceModel\Advanced;
 
 use Magento\CatalogSearch\Model\Indexer\Fulltext;
+use Magento\CatalogSearch\Model\Search\ItemCollectionProvider;
 use Magento\Framework\Indexer\IndexerRegistry;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\CatalogSearch\Model\ResourceModel\Advanced\Collection.
  * @magentoDbIsolation disabled
  */
-class CollectionTest extends \PHPUnit\Framework\TestCase
+class CollectionTest extends TestCase
 {
     /**
-     * @var \Magento\CatalogSearch\Model\ResourceModel\Advanced\Collection
+     * @var Collection
      */
     private $advancedCollection;
-
-    protected function setUp(): void
-    {
-        $advanced = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\CatalogSearch\Model\Search\ItemCollectionProvider::class);
-        $this->advancedCollection = $advanced->getCollection();
-        $indexerRegistry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(IndexerRegistry::class);
-        $indexerRegistry->get(Fulltext::INDEXER_ID)->reindexAll();
-    }
 
     /**
      * @dataProvider filtersDataProvider
@@ -51,5 +44,15 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
             [['name' => '  ', 'description' => 'green'], 2],
             [['name' => '  ', 'description' => '   '], 0],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $advanced = Bootstrap::getObjectManager()
+            ->create(ItemCollectionProvider::class);
+        $this->advancedCollection = $advanced->getCollection();
+        $indexerRegistry = Bootstrap::getObjectManager()
+            ->create(IndexerRegistry::class);
+        $indexerRegistry->get(Fulltext::INDEXER_ID)->reindexAll();
     }
 }

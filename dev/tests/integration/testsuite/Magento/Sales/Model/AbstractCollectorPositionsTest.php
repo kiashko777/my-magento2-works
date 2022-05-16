@@ -7,9 +7,15 @@
 /**
  * Abstract test case to test positions of a module's total collectors as compared to other collectors
  */
+
 namespace Magento\Sales\Model;
 
-abstract class AbstractCollectorPositionsTest extends \PHPUnit\Framework\TestCase
+use InvalidArgumentException;
+use Magento\Quote\Model\Quote\Address\Total\Collector;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+abstract class AbstractCollectorPositionsTest extends TestCase
 {
     /**
      * @param string $collectorCode
@@ -54,15 +60,15 @@ abstract class AbstractCollectorPositionsTest extends \PHPUnit\Framework\TestCas
     /**
      * Return array of total collectors for the designated $configType
      *
-     * @var string $configType
-     * @throws \InvalidArgumentException
      * @return array
+     * @throws InvalidArgumentException
+     * @var string $configType
      */
     protected static function _getConfigCollectors($configType)
     {
         switch ($configType) {
             case 'quote':
-                $configClass = \Magento\Quote\Model\Quote\Address\Total\Collector::class;
+                $configClass = Collector::class;
                 $methodGetCollectors = 'getCollectors';
                 break;
             case 'invoice':
@@ -74,9 +80,9 @@ abstract class AbstractCollectorPositionsTest extends \PHPUnit\Framework\TestCas
                 $methodGetCollectors = 'getTotalModels';
                 break;
             default:
-                throw new \InvalidArgumentException('Unknown config type: ' . $configType);
+                throw new InvalidArgumentException('Unknown config type: ' . $configType);
         }
-        $config = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create($configClass);
+        $config = Bootstrap::getObjectManager()->create($configClass);
         return $config->{$methodGetCollectors}();
     }
 

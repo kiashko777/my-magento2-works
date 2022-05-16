@@ -32,18 +32,6 @@ class AddQuantityFilterToCollectionTest extends TestCase
     private $request;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->request = $this->objectManager->get(RequestInterface::class);
-        $this->componentFactory = $this->objectManager->get(UiComponentFactory::class);
-    }
-
-    /**
      * @dataProvider quantityFilterProvider
      * @magentoDataFixture Magento/Catalog/_files/multiple_products.php
      * @param array $filter
@@ -56,6 +44,35 @@ class AddQuantityFilterToCollectionTest extends TestCase
         $dataProviderData = $this->getComponentProvidedData('product_listing');
         $actualProducts = array_column($dataProviderData['items'], 'sku');
         $this->assertEquals($expectedProducts, $actualProducts, 'Expected products do not match actual products!');
+    }
+
+    /**
+     * Get component provided data
+     *
+     * @param string $namespace
+     * @return array
+     */
+    private function getComponentProvidedData(string $namespace): array
+    {
+        $component = $this->componentFactory->create($namespace);
+        $this->prepareChildComponents($component);
+
+        return $component->getContext()->getDataProvider()->getData();
+    }
+
+    /**
+     * Call prepare method in the child components
+     *
+     * @param UiComponentInterface $component
+     * @return void
+     */
+    private function prepareChildComponents(UiComponentInterface $component): void
+    {
+        foreach ($component->getChildComponents() as $child) {
+            $this->prepareChildComponents($child);
+        }
+
+        $component->prepare();
     }
 
     /**
@@ -103,31 +120,14 @@ class AddQuantityFilterToCollectionTest extends TestCase
     }
 
     /**
-     * Call prepare method in the child components
-     *
-     * @param UiComponentInterface $component
-     * @return void
+     * @inheritdoc
      */
-    private function prepareChildComponents(UiComponentInterface $component): void
+    protected function setUp(): void
     {
-        foreach ($component->getChildComponents() as $child) {
-            $this->prepareChildComponents($child);
-        }
+        parent::setUp();
 
-        $component->prepare();
-    }
-
-    /**
-     * Get component provided data
-     *
-     * @param string $namespace
-     * @return array
-     */
-    private function getComponentProvidedData(string $namespace): array
-    {
-        $component = $this->componentFactory->create($namespace);
-        $this->prepareChildComponents($component);
-
-        return $component->getContext()->getDataProvider()->getData();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->request = $this->objectManager->get(RequestInterface::class);
+        $this->componentFactory = $this->objectManager->get(UiComponentFactory::class);
     }
 }

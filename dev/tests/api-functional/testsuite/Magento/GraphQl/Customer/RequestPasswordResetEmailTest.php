@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Customer;
 
+use Exception;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
 
@@ -17,12 +18,6 @@ class RequestPasswordResetEmailTest extends GraphQlAbstract
      */
     private $lockCustomer;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->lockCustomer = Bootstrap::getObjectManager()->get(LockCustomer::class);
-    }
     /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      */
@@ -45,7 +40,7 @@ QUERY;
      */
     public function testCustomerAccountWithEmailNotAvailable()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Cannot reset the customer\'s password');
         $query =
             <<<QUERY
@@ -61,7 +56,7 @@ QUERY;
      */
     public function testEmailAvailableEmptyValue()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('You must specify an email address.');
         $query = <<<QUERY
 mutation {
@@ -76,7 +71,7 @@ QUERY;
      */
     public function testEmailAvailableInvalidValue()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The email address has an invalid format.');
         $query = <<<QUERY
 mutation {
@@ -93,7 +88,7 @@ QUERY;
      */
     public function testRequestPasswordResetEmailForLockCustomer()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The account is locked');
         $this->lockCustomer->execute(1);
         $query =
@@ -104,5 +99,12 @@ mutation {
 QUERY;
 
         $this->graphQlMutation($query);
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->lockCustomer = Bootstrap::getObjectManager()->get(LockCustomer::class);
     }
 }

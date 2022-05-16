@@ -3,7 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Model;
+
+use Magento\Framework\Exception\LocalizedException;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\Catalog\Model\Category.
@@ -14,32 +19,12 @@ namespace Magento\Catalog\Model;
  * @magentoAppIsolation enabled
  * @magentoDbIsolation enabled
  */
-class CategoryTreeTest extends \PHPUnit\Framework\TestCase
+class CategoryTreeTest extends TestCase
 {
     /**
-     * @var \Magento\Catalog\Model\Category
+     * @var Category
      */
     protected $_model;
-
-    protected function setUp(): void
-    {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\Category::class
-        );
-    }
-
-    /**
-     * Load category
-     *
-     * @param $categoryId
-     * @return Category
-     */
-    protected function loadCategory($categoryId)
-    {
-        $this->_model->setData([]);
-        $this->_model->load($categoryId);
-        return $this->_model;
-    }
 
     public function testMovePosition()
     {
@@ -66,6 +51,19 @@ class CategoryTreeTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(1, $category->getPosition(), 'Category 9 position must be 1');
     }
 
+    /**
+     * Load category
+     *
+     * @param $categoryId
+     * @return Category
+     */
+    protected function loadCategory($categoryId)
+    {
+        $this->_model->setData([]);
+        $this->_model->load($categoryId);
+        return $this->_model;
+    }
+
     public function testMove()
     {
         $this->_model->load(7);
@@ -81,7 +79,7 @@ class CategoryTreeTest extends \PHPUnit\Framework\TestCase
      */
     public function testMoveWrongParent()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
 
         $this->_model->load(7);
         $this->_model->move(100, 0);
@@ -91,7 +89,7 @@ class CategoryTreeTest extends \PHPUnit\Framework\TestCase
      */
     public function testMoveWrongId()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
 
         $this->_model->move(100, 0);
     }
@@ -219,5 +217,12 @@ class CategoryTreeTest extends \PHPUnit\Framework\TestCase
         $this->_model->unsetData();
         $this->_model->load(3);
         $this->assertTrue($this->_model->isInRootCategoryList());
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Category::class
+        );
     }
 }

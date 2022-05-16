@@ -5,20 +5,24 @@
  */
 
 declare(strict_types=1);
+
+use Magento\Framework\Registry;
+use Magento\Store\Model\Store;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
-/** @var \Magento\Framework\Registry $registry */
-$registry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
+/** @var Registry $registry */
+$registry = Bootstrap::getObjectManager()->get(Registry::class);
 
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
-$store = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Store\Model\Store::class);
+$store = Bootstrap::getObjectManager()->create(Store::class);
 if ($store->load('fixture_fourth_store', 'code')->getId()) {
     $store->delete();
 }
 
-$store = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Store\Model\Store::class);
+$store = Bootstrap::getObjectManager()->create(Store::class);
 if ($store->load('fixture_fifth_store', 'code')->getId()) {
     $store->delete();
 }

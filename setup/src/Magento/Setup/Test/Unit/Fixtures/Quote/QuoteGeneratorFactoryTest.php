@@ -30,6 +30,24 @@ class QuoteGeneratorFactoryTest extends TestCase
     private $fixture;
 
     /**
+     * Test create method.
+     *
+     * @return void
+     */
+    public function testCreate()
+    {
+        $result = $this->getMockBuilder(QuoteGenerator::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->objectManager->expects($this->once())
+            ->method('create')
+            ->with(QuoteGenerator::class, [])
+            ->willReturn($result);
+
+        $this->assertSame($result, $this->fixture->create([]));
+    }
+
+    /**
      * @inheritdoc
      */
     protected function setUp(): void
@@ -46,23 +64,5 @@ class QuoteGeneratorFactoryTest extends TestCase
                 'instanceName' => QuoteGenerator::class,
             ]
         );
-    }
-
-    /**
-     * Test create method.
-     *
-     * @return void
-     */
-    public function testCreate()
-    {
-        $result =  $this->getMockBuilder(QuoteGenerator::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $this->objectManager->expects($this->once())
-            ->method('create')
-            ->with(QuoteGenerator::class, [])
-            ->willReturn($result);
-
-        $this->assertSame($result, $this->fixture->create([]));
     }
 }

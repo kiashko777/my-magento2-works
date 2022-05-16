@@ -3,35 +3,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Ui\DataProvider\Product\Attributes;
 
-class ListingTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\App\RequestInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class ListingTest extends TestCase
 {
-    /** @var \Magento\Catalog\Ui\DataProvider\Product\Attributes\Listing */
+    /** @var Listing */
     private $dataProvider;
 
-    /** @var \Magento\Framework\App\RequestInterface */
+    /** @var RequestInterface */
     private $request;
-
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var \Magento\Framework\App\RequestInterface $request */
-        $this->request = $objectManager->get(\Magento\Framework\App\RequestInterface::class);
-
-        /** Default Attribute Set Id is equal 4 */
-        $this->request->setParams(['template_id' => 4]);
-
-        $this->dataProvider = $objectManager->create(
-            \Magento\Catalog\Ui\DataProvider\Product\Attributes\Listing::class,
-            [
-                'name' => 'product_attributes_grid_data_source',
-                'primaryFieldName' => 'attribute_id',
-                'requestFieldName' => 'id',
-                'request' => $this->request
-            ]
-        );
-    }
 
     public function testGetDataSortedAsc()
     {
@@ -49,5 +34,25 @@ class ListingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(2, $data['totalRecords']);
         $this->assertEquals('manufacturer', $data['items'][0]['attribute_code']);
         $this->assertEquals('color', $data['items'][1]['attribute_code']);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var RequestInterface $request */
+        $this->request = $objectManager->get(RequestInterface::class);
+
+        /** Default Attribute Set Id is equal 4 */
+        $this->request->setParams(['template_id' => 4]);
+
+        $this->dataProvider = $objectManager->create(
+            Listing::class,
+            [
+                'name' => 'product_attributes_grid_data_source',
+                'primaryFieldName' => 'attribute_id',
+                'requestFieldName' => 'id',
+                'request' => $this->request
+            ]
+        );
     }
 }

@@ -3,12 +3,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Backend\Model\Session;
+
+use Magento\Framework\DataObject;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class QuoteTest
  */
-class QuoteTest extends \PHPUnit\Framework\TestCase
+class QuoteTest extends TestCase
 {
     /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
@@ -17,14 +22,14 @@ class QuoteTest extends \PHPUnit\Framework\TestCase
     public function testGetQuote()
     {
         /** Preconditions */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
         $fixtureCustomerId = 1;
-        /** @var \Magento\Backend\Model\Session\Quote $backendQuoteSession */
-        $backendQuoteSession = $objectManager->get(\Magento\Backend\Model\Session\Quote::class);
+        /** @var Quote $backendQuoteSession */
+        $backendQuoteSession = $objectManager->get(Quote::class);
         $backendQuoteSession->setCustomerId($fixtureCustomerId);
-        /** @var \Magento\Backend\Model\Session\Quote $quoteSession */
-        $quoteSession = $objectManager->create(\Magento\Backend\Model\Session\Quote::class);
-        $quoteSession->setEntity(new \Magento\Framework\DataObject());
+        /** @var Quote $quoteSession */
+        $quoteSession = $objectManager->create(Quote::class);
+        $quoteSession->setEntity(new DataObject());
 
         /** SUT execution */
         $quote = $quoteSession->getQuote();

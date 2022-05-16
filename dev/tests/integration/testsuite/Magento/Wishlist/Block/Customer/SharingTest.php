@@ -28,17 +28,6 @@ class SharingTest extends TestCase
     private $block;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Sharing::class);
-    }
-
-    /**
      * @return void
      */
     public function testDisplayWishListSharingForm(): void
@@ -57,5 +46,16 @@ class SharingTest extends TestCase
                 sprintf("%s was not found.", $element)
             );
         }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Sharing::class);
     }
 }

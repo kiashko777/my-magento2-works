@@ -26,17 +26,6 @@ class ReplaceFixtureTest extends AbstractOverridesTest
     private $configStorage;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->config = $this->objectManager->get(ScopeConfigInterface::class);
-        $this->configStorage = $this->objectManager->get(ConfigStorage::class);
-    }
-
-    /**
      * Checks that fixture can be replaced in test class node
      *
      * @magentoConfigFixture default_store test_section/test_group/field_1 new_value
@@ -174,5 +163,16 @@ class ReplaceFixtureTest extends AbstractOverridesTest
             $expectedConfigValue,
             $this->configStorage->getValueFromDb('test_section/test_group/field_1')
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->config = $this->objectManager->get(ScopeConfigInterface::class);
+        $this->configStorage = $this->objectManager->get(ConfigStorage::class);
     }
 }

@@ -3,9 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Di\App\Task\Operation;
 
+use Magento\Framework\Interception\Config\Config;
 use Magento\Setup\Module\Di\App\Task\OperationInterface;
+use Magento\Setup\Module\Di\Code\Reader\Decorator\Interceptions;
 
 class InterceptionCache implements OperationInterface
 {
@@ -15,25 +18,26 @@ class InterceptionCache implements OperationInterface
     private $data = [];
 
     /**
-     * @var \Magento\Framework\Interception\Config\Config
+     * @var Config
      */
     private $configInterface;
 
     /**
-     * @var \Magento\Setup\Module\Di\Code\Reader\Decorator\Interceptions
+     * @var Interceptions
      */
     private $interceptionsInstancesNamesList;
 
     /**
-     * @param \Magento\Framework\Interception\Config\Config $configInterface
-     * @param \Magento\Setup\Module\Di\Code\Reader\Decorator\Interceptions $interceptionsInstancesNamesList
+     * @param Config $configInterface
+     * @param Interceptions $interceptionsInstancesNamesList
      * @param array $data
      */
     public function __construct(
-        \Magento\Framework\Interception\Config\Config $configInterface,
-        \Magento\Setup\Module\Di\Code\Reader\Decorator\Interceptions $interceptionsInstancesNamesList,
-        array $data = []
-    ) {
+        Config                $configInterface,
+        Interceptions $interceptionsInstancesNamesList,
+        array                                                        $data = []
+    )
+    {
         $this->configInterface = $configInterface;
         $this->interceptionsInstancesNamesList = $interceptionsInstancesNamesList;
         $this->data = $data;

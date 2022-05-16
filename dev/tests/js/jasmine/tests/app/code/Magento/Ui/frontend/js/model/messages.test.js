@@ -64,7 +64,7 @@ define([
                 ]
             };
             returnedObj = ['Message test case ' + messageObj.parameters[0] + ', case ' +
-                messageObj.parameters[1] + ' and case ' + messageObj.parameters[2]];
+            messageObj.parameters[1] + ' and case ' + messageObj.parameters[2]];
 
             expect(obj.add(messageObj, type)).toEqual(true);
             expect(type).toEqual(returnedObj);

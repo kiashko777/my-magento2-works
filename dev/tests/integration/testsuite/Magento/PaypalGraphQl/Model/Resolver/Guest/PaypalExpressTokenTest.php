@@ -9,9 +9,9 @@ namespace Magento\PaypalGraphQl\Model\Resolver\Guest;
 
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\GraphQl\Exception\GraphQlInputException;
+use Magento\Framework\Serialize\SerializerInterface;
 use Magento\Paypal\Model\Api\Nvp;
 use Magento\PaypalGraphQl\PaypalExpressAbstractTest;
-use Magento\Framework\Serialize\SerializerInterface;
 use Magento\Quote\Model\QuoteIdToMaskedQuoteId;
 
 /**
@@ -30,14 +30,6 @@ class PaypalExpressTokenTest extends PaypalExpressAbstractTest
      * @var QuoteIdToMaskedQuoteId
      */
     private $quoteIdToMaskedId;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->json = $this->objectManager->get(SerializerInterface::class);
-        $this->quoteIdToMaskedId = $this->objectManager->get(QuoteIdToMaskedQuoteId::class);
-    }
 
     /**
      * Test create paypal token for guest
@@ -177,19 +169,6 @@ class PaypalExpressTokenTest extends PaypalExpressAbstractTest
     }
 
     /**
-     * Paypal method codes provider
-     *
-     * @return array
-     */
-    public function getPaypalCodesProvider(): array
-    {
-        return [
-            ['paypal_express'],
-            ['payflow_express'],
-        ];
-    }
-
-    /**
      * Get GraphQl query for creating Paypal token
      *
      * @param string $cartId
@@ -220,5 +199,26 @@ mutation {
     }
 }
 QUERY;
+    }
+
+    /**
+     * Paypal method codes provider
+     *
+     * @return array
+     */
+    public function getPaypalCodesProvider(): array
+    {
+        return [
+            ['paypal_express'],
+            ['payflow_express'],
+        ];
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->json = $this->objectManager->get(SerializerInterface::class);
+        $this->quoteIdToMaskedId = $this->objectManager->get(QuoteIdToMaskedQuoteId::class);
     }
 }

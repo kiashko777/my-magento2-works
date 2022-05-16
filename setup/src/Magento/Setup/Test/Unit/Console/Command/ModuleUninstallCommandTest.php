@@ -126,91 +126,6 @@ class ModuleUninstallCommandTest extends TestCase
      */
     private $patchApplierMock;
 
-    /**
-     * @SuppressWarnings(PHPMD.UnusedLocalVariable)
-     */
-    protected function setUp(): void
-    {
-        $this->deploymentConfig = $this->createMock(DeploymentConfig::class);
-        $this->fullModuleList = $this->createMock(FullModuleList::class);
-        $this->maintenanceMode = $this->createMock(MaintenanceMode::class);
-        $objectManagerProvider = $this->createMock(ObjectManagerProvider::class);
-        $objectManager = $this->getMockForAbstractClass(
-            ObjectManagerInterface::class,
-            [],
-            '',
-            false
-        );
-        $this->uninstallCollector = $this->createMock(UninstallCollector::class);
-        $this->packageInfo = $this->createMock(PackageInfo::class);
-        $packageInfoFactory = $this->createMock(PackageInfoFactory::class);
-        $packageInfoFactory->expects($this->once())->method('create')->willReturn($this->packageInfo);
-        $this->dependencyChecker = $this->createMock(DependencyChecker::class);
-        $this->backupRollback = $this->createMock(BackupRollback::class);
-        $this->backupRollbackFactory = $this->createMock(BackupRollbackFactory::class);
-        $this->backupRollbackFactory->expects($this->any())
-            ->method('create')
-            ->willReturn($this->backupRollback);
-        $this->cache = $this->createMock(Cache::class);
-        $this->cleanupFiles = $this->createMock(CleanupFiles::class);
-        $objectManagerProvider->expects($this->any())->method('get')->willReturn($objectManager);
-        $configLoader = $this->getMockForAbstractClass(
-            ConfigLoaderInterface::class,
-            [],
-            '',
-            false
-        );
-        $this->patchApplierMock = $this->getMockBuilder(PatchApplier::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $configLoader->expects($this->any())->method('load')->willReturn([]);
-        $objectManager->expects($this->any())
-            ->method('get')
-            ->willReturnMap([
-                [PackageInfoFactory::class, $packageInfoFactory],
-                [DependencyChecker::class, $this->dependencyChecker],
-                [Cache::class, $this->cache],
-                [CleanupFiles::class, $this->cleanupFiles],
-                [
-                    State::class,
-                    $this->createMock(State::class)
-                ],
-                [BackupRollbackFactory::class, $this->backupRollbackFactory],
-                [PatchApplier::class, $this->patchApplierMock],
-                [ConfigLoaderInterface::class, $configLoader],
-            ]);
-        $composer = $this->createMock(ComposerInformation::class);
-        $composer->expects($this->any())
-            ->method('getRootRequiredPackages')
-            ->willReturn(['magento/package-a', 'magento/package-b']);
-        $this->moduleUninstaller = $this->createMock(ModuleUninstaller::class);
-        $this->moduleRegistryUninstaller = $this->createMock(ModuleRegistryUninstaller::class);
-        $this->command = new ModuleUninstallCommand(
-            $composer,
-            $this->deploymentConfig,
-            $this->fullModuleList,
-            $this->maintenanceMode,
-            $objectManagerProvider,
-            $this->uninstallCollector,
-            $this->moduleUninstaller,
-            $this->moduleRegistryUninstaller,
-            new MaintenanceModeEnabler($this->maintenanceMode)
-        );
-        $this->question = $this->createMock(QuestionHelper::class);
-        $this->question
-            ->expects($this->any())
-            ->method('ask')
-            ->willReturn(true);
-        $this->helperSet = $this->createMock(HelperSet::class);
-        $this->helperSet
-            ->expects($this->any())
-            ->method('get')
-            ->with('question')
-            ->willReturn($this->question);
-        $this->command->setHelperSet($this->helperSet);
-        $this->tester = new CommandTester($this->command);
-    }
-
     public function testExecuteApplicationNotInstalled()
     {
         $this->deploymentConfig->expects($this->once())->method('isAvailable')->willReturn(false);
@@ -233,7 +148,8 @@ class ModuleUninstallCommandTest extends TestCase
         array $fullModuleListMap,
         array $input,
         array $expect
-    ) {
+    )
+    {
         $this->deploymentConfig->expects($this->once())->method('isAvailable')->willReturn(true);
         $this->packageInfo->expects($this->exactly(count($input['module'])))
             ->method('getPackageName')
@@ -335,6 +251,28 @@ class ModuleUninstallCommandTest extends TestCase
         ];
     }
 
+    /**
+     * @dataProvider executeFailedDependenciesDataProvider
+     * @param array $dependencies
+     * @param array $input
+     * @param array $expect
+     */
+    public function testExecuteFailedDependencies(
+        array $dependencies,
+        array $input,
+        array $expect
+    )
+    {
+        $this->setUpPassValidation();
+        $this->dependencyChecker->expects($this->once())
+            ->method('checkDependenciesWhenDisableModules')
+            ->willReturn($dependencies);
+        $this->tester->execute($input);
+        foreach ($expect as $message) {
+            $this->assertStringContainsString($message, $this->tester->getDisplay());
+        }
+    }
+
     private function setUpPassValidation()
     {
         $this->deploymentConfig->expects($this->once())->method('isAvailable')->willReturn(true);
@@ -348,27 +286,6 @@ class ModuleUninstallCommandTest extends TestCase
         $this->fullModuleList->expects($this->any())
             ->method('has')
             ->willReturn(true);
-    }
-
-    /**
-     * @dataProvider executeFailedDependenciesDataProvider
-     * @param array $dependencies
-     * @param array $input
-     * @param array $expect
-     */
-    public function testExecuteFailedDependencies(
-        array $dependencies,
-        array $input,
-        array $expect
-    ) {
-        $this->setUpPassValidation();
-        $this->dependencyChecker->expects($this->once())
-            ->method('checkDependenciesWhenDisableModules')
-            ->willReturn($dependencies);
-        $this->tester->execute($input);
-        foreach ($expect as $message) {
-            $this->assertStringContainsString($message, $this->tester->getDisplay());
-        }
     }
 
     /**
@@ -409,16 +326,6 @@ class ModuleUninstallCommandTest extends TestCase
         ];
     }
 
-    private function setUpExecute()
-    {
-        $this->setUpPassValidation();
-        $this->dependencyChecker->expects($this->once())
-            ->method('checkDependenciesWhenDisableModules')
-            ->willReturn(['Magento_A' => [], 'Magento_B' => []]);
-        $this->cache->expects($this->once())->method('clean');
-        $this->cleanupFiles->expects($this->once())->method('clearCodeGeneratedClasses');
-    }
-
     public function testExecute()
     {
         $input = ['module' => ['Magento_A', 'Magento_B']];
@@ -433,6 +340,16 @@ class ModuleUninstallCommandTest extends TestCase
             ->method('removeModulesFromDeploymentConfig')
             ->with($this->isInstanceOf(OutputInterface::class), $input['module']);
         $this->tester->execute($input);
+    }
+
+    private function setUpExecute()
+    {
+        $this->setUpPassValidation();
+        $this->dependencyChecker->expects($this->once())
+            ->method('checkDependenciesWhenDisableModules')
+            ->willReturn(['Magento_A' => [], 'Magento_B' => []]);
+        $this->cache->expects($this->once())->method('clean');
+        $this->cleanupFiles->expects($this->once())->method('clearCodeGeneratedClasses');
     }
 
     public function testExecuteClearStaticContent()
@@ -585,5 +502,90 @@ class ModuleUninstallCommandTest extends TestCase
         $this->command->setHelperSet($this->helperSet);
         $this->tester = new CommandTester($this->command);
         $this->tester->execute($input);
+    }
+
+    /**
+     * @SuppressWarnings(PHPMD.UnusedLocalVariable)
+     */
+    protected function setUp(): void
+    {
+        $this->deploymentConfig = $this->createMock(DeploymentConfig::class);
+        $this->fullModuleList = $this->createMock(FullModuleList::class);
+        $this->maintenanceMode = $this->createMock(MaintenanceMode::class);
+        $objectManagerProvider = $this->createMock(ObjectManagerProvider::class);
+        $objectManager = $this->getMockForAbstractClass(
+            ObjectManagerInterface::class,
+            [],
+            '',
+            false
+        );
+        $this->uninstallCollector = $this->createMock(UninstallCollector::class);
+        $this->packageInfo = $this->createMock(PackageInfo::class);
+        $packageInfoFactory = $this->createMock(PackageInfoFactory::class);
+        $packageInfoFactory->expects($this->once())->method('create')->willReturn($this->packageInfo);
+        $this->dependencyChecker = $this->createMock(DependencyChecker::class);
+        $this->backupRollback = $this->createMock(BackupRollback::class);
+        $this->backupRollbackFactory = $this->createMock(BackupRollbackFactory::class);
+        $this->backupRollbackFactory->expects($this->any())
+            ->method('create')
+            ->willReturn($this->backupRollback);
+        $this->cache = $this->createMock(Cache::class);
+        $this->cleanupFiles = $this->createMock(CleanupFiles::class);
+        $objectManagerProvider->expects($this->any())->method('get')->willReturn($objectManager);
+        $configLoader = $this->getMockForAbstractClass(
+            ConfigLoaderInterface::class,
+            [],
+            '',
+            false
+        );
+        $this->patchApplierMock = $this->getMockBuilder(PatchApplier::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $configLoader->expects($this->any())->method('load')->willReturn([]);
+        $objectManager->expects($this->any())
+            ->method('get')
+            ->willReturnMap([
+                [PackageInfoFactory::class, $packageInfoFactory],
+                [DependencyChecker::class, $this->dependencyChecker],
+                [Cache::class, $this->cache],
+                [CleanupFiles::class, $this->cleanupFiles],
+                [
+                    State::class,
+                    $this->createMock(State::class)
+                ],
+                [BackupRollbackFactory::class, $this->backupRollbackFactory],
+                [PatchApplier::class, $this->patchApplierMock],
+                [ConfigLoaderInterface::class, $configLoader],
+            ]);
+        $composer = $this->createMock(ComposerInformation::class);
+        $composer->expects($this->any())
+            ->method('getRootRequiredPackages')
+            ->willReturn(['magento/package-a', 'magento/package-b']);
+        $this->moduleUninstaller = $this->createMock(ModuleUninstaller::class);
+        $this->moduleRegistryUninstaller = $this->createMock(ModuleRegistryUninstaller::class);
+        $this->command = new ModuleUninstallCommand(
+            $composer,
+            $this->deploymentConfig,
+            $this->fullModuleList,
+            $this->maintenanceMode,
+            $objectManagerProvider,
+            $this->uninstallCollector,
+            $this->moduleUninstaller,
+            $this->moduleRegistryUninstaller,
+            new MaintenanceModeEnabler($this->maintenanceMode)
+        );
+        $this->question = $this->createMock(QuestionHelper::class);
+        $this->question
+            ->expects($this->any())
+            ->method('ask')
+            ->willReturn(true);
+        $this->helperSet = $this->createMock(HelperSet::class);
+        $this->helperSet
+            ->expects($this->any())
+            ->method('get')
+            ->with('question')
+            ->willReturn($this->question);
+        $this->command->setHelperSet($this->helperSet);
+        $this->tester = new CommandTester($this->command);
     }
 }

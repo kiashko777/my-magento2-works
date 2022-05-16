@@ -5,15 +5,15 @@
  */
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Address as OrderAddress;
 use Magento\Sales\Model\Order\Item as OrderItem;
 use Magento\Sales\Model\Order\Payment;
 use Magento\Store\Model\StoreManagerInterface;
-use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
-use Magento\Catalog\Model\Product;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Sales/_files/default_rollback.php');
 Resolver::getInstance()->requireDataFixture('Magento/Customer/_files/customer.php');
@@ -45,7 +45,7 @@ $shippingAddress = clone $billingAddress;
 $shippingAddress->setId(null)->setAddressType('shipping');
 
 /** @var Payment $payment */
-$payment = $objectManager->create(\Magento\Sales\Model\Order\Payment::class);
+$payment = $objectManager->create(Payment::class);
 $payment->setMethod('checkmo');
 
 /** @var OrderItem $orderItem */
@@ -84,10 +84,10 @@ $product = $productRepository->get($productSku);
 // set product as out of stock
 $product->setStockData(
     [
-        'use_config_manage_stock'   => 1,
-        'qty'                       => 0,
-        'is_qty_decimal'            => 0,
-        'is_in_stock'               => 0,
+        'use_config_manage_stock' => 1,
+        'qty' => 0,
+        'is_qty_decimal' => 0,
+        'is_in_stock' => 0,
     ]
 );
 $productRepository->save($product);

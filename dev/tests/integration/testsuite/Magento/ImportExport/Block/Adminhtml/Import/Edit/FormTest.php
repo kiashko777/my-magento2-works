@@ -3,13 +3,22 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\ImportExport\Block\Adminhtml\Import\Edit;
+
+use Magento\Framework\Data\Form\Element\AbstractElement;
+use Magento\Framework\Data\Form\Element\Fieldset;
+use Magento\Framework\View\LayoutInterface;
+use Magento\ImportExport\Model\Import;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 
 /**
  * Tests for block \Magento\ImportExport\Block\Adminhtml\Import\Edit\FormTest
  * @magentoAppArea Adminhtml
  */
-class FormTest extends \PHPUnit\Framework\TestCase
+class FormTest extends TestCase
 {
     /**
      * List of expected fieldsets in import edit form
@@ -19,32 +28,17 @@ class FormTest extends \PHPUnit\Framework\TestCase
     protected $_expectedFieldsets = ['base_fieldset', 'upload_file_fieldset'];
 
     /**
-     * Add behaviour fieldsets to expected fieldsets
-     *
-     * @static
-     */
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $importModel = $objectManager->create(\Magento\ImportExport\Model\Import::class);
-        $uniqueBehaviors = $importModel->getUniqueEntityBehaviors();
-        foreach (array_keys($uniqueBehaviors) as $behavior) {
-            $this->_expectedFieldsets[] = $behavior . '_fieldset';
-        }
-    }
-
-    /**
      * Test content of form after _prepareForm
      */
     public function testPrepareForm()
     {
-        $formBlock = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
+        $formBlock = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
         )->createBlock(
-            \Magento\ImportExport\Block\Adminhtml\Import\Edit\Form::class
+            Form::class
         );
-        $prepareForm = new \ReflectionMethod(
-            \Magento\ImportExport\Block\Adminhtml\Import\Edit\Form::class,
+        $prepareForm = new ReflectionMethod(
+            Form::class,
             '_prepareForm'
         );
         $prepareForm->setAccessible(true);
@@ -59,7 +53,7 @@ class FormTest extends \PHPUnit\Framework\TestCase
         $formFieldsets = [];
         $formElements = $form->getElements();
         foreach ($formElements as $element) {
-            /** @var $element \Magento\Framework\Data\Form\Element\AbstractElement */
+            /** @var $element AbstractElement */
             if (in_array($element->getId(), $this->_expectedFieldsets)) {
                 $formFieldsets[] = $element;
             }
@@ -67,10 +61,25 @@ class FormTest extends \PHPUnit\Framework\TestCase
         $this->assertSameSize($this->_expectedFieldsets, $formFieldsets);
         foreach ($formFieldsets as $fieldset) {
             $this->assertInstanceOf(
-                \Magento\Framework\Data\Form\Element\Fieldset::class,
+                Fieldset::class,
                 $fieldset,
                 'Incorrect fieldset class.'
             );
+        }
+    }
+
+    /**
+     * Add behaviour fieldsets to expected fieldsets
+     *
+     * @static
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $importModel = $objectManager->create(Import::class);
+        $uniqueBehaviors = $importModel->getUniqueEntityBehaviors();
+        foreach (array_keys($uniqueBehaviors) as $behavior) {
+            $this->_expectedFieldsets[] = $behavior . '_fieldset';
         }
     }
 }

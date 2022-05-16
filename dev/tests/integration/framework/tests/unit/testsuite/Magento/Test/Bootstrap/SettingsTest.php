@@ -7,12 +7,18 @@
 /**
  * Test class for \Magento\TestFramework\Bootstrap\Settings.
  */
+
 namespace Magento\Test\Bootstrap;
 
-class SettingsTest extends \PHPUnit\Framework\TestCase
+use InvalidArgumentException;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\TestFramework\Bootstrap\Settings;
+use PHPUnit\Framework\TestCase;
+
+class SettingsTest extends TestCase
 {
     /**
-     * @var \Magento\TestFramework\Bootstrap\Settings
+     * @var Settings
      */
     protected $_object;
 
@@ -34,41 +40,14 @@ class SettingsTest extends \PHPUnit\Framework\TestCase
         $this->_fixtureDir = realpath(__DIR__ . '/_files') . '/';
     }
 
-    protected function setUp(): void
-    {
-        $this->_object = new \Magento\TestFramework\Bootstrap\Settings(
-            $this->_fixtureDir,
-            [
-                'item_label' => 'Item Label',
-                'number_of_items' => 42,
-                'item_price' => 12.99,
-                'is_in_stock' => true,
-                'free_shipping' => 'enabled',
-                'zero_value' => '0',
-                'test_file' => 'metrics.php',
-                'all_xml_files' => '*.xml',
-                'all_xml_or_one_php_file' => '{*.xml,4.php}',
-                'one_xml_or_any_php_file' => '1.xml;?.php',
-                'config_file_with_dist' => '1.xml',
-                'config_file_no_dist' => '2.xml',
-                'no_config_file_dist' => '3.xml'
-            ]
-        );
-    }
-
-    protected function tearDown(): void
-    {
-        $this->_object = null;
-    }
-
     /**
      */
     public function testConstructorNonExistingBaseDir()
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Base path \'non_existing_dir\' has to be an existing directory.');
 
-        new \Magento\TestFramework\Bootstrap\Settings('non_existing_dir', []);
+        new Settings('non_existing_dir', []);
     }
 
     /**
@@ -200,7 +179,7 @@ class SettingsTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetAsConfigFileException($settingName, $expectedExceptionMsg)
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage((string)$expectedExceptionMsg);
         $this->_object->getAsConfigFile($settingName);
     }
@@ -217,5 +196,32 @@ class SettingsTest extends \PHPUnit\Framework\TestCase
                 __("Setting 'item_label' specifies the non-existing file '%1Item Label.dist'.", $this->_fixtureDir),
             ]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->_object = new Settings(
+            $this->_fixtureDir,
+            [
+                'item_label' => 'Item Label',
+                'number_of_items' => 42,
+                'item_price' => 12.99,
+                'is_in_stock' => true,
+                'free_shipping' => 'enabled',
+                'zero_value' => '0',
+                'test_file' => 'metrics.php',
+                'all_xml_files' => '*.xml',
+                'all_xml_or_one_php_file' => '{*.xml,4.php}',
+                'one_xml_or_any_php_file' => '1.xml;?.php',
+                'config_file_with_dist' => '1.xml',
+                'config_file_no_dist' => '2.xml',
+                'no_config_file_dist' => '3.xml'
+            ]
+        );
+    }
+
+    protected function tearDown(): void
+    {
+        $this->_object = null;
     }
 }

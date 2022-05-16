@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Magento\Setup\Test\Unit\Fixtures;
 
 use Magento\Customer\Model\ResourceModel\Customer\Collection;
+use Magento\Customer\Model\ResourceModel\Customer\CollectionFactory;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
 use Magento\Setup\Fixtures\CustomersFixture;
 use Magento\Setup\Fixtures\FixtureModel;
@@ -48,32 +49,6 @@ class CustomersFixtureTest extends TestCase
      * @var MockObject
      */
     private $collectionMock;
-
-    protected function setUp(): void
-    {
-        $this->fixtureModelMock = $this->createMock(FixtureModel::class);
-
-        $this->customerGeneratorMock =
-            $this->createMock(CustomerGenerator::class);
-
-        $this->customerDataGeneratorFactoryMock =
-            $this->createMock(CustomerDataGeneratorFactory::class);
-
-        $this->collectionFactoryMock =
-            $this->createPartialMock(
-                \Magento\Customer\Model\ResourceModel\Customer\CollectionFactory::class,
-                ['create']
-            );
-
-        $this->collectionMock = $this->createMock(Collection::class);
-
-        $this->model = (new ObjectManager($this))->getObject(CustomersFixture::class, [
-            'fixtureModel' => $this->fixtureModelMock,
-            'customerGenerator' => $this->customerGeneratorMock,
-            'customerDataGeneratorFactory' => $this->customerDataGeneratorFactoryMock,
-            'collectionFactory' => $this->collectionFactoryMock
-        ]);
-    }
 
     public function testExecute()
     {
@@ -136,5 +111,31 @@ class CustomersFixtureTest extends TestCase
             ],
             $this->model->introduceParamLabels()
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->fixtureModelMock = $this->createMock(FixtureModel::class);
+
+        $this->customerGeneratorMock =
+            $this->createMock(CustomerGenerator::class);
+
+        $this->customerDataGeneratorFactoryMock =
+            $this->createMock(CustomerDataGeneratorFactory::class);
+
+        $this->collectionFactoryMock =
+            $this->createPartialMock(
+                CollectionFactory::class,
+                ['create']
+            );
+
+        $this->collectionMock = $this->createMock(Collection::class);
+
+        $this->model = (new ObjectManager($this))->getObject(CustomersFixture::class, [
+            'fixtureModel' => $this->fixtureModelMock,
+            'customerGenerator' => $this->customerGeneratorMock,
+            'customerDataGeneratorFactory' => $this->customerDataGeneratorFactoryMock,
+            'collectionFactory' => $this->collectionFactoryMock
+        ]);
     }
 }

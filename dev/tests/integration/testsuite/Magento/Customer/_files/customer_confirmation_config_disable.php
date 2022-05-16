@@ -6,8 +6,8 @@
 
 declare(strict_types=1);
 
-use Magento\Store\Model\ScopeInterface;
 use Magento\Framework\App\Config\MutableScopeConfigInterface;
+use Magento\Store\Model\ScopeInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 
 $objectManager = Bootstrap::getObjectManager();

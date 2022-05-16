@@ -8,7 +8,6 @@ declare(strict_types=1);
 namespace Magento\GraphQl\DownloadableProduct;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\Catalog\Model\Product;
 use Magento\Framework\ObjectManager\ObjectManager;
 use Magento\GraphQl\Quote\GetMaskedQuoteIdByReservedOrderId;
 use Magento\GraphQl\Quote\GetQuoteItemIdByReservedQuoteIdAndSku;
@@ -53,21 +52,6 @@ class UpdateDownloadableCartItemsTest extends GraphQlAbstract
      * @var QuoteResource
      */
     private $quoteResource;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $this->objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->quoteFactory = $this->objectManager->get(QuoteFactory::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->quoteResource = $this->objectManager->get(QuoteResource::class);
-        $this->getQuoteItemIdByReservedQuoteIdAndSku = $this->objectManager->get(
-            GetQuoteItemIdByReservedQuoteIdAndSku::class
-        );
-    }
 
     /**
      * Update a downloadable product into shopping cart when "Links can be purchased separately" is enabled
@@ -120,6 +104,30 @@ MUTATION;
         self::assertCount(1, $response['addDownloadableProductsToCart']['cart']['items']);
         self::assertEquals($finalQty, $response['addDownloadableProductsToCart']['cart']['items'][0]['quantity']);
         self::assertEquals($sku, $response['addDownloadableProductsToCart']['cart']['items'][0]['product']['sku']);
+    }
+
+    /**
+     * Function returns array of all product's links
+     *
+     * @param string $sku
+     * @return array
+     */
+    private function getProductsLinks(string $sku): array
+    {
+        $result = [];
+        $productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+
+        $product = $productRepository->get($sku, false, null, true);
+
+        foreach ($product->getDownloadableLinks() as $linkObject) {
+            $result[$linkObject->getLinkId()] = [
+                'title' => $linkObject->getTitle(),
+                'link_type' => null, //deprecated field
+                'price' => $linkObject->getPrice(),
+            ];
+        }
+
+        return $result;
     }
 
     /**
@@ -177,26 +185,17 @@ MUTATION;
     }
 
     /**
-     * Function returns array of all product's links
-     *
-     * @param string $sku
-     * @return array
+     * @inheritdoc
      */
-    private function getProductsLinks(string $sku) : array
+    protected function setUp(): void
     {
-        $result = [];
-        $productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-
-        $product = $productRepository->get($sku, false, null, true);
-
-        foreach ($product->getDownloadableLinks() as $linkObject) {
-            $result[$linkObject->getLinkId()] = [
-                'title' => $linkObject->getTitle(),
-                'link_type' => null, //deprecated field
-                'price' => $linkObject->getPrice(),
-            ];
-        }
-
-        return $result;
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $this->objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->quoteFactory = $this->objectManager->get(QuoteFactory::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->quoteResource = $this->objectManager->get(QuoteResource::class);
+        $this->getQuoteItemIdByReservedQuoteIdAndSku = $this->objectManager->get(
+            GetQuoteItemIdByReservedQuoteIdAndSku::class
+        );
     }
 }

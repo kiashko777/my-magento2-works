@@ -8,30 +8,24 @@ declare(strict_types=1);
 
 namespace Magento\Framework\App\ObjectManager\ConfigWriter;
 
-class FilesystemTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\App\ObjectManager\ConfigLoader;
+use Magento\Framework\App\ObjectManager\ConfigLoader\Compiled;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class FilesystemTest extends TestCase
 {
     const CACHE_KEY = 'filesystemtest';
 
     /**
-     * @var \Magento\Framework\App\ObjectManager\ConfigWriter\Filesystem
+     * @var Filesystem
      */
     private $configWriter;
 
     /**
-     * @var \Magento\Framework\App\ObjectManager\ConfigLoader
+     * @var ConfigLoader
      */
     private $configReader;
-
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->configWriter = $objectManager->create(
-            \Magento\Framework\App\ObjectManager\ConfigWriter\Filesystem::class
-        );
-        $this->configReader = $objectManager->create(
-            \Magento\Framework\App\ObjectManager\ConfigLoader\Compiled::class
-        );
-    }
 
     public function testWrite()
     {
@@ -55,5 +49,16 @@ class FilesystemTest extends \PHPUnit\Framework\TestCase
 
         $this->configWriter->write(self::CACHE_KEY, $sampleData);
         $this->assertEquals($sampleData, $this->configReader->load(self::CACHE_KEY));
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->configWriter = $objectManager->create(
+            Filesystem::class
+        );
+        $this->configReader = $objectManager->create(
+            Compiled::class
+        );
     }
 }

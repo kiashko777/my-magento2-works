@@ -43,20 +43,6 @@ class CrosssellTest extends AbstractLinksTest
     private $executeInStoreContext;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->block = $this->layout->createBlock(Crosssell::class);
-        $this->linkType = 'crosssell';
-        $this->titleName = (string)__('More Choices:');
-        $this->checkoutSession = $this->objectManager->get(Session::class);
-        $this->executeInStoreContext = $this->objectManager->get(ExecuteInStoreContext::class);
-    }
-
-    /**
      * Checks for a simple cross-sell product when block code is generated
      *
      * @magentoDataFixture Magento/Checkout/_files/quote_with_simple_product_saved.php
@@ -87,6 +73,31 @@ class CrosssellTest extends AbstractLinksTest
             Xpath::getElementsCountForXpath($this->addToLinksXpath, $html),
             'Expected add to links is incorrect or missing!'
         );
+    }
+
+    /**
+     * Set quoteId in checkoutSession object.
+     *
+     * @param string $reservedOrderId
+     * @return void
+     */
+    private function setCheckoutSessionQuote(string $reservedOrderId): void
+    {
+        $this->checkoutSession->clearQuote();
+        $quote = $this->objectManager->get(GetQuoteByReservedOrderId::class)->execute($reservedOrderId);
+        if ($quote !== null) {
+            $this->checkoutSession->setQuoteId($quote->getId());
+        }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function prepareBlock(): void
+    {
+        parent::prepareBlock();
+
+        $this->block->setViewModel($this->objectManager->get(PreparePostData::class));
     }
 
     /**
@@ -130,6 +141,19 @@ class CrosssellTest extends AbstractLinksTest
             $this->getActualLinks($items),
             'Expected cross-sell products do not match actual cross-sell products!'
         );
+    }
+
+    /**
+     * Get products of block when quote in checkout session
+     *
+     * @param string $reservedOrderId
+     * @return array
+     */
+    public function getBlockItems(string $reservedOrderId): array
+    {
+        $this->setCheckoutSessionQuote($reservedOrderId);
+
+        return $this->block->getItems();
     }
 
     /**
@@ -186,7 +210,8 @@ class CrosssellTest extends AbstractLinksTest
     public function testPositionCrosssellProductsWithLastAddedProduct(
         array $positionData,
         array $expectedProductLinks
-    ): void {
+    ): void
+    {
         foreach ($positionData as $sku => $productLinks) {
             $this->linkProducts($sku, $productLinks);
         }
@@ -279,6 +304,18 @@ class CrosssellTest extends AbstractLinksTest
     }
 
     /**
+     * @inheritdoc
+     */
+    protected function prepareProductsWebsiteIds(): array
+    {
+        $productsWebsiteIds = parent::prepareProductsWebsiteIds();
+        $simple = $productsWebsiteIds['simple-1'];
+        unset($productsWebsiteIds['simple-1']);
+
+        return array_merge($productsWebsiteIds, ['simple-tableRate-1' => $simple]);
+    }
+
+    /**
      * Test the invisibility of cross-sell products in the block which added to cart
      *
      * @magentoDataFixture Magento/Sales/_files/quote_with_multiple_products.php
@@ -302,52 +339,16 @@ class CrosssellTest extends AbstractLinksTest
     }
 
     /**
-     * Get products of block when quote in checkout session
-     *
-     * @param string $reservedOrderId
-     * @return array
-     */
-    public function getBlockItems(string $reservedOrderId): array
-    {
-        $this->setCheckoutSessionQuote($reservedOrderId);
-
-        return $this->block->getItems();
-    }
-
-    /**
      * @inheritdoc
      */
-    protected function prepareBlock(): void
+    protected function setUp(): void
     {
-        parent::prepareBlock();
+        parent::setUp();
 
-        $this->block->setViewModel($this->objectManager->get(PreparePostData::class));
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function prepareProductsWebsiteIds(): array
-    {
-        $productsWebsiteIds = parent::prepareProductsWebsiteIds();
-        $simple = $productsWebsiteIds['simple-1'];
-        unset($productsWebsiteIds['simple-1']);
-
-        return array_merge($productsWebsiteIds, ['simple-tableRate-1' => $simple]);
-    }
-
-    /**
-     * Set quoteId in checkoutSession object.
-     *
-     * @param string $reservedOrderId
-     * @return void
-     */
-    private function setCheckoutSessionQuote(string $reservedOrderId): void
-    {
-        $this->checkoutSession->clearQuote();
-        $quote = $this->objectManager->get(GetQuoteByReservedOrderId::class)->execute($reservedOrderId);
-        if ($quote !== null) {
-            $this->checkoutSession->setQuoteId($quote->getId());
-        }
+        $this->block = $this->layout->createBlock(Crosssell::class);
+        $this->linkType = 'crosssell';
+        $this->titleName = (string)__('More Choices:');
+        $this->checkoutSession = $this->objectManager->get(Session::class);
+        $this->executeInStoreContext = $this->objectManager->get(ExecuteInStoreContext::class);
     }
 }

@@ -13,8 +13,8 @@ use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\View\Element\UiComponentFactory;
 use Magento\Framework\View\Element\UiComponentInterface;
 use Magento\Store\Model\StoreManagerInterface;
-use PHPUnit\Framework\TestCase;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Base logic for relations data providers checks
@@ -82,6 +82,21 @@ abstract class AbstractRelationsDataProviderTest extends TestCase
     }
 
     /**
+     * Call prepare method in the child components
+     *
+     * @param UiComponentInterface $component
+     * @return void
+     */
+    private function prepareChildComponents(UiComponentInterface $component): void
+    {
+        foreach ($component->getChildComponents() as $child) {
+            $this->prepareChildComponents($child);
+        }
+
+        $component->prepare();
+    }
+
+    /**
      * Prepare request
      *
      * @param string $productSku
@@ -106,20 +121,5 @@ abstract class AbstractRelationsDataProviderTest extends TestCase
         ];
 
         $this->request->setParams($params);
-    }
-
-    /**
-     * Call prepare method in the child components
-     *
-     * @param UiComponentInterface $component
-     * @return void
-     */
-    private function prepareChildComponents(UiComponentInterface $component): void
-    {
-        foreach ($component->getChildComponents() as $child) {
-            $this->prepareChildComponents($child);
-        }
-
-        $component->prepare();
     }
 }

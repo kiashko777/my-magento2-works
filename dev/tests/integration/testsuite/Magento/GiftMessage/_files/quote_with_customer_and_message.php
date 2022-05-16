@@ -3,25 +3,32 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\GiftMessage\Model\Message;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\QuoteIdMask;
+use Magento\Quote\Model\QuoteIdMaskFactory;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Customer/_files/customer.php');
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 
-/** @var \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository */
-$customerRepository = $objectManager->create(\Magento\Customer\Api\CustomerRepositoryInterface::class);
+/** @var CustomerRepositoryInterface $customerRepository */
+$customerRepository = $objectManager->create(CustomerRepositoryInterface::class);
 $customer = $customerRepository->getById(1);
 
-/** @var \Magento\GiftMessage\Model\Message $message */
-$message = $objectManager->create(\Magento\GiftMessage\Model\Message::class);
+/** @var Message $message */
+$message = $objectManager->create(Message::class);
 $message->setSender('Romeo');
 $message->setRecipient('Mercutio');
 $message->setMessage('I thought all for the best.');
 $message->save();
 
-/** @var \Magento\Quote\Model\Quote $quote */
-$quote = $objectManager->create(\Magento\Quote\Model\Quote::class);
+/** @var Quote $quote */
+$quote = $objectManager->create(Quote::class);
 $quote->setData(
     [
         'store_id' => 1,
@@ -32,9 +39,9 @@ $quote->setData(
 )->assignCustomer($customer);
 $quote->save();
 
-/** @var \Magento\Quote\Model\QuoteIdMask $quoteIdMask */
-$quoteIdMask = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->create(\Magento\Quote\Model\QuoteIdMaskFactory::class)
+/** @var QuoteIdMask $quoteIdMask */
+$quoteIdMask = Bootstrap::getObjectManager()
+    ->create(QuoteIdMaskFactory::class)
     ->create();
 $quoteIdMask->setQuoteId($quote->getId());
 $quoteIdMask->setDataChanges(true);

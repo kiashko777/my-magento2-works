@@ -3,21 +3,22 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Elasticsearch\Model\Indexer;
 
-use Magento\Catalog\Model\Product\Action as ProductAction;
 use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\CatalogInventory\Api\StockRegistryInterface;
+use Magento\Catalog\Model\Product\Action as ProductAction;
 use Magento\CatalogInventory\Api\StockItemRepositoryInterface;
+use Magento\CatalogInventory\Api\StockRegistryInterface;
 use Magento\CatalogSearch\Model\Indexer\Fulltext as CatalogSearchFulltextIndexer;
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Store\Model\StoreManagerInterface;
-use Magento\Elasticsearch\SearchAdapter\ConnectionManager;
-use Magento\Elasticsearch6\Model\Client\Elasticsearch as ElasticsearchClient;
 use Magento\Elasticsearch\Model\Config;
+use Magento\Elasticsearch\SearchAdapter\ConnectionManager;
 use Magento\Elasticsearch\SearchAdapter\SearchIndexNameResolver;
-use Magento\Indexer\Model\Indexer;
+use Magento\Elasticsearch6\Model\Client\Elasticsearch as ElasticsearchClient;
 use Magento\Framework\Search\EngineResolverInterface;
+use Magento\Indexer\Model\Indexer;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestModuleCatalogSearch\Model\ElasticsearchVersionChecker;
 use PHPUnit\Framework\TestCase;
 
@@ -73,37 +74,6 @@ class IndexHandlerTest extends TestCase
     private $searchIndexNameResolver;
 
     /**
-     * {@inheritdoc}
-     */
-    protected function setUp(): void
-    {
-        $connectionManager = Bootstrap::getObjectManager()->create(ConnectionManager::class);
-        $this->client = $connectionManager->getConnection();
-
-        $this->storeManager = Bootstrap::getObjectManager()->create(StoreManagerInterface::class);
-        $this->storeIds = array_keys($this->storeManager->getStores());
-
-        $clientConfig = Bootstrap::getObjectManager()->create(Config::class);
-        $this->entityType = $clientConfig->getEntityType();
-
-        $this->indexer = Bootstrap::getObjectManager()->create(Indexer::class);
-        $this->indexer->load(CatalogSearchFulltextIndexer::INDEXER_ID);
-        $this->indexer->reindexAll();
-
-        $this->searchIndexNameResolver = Bootstrap::getObjectManager()->create(SearchIndexNameResolver::class);
-        $this->productRepository = Bootstrap::getObjectManager()->create(ProductRepositoryInterface::class);
-    }
-
-    /**
-     * Make sure that correct engine is set
-     */
-    protected function assertPreConditions(): void
-    {
-        $currentEngine = Bootstrap::getObjectManager()->get(EngineResolverInterface::class)->getCurrentSearchEngine();
-        $this->assertEquals($this->getInstalledSearchEngine(), $currentEngine);
-    }
-
-    /**
      * @magentoConfigFixture current_store catalog/search/elasticsearch_index_prefix indexerhandlertest
      * @return void
      */
@@ -121,6 +91,66 @@ class IndexHandlerTest extends TestCase
             $this->assertCount(2, $this->searchByBoolAttribute(0, $storeId));
             $this->assertCount(3, $this->searchByBoolAttribute(1, $storeId));
         }
+    }
+
+    /**
+     * Search docs in Elasticsearch by name.
+     *
+     * @param string $text
+     * @param int $storeId
+     * @return array
+     */
+    private function searchByName(string $text, int $storeId): array
+    {
+        $index = $this->searchIndexNameResolver->getIndexName($storeId, $this->indexer->getId());
+        $searchQuery = [
+            'index' => $index,
+            'type' => $this->entityType,
+            'body' => [
+                'query' => [
+                    'bool' => [
+                        'minimum_should_match' => 1,
+                        'should' => [
+                            [
+                                'match' => [
+                                    'name' => $text,
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+        $queryResult = $this->client->query($searchQuery);
+        $products = isset($queryResult['hits']['hits']) ? $queryResult['hits']['hits'] : [];
+
+        return $products;
+    }
+
+    /**
+     * Search docs in Elasticsearch by boolean attribute.
+     *
+     * @param int $value
+     * @param int $storeId
+     * @return array
+     */
+    private function searchByBoolAttribute(int $value, int $storeId): array
+    {
+        $index = $this->searchIndexNameResolver->getIndexName($storeId, $this->indexer->getId());
+        $searchQuery = [
+            'index' => $index,
+            'type' => $this->entityType,
+            'body' => [
+                'query' => [
+                    'query_string' => [
+                        'query' => $value,
+                        'default_field' => 'boolean_attribute',
+                    ],
+                ],
+            ],
+        ];
+        $queryResult = $this->client->query($searchQuery);
+        return isset($queryResult['hits']['hits']) ? $queryResult['hits']['hits'] : [];
     }
 
     /**
@@ -237,63 +267,34 @@ class IndexHandlerTest extends TestCase
     }
 
     /**
-     * Search docs in Elasticsearch by name.
-     *
-     * @param string $text
-     * @param int $storeId
-     * @return array
+     * {@inheritdoc}
      */
-    private function searchByName(string $text, int $storeId): array
+    protected function setUp(): void
     {
-        $index = $this->searchIndexNameResolver->getIndexName($storeId, $this->indexer->getId());
-        $searchQuery = [
-            'index' => $index,
-            'type' => $this->entityType,
-            'body' => [
-                'query' => [
-                    'bool' => [
-                        'minimum_should_match' => 1,
-                        'should' => [
-                            [
-                                'match' => [
-                                    'name' => $text,
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-        ];
-        $queryResult = $this->client->query($searchQuery);
-        $products = isset($queryResult['hits']['hits']) ? $queryResult['hits']['hits'] : [];
+        $connectionManager = Bootstrap::getObjectManager()->create(ConnectionManager::class);
+        $this->client = $connectionManager->getConnection();
 
-        return $products;
+        $this->storeManager = Bootstrap::getObjectManager()->create(StoreManagerInterface::class);
+        $this->storeIds = array_keys($this->storeManager->getStores());
+
+        $clientConfig = Bootstrap::getObjectManager()->create(Config::class);
+        $this->entityType = $clientConfig->getEntityType();
+
+        $this->indexer = Bootstrap::getObjectManager()->create(Indexer::class);
+        $this->indexer->load(CatalogSearchFulltextIndexer::INDEXER_ID);
+        $this->indexer->reindexAll();
+
+        $this->searchIndexNameResolver = Bootstrap::getObjectManager()->create(SearchIndexNameResolver::class);
+        $this->productRepository = Bootstrap::getObjectManager()->create(ProductRepositoryInterface::class);
     }
 
     /**
-     * Search docs in Elasticsearch by boolean attribute.
-     *
-     * @param int $value
-     * @param int $storeId
-     * @return array
+     * Make sure that correct engine is set
      */
-    private function searchByBoolAttribute(int $value, int $storeId): array
+    protected function assertPreConditions(): void
     {
-        $index = $this->searchIndexNameResolver->getIndexName($storeId, $this->indexer->getId());
-        $searchQuery = [
-            'index' => $index,
-            'type' => $this->entityType,
-            'body' => [
-                'query' => [
-                    'query_string' => [
-                        'query' => $value,
-                        'default_field' => 'boolean_attribute',
-                    ],
-                ],
-            ],
-        ];
-        $queryResult = $this->client->query($searchQuery);
-        return isset($queryResult['hits']['hits']) ? $queryResult['hits']['hits'] : [];
+        $currentEngine = Bootstrap::getObjectManager()->get(EngineResolverInterface::class)->getCurrentSearchEngine();
+        $this->assertEquals($this->getInstalledSearchEngine(), $currentEngine);
     }
 
     /**

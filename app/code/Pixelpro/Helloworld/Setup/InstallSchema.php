@@ -2,10 +2,6 @@
 
 namespace Pixelpro\Helloworld\Setup;
 
-use Magento\Framework\Setup\ModuleContextInterface;
-use Magento\Framework\Setup\SchemaSetupInterface;
-use Magento\Framework\Setup\InstallSchemaInterface;
-
 class InstallSchema implements \Magento\Framework\Setup\InstallSchemaInterface
 {
     public function install(\Magento\Framework\Setup\SchemaSetupInterface $setup, \Magento\Framework\Setup\ModuleContextInterface $context)

@@ -31,17 +31,6 @@ class OrderShipmentsTest extends GraphQlAbstract
      */
     private $orderRepository;
 
-    protected function setUp(): void
-    {
-        $this->getCustomerAuthHeader = Bootstrap::getObjectManager()->get(GetCustomerAuthenticationHeader::class);
-        $this->orderRepository = Bootstrap::getObjectManager()->get(OrderRepositoryInterface::class);
-    }
-
-    protected function tearDown(): void
-    {
-        $this->cleanupOrders();
-    }
-
     /**
      * @magentoApiDataFixture Magento/GraphQl/Sales/_files/customer_order_with_simple_shipment.php
      */
@@ -94,6 +83,87 @@ class OrderShipmentsTest extends GraphQlAbstract
         $this->assertCount(1, $shipment['comments']);
         $this->assertEquals('This comment is visible to the customer', $shipment['comments'][0]['message']);
         $this->assertNotEmpty($shipment['comments'][0]['timestamp']);
+    }
+
+    /**
+     * Get query that fetch orders and shipment information
+     *
+     * @param string|null $orderId
+     * @return string
+     */
+    private function getQuery(string $orderId = null)
+    {
+        $filter = $orderId ? "(filter:{number:{eq:\"$orderId\"}})" : "";
+        return <<<QUERY
+{
+  customer {
+    orders {$filter}{
+      items {
+        number
+        status
+        items {
+          product_sku
+        }
+        carrier
+        shipping_method
+        shipments {
+          id
+          number
+          tracking {
+            title
+            carrier
+            number
+          }
+          items {
+            id
+            order_item {
+              product_sku
+            }
+            product_name
+            product_sku
+            product_sale_price {
+              value
+              currency
+            }
+            ... on BundleShipmentItem {
+                bundle_options {
+                    label
+                    values {
+                        product_name
+                        product_sku
+                        quantity
+                        price {
+                            value
+                        }
+                    }
+                }
+            }
+            quantity_shipped
+          }
+          comments {
+            timestamp
+            message
+          }
+        }
+      }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
+     * Get model instance for order by number
+     *
+     * @param string $orderNumber
+     * @return Order
+     */
+    private function fetchOrderModel(string $orderNumber): Order
+    {
+        /** @var Order $order */
+        $order = Bootstrap::getObjectManager()->get(Order::class);
+        $order->loadByIncrementId($orderNumber);
+        return $order;
     }
 
     /**
@@ -206,87 +276,6 @@ class OrderShipmentsTest extends GraphQlAbstract
     }
 
     /**
-     * Get query that fetch orders and shipment information
-     *
-     * @param string|null $orderId
-     * @return string
-     */
-    private function getQuery(string $orderId = null)
-    {
-        $filter = $orderId ? "(filter:{number:{eq:\"$orderId\"}})" : "";
-        return <<<QUERY
-{
-  customer {
-    orders {$filter}{
-      items {
-        number
-        status
-        items {
-          product_sku
-        }
-        carrier
-        shipping_method
-        shipments {
-          id
-          number
-          tracking {
-            title
-            carrier
-            number
-          }
-          items {
-            id
-            order_item {
-              product_sku
-            }
-            product_name
-            product_sku
-            product_sale_price {
-              value
-              currency
-            }
-            ... on BundleShipmentItem {
-                bundle_options {
-                    label
-                    values {
-                        product_name
-                        product_sku
-                        quantity
-                        price {
-                            value
-                        }
-                    }
-                }
-            }
-            quantity_shipped
-          }
-          comments {
-            timestamp
-            message
-          }
-        }
-      }
-    }
-  }
-}
-QUERY;
-    }
-
-    /**
-     * Get model instance for order by number
-     *
-     * @param string $orderNumber
-     * @return Order
-     */
-    private function fetchOrderModel(string $orderNumber): Order
-    {
-        /** @var Order $order */
-        $order = Bootstrap::getObjectManager()->get(Order::class);
-        $order->loadByIncrementId($orderNumber);
-        return $order;
-    }
-
-    /**
      * Create shipment for order
      *
      * @param string $orderNumber
@@ -308,6 +297,17 @@ QUERY;
         $transaction->addObject($shipment)->addObject($order)->save();
     }
 
+    protected function setUp(): void
+    {
+        $this->getCustomerAuthHeader = Bootstrap::getObjectManager()->get(GetCustomerAuthenticationHeader::class);
+        $this->orderRepository = Bootstrap::getObjectManager()->get(OrderRepositoryInterface::class);
+    }
+
+    protected function tearDown(): void
+    {
+        $this->cleanupOrders();
+    }
+
     /**
      * Clean up orders
      */
@@ -317,7 +317,7 @@ QUERY;
         $registry->unregister('isSecureArea');
         $registry->register('isSecureArea', true);
 
-        /** @var $order \Magento\Sales\Model\Order */
+        /** @var $order Order */
         $orderCollection = Bootstrap::getObjectManager()->create(OrderCollection::class);
         foreach ($orderCollection as $order) {
             $this->orderRepository->delete($order);

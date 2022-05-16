@@ -5,15 +5,21 @@
  */
 declare(strict_types=1);
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\Catalog\Model\Product;
+use Magento\Eav\Model\Config;
+use Magento\Eav\Model\Entity\Attribute\AbstractAttribute;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
 
-$registry = $objectManager->get(\Magento\Framework\Registry::class);
+$objectManager = Bootstrap::getObjectManager();
+
+$registry = $objectManager->get(Registry::class);
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
-$eavConfig = $objectManager->get(\Magento\Eav\Model\Config::class);
-$attribute = $eavConfig->getAttribute(\Magento\Catalog\Model\Product::ENTITY, 'test_configurable_with_sm');
-if ($attribute instanceof \Magento\Eav\Model\Entity\Attribute\AbstractAttribute && $attribute->getId()) {
+$eavConfig = $objectManager->get(Config::class);
+$attribute = $eavConfig->getAttribute(Product::ENTITY, 'test_configurable_with_sm');
+if ($attribute instanceof AbstractAttribute && $attribute->getId()) {
     $attribute->delete();
 }
 $eavConfig->clear();

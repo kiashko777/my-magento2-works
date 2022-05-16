@@ -40,15 +40,6 @@ class UpdateCartItemsTest extends GraphQlAbstract
      */
     private $productRepository;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->quoteResource = $objectManager->get(QuoteResource::class);
-        $this->quoteFactory = $objectManager->get(QuoteFactory::class);
-        $this->quoteIdToMaskedId = $objectManager->get(QuoteIdToMaskedQuoteIdInterface::class);
-        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
-    }
-
     /**
      * @magentoApiDataFixture Magento/Checkout/_files/quote_with_simple_product_saved.php
      */
@@ -85,6 +76,56 @@ class UpdateCartItemsTest extends GraphQlAbstract
     }
 
     /**
+     * @param string $maskedQuoteId
+     * @param int $itemId
+     * @param float $quantity
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId, int $itemId, float $quantity): string
+    {
+        return <<<QUERY
+mutation {
+  updateCartItems(input: {
+    cart_id: "{$maskedQuoteId}"
+    cart_items: [
+      {
+        cart_item_id: {$itemId}
+        quantity: {$quantity}
+      }
+    ]
+  }) {
+    cart {
+      items {
+        id
+        quantity
+      }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
+     * @param string $maskedQuoteId
+     * @return string
+     */
+    private function getCartQuery(string $maskedQuoteId)
+    {
+        return <<<QUERY
+query {
+  cart(cart_id: "{$maskedQuoteId}"){
+    items{
+      product{
+        name
+      }
+      quantity
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Checkout/_files/quote_with_simple_product_saved.php
      */
     public function testRemoveCartItemIfQuantityIsZero()
@@ -118,7 +159,7 @@ class UpdateCartItemsTest extends GraphQlAbstract
      */
     public function testUpdateItemInNonExistentCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Could not find a cart with ID "non_existent_masked_id"');
 
         $query = $this->getQuery('non_existent_masked_id', 1, 2);
@@ -228,56 +269,6 @@ QUERY;
     }
 
     /**
-     * @param string $maskedQuoteId
-     * @param int $itemId
-     * @param float $quantity
-     * @return string
-     */
-    private function getQuery(string $maskedQuoteId, int $itemId, float $quantity): string
-    {
-        return <<<QUERY
-mutation {
-  updateCartItems(input: {
-    cart_id: "{$maskedQuoteId}"
-    cart_items: [
-      {
-        cart_item_id: {$itemId}
-        quantity: {$quantity}
-      }
-    ]
-  }) {
-    cart {
-      items {
-        id
-        quantity
-      }
-    }
-  }
-}
-QUERY;
-    }
-
-    /**
-     * @param string $maskedQuoteId
-     * @return string
-     */
-    private function getCartQuery(string $maskedQuoteId)
-    {
-        return <<<QUERY
-query {
-  cart(cart_id: "{$maskedQuoteId}"){
-    items{
-      product{
-        name
-      }
-      quantity
-    }
-  }
-}
-QUERY;
-    }
-
-    /**
      * @magentoConfigFixture default_store sales/gift_options/allow_items 0
      * @magentoApiDataFixture Magento/GiftMessage/_files/guest/quote_with_item_message.php
      * @throws Exception
@@ -290,33 +281,6 @@ QUERY;
         $query = $this->getUpdateGiftMessageQuery($messageTo, $messageFrom, $message);
         foreach ($this->graphQlMutation($query)['updateCartItems']['cart']['items'] as $item) {
             self::assertNull($item['gift_message']);
-        }
-    }
-
-    /**
-     * @magentoConfigFixture default_store sales/gift_options/allow_items 1
-     * @magentoApiDataFixture Magento/GiftMessage/_files/guest/quote_with_item_message.php
-     * @throws Exception
-     */
-    public function testUpdateGiftMessageCartForItem()
-    {
-        $messageTo = "Alex";
-        $messageFrom = "Mike";
-        $message = "Best regards";
-        $query = $this->getUpdateGiftMessageQuery($messageTo, $messageFrom, $message);
-        foreach ($this->graphQlMutation($query)['updateCartItems']['cart']['items'] as $item) {
-            self::assertArrayHasKey('gift_message', $item);
-            self::assertSame('Alex', $item['gift_message']['to']);
-            self::assertSame('Mike', $item['gift_message']['from']);
-            self::assertSame('Best regards', $item['gift_message']['message']);
-        }
-        $messageTo = "";
-        $messageFrom = "";
-        $message = "";
-        $query = $this->getUpdateGiftMessageQuery($messageTo, $messageFrom, $message);
-        foreach ($this->graphQlMutation($query)['updateCartItems']['cart']['items'] as $item) {
-            self::assertArrayHasKey('gift_message', $item);
-            self::assertSame(null, $item['gift_message']);
         }
     }
 
@@ -364,5 +328,41 @@ mutation {
   }
 }
 QUERY;
+    }
+
+    /**
+     * @magentoConfigFixture default_store sales/gift_options/allow_items 1
+     * @magentoApiDataFixture Magento/GiftMessage/_files/guest/quote_with_item_message.php
+     * @throws Exception
+     */
+    public function testUpdateGiftMessageCartForItem()
+    {
+        $messageTo = "Alex";
+        $messageFrom = "Mike";
+        $message = "Best regards";
+        $query = $this->getUpdateGiftMessageQuery($messageTo, $messageFrom, $message);
+        foreach ($this->graphQlMutation($query)['updateCartItems']['cart']['items'] as $item) {
+            self::assertArrayHasKey('gift_message', $item);
+            self::assertSame('Alex', $item['gift_message']['to']);
+            self::assertSame('Mike', $item['gift_message']['from']);
+            self::assertSame('Best regards', $item['gift_message']['message']);
+        }
+        $messageTo = "";
+        $messageFrom = "";
+        $message = "";
+        $query = $this->getUpdateGiftMessageQuery($messageTo, $messageFrom, $message);
+        foreach ($this->graphQlMutation($query)['updateCartItems']['cart']['items'] as $item) {
+            self::assertArrayHasKey('gift_message', $item);
+            self::assertSame(null, $item['gift_message']);
+        }
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->quoteResource = $objectManager->get(QuoteResource::class);
+        $this->quoteFactory = $objectManager->get(QuoteFactory::class);
+        $this->quoteIdToMaskedId = $objectManager->get(QuoteIdToMaskedQuoteIdInterface::class);
+        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
     }
 }

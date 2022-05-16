@@ -8,8 +8,10 @@ declare(strict_types=1);
 
 namespace Magento\Cms\Controller\Adminhtml;
 
+use Exception;
 use Magento\Cms\Api\Data\PageInterface;
 use Magento\Cms\Api\GetPageByIdentifierInterface;
+use Magento\Cms\Controller\Adminhtml\Page\PostDataProcessor;
 use Magento\Cms\Model\Page;
 use Magento\Framework\Acl\Builder;
 use Magento\Framework\App\Config\ScopeConfigInterface;
@@ -20,7 +22,7 @@ use Magento\TestFramework\TestCase\AbstractBackendController;
 use Magento\UrlRewrite\Model\ResourceModel\UrlRewriteCollection;
 use Magento\UrlRewrite\Model\ResourceModel\UrlRewriteCollectionFactory;
 use Magento\UrlRewrite\Model\UrlRewrite;
-use Magento\Cms\Controller\Adminhtml\Page\PostDataProcessor;
+use Throwable;
 
 /**
  * Test the saving CMS pages design via admin area interface.
@@ -71,69 +73,6 @@ class PageDesignTest extends AbstractBackendController
     private $postDataProcessor;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        Bootstrap::getObjectManager()->configure([
-            'preferences' => [
-                CustomLayoutManagerInterface::class =>
-                    CustomLayoutManager::class
-            ]
-        ]);
-        parent::setUp();
-
-        $this->aclBuilder = Bootstrap::getObjectManager()->get(Builder::class);
-        $this->pageRetriever = Bootstrap::getObjectManager()->get(GetPageByIdentifierInterface::class);
-        $this->scopeConfig = Bootstrap::getObjectManager()->get(ScopeConfigInterface::class);
-        $this->pagesToDelete = [];
-        $this->postDataProcessor = Bootstrap::getObjectManager()->get(PostDataProcessor::class);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    protected function tearDown(): void
-    {
-        parent::tearDown();
-
-        $pageIds = [];
-        foreach ($this->pagesToDelete as $identifier) {
-            $pageIds[] = $identifier;
-            $page = $this->pageRetriever->execute($identifier, 0);
-            $page->delete();
-        }
-        $this->removeUrlRewrites();
-    }
-
-    /**
-     * Removes url rewrites created during test execution.
-     *
-     * @return void
-     */
-    private function removeUrlRewrites(): void
-    {
-        if (!empty($this->pagesToDelete)) {
-            /** @var UrlRewriteCollectionFactory $urlRewriteCollectionFactory */
-            $urlRewriteCollectionFactory = Bootstrap::getObjectManager()->get(
-                UrlRewriteCollectionFactory::class
-            );
-            /** @var UrlRewriteCollection $urlRewriteCollection */
-            $urlRewriteCollection = $urlRewriteCollectionFactory->create();
-            $urlRewriteCollection->addFieldToFilter('request_path', ['in' => $this->pagesToDelete]);
-            $urlRewrites = $urlRewriteCollection->getItems();
-            /** @var UrlRewrite $urlRewrite */
-            foreach ($urlRewrites as $urlRewrite) {
-                try {
-                    $urlRewrite->delete();
-                } catch (\Exception $exception) {
-                    // already removed
-                }
-            }
-        }
-    }
-
-    /**
      * Check whether additional authorization is required for the design fields.
      *
      * @magentoDbIsolation disabled
@@ -144,7 +83,7 @@ class PageDesignTest extends AbstractBackendController
         //Expected list of sessions messages collected throughout the controller calls.
         $sessionMessages = ['You are not allowed to change CMS pages design settings'];
         //Test page data.
-        $id = 'test-page' .rand(1111, 9999);
+        $id = 'test-page' . rand(1111, 9999);
         $requestData = [
             PageInterface::IDENTIFIER => $id,
             PageInterface::TITLE => 'Page title',
@@ -202,7 +141,7 @@ class PageDesignTest extends AbstractBackendController
     public function testSaveDesignWithDefaults(): void
     {
         //Test page data.
-        $id = 'test-page' .rand(1111, 9999);
+        $id = 'test-page' . rand(1111, 9999);
         $defaultLayout = $this->scopeConfig->getValue('web/default_layouts/default_cms_layout');
         $requestData = [
             PageInterface::IDENTIFIER => $id,
@@ -229,8 +168,8 @@ class PageDesignTest extends AbstractBackendController
      * Test that custom layout update fields are dealt with properly.
      *
      * @magentoDataFixture Magento/Cms/_files/pages_with_layout_xml.php
-     * @throws \Throwable
      * @return void
+     * @throws Throwable
      */
     public function testSaveLayoutXml(): void
     {
@@ -319,5 +258,68 @@ class PageDesignTest extends AbstractBackendController
             PageInterface::LAYOUT_UPDATE_XML => '<container />',
         ];
         $this->assertFalse($this->postDataProcessor->validate($requestData));
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        Bootstrap::getObjectManager()->configure([
+            'preferences' => [
+                CustomLayoutManagerInterface::class =>
+                    CustomLayoutManager::class
+            ]
+        ]);
+        parent::setUp();
+
+        $this->aclBuilder = Bootstrap::getObjectManager()->get(Builder::class);
+        $this->pageRetriever = Bootstrap::getObjectManager()->get(GetPageByIdentifierInterface::class);
+        $this->scopeConfig = Bootstrap::getObjectManager()->get(ScopeConfigInterface::class);
+        $this->pagesToDelete = [];
+        $this->postDataProcessor = Bootstrap::getObjectManager()->get(PostDataProcessor::class);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+
+        $pageIds = [];
+        foreach ($this->pagesToDelete as $identifier) {
+            $pageIds[] = $identifier;
+            $page = $this->pageRetriever->execute($identifier, 0);
+            $page->delete();
+        }
+        $this->removeUrlRewrites();
+    }
+
+    /**
+     * Removes url rewrites created during test execution.
+     *
+     * @return void
+     */
+    private function removeUrlRewrites(): void
+    {
+        if (!empty($this->pagesToDelete)) {
+            /** @var UrlRewriteCollectionFactory $urlRewriteCollectionFactory */
+            $urlRewriteCollectionFactory = Bootstrap::getObjectManager()->get(
+                UrlRewriteCollectionFactory::class
+            );
+            /** @var UrlRewriteCollection $urlRewriteCollection */
+            $urlRewriteCollection = $urlRewriteCollectionFactory->create();
+            $urlRewriteCollection->addFieldToFilter('request_path', ['in' => $this->pagesToDelete]);
+            $urlRewrites = $urlRewriteCollection->getItems();
+            /** @var UrlRewrite $urlRewrite */
+            foreach ($urlRewrites as $urlRewrite) {
+                try {
+                    $urlRewrite->delete();
+                } catch (Exception $exception) {
+                    // already removed
+                }
+            }
+        }
     }
 }

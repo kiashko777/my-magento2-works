@@ -17,11 +17,11 @@ use Magento\ConfigurableProduct\Helper\Product\Options\Factory;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 use Magento\Eav\Api\Data\AttributeOptionInterface;
 use Magento\Framework\Api\Data\ImageContentInterface;
+use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Filesystem;
 use Magento\Framework\Filesystem\Directory\WriteInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
-use Magento\Framework\App\Filesystem\DirectoryList;
 
 Resolver::getInstance()->requireDataFixture(
     'Magento/ConfigurableProduct/_files/configurable_attribute_first.php'
@@ -63,7 +63,7 @@ $secondAttributeOptions = $secondAttribute->getOptions();
 
 $attributeSetId = $installer->getAttributeSetId('catalog_product', 'Default');
 $associatedProductIds = [];
-$firstAttributeValues =  [];
+$firstAttributeValues = [];
 $secondAttributeValues = [];
 $testImagePath = __DIR__ . '/magento_image.jpg';
 $mediaImage = $mediaPath . '/' . $baseTmpMediaPath . '/magento_image.jpg';

@@ -18,23 +18,13 @@ use Magento\TestFramework\TestCase\GraphQlAbstract;
 class CacheTagTest extends GraphQlAbstract
 {
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->markTestSkipped(
-            'This test will stay skipped until DEVOPS-4924 is resolved'
-        );
-    }
-
-    /**
      * Test if Magento cache tags and debug headers for products are generated properly
      *
      * @magentoApiDataFixture Magento/Catalog/_files/multiple_products.php
      */
     public function testCacheTagsAndCacheDebugHeaderForProducts()
     {
-        $productSku='simple2';
+        $productSku = 'simple2';
         $query
             = <<<QUERY
  {
@@ -70,8 +60,8 @@ QUERY;
         $this->assertArrayHasKey('X-Magento-Cache-Debug', $responseMiss['headers']);
         $this->assertEquals('MISS', $responseMiss['headers']['X-Magento-Cache-Debug']);
         $this->assertArrayHasKey('X-Magento-Tags', $responseMiss['headers']);
-        $expectedCacheTags = ['cat_p','cat_p_' . $product->getId(),'FPC'];
-        $actualCacheTags  = explode(',', $responseMiss['headers']['X-Magento-Tags']);
+        $expectedCacheTags = ['cat_p', 'cat_p_' . $product->getId(), 'FPC'];
+        $actualCacheTags = explode(',', $responseMiss['headers']['X-Magento-Tags']);
         foreach ($expectedCacheTags as $expectedCacheTag) {
             $this->assertContains($expectedCacheTag, $actualCacheTags);
         }
@@ -88,7 +78,7 @@ QUERY;
     {
         $firstProductSku = 'simple333';
         $secondProductSku = 'simple444';
-        $categoryId ='4';
+        $categoryId = '4';
 
         /** @var ProductRepositoryInterface $productRepository */
         $productRepository = ObjectManager::getInstance()->get(ProductRepositoryInterface::class);
@@ -97,14 +87,14 @@ QUERY;
         /** @var Product $secondProduct */
         $secondProduct = $productRepository->get($secondProductSku, false, null, true);
 
-        $categoryQueryVariables =[
+        $categoryQueryVariables = [
             'id' => $categoryId,
-            'pageSize'=> 10,
+            'pageSize' => 10,
             'currentPage' => 1
         ];
 
         $product1Query = $this->getProductQuery($firstProductSku);
-        $product2Query =$this->getProductQuery($secondProductSku);
+        $product2Query = $this->getProductQuery($secondProductSku);
         $categoryQuery = $this->getCategoryQuery();
 
         // cache-debug header value should be a MISS when category is loaded first time
@@ -198,5 +188,15 @@ query GetCategoryQuery(\$id: Int!, \$pageSize: Int!, \$currentPage: Int!) {
 QUERY;
 
         return $categoryQueryString;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->markTestSkipped(
+            'This test will stay skipped until DEVOPS-4924 is resolved'
+        );
     }
 }

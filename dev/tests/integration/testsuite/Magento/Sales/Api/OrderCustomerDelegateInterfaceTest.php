@@ -11,7 +11,6 @@ use Magento\Customer\Api\AccountManagementInterface;
 use Magento\Customer\Api\Data\AddressInterface;
 use Magento\Customer\Api\Data\CustomerInterface;
 use Magento\Customer\Api\Data\CustomerInterfaceFactory;
-use Magento\Framework\Api\AttributeInterface;
 use Magento\Sales\Api\Data\OrderAddressInterface;
 use Magento\Sales\Model\Order;
 use Magento\Sales\Model\OrderFactory;
@@ -49,80 +48,6 @@ class OrderCustomerDelegateInterfaceTest extends TestCase
      * @var OrderFactory
      */
     private $orderFactory;
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function setUp(): void
-    {
-        $this->delegate = Bootstrap::getObjectManager()->get(
-            OrderCustomerDelegateInterface::class
-        );
-        $this->orderRepository = Bootstrap::getObjectManager()->get(
-            OrderRepositoryInterface::class
-        );
-        $this->customerFactory = Bootstrap::getObjectManager()->get(
-            CustomerInterfaceFactory::class
-        );
-        $this->accountManagement = Bootstrap::getObjectManager()->get(
-            AccountManagementInterface::class
-        );
-        $this->orderFactory = Bootstrap::getObjectManager()->get(
-            OrderFactory::class
-        );
-    }
-
-    /**
-     * @param OrderAddressInterface $orderAddress
-     * @param AddressInterface $address
-     *
-     * @return void
-     */
-    private function compareAddresses(
-        OrderAddressInterface $orderAddress,
-        AddressInterface $address
-    ): void {
-        $this->assertEquals(
-            $orderAddress->getFirstname(),
-            $address->getFirstname()
-        );
-        $this->assertEquals(
-            $orderAddress->getLastname(),
-            $address->getLastname()
-        );
-        $this->assertEquals(
-            $orderAddress->getCompany(),
-            $address->getCompany()
-        );
-        $this->assertEquals(
-            $orderAddress->getStreet(),
-            $address->getStreet()
-        );
-        $this->assertEquals(
-            $orderAddress->getCity(),
-            $address->getCity()
-        );
-        if (!$address->getRegionId()) {
-            $this->assertEmpty($address->getRegionId());
-        } else {
-            $this->assertEquals(
-                $orderAddress->getRegionId(),
-                $address->getRegionId()
-            );
-        }
-        $this->assertEquals(
-            $orderAddress->getPostcode(),
-            $address->getPostcode()
-        );
-        $this->assertEquals(
-            $orderAddress->getCountryId(),
-            $address->getCountryId()
-        );
-        $this->assertEquals(
-            $orderAddress->getTelephone(),
-            $address->getTelephone()
-        );
-    }
 
     /**
      * @magentoDbIsolation enabled
@@ -181,6 +106,59 @@ class OrderCustomerDelegateInterfaceTest extends TestCase
     }
 
     /**
+     * @param OrderAddressInterface $orderAddress
+     * @param AddressInterface $address
+     *
+     * @return void
+     */
+    private function compareAddresses(
+        OrderAddressInterface $orderAddress,
+        AddressInterface      $address
+    ): void
+    {
+        $this->assertEquals(
+            $orderAddress->getFirstname(),
+            $address->getFirstname()
+        );
+        $this->assertEquals(
+            $orderAddress->getLastname(),
+            $address->getLastname()
+        );
+        $this->assertEquals(
+            $orderAddress->getCompany(),
+            $address->getCompany()
+        );
+        $this->assertEquals(
+            $orderAddress->getStreet(),
+            $address->getStreet()
+        );
+        $this->assertEquals(
+            $orderAddress->getCity(),
+            $address->getCity()
+        );
+        if (!$address->getRegionId()) {
+            $this->assertEmpty($address->getRegionId());
+        } else {
+            $this->assertEquals(
+                $orderAddress->getRegionId(),
+                $address->getRegionId()
+            );
+        }
+        $this->assertEquals(
+            $orderAddress->getPostcode(),
+            $address->getPostcode()
+        );
+        $this->assertEquals(
+            $orderAddress->getCountryId(),
+            $address->getCountryId()
+        );
+        $this->assertEquals(
+            $orderAddress->getTelephone(),
+            $address->getTelephone()
+        );
+    }
+
+    /**
      * @magentoDbIsolation enabled
      * @magentoAppIsolation enabled
      * @magentoDataFixture Magento/Sales/_files/order_different_addresses.php
@@ -234,5 +212,27 @@ class OrderCustomerDelegateInterfaceTest extends TestCase
         }
 
         $this->assertEquals($order->getCustomerId(), $createdCustomer->getId());
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function setUp(): void
+    {
+        $this->delegate = Bootstrap::getObjectManager()->get(
+            OrderCustomerDelegateInterface::class
+        );
+        $this->orderRepository = Bootstrap::getObjectManager()->get(
+            OrderRepositoryInterface::class
+        );
+        $this->customerFactory = Bootstrap::getObjectManager()->get(
+            CustomerInterfaceFactory::class
+        );
+        $this->accountManagement = Bootstrap::getObjectManager()->get(
+            AccountManagementInterface::class
+        );
+        $this->orderFactory = Bootstrap::getObjectManager()->get(
+            OrderFactory::class
+        );
     }
 }

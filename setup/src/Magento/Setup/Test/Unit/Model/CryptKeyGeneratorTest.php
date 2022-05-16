@@ -27,15 +27,6 @@ class CryptKeyGeneratorTest extends TestCase
      */
     private $cryptKeyGenerator;
 
-    protected function setUp(): void
-    {
-        $this->randomMock = $this->getMockBuilder(Random::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $this->cryptKeyGenerator = new CryptKeyGenerator($this->randomMock);
-    }
-
     public function testStringForHashingIsReadFromRandom()
     {
         $this->randomMock
@@ -57,5 +48,14 @@ class CryptKeyGeneratorTest extends TestCase
         $actual = $this->cryptKeyGenerator->generate();
 
         $this->assertEquals($expected, $actual);
+    }
+
+    protected function setUp(): void
+    {
+        $this->randomMock = $this->getMockBuilder(Random::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->cryptKeyGenerator = new CryptKeyGenerator($this->randomMock);
     }
 }

@@ -4,14 +4,15 @@
  * See COPYING.txt for license details.
  */
 
-use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\GiftMessage\Model\Message;
 use Magento\GiftMessage\Model\ResourceModel\Message as MessageResource;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Address as OrderAddress;
+use Magento\Sales\Model\Order\Payment;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/product_simple.php');
 
@@ -20,7 +21,7 @@ $addressData = include __DIR__ . '/../../../../Magento/Sales/_files/address_data
 $objectManager = Bootstrap::getObjectManager();
 
 /** @var Order $order */
-/** @var Order\Payment $payment */
+/** @var Payment $payment */
 /** @var Order\Item $orderItem */
 /** @var array $addressData Data for creating addresses for the orders. */
 $orders = [
@@ -50,7 +51,7 @@ $orders = [
 /** @var OrderRepositoryInterface $orderRepository */
 $orderRepository = $objectManager->create(OrderRepositoryInterface::class);
 
-$payment = $objectManager->create(\Magento\Sales\Model\Order\Payment::class);
+$payment = $objectManager->create(Payment::class);
 $payment->setMethod('checkmo');
 $productRepository = $objectManager->create(ProductRepositoryInterface::class);
 $product = $productRepository->get('simple');

@@ -3,61 +3,45 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogImportExport\Model\Import\Product\Type;
+
+use Magento\Catalog\Model\ResourceModel\Product\Attribute\CollectionFactory;
+use Magento\CatalogImportExport\Model\Import\Product;
+use Magento\Framework\App\ResourceConnection;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Tests \Magento\CatalogImportExport\Model\Import\Products\Type\AbstractType.
  */
-class AbstractTest extends \PHPUnit\Framework\TestCase
+class AbstractTest extends TestCase
 {
     /**
-     * @var \Magento\CatalogImportExport\Model\Import\Product\Type\AbstractType
+     * @var AbstractType
      */
     protected $_model;
 
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     private $objectManager;
-
-    /**
-     * On product import abstract class methods level it doesn't matter what product type is using.
-     * That is why current tests are using simple product entity type by default
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $params = [$this->objectManager->create(\Magento\CatalogImportExport\Model\Import\Product::class), 'simple'];
-        $this->_model = $this->getMockForAbstractClass(
-            \Magento\CatalogImportExport\Model\Import\Product\Type\AbstractType::class,
-            [
-                $this->objectManager->get(
-                    \Magento\Eav\Model\ResourceModel\Entity\Attribute\Set\CollectionFactory::class
-                ),
-                $this->objectManager->get(
-                    \Magento\Catalog\Model\ResourceModel\Product\Attribute\CollectionFactory::class
-                ),
-                $this->objectManager->get(
-                    \Magento\Framework\App\ResourceConnection::class
-                ),
-                $params
-            ]
-        );
-    }
 
     /**
      * @dataProvider prepareAttributesWithDefaultValueForSaveDataProvider
      *
      * @param array $rowData
-     * @param bool  $withDefaultValue
+     * @param bool $withDefaultValue
      * @param array $expectedAttributes
      * @return void
      */
     public function testPrepareAttributesWithDefaultValueForSave(
         array $rowData,
-        bool $withDefaultValue,
+        bool  $withDefaultValue,
         array $expectedAttributes
-    ): void {
+    ): void
+    {
         $actualAttributes = $this->_model->prepareAttributesWithDefaultValueForSave($rowData, $withDefaultValue);
         foreach ($expectedAttributes as $key => $value) {
             $this->assertArrayHasKey($key, $actualAttributes);
@@ -274,5 +258,30 @@ class AbstractTest extends \PHPUnit\Framework\TestCase
                 ],
             ],
         ];
+    }
+
+    /**
+     * On product import abstract class methods level it doesn't matter what product type is using.
+     * That is why current tests are using simple product entity type by default
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $params = [$this->objectManager->create(Product::class), 'simple'];
+        $this->_model = $this->getMockForAbstractClass(
+            AbstractType::class,
+            [
+                $this->objectManager->get(
+                    \Magento\Eav\Model\ResourceModel\Entity\Attribute\Set\CollectionFactory::class
+                ),
+                $this->objectManager->get(
+                    CollectionFactory::class
+                ),
+                $this->objectManager->get(
+                    ResourceConnection::class
+                ),
+                $params
+            ]
+        );
     }
 }

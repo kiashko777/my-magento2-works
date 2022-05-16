@@ -3,10 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Magento\GraphQl\Quote\Guest;
 
+use Exception;
 use Magento\GraphQl\Quote\GetMaskedQuoteIdByReservedOrderId;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
@@ -20,15 +21,6 @@ class GetAvailableShippingMethodsTest extends GraphQlAbstract
      * @var GetMaskedQuoteIdByReservedOrderId
      */
     private $getMaskedQuoteIdByReservedOrderId;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-    }
 
     /**
      * Test case: get available shipping methods from current customer quote
@@ -79,6 +71,69 @@ class GetAvailableShippingMethodsTest extends GraphQlAbstract
             'simple_product',
             $response['cart']['shipping_addresses'][0]['cart_items_v2'][0]['product']['sku']
         );
+    }
+
+    /**
+     * @param string $maskedQuoteId
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId): string
+    {
+        return <<<QUERY
+query {
+  cart (cart_id: "{$maskedQuoteId}") {
+    shipping_addresses {
+      cart_items {
+        cart_item_id
+        quantity
+      }
+      cart_items_v2 {
+        id
+        quantity
+        product {
+          sku
+        }
+      }
+      available_shipping_methods {
+        amount {
+          value
+          currency
+        }
+        carrier_code
+        carrier_title
+        error_message
+        method_code
+        method_title
+        price_excl_tax {
+          value
+          currency
+        }
+        price_incl_tax {
+          value
+          currency
+        }
+        base_amount {
+          value
+          currency
+        }
+        carrier_code
+        carrier_title
+        error_message
+        method_code
+        method_title
+        price_excl_tax {
+          value
+          currency
+        }
+        price_incl_tax {
+          value
+          currency
+        }
+      }
+    }
+  }
+}
+QUERY;
     }
 
     /**
@@ -175,7 +230,7 @@ class GetAvailableShippingMethodsTest extends GraphQlAbstract
      */
     public function testGetAvailableShippingMethodsOfNonExistentCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Could not find a cart with ID "non_existent_masked_id"');
 
         $maskedQuoteId = 'non_existent_masked_id';
@@ -185,65 +240,11 @@ class GetAvailableShippingMethodsTest extends GraphQlAbstract
     }
 
     /**
-     * @param string $maskedQuoteId
-     * @return string
+     * @inheritdoc
      */
-    private function getQuery(string $maskedQuoteId): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-query {
-  cart (cart_id: "{$maskedQuoteId}") {
-    shipping_addresses {
-      cart_items {
-        cart_item_id
-        quantity
-      }
-      cart_items_v2 {
-        id
-        quantity
-        product {
-          sku
-        }
-      }
-      available_shipping_methods {
-        amount {
-          value
-          currency
-        }
-        carrier_code
-        carrier_title
-        error_message
-        method_code
-        method_title
-        price_excl_tax {
-          value
-          currency
-        }
-        price_incl_tax {
-          value
-          currency
-        }
-        base_amount {
-          value
-          currency
-        }
-        carrier_code
-        carrier_title
-        error_message
-        method_code
-        method_title
-        price_excl_tax {
-          value
-          currency
-        }
-        price_incl_tax {
-          value
-          currency
-        }
-      }
-    }
-  }
-}
-QUERY;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
     }
 }

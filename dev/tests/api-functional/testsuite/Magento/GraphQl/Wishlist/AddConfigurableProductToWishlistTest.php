@@ -9,7 +9,6 @@ namespace Magento\GraphQl\Wishlist;
 
 use Exception;
 use Magento\Framework\Exception\AuthenticationException;
-use Magento\Framework\ObjectManagerInterface;
 use Magento\Integration\Api\CustomerTokenServiceInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
@@ -32,16 +31,6 @@ class AddConfigurableProductToWishlistTest extends GraphQlAbstract
     private $wishlistFactory;
 
     /**
-     * Set Up
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-        $this->wishlistFactory = $objectManager->get(WishlistFactory::class);
-    }
-
-    /**
      * @magentoConfigFixture default_store wishlist/general/active 1
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      * @magentoApiDataFixture Magento/ConfigurableProduct/_files/product_configurable.php
@@ -53,7 +42,7 @@ class AddConfigurableProductToWishlistTest extends GraphQlAbstract
         $product = $this->getConfigurableProductInfo();
         $customerId = 1;
         $qty = 2;
-        $attributeId = (int) $product['configurable_options'][0]['attribute_id'];
+        $attributeId = (int)$product['configurable_options'][0]['attribute_id'];
         $valueIndex = $product['configurable_options'][0]['values'][0]['value_index'];
         $childSku = $product['variants'][0]['product']['sku'];
         $parentSku = $product['sku'];
@@ -81,99 +70,6 @@ class AddConfigurableProductToWishlistTest extends GraphQlAbstract
         $configurableOptions = $wishlistResponse['items_v2']['items'][0]['configurable_options'];
         $this->assertEquals('Test Configurable', $configurableOptions[0]['option_label']);
         $this->assertEquals('Option 1', $configurableOptions[0]['value_label']);
-    }
-
-    /**
-     * Authentication header map
-     *
-     * @param string $username
-     * @param string $password
-     *
-     * @return array
-     *
-     * @throws AuthenticationException
-     */
-    private function getHeadersMap(string $username = 'customer@example.com', string $password = 'password'): array
-    {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
-
-        return ['Authorization' => 'Bearer ' . $customerToken];
-    }
-
-    /**
-     * Returns GraphQl mutation string
-     *
-     * @param string $parentSku
-     * @param string $childSku
-     * @param int $qty
-     * @param string $customizableOptions
-     * @param int $wishlistId
-     *
-     * @return string
-     */
-    private function getQuery(
-        string $parentSku,
-        string $childSku,
-        int $qty,
-        string $customizableOptions,
-        int $wishlistId = 0
-    ): string {
-        return <<<MUTATION
-mutation {
-  addProductsToWishlist(
-    wishlistId: {$wishlistId},
-    wishlistItems: [
-      {
-        sku: "{$childSku}"
-        parent_sku: "{$parentSku}"
-        quantity: {$qty}
-        {$customizableOptions}
-      }
-    ]
-) {
-    user_errors {
-      code
-      message
-    }
-    wishlist {
-      id
-      sharing_code
-      items_count
-      updated_at
-      items_v2(currentPage:1,pageSize:1) {
-      items{
-          id
-        description
-        quantity
-        added_at
-        ... on ConfigurableWishlistItem {
-          child_sku
-          configurable_options {
-            id
-            option_label
-            value_id
-            value_label
-          }
-        }
-      }
-      }
-    }
-  }
-}
-MUTATION;
-    }
-
-    /**
-     * Generates uid for super configurable product super attributes
-     *
-     * @param int $attributeId
-     * @param int $valueIndex
-     *
-     * @return string
-     */
-    private function generateSuperAttributesUidQuery(int $attributeId, int $valueIndex): string
-    {
-        return 'selected_options: ["' . base64_encode("configurable/$attributeId/$valueIndex") . '"]';
     }
 
     /**
@@ -234,5 +130,109 @@ MUTATION;
   }
 }
 QUERY;
+    }
+
+    /**
+     * Generates uid for super configurable product super attributes
+     *
+     * @param int $attributeId
+     * @param int $valueIndex
+     *
+     * @return string
+     */
+    private function generateSuperAttributesUidQuery(int $attributeId, int $valueIndex): string
+    {
+        return 'selected_options: ["' . base64_encode("configurable/$attributeId/$valueIndex") . '"]';
+    }
+
+    /**
+     * Returns GraphQl mutation string
+     *
+     * @param string $parentSku
+     * @param string $childSku
+     * @param int $qty
+     * @param string $customizableOptions
+     * @param int $wishlistId
+     *
+     * @return string
+     */
+    private function getQuery(
+        string $parentSku,
+        string $childSku,
+        int    $qty,
+        string $customizableOptions,
+        int    $wishlistId = 0
+    ): string
+    {
+        return <<<MUTATION
+mutation {
+  addProductsToWishlist(
+    wishlistId: {$wishlistId},
+    wishlistItems: [
+      {
+        sku: "{$childSku}"
+        parent_sku: "{$parentSku}"
+        quantity: {$qty}
+        {$customizableOptions}
+      }
+    ]
+) {
+    user_errors {
+      code
+      message
+    }
+    wishlist {
+      id
+      sharing_code
+      items_count
+      updated_at
+      items_v2(currentPage:1,pageSize:1) {
+      items{
+          id
+        description
+        quantity
+        added_at
+        ... on ConfigurableWishlistItem {
+          child_sku
+          configurable_options {
+            id
+            option_label
+            value_id
+            value_label
+          }
+        }
+      }
+      }
+    }
+  }
+}
+MUTATION;
+    }
+
+    /**
+     * Authentication header map
+     *
+     * @param string $username
+     * @param string $password
+     *
+     * @return array
+     *
+     * @throws AuthenticationException
+     */
+    private function getHeadersMap(string $username = 'customer@example.com', string $password = 'password'): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
+
+        return ['Authorization' => 'Bearer ' . $customerToken];
+    }
+
+    /**
+     * Set Up
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
+        $this->wishlistFactory = $objectManager->get(WishlistFactory::class);
     }
 }

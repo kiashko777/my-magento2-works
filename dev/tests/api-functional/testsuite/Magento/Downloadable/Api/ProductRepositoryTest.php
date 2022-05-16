@@ -9,7 +9,9 @@ declare(strict_types=1);
 namespace Magento\Downloadable\Api;
 
 use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Downloadable\Model\Product\Type;
 use Magento\Framework\Api\ExtensibleDataInterface;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
@@ -30,162 +32,6 @@ class ProductRepositoryTest extends WebapiAbstract
      * @var string
      */
     private $testImagePath;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-
-        $this->testImagePath = __DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'test_image.jpg';
-
-        /** @var DomainManagerInterface $domainManager */
-        $domainManager = $objectManager->get(DomainManagerInterface::class);
-        $domainManager->addDomains(['www.example.com']);
-    }
-
-    /**
-     * Execute per test cleanup
-     */
-    protected function tearDown(): void
-    {
-        $this->deleteProductBySku(self::PRODUCT_SKU);
-        parent::tearDown();
-
-        $objectManager = Bootstrap::getObjectManager();
-
-        /** @var DomainManagerInterface $domainManager */
-        $domainManager = $objectManager->get(DomainManagerInterface::class);
-        $domainManager->removeDomains(['www.example.com']);
-    }
-
-    protected function getLinkData()
-    {
-        return [
-            'link1' => [
-                'title' => "link1",
-                'sort_order'=> 10,
-                'is_shareable' => 1,
-                'price' => 2.0,
-                'number_of_downloads' => 0,
-                'link_type' => 'file',
-                'link_file_content' => [
-                    'name' => 'link1_content.jpg',
-                    // phpcs:ignore Magento2.Functions.DiscouragedFunction
-                    'file_data' => base64_encode(file_get_contents($this->testImagePath)),
-                ],
-                'sample_type' => 'file',
-                'sample_file_content' => [
-                    'name' => 'link1_sample.jpg',
-                    // phpcs:ignore Magento2.Functions.DiscouragedFunction
-                    'file_data' => base64_encode(file_get_contents($this->testImagePath)),
-                ],
-            ],
-            'link2' => [
-                'title' => 'link2',
-                'sort_order'=> 20,
-                'is_shareable' => 0,
-                'price' => 3.0,
-                'number_of_downloads' => 100,
-                'link_type' => "url",
-                'link_url' => 'http://www.example.com/link2.jpg',
-                'sample_type' => 'url',
-                'sample_url' => 'http://www.example.com/link2.jpg',
-            ],
-        ];
-    }
-
-    protected function getExpectedLinkData()
-    {
-        return [
-            [
-                'title' => 'link1',
-                'sort_order' => 10,
-                'is_shareable' => 1,
-                'price' => 2,
-                'number_of_downloads' => 0,
-                'link_type' => 'file',
-                'sample_type' => 'file',
-            ],
-            [
-                'title' => 'link2',
-                'sort_order' => 20,
-                'is_shareable' => 0,
-                'price' => 3,
-                'number_of_downloads' => 100,
-                'link_type' => 'url',
-                'link_url' => 'http://www.example.com/link2.jpg',
-                'sample_type' => 'url',
-                'sample_url' => 'http://www.example.com/link2.jpg',
-            ],
-        ];
-    }
-
-    protected function getSampleData()
-    {
-        return [
-            'sample1' => [
-                'title' => 'sample1',
-                'sort_order' => 10,
-                'sample_type' => 'url',
-                'sample_url' => 'http://www.example.com/sample1.jpg',
-            ],
-            'sample2' => [
-                'title' => 'sample2',
-                'sort_order' => 20,
-                'sample_type' => 'file',
-                'sample_file_content' => [
-                    'name' => 'sample2.jpg',
-                    // phpcs:ignore Magento2.Functions.DiscouragedFunction
-                    'file_data' => base64_encode(file_get_contents($this->testImagePath)),
-                ],
-            ],
-        ];
-    }
-
-    protected function getExpectedSampleData()
-    {
-        return [
-            [
-                'title' => 'sample1',
-                'sort_order' => 10,
-                'sample_type' => 'url',
-                'sample_url' => 'http://www.example.com/sample1.jpg',
-            ],
-            [
-                'title' => 'sample2',
-                'sort_order' => 20,
-                'sample_type' => 'file',
-            ],
-        ];
-    }
-
-    protected function createDownloadableProduct()
-    {
-        $product = [
-            "sku" => self::PRODUCT_SKU,
-            "name" => self::PRODUCT_SKU,
-            "type_id" => \Magento\Downloadable\Model\Product\Type::TYPE_DOWNLOADABLE,
-            "price" => 10,
-            'attribute_set_id' => 4,
-            "extension_attributes" => [
-                // phpcs:ignore Magento2.Functions.DiscouragedFunction
-                "downloadable_product_links" => array_values($this->getLinkData()),
-                // phpcs:ignore Magento2.Functions.DiscouragedFunction
-                "downloadable_product_samples" => array_values($this->getSampleData()),
-            ],
-        ];
-
-        $response =  $this->createProduct($product);
-        $this->assertEquals(self::PRODUCT_SKU, $response[ProductInterface::SKU]);
-        $this->assertEquals(10, $response['price']);
-        $this->assertEquals(
-            \Magento\Downloadable\Model\Product\Type::TYPE_DOWNLOADABLE,
-            $response['type_id']
-        );
-        return $response;
-    }
 
     /**
      * Create a downloadable product with two links and two samples
@@ -225,6 +71,157 @@ class ProductRepositoryTest extends WebapiAbstract
 
         $expectedSampleData = $this->getExpectedSampleData();
         $this->assertEquals($expectedSampleData, $resultSamples);
+    }
+
+    protected function createDownloadableProduct()
+    {
+        $product = [
+            "sku" => self::PRODUCT_SKU,
+            "name" => self::PRODUCT_SKU,
+            "type_id" => Type::TYPE_DOWNLOADABLE,
+            "price" => 10,
+            'attribute_set_id' => 4,
+            "extension_attributes" => [
+                // phpcs:ignore Magento2.Functions.DiscouragedFunction
+                "downloadable_product_links" => array_values($this->getLinkData()),
+                // phpcs:ignore Magento2.Functions.DiscouragedFunction
+                "downloadable_product_samples" => array_values($this->getSampleData()),
+            ],
+        ];
+
+        $response = $this->createProduct($product);
+        $this->assertEquals(self::PRODUCT_SKU, $response[ProductInterface::SKU]);
+        $this->assertEquals(10, $response['price']);
+        $this->assertEquals(
+            Type::TYPE_DOWNLOADABLE,
+            $response['type_id']
+        );
+        return $response;
+    }
+
+    protected function getLinkData()
+    {
+        return [
+            'link1' => [
+                'title' => "link1",
+                'sort_order' => 10,
+                'is_shareable' => 1,
+                'price' => 2.0,
+                'number_of_downloads' => 0,
+                'link_type' => 'file',
+                'link_file_content' => [
+                    'name' => 'link1_content.jpg',
+                    // phpcs:ignore Magento2.Functions.DiscouragedFunction
+                    'file_data' => base64_encode(file_get_contents($this->testImagePath)),
+                ],
+                'sample_type' => 'file',
+                'sample_file_content' => [
+                    'name' => 'link1_sample.jpg',
+                    // phpcs:ignore Magento2.Functions.DiscouragedFunction
+                    'file_data' => base64_encode(file_get_contents($this->testImagePath)),
+                ],
+            ],
+            'link2' => [
+                'title' => 'link2',
+                'sort_order' => 20,
+                'is_shareable' => 0,
+                'price' => 3.0,
+                'number_of_downloads' => 100,
+                'link_type' => "url",
+                'link_url' => 'http://www.example.com/link2.jpg',
+                'sample_type' => 'url',
+                'sample_url' => 'http://www.example.com/link2.jpg',
+            ],
+        ];
+    }
+
+    protected function getSampleData()
+    {
+        return [
+            'sample1' => [
+                'title' => 'sample1',
+                'sort_order' => 10,
+                'sample_type' => 'url',
+                'sample_url' => 'http://www.example.com/sample1.jpg',
+            ],
+            'sample2' => [
+                'title' => 'sample2',
+                'sort_order' => 20,
+                'sample_type' => 'file',
+                'sample_file_content' => [
+                    'name' => 'sample2.jpg',
+                    // phpcs:ignore Magento2.Functions.DiscouragedFunction
+                    'file_data' => base64_encode(file_get_contents($this->testImagePath)),
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Create product
+     *
+     * @param array $product
+     * @return array the created product data
+     */
+    protected function createProduct($product)
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH,
+                'httpMethod' => Request::HTTP_METHOD_POST
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'Save',
+            ],
+        ];
+        $requestData = ['product' => $product];
+        $response = $this->_webApiCall($serviceInfo, $requestData);
+        return $response;
+    }
+
+    protected function getExpectedLinkData()
+    {
+        return [
+            [
+                'title' => 'link1',
+                'sort_order' => 10,
+                'is_shareable' => 1,
+                'price' => 2,
+                'number_of_downloads' => 0,
+                'link_type' => 'file',
+                'sample_type' => 'file',
+            ],
+            [
+                'title' => 'link2',
+                'sort_order' => 20,
+                'is_shareable' => 0,
+                'price' => 3,
+                'number_of_downloads' => 100,
+                'link_type' => 'url',
+                'link_url' => 'http://www.example.com/link2.jpg',
+                'sample_type' => 'url',
+                'sample_url' => 'http://www.example.com/link2.jpg',
+            ],
+        ];
+    }
+
+    protected function getExpectedSampleData()
+    {
+        return [
+            [
+                'title' => 'sample1',
+                'sort_order' => 10,
+                'sample_type' => 'url',
+                'sample_url' => 'http://www.example.com/sample1.jpg',
+            ],
+            [
+                'title' => 'sample2',
+                'sort_order' => 20,
+                'sample_type' => 'file',
+            ],
+        ];
     }
 
     /**
@@ -302,6 +299,40 @@ class ProductRepositoryTest extends WebapiAbstract
 
         $resultSamples = $response[ExtensibleDataInterface::EXTENSION_ATTRIBUTES_KEY]["downloadable_product_samples"];
         $this->assertCount(2, $resultSamples);
+    }
+
+    /**
+     * Save product
+     *
+     * @param array $product
+     * @return array the created product data
+     */
+    protected function saveProduct($product)
+    {
+        if (isset($product['custom_attributes'])) {
+            for ($i = 0, $iMax = count($product['custom_attributes']); $i < $iMax; $i++) {
+                if ($product['custom_attributes'][$i]['attribute_code'] == 'category_ids'
+                    && !is_array($product['custom_attributes'][$i]['value'])
+                ) {
+                    $product['custom_attributes'][$i]['value'] = [""];
+                }
+            }
+        }
+        $resourcePath = self::RESOURCE_PATH . '/' . $product['sku'];
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => $resourcePath,
+                'httpMethod' => Request::HTTP_METHOD_PUT
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'Save',
+            ],
+        ];
+        $requestData = ['product' => $product];
+        $response = $this->_webApiCall($serviceInfo, $requestData);
+        return $response;
     }
 
     /**
@@ -590,53 +621,32 @@ class ProductRepositoryTest extends WebapiAbstract
     }
 
     /**
-     * Get product
-     *
-     * @param string $productSku
-     * @return array the product data
+     * @inheritdoc
      */
-    protected function getProduct($productSku)
+    protected function setUp(): void
     {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . '/' . $productSku,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'Get',
-            ],
-        ];
+        $objectManager = Bootstrap::getObjectManager();
 
-        $response = (TESTS_WEB_API_ADAPTER == self::ADAPTER_SOAP) ?
-            $this->_webApiCall($serviceInfo, ['sku' => $productSku]) : $this->_webApiCall($serviceInfo);
+        $this->testImagePath = __DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'test_image.jpg';
 
-        return $response;
+        /** @var DomainManagerInterface $domainManager */
+        $domainManager = $objectManager->get(DomainManagerInterface::class);
+        $domainManager->addDomains(['www.example.com']);
     }
 
     /**
-     * Create product
-     *
-     * @param array $product
-     * @return array the created product data
+     * Execute per test cleanup
      */
-    protected function createProduct($product)
+    protected function tearDown(): void
     {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'Save',
-            ],
-        ];
-        $requestData = ['product' => $product];
-        $response = $this->_webApiCall($serviceInfo, $requestData);
-        return $response;
+        $this->deleteProductBySku(self::PRODUCT_SKU);
+        parent::tearDown();
+
+        $objectManager = Bootstrap::getObjectManager();
+
+        /** @var DomainManagerInterface $domainManager */
+        $domainManager = $objectManager->get(DomainManagerInterface::class);
+        $domainManager->removeDomains(['www.example.com']);
     }
 
     /**
@@ -651,7 +661,7 @@ class ProductRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => $resourcePath,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE
+                'httpMethod' => Request::HTTP_METHOD_DELETE
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -665,36 +675,28 @@ class ProductRepositoryTest extends WebapiAbstract
     }
 
     /**
-     * Save product
+     * Get product
      *
-     * @param array $product
-     * @return array the created product data
+     * @param string $productSku
+     * @return array the product data
      */
-    protected function saveProduct($product)
+    protected function getProduct($productSku)
     {
-        if (isset($product['custom_attributes'])) {
-            for ($i = 0, $iMax = count($product['custom_attributes']); $i < $iMax; $i++) {
-                if ($product['custom_attributes'][$i]['attribute_code'] == 'category_ids'
-                    && !is_array($product['custom_attributes'][$i]['value'])
-                ) {
-                    $product['custom_attributes'][$i]['value'] = [""];
-                }
-            }
-        }
-        $resourcePath = self::RESOURCE_PATH . '/' . $product['sku'];
         $serviceInfo = [
             'rest' => [
-                'resourcePath' => $resourcePath,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT
+                'resourcePath' => self::RESOURCE_PATH . '/' . $productSku,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
                 'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'Save',
+                'operation' => self::SERVICE_NAME . 'Get',
             ],
         ];
-        $requestData = ['product' => $product];
-        $response = $this->_webApiCall($serviceInfo, $requestData);
+
+        $response = (TESTS_WEB_API_ADAPTER == self::ADAPTER_SOAP) ?
+            $this->_webApiCall($serviceInfo, ['sku' => $productSku]) : $this->_webApiCall($serviceInfo);
+
         return $response;
     }
 }

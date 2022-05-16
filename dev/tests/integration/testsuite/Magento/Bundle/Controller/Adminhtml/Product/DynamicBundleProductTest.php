@@ -175,7 +175,7 @@ class DynamicBundleProductTest extends AbstractBundleProductSaveTest
     public function testProductSaveMissedOptionTitle(array $post): void
     {
         $this->productToDelete = null;
-        $post =  $this->prepareRequestData($post);
+        $post = $this->prepareRequestData($post);
         $this->dispatch('backend/catalog/product/save');
         $this->assertSessionMessages($this->equalTo(["The option couldn't be saved."]));
     }
@@ -219,7 +219,7 @@ class DynamicBundleProductTest extends AbstractBundleProductSaveTest
     public function testUpdateProduct(array $post): void
     {
         $id = $this->productRepository->get('bundle-product-checkbox-options')->getId();
-        $post =  $this->prepareRequestData($post, (int)$id);
+        $post = $this->prepareRequestData($post, (int)$id);
         $this->dispatch('backend/catalog/product/save');
         $this->assertBundleOptions($post['bundle_options']);
     }

@@ -21,6 +21,8 @@ use PHPUnit\TextUI\XmlConfiguration\Loader;
 use PHPUnit\TextUI\XmlConfiguration\TestSuite as TestSuiteConfiguration;
 use PHPUnit\TextUI\XmlConfiguration\TestSuiteCollection;
 use PHPUnit\TextUI\XmlConfiguration\TestSuiteMapper;
+use ReflectionClass;
+use ReflectionException;
 
 /**
  * Integration tests wrapper.
@@ -31,7 +33,7 @@ class IntegrationTest extends TestSuite
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      * @param string $className
      * @return TestSuite
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     public static function suite($className)
     {
@@ -52,7 +54,7 @@ class IntegrationTest extends TestSuite
                     $testName = $test->getName();
 
                     if ($overrideConfig->hasSkippedTest($testName) && !$test instanceof SkippableInterface) {
-                        $reflectionClass = new \ReflectionClass($testName);
+                        $reflectionClass = new ReflectionClass($testName);
                         $resultTest = $generator->generateTestWrapper($reflectionClass);
                         $suite->addTest(new TestSuite($resultTest, $testName));
                     } else {
@@ -63,23 +65,6 @@ class IntegrationTest extends TestSuite
         }
 
         return $suite;
-    }
-
-    /**
-     * Returns config file name from command line params.
-     *
-     * @return string
-     */
-    private static function getConfigurationFile(): string
-    {
-        $params = getopt('c:', ['configuration:']);
-        $defaultConfigFile = file_exists(__DIR__ . '../../phpunit.xml')
-            ? __DIR__ . '/../../phpunit.xml'
-            : __DIR__ . '/../../phpunit.xml.dist';
-        $longConfig = $params['configuration'] ?? $defaultConfigFile;
-        $shortConfig = $params['c'] ?? '';
-
-        return $shortConfig ? $shortConfig : $longConfig;
     }
 
     /**
@@ -97,6 +82,23 @@ class IntegrationTest extends TestSuite
 
         // @phpstan-ignore-next-line
         return (new Loader())->load(self::getConfigurationFile());
+    }
+
+    /**
+     * Returns config file name from command line params.
+     *
+     * @return string
+     */
+    private static function getConfigurationFile(): string
+    {
+        $params = getopt('c:', ['configuration:']);
+        $defaultConfigFile = file_exists(__DIR__ . '../../phpunit.xml')
+            ? __DIR__ . '/../../phpunit.xml'
+            : __DIR__ . '/../../phpunit.xml.dist';
+        $longConfig = $params['configuration'] ?? $defaultConfigFile;
+        $shortConfig = $params['c'] ?? '';
+
+        return $shortConfig ? $shortConfig : $longConfig;
     }
 
     /**

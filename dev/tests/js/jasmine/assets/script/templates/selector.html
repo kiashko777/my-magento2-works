@@ -7,9 +7,11 @@
 <div id="<%= containerId %>">
     <div
         id="<%= nodeId %>"
-        <%= dataAttr %>='<%= JSON.stringify(nodeData) %>'></div>
+    <%= dataAttr %>='<%= JSON.stringify(nodeData) %>'>
+</div>
 
-    <script type="text/x-magento-init">
+<script type="text/x-magento-init">
         <%= JSON.stringify(scriptData) %>
-    </script>
+
+</script>
 </div>

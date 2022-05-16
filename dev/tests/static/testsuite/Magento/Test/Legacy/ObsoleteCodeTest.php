@@ -8,17 +8,20 @@
  * Tests to find various obsolete code usage
  * (deprecated and removed Magento 1 legacy methods, properties, classes, etc.)
  */
+
 namespace Magento\Test\Legacy;
 
+use Exception;
 use Magento\Framework\App\Utility\AggregateInvoker;
 use Magento\Framework\App\Utility\Files;
 use Magento\Framework\Component\ComponentRegistrar;
 use Magento\TestFramework\Utility\ChangedFiles;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
-class ObsoleteCodeTest extends \PHPUnit\Framework\TestCase
+class ObsoleteCodeTest extends TestCase
 {
     /**@#+
      * Lists of obsolete entities from fixtures
@@ -60,7 +63,7 @@ class ObsoleteCodeTest extends \PHPUnit\Framework\TestCase
                 }
                 $message .= PHP_EOL;
             }
-            throw new \Exception($message);
+            throw new Exception($message);
         }
     }
 
@@ -132,69 +135,47 @@ class ObsoleteCodeTest extends \PHPUnit\Framework\TestCase
         );
     }
 
-    public function testClassFiles()
+    /**
+     * Reads list of blacklisted files
+     *
+     * @param bool $absolutePath
+     * @return array
+     * @throws Exception
+     */
+    private function getBlacklistFiles($absolutePath = false)
     {
-        $invoker = new AggregateInvoker($this);
-        $invoker(
-            function ($file) {
-                $this->_testObsoletePaths($file);
-            },
-            Files::init()->getPhpFiles()
-        );
+        $blackList = include __DIR__ . '/_files/blacklist/obsolete_mage.php';
+        $ignored = [];
+        $appPath = BP;
+        foreach ($blackList as $file) {
+            if ($absolutePath) {
+                // phpcs:ignore
+                $ignored = array_merge($ignored, glob($appPath . DIRECTORY_SEPARATOR . $file, GLOB_NOSORT));
+            } else {
+                // phpcs:ignore
+                $ignored = array_merge($ignored, $this->processPattern($appPath, $file));
+            }
+        }
+        return $ignored;
     }
 
-    public function testTemplateMageCalls()
+    /**
+     * @param string $appPath
+     * @param string $pattern
+     * @return array
+     * @throws Exception
+     */
+    private function processPattern($appPath, $pattern)
     {
-        $invoker = new AggregateInvoker($this);
-        $invoker(
-            function ($file) {
-                $content = file_get_contents($file);
-                $this->_assertNotRegExp(
-                    '/\bMage::(\w+?)\(/iS',
-                    $content,
-                    "Static Method of 'Mage' class is obsolete."
-                );
-            },
-            Files::init()->getPhpFiles(
-                Files::INCLUDE_TEMPLATES
-                | Files::INCLUDE_TESTS
-                | Files::AS_DATA_SET
-            )
-        );
-    }
+        $files = [];
+        $relativePathStart = strlen($appPath);
 
-    public function testXmlFiles()
-    {
-        $invoker = new AggregateInvoker($this);
-        $invoker(
-            function ($file) {
-                $content = file_get_contents($file);
-                $this->_testObsoleteClasses($content);
-                $this->_testObsoleteNamespaces($content);
-                $this->_testObsoletePaths($file);
-            },
-            Files::init()->getXmlFiles()
-        );
-    }
+        $fileSet = glob($appPath . DIRECTORY_SEPARATOR . $pattern, GLOB_NOSORT);
+        foreach ($fileSet as $file) {
+            $files[] = ltrim(substr($file, $relativePathStart), '/');
+        }
 
-    public function testJsFiles()
-    {
-        $invoker = new AggregateInvoker($this);
-        $invoker(
-            function ($file) {
-                $content = file_get_contents($file);
-                $this->_testObsoletePropertySkipCalculate($content);
-                if (strpos($file, 'requirejs-config.js') === false
-                    && (
-                        strpos($file, '/view/frontend/web/') !== false
-                        || strpos($file, '/view/base/web/') !== false
-                    )
-                ) {
-                    $this->_testJqueryUiLibraryIsNotUsedInJs($content);
-                }
-            },
-            Files::init()->getJsFiles()
-        );
+        return $files;
     }
 
     /**
@@ -215,6 +196,36 @@ class ObsoleteCodeTest extends \PHPUnit\Framework\TestCase
                 $this->_suggestReplacement(sprintf("Class '%s' is obsolete.", $class), $replacement)
             );
         }
+    }
+
+    /**
+     * Custom replacement for assertNotRegexp()
+     *
+     * In this particular test the original assertNotRegexp() cannot be used
+     * because of too large text $content, which obfuscates tests output
+     *
+     * @param string $regex
+     * @param string $content
+     * @param string $message
+     */
+    protected function _assertNotRegexp($regex, $content, $message)
+    {
+        $this->assertSame(0, preg_match($regex, $content), $message);
+    }
+
+    /**
+     * Append a "suggested replacement" part to the string
+     *
+     * @param string $original
+     * @param string $suggestion
+     * @return string
+     */
+    private function _suggestReplacement($original, $suggestion)
+    {
+        if ($suggestion) {
+            return "{$original} Suggested replacement: {$suggestion}";
+        }
+        return $original;
     }
 
     /**
@@ -299,28 +310,32 @@ class ObsoleteCodeTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Assert that obsolete paths are not used in the content
+     * Analyze contents to determine whether this is declaration of specified class/interface
      *
-     * This method will search the content for references to class
-     * that start with obsolete namespace
-     *
-     * @param string $file
+     * @param string $content
+     * @param string $name
+     * @return bool
      */
-    protected function _testObsoletePaths($file)
+    protected function _isClassOrInterface($content, $name)
     {
-        foreach (self::$_paths as $row) {
-            list($obsoletePath, , $replacementPath) = $row;
-            $relativePath = str_replace(BP, '', $file);
-            $message = $this->_suggestReplacement(
-                "Path '{$obsoletePath}' is obsolete.",
-                $replacementPath
-            );
-            $this->assertStringStartsNotWith($obsoletePath . '/', $relativePath, $message);
-            $this->assertStringStartsNotWith($obsoletePath . '.', $relativePath, $message);
-            $this->assertStringStartsNotWith($obsoletePath . 'Factory.', $relativePath, $message);
-            $this->assertStringStartsNotWith($obsoletePath . 'Interface.', $relativePath, $message);
-            $this->assertStringStartsNotWith($obsoletePath . 'Test.', $relativePath, $message);
-        }
+        $name = preg_quote($name, '/');
+        return (bool)preg_match('/\b(?:class|interface)\s+' . $name . '\b[^{]*\{/iS', $content);
+    }
+
+    /**
+     * Analyze contents to determine whether this is a direct descendant of specified class/interface
+     *
+     * @param string $content
+     * @param string $name
+     * @return bool
+     */
+    protected function _isDirectDescendant($content, $name)
+    {
+        $name = preg_quote($name, '/');
+        return (bool)preg_match(
+            '/\s+extends\s+' . $name . '\b|\s+implements\s+[^{]*\b' . $name . '\b[^{^\\\\]*\{/iS',
+            $content
+        );
     }
 
     /**
@@ -451,30 +466,6 @@ class ObsoleteCodeTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Build regular expression from Obsolete Constants with correspond to contents
-     *
-     * @param string $classPartialPath
-     * @param string $content
-     * @param string $constant
-     * @return string
-     */
-    private function buildRegExFromObsoleteConstant($classPartialPath, $content, $constant)
-    {
-        $regex = preg_quote("{$classPartialPath}::{$constant}");
-        if ($this->_isClassOrInterface($content, $classPartialPath)) {
-            $regex .= '|' . $this->_getClassConstantDefinitionRegExp($constant)
-                . '|' . preg_quote("self::{$constant}", '/')
-                . '|' . preg_quote("static::{$constant}", '/');
-        } elseif ($this->_isDirectDescendant($content, $classPartialPath)) {
-            $regex .= '|' . preg_quote("parent::{$constant}", '/');
-            if (!$this->_isClassConstantDefined($content, $constant)) {
-                $regex .= '|' . preg_quote("self::{$constant}", '/') . '|' . preg_quote("static::{$constant}", '/');
-            }
-        }
-        return $regex;
-    }
-
-    /**
      * Checks condition of using full classpath in 'use' with 'as' (Example: 'use A\B\C as D')
      * where A\B\C is the class where the constant is obsolete
      *
@@ -498,56 +489,6 @@ class ObsoleteCodeTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Check all combinations of classpath with constant
-     *
-     * @param string $constant
-     * @param string $class
-     * @param string $replacement
-     * @param string $content
-     */
-    private function _checkConstantWithClasspath($constant, $class, $replacement, $content)
-    {
-        $classPathParts = explode('\\', $class);
-        $classPartialPath = '';
-        for ($count = count($classPathParts), $i = $count - 1; $i >= 0; $i--) {
-            if ($i === ($count - 1)) {
-                $classPartialPath = $classPathParts[$i] . $classPartialPath;
-            } else {
-                $classPartialPath = $classPathParts[$i] . '\\' . $classPartialPath;
-            }
-            $constantRegex = $this->buildRegExFromObsoleteConstant($classPartialPath, $content, $constant);
-            $regexClassPartialPath = preg_replace('/' . preg_quote($classPartialPath) . '$/', '', $class);
-            $classRegex = preg_quote($regexClassPartialPath . $classPathParts[$i]);
-            if ($regexClassPartialPath !== '') {
-                $classRegex .= '|' . preg_quote(rtrim($regexClassPartialPath, '\\'));
-            }
-            // Checks condition when classpath is distributed over namespace and class definition
-            $classRegexNamespaceClass = '/namespace\s+' . preg_quote('\\') . '?(' . $classRegex . ')(\s|;)(\r?\n)+'
-                . 'class\s+' . preg_quote('\\') . '?(' . preg_quote(rtrim($classPartialPath, '\\')) . ')\s*/';
-            $matchNamespaceClass = preg_match($classRegexNamespaceClass, $content);
-            $constantRegexPartial = '/\b(?P<classWithConst>([a-zA-Z0-9_' . preg_quote('\\') . ']*))('
-                . preg_quote('::') . ')*' . '(' . preg_quote($constant, '/') . '\b)(\s*|;)/';
-            $matchConstantPartial = preg_match($constantRegexPartial, $content, $match);
-            if (($matchNamespaceClass === 1) && ($matchConstantPartial === 1) && ($match['classWithConst'] === '')) {
-                $this->assertSame(
-                    0,
-                    1,
-                    $this->_suggestReplacement(sprintf("Constant '%s' is obsolete.", $constant), $replacement)
-                );
-            } else {
-                $this->_checkExistenceOfObsoleteConstants(
-                    $constantRegex,
-                    $classRegex,
-                    $content,
-                    "{$classPartialPath}::{$constant}",
-                    $replacement,
-                    $class
-                );
-            }
-        }
-    }
-
-    /**
      * Check existence of Obsolete Constant in current content
      *
      * @param string $constantRegex
@@ -564,7 +505,8 @@ class ObsoleteCodeTest extends \PHPUnit\Framework\TestCase
         $constant,
         $replacement,
         $class
-    ) {
+    )
+    {
         $constantRegexFull = '/\b(?P<constPart>((?P<classWithConst>([a-zA-Z0-9_' . preg_quote('\\') . ']*))('
             . preg_quote('::') . ')*' . '(' . $constantRegex . '\b)))(\s*|;)/';
         $matchConstant = preg_match_all($constantRegexFull, $content, $matchConstantString);
@@ -618,7 +560,8 @@ class ObsoleteCodeTest extends \PHPUnit\Framework\TestCase
         $matchConstantString,
         $matchClassString,
         $class
-    ) {
+    )
+    {
         $foundProperUse = false;
         $foundAsComponent = false;
         $asComponent = $matchClassString['classAlias'];
@@ -651,37 +594,6 @@ class ObsoleteCodeTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Check proper usage of classpath in constant and 'use'/'namespace' when there is no 'as' alias
-     *
-     * @param string $matchConstantString
-     * @param string $matchClassString
-     * @param string $class
-     * @return int
-     */
-    private function _checkNoAliasUseNamespace(
-        $matchConstantString,
-        $matchClassString,
-        $class
-    ) {
-        $foundProperUse = false;
-        foreach ($matchConstantString['constPart'] as $constantMatch) {
-            $foundProperUse = $this->_checkCompletePathOfClass(
-                $constantMatch,
-                $matchClassString,
-                $class
-            );
-            if ($foundProperUse) {
-                break;
-            }
-        }
-        if ($foundProperUse) {
-            return 1;
-        } else {
-            return 0;
-        }
-    }
-
-    /**
      * Check if class path with constant and in 'use' or 'namespace' forms complete classpath
      *
      * @param string $constantMatch
@@ -697,7 +609,8 @@ class ObsoleteCodeTest extends \PHPUnit\Framework\TestCase
         $class,
         $foundAsComponent = false,
         $asComponent = ''
-    ) {
+    )
+    {
         $temp = explode('::', $constantMatch);
         $pathWithConst = trim(ltrim(str_replace('\\\\', '\\', $temp[0]), '\\'));
         if ($pathWithConst === $class) {
@@ -756,7 +669,8 @@ class ObsoleteCodeTest extends \PHPUnit\Framework\TestCase
         $matchClassString,
         $class,
         $foundAsComponent
-    ) {
+    )
+    {
         if ($pathInUseNamespaceTruncated === $pathInUseNamespace && $pathInUseNamespaceTruncated !== $class
             && ($foundAsComponent || (strpos($matchClassString['useOrNamespace'], 'namespace') !== false))) {
             return true;
@@ -781,7 +695,8 @@ class ObsoleteCodeTest extends \PHPUnit\Framework\TestCase
         $pathWithConst,
         $class,
         $foundAsComponent
-    ) {
+    )
+    {
         if ((($pathInUseNamespaceTruncated . '\\' . $pathWithConst === $class)
                 && ($pathInUseNamespaceTruncated !== $pathInUseNamespace) && !$foundAsComponent)
             || (($pathInUseNamespaceTruncated === $class) && (strpos($pathWithConst, '\\') === false)
@@ -790,6 +705,123 @@ class ObsoleteCodeTest extends \PHPUnit\Framework\TestCase
         } else {
             return false;
         }
+    }
+
+    /**
+     * Check proper usage of classpath in constant and 'use'/'namespace' when there is no 'as' alias
+     *
+     * @param string $matchConstantString
+     * @param string $matchClassString
+     * @param string $class
+     * @return int
+     */
+    private function _checkNoAliasUseNamespace(
+        $matchConstantString,
+        $matchClassString,
+        $class
+    )
+    {
+        $foundProperUse = false;
+        foreach ($matchConstantString['constPart'] as $constantMatch) {
+            $foundProperUse = $this->_checkCompletePathOfClass(
+                $constantMatch,
+                $matchClassString,
+                $class
+            );
+            if ($foundProperUse) {
+                break;
+            }
+        }
+        if ($foundProperUse) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    /**
+     * Check all combinations of classpath with constant
+     *
+     * @param string $constant
+     * @param string $class
+     * @param string $replacement
+     * @param string $content
+     */
+    private function _checkConstantWithClasspath($constant, $class, $replacement, $content)
+    {
+        $classPathParts = explode('\\', $class);
+        $classPartialPath = '';
+        for ($count = count($classPathParts), $i = $count - 1; $i >= 0; $i--) {
+            if ($i === ($count - 1)) {
+                $classPartialPath = $classPathParts[$i] . $classPartialPath;
+            } else {
+                $classPartialPath = $classPathParts[$i] . '\\' . $classPartialPath;
+            }
+            $constantRegex = $this->buildRegExFromObsoleteConstant($classPartialPath, $content, $constant);
+            $regexClassPartialPath = preg_replace('/' . preg_quote($classPartialPath) . '$/', '', $class);
+            $classRegex = preg_quote($regexClassPartialPath . $classPathParts[$i]);
+            if ($regexClassPartialPath !== '') {
+                $classRegex .= '|' . preg_quote(rtrim($regexClassPartialPath, '\\'));
+            }
+            // Checks condition when classpath is distributed over namespace and class definition
+            $classRegexNamespaceClass = '/namespace\s+' . preg_quote('\\') . '?(' . $classRegex . ')(\s|;)(\r?\n)+'
+                . 'class\s+' . preg_quote('\\') . '?(' . preg_quote(rtrim($classPartialPath, '\\')) . ')\s*/';
+            $matchNamespaceClass = preg_match($classRegexNamespaceClass, $content);
+            $constantRegexPartial = '/\b(?P<classWithConst>([a-zA-Z0-9_' . preg_quote('\\') . ']*))('
+                . preg_quote('::') . ')*' . '(' . preg_quote($constant, '/') . '\b)(\s*|;)/';
+            $matchConstantPartial = preg_match($constantRegexPartial, $content, $match);
+            if (($matchNamespaceClass === 1) && ($matchConstantPartial === 1) && ($match['classWithConst'] === '')) {
+                $this->assertSame(
+                    0,
+                    1,
+                    $this->_suggestReplacement(sprintf("Constant '%s' is obsolete.", $constant), $replacement)
+                );
+            } else {
+                $this->_checkExistenceOfObsoleteConstants(
+                    $constantRegex,
+                    $classRegex,
+                    $content,
+                    "{$classPartialPath}::{$constant}",
+                    $replacement,
+                    $class
+                );
+            }
+        }
+    }
+
+    /**
+     * Build regular expression from Obsolete Constants with correspond to contents
+     *
+     * @param string $classPartialPath
+     * @param string $content
+     * @param string $constant
+     * @return string
+     */
+    private function buildRegExFromObsoleteConstant($classPartialPath, $content, $constant)
+    {
+        $regex = preg_quote("{$classPartialPath}::{$constant}");
+        if ($this->_isClassOrInterface($content, $classPartialPath)) {
+            $regex .= '|' . $this->_getClassConstantDefinitionRegExp($constant)
+                . '|' . preg_quote("self::{$constant}", '/')
+                . '|' . preg_quote("static::{$constant}", '/');
+        } elseif ($this->_isDirectDescendant($content, $classPartialPath)) {
+            $regex .= '|' . preg_quote("parent::{$constant}", '/');
+            if (!$this->_isClassConstantDefined($content, $constant)) {
+                $regex .= '|' . preg_quote("self::{$constant}", '/') . '|' . preg_quote("static::{$constant}", '/');
+            }
+        }
+        return $regex;
+    }
+
+    /**
+     * Retrieve a PCRE matching a class constant definition
+     *
+     * @param string $constant
+     * @return string
+     */
+    protected function _getClassConstantDefinitionRegExp($constant)
+    {
+        return '\bconst\s+' . preg_quote($constant, '/') . '\b';
     }
 
     /**
@@ -805,17 +837,6 @@ class ObsoleteCodeTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Retrieve a PCRE matching a class constant definition
-     *
-     * @param string $constant
-     * @return string
-     */
-    protected function _getClassConstantDefinitionRegExp($constant)
-    {
-        return '\bconst\s+' . preg_quote($constant, '/') . '\b';
-    }
-
-    /**
      * @param string $content
      */
     protected function _testObsoletePropertySkipCalculate($content)
@@ -827,63 +848,111 @@ class ObsoleteCodeTest extends \PHPUnit\Framework\TestCase
         );
     }
 
-    /**
-     * Analyze contents to determine whether this is declaration of specified class/interface
-     *
-     * @param string $content
-     * @param string $name
-     * @return bool
-     */
-    protected function _isClassOrInterface($content, $name)
+    public function testClassFiles()
     {
-        $name = preg_quote($name, '/');
-        return (bool)preg_match('/\b(?:class|interface)\s+' . $name . '\b[^{]*\{/iS', $content);
-    }
-
-    /**
-     * Analyze contents to determine whether this is a direct descendant of specified class/interface
-     *
-     * @param string $content
-     * @param string $name
-     * @return bool
-     */
-    protected function _isDirectDescendant($content, $name)
-    {
-        $name = preg_quote($name, '/');
-        return (bool)preg_match(
-            '/\s+extends\s+' . $name . '\b|\s+implements\s+[^{]*\b' . $name . '\b[^{^\\\\]*\{/iS',
-            $content
+        $invoker = new AggregateInvoker($this);
+        $invoker(
+            function ($file) {
+                $this->_testObsoletePaths($file);
+            },
+            Files::init()->getPhpFiles()
         );
     }
 
     /**
-     * Append a "suggested replacement" part to the string
+     * Assert that obsolete paths are not used in the content
      *
-     * @param string $original
-     * @param string $suggestion
-     * @return string
+     * This method will search the content for references to class
+     * that start with obsolete namespace
+     *
+     * @param string $file
      */
-    private function _suggestReplacement($original, $suggestion)
+    protected function _testObsoletePaths($file)
     {
-        if ($suggestion) {
-            return "{$original} Suggested replacement: {$suggestion}";
+        foreach (self::$_paths as $row) {
+            list($obsoletePath, , $replacementPath) = $row;
+            $relativePath = str_replace(BP, '', $file);
+            $message = $this->_suggestReplacement(
+                "Path '{$obsoletePath}' is obsolete.",
+                $replacementPath
+            );
+            $this->assertStringStartsNotWith($obsoletePath . '/', $relativePath, $message);
+            $this->assertStringStartsNotWith($obsoletePath . '.', $relativePath, $message);
+            $this->assertStringStartsNotWith($obsoletePath . 'Factory.', $relativePath, $message);
+            $this->assertStringStartsNotWith($obsoletePath . 'Interface.', $relativePath, $message);
+            $this->assertStringStartsNotWith($obsoletePath . 'Test.', $relativePath, $message);
         }
-        return $original;
+    }
+
+    public function testTemplateMageCalls()
+    {
+        $invoker = new AggregateInvoker($this);
+        $invoker(
+            function ($file) {
+                $content = file_get_contents($file);
+                $this->_assertNotRegExp(
+                    '/\bMage::(\w+?)\(/iS',
+                    $content,
+                    "Static Method of 'Mage' class is obsolete."
+                );
+            },
+            Files::init()->getPhpFiles(
+                Files::INCLUDE_TEMPLATES
+                | Files::INCLUDE_TESTS
+                | Files::AS_DATA_SET
+            )
+        );
+    }
+
+    public function testXmlFiles()
+    {
+        $invoker = new AggregateInvoker($this);
+        $invoker(
+            function ($file) {
+                $content = file_get_contents($file);
+                $this->_testObsoleteClasses($content);
+                $this->_testObsoleteNamespaces($content);
+                $this->_testObsoletePaths($file);
+            },
+            Files::init()->getXmlFiles()
+        );
+    }
+
+    public function testJsFiles()
+    {
+        $invoker = new AggregateInvoker($this);
+        $invoker(
+            function ($file) {
+                $content = file_get_contents($file);
+                $this->_testObsoletePropertySkipCalculate($content);
+                if (strpos($file, 'requirejs-config.js') === false
+                    && (
+                        strpos($file, '/view/frontend/web/') !== false
+                        || strpos($file, '/view/base/web/') !== false
+                    )
+                ) {
+                    $this->_testJqueryUiLibraryIsNotUsedInJs($content);
+                }
+            },
+            Files::init()->getJsFiles()
+        );
     }
 
     /**
-     * Custom replacement for assertNotRegexp()
+     * Assert that jquery/ui library is not used in JS content.
      *
-     * In this particular test the original assertNotRegexp() cannot be used
-     * because of too large text $content, which obfuscates tests output
-     *
-     * @param string $regex
-     * @param string $content
-     * @param string $message
+     * @param string $fileContent
      */
-    protected function _assertNotRegexp($regex, $content, $message)
+    private function _testJqueryUiLibraryIsNotUsedInJs($fileContent)
     {
-        $this->assertSame(0, preg_match($regex, $content), $message);
+        $this->_assertNotRegexp(
+            '/(["\'])jquery\/ui\1/',
+            $fileContent,
+            $this->_suggestReplacement(
+                sprintf("Dependency '%s' is redundant.", 'jquery/ui'),
+                'Use separate jquery ui widget instead of all library.'
+            )
+        );
     }
 
     public function testMageMethodsObsolete()
@@ -901,11 +970,11 @@ class ObsoleteCodeTest extends \PHPUnit\Framework\TestCase
 
         $invoker = new AggregateInvoker($this);
         $invoker(
-            /**
-             * Check absence of obsolete Mage class usages
-             *
-             * @param string $file
-             */
+        /**
+         * Check absence of obsolete Mage class usages
+         *
+         * @param string $file
+         */
             function ($file) {
                 $this->_assertNotRegExp(
                     '/[^a-z\d_]Mage\s*::/i',
@@ -914,66 +983,6 @@ class ObsoleteCodeTest extends \PHPUnit\Framework\TestCase
                 );
             },
             $files
-        );
-    }
-
-    /**
-     * @param string $appPath
-     * @param string $pattern
-     * @return array
-     * @throws \Exception
-     */
-    private function processPattern($appPath, $pattern)
-    {
-        $files = [];
-        $relativePathStart = strlen($appPath);
-
-        $fileSet = glob($appPath . DIRECTORY_SEPARATOR . $pattern, GLOB_NOSORT);
-        foreach ($fileSet as $file) {
-            $files[] = ltrim(substr($file, $relativePathStart), '/');
-        }
-
-        return $files;
-    }
-
-    /**
-     * Reads list of blacklisted files
-     *
-     * @param bool $absolutePath
-     * @return array
-     * @throws \Exception
-     */
-    private function getBlacklistFiles($absolutePath = false)
-    {
-        $blackList = include __DIR__ . '/_files/blacklist/obsolete_mage.php';
-        $ignored = [];
-        $appPath = BP;
-        foreach ($blackList as $file) {
-            if ($absolutePath) {
-                // phpcs:ignore
-                $ignored = array_merge($ignored, glob($appPath . DIRECTORY_SEPARATOR . $file, GLOB_NOSORT));
-            } else {
-                // phpcs:ignore
-                $ignored = array_merge($ignored, $this->processPattern($appPath, $file));
-            }
-        }
-        return $ignored;
-    }
-
-    /**
-     * Assert that jquery/ui library is not used in JS content.
-     *
-     * @param string $fileContent
-     */
-    private function _testJqueryUiLibraryIsNotUsedInJs($fileContent)
-    {
-        $this->_assertNotRegexp(
-            '/(["\'])jquery\/ui\1/',
-            $fileContent,
-            $this->_suggestReplacement(
-                sprintf("Dependency '%s' is redundant.", 'jquery/ui'),
-                'Use separate jquery ui widget instead of all library.'
-            )
         );
     }
 }

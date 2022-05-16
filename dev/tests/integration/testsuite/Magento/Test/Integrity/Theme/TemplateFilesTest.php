@@ -3,9 +3,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Theme;
 
-class TemplateFilesTest extends \Magento\TestFramework\TestCase\AbstractIntegrity
+use Magento\Framework\View\FileSystem;
+use Magento\Framework\View\Layout\ProcessorInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractIntegrity;
+use PHPUnit\Framework\ExpectationFailedException;
+use SimpleXMLElement;
+
+class TemplateFilesTest extends AbstractIntegrity
 {
     /**
      * Note that data provider is not used in conventional way in order to not overwhelm test statistics
@@ -17,11 +25,11 @@ class TemplateFilesTest extends \Magento\TestFramework\TestCase\AbstractIntegrit
             list($area, $themeId, $module, $file, $xml) = $template;
             $params = ['area' => $area, 'themeId' => $themeId, 'module' => $module];
             try {
-                $templateFilename = \Magento\TestFramework\Helper\Bootstrap::getObjectmanager()
-                    ->get(\Magento\Framework\View\FileSystem::class)
+                $templateFilename = Bootstrap::getObjectmanager()
+                    ->get(FileSystem::class)
                     ->getTemplateFileName($file, $params);
                 $this->assertFileExists($templateFilename);
-            } catch (\PHPUnit\Framework\ExpectationFailedException $e) {
+            } catch (ExpectationFailedException $e) {
                 $invalidTemplates[] = "File \"{$templateFilename}\" does not exist." .
                     PHP_EOL .
                     "Parameters: {$area}/{$themeId} {$module}::{$file}" .
@@ -43,9 +51,9 @@ class TemplateFilesTest extends \Magento\TestFramework\TestCase\AbstractIntegrit
 
         $themes = $this->_getDesignThemes();
         foreach ($themes as $theme) {
-            /** @var \Magento\Framework\View\Layout\ProcessorInterface $layoutUpdate */
-            $layoutUpdate = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-                \Magento\Framework\View\Layout\ProcessorInterface::class,
+            /** @var ProcessorInterface $layoutUpdate */
+            $layoutUpdate = Bootstrap::getObjectManager()->create(
+                ProcessorInterface::class,
                 ['theme' => $theme]
             );
             $layoutTemplates = $this->_getLayoutTemplates($layoutUpdate->getFileLayoutUpdatesXml());
@@ -60,7 +68,7 @@ class TemplateFilesTest extends \Magento\TestFramework\TestCase\AbstractIntegrit
     /**
      * Get templates list that are defined in layout
      *
-     * @param  \SimpleXMLElement $layoutXml
+     * @param SimpleXMLElement $layoutXml
      * @return array
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
@@ -114,7 +122,7 @@ class TemplateFilesTest extends \Magento\TestFramework\TestCase\AbstractIntegrit
     /**
      * Get module name based on block definition in xml layout
      *
-     * @param  \SimpleXMLElement $xmlNode
+     * @param SimpleXMLElement $xmlNode
      * @return string
      */
     protected function _getBlockModule($xmlNode)

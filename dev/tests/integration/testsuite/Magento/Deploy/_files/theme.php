@@ -3,13 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Component\ComponentRegistrar;
+use Magento\Framework\Filesystem;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Theme\Model\Theme\Registration;
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 
-/* @var \Magento\Framework\Filesystem $filesystem */
-$filesystem = $objectManager->get(\Magento\Framework\Filesystem::class);
-$appDir = $filesystem->getDirectoryWrite(\Magento\Framework\App\Filesystem\DirectoryList::APP);
+/* @var Filesystem $filesystem */
+$filesystem = $objectManager->get(Filesystem::class);
+$appDir = $filesystem->getDirectoryWrite(DirectoryList::APP);
 
 if (!function_exists('rcopy')) {
     /**
@@ -84,6 +89,6 @@ if (!$registrar->getPath(ComponentRegistrar::THEME, 'frontend/Magento/zoom3')) {
     );
 }
 
-/** @var \Magento\Theme\Model\Theme\Registration $themeRegistration */
-$themeRegistration = $objectManager->get(\Magento\Theme\Model\Theme\Registration::class);
+/** @var Registration $themeRegistration */
+$themeRegistration = $objectManager->get(Registration::class);
 $themeRegistration->register();

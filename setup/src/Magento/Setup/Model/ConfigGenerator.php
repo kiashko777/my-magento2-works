@@ -6,13 +6,13 @@
 
 namespace Magento\Setup\Model;
 
+use Magento\Framework\App\DeploymentConfig;
 use Magento\Framework\App\ObjectManager;
+use Magento\Framework\App\State;
+use Magento\Framework\Config\ConfigOptionsListConstants;
 use Magento\Framework\Config\Data\ConfigData;
 use Magento\Framework\Config\Data\ConfigDataFactory;
 use Magento\Framework\Config\File\ConfigFilePool;
-use Magento\Framework\App\DeploymentConfig;
-use Magento\Framework\Config\ConfigOptionsListConstants;
-use Magento\Framework\App\State;
 use Magento\Framework\Math\Random;
 use Magento\Setup\Model\ConfigOptionsList\DriverOptions;
 
@@ -29,17 +29,17 @@ class ConfigGenerator
      * @var array
      */
     private static $paramMap = [
-        ConfigOptionsListConstants::INPUT_KEY_DB_HOST            => ConfigOptionsListConstants::KEY_HOST,
-        ConfigOptionsListConstants::INPUT_KEY_DB_NAME            => ConfigOptionsListConstants::KEY_NAME,
-        ConfigOptionsListConstants::INPUT_KEY_DB_USER            => ConfigOptionsListConstants::KEY_USER,
-        ConfigOptionsListConstants::INPUT_KEY_DB_PASSWORD        => ConfigOptionsListConstants::KEY_PASSWORD,
-        ConfigOptionsListConstants::INPUT_KEY_DB_PREFIX          => ConfigOptionsListConstants::KEY_PREFIX,
-        ConfigOptionsListConstants::INPUT_KEY_DB_MODEL           => ConfigOptionsListConstants::KEY_MODEL,
-        ConfigOptionsListConstants::INPUT_KEY_DB_ENGINE          => ConfigOptionsListConstants::KEY_ENGINE,
+        ConfigOptionsListConstants::INPUT_KEY_DB_HOST => ConfigOptionsListConstants::KEY_HOST,
+        ConfigOptionsListConstants::INPUT_KEY_DB_NAME => ConfigOptionsListConstants::KEY_NAME,
+        ConfigOptionsListConstants::INPUT_KEY_DB_USER => ConfigOptionsListConstants::KEY_USER,
+        ConfigOptionsListConstants::INPUT_KEY_DB_PASSWORD => ConfigOptionsListConstants::KEY_PASSWORD,
+        ConfigOptionsListConstants::INPUT_KEY_DB_PREFIX => ConfigOptionsListConstants::KEY_PREFIX,
+        ConfigOptionsListConstants::INPUT_KEY_DB_MODEL => ConfigOptionsListConstants::KEY_MODEL,
+        ConfigOptionsListConstants::INPUT_KEY_DB_ENGINE => ConfigOptionsListConstants::KEY_ENGINE,
         ConfigOptionsListConstants::INPUT_KEY_DB_INIT_STATEMENTS => ConfigOptionsListConstants::KEY_INIT_STATEMENTS,
-        ConfigOptionsListConstants::INPUT_KEY_ENCRYPTION_KEY     => ConfigOptionsListConstants::KEY_ENCRYPTION_KEY,
-        ConfigOptionsListConstants::INPUT_KEY_SESSION_SAVE       => ConfigOptionsListConstants::KEY_SAVE,
-        ConfigOptionsListConstants::INPUT_KEY_RESOURCE           => ConfigOptionsListConstants::KEY_RESOURCE,
+        ConfigOptionsListConstants::INPUT_KEY_ENCRYPTION_KEY => ConfigOptionsListConstants::KEY_ENCRYPTION_KEY,
+        ConfigOptionsListConstants::INPUT_KEY_SESSION_SAVE => ConfigOptionsListConstants::KEY_SAVE,
+        ConfigOptionsListConstants::INPUT_KEY_RESOURCE => ConfigOptionsListConstants::KEY_RESOURCE,
     ];
 
     /**
@@ -78,12 +78,13 @@ class ConfigGenerator
      * @param DriverOptions|null $driverOptions
      */
     public function __construct(
-        Random $random,
-        DeploymentConfig $deploymentConfig,
-        ConfigDataFactory $configDataFactory = null,
+        Random                     $random,
+        DeploymentConfig           $deploymentConfig,
+        ConfigDataFactory          $configDataFactory = null,
         CryptKeyGeneratorInterface $cryptKeyGenerator = null,
-        DriverOptions $driverOptions = null
-    ) {
+        DriverOptions              $driverOptions = null
+    )
+    {
         $this->random = $random;
         $this->deploymentConfig = $deploymentConfig;
         $this->configDataFactory = $configDataFactory ?? ObjectManager::getInstance()->get(ConfigDataFactory::class);

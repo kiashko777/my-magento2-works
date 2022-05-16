@@ -9,6 +9,9 @@ use Magento\SalesRule\Api\Data\ConditionInterface;
 use Magento\SalesRule\Api\Data\ConditionInterfaceFactory;
 use Magento\SalesRule\Api\RuleRepositoryInterface;
 use Magento\SalesRule\Model\CouponFactory;
+use Magento\SalesRule\Model\Rule\Condition\Combine;
+use Magento\SalesRule\Model\Rule\Condition\Product;
+use Magento\SalesRule\Model\Rule\Condition\Product\Found;
 use Magento\TestFramework\Helper\Bootstrap;
 
 /** @var CouponFactory $couponFactory */
@@ -28,7 +31,7 @@ $salesRule = $ruleRepository->getById($ruleId);
 
 /** @var ConditionInterface $conditionProductSku */
 $conditionProductSku = $conditionFactory->create();
-$conditionProductSku->setConditionType(\Magento\SalesRule\Model\Rule\Condition\Product::class);
+$conditionProductSku->setConditionType(Product::class);
 $conditionProductSku->setAttributeName('sku');
 $conditionProductSku->setValue('1');
 $conditionProductSku->setOperator('!=');
@@ -36,14 +39,14 @@ $conditionProductSku->setValue($sku);
 
 /** @var ConditionInterface $conditionProductFound */
 $conditionProductFound = $conditionFactory->create();
-$conditionProductFound->setConditionType(\Magento\SalesRule\Model\Rule\Condition\Product\Found::class);
+$conditionProductFound->setConditionType(Found::class);
 $conditionProductFound->setValue('1');
 $conditionProductFound->setAggregatorType('all');
 $conditionProductFound->setConditions([$conditionProductSku]);
 
 /** @var ConditionInterface $conditionCombine */
 $conditionCombine = $conditionFactory->create();
-$conditionCombine->setConditionType(\Magento\SalesRule\Model\Rule\Condition\Combine::class);
+$conditionCombine->setConditionType(Combine::class);
 $conditionCombine->setValue('1');
 $conditionCombine->setAggregatorType('all');
 $conditionCombine->setConditions([$conditionProductFound]);

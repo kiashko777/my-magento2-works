@@ -3,19 +3,25 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogSearch\Model\ResourceModel\Fulltext;
+
+use Magento\Catalog\Model\Layer\Category;
+use Magento\Catalog\Model\Layer\Search;
+use Magento\Catalog\Model\Product;
+use Magento\CatalogInventory\Api\StockItemRepositoryInterface;
+use Magento\CatalogInventory\Model\StockRegistry;
+use Magento\Eav\Model\Config;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\CatalogSearch\Model\ResourceModel\Fulltext\Collection.
  * @magentoDbIsolation disabled
  */
-class CollectionTest extends \PHPUnit\Framework\TestCase
+class CollectionTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        $this->markTestSkipped("MC-18332: Mysql Search Engine is deprecated and will be removed");
-    }
-
     /**
      * @dataProvider filtersDataProviderSearch
      * @magentoDataFixture Magento/Framework/Search/_files/products.php
@@ -24,10 +30,10 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
      */
     public function testLoadWithFilterSearch($request, $filters, $expectedCount)
     {
-        $objManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var  \Magento\CatalogSearch\Model\ResourceModel\Fulltext\Collection $fulltextCollection */
+        $objManager = Bootstrap::getObjectManager();
+        /** @var  Collection $fulltextCollection */
         $fulltextCollection = $objManager->create(
-            \Magento\CatalogSearch\Model\ResourceModel\Fulltext\Collection::class,
+            Collection::class,
             ['searchRequestName' => $request]
         );
         foreach ($filters as $field => $value) {
@@ -48,9 +54,9 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
      */
     public function testLoadWithFilterQuickSearch($filters, $expectedCount)
     {
-        $objManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $searchLayer = $objManager->create(\Magento\Catalog\Model\Layer\Search::class);
-        /** @var  \Magento\CatalogSearch\Model\ResourceModel\Fulltext\Collection $fulltextCollection */
+        $objManager = Bootstrap::getObjectManager();
+        $searchLayer = $objManager->create(Search::class);
+        /** @var  Collection $fulltextCollection */
         $fulltextCollection = $searchLayer->getProductCollection();
         foreach ($filters as $field => $value) {
             $fulltextCollection->addFieldToFilter($field, $value);
@@ -70,9 +76,9 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
      */
     public function testLoadWithFilterCatalogView($filters, $expectedCount)
     {
-        $objManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $searchLayer = $objManager->create(\Magento\Catalog\Model\Layer\Category::class);
-        /** @var  \Magento\CatalogSearch\Model\ResourceModel\Fulltext\Collection $fulltextCollection */
+        $objManager = Bootstrap::getObjectManager();
+        $searchLayer = $objManager->create(Category::class);
+        /** @var  Collection $fulltextCollection */
         $fulltextCollection = $searchLayer->getProductCollection();
         foreach ($filters as $field => $value) {
             $fulltextCollection->addFieldToFilter($field, $value);
@@ -91,11 +97,11 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
         $howManySearchRequests = 3;
         $previousResult = null;
 
-        $objManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objManager = Bootstrap::getObjectManager();
 
         foreach (range(1, $howManySearchRequests) as $i) {
-            $searchLayer = $objManager->create(\Magento\Catalog\Model\Layer\Search::class);
-            /** @var  \Magento\CatalogSearch\Model\ResourceModel\Fulltext\Collection $fulltextCollection */
+            $searchLayer = $objManager->create(Search::class);
+            /** @var  Collection $fulltextCollection */
             $fulltextCollection = $searchLayer->getProductCollection();
 
             $fulltextCollection->addSearchFilter('shorts');
@@ -160,17 +166,17 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
      * @param array $filters
      * @param bool $found
      * @param array $outOfStock
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @throws NoSuchEntityException
      */
     public function testConfigurableProductWithMultipleOptions(array $filters, bool $found, array $outOfStock = [])
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /**@var $stockRegistry \Magento\CatalogInventory\Model\StockRegistry */
-        $stockRegistry = $objectManager->get(\Magento\CatalogInventory\Model\StockRegistry::class);
-        /**@var $stockItemRepository \Magento\CatalogInventory\Api\StockItemRepositoryInterface */
-        $stockItemRepository = $objectManager->get(\Magento\CatalogInventory\Api\StockItemRepositoryInterface::class);
+        $objectManager = Bootstrap::getObjectManager();
+        /**@var $stockRegistry StockRegistry */
+        $stockRegistry = $objectManager->get(StockRegistry::class);
+        /**@var $stockItemRepository StockItemRepositoryInterface */
+        $stockItemRepository = $objectManager->get(StockItemRepositoryInterface::class);
         $collection = $objectManager->create(
-            \Magento\CatalogSearch\Model\ResourceModel\Fulltext\Collection::class,
+            Collection::class,
             ['searchRequestName' => 'filter_by_configurable_product_options']
         );
         foreach ($outOfStock as $sku) {
@@ -198,6 +204,27 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
             $this->assertEquals('configurable_with_2_opts', $item['sku']);
         }
         $this->assertCount(0, $items);
+    }
+
+    /**
+     * Get attribute option value by label
+     *
+     * @param string $attributeName
+     * @param string $optionLabel
+     * @return string|null
+     */
+    private function getOptionValue(string $attributeName, string $optionLabel): ?string
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $eavConfig = $objectManager->get(Config::class);
+        $attribute = $eavConfig->getAttribute(Product::ENTITY, $attributeName);
+        $option = null;
+        foreach ($attribute->getOptions() as $option) {
+            if ($option->getLabel() === $optionLabel) {
+                return $option->getValue();
+            }
+        }
+        return null;
     }
 
     /**
@@ -281,24 +308,8 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
         ];
     }
 
-    /**
-     * Get attribute option value by label
-     *
-     * @param string $attributeName
-     * @param string $optionLabel
-     * @return string|null
-     */
-    private function getOptionValue(string $attributeName, string $optionLabel): ?string
+    protected function setUp(): void
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $eavConfig = $objectManager->get(\Magento\Eav\Model\Config::class);
-        $attribute = $eavConfig->getAttribute(\Magento\Catalog\Model\Product::ENTITY, $attributeName);
-        $option = null;
-        foreach ($attribute->getOptions() as $option) {
-            if ($option->getLabel() === $optionLabel) {
-                return $option->getValue();
-            }
-        }
-        return null;
+        $this->markTestSkipped("MC-18332: Mysql Search Engine is deprecated and will be removed");
     }
 }

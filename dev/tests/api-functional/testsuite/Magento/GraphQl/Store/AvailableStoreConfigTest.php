@@ -37,16 +37,6 @@ class AvailableStoreConfigTest extends GraphQlAbstract
     private $storeResource;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->storeConfigManager = $this->objectManager->get(StoreConfigManagerInterface::class);
-        $this->storeResource = $this->objectManager->get(StoreResource::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Store/_files/store.php
      * @magentoApiDataFixture Magento/Store/_files/inactive_store.php
      */
@@ -109,6 +99,53 @@ QUERY;
     }
 
     /**
+     * Validate Store Config Data
+     *
+     * @param StoreConfigInterface $storeConfig
+     * @param array $responseConfig
+     */
+    private function validateStoreConfig(StoreConfigInterface $storeConfig, array $responseConfig): void
+    {
+        /** @var Store $store */
+        $store = $this->objectManager->get(Store::class);
+        $this->storeResource->load($store, $storeConfig->getCode(), 'code');
+        $this->assertEquals($storeConfig->getId(), $responseConfig['id']);
+        $this->assertEquals($storeConfig->getCode(), $responseConfig['code']);
+        $this->assertEquals($store->getName(), $responseConfig['store_name']);
+        $this->assertEquals($store->getSortOrder(), $responseConfig['store_sort_order']);
+        $this->assertEquals(
+            $store->getGroup()->getDefaultStoreId() == $store->getId(),
+            $responseConfig['is_default_store']
+        );
+        $this->assertEquals($store->getGroup()->getCode(), $responseConfig['store_group_code']);
+        $this->assertEquals($store->getGroup()->getName(), $responseConfig['store_group_name']);
+        $this->assertEquals(
+            $store->getWebsite()->getDefaultGroupId() === $store->getGroupId(),
+            $responseConfig['is_default_store_group']
+        );
+        $this->assertEquals($store->getWebsite()->getCode(), $responseConfig['website_code']);
+        $this->assertEquals($store->getWebsite()->getName(), $responseConfig['website_name']);
+        $this->assertEquals($storeConfig->getCode(), $responseConfig['store_code']);
+        $this->assertEquals($storeConfig->getLocale(), $responseConfig['locale']);
+        $this->assertEquals($storeConfig->getBaseCurrencyCode(), $responseConfig['base_currency_code']);
+        $this->assertEquals(
+            $storeConfig->getDefaultDisplayCurrencyCode(),
+            $responseConfig['default_display_currency_code']
+        );
+        $this->assertEquals($storeConfig->getTimezone(), $responseConfig['timezone']);
+        $this->assertEquals($storeConfig->getWeightUnit(), $responseConfig['weight_unit']);
+        $this->assertEquals($storeConfig->getBaseUrl(), $responseConfig['base_url']);
+        $this->assertEquals($storeConfig->getBaseLinkUrl(), $responseConfig['base_link_url']);
+        $this->assertEquals($storeConfig->getBaseStaticUrl(), $responseConfig['base_static_url']);
+        $this->assertEquals($storeConfig->getBaseMediaUrl(), $responseConfig['base_media_url']);
+        $this->assertEquals($storeConfig->getSecureBaseUrl(), $responseConfig['secure_base_url']);
+        $this->assertEquals($storeConfig->getSecureBaseLinkUrl(), $responseConfig['secure_base_link_url']);
+        $this->assertEquals($storeConfig->getSecureBaseStaticUrl(), $responseConfig['secure_base_static_url']);
+        $this->assertEquals($storeConfig->getSecureBaseMediaUrl(), $responseConfig['secure_base_media_url']);
+        $this->assertEquals($store->isUseStoreInUrl(), $responseConfig['use_store_in_url']);
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Store/_files/second_website_with_two_stores.php
      */
     public function testNonDefaultWebsiteAvailableStoreConfigs(): void
@@ -156,53 +193,6 @@ QUERY;
         foreach ($storeConfigs as $key => $storeConfig) {
             $this->validateStoreConfig($storeConfig, $response['availableStores'][$key]);
         }
-    }
-
-    /**
-     * Validate Store Config Data
-     *
-     * @param StoreConfigInterface $storeConfig
-     * @param array $responseConfig
-     */
-    private function validateStoreConfig(StoreConfigInterface $storeConfig, array $responseConfig): void
-    {
-        /** @var Store $store */
-        $store = $this->objectManager->get(Store::class);
-        $this->storeResource->load($store, $storeConfig->getCode(), 'code');
-        $this->assertEquals($storeConfig->getId(), $responseConfig['id']);
-        $this->assertEquals($storeConfig->getCode(), $responseConfig['code']);
-        $this->assertEquals($store->getName(), $responseConfig['store_name']);
-        $this->assertEquals($store->getSortOrder(), $responseConfig['store_sort_order']);
-        $this->assertEquals(
-            $store->getGroup()->getDefaultStoreId() == $store->getId(),
-            $responseConfig['is_default_store']
-        );
-        $this->assertEquals($store->getGroup()->getCode(), $responseConfig['store_group_code']);
-        $this->assertEquals($store->getGroup()->getName(), $responseConfig['store_group_name']);
-        $this->assertEquals(
-            $store->getWebsite()->getDefaultGroupId() === $store->getGroupId(),
-            $responseConfig['is_default_store_group']
-        );
-        $this->assertEquals($store->getWebsite()->getCode(), $responseConfig['website_code']);
-        $this->assertEquals($store->getWebsite()->getName(), $responseConfig['website_name']);
-        $this->assertEquals($storeConfig->getCode(), $responseConfig['store_code']);
-        $this->assertEquals($storeConfig->getLocale(), $responseConfig['locale']);
-        $this->assertEquals($storeConfig->getBaseCurrencyCode(), $responseConfig['base_currency_code']);
-        $this->assertEquals(
-            $storeConfig->getDefaultDisplayCurrencyCode(),
-            $responseConfig['default_display_currency_code']
-        );
-        $this->assertEquals($storeConfig->getTimezone(), $responseConfig['timezone']);
-        $this->assertEquals($storeConfig->getWeightUnit(), $responseConfig['weight_unit']);
-        $this->assertEquals($storeConfig->getBaseUrl(), $responseConfig['base_url']);
-        $this->assertEquals($storeConfig->getBaseLinkUrl(), $responseConfig['base_link_url']);
-        $this->assertEquals($storeConfig->getBaseStaticUrl(), $responseConfig['base_static_url']);
-        $this->assertEquals($storeConfig->getBaseMediaUrl(), $responseConfig['base_media_url']);
-        $this->assertEquals($storeConfig->getSecureBaseUrl(), $responseConfig['secure_base_url']);
-        $this->assertEquals($storeConfig->getSecureBaseLinkUrl(), $responseConfig['secure_base_link_url']);
-        $this->assertEquals($storeConfig->getSecureBaseStaticUrl(), $responseConfig['secure_base_static_url']);
-        $this->assertEquals($storeConfig->getSecureBaseMediaUrl(), $responseConfig['secure_base_media_url']);
-        $this->assertEquals($store->isUseStoreInUrl(), $responseConfig['use_store_in_url']);
     }
 
     /**
@@ -314,5 +304,15 @@ QUERY;
         foreach ($response['availableStores'] as $key => $responseConfig) {
             $this->validateStoreConfig($storeConfigs[$key], $responseConfig);
         }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->storeConfigManager = $this->objectManager->get(StoreConfigManagerInterface::class);
+        $this->storeResource = $this->objectManager->get(StoreResource::class);
     }
 }

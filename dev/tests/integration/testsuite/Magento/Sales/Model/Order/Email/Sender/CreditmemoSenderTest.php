@@ -28,14 +28,6 @@ class CreditmemoSenderTest extends TestCase
     private $customerRepository;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->customerRepository = Bootstrap::getObjectManager()->get(CustomerRepositoryInterface::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Sales/_files/order.php
      */
     public function testSend()
@@ -81,6 +73,37 @@ class CreditmemoSenderTest extends TestCase
         $this->assertEquals(self::NEW_CUSTOMER_EMAIL, $craditmemoIdentity->getCustomerEmail());
         $this->assertTrue($result);
         $this->assertNotEmpty($creditmemo->getEmailSent());
+    }
+
+    private function createOrder(): Order
+    {
+        $order = Bootstrap::getObjectManager()->create(Order::class);
+        $order->loadByIncrementId('100000001');
+
+        return $order;
+    }
+
+    private function createCreditmemo(Order $order): Creditmemo
+    {
+        $creditmemo = Bootstrap::getObjectManager()->create(Creditmemo::class);
+        $creditmemo->setOrder($order);
+        return $creditmemo;
+    }
+
+    private function createCreditMemoIdentity(): CreditmemoIdentity
+    {
+        return Bootstrap::getObjectManager()->create(CreditmemoIdentity::class);
+    }
+
+    private function createCreditMemoSender(CreditmemoIdentity $creditmemoIdentity): CreditmemoSender
+    {
+        return Bootstrap::getObjectManager()
+            ->create(
+                CreditmemoSender::class,
+                [
+                    'identityContainer' => $creditmemoIdentity,
+                ]
+            );
     }
 
     /**
@@ -152,34 +175,11 @@ class CreditmemoSenderTest extends TestCase
         $this->assertTrue($creditmemo->getSendEmail());
     }
 
-    private function createCreditmemo(Order $order): Creditmemo
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
     {
-        $creditmemo = Bootstrap::getObjectManager()->create(Creditmemo::class);
-        $creditmemo->setOrder($order);
-        return $creditmemo;
-    }
-
-    private function createOrder(): Order
-    {
-        $order = Bootstrap::getObjectManager()->create(Order::class);
-        $order->loadByIncrementId('100000001');
-
-        return $order;
-    }
-
-    private function createCreditMemoIdentity(): CreditmemoIdentity
-    {
-        return Bootstrap::getObjectManager()->create(CreditmemoIdentity::class);
-    }
-
-    private function createCreditMemoSender(CreditmemoIdentity $creditmemoIdentity): CreditmemoSender
-    {
-        return Bootstrap::getObjectManager()
-            ->create(
-                CreditmemoSender::class,
-                [
-                    'identityContainer' => $creditmemoIdentity,
-                ]
-            );
+        $this->customerRepository = Bootstrap::getObjectManager()->get(CustomerRepositoryInterface::class);
     }
 }

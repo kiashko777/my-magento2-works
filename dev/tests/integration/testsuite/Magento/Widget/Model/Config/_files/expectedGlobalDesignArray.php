@@ -3,9 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Catalog\Block\Adminhtml\Product\Widget\Chooser;
+use Magento\Config\Model\Config\Source\Yesno;
+use Magento\Sales\Block\Widget\Guest\Form;
+
 return [
     'sales_widget_guestform' => [
-        '@' => ['type' => \Magento\Sales\Block\Widget\Guest\Form::class],
+        '@' => ['type' => Form::class],
         'is_email_compatible' => '1',
         'name' => 'Orders and Returns',
         'description' => 'Orders and Returns Search Form',
@@ -27,7 +32,7 @@ return [
                 'visible' => '0',
             ],
             'link_display' => [
-                'source_model' => \Magento\Config\Model\Config\Source\Yesno::class,
+                'source_model' => Yesno::class,
                 'type' => 'select',
                 'visible' => '1',
                 'sort_order' => '10',
@@ -48,7 +53,7 @@ return [
                 'type' => 'label',
                 '@' => ['type' => 'complex'],
                 'helper_block' => [
-                    'type' => \Magento\Catalog\Block\Adminhtml\Product\Widget\Chooser::class,
+                    'type' => Chooser::class,
                     'data' => ['button' => ['open' => 'Select Products...']],
                 ],
                 'visible' => '1',
@@ -63,7 +68,7 @@ return [
         ],
     ],
     'new_products' => [
-        '@' => ['type' => \Magento\Sales\Block\Widget\Guest\Form::class],
+        '@' => ['type' => Form::class],
         'is_email_compatible' => '1',
         'name' => 'Orders and Returns',
         'description' => 'Orders and Returns Search Form',

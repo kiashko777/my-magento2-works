@@ -23,14 +23,6 @@ class MultiSelectTest extends TestCase
     private $factory;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->factory = Bootstrap::getObjectManager()->get(MultiSelectFactory::class);
-    }
-
-    /**
      * Options data to verify
      *
      * @return array
@@ -55,8 +47,7 @@ class MultiSelectTest extends TestCase
                 ]
             ],
             'provider' => [
-                new class implements OptionSourceInterface
-                {
+                new class implements OptionSourceInterface {
                     /**
                      * @inheritDoc
                      */
@@ -85,5 +76,13 @@ class MultiSelectTest extends TestCase
         $component->prepare();
 
         $this->assertEquals($expected, $component->getData('config')['options']);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->factory = Bootstrap::getObjectManager()->get(MultiSelectFactory::class);
     }
 }

@@ -3,18 +3,25 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\ImportExport\Block\Adminhtml\Export\Edit;
+
+use Magento\Framework\Data\Form\Element\AbstractElement;
+use Magento\Framework\Data\Form\Element\Fieldset;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for block \Magento\ImportExport\Block\Adminhtml\Export\Edit\Form
  * @magentoAppArea Adminhtml
  */
-class FormTest extends \PHPUnit\Framework\TestCase
+class FormTest extends TestCase
 {
     /**
      * Testing model
      *
-     * @var \Magento\ImportExport\Block\Adminhtml\Export\Edit\Form
+     * @var Form
      */
     protected $_model;
 
@@ -36,16 +43,6 @@ class FormTest extends \PHPUnit\Framework\TestCase
         'fields_enclosure' => 'fields_enclosure'
     ]];
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
-        )->createBlock(
-            \Magento\ImportExport\Block\Adminhtml\Export\Edit\Form::class
-        );
-    }
-
     /**
      * Test preparing of form
      *
@@ -60,22 +57,32 @@ class FormTest extends \PHPUnit\Framework\TestCase
         $actualFieldsets = [];
         $formElements = $this->_model->getForm()->getElements();
         foreach ($formElements as $formElement) {
-            if ($formElement instanceof \Magento\Framework\Data\Form\Element\Fieldset) {
+            if ($formElement instanceof Fieldset) {
                 $actualFieldsets[] = $formElement;
             }
         }
 
         // assert fieldsets and fields
         $this->assertSameSize($this->_expectedFields, $actualFieldsets);
-        /** @var $actualFieldset \Magento\Framework\Data\Form\Element\Fieldset */
+        /** @var $actualFieldset Fieldset */
         foreach ($actualFieldsets as $actualFieldset) {
             $this->assertArrayHasKey($actualFieldset->getId(), $this->_expectedFields);
             $expectedFields = $this->_expectedFields[$actualFieldset->getId()];
-            /** @var $actualField \Magento\Framework\Data\Form\Element\AbstractElement */
+            /** @var $actualField AbstractElement */
             foreach ($actualFieldset->getElements() as $actualField) {
                 $this->assertArrayHasKey($actualField->getId(), $expectedFields);
                 $this->assertEquals($expectedFields[$actualField->getId()], $actualField->getName());
             }
         }
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->_model = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
+        )->createBlock(
+            Form::class
+        );
     }
 }

@@ -116,36 +116,6 @@ class CreateAccountTest extends TestCase
     private $templateCollectionFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->accountManagement = $this->objectManager->get(AccountManagementInterface::class);
-        $this->customerFactory = $this->objectManager->get(CustomerInterfaceFactory::class);
-        $this->dataObjectHelper = $this->objectManager->create(DataObjectHelper::class);
-        $this->transportBuilderMock = $this->objectManager->get(TransportBuilderMock::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
-        $this->extensibleDataObjectConverter = $this->objectManager->get(ExtensibleDataObjectConverter::class);
-        $this->customerModelFactory = $this->objectManager->get(CustomerFactory::class);
-        $this->random = $this->objectManager->get(Random::class);
-        $this->encryptor = $this->objectManager->get(EncryptorInterface::class);
-        $this->mutableScopeConfig = $this->objectManager->get(MutableScopeConfigInterface::class);
-        $this->templateCollectionFactory = $this->objectManager->get(TemplateCollectionFactory::class);
-        parent::setUp();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        parent::tearDown();
-        $this->mutableScopeConfig->clean();
-    }
-
-    /**
      * @dataProvider createInvalidAccountDataProvider
      * @param array $customerData
      * @param string $password
@@ -154,15 +124,44 @@ class CreateAccountTest extends TestCase
      * @return void
      */
     public function testCreateAccountWithInvalidFields(
-        array $customerData,
+        array  $customerData,
         string $password,
         string $errorType,
-        array $errorMessage
-    ): void {
+        array  $errorMessage
+    ): void
+    {
         $customerEntity = $this->populateCustomerEntity($this->defaultCustomerData, $customerData);
         $this->expectException($errorType);
         $this->expectExceptionMessage((string)__(...$errorMessage));
         $this->accountManagement->createAccount($customerEntity, $password);
+    }
+
+    /**
+     * Fill in customer entity using array of customer data and additional customer data.
+     *
+     * @param array $customerData
+     * @param array $additionalCustomerData
+     * @param CustomerInterface|null $customerEntity
+     * @return CustomerInterface
+     */
+    private function populateCustomerEntity(
+        array              $customerData,
+        array              $additionalCustomerData = [],
+        ?CustomerInterface $customerEntity = null
+    ): CustomerInterface
+    {
+        $customerEntity = $customerEntity ?? $this->customerFactory->create();
+        $customerData = array_merge(
+            $customerData,
+            $additionalCustomerData
+        );
+        $this->dataObjectHelper->populateWithArray(
+            $customerEntity,
+            $customerData,
+            CustomerInterface::class
+        );
+
+        return $customerEntity;
     }
 
     /**
@@ -174,13 +173,13 @@ class CreateAccountTest extends TestCase
             'empty_firstname' => [
                 'customer_data' => ['firstname' => ''],
                 'password' => '_aPassword1',
-                'error_type' =>  Exception::class,
+                'error_type' => Exception::class,
                 'error_message' => ['"%1" is a required value.', 'First Name'],
             ],
             'empty_lastname' => [
                 'customer_data' => ['lastname' => ''],
                 'password' => '_aPassword1',
-                'error_type' =>  Exception::class,
+                'error_type' => Exception::class,
                 'error_message' => ['"%1" is a required value.', 'Last Name'],
             ],
             'empty_email' => [
@@ -246,6 +245,22 @@ class CreateAccountTest extends TestCase
     }
 
     /**
+     * Returns random numeric string with given length.
+     *
+     * @param int $length
+     * @return string
+     */
+    private function getRandomNumericString(int $length): string
+    {
+        $string = '';
+        for ($i = 0; $i <= $length; $i++) {
+            $string .= Random::getRandomNumber(0, 9);
+        }
+
+        return $string;
+    }
+
+    /**
      * @magentoAppArea frontend
      * @magentoDataFixture Magento/Customer/_files/customer_welcome_email_template.php
      * @return void
@@ -264,6 +279,55 @@ class CreateAccountTest extends TestCase
                 'email' => 'owner@example.com',
                 'message' => 'Customer create account email template',
             ]
+        );
+    }
+
+    /**
+     * Returns email template id by template code.
+     *
+     * @param string $templateCode
+     * @return int
+     */
+    private function getCustomTemplateId(string $templateCode): int
+    {
+        return (int)$this->templateCollectionFactory->create()
+            ->addFieldToFilter('template_code', $templateCode)
+            ->getFirstItem()
+            ->getId();
+    }
+
+    /**
+     * Sets config data.
+     *
+     * @param array $configs
+     * @return void
+     */
+    private function setConfig(array $configs): void
+    {
+        foreach ($configs as $path => $value) {
+            $this->mutableScopeConfig->setValue($path, $value, ScopeInterface::SCOPE_STORE, 'default');
+        }
+    }
+
+    /**
+     * Assert email data.
+     *
+     * @param array $expectedData
+     * @return void
+     */
+    private function assertEmailData(array $expectedData): void
+    {
+        $message = $this->transportBuilderMock->getSentMessage();
+        $this->assertNotNull($message);
+        $messageFrom = $message->getFrom();
+        $this->assertNotNull($messageFrom);
+        $messageFrom = reset($messageFrom);
+        $this->assertEquals($expectedData['name'], $messageFrom->getName());
+        $this->assertEquals($expectedData['email'], $messageFrom->getEmail());
+        $this->assertStringContainsString(
+            $expectedData['message'],
+            $message->getBody()->getParts()[0]->getRawContent(),
+            'Expected message wasn\'t found in email content.'
         );
     }
 
@@ -374,6 +438,28 @@ class CreateAccountTest extends TestCase
 
         $this->assertNotNull($savedCustomerEntity->getId());
         $this->assertCustomerData($savedCustomerEntity, $expectedCustomerData);
+    }
+
+    /**
+     * Check that customer parameters match expected values.
+     *
+     * @param CustomerInterface $customer
+     * @param array $expectedData
+     * return void
+     */
+    private function assertCustomerData(
+        CustomerInterface $customer,
+        array             $expectedData
+    ): void
+    {
+        $actualCustomerArray = $customer->__toArray();
+        foreach ($expectedData as $key => $expectedValue) {
+            $this->assertEquals(
+                $expectedValue,
+                $actualCustomerArray[$key],
+                "Invalid expected value for $key field."
+            );
+        }
     }
 
     /**
@@ -644,115 +730,32 @@ class CreateAccountTest extends TestCase
     }
 
     /**
-     * Returns random numeric string with given length.
-     *
-     * @param int $length
-     * @return string
+     * @inheritdoc
      */
-    private function getRandomNumericString(int $length): string
+    protected function setUp(): void
     {
-        $string = '';
-        for ($i = 0; $i <= $length; $i++) {
-            $string .= Random::getRandomNumber(0, 9);
-        }
-
-        return $string;
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->accountManagement = $this->objectManager->get(AccountManagementInterface::class);
+        $this->customerFactory = $this->objectManager->get(CustomerInterfaceFactory::class);
+        $this->dataObjectHelper = $this->objectManager->create(DataObjectHelper::class);
+        $this->transportBuilderMock = $this->objectManager->get(TransportBuilderMock::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
+        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
+        $this->extensibleDataObjectConverter = $this->objectManager->get(ExtensibleDataObjectConverter::class);
+        $this->customerModelFactory = $this->objectManager->get(CustomerFactory::class);
+        $this->random = $this->objectManager->get(Random::class);
+        $this->encryptor = $this->objectManager->get(EncryptorInterface::class);
+        $this->mutableScopeConfig = $this->objectManager->get(MutableScopeConfigInterface::class);
+        $this->templateCollectionFactory = $this->objectManager->get(TemplateCollectionFactory::class);
+        parent::setUp();
     }
 
     /**
-     * Fill in customer entity using array of customer data and additional customer data.
-     *
-     * @param array $customerData
-     * @param array $additionalCustomerData
-     * @param CustomerInterface|null $customerEntity
-     * @return CustomerInterface
+     * @inheritdoc
      */
-    private function populateCustomerEntity(
-        array $customerData,
-        array $additionalCustomerData = [],
-        ?CustomerInterface $customerEntity = null
-    ): CustomerInterface {
-        $customerEntity = $customerEntity ?? $this->customerFactory->create();
-        $customerData = array_merge(
-            $customerData,
-            $additionalCustomerData
-        );
-        $this->dataObjectHelper->populateWithArray(
-            $customerEntity,
-            $customerData,
-            CustomerInterface::class
-        );
-
-        return $customerEntity;
-    }
-
-    /**
-     * Check that customer parameters match expected values.
-     *
-     * @param CustomerInterface $customer
-     * @param array $expectedData
-     * return void
-     */
-    private function assertCustomerData(
-        CustomerInterface $customer,
-        array $expectedData
-    ): void {
-        $actualCustomerArray = $customer->__toArray();
-        foreach ($expectedData as $key => $expectedValue) {
-            $this->assertEquals(
-                $expectedValue,
-                $actualCustomerArray[$key],
-                "Invalid expected value for $key field."
-            );
-        }
-    }
-
-    /**
-     * Sets config data.
-     *
-     * @param array $configs
-     * @return void
-     */
-    private function setConfig(array $configs): void
+    protected function tearDown(): void
     {
-        foreach ($configs as $path => $value) {
-            $this->mutableScopeConfig->setValue($path, $value, ScopeInterface::SCOPE_STORE, 'default');
-        }
-    }
-
-    /**
-     * Assert email data.
-     *
-     * @param array $expectedData
-     * @return void
-     */
-    private function assertEmailData(array $expectedData): void
-    {
-        $message = $this->transportBuilderMock->getSentMessage();
-        $this->assertNotNull($message);
-        $messageFrom = $message->getFrom();
-        $this->assertNotNull($messageFrom);
-        $messageFrom = reset($messageFrom);
-        $this->assertEquals($expectedData['name'], $messageFrom->getName());
-        $this->assertEquals($expectedData['email'], $messageFrom->getEmail());
-        $this->assertStringContainsString(
-            $expectedData['message'],
-            $message->getBody()->getParts()[0]->getRawContent(),
-            'Expected message wasn\'t found in email content.'
-        );
-    }
-
-    /**
-     * Returns email template id by template code.
-     *
-     * @param string $templateCode
-     * @return int
-     */
-    private function getCustomTemplateId(string $templateCode): int
-    {
-        return (int)$this->templateCollectionFactory->create()
-            ->addFieldToFilter('template_code', $templateCode)
-            ->getFirstItem()
-            ->getId();
+        parent::tearDown();
+        $this->mutableScopeConfig->clean();
     }
 }

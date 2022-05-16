@@ -3,23 +3,31 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\TestCase\Webapi\Adapter;
 
+use Laminas\Soap\Client;
+use LogicException;
 use Magento\Framework\Api\SimpleDataObjectConverter;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Authentication\OauthHelper;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use Magento\TestFramework\TestCase\Webapi\AdapterInterface;
 use Magento\Webapi\Controller\Soap\Request\Handler as SoapHandler;
+use Magento\Webapi\Model\Config;
 
 /**
  * Test client for SOAP API testing.
  */
-class Soap implements \Magento\TestFramework\TestCase\Webapi\AdapterInterface
+class Soap implements AdapterInterface
 {
     const WSDL_BASE_PATH = '/soap';
 
     /**
      * SOAP client initialized with different WSDLs.
      *
-     * @var \Laminas\Soap\Client[]
+     * @var Client[]
      */
     protected $_soapClients = ['custom' => [], 'default' => []];
 
@@ -38,10 +46,10 @@ class Soap implements \Magento\TestFramework\TestCase\Webapi\AdapterInterface
      */
     public function __construct()
     {
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
+        /** @var $objectManager ObjectManager */
         $objectManager = Bootstrap::getObjectManager();
         $this->_soapConfig = $objectManager->get(\Magento\Webapi\Model\Soap\Config::class);
-        $this->_converter = $objectManager->get(\Magento\Framework\Api\SimpleDataObjectConverter::class);
+        $this->_converter = $objectManager->get(SimpleDataObjectConverter::class);
         ini_set('default_socket_timeout', 120);
     }
 
@@ -63,11 +71,33 @@ class Soap implements \Magento\TestFramework\TestCase\Webapi\AdapterInterface
     }
 
     /**
+     * Retrieve SOAP operation name from available service info.
+     *
+     * @param array $serviceInfo
+     * @return string
+     * @throws LogicException
+     */
+    protected function _getSoapOperation($serviceInfo)
+    {
+        if (isset($serviceInfo['soap']['operation'])) {
+            $soapOperation = $serviceInfo['soap']['operation'];
+        } elseif (isset($serviceInfo['serviceInterface']) && isset($serviceInfo['method'])) {
+            $soapOperation = $this->_soapConfig->getSoapOperation(
+                $serviceInfo['serviceInterface'],
+                $serviceInfo['method']
+            );
+        } else {
+            throw new LogicException("SOAP operation cannot be identified.");
+        }
+        return $soapOperation;
+    }
+
+    /**
      * Get proper SOAP client instance that is initialized with WSDL corresponding to requested service interface.
      *
      * @param string $serviceInfo PHP service interface name, should include version if present
      * @param string|null $storeCode
-     * @return \Laminas\Soap\Client
+     * @return Client
      */
     protected function _getSoapClient($serviceInfo, $storeCode = null)
     {
@@ -75,7 +105,7 @@ class Soap implements \Magento\TestFramework\TestCase\Webapi\AdapterInterface
             [$this->_getSoapServiceName($serviceInfo) . $this->_getSoapServiceVersion($serviceInfo)],
             $storeCode
         );
-        /** @var \Laminas\Soap\Client $soapClient */
+        /** @var Client $soapClient */
         $soapClient = null;
         if (isset($serviceInfo['soap']['token'])) {
             $token = $serviceInfo['soap']['token'];
@@ -100,29 +130,6 @@ class Soap implements \Magento\TestFramework\TestCase\Webapi\AdapterInterface
     }
 
     /**
-     * Create SOAP client instance and initialize it with provided WSDL URL.
-     *
-     * @param string $wsdlUrl
-     * @param string $token Authentication token
-     * @return \Laminas\Soap\Client
-     */
-    public function instantiateSoapClient($wsdlUrl, $token = null)
-    {
-        $accessCredentials = $token
-            ? $token
-            : \Magento\TestFramework\Authentication\OauthHelper::getApiAccessCredentials()['key'];
-        $opts = ['http' => ['header' => "Authorization: Bearer " . $accessCredentials]];
-        $context = stream_context_create($opts);
-        $soapClient = new \Laminas\Soap\Client($wsdlUrl);
-        $soapClient->setSoapVersion(SOAP_1_2);
-        $soapClient->setStreamContext($context);
-        if (TESTS_XDEBUG_ENABLED) {
-            $soapClient->setCookie('XDEBUG_SESSION', 1);
-        }
-        return $soapClient;
-    }
-
-    /**
      * Generate WSDL URL.
      *
      * @param array $services e.g.<pre>
@@ -140,7 +147,7 @@ class Soap implements \Magento\TestFramework\TestCase\Webapi\AdapterInterface
         ksort($services);
         if ($storeCode == null) {
             $storeCode = Bootstrap::getObjectManager()
-                ->get(\Magento\Store\Model\StoreManagerInterface::class)
+                ->get(StoreManagerInterface::class)
                 ->getStore()
                 ->getCode();
         }
@@ -155,25 +162,22 @@ class Soap implements \Magento\TestFramework\TestCase\Webapi\AdapterInterface
     }
 
     /**
-     * Retrieve SOAP operation name from available service info.
+     * Retrieve service name from available service info.
      *
      * @param array $serviceInfo
      * @return string
-     * @throws \LogicException
+     * @throws LogicException
      */
-    protected function _getSoapOperation($serviceInfo)
+    protected function _getSoapServiceName($serviceInfo)
     {
-        if (isset($serviceInfo['soap']['operation'])) {
-            $soapOperation = $serviceInfo['soap']['operation'];
-        } elseif (isset($serviceInfo['serviceInterface']) && isset($serviceInfo['method'])) {
-            $soapOperation = $this->_soapConfig->getSoapOperation(
-                $serviceInfo['serviceInterface'],
-                $serviceInfo['method']
-            );
+        if (isset($serviceInfo['soap']['service'])) {
+            $serviceName = $serviceInfo['soap']['service'];
+        } elseif (isset($serviceInfo['serviceInterface'])) {
+            $serviceName = $this->_soapConfig->getServiceName($serviceInfo['serviceInterface'], false);
         } else {
-            throw new \LogicException("SOAP operation cannot be identified.");
+            throw new LogicException("Service name cannot be identified.");
         }
-        return $soapOperation;
+        return $serviceName;
     }
 
     /**
@@ -181,7 +185,7 @@ class Soap implements \Magento\TestFramework\TestCase\Webapi\AdapterInterface
      *
      * @param array $serviceInfo
      * @return string
-     * @throws \LogicException
+     * @throws LogicException
      */
     protected function _getSoapServiceVersion($serviceInfo)
     {
@@ -193,7 +197,7 @@ class Soap implements \Magento\TestFramework\TestCase\Webapi\AdapterInterface
             return '';
         } elseif (isset($serviceInfo['serviceInterface'])) {
             preg_match(
-                \Magento\Webapi\Model\Config::SERVICE_CLASS_PATTERN,
+                Config::SERVICE_CLASS_PATTERN,
                 $serviceInfo['serviceInterface'],
                 $matches
             );
@@ -205,7 +209,7 @@ class Soap implements \Magento\TestFramework\TestCase\Webapi\AdapterInterface
                 //throw new \LogicException("Service interface name is invalid.");
             }
         } else {
-            throw new \LogicException("Service version cannot be identified.");
+            throw new LogicException("Service version cannot be identified.");
         }
         /** Normalize version */
         $version = 'V' . ltrim($version, 'vV');
@@ -213,22 +217,26 @@ class Soap implements \Magento\TestFramework\TestCase\Webapi\AdapterInterface
     }
 
     /**
-     * Retrieve service name from available service info.
+     * Create SOAP client instance and initialize it with provided WSDL URL.
      *
-     * @param array $serviceInfo
-     * @return string
-     * @throws \LogicException
+     * @param string $wsdlUrl
+     * @param string $token Authentication token
+     * @return Client
      */
-    protected function _getSoapServiceName($serviceInfo)
+    public function instantiateSoapClient($wsdlUrl, $token = null)
     {
-        if (isset($serviceInfo['soap']['service'])) {
-            $serviceName = $serviceInfo['soap']['service'];
-        } elseif (isset($serviceInfo['serviceInterface'])) {
-            $serviceName = $this->_soapConfig->getServiceName($serviceInfo['serviceInterface'], false);
-        } else {
-            throw new \LogicException("Service name cannot be identified.");
+        $accessCredentials = $token
+            ? $token
+            : OauthHelper::getApiAccessCredentials()['key'];
+        $opts = ['http' => ['header' => "Authorization: Bearer " . $accessCredentials]];
+        $context = stream_context_create($opts);
+        $soapClient = new Client($wsdlUrl);
+        $soapClient->setSoapVersion(SOAP_1_2);
+        $soapClient->setStreamContext($context);
+        if (TESTS_XDEBUG_ENABLED) {
+            $soapClient->setCookie('XDEBUG_SESSION', 1);
         }
-        return $serviceName;
+        return $soapClient;
     }
 
     /**

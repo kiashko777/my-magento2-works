@@ -24,7 +24,7 @@ $mediaAsset = $mediaAssetFactory->create(
         'width' => 420,
         'height' => 240,
         'size' => 12877,
-        'createdAt' => (new \DateTime('-1 year'))->format('Y-m-d H:i:s'),
+        'createdAt' => (new DateTime('-1 year'))->format('Y-m-d H:i:s'),
     ]
 );
 /** @var SaveAssetsInterface $mediaSave */

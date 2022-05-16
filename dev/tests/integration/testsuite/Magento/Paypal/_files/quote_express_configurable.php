@@ -5,29 +5,33 @@
  */
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
 use Magento\Checkout\Model\Cart;
+use Magento\Eav\Model\Config;
 use Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection;
+use Magento\Framework\DataObject;
 use Magento\Quote\Model\Quote\Address;
 use Magento\Quote\Model\Quote\Address\Rate;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/ConfigurableProduct/_files/product_configurable.php');
 
-/** @var $objectManager \Magento\TestFramework\ObjectManager */
+/** @var $objectManager ObjectManager */
 $objectManager = Bootstrap::getObjectManager();
 
-/** @var $product \Magento\Catalog\Model\Product */
+/** @var $product Product */
 $productRepository = $objectManager->create(ProductRepositoryInterface::class);
 $product = $productRepository->get('configurable');
-/** @var \Magento\Eav\Model\Config $eavConfig */
-$eavConfig = $objectManager->get(\Magento\Eav\Model\Config::class);
-$attribute = $eavConfig->getAttribute(\Magento\Catalog\Model\Product::ENTITY, 'test_configurable');
+/** @var Config $eavConfig */
+$eavConfig = $objectManager->get(Config::class);
+$attribute = $eavConfig->getAttribute(Product::ENTITY, 'test_configurable');
 /** @var $options Collection */
 $options = $objectManager->create(Collection::class);
 $option = $options->setAttributeFilter($attribute->getId())->getFirstItem();
 
-$requestInfo = new \Magento\Framework\DataObject(
+$requestInfo = new DataObject(
     [
         'product' => 1,
         'selected_configurable_option' => 1,

@@ -10,11 +10,12 @@ declare(strict_types=1);
 use Magento\Framework\Registry;
 use Magento\Quote\Model\Quote;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Sales/_files/default_rollback.php');
 
-/** @var $objectManager \Magento\TestFramework\ObjectManager */
+/** @var $objectManager ObjectManager */
 $objectManager = Bootstrap::getObjectManager();
 $objectManager->get(Registry::class)->unregister('quote');
 $quote = $objectManager->create(Quote::class);

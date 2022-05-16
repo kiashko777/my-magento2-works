@@ -6,6 +6,7 @@
 
 namespace Magento\Customer\Model\ResourceModel\Grid;
 
+use LogicException;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Api\Data\CustomerInterface;
 use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
@@ -24,7 +25,7 @@ class CollectionTest extends TestCase
             ->getApplication()
             ->getDbInstance();
         if (!$db->isDbDumpExists()) {
-            throw new \LogicException('DB dump does not exist.');
+            throw new LogicException('DB dump does not exist.');
         }
         $db->restoreFromDbDump();
 

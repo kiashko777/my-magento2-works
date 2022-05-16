@@ -7,15 +7,18 @@
 namespace Magento\Test\Integrity\Phrase;
 
 use Magento\Framework\Component\ComponentRegistrar;
+use Magento\Framework\Phrase;
+use Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer;
+use Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer\PhraseCollector;
 
 /**
  * Scan source code for detects invocations of __() function or Phrase object, analyzes placeholders with arguments
  * and see if they not equal
  */
-class ArgumentsTest extends \Magento\Test\Integrity\Phrase\AbstractTestCase
+class ArgumentsTest extends AbstractTestCase
 {
     /**
-     * @var \Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer\PhraseCollector
+     * @var PhraseCollector
      */
     protected $_phraseCollector;
 
@@ -26,22 +29,6 @@ class ArgumentsTest extends \Magento\Test\Integrity\Phrase\AbstractTestCase
      * @var array
      */
     protected $blackList;
-
-    protected function setUp(): void
-    {
-        $this->_phraseCollector = new \Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer\PhraseCollector(
-            new \Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer(),
-            true,
-            \Magento\Framework\Phrase::class
-        );
-
-        $componentRegistrar = new ComponentRegistrar();
-        $this->blackList = [
-            // the file below is the only file where strings are translated without corresponding arguments
-            $componentRegistrar->getPath(ComponentRegistrar::MODULE, 'Magento_Translation')
-                . '/Model/Js/DataProvider.php',
-        ];
-    }
 
     public function testArguments()
     {
@@ -126,5 +113,21 @@ class ArgumentsTest extends \Magento\Test\Integrity\Phrase\AbstractTestCase
                 $incorrectNumberOfArgumentsErrors[] = $this->_createPhraseError($phrase);
             }
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->_phraseCollector = new PhraseCollector(
+            new Tokenizer(),
+            true,
+            Phrase::class
+        );
+
+        $componentRegistrar = new ComponentRegistrar();
+        $this->blackList = [
+            // the file below is the only file where strings are translated without corresponding arguments
+            $componentRegistrar->getPath(ComponentRegistrar::MODULE, 'Magento_Translation')
+            . '/Model/Js/DataProvider.php',
+        ];
     }
 }

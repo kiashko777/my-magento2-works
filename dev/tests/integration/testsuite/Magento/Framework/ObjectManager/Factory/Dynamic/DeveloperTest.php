@@ -35,7 +35,7 @@ class DeveloperTest extends AbstractFactoryRuntimeDefinitionsTestCases
                 'type' => HasOptionalParameters::class,
                 'arguments' => [
                     'requiredInterfaceParameter' => ['instance' => InterfaceImplementation::class],
-                    'requiredObjectParameter' => ['instance' =>  Basic::class],
+                    'requiredObjectParameter' => ['instance' => Basic::class],
                     'optionalInterfaceParameter' => ['instance' => InterfaceImplementation::class],
                     'optionalObjectParameter' => ['instance' => Basic::class],
                     'optionalStringParameter' => self::ALIAS_OVERRIDDEN_STRING,
@@ -51,7 +51,7 @@ class DeveloperTest extends AbstractFactoryRuntimeDefinitionsTestCases
 
         $runtimeConfig = new \Magento\Framework\Interception\ObjectManager\Config\Developer();
         $runtimeConfig->extend($runtimeDiConfig);
-        $factory = new \Magento\Framework\ObjectManager\Factory\Dynamic\Developer($runtimeConfig);
+        $factory = new Developer($runtimeConfig);
         $factory->setObjectManager(new ObjectManager($factory, $runtimeConfig));
         return $factory;
     }

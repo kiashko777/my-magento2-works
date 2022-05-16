@@ -24,7 +24,7 @@ use PHPUnit\Framework\Constraint\StringContains;
  */
 class SaveTest extends AbstractInvoiceControllerTest
 {
-    /** @var string  */
+    /** @var string */
     protected $uri = 'backend/sales/order_invoice/save';
 
     /** @var Escaper */
@@ -32,17 +32,6 @@ class SaveTest extends AbstractInvoiceControllerTest
 
     /** @var Item */
     private $orderItemResource;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->escaper = $this->_objectManager->get(Escaper::class);
-        $this->orderItemResource = $this->_objectManager->get(Item::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Sales/_files/order.php
@@ -59,6 +48,39 @@ class SaveTest extends AbstractInvoiceControllerTest
         $invoice = $this->getInvoiceByOrder($order);
         $this->checkSuccess($invoice, 2);
         $this->assertNull($this->transportBuilder->getSentMessage());
+    }
+
+    /**
+     * Check that invoice was successfully created
+     *
+     * @param InvoiceInterface $invoice
+     * @param int $invoicedItemsQty
+     * @param string|null $commentMessage
+     * @param bool $doShipment
+     * @return void
+     */
+    private function checkSuccess(
+        InvoiceInterface $invoice,
+        int              $invoicedItemsQty,
+        ?string          $commentMessage = null,
+        bool             $doShipment = false
+    ): void
+    {
+        $message = $doShipment ? 'You created the invoice and shipment.' : 'The invoice has been created.';
+        $expectedState = $doShipment ? Order::STATE_COMPLETE : Order::STATE_PROCESSING;
+        $this->assertNotNull($invoice->getEntityId());
+        $this->assertEquals($invoicedItemsQty, (int)$invoice->getTotalQty());
+        $order = $invoice->getOrder();
+        $this->assertEquals($expectedState, $order->getState());
+
+        if ($commentMessage) {
+            $this->assertEquals($commentMessage, $invoice->getCustomerNote());
+        }
+
+        $this->assertRedirect(
+            $this->stringContains(sprintf('sales/order/view/order_id/%u', (int)$order->getEntityId()))
+        );
+        $this->assertSessionMessages($this->containsEqual((string)__($message)));
     }
 
     /**
@@ -123,10 +145,11 @@ class SaveTest extends AbstractInvoiceControllerTest
      * @return void
      */
     public function testSuccessfulInvoice(
-        int $invoicedItemsQty,
+        int    $invoicedItemsQty,
         string $commentMessage = '',
-        bool $doShipment = false
-    ): void {
+        bool   $doShipment = false
+    ): void
+    {
         $order = $this->getOrder('100000001');
         $post = $this->hydratePost(
             [$order->getItemsCollection()->getFirstItem()->getId() => $invoicedItemsQty],
@@ -168,6 +191,18 @@ class SaveTest extends AbstractInvoiceControllerTest
         $this->prepareRequest(['order_id' => 899989]);
         $this->dispatch('backend/sales/order_invoice/save');
         $this->assertErrorResponse($expectedMessage);
+    }
+
+    /**
+     * Check error response
+     *
+     * @param string $expectedMessage
+     * @return void
+     */
+    private function assertErrorResponse(string $expectedMessage): void
+    {
+        $this->assertRedirect($this->stringContains('sales/order_invoice/new'));
+        $this->assertSessionMessages($this->containsEqual($expectedMessage));
     }
 
     /**
@@ -218,6 +253,22 @@ class SaveTest extends AbstractInvoiceControllerTest
     }
 
     /**
+     * Get order items qty invoiced
+     *
+     * @param int $orderId
+     * @return array
+     */
+    private function getOrderItemsQtyInvoiced(int $orderId): array
+    {
+        $connection = $this->orderItemResource->getConnection();
+        $select = $connection->select()
+            ->from($this->orderItemResource->getMainTable(), OrderItemInterface::QTY_INVOICED)
+            ->where(OrderItemInterface::ORDER_ID . ' = ?', $orderId);
+
+        return $connection->fetchCol($select);
+    }
+
+    /**
      * @magentoDataFixture Magento/Sales/_files/order_with_bundle_dynamic_price_no.php
      *
      * @return void
@@ -233,6 +284,22 @@ class SaveTest extends AbstractInvoiceControllerTest
         $ordered = $this->getOrderItemsQtyOrdered((int)$entityId);
         $invoiced = $this->getOrderItemsQtyInvoiced((int)$entityId);
         $this->assertEquals($ordered, $invoiced);
+    }
+
+    /**
+     * Get order items qty ordered
+     *
+     * @param int $orderId
+     * @return array
+     */
+    private function getOrderItemsQtyOrdered(int $orderId): array
+    {
+        $connection = $this->orderItemResource->getConnection();
+        $select = $connection->select()
+            ->from($this->orderItemResource->getMainTable(), OrderItemInterface::QTY_ORDERED)
+            ->where(OrderItemInterface::ORDER_ID . ' = ?', $orderId);
+
+        return $connection->fetchCol($select);
     }
 
     /**
@@ -274,78 +341,13 @@ class SaveTest extends AbstractInvoiceControllerTest
     }
 
     /**
-     * Check error response
-     *
-     * @param string $expectedMessage
-     * @return void
+     * @inheritdoc
      */
-    private function assertErrorResponse(string $expectedMessage): void
+    protected function setUp(): void
     {
-        $this->assertRedirect($this->stringContains('sales/order_invoice/new'));
-        $this->assertSessionMessages($this->containsEqual($expectedMessage));
-    }
+        parent::setUp();
 
-    /**
-     * Check that invoice was successfully created
-     *
-     * @param InvoiceInterface $invoice
-     * @param int $invoicedItemsQty
-     * @param string|null $commentMessage
-     * @param bool $doShipment
-     * @return void
-     */
-    private function checkSuccess(
-        InvoiceInterface $invoice,
-        int $invoicedItemsQty,
-        ?string $commentMessage = null,
-        bool $doShipment = false
-    ): void {
-        $message = $doShipment ? 'You created the invoice and shipment.' : 'The invoice has been created.';
-        $expectedState = $doShipment ? Order::STATE_COMPLETE : Order::STATE_PROCESSING;
-        $this->assertNotNull($invoice->getEntityId());
-        $this->assertEquals($invoicedItemsQty, (int)$invoice->getTotalQty());
-        $order = $invoice->getOrder();
-        $this->assertEquals($expectedState, $order->getState());
-
-        if ($commentMessage) {
-            $this->assertEquals($commentMessage, $invoice->getCustomerNote());
-        }
-
-        $this->assertRedirect(
-            $this->stringContains(sprintf('sales/order/view/order_id/%u', (int)$order->getEntityId()))
-        );
-        $this->assertSessionMessages($this->containsEqual((string)__($message)));
-    }
-
-    /**
-     * Get order items qty invoiced
-     *
-     * @param int $orderId
-     * @return array
-     */
-    private function getOrderItemsQtyInvoiced(int $orderId): array
-    {
-        $connection = $this->orderItemResource->getConnection();
-        $select = $connection->select()
-            ->from($this->orderItemResource->getMainTable(), OrderItemInterface::QTY_INVOICED)
-            ->where(OrderItemInterface::ORDER_ID . ' = ?', $orderId);
-
-        return $connection->fetchCol($select);
-    }
-
-    /**
-     * Get order items qty ordered
-     *
-     * @param int $orderId
-     * @return array
-     */
-    private function getOrderItemsQtyOrdered(int $orderId): array
-    {
-        $connection = $this->orderItemResource->getConnection();
-        $select = $connection->select()
-            ->from($this->orderItemResource->getMainTable(), OrderItemInterface::QTY_ORDERED)
-            ->where(OrderItemInterface::ORDER_ID . ' = ?', $orderId);
-
-        return $connection->fetchCol($select);
+        $this->escaper = $this->_objectManager->get(Escaper::class);
+        $this->orderItemResource = $this->_objectManager->get(Item::class);
     }
 }

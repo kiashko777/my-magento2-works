@@ -5,9 +5,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Layout;
 
-class ThemeHandlesTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\App\Utility\AggregateInvoker;
+use Magento\Framework\App\Utility\Files;
+use PHPUnit\Framework\TestCase;
+
+class ThemeHandlesTest extends TestCase
 {
     /**
      * @var array|null
@@ -16,13 +21,13 @@ class ThemeHandlesTest extends \PHPUnit\Framework\TestCase
 
     public function testIsDesignHandleDeclaredInCode()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
-            /**
-             * Check that all handles declared in a theme layout are declared in base layouts
-             *
-             * @param string $handleName
-             */
+        /**
+         * Check that all handles declared in a theme layout are declared in base layouts
+         *
+         * @param string $handleName
+         */
             function ($handleName) {
                 $this->assertContains(
                     $handleName,
@@ -35,23 +40,6 @@ class ThemeHandlesTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @return array
-     */
-    public function designHandlesDataProvider()
-    {
-        $files = \Magento\Framework\App\Utility\Files::init()->getLayoutFiles(
-            ['include_code' => false, 'area' => 'frontend'],
-            false
-        );
-        $handles = $this->_extractLayoutHandles($files);
-        $result = [];
-        foreach ($handles as $handleName) {
-            $result[$handleName] = [$handleName];
-        }
-        return $result;
-    }
-
-    /**
      * Return layout handles that are declared in the base layouts for frontend
      *
      * @return array
@@ -59,7 +47,7 @@ class ThemeHandlesTest extends \PHPUnit\Framework\TestCase
     protected function _getBaseFrontendHandles()
     {
         if ($this->_baseFrontendHandles === null) {
-            $files = \Magento\Framework\App\Utility\Files::init()->getLayoutFiles(
+            $files = Files::init()->getLayoutFiles(
                 ['include_design' => false, 'area' => 'frontend'],
                 false
             );
@@ -82,6 +70,23 @@ class ThemeHandlesTest extends \PHPUnit\Framework\TestCase
             $result[] = $handleName;
         }
         $result = array_unique($result);
+        return $result;
+    }
+
+    /**
+     * @return array
+     */
+    public function designHandlesDataProvider()
+    {
+        $files = Files::init()->getLayoutFiles(
+            ['include_code' => false, 'area' => 'frontend'],
+            false
+        );
+        $handles = $this->_extractLayoutHandles($files);
+        $result = [];
+        foreach ($handles as $handleName) {
+            $result[$handleName] = [$handleName];
+        }
         return $result;
     }
 }

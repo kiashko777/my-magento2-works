@@ -6,17 +6,11 @@
 
 namespace Magento\Security\Controller\Adminhtml\Session;
 
-class LogoutAllTest extends \Magento\TestFramework\TestCase\AbstractBackendController
-{
-    /**
-     * Set up
-     */
-    protected function setUp(): void
-    {
-        $this->uri = 'backend/security/session/logoutAll';
-        parent::setUp();
-    }
+use Magento\Framework\Message\MessageInterface;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
+class LogoutAllTest extends AbstractBackendController
+{
     /**
      * logoutAllAction test
      */
@@ -25,8 +19,17 @@ class LogoutAllTest extends \Magento\TestFramework\TestCase\AbstractBackendContr
         $this->dispatch('backend/security/session/logoutAll');
         $this->assertSessionMessages(
             $this->equalTo(['All other open sessions for this account were terminated.']),
-            \Magento\Framework\Message\MessageInterface::TYPE_SUCCESS
+            MessageInterface::TYPE_SUCCESS
         );
         $this->assertRedirect($this->stringContains('security/session/activity'));
+    }
+
+    /**
+     * Set up
+     */
+    protected function setUp(): void
+    {
+        $this->uri = 'backend/security/session/logoutAll';
+        parent::setUp();
     }
 }

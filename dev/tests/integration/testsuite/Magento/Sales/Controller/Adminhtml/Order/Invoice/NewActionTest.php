@@ -30,17 +30,6 @@ class NewActionTest extends AbstractBackendController
     private $escaper;
 
     /**
-     * @inheridoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->orderFactory = $this->_objectManager->get(OrderFactory::class);
-        $this->escaper = $this->_objectManager->get(Escaper::class);
-    }
-
-    /**
      * @return void
      */
     public function testWithNoExistingOrder(): void
@@ -48,6 +37,19 @@ class NewActionTest extends AbstractBackendController
         $this->dispatchWithOrderId(863521);
         $expectedMessage = (string)__("The entity that was requested doesn't exist. Verify the entity and try again.");
         $this->assertSessionMessages($this->containsEqual($this->escaper->escapeHtml($expectedMessage)));
+    }
+
+    /**
+     * Dispatch request with order_id param
+     *
+     * @param int $orderId
+     * @return void
+     */
+    private function dispatchWithOrderId(int $orderId): void
+    {
+        $this->getRequest()->setMethod(Http::METHOD_GET)
+            ->setParams(['order_id' => $orderId]);
+        $this->dispatch('backend/sales/order_invoice/new');
     }
 
     /**
@@ -64,15 +66,13 @@ class NewActionTest extends AbstractBackendController
     }
 
     /**
-     * Dispatch request with order_id param
-     *
-     * @param int $orderId
-     * @return void
+     * @inheridoc
      */
-    private function dispatchWithOrderId(int $orderId): void
+    protected function setUp(): void
     {
-        $this->getRequest()->setMethod(Http::METHOD_GET)
-            ->setParams(['order_id' => $orderId]);
-        $this->dispatch('backend/sales/order_invoice/new');
+        parent::setUp();
+
+        $this->orderFactory = $this->_objectManager->get(OrderFactory::class);
+        $this->escaper = $this->_objectManager->get(Escaper::class);
     }
 }

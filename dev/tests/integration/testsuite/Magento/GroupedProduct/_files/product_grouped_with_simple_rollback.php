@@ -3,29 +3,36 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
 
-/** @var \Magento\Framework\Registry $registry */
-$registry = $objectManager->get(\Magento\Framework\Registry::class);
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\CatalogInventory\Model\Stock\Status;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
+
+/** @var Registry $registry */
+$registry = $objectManager->get(Registry::class);
 
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
-/** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-$productRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+/** @var ProductRepositoryInterface $productRepository */
+$productRepository = Bootstrap::getObjectManager()
+    ->get(ProductRepositoryInterface::class);
 
 $skuList = ['simple_11', 'simple_22', 'grouped'];
 foreach ($skuList as $sku) {
     try {
         $product = $productRepository->get($sku, false, null, true);
 
-        $stockStatus = $objectManager->create(\Magento\CatalogInventory\Model\Stock\Status::class);
+        $stockStatus = $objectManager->create(Status::class);
         $stockStatus->load($product->getEntityId(), 'product_id');
         $stockStatus->delete();
 
         $productRepository->delete($product);
-    } catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+    } catch (NoSuchEntityException $e) {
         //Products already removed
     }
 }

@@ -41,7 +41,8 @@ define([
             try {
                 injector.clean();
                 injector.remove();
-            } catch (e) {}
+            } catch (e) {
+            }
         });
 
         it('mixin is applied to Magento_Theme/js/view/breadcrumbs', function () {

@@ -9,11 +9,19 @@ namespace Magento\Setup\Test\Unit\Module\Dependency\Report\Dependency\Data;
 
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
 use Magento\Setup\Module\Dependency\Report\Dependency\Data\Dependency;
-
 use PHPUnit\Framework\TestCase;
 
 class DependencyTest extends TestCase
 {
+    public function testGetModule()
+    {
+        $module = 'module';
+
+        $dependency = $this->createDependency($module);
+
+        $this->assertEquals($module, $dependency->getModule());
+    }
+
     /**
      * @param string $module
      * @param string|null $type One of \Magento\Setup\Module\Dependency\Dependency::TYPE_ const
@@ -26,15 +34,6 @@ class DependencyTest extends TestCase
             Dependency::class,
             ['module' => $module, 'type' => $type]
         );
-    }
-
-    public function testGetModule()
-    {
-        $module = 'module';
-
-        $dependency = $this->createDependency($module);
-
-        $this->assertEquals($module, $dependency->getModule());
     }
 
     public function testGetType()

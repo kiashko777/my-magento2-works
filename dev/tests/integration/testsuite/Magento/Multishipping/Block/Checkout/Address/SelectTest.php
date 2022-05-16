@@ -6,23 +6,17 @@
 
 namespace Magento\Multishipping\Block\Checkout\Address;
 
+use Magento\Customer\Api\AddressRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea frontend
  */
-class SelectTest extends \PHPUnit\Framework\TestCase
+class SelectTest extends TestCase
 {
-    /** @var \Magento\Multishipping\Block\Checkout\Address\Select */
+    /** @var Select */
     protected $_selectBlock;
-
-    protected function setUp(): void
-    {
-        $this->_selectBlock = Bootstrap::getObjectManager()->create(
-            \Magento\Multishipping\Block\Checkout\Address\Select::class
-        );
-        parent::setUp();
-    }
 
     /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
@@ -30,18 +24,26 @@ class SelectTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetAddressAsHtml()
     {
-        /** @var \Magento\Customer\Api\AddressRepositoryInterface $addressRepository */
+        /** @var AddressRepositoryInterface $addressRepository */
         $addressRepository = Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Api\AddressRepositoryInterface::class
+            AddressRepositoryInterface::class
         );
         $fixtureAddressId = 1;
         $address = $addressRepository->getById($fixtureAddressId);
         $addressAsHtml = $this->_selectBlock->getAddressAsHtml($address);
         $this->assertEquals(
             "John Smith<br />CompanyName<br />Green str, 67<br />CityM,  Alabama, 75477"
-                . "<br />United States<br />T: <a href=\"tel:3468676\">3468676</a>",
+            . "<br />United States<br />T: <a href=\"tel:3468676\">3468676</a>",
             str_replace("\n", '', $addressAsHtml),
             "Address was represented as HTML incorrectly"
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->_selectBlock = Bootstrap::getObjectManager()->create(
+            Select::class
+        );
+        parent::setUp();
     }
 }

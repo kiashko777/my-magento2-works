@@ -7,72 +7,19 @@
 /**
  * Coverage of obsolete table names usage
  */
+
 namespace Magento\Test\Legacy;
 
+use Magento\Framework\App\Utility\AggregateInvoker;
 use Magento\Framework\App\Utility\Files;
+use PHPUnit\Framework\TestCase;
 
-class TableTest extends \PHPUnit\Framework\TestCase
+class TableTest extends TestCase
 {
-    public function testTableName()
-    {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
-        $invoker(
-            /**
-             * @param string $filePath
-             */
-            function ($filePath) {
-                $tables = self::extractTables($filePath);
-                $legacyTables = [];
-                foreach ($tables as $table) {
-                    $tableName = $table['name'];
-                    if (strpos($tableName, '/') === false) {
-                        continue;
-                    }
-                    $legacyTables[] = $table;
-                }
-
-                $message = $this->_composeFoundsMessage($legacyTables);
-                $this->assertEmpty($message, $message);
-            },
-            Files::init()->getPhpFiles(
-                Files::INCLUDE_APP_CODE
-                | Files::INCLUDE_PUB_CODE
-                | Files::INCLUDE_LIBS
-                | Files::INCLUDE_TEMPLATES
-                | Files::AS_DATA_SET
-                | Files::INCLUDE_NON_CLASSES
-            )
-        );
-    }
-
-    /**
-     * Returns found table names in a file
-     *
-     * @param  string $filePath
-     * @return array
-     */
-    public static function extractTables($filePath)
-    {
-        $regexpMethods = ['_getRegexpTableInMethods', '_getRegexpTableInArrays', '_getRegexpTableInProperties'];
-
-        $result = [];
-        $content = file_get_contents($filePath);
-        foreach ($regexpMethods as $method) {
-            $regexp = self::$method($filePath);
-            if (!preg_match_all($regexp, $content, $matches, PREG_SET_ORDER)) {
-                continue;
-            }
-
-            $iterationResult = self::_matchesToInformation($content, $matches);
-            $result = array_merge($result, $iterationResult);
-        }
-        return $result;
-    }
-
     /**
      * Returns regexp to find table names in method calls in a file
      *
-     * @param  string $filePath
+     * @param string $filePath
      * @return string
      */
     protected static function _getRegexpTableInMethods($filePath)
@@ -110,7 +57,7 @@ class TableTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @param  string $filePath
+     * @param string $filePath
      * @return bool
      */
     protected static function _isResourceButNotCollection($filePath)
@@ -123,7 +70,7 @@ class TableTest extends \PHPUnit\Framework\TestCase
     /**
      * Returns regular expression to find legacy method calls with table in it
      *
-     * @param  string|array $method Method name, or array with method name and index of table parameter in signature
+     * @param string|array $method Method name, or array with method name and index of table parameter in signature
      * @return string
      */
     protected static function _composeRegexpForMethod($method)
@@ -146,7 +93,7 @@ class TableTest extends \PHPUnit\Framework\TestCase
     /**
      * Returns regexp to find table names in array definitions
      *
-     * @param  string $filePath
+     * @param string $filePath
      * @return string
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
@@ -158,7 +105,7 @@ class TableTest extends \PHPUnit\Framework\TestCase
     /**
      * Returns regexp to find table names in property assignments
      *
-     * @param  string $filePath
+     * @param string $filePath
      * @return string
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
@@ -175,12 +122,68 @@ class TableTest extends \PHPUnit\Framework\TestCase
         return $result;
     }
 
+    public function testTableName()
+    {
+        $invoker = new AggregateInvoker($this);
+        $invoker(
+        /**
+         * @param string $filePath
+         */
+            function ($filePath) {
+                $tables = self::extractTables($filePath);
+                $legacyTables = [];
+                foreach ($tables as $table) {
+                    $tableName = $table['name'];
+                    if (strpos($tableName, '/') === false) {
+                        continue;
+                    }
+                    $legacyTables[] = $table;
+                }
+
+                $message = $this->_composeFoundsMessage($legacyTables);
+                $this->assertEmpty($message, $message);
+            },
+            Files::init()->getPhpFiles(
+                Files::INCLUDE_APP_CODE
+                | Files::INCLUDE_PUB_CODE
+                | Files::INCLUDE_LIBS
+                | Files::INCLUDE_TEMPLATES
+                | Files::AS_DATA_SET
+                | Files::INCLUDE_NON_CLASSES
+            )
+        );
+    }
+
+    /**
+     * Returns found table names in a file
+     *
+     * @param string $filePath
+     * @return array
+     */
+    public static function extractTables($filePath)
+    {
+        $regexpMethods = ['_getRegexpTableInMethods', '_getRegexpTableInArrays', '_getRegexpTableInProperties'];
+
+        $result = [];
+        $content = file_get_contents($filePath);
+        foreach ($regexpMethods as $method) {
+            $regexp = self::$method($filePath);
+            if (!preg_match_all($regexp, $content, $matches, PREG_SET_ORDER)) {
+                continue;
+            }
+
+            $iterationResult = self::_matchesToInformation($content, $matches);
+            $result = array_merge($result, $iterationResult);
+        }
+        return $result;
+    }
+
     /**
      * Converts regexp matches to information, understandable by human: extracts legacy table name and line,
      * where it was found
      *
-     * @param  string $content
-     * @param  array $matches
+     * @param string $content
+     * @param array $matches
      * @return array
      */
     protected static function _matchesToInformation($content, $matches)
@@ -199,7 +202,7 @@ class TableTest extends \PHPUnit\Framework\TestCase
     /**
      * Composes information message based on list of legacy tables, found in a file
      *
-     * @param  array $legacyTables
+     * @param array $legacyTables
      * @return string
      */
     protected function _composeFoundsMessage($legacyTables): string
@@ -214,9 +217,9 @@ class TableTest extends \PHPUnit\Framework\TestCase
         }
 
         $result = 'Legacy table names with slash must be fixed to direct table names. Found: ' . implode(
-            ', ',
-            $descriptions
-        ) . '.';
+                ', ',
+                $descriptions
+            ) . '.';
         return $result;
     }
 }

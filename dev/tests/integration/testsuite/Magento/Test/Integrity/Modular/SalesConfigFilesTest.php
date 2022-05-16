@@ -3,7 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Modular;
+
+use Magento\Framework\App\Utility\Files;
+use Magento\Sales\Model\Config\SchemaLocator;
+use Magento\TestFramework\Helper\Bootstrap;
 
 class SalesConfigFilesTest extends AbstractMergedConfigTest
 {
@@ -33,12 +38,12 @@ class SalesConfigFilesTest extends AbstractMergedConfigTest
      */
     protected function getMergedSchemaFile()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        return $objectManager->get(\Magento\Sales\Model\Config\SchemaLocator::class)->getSchema();
+        $objectManager = Bootstrap::getObjectManager();
+        return $objectManager->get(SchemaLocator::class)->getSchema();
     }
 
     protected function getConfigFiles()
     {
-        return \Magento\Framework\App\Utility\Files::init()->getConfigFiles('sales.xml');
+        return Files::init()->getConfigFiles('sales.xml');
     }
 }

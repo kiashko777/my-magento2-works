@@ -3,8 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\BundleImportExport\Model;
 
+use Magento\Catalog\Model\Product;
 use Magento\CatalogImportExport\Model\AbstractProductExportImportTestCase;
 
 class BundleTest extends AbstractProductExportImportTestCase
@@ -52,9 +54,10 @@ class BundleTest extends AbstractProductExportImportTestCase
      * @inheritdoc
      */
     protected function assertEqualsSpecificAttributes(
-        \Magento\Catalog\Model\Product $expectedProduct,
-        \Magento\Catalog\Model\Product $actualProduct
-    ): void {
+        Product $expectedProduct,
+        Product $actualProduct
+    ): void
+    {
         $expectedBundleProductOptions = $expectedProduct->getExtensionAttributes()->getBundleProductOptions();
         $actualBundleProductOptions = $actualProduct->getExtensionAttributes()->getBundleProductOptions();
 

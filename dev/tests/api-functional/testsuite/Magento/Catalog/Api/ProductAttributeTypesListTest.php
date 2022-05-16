@@ -4,9 +4,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Api;
 
-class ProductAttributeTypesListTest extends \Magento\TestFramework\TestCase\WebapiAbstract
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\TestFramework\TestCase\WebapiAbstract;
+
+class ProductAttributeTypesListTest extends WebapiAbstract
 {
     const SERVICE_NAME = 'catalogProductAttributeTypesListV1';
     const SERVICE_VERSION = 'V1';
@@ -17,7 +21,7 @@ class ProductAttributeTypesListTest extends \Magento\TestFramework\TestCase\Weba
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/types',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,

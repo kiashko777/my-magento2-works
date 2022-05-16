@@ -8,25 +8,31 @@ declare(strict_types=1);
 
 namespace Magento\Cms\Controller\Adminhtml\Wysiwyg\Images;
 
+use Magento\Cms\Helper\Wysiwyg\Images;
 use Magento\Framework\App\Filesystem\DirectoryList;
-use Magento\Framework\Controller\Result\Json as JsonResponse;
-use Magento\Framework\App\Response\HttpFactory as ResponseFactory;
 use Magento\Framework\App\Response\Http as Response;
+use Magento\Framework\App\Response\HttpFactory as ResponseFactory;
+use Magento\Framework\Controller\Result\Json as JsonResponse;
+use Magento\Framework\Filesystem;
+use Magento\Framework\Filesystem\Directory\WriteInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for \Magento\Cms\Controller\Adminhtml\Wysiwyg\Images\Upload class.
  *
  * @magentoAppArea Adminhtml
  */
-class UploadTest extends \PHPUnit\Framework\TestCase
+class UploadTest extends TestCase
 {
     /**
-     * @var \Magento\Cms\Controller\Adminhtml\Wysiwyg\Images\Upload
+     * @var Upload
      */
     private $model;
 
     /**
-     * @var \Magento\Framework\Filesystem\Directory\WriteInterface
+     * @var WriteInterface
      */
     private $mediaDirectory;
 
@@ -46,12 +52,12 @@ class UploadTest extends \PHPUnit\Framework\TestCase
     private $fileName = 'magento_small_image.jpg';
 
     /**
-     * @var \Magento\Framework\Filesystem
+     * @var Filesystem
      */
     private $filesystem;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
@@ -63,32 +69,15 @@ class UploadTest extends \PHPUnit\Framework\TestCase
     /**
      * @inheritdoc
      */
-    protected function setUp(): void
+    public static function tearDownAfterClass(): void
     {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $directoryName = 'directory1';
-        $excludedDirName = 'downloadable';
-        $this->filesystem = $this->objectManager->get(\Magento\Framework\Filesystem::class);
-        /** @var \Magento\Cms\Helper\Wysiwyg\Images $imagesHelper */
-        $imagesHelper = $this->objectManager->get(\Magento\Cms\Helper\Wysiwyg\Images::class);
-        $this->mediaDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::MEDIA);
-        $this->fullDirectoryPath = $imagesHelper->getStorageRoot() . DIRECTORY_SEPARATOR . $directoryName;
-        $this->fullExcludedDirectoryPath = $imagesHelper->getStorageRoot() . DIRECTORY_SEPARATOR . $excludedDirName;
-        $this->mediaDirectory->create($this->mediaDirectory->getRelativePath($this->fullDirectoryPath));
-        $this->responseFactory = $this->objectManager->get(ResponseFactory::class);
-        $this->model = $this->objectManager->get(\Magento\Cms\Controller\Adminhtml\Wysiwyg\Images\Upload::class);
-        $fixtureDir = realpath(__DIR__ . '/../../../../../Catalog/_files');
-        $tmpFile = $this->filesystem->getDirectoryRead(DirectoryList::PUB)->getAbsolutePath() . $this->fileName;
-        copy($fixtureDir . DIRECTORY_SEPARATOR . $this->fileName, $tmpFile);
-        $_FILES = [
-            'image' => [
-                'name' => $this->fileName,
-                'type' => 'image/png',
-                'tmp_name' => $tmpFile,
-                'error' => 0,
-                'size' => filesize($fixtureDir),
-            ],
-        ];
+        $filesystem = Bootstrap::getObjectManager()
+            ->get(Filesystem::class);
+        /** @var WriteInterface $directory */
+        $directory = $filesystem->getDirectoryWrite(DirectoryList::MEDIA);
+        if ($directory->isExist('wysiwyg')) {
+            $directory->delete('wysiwyg');
+        }
     }
 
     /**
@@ -210,14 +199,31 @@ class UploadTest extends \PHPUnit\Framework\TestCase
     /**
      * @inheritdoc
      */
-    public static function tearDownAfterClass(): void
+    protected function setUp(): void
     {
-        $filesystem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\Filesystem::class);
-        /** @var \Magento\Framework\Filesystem\Directory\WriteInterface $directory */
-        $directory = $filesystem->getDirectoryWrite(DirectoryList::MEDIA);
-        if ($directory->isExist('wysiwyg')) {
-            $directory->delete('wysiwyg');
-        }
+        $this->objectManager = Bootstrap::getObjectManager();
+        $directoryName = 'directory1';
+        $excludedDirName = 'downloadable';
+        $this->filesystem = $this->objectManager->get(Filesystem::class);
+        /** @var Images $imagesHelper */
+        $imagesHelper = $this->objectManager->get(Images::class);
+        $this->mediaDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::MEDIA);
+        $this->fullDirectoryPath = $imagesHelper->getStorageRoot() . DIRECTORY_SEPARATOR . $directoryName;
+        $this->fullExcludedDirectoryPath = $imagesHelper->getStorageRoot() . DIRECTORY_SEPARATOR . $excludedDirName;
+        $this->mediaDirectory->create($this->mediaDirectory->getRelativePath($this->fullDirectoryPath));
+        $this->responseFactory = $this->objectManager->get(ResponseFactory::class);
+        $this->model = $this->objectManager->get(Upload::class);
+        $fixtureDir = realpath(__DIR__ . '/../../../../../Catalog/_files');
+        $tmpFile = $this->filesystem->getDirectoryRead(DirectoryList::PUB)->getAbsolutePath() . $this->fileName;
+        copy($fixtureDir . DIRECTORY_SEPARATOR . $this->fileName, $tmpFile);
+        $_FILES = [
+            'image' => [
+                'name' => $this->fileName,
+                'type' => 'image/png',
+                'tmp_name' => $tmpFile,
+                'error' => 0,
+                'size' => filesize($fixtureDir),
+            ],
+        ];
     }
 }

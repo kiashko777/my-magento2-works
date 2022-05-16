@@ -7,12 +7,14 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Quote\Customer;
 
+use Exception;
+use Magento\Framework\Exception\AuthenticationException;
+use Magento\Integration\Api\CustomerTokenServiceInterface;
 use Magento\Quote\Model\QuoteFactory;
 use Magento\Quote\Model\QuoteIdToMaskedQuoteIdInterface;
 use Magento\Quote\Model\ResourceModel\Quote as QuoteResource;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
-use Magento\Integration\Api\CustomerTokenServiceInterface;
 
 /**
  * Test for merging customer carts
@@ -38,22 +40,6 @@ class MergeCartsTest extends GraphQlAbstract
      * @var CustomerTokenServiceInterface
      */
     private $customerTokenService;
-
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->quoteResource = $objectManager->get(QuoteResource::class);
-        $this->quoteFactory = $objectManager->get(QuoteFactory::class);
-        $this->quoteIdToMaskedId = $objectManager->get(QuoteIdToMaskedQuoteIdInterface::class);
-        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-    }
-
-    protected function tearDown(): void
-    {
-        $quote = $this->quoteFactory->create();
-        $this->quoteResource->load($quote, '1', 'customer_id');
-        $this->quoteResource->delete($quote);
-    }
 
     /**
      * @magentoApiDataFixture Magento/Checkout/_files/quote_with_virtual_product_saved.php
@@ -99,6 +85,67 @@ class MergeCartsTest extends GraphQlAbstract
         $item2 = $cartResponse['cart']['items'][1];
         self::assertArrayHasKey('quantity', $item2);
         self::assertEquals(1, $item2['quantity']);
+    }
+
+    /**
+     * Create the mergeCart mutation
+     *
+     * @param string $guestQuoteMaskedId
+     * @param string $customerQuoteMaskedId
+     * @return string
+     */
+    private function getCartMergeMutation(string $guestQuoteMaskedId, string $customerQuoteMaskedId): string
+    {
+        return <<<QUERY
+mutation {
+  mergeCarts(
+    source_cart_id: "{$guestQuoteMaskedId}"
+    destination_cart_id: "{$customerQuoteMaskedId}"
+  ){
+  items {
+      quantity
+      product {
+        sku
+      }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
+     * @param string $username
+     * @param string $password
+     * @return array
+     * @throws AuthenticationException
+     */
+    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
+        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
+        return $headerMap;
+    }
+
+    /**
+     * Get cart query
+     *
+     * @param string $maskedId
+     * @return string
+     */
+    private function getCartQuery(string $maskedId): string
+    {
+        return <<<QUERY
+{
+  cart(cart_id: "{$maskedId}") {
+    items {
+      quantity
+      product {
+        sku
+      }
+    }
+  }
+}
+QUERY;
     }
 
     /**
@@ -152,7 +199,7 @@ class MergeCartsTest extends GraphQlAbstract
      */
     public function testGuestCartExpiryAfterMerge()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The cart isn\'t active.');
 
         $customerQuote = $this->quoteFactory->create();
@@ -186,7 +233,7 @@ class MergeCartsTest extends GraphQlAbstract
      */
     public function testMergeTwoCustomerCarts()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The current user cannot perform operations on cart');
 
         $firstQuote = $this->quoteFactory->create();
@@ -208,6 +255,73 @@ class MergeCartsTest extends GraphQlAbstract
     }
 
     /**
+     * Get create empty cart mutation
+     *
+     * @return string
+     */
+    private function getCreateEmptyCartMutation(): string
+    {
+        return <<<QUERY
+mutation {
+  createEmptyCart
+}
+QUERY;
+    }
+
+    /**
+     * Add simple product to cart
+     *
+     * @param string $maskedId
+     * @param array $headerMap
+     * @throws Exception
+     */
+    private function addSimpleProductToCart(string $maskedId, array $headerMap): void
+    {
+        $result = $this->graphQlMutation($this->getAddProductToCartMutation($maskedId), [], '', $headerMap);
+        self::assertArrayHasKey('addSimpleProductsToCart', $result);
+        self::assertArrayHasKey('cart', $result['addSimpleProductsToCart']);
+        self::assertArrayHasKey('items', $result['addSimpleProductsToCart']['cart']);
+        self::assertArrayHasKey(0, $result['addSimpleProductsToCart']['cart']['items']);
+        self::assertArrayHasKey('quantity', $result['addSimpleProductsToCart']['cart']['items'][0]);
+        self::assertEquals(1, $result['addSimpleProductsToCart']['cart']['items'][0]['quantity']);
+        self::assertArrayHasKey('product', $result['addSimpleProductsToCart']['cart']['items'][0]);
+        self::assertArrayHasKey('sku', $result['addSimpleProductsToCart']['cart']['items'][0]['product']);
+        self::assertEquals('simple_product', $result['addSimpleProductsToCart']['cart']['items'][0]['product']['sku']);
+    }
+
+    /**
+     * Get add product to cart mutation
+     *
+     * @param string $maskedId
+     * @return string
+     */
+    private function getAddProductToCartMutation(string $maskedId): string
+    {
+        return <<<QUERY
+mutation {
+  addSimpleProductsToCart(input: {
+    cart_id: "{$maskedId}"
+    cart_items: {
+      data: {
+        quantity: 1
+        sku: "simple_product"
+      }
+    }
+  }) {
+    cart {
+      items {
+        quantity
+        product {
+          sku
+        }
+      }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
      * @magentoApiDataFixture Magento/GraphQl/Quote/_files/customer/create_empty_cart.php
@@ -215,7 +329,7 @@ class MergeCartsTest extends GraphQlAbstract
      */
     public function testMergeCartsWithEmptySourceCartId()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Required parameter "source_cart_id" is missing');
 
         $customerQuote = $this->quoteFactory->create();
@@ -234,7 +348,7 @@ class MergeCartsTest extends GraphQlAbstract
      */
     public function testMergeCartsWithEmptyDestinationCartId()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The parameter "destination_cart_id" cannot be empty');
 
         $guestQuote = $this->quoteFactory->create();
@@ -300,53 +414,6 @@ class MergeCartsTest extends GraphQlAbstract
     }
 
     /**
-     * Add simple product to cart
-     *
-     * @param string $maskedId
-     * @param array $headerMap
-     * @throws \Exception
-     */
-    private function addSimpleProductToCart(string $maskedId, array $headerMap): void
-    {
-        $result = $this->graphQlMutation($this->getAddProductToCartMutation($maskedId), [], '', $headerMap);
-        self::assertArrayHasKey('addSimpleProductsToCart', $result);
-        self::assertArrayHasKey('cart', $result['addSimpleProductsToCart']);
-        self::assertArrayHasKey('items', $result['addSimpleProductsToCart']['cart']);
-        self::assertArrayHasKey(0, $result['addSimpleProductsToCart']['cart']['items']);
-        self::assertArrayHasKey('quantity', $result['addSimpleProductsToCart']['cart']['items'][0]);
-        self::assertEquals(1, $result['addSimpleProductsToCart']['cart']['items'][0]['quantity']);
-        self::assertArrayHasKey('product', $result['addSimpleProductsToCart']['cart']['items'][0]);
-        self::assertArrayHasKey('sku', $result['addSimpleProductsToCart']['cart']['items'][0]['product']);
-        self::assertEquals('simple_product', $result['addSimpleProductsToCart']['cart']['items'][0]['product']['sku']);
-    }
-
-    /**
-     * Create the mergeCart mutation
-     *
-     * @param string $guestQuoteMaskedId
-     * @param string $customerQuoteMaskedId
-     * @return string
-     */
-    private function getCartMergeMutation(string $guestQuoteMaskedId, string $customerQuoteMaskedId): string
-    {
-        return <<<QUERY
-mutation {
-  mergeCarts(
-    source_cart_id: "{$guestQuoteMaskedId}"
-    destination_cart_id: "{$customerQuoteMaskedId}"
-  ){
-  items {
-      quantity
-      product {
-        sku
-      }
-    }
-  }
-}
-QUERY;
-    }
-
-    /**
      * Create the mergeCart mutation
      *
      * @param string $guestQuoteMaskedId
@@ -354,7 +421,8 @@ QUERY;
      */
     private function getCartMergeMutationWithoutDestinationCartId(
         string $guestQuoteMaskedId
-    ): string {
+    ): string
+    {
         return <<<QUERY
 mutation {
   mergeCarts(
@@ -371,84 +439,19 @@ mutation {
 QUERY;
     }
 
-    /**
-     * Get cart query
-     *
-     * @param string $maskedId
-     * @return string
-     */
-    private function getCartQuery(string $maskedId): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-{
-  cart(cart_id: "{$maskedId}") {
-    items {
-      quantity
-      product {
-        sku
-      }
-    }
-  }
-}
-QUERY;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->quoteResource = $objectManager->get(QuoteResource::class);
+        $this->quoteFactory = $objectManager->get(QuoteFactory::class);
+        $this->quoteIdToMaskedId = $objectManager->get(QuoteIdToMaskedQuoteIdInterface::class);
+        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
     }
 
-    /**
-     * Get create empty cart mutation
-     *
-     * @return string
-     */
-    private function getCreateEmptyCartMutation(): string
+    protected function tearDown(): void
     {
-        return <<<QUERY
-mutation {
-  createEmptyCart
-}
-QUERY;
-    }
-
-    /**
-     * Get add product to cart mutation
-     *
-     * @param string $maskedId
-     * @return string
-     */
-    private function getAddProductToCartMutation(string $maskedId): string
-    {
-        return <<<QUERY
-mutation {
-  addSimpleProductsToCart(input: {
-    cart_id: "{$maskedId}"
-    cart_items: {
-      data: {
-        quantity: 1
-        sku: "simple_product"
-      }
-    }
-  }) {
-    cart {
-      items {
-        quantity
-        product {
-          sku
-        }
-      }
-    }
-  }
-}
-QUERY;
-    }
-
-    /**
-     * @param string $username
-     * @param string $password
-     * @return array
-     * @throws \Magento\Framework\Exception\AuthenticationException
-     */
-    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
-    {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
-        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
-        return $headerMap;
+        $quote = $this->quoteFactory->create();
+        $this->quoteResource->load($quote, '1', 'customer_id');
+        $this->quoteResource->delete($quote);
     }
 }

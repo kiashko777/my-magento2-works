@@ -54,21 +54,6 @@ class InvoiceSenderTest extends TestCase
     private $invoiceIdentity;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
-        $this->invoiceSender = $this->objectManager->get(InvoiceSender::class);
-        $this->transportBuilderMock = $this->objectManager->get(TransportBuilderMock::class);
-        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
-        $this->invoiceFactory = $this->objectManager->get(InvoiceInterfaceFactory::class);
-        $this->invoiceIdentity = $this->objectManager->get(InvoiceIdentity::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Sales/_files/order.php
      * @magentoAppArea frontend
      * @return void
@@ -91,6 +76,32 @@ class InvoiceSenderTest extends TestCase
         $this->assertEquals($invoice->getBaseSubtotal(), $order->getBaseSubtotal());
         $this->assertEquals($invoice->getBaseTaxAmount(), $order->getBaseTaxAmount());
         $this->assertEquals($invoice->getBaseShippingAmount(), $order->getBaseShippingAmount());
+    }
+
+    /**
+     * Get order by increment_id
+     *
+     * @param string $incrementId
+     * @return OrderInterface
+     */
+    private function getOrder(string $incrementId): OrderInterface
+    {
+        return $this->orderFactory->create()->loadByIncrementId($incrementId);
+    }
+
+    /**
+     * Create invoice and set order
+     *
+     * @param OrderInterface $order
+     * @return InvoiceInterface
+     */
+    private function createInvoice(OrderInterface $order): InvoiceInterface
+    {
+        /** @var Invoice $invoice */
+        $invoice = $this->invoiceFactory->create();
+        $invoice->setOrder($order);
+
+        return $invoice;
     }
 
     /**
@@ -201,28 +212,17 @@ class InvoiceSenderTest extends TestCase
     }
 
     /**
-     * Create invoice and set order
-     *
-     * @param OrderInterface $order
-     * @return InvoiceInterface
+     * @inheritdoc
      */
-    private function createInvoice(OrderInterface $order): InvoiceInterface
+    protected function setUp(): void
     {
-        /** @var Invoice $invoice */
-        $invoice = $this->invoiceFactory->create();
-        $invoice->setOrder($order);
-
-        return $invoice;
-    }
-
-    /**
-     * Get order by increment_id
-     *
-     * @param string $incrementId
-     * @return OrderInterface
-     */
-    private function getOrder(string $incrementId): OrderInterface
-    {
-        return $this->orderFactory->create()->loadByIncrementId($incrementId);
+        parent::setUp();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
+        $this->invoiceSender = $this->objectManager->get(InvoiceSender::class);
+        $this->transportBuilderMock = $this->objectManager->get(TransportBuilderMock::class);
+        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
+        $this->invoiceFactory = $this->objectManager->get(InvoiceInterfaceFactory::class);
+        $this->invoiceIdentity = $this->objectManager->get(InvoiceIdentity::class);
     }
 }

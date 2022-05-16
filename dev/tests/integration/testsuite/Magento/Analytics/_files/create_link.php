@@ -3,12 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+
+use Magento\Analytics\Model\FileInfoManager;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
 
 /**
- * @var $fileInfoManager \Magento\Analytics\Model\FileInfoManager
+ * @var $fileInfoManager FileInfoManager
  */
-$fileInfoManager = $objectManager->create(\Magento\Analytics\Model\FileInfoManager::class);
+$fileInfoManager = $objectManager->create(FileInfoManager::class);
 
 /**
  * @var $fileInfo \Magento\Analytics\Model\FileInfo

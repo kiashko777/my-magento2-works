@@ -4,6 +4,11 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Customer\Api\Data\CustomerInterface;
+use Magento\Framework\MessageQueue\ConsumerInterface;
+use Magento\TestModuleMysqlMq\Model\DataObject;
+use Magento\TestModuleMysqlMq\Model\Processor;
+
 return [
     "publishers" => [
         "amqp-magento" => [
@@ -40,11 +45,11 @@ return [
             "name" => "publisher5.topic",
             "schema" => [
                 "schema_type" => "object",
-                "schema_value" => '\\' . \Magento\TestModuleMysqlMq\Model\DataObject::class
+                "schema_value" => '\\' . DataObject::class
             ],
             "response_schema" => [
                 "schema_type" => "object",
-                "schema_value" => \Magento\Customer\Api\Data\CustomerInterface::class
+                "schema_value" => CustomerInterface::class
             ],
             "publisher" => "test-publisher-5"
         ]
@@ -58,13 +63,13 @@ return [
             "handlers" => [
                 "topic.broker.test" => [
                     "0" => [
-                        "type" => \Magento\TestModuleMysqlMq\Model\Processor::class,
+                        "type" => Processor::class,
                         "method" => "processMessage"
                     ]
                 ]
             ],
             "max_messages" => null,
-            "instance_type" => \Magento\Framework\MessageQueue\ConsumerInterface::class
+            "instance_type" => ConsumerInterface::class
         ]
     ],
     "binds" => [

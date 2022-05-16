@@ -9,7 +9,6 @@ declare(strict_types=1);
 namespace Magento\TestModuleSimpleTemplateDirective\Model;
 
 use Magento\Framework\Filter\SimpleDirective\ProcessorInterface;
-use Magento\Framework\Filter\Template;
 
 /**
  * Handles the {{mydir}} directive
@@ -31,7 +30,8 @@ class MyDirProcessor implements ProcessorInterface
         $value,
         array $parameters,
         ?string $html
-    ): string {
+    ): string
+    {
         return $value . $parameters['param1'] . $html;
     }
 

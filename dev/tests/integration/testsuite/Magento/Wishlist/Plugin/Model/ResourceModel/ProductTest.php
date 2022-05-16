@@ -33,18 +33,6 @@ class ProductTest extends TestCase
     private $getWishlistByCustomerId;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productResoure = $this->objectManager->get(ProductResourceModel::class);
-        $this->getWishlistByCustomerId = $this->objectManager->get(GetWishlistByCustomerId::class);
-    }
-
-    /**
      * @return void
      */
     public function testPluginIsRegistered(): void
@@ -67,5 +55,17 @@ class ProductTest extends TestCase
         $this->assertNotNull($item);
         $this->productResoure->delete($item->getProduct());
         $this->assertNull($this->getWishlistByCustomerId->getItemBySku(1, 'simple'));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productResoure = $this->objectManager->get(ProductResourceModel::class);
+        $this->getWishlistByCustomerId = $this->objectManager->get(GetWishlistByCustomerId::class);
     }
 }

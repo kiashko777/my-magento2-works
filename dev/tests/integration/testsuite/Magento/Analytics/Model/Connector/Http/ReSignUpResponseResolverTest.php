@@ -3,18 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Analytics\Model\Connector\Http;
 
 use Magento\Analytics\Model\Config\Backend\Baseurl\SubscriptionUpdateHandler;
 use Magento\Analytics\Model\Config\Backend\Enabled\SubscriptionHandler;
-use Magento\Framework\FlagManager;
 use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\FlagManager;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+use Zend_Http_Response;
 
 /**
  * Checks that cron job was set if error handler was set and appropriate http error code was returned.
  */
-class ReSignUpResponseResolverTest extends \PHPUnit\Framework\TestCase
+class ReSignUpResponseResolverTest extends TestCase
 {
     /**
      * @var ResponseResolver
@@ -42,87 +45,24 @@ class ReSignUpResponseResolverTest extends \PHPUnit\Framework\TestCase
     private $flagManager;
 
     /**
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->otpResponseResolver = $objectManager->get(
-            'OtpResponseResolver'
-        );
-        $this->updateResponseResolver = $objectManager->get(
-            'UpdateResponseResolver'
-        );
-        $this->notifyDataChangedResponseResolver = $objectManager->get(
-            'NotifyDataChangedResponseResolver'
-        );
-        $this->converter = $objectManager->get(ConverterInterface::class);
-        $this->flagManager = $objectManager->get(FlagManager::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Analytics/_files/enabled_subscription_with_invalid_token.php
      * @magentoDbIsolation enabled
      */
     public function testReSignUpOnOtp()
     {
         $body = $this->converter->toBody(['test' => '42']);
-        $retryResponse = new \Zend_Http_Response(401, [$this->converter->getContentTypeHeader()], $body);
+        $retryResponse = new Zend_Http_Response(401, [$this->converter->getContentTypeHeader()], $body);
         $this->otpResponseResolver->getResult($retryResponse);
         $this->assertCronWasSet();
     }
 
     /**
-     * @magentoDataFixture Magento/Analytics/_files/enabled_subscription_with_invalid_token.php
-     * @magentoDbIsolation enabled
+     * @return void
      */
-    public function testReSignOnOtpWasNotCalled()
+    private function assertCronWasSet()
     {
-        $body = $this->converter->toBody(['test' => '42']);
-        $successResponse = new \Zend_Http_Response(201, [$this->converter->getContentTypeHeader()], $body);
-        $this->otpResponseResolver->getResult($successResponse);
-        $this->assertCronWasNotSet();
-    }
-
-    /**
-     * @magentoDataFixture Magento/Analytics/_files/enabled_subscription_with_invalid_token.php
-     * @magentoDbIsolation enabled
-     */
-    public function testReSignUpOnUpdateWasCalled()
-    {
-        $body = $this->converter->toBody(['test' => '42']);
-        $retryResponse = new \Zend_Http_Response(401, [$this->converter->getContentTypeHeader()], $body);
-        $this->updateResponseResolver->getResult($retryResponse);
-        $this->assertCronWasSet();
-    }
-
-    /**
-     * @magentoDataFixture Magento/Analytics/_files/enabled_subscription_with_invalid_token.php
-     * @magentoDbIsolation enabled
-     */
-    public function testReSignUpOnUpdateWasNotCalled()
-    {
-        $body = $this->converter->toBody(['test' => '42']);
-        $successResponse = new \Zend_Http_Response(201, [$this->converter->getContentTypeHeader()], $body);
-        $this->updateResponseResolver->getResult($successResponse);
-        $this->assertCronWasNotSet();
-    }
-
-    /**
-     * @magentoDataFixture Magento/Analytics/_files/enabled_subscription_with_invalid_token.php
-     * @magentoDbIsolation enabled
-     */
-    public function testReSignUpOnNotifyDataChangedWasNotCalledWhenSubscriptionUpdateIsRunning()
-    {
-        $this->flagManager
-            ->saveFlag(
-                SubscriptionUpdateHandler::PREVIOUS_BASE_URL_FLAG_CODE,
-                'https://previous.example.com/'
-            );
-        $body = $this->converter->toBody(['test' => '42']);
-        $retryResponse = new \Zend_Http_Response(401, [$this->converter->getContentTypeHeader()], $body);
-        $this->notifyDataChangedResponseResolver->getResult($retryResponse);
-        $this->assertCronWasNotSet();
+        $this->assertEquals('0 * * * *', $this->getSubscribeSchedule());
+        $this->assertGreaterThan(1, $this->getAttemptFlag());
     }
 
     /**
@@ -130,7 +70,7 @@ class ReSignUpResponseResolverTest extends \PHPUnit\Framework\TestCase
      */
     private function getSubscribeSchedule()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
         /**
          * @var $scopeConfig ScopeConfigInterface
          */
@@ -158,12 +98,15 @@ class ReSignUpResponseResolverTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @return void
+     * @magentoDataFixture Magento/Analytics/_files/enabled_subscription_with_invalid_token.php
+     * @magentoDbIsolation enabled
      */
-    private function assertCronWasSet()
+    public function testReSignOnOtpWasNotCalled()
     {
-        $this->assertEquals('0 * * * *', $this->getSubscribeSchedule());
-        $this->assertGreaterThan(1, $this->getAttemptFlag());
+        $body = $this->converter->toBody(['test' => '42']);
+        $successResponse = new Zend_Http_Response(201, [$this->converter->getContentTypeHeader()], $body);
+        $this->otpResponseResolver->getResult($successResponse);
+        $this->assertCronWasNotSet();
     }
 
     /**
@@ -173,5 +116,65 @@ class ReSignUpResponseResolverTest extends \PHPUnit\Framework\TestCase
     {
         $this->assertNull($this->getSubscribeSchedule());
         $this->assertNull($this->getAttemptFlag());
+    }
+
+    /**
+     * @magentoDataFixture Magento/Analytics/_files/enabled_subscription_with_invalid_token.php
+     * @magentoDbIsolation enabled
+     */
+    public function testReSignUpOnUpdateWasCalled()
+    {
+        $body = $this->converter->toBody(['test' => '42']);
+        $retryResponse = new Zend_Http_Response(401, [$this->converter->getContentTypeHeader()], $body);
+        $this->updateResponseResolver->getResult($retryResponse);
+        $this->assertCronWasSet();
+    }
+
+    /**
+     * @magentoDataFixture Magento/Analytics/_files/enabled_subscription_with_invalid_token.php
+     * @magentoDbIsolation enabled
+     */
+    public function testReSignUpOnUpdateWasNotCalled()
+    {
+        $body = $this->converter->toBody(['test' => '42']);
+        $successResponse = new Zend_Http_Response(201, [$this->converter->getContentTypeHeader()], $body);
+        $this->updateResponseResolver->getResult($successResponse);
+        $this->assertCronWasNotSet();
+    }
+
+    /**
+     * @magentoDataFixture Magento/Analytics/_files/enabled_subscription_with_invalid_token.php
+     * @magentoDbIsolation enabled
+     */
+    public function testReSignUpOnNotifyDataChangedWasNotCalledWhenSubscriptionUpdateIsRunning()
+    {
+        $this->flagManager
+            ->saveFlag(
+                SubscriptionUpdateHandler::PREVIOUS_BASE_URL_FLAG_CODE,
+                'https://previous.example.com/'
+            );
+        $body = $this->converter->toBody(['test' => '42']);
+        $retryResponse = new Zend_Http_Response(401, [$this->converter->getContentTypeHeader()], $body);
+        $this->notifyDataChangedResponseResolver->getResult($retryResponse);
+        $this->assertCronWasNotSet();
+    }
+
+    /**
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->otpResponseResolver = $objectManager->get(
+            'OtpResponseResolver'
+        );
+        $this->updateResponseResolver = $objectManager->get(
+            'UpdateResponseResolver'
+        );
+        $this->notifyDataChangedResponseResolver = $objectManager->get(
+            'NotifyDataChangedResponseResolver'
+        );
+        $this->converter = $objectManager->get(ConverterInterface::class);
+        $this->flagManager = $objectManager->get(FlagManager::class);
     }
 }

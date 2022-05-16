@@ -6,14 +6,15 @@ namespace Devall\Customform\Ui\Component\Listing\Column;
 use Magento\Framework\UrlInterface;
 use Magento\Framework\View\Element\UiComponent\ContextInterface;
 use Magento\Framework\View\Element\UiComponentFactory;
+use Magento\Ui\Component\Listing\Columns\Column;
 
-class CustomformActions extends \Magento\Ui\Component\Listing\Columns\Column
+class CustomformActions extends Column
 {
 
     const URL_PATH_EDIT = 'mladmincustomform/customform/edit';
     const URL_PATH_DELETE = 'mladmincustomform/customform/delete';
-    protected $urlBuilder;
     const URL_PATH_DETAILS = 'mladmincustomform/customform/details';
+    protected $urlBuilder;
 
     /**
      * @param ContextInterface $context
@@ -23,11 +24,11 @@ class CustomformActions extends \Magento\Ui\Component\Listing\Columns\Column
      * @param array $data
      */
     public function __construct(
-        ContextInterface $context,
-        UiComponentFactory           $uiComponentFactory,
-        UrlInterface                              $urlBuilder,
-        array                                                        $components = [],
-        array                                                        $data = []
+        ContextInterface   $context,
+        UiComponentFactory $uiComponentFactory,
+        UrlInterface       $urlBuilder,
+        array              $components = [],
+        array              $data = []
     )
     {
         $this->urlBuilder = $urlBuilder;

@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Setup\Test\Unit\Module\Di\Code\Reader\InstancesNamesList;
 
+use Exception;
 use Magento\Framework\Code\Reader\ClassReader;
 use Magento\Framework\Code\Validator;
 use Magento\Framework\Exception\ValidatorException;
@@ -16,6 +17,7 @@ use Magento\Setup\Module\Di\Code\Reader\Decorator\Directory;
 use Magento\Setup\Module\Di\Compiler\Log\Log;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use ReflectionException;
 
 /**
  * Test for Directory Decorator
@@ -46,40 +48,6 @@ class DirectoryTest extends TestCase
      * @var Log|MockObject
      */
     private $logMock;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->logMock = $this->getMockBuilder(Log::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['add'])
-            ->getMock();
-
-        $this->classesScanner = $this->getMockBuilder(ClassesScanner::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['getList'])
-            ->getMock();
-
-        $this->classReaderMock = $this->getMockBuilder(ClassReader::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['getParents'])
-            ->getMock();
-
-        $this->validatorMock = $this->getMockBuilder(Validator::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['validate'])
-            ->getMock();
-
-        $this->model = new Directory(
-            $this->logMock,
-            $this->classReaderMock,
-            $this->classesScanner,
-            $this->validatorMock,
-            '/generated/code'
-        );
-    }
 
     public function testGetList()
     {
@@ -168,7 +136,7 @@ class DirectoryTest extends TestCase
      *
      * @param $exception
      */
-    public function testGetListException(\Exception $exception)
+    public function testGetListException(Exception $exception)
     {
         $path = '/tmp/test';
 
@@ -205,8 +173,42 @@ class DirectoryTest extends TestCase
     {
         return [
             [new ValidatorException(new Phrase('Not Valid!'))],
-            [new \ReflectionException('Not Valid!')]
+            [new ReflectionException('Not Valid!')]
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->logMock = $this->getMockBuilder(Log::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['add'])
+            ->getMock();
+
+        $this->classesScanner = $this->getMockBuilder(ClassesScanner::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['getList'])
+            ->getMock();
+
+        $this->classReaderMock = $this->getMockBuilder(ClassReader::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['getParents'])
+            ->getMock();
+
+        $this->validatorMock = $this->getMockBuilder(Validator::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['validate'])
+            ->getMock();
+
+        $this->model = new Directory(
+            $this->logMock,
+            $this->classReaderMock,
+            $this->classesScanner,
+            $this->validatorMock,
+            '/generated/code'
+        );
     }
 
     /**

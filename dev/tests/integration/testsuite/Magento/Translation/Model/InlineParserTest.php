@@ -8,15 +8,18 @@ declare(strict_types=1);
 
 namespace Magento\Translation\Model;
 
+use Exception;
+use Magento\Framework\App\Area;
 use Magento\Framework\App\Config\MutableScopeConfigInterface;
 use Magento\Framework\App\State;
 use Magento\Framework\Translate\Inline;
-use Magento\Framework\App\Area;
 use Magento\Store\Model\ScopeInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Translation\Model\Inline\Parser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use ReflectionMethod;
+use ReflectionProperty;
 
 /**
  * Test for \Magento\Translation\Model\Inline\Parser.
@@ -30,17 +33,6 @@ class InlineParserTest extends TestCase
      * @var Parser
      */
     private $model;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $inline = Bootstrap::getObjectManager()->create(Inline::class);
-        $this->model = Bootstrap::getObjectManager()->create(Parser::class, ['translateInline' => $inline]);
-        Bootstrap::getObjectManager()->get(MutableScopeConfigInterface::class)
-            ->setValue(self::XML_PATH_TRANSLATE_INLINE_ACTIVE, true, ScopeInterface::SCOPE_STORE, self::STUB_STORE);
-    }
 
     /**
      * Process ajax post test
@@ -57,8 +49,9 @@ class InlineParserTest extends TestCase
         string $originalText,
         string $translatedText,
         string $area,
-        ?bool $isPerStore = null
-    ): void {
+        ?bool  $isPerStore = null
+    ): void
+    {
         Bootstrap::getObjectManager()->get(State::class)
             ->setAreaCode($area);
 
@@ -74,7 +67,7 @@ class InlineParserTest extends TestCase
         try {
             $this->assertEquals($translatedText, $model->getTranslate());
             $model->delete();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $model->delete();
             Bootstrap::getObjectManager()->get(LoggerInterface::class)
                 ->critical($e);
@@ -109,12 +102,12 @@ class InlineParserTest extends TestCase
         Bootstrap::getObjectManager()->get(State::class)
             ->setAreaCode($area);
 
-        $isJsonProperty = new \ReflectionProperty(get_class($this->model), '_isJson');
+        $isJsonProperty = new ReflectionProperty(get_class($this->model), '_isJson');
         $isJsonProperty->setAccessible(true);
 
         $this->assertFalse($isJsonProperty->getValue($this->model));
 
-        $setIsJsonMethod = new \ReflectionMethod($this->model, 'setIsJson');
+        $setIsJsonMethod = new ReflectionMethod($this->model, 'setIsJson');
         $setIsJsonMethod->setAccessible(true);
         $setIsJsonMethod->invoke($this->model, true);
 
@@ -132,5 +125,16 @@ class InlineParserTest extends TestCase
             [Area::AREA_ADMINHTML],
             [Area::AREA_FRONTEND]
         ];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $inline = Bootstrap::getObjectManager()->create(Inline::class);
+        $this->model = Bootstrap::getObjectManager()->create(Parser::class, ['translateInline' => $inline]);
+        Bootstrap::getObjectManager()->get(MutableScopeConfigInterface::class)
+            ->setValue(self::XML_PATH_TRANSLATE_INLINE_ACTIVE, true, ScopeInterface::SCOPE_STORE, self::STUB_STORE);
     }
 }

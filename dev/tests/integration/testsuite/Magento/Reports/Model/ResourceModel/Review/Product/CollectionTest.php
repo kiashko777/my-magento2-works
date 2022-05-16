@@ -3,24 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Reports\Model\ResourceModel\Review\Product;
+
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class CollectionTest extends \PHPUnit\Framework\TestCase
+class CollectionTest extends TestCase
 {
     /**
-     * @var \Magento\Reports\Model\ResourceModel\Review\Product\Collection
+     * @var Collection
      */
     private $_collection;
-
-    protected function setUp(): void
-    {
-        $this->_collection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Reports\Model\ResourceModel\Review\Product\Collection::class
-        );
-    }
 
     public function testGetSelect()
     {
@@ -30,5 +27,12 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
             . '[\s\S]+LEFT JOIN `.*rating_option_vote_aggregated` AS `table_rating`/';
 
         $this->assertMatchesRegularExpression($search, $select);
+    }
+
+    protected function setUp(): void
+    {
+        $this->_collection = Bootstrap::getObjectManager()->create(
+            Collection::class
+        );
     }
 }

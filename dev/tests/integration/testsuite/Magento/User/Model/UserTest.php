@@ -23,6 +23,7 @@ use Magento\TestFramework\Bootstrap as TestFrameworkBootstrap;
 use Magento\TestFramework\Entity;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Mail\Template\TransportBuilderMock;
+use Magento\User\Model\Spi\NotificatorInterface;
 use Magento\User\Model\User as UserModel;
 use PHPUnit\Framework\TestCase;
 
@@ -33,20 +34,17 @@ use PHPUnit\Framework\TestCase;
 class UserTest extends TestCase
 {
     /**
+     * @var Role
+     */
+    protected static $_newRole;
+    /**
      * @var UserModel
      */
     protected $_model;
-
     /**
      * @var DateTime
      */
     protected $_dateTime;
-
-    /**
-     * @var Role
-     */
-    protected static $_newRole;
-
     /**
      * @var Encryptor
      */
@@ -63,15 +61,15 @@ class UserTest extends TestCase
     private $objectManager;
 
     /**
-     * @inheritDoc
+     * phpcs:disable Magento2.Functions.StaticFunction
      */
-    protected function setUp(): void
+    public static function roleDataFixture()
     {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->_model = $this->objectManager->create(UserModel::class);
-        $this->_dateTime = $this->objectManager->get(DateTime::class);
-        $this->encryptor = $this->objectManager->get(Encryptor::class);
-        $this->cache = $this->objectManager->get(CacheInterface::class);
+        self::$_newRole = Bootstrap::getObjectManager()->create(
+            Role::class
+        );
+        self::$_newRole->setName('admin_role')->setRoleType('G')->setPid('1');
+        self::$_newRole->save();
     }
 
     /**
@@ -130,18 +128,6 @@ class UserTest extends TestCase
         $this->assertEquals(TestFrameworkBootstrap::ADMIN_ROLE_NAME, $this->_model->getRole()->getRoleName());
         $this->_model->setRoleId(self::$_newRole->getId())->save();
         $this->assertEquals('admin_role', $this->_model->getRole()->getRoleName());
-    }
-
-    /**
-     * phpcs:disable Magento2.Functions.StaticFunction
-     */
-    public static function roleDataFixture()
-    {
-        self::$_newRole = Bootstrap::getObjectManager()->create(
-            Role::class
-        );
-        self::$_newRole->setName('admin_role')->setRoleType('G')->setPid('1');
-        self::$_newRole->save();
     }
 
     /**
@@ -631,7 +617,7 @@ class UserTest extends TestCase
             ->create(TemplateCollection::class);
         foreach ($templateCollection as $template) {
             if ($template->getOrigTemplateCode() == $origTemplateCode) {
-                $templateId = (int) $template->getId();
+                $templateId = (int)$template->getId();
             }
         }
         if ($templateId === null) {
@@ -661,14 +647,26 @@ class UserTest extends TestCase
             )
         );
         $userModel = $this->_model->loadByUsername('adminUser');
-        $notificator = $this->objectManager->get(\Magento\User\Model\Spi\NotificatorInterface::class);
+        $notificator = $this->objectManager->get(NotificatorInterface::class);
         $notificator->sendForgotPassword($userModel);
         /** @var TransportBuilderMock $transportBuilderMock */
         $transportBuilderMock = $this->objectManager->get(TransportBuilderMock::class);
         $sentMessage = $transportBuilderMock->getSentMessage();
         $this->assertStringContainsString(
-            'id='.$userModel->getId(),
+            'id=' . $userModel->getId(),
             quoted_printable_decode($sentMessage->getBodyText())
         );
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->_model = $this->objectManager->create(UserModel::class);
+        $this->_dateTime = $this->objectManager->get(DateTime::class);
+        $this->encryptor = $this->objectManager->get(Encryptor::class);
+        $this->cache = $this->objectManager->get(CacheInterface::class);
     }
 }

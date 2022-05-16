@@ -6,36 +6,29 @@
 
 namespace Magento\Webapi\Controller;
 
+use Magento\Framework\Locale\ResolverInterface;
 use Magento\Store\Model\Store;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for Magento\Webapi\Controller\PathProcessor class.
  */
-class PathProcessorTest extends \PHPUnit\Framework\TestCase
+class PathProcessorTest extends TestCase
 {
     /**
-     * @var \Magento\Store\Model\StoreManagerInterface
+     * @var StoreManagerInterface
      */
     protected $storeManager;
-
     /**
-     * @var \Magento\Framework\Locale\ResolverInterface::class
-     */
-    private $localeResolver;
-
-    /**
-     * @var \Magento\Webapi\Controller\PathProcessor
+     * @var PathProcessor
      */
     protected $pathProcessor;
-
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->storeManager = $objectManager->get(\Magento\Store\Model\StoreManagerInterface::class);
-        $this->storeManager->reinitStores();
-        $this->localeResolver = $objectManager->get(\Magento\Framework\Locale\ResolverInterface::class);
-        $this->pathProcessor = $objectManager->get(\Magento\Webapi\Controller\PathProcessor::class);
-    }
+    /**
+     * @var ResolverInterface::class
+     */
+    private $localeResolver;
 
     /**
      * @magentoDataFixture Magento/Store/_files/core_fixturestore.php
@@ -83,5 +76,14 @@ class PathProcessorTest extends \PHPUnit\Framework\TestCase
         $this->pathProcessor->process($path);
         $this->assertEquals($locale, $this->localeResolver->getLocale());
         $this->assertNotEquals('en_US', $this->localeResolver->getLocale());
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->storeManager = $objectManager->get(StoreManagerInterface::class);
+        $this->storeManager->reinitStores();
+        $this->localeResolver = $objectManager->get(ResolverInterface::class);
+        $this->pathProcessor = $objectManager->get(PathProcessor::class);
     }
 }

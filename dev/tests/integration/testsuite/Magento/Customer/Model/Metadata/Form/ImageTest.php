@@ -10,12 +10,16 @@ namespace Magento\Customer\Model\Metadata\Form;
 
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Exception\FileSystemException;
+use Magento\Framework\Exception\ValidatorException;
 use Magento\Framework\Filesystem;
 use Magento\Framework\Filesystem\Directory\WriteInterface;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+use ReflectionException;
+use ReflectionMethod;
 
-class ImageTest extends \PHPUnit\Framework\TestCase
+class ImageTest extends TestCase
 {
     /**
      * @var ObjectManagerInterface
@@ -53,6 +57,22 @@ class ImageTest extends \PHPUnit\Framework\TestCase
     private $mediaDirectory;
 
     /**
+     * @inheritdoc
+     * @throws FileSystemException
+     */
+    public static function tearDownAfterClass(): void
+    {
+        parent::tearDownAfterClass();
+        $filesystem = Bootstrap::getObjectManager()->get(
+            Filesystem::class
+        );
+        /** @var WriteInterface $mediaDirectory */
+        $mediaDirectory = $filesystem->getDirectoryWrite(DirectoryList::MEDIA);
+        $mediaDirectory->delete('customer');
+        $mediaDirectory->delete('customer_address');
+    }
+
+    /**
      * @inheritDoc
      */
     public function setUp(): void
@@ -69,7 +89,7 @@ class ImageTest extends \PHPUnit\Framework\TestCase
      *
      * @magentoAppIsolation enabled
      * @throws FileSystemException
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     public function testProcessCustomerAddressValue()
     {
@@ -98,9 +118,9 @@ class ImageTest extends \PHPUnit\Framework\TestCase
         $expectedPath = $this->mediaDirectory->getAbsolutePath('customer_address' . $this->expectedFileName);
 
         /** @var Image $image */
-        $image = $this->objectManager->create(\Magento\Customer\Model\Metadata\Form\Image::class, $params);
-        $processCustomerAddressValueMethod = new \ReflectionMethod(
-            \Magento\Customer\Model\Metadata\Form\Image::class,
+        $image = $this->objectManager->create(Image::class, $params);
+        $processCustomerAddressValueMethod = new ReflectionMethod(
+            Image::class,
             'processCustomerAddressValue'
         );
         $processCustomerAddressValueMethod->setAccessible(true);
@@ -115,7 +135,7 @@ class ImageTest extends \PHPUnit\Framework\TestCase
      *
      * @magentoAppIsolation enabled
      * @throws FileSystemException
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     public function testProcessCustomerValue()
     {
@@ -142,9 +162,9 @@ class ImageTest extends \PHPUnit\Framework\TestCase
         ];
 
         /** @var Image $image */
-        $image = $this->objectManager->create(\Magento\Customer\Model\Metadata\Form\Image::class, $params);
-        $processCustomerAddressValueMethod = new \ReflectionMethod(
-            \Magento\Customer\Model\Metadata\Form\Image::class,
+        $image = $this->objectManager->create(Image::class, $params);
+        $processCustomerAddressValueMethod = new ReflectionMethod(
+            Image::class,
             'processCustomerValue'
         );
         $processCustomerAddressValueMethod->setAccessible(true);
@@ -159,12 +179,12 @@ class ImageTest extends \PHPUnit\Framework\TestCase
      * @magentoAppIsolation enabled
      *
      * @throws FileSystemException
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     public function testProcessCustomerInvalidValue()
     {
         $this->expectException(
-            \Magento\Framework\Exception\ValidatorException::class
+            ValidatorException::class
         );
 
         $this->mediaDirectory->delete('customer');
@@ -190,28 +210,12 @@ class ImageTest extends \PHPUnit\Framework\TestCase
         ];
 
         /** @var Image $image */
-        $image = $this->objectManager->create(\Magento\Customer\Model\Metadata\Form\Image::class, $params);
-        $processCustomerAddressValueMethod = new \ReflectionMethod(
-            \Magento\Customer\Model\Metadata\Form\Image::class,
+        $image = $this->objectManager->create(Image::class, $params);
+        $processCustomerAddressValueMethod = new ReflectionMethod(
+            Image::class,
             'processCustomerValue'
         );
         $processCustomerAddressValueMethod->setAccessible(true);
         $processCustomerAddressValueMethod->invoke($image, $imageFile);
-    }
-
-    /**
-     * @inheritdoc
-     * @throws FileSystemException
-     */
-    public static function tearDownAfterClass(): void
-    {
-        parent::tearDownAfterClass();
-        $filesystem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            Filesystem::class
-        );
-        /** @var WriteInterface $mediaDirectory */
-        $mediaDirectory = $filesystem->getDirectoryWrite(DirectoryList::MEDIA);
-        $mediaDirectory->delete('customer');
-        $mediaDirectory->delete('customer_address');
     }
 }

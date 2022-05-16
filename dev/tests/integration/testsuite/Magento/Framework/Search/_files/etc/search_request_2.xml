@@ -41,7 +41,8 @@
             <filter xsi:type="wildcardFilter" name="not_filter" field="field_3_override" value="$field_3_override$"/>
         </filters>
         <aggregations>
-            <bucket name="bucket_1" field="field_1_override" xsi:type="dynamicBucket" method="$field_1_dynamic_algorithm_override$">
+            <bucket name="bucket_1" field="field_1_override" xsi:type="dynamicBucket"
+                    method="$field_1_dynamic_algorithm_override$">
                 <metrics>
                     <metric type="count"/>
                 </metrics>

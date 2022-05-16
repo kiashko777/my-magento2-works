@@ -3,27 +3,28 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Downloadable\Model\Observer;
+
+use Magento\Downloadable\Model\Link\Purchased\Item;
+use Magento\Downloadable\Model\ResourceModel\Link\Purchased\Item\Collection;
+use Magento\Downloadable\Model\ResourceModel\Link\Purchased\Item\CollectionFactory;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Sales\Model\Order;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Integration test for case, when customer is able to download
  * downloadable product, after order was canceled.
  */
-class SetLinkStatusObserverTest extends \PHPUnit\Framework\TestCase
+class SetLinkStatusObserverTest extends TestCase
 {
     /**
      * Object manager
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    /**
-     * Initialization of dependencies
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * Asserting, that links status is expired after canceling of order.
@@ -35,8 +36,8 @@ class SetLinkStatusObserverTest extends \PHPUnit\Framework\TestCase
      */
     public function testCheckStatusOnOrderCancel()
     {
-        /** @var \Magento\Sales\Model\Order $order */
-        $order = $this->objectManager->create(\Magento\Sales\Model\Order::class);
+        /** @var Order $order */
+        $order = $this->objectManager->create(Order::class);
         $order->loadByIncrementId('100000001');
 
         $orderItems = $order->getAllItems();
@@ -45,12 +46,12 @@ class SetLinkStatusObserverTest extends \PHPUnit\Framework\TestCase
         $orderItem = array_shift($items);
 
         /** Canceling order to reproduce test case */
-        $order->setState(\Magento\Sales\Model\Order::STATE_CANCELED);
+        $order->setState(Order::STATE_CANCELED);
         $order->save();
 
-        /** @var \Magento\Downloadable\Model\ResourceModel\Link\Purchased\Item\Collection $linkCollection */
+        /** @var Collection $linkCollection */
         $linkCollection = $this->objectManager->create(
-            \Magento\Downloadable\Model\ResourceModel\Link\Purchased\Item\CollectionFactory::class
+            CollectionFactory::class
         )->create();
 
         $linkCollection->addFieldToFilter('order_item_id', $orderItem->getId());
@@ -58,12 +59,20 @@ class SetLinkStatusObserverTest extends \PHPUnit\Framework\TestCase
         /** Assert there are items in linkCollection to avoid false-positive test result. */
         $this->assertGreaterThan(0, $linkCollection->count());
 
-        /** @var \Magento\Downloadable\Model\Link\Purchased\Item $linkItem */
+        /** @var Item $linkItem */
         foreach ($linkCollection->getItems() as $linkItem) {
             $this->assertEquals(
-                \Magento\Downloadable\Model\Link\Purchased\Item::LINK_STATUS_EXPIRED,
+                Item::LINK_STATUS_EXPIRED,
                 $linkItem->getStatus()
             );
         }
+    }
+
+    /**
+     * Initialization of dependencies
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

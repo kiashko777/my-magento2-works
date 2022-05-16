@@ -3,9 +3,9 @@
 namespace Pixelpro\Helloworld\Controller\adminhtml\Post;
 
 use Magento\Backend\App\Action\Context;
+use Magento\Framework\Controller\ResultFactory;
 use Magento\Ui\Component\MassAction\Filter;
 use Pixelpro\Helloworld\Model\ResourceModel\Post\CollectionFactory;
-use Magento\Framework\Controller\ResultFactory;
 
 /**
  * Class MassDisable

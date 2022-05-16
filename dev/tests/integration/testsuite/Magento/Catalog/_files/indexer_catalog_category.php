@@ -4,12 +4,16 @@
  * See COPYING.txt for license details.
  */
 
-/** @var $category \Magento\Catalog\Model\Category */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+/** @var $category Category */
+
+use Magento\Catalog\Model\Category;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
 
 // products from this fixture were moved to indexer_catalog_products.php
 
-$categoryFirst = $objectManager->create(\Magento\Catalog\Model\Category::class);
+$categoryFirst = $objectManager->create(Category::class);
 $categoryFirst->setName('Category 1')
     ->setPath('1/2')
     ->setLevel(2)
@@ -19,7 +23,7 @@ $categoryFirst->setName('Category 1')
     ->setPosition(1)
     ->save();
 
-$categorySecond = $objectManager->create(\Magento\Catalog\Model\Category::class);
+$categorySecond = $objectManager->create(Category::class);
 $categorySecond->setName('Category 2')
     ->setPath('1/2')
     ->setLevel(2)
@@ -29,7 +33,7 @@ $categorySecond->setName('Category 2')
     ->setPosition(2)
     ->save();
 
-$categoryThird = $objectManager->create(\Magento\Catalog\Model\Category::class);
+$categoryThird = $objectManager->create(Category::class);
 $categoryThird->setName('Category 3')
     ->setPath($categoryFirst->getPath())
     ->setLevel(3)
@@ -39,7 +43,7 @@ $categoryThird->setName('Category 3')
     ->setPosition(2)
     ->save();
 
-$categoryFourth = $objectManager->create(\Magento\Catalog\Model\Category::class);
+$categoryFourth = $objectManager->create(Category::class);
 $categoryFourth->setName('Category 4')
     ->setPath($categoryThird->getPath())
     ->setLevel(4)
@@ -49,7 +53,7 @@ $categoryFourth->setName('Category 4')
     ->setPosition(1)
     ->save();
 
-$categoryFifth = $objectManager->create(\Magento\Catalog\Model\Category::class);
+$categoryFifth = $objectManager->create(Category::class);
 $categoryFifth->setName('Category 5')
     ->setPath($categorySecond->getPath())
     ->setLevel(3)

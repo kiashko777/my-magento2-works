@@ -7,20 +7,25 @@
 /**
  * Tests, that perform search of words, that signal of obsolete code
  */
+
 namespace Magento\Test\Legacy;
 
+use Magento\Framework\App\Utility\AggregateInvoker;
+use Magento\Framework\App\Utility\Files;
 use Magento\Framework\Component\ComponentRegistrar;
+use Magento\TestFramework\Inspection\WordsFinder;
+use PHPUnit\Framework\TestCase;
 
-class WordsTest extends \PHPUnit\Framework\TestCase
+class WordsTest extends TestCase
 {
     /**
-     * @var \Magento\TestFramework\Inspection\WordsFinder
+     * @var WordsFinder
      */
     protected static $_wordsFinder;
 
     public static function setUpBeforeClass(): void
     {
-        self::$_wordsFinder = new \Magento\TestFramework\Inspection\WordsFinder(
+        self::$_wordsFinder = new WordsFinder(
             glob(__DIR__ . '/_files/words_*.xml'),
             BP,
             new ComponentRegistrar()
@@ -29,18 +34,18 @@ class WordsTest extends \PHPUnit\Framework\TestCase
 
     public function testWords()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
-            /**
-             * @param string $file
-             */
+        /**
+         * @param string $file
+         */
             function ($file) {
                 $words = self::$_wordsFinder->findWords(realpath($file));
                 if ($words) {
                     $this->fail("Found words: '" . implode("', '", $words) . "' in '{$file}' file");
                 }
             },
-            \Magento\Framework\App\Utility\Files::init()->getAllFiles()
+            Files::init()->getAllFiles()
         );
     }
 }

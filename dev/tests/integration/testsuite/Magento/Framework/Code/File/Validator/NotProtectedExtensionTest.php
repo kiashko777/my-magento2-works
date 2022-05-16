@@ -7,12 +7,14 @@ declare(strict_types=1);
 
 namespace Magento\Framework\Code\File\Validator;
 
+use Magento\MediaStorage\Model\File\Validator\NotProtectedExtension;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class NotProtectedExtension
  */
-class NotProtectedExtensionTest extends \PHPUnit\Framework\TestCase
+class NotProtectedExtensionTest extends TestCase
 {
     /**
      * Test that phpt, pht is invalid extension type
@@ -21,8 +23,8 @@ class NotProtectedExtensionTest extends \PHPUnit\Framework\TestCase
     public function testIsValid($extension)
     {
         $objectManager = Bootstrap::getObjectManager();
-        /** @var \Magento\MediaStorage\Model\File\Validator\NotProtectedExtension $model */
-        $model = $objectManager->create(\Magento\MediaStorage\Model\File\Validator\NotProtectedExtension::class);
+        /** @var NotProtectedExtension $model */
+        $model = $objectManager->create(NotProtectedExtension::class);
         $this->assertFalse($model->isValid($extension));
     }
 

@@ -18,14 +18,6 @@ class RegionTest extends TestCase
     protected $country;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->country = Bootstrap::getObjectManager()->create(Country::class);
-    }
-
-    /**
      * Verify country has regions.
      *
      * @var string $countryId
@@ -44,7 +36,7 @@ class RegionTest extends TestCase
      *
      * @return array
      */
-    public function getCountryIdDataProvider():array
+    public function getCountryIdDataProvider(): array
     {
         return [
             ['countryId' => 'US'],
@@ -74,5 +66,13 @@ class RegionTest extends TestCase
             ['countryId' => 'DK'],
             ['countryId' => 'AL']
         ];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->country = Bootstrap::getObjectManager()->create(Country::class);
     }
 }

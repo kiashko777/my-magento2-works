@@ -34,17 +34,6 @@ class QuoteRecollectProcessorTest extends TestCase
     private $prepareBundleLinks;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getQuoteByReservedOrderId = $objectManager->get(GetQuoteByReservedOrderId::class);
-        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
-        $this->prepareBundleLinks = $objectManager->get(PrepareBundleLinks::class);
-    }
-
-    /**
      * Tests that quote marked to recollect after bundle product options or selections changed.
      *
      * @magentoAppIsolation enabled
@@ -56,15 +45,33 @@ class QuoteRecollectProcessorTest extends TestCase
      * @return void
      */
     public function testMarkQuoteRecollectAfterChangeBundleOptions(
-        array $optionsData,
-        array $selectionsData,
+        array  $optionsData,
+        array  $selectionsData,
         string $expectedTriggerRecollect
-    ): void {
+    ): void
+    {
         $quote = $this->getQuoteByReservedOrderId->execute('test_cart_with_fixed_bundle');
         $this->assertFalse((bool)$quote->getTriggerRecollect());
         $this->updateBundleProduct('fixed_bundle_product_without_discounts', $optionsData, $selectionsData);
         $updatedQuote = $this->getQuoteByReservedOrderId->execute('test_cart_with_fixed_bundle');
         $this->assertEquals($expectedTriggerRecollect, $updatedQuote->getTriggerRecollect());
+    }
+
+    /**
+     * Updates bundle product options and selections.
+     *
+     * @param string $sku
+     * @param array $optionsData
+     * @param array $selectionsData
+     * @return void
+     */
+    private function updateBundleProduct(string $sku, array $optionsData, array $selectionsData): void
+    {
+        $product = $this->productRepository->get($sku);
+        $option = current($product->getExtensionAttributes()->getBundleProductOptions());
+        $optionsData[0]['option_id'] = $option->getId();
+        $updatedProduct = $this->prepareBundleLinks->execute($product, $optionsData, [$selectionsData]);
+        $this->productRepository->save($updatedProduct);
     }
 
     /**
@@ -119,19 +126,13 @@ class QuoteRecollectProcessorTest extends TestCase
     }
 
     /**
-     * Updates bundle product options and selections.
-     *
-     * @param string $sku
-     * @param array $optionsData
-     * @param array $selectionsData
-     * @return void
+     * @inheritDoc
      */
-    private function updateBundleProduct(string $sku, array $optionsData, array $selectionsData): void
+    protected function setUp(): void
     {
-        $product = $this->productRepository->get($sku);
-        $option = current($product->getExtensionAttributes()->getBundleProductOptions());
-        $optionsData[0]['option_id'] = $option->getId();
-        $updatedProduct = $this->prepareBundleLinks->execute($product, $optionsData, [$selectionsData]);
-        $this->productRepository->save($updatedProduct);
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getQuoteByReservedOrderId = $objectManager->get(GetQuoteByReservedOrderId::class);
+        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
+        $this->prepareBundleLinks = $objectManager->get(PrepareBundleLinks::class);
     }
 }

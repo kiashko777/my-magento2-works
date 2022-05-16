@@ -8,17 +8,17 @@ declare(strict_types=1);
 
 namespace Magento\Checkout\Model;
 
+use Magento\Captcha\Helper\Data as CaptchaHelper;
 use Magento\Captcha\Model\DefaultModel;
 use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Model\Session as CustomerSession;
+use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\HTTP\PhpEnvironment\RemoteAddress;
 use Magento\TestFramework\Helper\Bootstrap;
-use PHPUnit\Framework\TestCase;
-use Magento\Captcha\Helper\Data as CaptchaHelper;
-use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\TestFramework\ObjectManager;
-use Magento\Customer\Model\Session as CustomerSession;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test CAPTCHA-based rate limiter.
@@ -53,27 +53,6 @@ class CaptchaRateLimiterTest extends TestCase
      * @var CustomerRepositoryInterface
      */
     private $customerRepo;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        /** @var ObjectManager $objectManager */
-        $objectManager = Bootstrap::getObjectManager();
-        $this->request = $objectManager->get(RequestInterface::class);
-        $this->request->getServer()->set('REMOTE_ADDR', '127.0.0.1');
-        $objectManager->removeSharedInstance(RemoteAddress::class);
-        $this->captchaHelper = $objectManager->get(CaptchaHelper::class);
-        $this->customerSession = $objectManager->get(CustomerSession::class);
-        $this->customerRepo = $objectManager->get(CustomerRepositoryInterface::class);
-        $this->model = $objectManager->create(
-            CaptchaRateLimiter::class,
-            ['captchaId' => 'payment_processing_request']
-        );
-    }
 
     /**
      * Verify that limits work for logged-in customers.
@@ -184,5 +163,26 @@ class CaptchaRateLimiterTest extends TestCase
         }
         //CAPTCHA was validated
         $this->assertTrue($limited);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        /** @var ObjectManager $objectManager */
+        $objectManager = Bootstrap::getObjectManager();
+        $this->request = $objectManager->get(RequestInterface::class);
+        $this->request->getServer()->set('REMOTE_ADDR', '127.0.0.1');
+        $objectManager->removeSharedInstance(RemoteAddress::class);
+        $this->captchaHelper = $objectManager->get(CaptchaHelper::class);
+        $this->customerSession = $objectManager->get(CustomerSession::class);
+        $this->customerRepo = $objectManager->get(CustomerRepositoryInterface::class);
+        $this->model = $objectManager->create(
+            CaptchaRateLimiter::class,
+            ['captchaId' => 'payment_processing_request']
+        );
     }
 }

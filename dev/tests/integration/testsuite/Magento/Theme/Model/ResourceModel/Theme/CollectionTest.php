@@ -3,27 +3,47 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Theme\Model\ResourceModel\Theme;
 
+use Exception;
+use Magento\Framework\App\Area;
 use Magento\Framework\View\Design\ThemeInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Theme\Model\Theme;
+use Magento\Theme\Model\Theme\Data;
+use PHPUnit\Framework\TestCase;
 
-class CollectionTest extends \PHPUnit\Framework\TestCase
+class CollectionTest extends TestCase
 {
     public static function setUpBeforeClass(): void
     {
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->configure(
-            ['preferences' => [\Magento\Theme\Model\Theme::class => \Magento\Theme\Model\Theme\Data::class]]
+        Bootstrap::getObjectManager()->configure(
+            ['preferences' => [Theme::class => Data::class]]
         );
     }
 
     /**
-     * @return \Magento\Theme\Model\ResourceModel\Theme\Collection
+     * @throws Exception
      */
-    protected static function _getThemesCollection()
+    public static function setInheritedThemeFixture()
     {
-        return \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Theme\Model\ResourceModel\Theme\Collection::class
-        );
+        $fixture = self::getInheritedThemeList();
+        $idByPath = [];
+        foreach ($fixture as $themeData) {
+            /** @var $themeModel ThemeInterface */
+            $themeModel = Bootstrap::getObjectManager()->create(
+                ThemeInterface::class
+            );
+            $themeModel->setData($themeData);
+
+            if ($themeData['parent_id'] && isset($idByPath[$themeData['parent_id']])) {
+                $themeModel->setParentId($idByPath[$themeData['parent_id']]);
+            }
+            $themeModel->save();
+
+            $idByPath[$themeModel->getFullPath()] = $themeModel->getId();
+        }
     }
 
     /**
@@ -45,193 +65,33 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @param string $fullPath
-     * @param bool $shouldExist
-     * @magentoDataFixture setThemeFixture
-     * @dataProvider getThemeByFullPathDataProvider
+     * @return Collection
      */
-    public function testGetThemeByFullPath($fullPath, $shouldExist)
+    protected static function _getThemesCollection()
     {
-        $themeCollection = self::_getThemesCollection();
-        $hasFound = false;
-        /** @var $theme \Magento\Framework\View\Design\ThemeInterface */
-        foreach ($themeCollection as $theme) {
-            if ($theme->getFullPath() == $fullPath) {
-                $hasFound = true;
-                break;
-            }
-        }
-        $message = $shouldExist ? 'Theme not found' : 'Theme is found but it should not';
-        $this->assertEquals($shouldExist, $hasFound, $message);
-    }
-
-    /**
-     * @return array
-     */
-    public function getThemeByFullPathDataProvider()
-    {
-        return [
-            ['test_area/test/default', true],
-            ['test_area2/test/pro', true],
-            ['test_area/test/pro', false],
-            ['test_area2/test/default', false],
-            ['', false],
-            ['test_area', false],
-            ['test_area/test', false],
-            ['test_area/test/something', false]
-        ];
-    }
-
-    /**
-     * @magentoDataFixture setThemeFixture
-     * @magentoDbIsolation enabled
-     * @dataProvider addAreaFilterDataProvider
-     */
-    public function testAddAreaFilter($area, $themeCount)
-    {
-        /** @var $themeCollection \Magento\Theme\Model\ResourceModel\Theme\Collection */
-        $themeCollection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Theme\Model\ResourceModel\Theme\Collection::class
+        return Bootstrap::getObjectManager()->create(
+            Collection::class
         );
-        $themeCollection->addAreaFilter($area);
-        $this->assertCount($themeCount, $themeCollection);
-    }
-
-    /**
-     * @return array
-     */
-    public function addAreaFilterDataProvider()
-    {
-        return [
-            ['area' => 'test_area', 'themeCount' => 1],
-            ['area' => 'test_area2', 'themeCount' => 1],
-            ['area' => 'test_area4', 'themeCount' => 0]
-        ];
-    }
-
-    /**
-     * @magentoDataFixture setThemeFixture
-     * @magentoDbIsolation enabled
-     * @dataProvider addTypeFilterDataProvider
-     * @covers \Magento\Theme\Model\ResourceModel\Theme\Collection::addAreaFilter
-     */
-    public function testAddTypeFilter($themeType, $themeCount)
-    {
-        /** @var $themeCollection \Magento\Theme\Model\ResourceModel\Theme\Collection */
-        $themeCollection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Theme\Model\ResourceModel\Theme\Collection::class
-        );
-        $themeCollection->addAreaFilter('test_area3');
-        if ($themeType !== false) {
-            $themeCollection->addTypeFilter($themeType);
-        }
-        $this->assertCount($themeCount, $themeCollection);
-    }
-
-    /**
-     * @return array
-     */
-    public function addTypeFilterDataProvider()
-    {
-        return [
-            ['themeType' => ThemeInterface::TYPE_PHYSICAL, 'themeCount' => 1],
-            ['themeType' => ThemeInterface::TYPE_VIRTUAL, 'themeCount' => 1],
-            ['themeType' => ThemeInterface::TYPE_STAGING, 'themeCount' => 1],
-            ['themeType' => false, 'themeCount' => 3]
-        ];
-    }
-
-    /**
-     * @magentoDataFixture setThemeFixture
-     * @magentoDbIsolation enabled
-     * @covers \Magento\Theme\Model\ResourceModel\Theme\Collection::filterVisibleThemes
-     */
-    public function testFilterVisibleThemes()
-    {
-        /** @var $themeCollection \Magento\Theme\Model\ResourceModel\Theme\Collection */
-        $themeCollection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Theme\Model\ResourceModel\Theme\Collection::class
-        );
-        $themeCollection->addAreaFilter('test_area3')->filterVisibleThemes();
-        $this->assertCount(2, $themeCollection);
-        /** @var $theme \Magento\Framework\View\Design\ThemeInterface */
-        foreach ($themeCollection as $theme) {
-            $this->assertTrue(
-                in_array($theme->getType(), [ThemeInterface::TYPE_PHYSICAL, ThemeInterface::TYPE_VIRTUAL])
-            );
-        }
-    }
-
-    /**
-     * @magentoDataFixture setInheritedThemeFixture
-     */
-    public function testCheckParentInThemes()
-    {
-        $collection = self::_getThemesCollection();
-        //->checkParentInThemes();
-        foreach (self::getInheritedThemeList() as $themeData) {
-            $fullPath = $themeData['area'] . '/' . $themeData['theme_path'];
-            $parentIdActual = $collection->clear()->getThemeByFullPath($fullPath)->getParentId();
-            if ($themeData['parent_id']) {
-                $parentFullPath = trim($themeData['parent_id'], '{}');
-                $parentIdExpected = (int)$collection->clear()->getThemeByFullPath($parentFullPath)->getId();
-                $this->assertEquals(
-                    $parentIdActual,
-                    $parentIdExpected,
-                    sprintf('Invalid parent_id for theme "%s"', $fullPath)
-                );
-            } else {
-                $parentIdExpected = 0;
-                $this->assertEquals(
-                    $parentIdExpected,
-                    $parentIdActual,
-                    sprintf('Parent id should be null for "%s"', $fullPath)
-                );
-            }
-        }
     }
 
     /**
      * Set themes fixtures
      *
-     * @return \Magento\Theme\Model\ResourceModel\Theme\Collection
+     * @return Collection
      */
     public static function setThemeFixture()
     {
         $themeCollection = self::_getThemesCollection();
         $themeCollection->load();
         foreach (self::getThemeList() as $themeData) {
-            /** @var $themeModel \Magento\Framework\View\Design\ThemeInterface */
-            $themeModel = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-                \Magento\Framework\View\Design\ThemeInterface::class
+            /** @var $themeModel ThemeInterface */
+            $themeModel = Bootstrap::getObjectManager()->create(
+                ThemeInterface::class
             );
             $themeModel->setData($themeData);
             $themeCollection->addItem($themeModel);
         }
         return $themeCollection->save();
-    }
-
-    /**
-     * @throws \Exception
-     */
-    public static function setInheritedThemeFixture()
-    {
-        $fixture = self::getInheritedThemeList();
-        $idByPath = [];
-        foreach ($fixture as $themeData) {
-            /** @var $themeModel \Magento\Framework\View\Design\ThemeInterface */
-            $themeModel = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-                \Magento\Framework\View\Design\ThemeInterface::class
-            );
-            $themeModel->setData($themeData);
-
-            if ($themeData['parent_id'] && isset($idByPath[$themeData['parent_id']])) {
-                $themeModel->setParentId($idByPath[$themeData['parent_id']]);
-            }
-            $themeModel->save();
-
-            $idByPath[$themeModel->getFullPath()] = $themeModel->getId();
-        }
     }
 
     /**
@@ -296,6 +156,153 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * @param string $fullPath
+     * @param bool $shouldExist
+     * @magentoDataFixture setThemeFixture
+     * @dataProvider getThemeByFullPathDataProvider
+     */
+    public function testGetThemeByFullPath($fullPath, $shouldExist)
+    {
+        $themeCollection = self::_getThemesCollection();
+        $hasFound = false;
+        /** @var $theme ThemeInterface */
+        foreach ($themeCollection as $theme) {
+            if ($theme->getFullPath() == $fullPath) {
+                $hasFound = true;
+                break;
+            }
+        }
+        $message = $shouldExist ? 'Theme not found' : 'Theme is found but it should not';
+        $this->assertEquals($shouldExist, $hasFound, $message);
+    }
+
+    /**
+     * @return array
+     */
+    public function getThemeByFullPathDataProvider()
+    {
+        return [
+            ['test_area/test/default', true],
+            ['test_area2/test/pro', true],
+            ['test_area/test/pro', false],
+            ['test_area2/test/default', false],
+            ['', false],
+            ['test_area', false],
+            ['test_area/test', false],
+            ['test_area/test/something', false]
+        ];
+    }
+
+    /**
+     * @magentoDataFixture setThemeFixture
+     * @magentoDbIsolation enabled
+     * @dataProvider addAreaFilterDataProvider
+     */
+    public function testAddAreaFilter($area, $themeCount)
+    {
+        /** @var $themeCollection Collection */
+        $themeCollection = Bootstrap::getObjectManager()->create(
+            Collection::class
+        );
+        $themeCollection->addAreaFilter($area);
+        $this->assertCount($themeCount, $themeCollection);
+    }
+
+    /**
+     * @return array
+     */
+    public function addAreaFilterDataProvider()
+    {
+        return [
+            ['area' => 'test_area', 'themeCount' => 1],
+            ['area' => 'test_area2', 'themeCount' => 1],
+            ['area' => 'test_area4', 'themeCount' => 0]
+        ];
+    }
+
+    /**
+     * @magentoDataFixture setThemeFixture
+     * @magentoDbIsolation enabled
+     * @dataProvider addTypeFilterDataProvider
+     * @covers       \Magento\Theme\Model\ResourceModel\Theme\Collection::addAreaFilter
+     */
+    public function testAddTypeFilter($themeType, $themeCount)
+    {
+        /** @var $themeCollection Collection */
+        $themeCollection = Bootstrap::getObjectManager()->create(
+            Collection::class
+        );
+        $themeCollection->addAreaFilter('test_area3');
+        if ($themeType !== false) {
+            $themeCollection->addTypeFilter($themeType);
+        }
+        $this->assertCount($themeCount, $themeCollection);
+    }
+
+    /**
+     * @return array
+     */
+    public function addTypeFilterDataProvider()
+    {
+        return [
+            ['themeType' => ThemeInterface::TYPE_PHYSICAL, 'themeCount' => 1],
+            ['themeType' => ThemeInterface::TYPE_VIRTUAL, 'themeCount' => 1],
+            ['themeType' => ThemeInterface::TYPE_STAGING, 'themeCount' => 1],
+            ['themeType' => false, 'themeCount' => 3]
+        ];
+    }
+
+    /**
+     * @magentoDataFixture setThemeFixture
+     * @magentoDbIsolation enabled
+     * @covers \Magento\Theme\Model\ResourceModel\Theme\Collection::filterVisibleThemes
+     */
+    public function testFilterVisibleThemes()
+    {
+        /** @var $themeCollection Collection */
+        $themeCollection = Bootstrap::getObjectManager()->create(
+            Collection::class
+        );
+        $themeCollection->addAreaFilter('test_area3')->filterVisibleThemes();
+        $this->assertCount(2, $themeCollection);
+        /** @var $theme ThemeInterface */
+        foreach ($themeCollection as $theme) {
+            $this->assertTrue(
+                in_array($theme->getType(), [ThemeInterface::TYPE_PHYSICAL, ThemeInterface::TYPE_VIRTUAL])
+            );
+        }
+    }
+
+    /**
+     * @magentoDataFixture setInheritedThemeFixture
+     */
+    public function testCheckParentInThemes()
+    {
+        $collection = self::_getThemesCollection();
+        //->checkParentInThemes();
+        foreach (self::getInheritedThemeList() as $themeData) {
+            $fullPath = $themeData['area'] . '/' . $themeData['theme_path'];
+            $parentIdActual = $collection->clear()->getThemeByFullPath($fullPath)->getParentId();
+            if ($themeData['parent_id']) {
+                $parentFullPath = trim($themeData['parent_id'], '{}');
+                $parentIdExpected = (int)$collection->clear()->getThemeByFullPath($parentFullPath)->getId();
+                $this->assertEquals(
+                    $parentIdActual,
+                    $parentIdExpected,
+                    sprintf('Invalid parent_id for theme "%s"', $fullPath)
+                );
+            } else {
+                $parentIdExpected = 0;
+                $this->assertEquals(
+                    $parentIdExpected,
+                    $parentIdActual,
+                    sprintf('Parent id should be null for "%s"', $fullPath)
+                );
+            }
+        }
+    }
+
+    /**
      * @return array
      */
     public static function getInheritedThemeList()
@@ -329,7 +336,7 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
                 'preview_image' => 'test1_test3.jpg',
                 'is_featured' => '1',
                 'area' => 'area51',
-                'type' => \Magento\Framework\View\Design\ThemeInterface::TYPE_VIRTUAL
+                'type' => ThemeInterface::TYPE_VIRTUAL
             ],
             [
                 'parent_id' => 'area51/test1/test0',
@@ -339,7 +346,7 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
                 'preview_image' => 'test1_test4.jpg',
                 'is_featured' => '1',
                 'area' => 'area51',
-                'type' => \Magento\Framework\View\Design\ThemeInterface::TYPE_VIRTUAL
+                'type' => ThemeInterface::TYPE_VIRTUAL
             ]
         ];
     }
@@ -350,16 +357,16 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
     public function testFilterPhysicalThemesPerPage()
     {
         $collection = $this->_getThemesCollection();
-        $collection->filterPhysicalThemes(1, \Magento\Theme\Model\ResourceModel\Theme\Collection::DEFAULT_PAGE_SIZE);
+        $collection->filterPhysicalThemes(1, Collection::DEFAULT_PAGE_SIZE);
 
         $this->assertLessThanOrEqual(
-            \Magento\Theme\Model\ResourceModel\Theme\Collection::DEFAULT_PAGE_SIZE,
+            Collection::DEFAULT_PAGE_SIZE,
             $collection->count()
         );
 
-        /** @var $theme \Magento\Framework\View\Design\ThemeInterface */
+        /** @var $theme ThemeInterface */
         foreach ($collection as $theme) {
-            $this->assertEquals(\Magento\Framework\App\Area::AREA_FRONTEND, $theme->getArea());
+            $this->assertEquals(Area::AREA_FRONTEND, $theme->getArea());
             $this->assertEquals(ThemeInterface::TYPE_PHYSICAL, $theme->getType());
         }
     }
@@ -373,9 +380,9 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
 
         $this->assertGreaterThan(0, $collection->count());
 
-        /** @var $theme \Magento\Framework\View\Design\ThemeInterface */
+        /** @var $theme ThemeInterface */
         foreach ($collection as $theme) {
-            $this->assertEquals(\Magento\Framework\App\Area::AREA_FRONTEND, $theme->getArea());
+            $this->assertEquals(Area::AREA_FRONTEND, $theme->getArea());
             $this->assertEquals(ThemeInterface::TYPE_PHYSICAL, $theme->getType());
         }
     }

@@ -7,10 +7,10 @@ declare(strict_types=1);
 
 namespace Magento\CatalogSearch\Controller\Advanced;
 
+use Laminas\Stdlib\Parameters;
 use Magento\Catalog\Api\ProductAttributeRepositoryInterface;
 use Magento\Catalog\Model\ResourceModel\Eav\Attribute;
 use Magento\TestFramework\TestCase\AbstractController;
-use Laminas\Stdlib\Parameters;
 
 /**
  * Test cases for catalog advanced search using search engine.
@@ -24,15 +24,6 @@ class ResultTest extends AbstractController
      * @var ProductAttributeRepositoryInterface
      */
     private $productAttributeRepository;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->productAttributeRepository = $this->_objectManager->create(ProductAttributeRepositoryInterface::class);
-    }
 
     /**
      * Advanced search test by difference product attributes.
@@ -65,6 +56,21 @@ class ResultTest extends AbstractController
         $this->dispatch('catalogsearch/advanced/result');
         $responseBody = $this->getResponse()->getBody();
         $this->assertStringContainsString('Simple product name', $responseBody);
+    }
+
+    /**
+     * Return attribute option value by option label.
+     *
+     * @param string $attributeCode
+     * @param string $optionLabel
+     * @return null|string
+     */
+    private function getAttributeOptionValueByOptionLabel(string $attributeCode, string $optionLabel): ?string
+    {
+        /** @var Attribute $attribute */
+        $attribute = $this->productAttributeRepository->get($attributeCode);
+
+        return $attribute->getSource()->getOptionId($optionLabel);
     }
 
     /**
@@ -224,17 +230,11 @@ class ResultTest extends AbstractController
     }
 
     /**
-     * Return attribute option value by option label.
-     *
-     * @param string $attributeCode
-     * @param string $optionLabel
-     * @return null|string
+     * @inheritdoc
      */
-    private function getAttributeOptionValueByOptionLabel(string $attributeCode, string $optionLabel): ?string
+    protected function setUp(): void
     {
-        /** @var Attribute $attribute */
-        $attribute = $this->productAttributeRepository->get($attributeCode);
-
-        return $attribute->getSource()->getOptionId($optionLabel);
+        parent::setUp();
+        $this->productAttributeRepository = $this->_objectManager->create(ProductAttributeRepositoryInterface::class);
     }
 }

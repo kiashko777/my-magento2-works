@@ -15,22 +15,6 @@ namespace Magento\Catalog\Model\Product\Attribute\Save;
 class AttributeDropdownTest extends AbstractAttributeTest
 {
     /**
-     * @inheritdoc
-     */
-    protected function getAttributeCode(): string
-    {
-        return 'dropdown_attribute';
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function getDefaultAttributeValue(): string
-    {
-        return $this->getAttribute()->getSource()->getOptionId('Option 1');
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/dropdown_attribute.php
      * @magentoDataFixture Magento/Catalog/_files/second_product_simple.php
      * @magentoDataFixture Magento/Catalog/_files/product_simple_out_of_stock.php
@@ -66,5 +50,21 @@ class AttributeDropdownTest extends AbstractAttributeTest
                 'second_product_sku' => 'simple-out-of-stock',
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function getAttributeCode(): string
+    {
+        return 'dropdown_attribute';
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function getDefaultAttributeValue(): string
+    {
+        return $this->getAttribute()->getSource()->getOptionId('Option 1');
     }
 }

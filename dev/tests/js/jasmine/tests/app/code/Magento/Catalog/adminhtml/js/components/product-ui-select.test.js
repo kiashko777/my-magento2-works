@@ -53,9 +53,9 @@ define([
                 var successCallback,
                     completeCallback,
                     responseData = {
-                    label: 'hello world',
-                    value: 'hello world'
-                };
+                        label: 'hello world',
+                        value: 'hello world'
+                    };
 
                 $.ajax = jasmine.createSpy().and.callFake(function (request) {
                     successCallback = request.success.bind(obj);

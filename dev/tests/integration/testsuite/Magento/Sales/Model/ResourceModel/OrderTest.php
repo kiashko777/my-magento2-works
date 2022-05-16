@@ -55,40 +55,6 @@ class OrderTest extends TestCase
     private $storeRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-
-        $this->resourceModel = $this->objectManager->create(Order::class);
-        $this->orderIncrementId = '100000001';
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-        $this->storeRepository = $this->objectManager->get(StoreRepositoryInterface::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $registry = $this->objectManager->get(Registry::class);
-        $registry->unregister('isSecureArea');
-        $registry->register('isSecureArea', true);
-
-        $orderCollection = $this->objectManager->create(OrderCollectionFactory::class)->create();
-        foreach ($orderCollection as $order) {
-            $order->delete();
-        }
-
-        $registry->unregister('isSecureArea');
-        $registry->register('isSecureArea', false);
-
-        $defaultStore = $this->storeRepository->get('default');
-        $this->storeManager->setCurrentStore($defaultStore->getId());
-    }
-
-    /**
      * Test save order
      *
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
@@ -184,5 +150,39 @@ class OrderTest extends TestCase
         $this->assertEquals($xForwardedFor, $order->getXForwardedFor());
         $this->assertStringContainsString($store->getWebsite()->getName(), $order->getStoreName());
         $this->assertStringContainsString($store->getGroup()->getName(), $order->getStoreName());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->resourceModel = $this->objectManager->create(Order::class);
+        $this->orderIncrementId = '100000001';
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
+        $this->storeRepository = $this->objectManager->get(StoreRepositoryInterface::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $registry = $this->objectManager->get(Registry::class);
+        $registry->unregister('isSecureArea');
+        $registry->register('isSecureArea', true);
+
+        $orderCollection = $this->objectManager->create(OrderCollectionFactory::class)->create();
+        foreach ($orderCollection as $order) {
+            $order->delete();
+        }
+
+        $registry->unregister('isSecureArea');
+        $registry->register('isSecureArea', false);
+
+        $defaultStore = $this->storeRepository->get('default');
+        $this->storeManager->setCurrentStore($defaultStore->getId());
     }
 }

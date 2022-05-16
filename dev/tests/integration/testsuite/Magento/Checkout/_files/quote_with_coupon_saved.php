@@ -9,8 +9,10 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Framework\Registry;
 use Magento\Quote\Model\QuoteFactory;
 use Magento\Quote\Model\ResourceModel\Quote as QuoteResource;
+use Magento\SalesRule\Model\RuleFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
@@ -23,10 +25,10 @@ $quoteResource = Bootstrap::getObjectManager()->get(QuoteResource::class);
 $quote = $quoteFactory->create();
 $quoteResource->load($quote, 'test_order_1', 'reserved_order_id');
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-$salesRuleFactory = $objectManager->get(\Magento\SalesRule\Model\RuleFactory::class);
+$objectManager = Bootstrap::getObjectManager();
+$salesRuleFactory = $objectManager->get(RuleFactory::class);
 $salesRule = $salesRuleFactory->create();
-$salesRuleId = $objectManager->get(\Magento\Framework\Registry::class)
+$salesRuleId = $objectManager->get(Registry::class)
     ->registry('Magento/Checkout/_file/discount_10percent');
 $salesRule->load($salesRuleId);
 $couponCode = $salesRule->getPrimaryCoupon()->getCode();

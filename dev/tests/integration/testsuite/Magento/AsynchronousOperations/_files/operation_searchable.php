@@ -6,13 +6,14 @@
 
 declare(strict_types=1);
 
-use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Bulk\OperationInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 
 /**
  * @var $resource Magento\Framework\App\ResourceConnection
  */
-$resource = Bootstrap::getObjectManager()->get(\Magento\Framework\App\ResourceConnection::class);
+$resource = Bootstrap::getObjectManager()->get(ResourceConnection::class);
 $connection = $resource->getConnection();
 $bulkTable = $resource->getTableName('magento_bulk');
 $operationTable = $resource->getTableName('magento_operation');

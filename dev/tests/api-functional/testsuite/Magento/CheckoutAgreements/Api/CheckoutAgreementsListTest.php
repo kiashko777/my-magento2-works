@@ -8,6 +8,7 @@ namespace Magento\CheckoutAgreements\Api;
 
 use Magento\Framework\Api\FilterBuilder;
 use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
@@ -27,6 +28,25 @@ class CheckoutAgreementsListTest extends WebapiAbstract
         // Checkout agreements are disabled by default
         $agreements = $this->_webApiCall($this->getServiceInfo($requestData), $requestData);
         $this->assertCount(2, $agreements);
+    }
+
+    /**
+     * @param array $requestData
+     * @return array
+     */
+    private function getServiceInfo(array $requestData): array
+    {
+        return [
+            'soap' => [
+                'service' => 'checkoutAgreementsCheckoutAgreementsListV1',
+                'serviceVersion' => 'V1',
+                'operation' => 'checkoutAgreementsCheckoutAgreementsListV1getList',
+            ],
+            'rest' => [
+                'resourcePath' => '/V1/carts/licence/list' . '?' . http_build_query($requestData),
+                'httpMethod' => Request::HTTP_METHOD_GET,
+            ],
+        ];
     }
 
     /**
@@ -50,24 +70,5 @@ class CheckoutAgreementsListTest extends WebapiAbstract
         $this->assertCount(1, $agreements);
         $this->assertEquals(1, $agreements[0]['is_active']);
         $this->assertEquals('Checkout Agreement (active)', $agreements[0]['name']);
-    }
-
-    /**
-     * @param array $requestData
-     * @return array
-     */
-    private function getServiceInfo(array $requestData) : array
-    {
-        return [
-            'soap' => [
-                'service' => 'checkoutAgreementsCheckoutAgreementsListV1',
-                'serviceVersion' => 'V1',
-                'operation' => 'checkoutAgreementsCheckoutAgreementsListV1getList',
-            ],
-            'rest' => [
-                'resourcePath' => '/V1/carts/licence/list' . '?' . http_build_query($requestData),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
-            ],
-        ];
     }
 }

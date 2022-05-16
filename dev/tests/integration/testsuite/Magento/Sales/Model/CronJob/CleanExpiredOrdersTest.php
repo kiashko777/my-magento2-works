@@ -3,12 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Model\CronJob;
 
+use Magento\Sales\Model\Order;
 use Magento\TestFramework\Helper\Bootstrap;
-use \Magento\Sales\Model\Order;
+use PHPUnit\Framework\TestCase;
 
-class CleanExpiredOrdersTest extends \PHPUnit\Framework\TestCase
+class CleanExpiredOrdersTest extends TestCase
 {
     /**
      * @magentoConfigFixture default sales/orders/delete_pending_after 0
@@ -18,11 +20,11 @@ class CleanExpiredOrdersTest extends \PHPUnit\Framework\TestCase
     public function testExecute()
     {
         /** @var CleanExpiredOrders $job */
-        $job = Bootstrap::getObjectManager()->create(\Magento\Sales\Model\CronJob\CleanExpiredOrders::class);
+        $job = Bootstrap::getObjectManager()->create(CleanExpiredOrders::class);
         $job->execute();
 
         /** @var Order $order */
-        $order = Bootstrap::getObjectManager()->create(\Magento\Sales\Model\Order::class);
+        $order = Bootstrap::getObjectManager()->create(Order::class);
         $order->load('100000001', 'increment_id');
         $this->assertEquals(Order::STATE_CANCELED, $order->getStatus());
     }

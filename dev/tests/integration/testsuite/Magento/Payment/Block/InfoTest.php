@@ -3,9 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Payment\Block;
 
 use Magento\Framework\View\Element\Text;
+use Magento\Framework\View\Layout;
 use Magento\Framework\View\LayoutInterface;
 use Magento\OfflinePayments\Model\Banktransfer;
 use Magento\OfflinePayments\Model\Checkmo;
@@ -14,11 +16,12 @@ use Magento\Payment\Block\Info\Instructions;
 use Magento\Payment\Model\Info;
 use Magento\Sales\Model\Order;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for Magento\Payment\Block\Info
  */
-class InfoTest extends \PHPUnit\Framework\TestCase
+class InfoTest extends TestCase
 {
     /**
      * Tests payment info block.
@@ -29,11 +32,11 @@ class InfoTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetChildPdfAsArray()
     {
-        /** @var $layout \Magento\Framework\View\Layout */
+        /** @var $layout Layout */
         $layout = Bootstrap::getObjectManager()->get(LayoutInterface::class);
         $block = $layout->createBlock(BlockInfo::class, 'block');
 
-        /** @var $paymentInfoBank Info  */
+        /** @var $paymentInfoBank Info */
         $paymentInfoBank = Bootstrap::getObjectManager()->create(
             Info::class
         );

@@ -7,62 +7,15 @@
 namespace Magento\Backend\Model\Search;
 
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  * @magentoDataFixture Magento/Sales/_files/order.php
  * @magentoDataFixture Magento/Sales/_files/order_shipping_address_different_to_billing.php
  */
-class OrderTest extends \PHPUnit\Framework\TestCase
+class OrderTest extends TestCase
 {
-    /**
-     * @dataProvider loadDataProvider
-     */
-    public function testLoad($query, $limit, $start, $expectedResult)
-    {
-        /** @var $order \Magento\Sales\Model\Order */
-        $order = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Sales\Model\Order::class);
-        $orderIdByIncrementId = [];
-        foreach (['100000001', '100000002', '100000003'] as $incrementId) {
-            $orderIdByIncrementId[$incrementId] = $order->loadByIncrementId($incrementId)->getId();
-        }
-
-        /** Preconditions */
-        $objectManager = Bootstrap::getObjectManager();
-        /** @var \Magento\Backend\Model\Search\Order $orderSearch */
-        $orderSearch = $objectManager->create(\Magento\Backend\Model\Search\Order::class);
-        $orderSearch->setQuery($query);
-        $orderSearch->setLimit($limit);
-        $orderSearch->setStart($start);
-        $orderSearch->load();
-
-        /** SUT Execution */
-        $searchResults = $orderSearch->getResults();
-
-        /** Ensure that search results are correct */
-        $this->assertCount(count($expectedResult), $searchResults, 'Quantity of search result items is invalid.');
-        foreach ($expectedResult as $itemIndex => $expectedItem) {
-            /** Validate URL to item */
-            $orderIncrementId = substr($expectedItem['id'], strlen('order/1/#'));
-            $this->assertStringContainsString(
-                "order/view/order_id/{$orderIdByIncrementId[$orderIncrementId]}",
-                $searchResults[$itemIndex]['url'],
-                'Item URL is invalid.'
-            );
-            $expectedItem['id'] = 'order/1/' . $orderIdByIncrementId[$orderIncrementId];
-            unset($searchResults[$itemIndex]['url']);
-
-            /** Validate other item data */
-            foreach ($expectedItem as $field => $value) {
-                $this->assertEquals(
-                    $value,
-                    (string)$searchResults[$itemIndex][$field],
-                    "Data of item #$itemIndex is invalid."
-                );
-            }
-        }
-    }
-
     public static function loadDataProvider()
     {
         return [
@@ -131,5 +84,53 @@ class OrderTest extends \PHPUnit\Framework\TestCase
                 ],
             ],
         ];
+    }
+
+    /**
+     * @dataProvider loadDataProvider
+     */
+    public function testLoad($query, $limit, $start, $expectedResult)
+    {
+        /** @var $order \Magento\Sales\Model\Order */
+        $order = Bootstrap::getObjectManager()->create(\Magento\Sales\Model\Order::class);
+        $orderIdByIncrementId = [];
+        foreach (['100000001', '100000002', '100000003'] as $incrementId) {
+            $orderIdByIncrementId[$incrementId] = $order->loadByIncrementId($incrementId)->getId();
+        }
+
+        /** Preconditions */
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var Order $orderSearch */
+        $orderSearch = $objectManager->create(Order::class);
+        $orderSearch->setQuery($query);
+        $orderSearch->setLimit($limit);
+        $orderSearch->setStart($start);
+        $orderSearch->load();
+
+        /** SUT Execution */
+        $searchResults = $orderSearch->getResults();
+
+        /** Ensure that search results are correct */
+        $this->assertCount(count($expectedResult), $searchResults, 'Quantity of search result items is invalid.');
+        foreach ($expectedResult as $itemIndex => $expectedItem) {
+            /** Validate URL to item */
+            $orderIncrementId = substr($expectedItem['id'], strlen('order/1/#'));
+            $this->assertStringContainsString(
+                "order/view/order_id/{$orderIdByIncrementId[$orderIncrementId]}",
+                $searchResults[$itemIndex]['url'],
+                'Item URL is invalid.'
+            );
+            $expectedItem['id'] = 'order/1/' . $orderIdByIncrementId[$orderIncrementId];
+            unset($searchResults[$itemIndex]['url']);
+
+            /** Validate other item data */
+            foreach ($expectedItem as $field => $value) {
+                $this->assertEquals(
+                    $value,
+                    (string)$searchResults[$itemIndex][$field],
+                    "Data of item #$itemIndex is invalid."
+                );
+            }
+        }
     }
 }

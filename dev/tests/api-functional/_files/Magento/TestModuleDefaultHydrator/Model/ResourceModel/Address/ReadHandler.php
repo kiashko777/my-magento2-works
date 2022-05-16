@@ -3,13 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestModuleDefaultHydrator\Model\ResourceModel\Address;
 
-use Magento\Framework\EntityManager\Operation\ExtensionInterface;
+use Exception;
 use Magento\Customer\Api\AddressRepositoryInterface;
-use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Customer\Api\Data\CustomerInterface;
+use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\EntityManager\EntityManager;
+use Magento\Framework\EntityManager\Operation\ExtensionInterface;
 
 class ReadHandler implements ExtensionInterface
 {
@@ -28,9 +30,10 @@ class ReadHandler implements ExtensionInterface
      * @param SearchCriteriaBuilder $SearchCriteriaBuilder
      */
     public function __construct(
-        \Magento\Customer\Api\AddressRepositoryInterface $addressRepository,
-        \Magento\Framework\Api\SearchCriteriaBuilder $searchCriteriaBuilder
-    ) {
+        AddressRepositoryInterface $addressRepository,
+        SearchCriteriaBuilder      $searchCriteriaBuilder
+    )
+    {
         $this->addressRepository = $addressRepository;
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
     }
@@ -38,7 +41,7 @@ class ReadHandler implements ExtensionInterface
     /**
      * @param CustomerInterface $entity
      * @return CustomerInterface
-     * @throws \Exception
+     * @throws Exception
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function execute($entity, $arguments = [])

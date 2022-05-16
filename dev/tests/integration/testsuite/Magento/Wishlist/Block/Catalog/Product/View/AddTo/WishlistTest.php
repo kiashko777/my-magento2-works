@@ -41,6 +41,49 @@ class WishlistTest extends TestCase
     private $productRepository;
 
     /**
+     * @magentoDataFixture Magento/Catalog/_files/second_product_simple.php
+     *
+     * @return void
+     */
+    public function testAddToWishListVisible(): void
+    {
+        $product = $this->productRepository->get('simple2');
+        $this->registerProduct($product);
+        $this->assertEquals(
+            1,
+            Xpath::getElementsCountForXpath(self::ADD_TO_WISHLIST_XPATH, $this->block->toHtml())
+        );
+    }
+
+    /**
+     * Register the product.
+     *
+     * @param ProductInterface $product
+     * @return void
+     */
+    private function registerProduct(ProductInterface $product): void
+    {
+        $this->registry->unregister('product');
+        $this->registry->register('product', $product);
+    }
+
+    /**
+     * @magentoConfigFixture current_store wishlist/general/active 0
+     * @magentoDataFixture Magento/Catalog/_files/second_product_simple.php
+     *
+     * @return void
+     */
+    public function testAddToWishListNotVisible(): void
+    {
+        $product = $this->productRepository->get('simple2');
+        $this->registerProduct($product);
+        $this->assertEquals(
+            0,
+            Xpath::getElementsCountForXpath(self::ADD_TO_WISHLIST_XPATH, $this->block->toHtml())
+        );
+    }
+
+    /**
      * @inheritdoc
      */
     protected function setUp(): void
@@ -61,48 +104,5 @@ class WishlistTest extends TestCase
         $this->registry->unregister('product');
 
         parent::tearDown();
-    }
-
-    /**
-     * @magentoDataFixture Magento/Catalog/_files/second_product_simple.php
-     *
-     * @return void
-     */
-    public function testAddToWishListVisible(): void
-    {
-        $product = $this->productRepository->get('simple2');
-        $this->registerProduct($product);
-        $this->assertEquals(
-            1,
-            Xpath::getElementsCountForXpath(self::ADD_TO_WISHLIST_XPATH, $this->block->toHtml())
-        );
-    }
-
-    /**
-     * @magentoConfigFixture current_store wishlist/general/active 0
-     * @magentoDataFixture Magento/Catalog/_files/second_product_simple.php
-     *
-     * @return void
-     */
-    public function testAddToWishListNotVisible(): void
-    {
-        $product = $this->productRepository->get('simple2');
-        $this->registerProduct($product);
-        $this->assertEquals(
-            0,
-            Xpath::getElementsCountForXpath(self::ADD_TO_WISHLIST_XPATH, $this->block->toHtml())
-        );
-    }
-
-    /**
-     * Register the product.
-     *
-     * @param ProductInterface $product
-     * @return void
-     */
-    private function registerProduct(ProductInterface $product): void
-    {
-        $this->registry->unregister('product');
-        $this->registry->register('product', $product);
     }
 }

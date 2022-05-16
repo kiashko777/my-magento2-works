@@ -4,13 +4,20 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Bundle\Model\Option;
+use Magento\Bundle\Model\Selection;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Framework\DataObject;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Checkout/_files/simple_product.php');
 
-/** @var $bundleProduct \Magento\Catalog\Model\Product */
-$bundleProduct = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Catalog\Model\Product::class
+/** @var $bundleProduct Product */
+$bundleProduct = Bootstrap::getObjectManager()->create(
+    Product::class
 );
 $bundleProduct->setTypeId(
     \Magento\Catalog\Model\Product\Type::TYPE_BUNDLE
@@ -29,9 +36,9 @@ $bundleProduct->setTypeId(
 )->setShortDescription(
     'Bundle'
 )->setVisibility(
-    \Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH
+    Visibility::VISIBILITY_BOTH
 )->setStatus(
-    \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED
+    Status::STATUS_ENABLED
 )->setStockData(
     [
         'use_config_manage_stock' => 0,
@@ -75,8 +82,8 @@ $bundleProduct->setTypeId(
     true
 )->save();
 
-/** @var $product \Magento\Catalog\Model\Product */
-$product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Product::class);
+/** @var $product Product */
+$product = Bootstrap::getObjectManager()->create(Product::class);
 $product->load($bundleProduct->getId());
 
 /** @var $typeInstance \Magento\Bundle\Model\Product\Type */
@@ -88,15 +95,15 @@ $selectionCollection = $typeInstance->getSelectionsCollection($typeInstance->get
 
 $bundleOptions = [];
 $bundleOptionsQty = [];
-/** @var $option \Magento\Bundle\Model\Option */
+/** @var $option Option */
 foreach ($optionCollection as $option) {
-    /** @var $selection \Magento\Bundle\Model\Selection */
+    /** @var $selection Selection */
     $selection = $selectionCollection->getFirstItem();
     $bundleOptions[$option->getId()] = $selection->getSelectionId();
     $bundleOptionsQty[$option->getId()] = 1;
 }
 
-$requestInfo = new \Magento\Framework\DataObject(
+$requestInfo = new DataObject(
     ['qty' => 1, 'bundle_option' => $bundleOptions, 'bundle_option_qty' => $bundleOptionsQty]
 );
 $product->setSkipCheckRequiredOption(true);

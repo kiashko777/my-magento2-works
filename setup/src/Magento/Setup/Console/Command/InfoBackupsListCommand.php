@@ -7,14 +7,16 @@
 namespace Magento\Setup\Console\Command;
 
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\App\ObjectManager;
 use Magento\Framework\Backup\Factory;
+use Magento\Framework\Console\Cli;
 use Magento\Framework\Filesystem\Driver\File;
 use Magento\Framework\Setup\BackupRollback;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\TableFactory;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Magento\Framework\App\ObjectManager;
 
 /**
  * Command prints list of available backup files
@@ -47,9 +49,10 @@ class InfoBackupsListCommand extends Command
      */
     public function __construct(
         DirectoryList $directoryList,
-        File $file,
-        TableFactory $tableHelperFactory = null
-    ) {
+        File          $file,
+        TableFactory  $tableHelperFactory = null
+    )
+    {
         $this->directoryList = $directoryList;
         $this->file = $file;
         $this->tableHelperFactory = $tableHelperFactory ?: ObjectManager::getInstance()->create(TableFactory::class);
@@ -97,10 +100,10 @@ class InfoBackupsListCommand extends Command
             }
             if (empty($tempTable)) {
                 $output->writeln('<info>No backup files found.</info>');
-                return \Magento\Framework\Console\Cli::RETURN_SUCCESS;
+                return Cli::RETURN_SUCCESS;
             }
             $output->writeln("<info>Showing backup files in $backupsDir.</info>");
-            /** @var \Symfony\Component\Console\Helper\Table $tableHelper */
+            /** @var Table $tableHelper */
             $tableHelper = $this->tableHelperFactory->create(['output' => $output]);
             $tableHelper->setHeaders(['Backup Filename', 'Backup Type']);
             asort($tempTable);
@@ -112,6 +115,6 @@ class InfoBackupsListCommand extends Command
             $output->writeln('<info>No backup files found.</info>');
         }
 
-        return \Magento\Framework\Console\Cli::RETURN_SUCCESS;
+        return Cli::RETURN_SUCCESS;
     }
 }

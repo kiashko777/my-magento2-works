@@ -13,6 +13,8 @@ use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
 use Magento\Setup\Model\FixtureGenerator\SqlCollector;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Zend_Db_Profiler;
+use Zend_Db_Profiler_Query;
 
 /**
  * Collect insert queries for quick entity generation
@@ -29,23 +31,12 @@ class SqlCollectorTest extends TestCase
      */
     private $resourceConnection;
 
-    protected function setUp(): void
-    {
-        $this->resourceConnection = $this->getMockBuilder(ResourceConnection::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $this->unit = (new ObjectManager($this))->getObject(
-            SqlCollector::class,
-            ['resourceConnection' => $this->resourceConnection]
-        );
-    }
-
     public function testGetEmptySql()
     {
         $connection = $this->getMockBuilder(AdapterInterface::class)
             ->setMethods(['getProfiler'])
             ->getMockForAbstractClass();
-        $profiler = $this->getMockBuilder(\Zend_Db_Profiler::class)
+        $profiler = $this->getMockBuilder(Zend_Db_Profiler::class)
             ->disableOriginalConstructor()
             ->getMock();
         $connection->expects($this->once())->method('getProfiler')->willReturn($profiler);
@@ -62,15 +53,15 @@ class SqlCollectorTest extends TestCase
         $connection = $this->getMockBuilder(AdapterInterface::class)
             ->setMethods(['getProfiler'])
             ->getMockForAbstractClass();
-        $profiler = $this->getMockBuilder(\Zend_Db_Profiler::class)
+        $profiler = $this->getMockBuilder(Zend_Db_Profiler::class)
             ->disableOriginalConstructor()
             ->getMock();
         $connection->expects($this->once())->method('getProfiler')->willReturn($profiler);
         $this->resourceConnection->expects($this->once())->method('getConnection')->willReturn($connection);
 
-        $query = $this->getMockBuilder(\Zend_Db_Profiler_Query::class)->disableOriginalConstructor()
+        $query = $this->getMockBuilder(Zend_Db_Profiler_Query::class)->disableOriginalConstructor()
             ->getMock();
-        $query->expects($this->exactly(2))->method('getQueryType')->willReturn(\Zend_Db_Profiler::SELECT);
+        $query->expects($this->exactly(2))->method('getQueryType')->willReturn(Zend_Db_Profiler::SELECT);
         $profiler->expects($this->once())->method('getQueryProfiles')->willReturn([$query]);
 
         $this->unit->disable();
@@ -82,15 +73,15 @@ class SqlCollectorTest extends TestCase
         $connection = $this->getMockBuilder(AdapterInterface::class)
             ->setMethods(['getProfiler'])
             ->getMockForAbstractClass();
-        $profiler = $this->getMockBuilder(\Zend_Db_Profiler::class)
+        $profiler = $this->getMockBuilder(Zend_Db_Profiler::class)
             ->disableOriginalConstructor()
             ->getMock();
         $connection->expects($this->once())->method('getProfiler')->willReturn($profiler);
         $this->resourceConnection->expects($this->once())->method('getConnection')->willReturn($connection);
 
-        $query = $this->getMockBuilder(\Zend_Db_Profiler_Query::class)->disableOriginalConstructor()
+        $query = $this->getMockBuilder(Zend_Db_Profiler_Query::class)->disableOriginalConstructor()
             ->getMock();
-        $query->expects($this->once())->method('getQueryType')->willReturn(\Zend_Db_Profiler::INSERT);
+        $query->expects($this->once())->method('getQueryType')->willReturn(Zend_Db_Profiler::INSERT);
         $query->expects($this->once())->method('getQuery')->willReturn(
             'INSERT INTO `catalog_product_entity` (id, sku, type, created_at, attribute_set)'
             . ' VALUES (?, ?, ?, \'2013-12-11\', ?), (?, ?, ?, \'2013-12-11\', ?)'
@@ -124,6 +115,17 @@ class SqlCollectorTest extends TestCase
                 ]
             ],
             $this->unit->getSql()
+        );
+    }
+
+    protected function setUp(): void
+    {
+        $this->resourceConnection = $this->getMockBuilder(ResourceConnection::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->unit = (new ObjectManager($this))->getObject(
+            SqlCollector::class,
+            ['resourceConnection' => $this->resourceConnection]
         );
     }
 }

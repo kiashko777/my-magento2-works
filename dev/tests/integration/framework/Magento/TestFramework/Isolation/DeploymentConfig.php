@@ -6,8 +6,9 @@
 
 namespace Magento\TestFramework\Isolation;
 
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Framework\App\DeploymentConfig\Reader;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * A listener that watches for integrity of deployment configuration
@@ -39,7 +40,7 @@ class DeploymentConfig
     public function startTestSuite()
     {
         if (null === $this->reader) {
-            $this->reader = Bootstrap::getObjectManager()->get(\Magento\Framework\App\DeploymentConfig\Reader::class);
+            $this->reader = Bootstrap::getObjectManager()->get(Reader::class);
             $this->config = $this->reader->load();
         }
     }
@@ -52,10 +53,10 @@ class DeploymentConfig
      * If this is intentional, then it must be reverted to the previous state within the test.
      * After that, the application needs to be wiped out and reinstalled.
      *
-     * @param \PHPUnit\Framework\TestCase $test
+     * @param TestCase $test
      * @return void
      */
-    public function endTest(\PHPUnit\Framework\TestCase $test)
+    public function endTest(TestCase $test)
     {
         $config = $this->reader->load();
         if ($this->config != $config) {

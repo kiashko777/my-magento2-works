@@ -3,18 +3,22 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Model\ResourceModel\Eav;
 
 use Magento\Eav\Api\AttributeRepositoryInterface;
 use Magento\Eav\Api\Data\AttributeInterface;
 use Magento\Eav\Model\Config;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Entity;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for \Magento\Catalog\Model\ResourceModel\Eav\Attribute.
  */
-class AttributeTest extends \PHPUnit\Framework\TestCase
+class AttributeTest extends TestCase
 {
     /**
      * @var ObjectManagerInterface
@@ -37,19 +41,6 @@ class AttributeTest extends \PHPUnit\Framework\TestCase
     private $catalogProductEntityType;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->model = $this->objectManager->get(Attribute::class);
-        $this->attributeRepository = $this->objectManager->get(AttributeRepositoryInterface::class);
-        $this->catalogProductEntityType = $this->objectManager->get(Config::class)
-            ->getEntityType('catalog_product')
-            ->getId();
-    }
-
-    /**
      * Test Create -> Read -> Update -> Delete attribute operations.
      *
      * @return void
@@ -60,7 +51,7 @@ class AttributeTest extends \PHPUnit\Framework\TestCase
             ->setEntityTypeId($this->catalogProductEntityType)
             ->setFrontendLabel('test')
             ->setIsUserDefined(1);
-        $crud = new \Magento\TestFramework\Entity($this->model, [AttributeInterface::FRONTEND_LABEL => uniqid()]);
+        $crud = new Entity($this->model, [AttributeInterface::FRONTEND_LABEL => uniqid()]);
         $crud->testCrud();
     }
 
@@ -72,12 +63,25 @@ class AttributeTest extends \PHPUnit\Framework\TestCase
     public function testAttributeSaveWithChangedEntityType(): void
     {
         $this->expectException(
-            \Magento\Framework\Exception\LocalizedException::class
+            LocalizedException::class
         );
         $this->expectExceptionMessage('Do not change entity type.');
 
         $attribute = $this->attributeRepository->get($this->catalogProductEntityType, 'test_attribute_code_333');
         $attribute->setEntityTypeId(1);
         $attribute->save();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->model = $this->objectManager->get(Attribute::class);
+        $this->attributeRepository = $this->objectManager->get(AttributeRepositoryInterface::class);
+        $this->catalogProductEntityType = $this->objectManager->get(Config::class)
+            ->getEntityType('catalog_product')
+            ->getId();
     }
 }

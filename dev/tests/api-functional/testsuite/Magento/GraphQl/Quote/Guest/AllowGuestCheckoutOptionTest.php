@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Quote\Guest;
 
+use Exception;
 use Magento\Framework\Registry;
 use Magento\GraphQl\Quote\GetMaskedQuoteIdByReservedOrderId;
 use Magento\OfflinePayments\Model\Checkmo;
@@ -47,19 +48,6 @@ class AllowGuestCheckoutOptionTest extends GraphQlAbstract
     private $guestCartRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->orderCollectionFactory = $objectManager->get(CollectionFactory::class);
-        $this->orderRepository = $objectManager->get(OrderRepositoryInterface::class);
-        $this->registry = Bootstrap::getObjectManager()->get(Registry::class);
-        $this->guestCartRepository = $objectManager->get(GuestCartRepositoryInterface::class);
-    }
-
-    /**
      * @magentoConfigFixture default_store checkout/options/guest_checkout 0
      */
     public function testCreateEmptyCartIfGuestCheckoutIsDisabled()
@@ -88,7 +76,7 @@ QUERY;
      */
     public function testSetBillingAddressToGuestCustomerCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Guest checkout is not allowed. Register a customer account or login with existing one.');
 
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
@@ -132,7 +120,7 @@ QUERY;
      */
     public function testSetGuestEmailOnCartWithGuestCheckoutDisabled()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Guest checkout is not allowed. Register a customer account or login with existing one.');
 
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
@@ -163,7 +151,7 @@ QUERY;
      */
     public function testSetPaymentOnCartWithGuestCheckoutDisabled()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Guest checkout is not allowed. Register a customer account or login with existing one.');
 
         $methodCode = Checkmo::PAYMENT_METHOD_CHECKMO_CODE;
@@ -202,7 +190,7 @@ QUERY;
      */
     public function testSetNewShippingAddressOnCartWithGuestCheckoutDisabled()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Guest checkout is not allowed. Register a customer account or login with existing one.');
 
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
@@ -250,7 +238,7 @@ QUERY;
      */
     public function testSetShippingMethodOnCartWithGuestCheckoutDisabled()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Guest checkout is not allowed. Register a customer account or login with existing one.');
 
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
@@ -301,7 +289,7 @@ QUERY;
      */
     public function testPlaceOrderWithGuestCheckoutDisabled()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Guest checkout is not allowed. Register a customer account or login with existing one.');
 
         $reservedOrderId = 'test_quote';
@@ -326,6 +314,19 @@ mutation {
   }
 }
 QUERY;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->orderCollectionFactory = $objectManager->get(CollectionFactory::class);
+        $this->orderRepository = $objectManager->get(OrderRepositoryInterface::class);
+        $this->registry = Bootstrap::getObjectManager()->get(Registry::class);
+        $this->guestCartRepository = $objectManager->get(GuestCartRepositoryInterface::class);
     }
 
     /**

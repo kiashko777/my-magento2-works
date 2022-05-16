@@ -32,15 +32,6 @@ class CalculateTest extends TestCase
     private $totalsManagement;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = ObjectManager::getInstance();
-        $this->totalsManagement = $this->objectManager->get(TotalsInformationManagement::class);
-    }
-
-    /**
      * Multishipping quote with FPT Weee TAX totals calculation test
      *
      * @magentoDataFixture Magento/Weee/_files/quote_multishipping.php
@@ -76,5 +67,14 @@ class CalculateTest extends TestCase
         $items = $actual->getTotalSegments();
         $this->assertTrue(array_key_exists('weee_tax', $items));
         $this->assertEquals(25.4, $items['weee_tax']->getValue());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = ObjectManager::getInstance();
+        $this->totalsManagement = $this->objectManager->get(TotalsInformationManagement::class);
     }
 }

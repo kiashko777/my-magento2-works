@@ -7,23 +7,23 @@
 
 var combo = require('./combo'),
     themes = require('../tools/files-router').get('themes'),
-    _      = require('underscore');
+    _ = require('underscore');
 
 var themeOptions = {};
 
-_.each(themes, function(theme, name) {
+_.each(themes, function (theme, name) {
     themeOptions[name] = {
         cmd: combo.collector.bind(combo, name)
     };
 });
 
 var execOptions = {
-    all : {
+    all: {
         cmd: function () {
             var cmdPlus = (/^win/.test(process.platform) == true) ? ' & ' : ' && ',
                 command;
 
-            command = _.map(themes, function(theme, name) {
+            command = _.map(themes, function (theme, name) {
                 return combo.collector(name);
             }).join(cmdPlus);
 

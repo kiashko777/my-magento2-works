@@ -6,19 +6,15 @@
 
 namespace Magento\Webapi\Routing;
 
-use Magento\Framework\Exception\AuthorizationException;
+use Magento\Framework\Exception\InputException;
+use Magento\TestFramework\TestCase\WebapiAbstract;
+use SoapFault;
 
 /**
  * SOAP error handling test.
  */
-class SoapErrorHandlingTest extends \Magento\TestFramework\TestCase\WebapiAbstract
+class SoapErrorHandlingTest extends WebapiAbstract
 {
-    protected function setUp(): void
-    {
-        $this->_markTestAsSoapOnly();
-        parent::setUp();
-    }
-
     public function testWebapiException()
     {
         $serviceInfo = [
@@ -30,7 +26,7 @@ class SoapErrorHandlingTest extends \Magento\TestFramework\TestCase\WebapiAbstra
         try {
             $this->_webApiCall($serviceInfo);
             $this->fail("SoapFault was not raised as expected.");
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->checkSoapFault(
                 $e,
                 'Service not found',
@@ -50,7 +46,7 @@ class SoapErrorHandlingTest extends \Magento\TestFramework\TestCase\WebapiAbstra
         try {
             $this->_webApiCall($serviceInfo);
             $this->fail("SoapFault was not raised as expected.");
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             /** In developer mode message is masked, so checks should be different in two modes */
             if (strpos($e->getMessage(), 'Internal Error') === false) {
                 $this->checkSoapFault(
@@ -75,6 +71,48 @@ class SoapErrorHandlingTest extends \Magento\TestFramework\TestCase\WebapiAbstra
     {
         $parameters = [];
         $this->_testWrappedError($parameters);
+    }
+
+    protected function _testWrappedError($parameters)
+    {
+        $serviceInfo = [
+            'soap' => [
+                'service' => 'testModule3ErrorV1',
+                'operation' => 'testModule3ErrorV1InputException',
+            ],
+        ];
+
+        $expectedException = new InputException();
+        foreach ($parameters as $error) {
+            $expectedException->addError(
+                __('Invalid value of "%value" provided for the %fieldName field.', $error)
+            );
+        }
+
+        $arguments = [
+            'wrappedErrorParameters' => $parameters,
+        ];
+
+        $expectedErrors = [];
+        foreach ($expectedException->getErrors() as $key => $error) {
+            $expectedErrors[$key] = [
+                'message' => $error->getRawMessage(),
+                'params' => $error->getParameters(),
+            ];
+        }
+
+        try {
+            $this->_webApiCall($serviceInfo, $arguments);
+            $this->fail("SoapFault was not raised as expected.");
+        } catch (SoapFault $e) {
+            $this->checkSoapFault(
+                $e,
+                $expectedException->getRawMessage(),
+                'env:Sender',
+                $expectedException->getParameters(), // expected error parameters
+                $expectedErrors                      // expected wrapped errors
+            );
+        }
     }
 
     public function testSingleWrappedErrorException()
@@ -107,7 +145,7 @@ class SoapErrorHandlingTest extends \Magento\TestFramework\TestCase\WebapiAbstra
         try {
             $this->_webApiCall($serviceInfo);
             $this->fail("SoapFault was not raised as expected.");
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->checkSoapFault(
                 $e,
                 "The consumer isn't authorized to access %resources.",
@@ -116,45 +154,9 @@ class SoapErrorHandlingTest extends \Magento\TestFramework\TestCase\WebapiAbstra
         }
     }
 
-    protected function _testWrappedError($parameters)
+    protected function setUp(): void
     {
-        $serviceInfo = [
-            'soap' => [
-                'service' => 'testModule3ErrorV1',
-                'operation' => 'testModule3ErrorV1InputException',
-            ],
-        ];
-
-        $expectedException = new \Magento\Framework\Exception\InputException();
-        foreach ($parameters as $error) {
-            $expectedException->addError(
-                __('Invalid value of "%value" provided for the %fieldName field.', $error)
-            );
-        }
-
-        $arguments = [
-            'wrappedErrorParameters' => $parameters,
-        ];
-
-        $expectedErrors = [];
-        foreach ($expectedException->getErrors() as $key => $error) {
-            $expectedErrors[$key] = [
-                'message' => $error->getRawMessage(),
-                'params' => $error->getParameters(),
-            ];
-        }
-
-        try {
-            $this->_webApiCall($serviceInfo, $arguments);
-            $this->fail("SoapFault was not raised as expected.");
-        } catch (\SoapFault $e) {
-            $this->checkSoapFault(
-                $e,
-                $expectedException->getRawMessage(),
-                'env:Sender',
-                $expectedException->getParameters(), // expected error parameters
-                $expectedErrors                      // expected wrapped errors
-            );
-        }
+        $this->_markTestAsSoapOnly();
+        parent::setUp();
     }
 }

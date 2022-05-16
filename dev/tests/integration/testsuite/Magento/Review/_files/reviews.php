@@ -5,6 +5,8 @@
  */
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Review\Model\Review;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
@@ -15,23 +17,23 @@ $objectManager = Bootstrap::getObjectManager();
 $productRepository = $objectManager->create(ProductRepositoryInterface::class);
 $product = $productRepository->get('simple1');
 $review = $objectManager->create(
-    \Magento\Review\Model\Review::class,
+    Review::class,
     ['data' => ['nickname' => 'Nickname', 'title' => 'Review Summary', 'detail' => 'Review text']]
 );
 $review->setEntityId(
-    $review->getEntityIdByCode(\Magento\Review\Model\Review::ENTITY_PRODUCT_CODE)
+    $review->getEntityIdByCode(Review::ENTITY_PRODUCT_CODE)
 )->setEntityPkValue(
     $product->getId()
 )->setStatusId(
-    \Magento\Review\Model\Review::STATUS_PENDING
+    Review::STATUS_PENDING
 )->setStoreId(
     $objectManager->get(
-        \Magento\Store\Model\StoreManagerInterface::class
+        StoreManagerInterface::class
     )->getStore()->getId()
 )->setStores(
     [
         $objectManager->get(
-            \Magento\Store\Model\StoreManagerInterface::class
+            StoreManagerInterface::class
         )->getStore()->getId()
     ]
 )->save();

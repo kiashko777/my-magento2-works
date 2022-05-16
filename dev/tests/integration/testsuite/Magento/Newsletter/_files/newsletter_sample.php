@@ -3,11 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-use Magento\Framework\App\TemplateTypesInterface;
 
-/** @var \Magento\Newsletter\Model\Template $template */
-$template = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Newsletter\Model\Template::class
+use Magento\Framework\App\TemplateTypesInterface;
+use Magento\Newsletter\Model\Template;
+use Magento\TestFramework\Helper\Bootstrap;
+
+/** @var Template $template */
+$template = Bootstrap::getObjectManager()->create(
+    Template::class
 );
 
 $templateData = [

@@ -3,9 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer;
 
 use Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer;
+use SplFileInfo;
 
 /**
  * PhraseCollector
@@ -13,7 +15,7 @@ use Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer;
 class PhraseCollector
 {
     /**
-     * @var \Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer
+     * @var Tokenizer
      */
     protected $_tokenizer;
 
@@ -27,7 +29,7 @@ class PhraseCollector
     /**
      * Processed file
      *
-     * @var \SplFileInfo
+     * @var SplFileInfo
      */
     protected $_file;
 
@@ -118,23 +120,6 @@ class PhraseCollector
     }
 
     /**
-     * @param Token $firstToken
-     * @return bool
-     */
-    protected function extractObjectPhrase(Token $firstToken)
-    {
-        if ($firstToken->isNew() && $this->_tokenizer->isMatchingClass($this->className)) {
-            $arguments = $this->_tokenizer->getFunctionArgumentsTokens();
-            $phrase = $this->_collectPhrase(array_shift($arguments));
-            if (null !== $phrase) {
-                $this->_addPhrase($phrase, count($arguments), $this->_file, $firstToken->getLine());
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
      * Collect all phrase parts into string. Return null if phrase is a variable
      *
      * @param array $phraseTokens
@@ -144,7 +129,7 @@ class PhraseCollector
     {
         $phrase = [];
         if ($phraseTokens) {
-            /** @var \Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer\Token $phraseToken */
+            /** @var Token $phraseToken */
             foreach ($phraseTokens as $phraseToken) {
                 if ($phraseToken->isConstantEncapsedString() || $phraseToken->isConcatenateOperator()) {
                     $phrase[] = $phraseToken->getValue();
@@ -162,7 +147,7 @@ class PhraseCollector
      *
      * @param string $phrase
      * @param int $argumentsAmount
-     * @param \SplFileInfo $file
+     * @param SplFileInfo $file
      * @param int $line
      * @return void
      */
@@ -174,6 +159,23 @@ class PhraseCollector
             'file' => $file,
             'line' => $line,
         ];
+    }
+
+    /**
+     * @param Token $firstToken
+     * @return bool
+     */
+    protected function extractObjectPhrase(Token $firstToken)
+    {
+        if ($firstToken->isNew() && $this->_tokenizer->isMatchingClass($this->className)) {
+            $arguments = $this->_tokenizer->getFunctionArgumentsTokens();
+            $phrase = $this->_collectPhrase(array_shift($arguments));
+            if (null !== $phrase) {
+                $this->_addPhrase($phrase, count($arguments), $this->_file, $firstToken->getLine());
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

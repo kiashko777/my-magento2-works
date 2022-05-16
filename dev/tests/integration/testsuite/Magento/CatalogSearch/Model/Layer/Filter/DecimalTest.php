@@ -35,30 +35,6 @@ class DecimalTest extends TestCase
     private $request;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        /** @var CategoryRepositoryInterface $categoryRepository */
-        $categoryRepository = $objectManager->get(CategoryRepositoryInterface::class);
-        $category = $categoryRepository->get(4);
-
-        /** @var LayerCategory $layer */
-        $layer = $objectManager->create(
-            LayerCategory::class,
-            ['data' => ['current_category' => $category]]
-        );
-        /** @var ProductAttributeInterface $attribute */
-        $attribute = $objectManager->get(ProductAttributeInterface::class);
-        $attribute->loadByCode('catalog_product', 'weight');
-        $this->request = $objectManager->get(Request::class);
-        $this->_model = $objectManager->create(Decimal::class, ['layer' => $layer]);
-        $this->_model->setAttributeModel($attribute);
-        $this->_model->setRequestVar('decimal');
-    }
-
-    /**
      * @return void
      */
     public function testApplyNothing()
@@ -100,5 +76,29 @@ class DecimalTest extends TestCase
             '<span class="price">$1.00</span> - <span class="price">$99.99</span>',
             (string)$filters[0]->getLabel()
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var CategoryRepositoryInterface $categoryRepository */
+        $categoryRepository = $objectManager->get(CategoryRepositoryInterface::class);
+        $category = $categoryRepository->get(4);
+
+        /** @var LayerCategory $layer */
+        $layer = $objectManager->create(
+            LayerCategory::class,
+            ['data' => ['current_category' => $category]]
+        );
+        /** @var ProductAttributeInterface $attribute */
+        $attribute = $objectManager->get(ProductAttributeInterface::class);
+        $attribute->loadByCode('catalog_product', 'weight');
+        $this->request = $objectManager->get(Request::class);
+        $this->_model = $objectManager->create(Decimal::class, ['layer' => $layer]);
+        $this->_model->setAttributeModel($attribute);
+        $this->_model->setRequestVar('decimal');
     }
 }

@@ -8,6 +8,12 @@ declare(strict_types=1);
 
 namespace Magento\Sniffs\Annotation\_files;
 
+use Exception;
+use Magento\Catalog\Api\Data\CategoryExtensionInterface;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Catalog\Model\ResourceModel\Product\Collection;
+use Magento\Framework\Exception\LocalizedException;
+
 /**
  * Class for method structure for annotations test cases
  */
@@ -60,9 +66,9 @@ class MethodAnnotationFixture
 
     /**
      * ProductVisibilityCondition constructor
-     * @param \Magento\Catalog\Model\Product\Visibility $productVisibility
+     * @param Visibility $productVisibility
      */
-    public function content(\Magento\Catalog\Model\Product\Visibility $productVisibility)
+    public function content(Visibility $productVisibility)
     {
         $this->productVisibility = $productVisibility;
     }
@@ -72,7 +78,7 @@ class MethodAnnotationFixture
      *
      * {@inheritdoc}
      *
-     * @param \Magento\Catalog\Model\ResourceModel\Product\Collection $collection
+     * @param Collection $collection
      * @return void
      */
     public function construct(AbstractDb $collection)
@@ -88,7 +94,7 @@ class MethodAnnotationFixture
      * @param int $parentId new parent category id
      *
      * @return $this
-     * @throws \Magento\Framework\Exception\LocalizedException|\Exception
+     * @throws LocalizedException|Exception
      */
     public function move($parentId)
     {
@@ -99,7 +105,7 @@ class MethodAnnotationFixture
         try {
             $this->categoryRepository->get($parentId, $this->getStoreId());
         } catch (NoSuchEntityException $e) {
-            throw new \Magento\Framework\Exception\LocalizedException(
+            throw new LocalizedException(
                 __('Sorry, but we can\'t find the new parent category you selected.'),
                 $e
             );
@@ -162,11 +168,11 @@ class MethodAnnotationFixture
     /**
      * Block for short description
      *
+     * @param string $store
+     * @param string $foo
      * @see consists more lines as part of the long description
      * on multi line.
      *
-     * @param string $store
-     * @param string $foo
      */
     public function getProductListDefaultSortBy12($store, $foo)
     {
@@ -201,25 +207,6 @@ class MethodAnnotationFixture
     }
 
     /**
-     * Retrieve custom options
-     *
-     * @param ProductOptionInterface $productOption
-     *
-     * @return array
-     */
-    protected function getCustomOptions(ProductOptionInterface $productOption)
-    {
-        if ($productOption
-            && $productOption->getExtensionAttributes()
-            && $productOption->getExtensionAttributes()->getCustomOptions()
-        ) {
-            return $productOption->getExtensionAttributes()
-                ->getCustomOptions();
-        }
-        return [];
-    }
-
-    /**
      * This is the summary for a DocBlock.
      *
      * This is the description for a DocBlock. This text may contain
@@ -229,7 +216,7 @@ class MethodAnnotationFixture
      * The section after the description contains the tags; which provide
      * structured meta-data concerning the given element.
      *
-     * @param int $example  This is an example function/method parameter description.
+     * @param int $example This is an example function/method parameter description.
      * @param string $example2 This is a second example.
      *
      */
@@ -266,7 +253,7 @@ class MethodAnnotationFixture
         return $name === $folder;
     }
 
-    public function setExtensionAs(\Magento\Catalog\Api\Data\CategoryExtensionInterface $extensionAttributes)
+    public function setExtensionAs(CategoryExtensionInterface $extensionAttributes)
     {
         return $this->_setExtensionAttributes($extensionAttributes);
     }
@@ -274,19 +261,19 @@ class MethodAnnotationFixture
     /**
      *
      * short description
-     * @param \Magento\Catalog\Api\Data\CategoryExtensionInterface $extensionAttributes
+     * @param CategoryExtensionInterface $extensionAttributes
      * @return mixed
      */
-    public function setEn(\Magento\Catalog\Api\Data\CategoryExtensionInterface $extensionAttributes)
+    public function setEn(CategoryExtensionInterface $extensionAttributes)
     {
         return $this->_setExtensionAttributes($extensionAttributes);
     }
 
     /**
-     * @param \Magento\Catalog\Api\Data\CategoryExtensionInterface $extensionAttributes
+     * @param CategoryExtensionInterface $extensionAttributes
      * @return mixed
      */
-    public function setExtenw(\Magento\Catalog\Api\Data\CategoryExtensionInterface $extensionAttributes)
+    public function setExtenw(CategoryExtensionInterface $extensionAttributes)
     {
         return $this->_setExtensionAttributes($extensionAttributes);
     }
@@ -294,10 +281,10 @@ class MethodAnnotationFixture
     /**
      *
      * Short description
-     * @param \Magento\Catalog\Api\Data\CategoryExtensionInterface $extensionAttributes
+     * @param CategoryExtensionInterface $extensionAttributes
      * @return mixed
      */
-    public function setExff(\Magento\Catalog\Api\Data\CategoryExtensionInterface $extensionAttributes)
+    public function setExff(CategoryExtensionInterface $extensionAttributes)
     {
         return $this->_setExtensionAttributes($extensionAttributes);
     }
@@ -313,5 +300,24 @@ class MethodAnnotationFixture
     public function getProductSortBy($start, $length)
     {
         return $start === $length;
+    }
+
+    /**
+     * Retrieve custom options
+     *
+     * @param ProductOptionInterface $productOption
+     *
+     * @return array
+     */
+    protected function getCustomOptions(ProductOptionInterface $productOption)
+    {
+        if ($productOption
+            && $productOption->getExtensionAttributes()
+            && $productOption->getExtensionAttributes()->getCustomOptions()
+        ) {
+            return $productOption->getExtensionAttributes()
+                ->getCustomOptions();
+        }
+        return [];
     }
 }

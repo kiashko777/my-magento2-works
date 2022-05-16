@@ -28,10 +28,10 @@ for ($i = 1; $i <= 5; $i++) {
         ->setGroupId(1)
         ->setLastname('Smith')
         ->setWebsiteId(1)
-        ->setEmail('customer'.$i.'@example.com');
+        ->setEmail('customer' . $i . '@example.com');
     try {
         $customerRepository->save($customer, 'password');
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
     }
 }
 
@@ -45,5 +45,5 @@ $indexerRegistry = $objectManager->create(IndexerRegistry::class);
 $indexer = $indexerRegistry->get(Customer::CUSTOMER_GRID_INDEXER_ID);
 try {
     $indexer->reindexAll();
-} catch (\Exception $e) {
+} catch (Exception $e) {
 }

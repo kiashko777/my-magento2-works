@@ -33,7 +33,8 @@ class SelectFilterTest extends CategorySelectFilterTest
         array $products,
         array $attributeData,
         array $expectation
-    ): void {
+    ): void
+    {
         $this->getSearchFiltersAndAssert($products, $attributeData, $expectation);
     }
 
@@ -83,11 +84,12 @@ class SelectFilterTest extends CategorySelectFilterTest
      * @return void
      */
     public function testGetActiveFiltersWithCustomAttribute(
-        array $products,
-        array $expectation,
+        array  $products,
+        array  $expectation,
         string $filterValue,
-        int $productsCount
-    ): void {
+        int    $productsCount
+    ): void
+    {
         $this->getSearchActiveFiltersAndAssert($products, $expectation, $filterValue, $productsCount);
     }
 

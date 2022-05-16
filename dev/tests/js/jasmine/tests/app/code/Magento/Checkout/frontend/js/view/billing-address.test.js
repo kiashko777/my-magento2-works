@@ -16,11 +16,13 @@ define([
             'Magento_Checkout/js/checkout-data': checkoutData,
             'Magento_Customer/js/customer-data': {
                 /** Stub */
-                get: function () {}
+                get: function () {
+                }
             },
             'Magento_Checkout/js/model/quote': {
                 /** Stub */
-                getQuoteId: function () {},
+                getQuoteId: function () {
+                },
 
                 billingAddress: ko.observable(null),
 
@@ -69,10 +71,12 @@ define([
                 },
 
                 /** Stub */
-                set: function () {},
+                set: function () {
+                },
 
                 /** Stub */
-                trigger: function () {}
+                trigger: function () {
+                }
             };
 
             done();

@@ -44,7 +44,7 @@ class AttributeValuesTest extends TestCase
             LayoutInterface::class
         );
 
-        /** @var \Magento\ConfigurableProduct\Block\Adminhtml\Product\Steps\AttributeValues */
+        /** @var AttributeValues */
         $block = $layout->createBlock(
             AttributeValues::class,
             'step2',

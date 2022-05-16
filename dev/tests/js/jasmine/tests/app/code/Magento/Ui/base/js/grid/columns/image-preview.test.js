@@ -40,7 +40,7 @@ define([
             /**
              * @return {Object}
              */
-            function getThumbnail()  {
+            function getThumbnail() {
                 return {
                     previewRowId: ko.observable()
                 };

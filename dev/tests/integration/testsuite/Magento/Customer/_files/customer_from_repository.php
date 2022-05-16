@@ -4,10 +4,14 @@
  * See COPYING.txt for license details.
  */
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-/** @var $repository \Magento\Customer\Api\CustomerRepositoryInterface */
-$repository = $objectManager->create(\Magento\Customer\Api\CustomerRepositoryInterface::class);
-$customer = $objectManager->create(\Magento\Customer\Api\Data\CustomerInterface::class);
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Api\Data\CustomerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
+/** @var $repository CustomerRepositoryInterface */
+$repository = $objectManager->create(CustomerRepositoryInterface::class);
+$customer = $objectManager->create(CustomerInterface::class);
 
 /** @var Magento\Customer\Api\Data\CustomerInterface $customer */
 $customer->setWebsiteId(1)

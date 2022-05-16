@@ -16,13 +16,16 @@ define([
 
         registry.set('provName', {
             /** Stub */
-            on: function () {},
+            on: function () {
+            },
 
             /** Stub */
-            get: function () {},
+            get: function () {
+            },
 
             /** Stub */
-            set: function () {}
+            set: function () {
+            }
         });
 
         obj = new Constr({
@@ -43,10 +46,12 @@ define([
             it('Check returned value if method called with object arguments', function () {
                 var arg = {
                     /** Stub */
-                    initContainer: function () {},
+                    initContainer: function () {
+                    },
 
                     /** Stub */
-                    activate: function () {}
+                    activate: function () {
+                    }
                 };
 
                 expect(obj.initElement(arg)).toBeDefined();
@@ -54,10 +59,12 @@ define([
             it('Check returned value type if method called object arguments', function () {
                 var arg = {
                         /** Stub */
-                        initContainer: function () {},
+                        initContainer: function () {
+                        },
 
                         /** Stub */
-                        activate: function () {}
+                        activate: function () {
+                        }
                     },
                     type = typeof obj.initElement(arg);
 
@@ -66,10 +73,12 @@ define([
             it('Check call method "this.bubble" inner initElement method', function () {
                 var arg = {
                     /** Stub */
-                    initContainer: function () {},
+                    initContainer: function () {
+                    },
 
                     /** Stub */
-                    activate: function () {}
+                    activate: function () {
+                    }
                 };
 
                 obj.bubble = jasmine.createSpy();

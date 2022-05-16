@@ -6,26 +6,31 @@
 
 namespace Magento\Checkout\Block\Cart;
 
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Store\Model\ScopeInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
 /**
  * Class GridTest
  * Test to verify default config value for
  * Store->Configuration->Sales->Checkout->Shopping Cart->Number of items to display pager
  */
-class GridTest extends \PHPUnit\Framework\TestCase
+class GridTest extends TestCase
 {
     public function testGetDefaultConfig()
     {
         $configValue = 20;
-        /** @var $scopeConfig \Magento\Framework\App\Config\ScopeConfigInterface */
-        $scopeConfig = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\App\Config\ScopeConfigInterface::class
+        /** @var $scopeConfig ScopeConfigInterface */
+        $scopeConfig = Bootstrap::getObjectManager()->get(
+            ScopeConfigInterface::class
         );
         $defaultConfigValue = $scopeConfig->getValue(
-            \Magento\Checkout\Block\Cart\Grid::XPATH_CONFIG_NUMBER_ITEMS_TO_DISPLAY_PAGER,
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE
+            Grid::XPATH_CONFIG_NUMBER_ITEMS_TO_DISPLAY_PAGER,
+            ScopeInterface::SCOPE_STORE
         );
         $errorMessage = 'Default Config value for Store->Configuration->Sales->Checkout->Shopping Cart->'
-        . 'Number of items to display pager shouold be ' . $configValue;
+            . 'Number of items to display pager shouold be ' . $configValue;
         $this->assertEquals($configValue, $defaultConfigValue, $errorMessage);
     }
 }

@@ -7,15 +7,17 @@ declare(strict_types=1);
 
 namespace Magento\Quote\Model\Quote\Item;
 
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Quote\Api\CartItemRepositoryInterface;
 use Magento\Quote\Api\Data\CartItemInterface;
 use Magento\Quote\Model\Quote;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Tests \Magento\Quote\Model\Quote\Item\Updater
  */
-class UpdaterTest extends \PHPUnit\Framework\TestCase
+class UpdaterTest extends TestCase
 {
     /**
      * @var Updater
@@ -23,18 +25,9 @@ class UpdaterTest extends \PHPUnit\Framework\TestCase
     private $updater;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->updater = $this->objectManager->create(Updater::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Sales/_files/quote_with_custom_price.php
@@ -59,5 +52,14 @@ class UpdaterTest extends \PHPUnit\Framework\TestCase
             $actualQuoteItem->getCustomPrice(),
             'Item custom price has to be null'
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->updater = $this->objectManager->create(Updater::class);
     }
 }

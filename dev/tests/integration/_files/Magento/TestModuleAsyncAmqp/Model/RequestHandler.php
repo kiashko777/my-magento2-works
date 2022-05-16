@@ -3,12 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestModuleAsyncAmqp\Model;
 
 class RequestHandler
 {
     /**
-     * @param \Magento\TestModuleAsyncAmqp\Model\AsyncTestData $simpleDataItem
+     * @param AsyncTestData $simpleDataItem
      */
     public function process($simpleDataItem)
     {

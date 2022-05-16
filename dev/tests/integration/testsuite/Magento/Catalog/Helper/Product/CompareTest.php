@@ -6,28 +6,32 @@
 
 namespace Magento\Catalog\Helper\Product;
 
-class CompareTest extends \PHPUnit\Framework\TestCase
+use Exception;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Compare\ListCompare;
+use Magento\Catalog\Model\ResourceModel\Product\Compare\Item\Collection;
+use Magento\Catalog\Model\Session;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class CompareTest extends TestCase
 {
     /**
-     * @var \Magento\Catalog\Helper\Product\Compare
+     * @var Compare
      */
     protected $_helper;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $_objectManager;
 
-    protected function setUp(): void
-    {
-        $this->_objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->_helper = $this->_objectManager->get(\Magento\Catalog\Helper\Product\Compare::class);
-    }
-
     public function testGetListUrl()
     {
-        /** @var $empty \Magento\Catalog\Helper\Product\Compare */
-        $empty = $this->_objectManager->create(\Magento\Catalog\Helper\Product\Compare::class);
+        /** @var $empty Compare */
+        $empty = $this->_objectManager->create(Compare::class);
         $this->assertStringContainsString('/catalog/product_compare/index/', $empty->getListUrl());
     }
 
@@ -36,12 +40,20 @@ class CompareTest extends \PHPUnit\Framework\TestCase
         $this->_testGetProductUrl('getAddUrl', '/catalog/product_compare/add/');
     }
 
+    protected function _testGetProductUrl($method, $expectedFullAction)
+    {
+        $product = $this->_objectManager->create(Product::class);
+        $product->setId(10);
+        $url = $this->_helper->{$method}($product);
+        $this->assertStringContainsString($expectedFullAction, $url);
+    }
+
     /**
      * @magentoAppIsolation enabled
      */
     public function testGetAddToWishlistParams()
     {
-        $product = $this->_objectManager->create(\Magento\Catalog\Model\Product::class);
+        $product = $this->_objectManager->create(Product::class);
         $product->setId(10);
         $json = $this->_helper->getAddToWishlistParams($product);
         $params = (array)json_decode($json);
@@ -79,7 +91,7 @@ class CompareTest extends \PHPUnit\Framework\TestCase
     public function testGetItemCollection()
     {
         $this->assertInstanceOf(
-            \Magento\Catalog\Model\ResourceModel\Product\Compare\Item\Collection::class,
+            Collection::class,
             $this->_helper->getItemCollection()
         );
     }
@@ -94,8 +106,8 @@ class CompareTest extends \PHPUnit\Framework\TestCase
      */
     public function testCalculate()
     {
-        /** @var \Magento\Catalog\Model\Session $session */
-        $session = $this->_objectManager->get(\Magento\Catalog\Model\Session::class);
+        /** @var Session $session */
+        $session = $this->_objectManager->get(Session::class);
         try {
             $session->unsCatalogCompareItemsCount();
             $this->assertFalse($this->_helper->hasItems());
@@ -107,10 +119,23 @@ class CompareTest extends \PHPUnit\Framework\TestCase
             $this->assertTrue($this->_helper->hasItems());
 
             $session->unsCatalogCompareItemsCount();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $session->unsCatalogCompareItemsCount();
             throw $e;
         }
+    }
+
+    /**
+     * Add products from fixture to compare list
+     */
+    protected function _populateCompareList()
+    {
+        $productRepository = $this->_objectManager->create(ProductRepositoryInterface::class);
+        $productOne = $productRepository->get('simple1');
+        $productTwo = $productRepository->get('simple2');
+        /** @var $compareList ListCompare */
+        $compareList = $this->_objectManager->create(ListCompare::class);
+        $compareList->addProduct($productOne)->addProduct($productTwo);
     }
 
     public function testSetGetAllowUsedFlat()
@@ -120,24 +145,9 @@ class CompareTest extends \PHPUnit\Framework\TestCase
         $this->assertFalse($this->_helper->getAllowUsedFlat());
     }
 
-    protected function _testGetProductUrl($method, $expectedFullAction)
+    protected function setUp(): void
     {
-        $product = $this->_objectManager->create(\Magento\Catalog\Model\Product::class);
-        $product->setId(10);
-        $url = $this->_helper->{$method}($product);
-        $this->assertStringContainsString($expectedFullAction, $url);
-    }
-
-    /**
-     * Add products from fixture to compare list
-     */
-    protected function _populateCompareList()
-    {
-        $productRepository = $this->_objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
-        $productOne = $productRepository->get('simple1');
-        $productTwo = $productRepository->get('simple2');
-        /** @var $compareList \Magento\Catalog\Model\Product\Compare\ListCompare */
-        $compareList = $this->_objectManager->create(\Magento\Catalog\Model\Product\Compare\ListCompare::class);
-        $compareList->addProduct($productOne)->addProduct($productTwo);
+        $this->_objectManager = Bootstrap::getObjectManager();
+        $this->_helper = $this->_objectManager->get(Compare::class);
     }
 }

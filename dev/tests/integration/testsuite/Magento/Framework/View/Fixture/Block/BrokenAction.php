@@ -3,13 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\View\Fixture\Block;
 
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Phrase;
+use Magento\Framework\View\Element\AbstractBlock;
 use Magento\Framework\View\LayoutInterface;
 
-class BrokenAction extends \Magento\Framework\View\Element\AbstractBlock
+class BrokenAction extends AbstractBlock
 {
     /**
      * @param LayoutInterface $layout

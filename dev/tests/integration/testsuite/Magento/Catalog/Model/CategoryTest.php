@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Model;
 
+use Exception;
 use Magento\Catalog\Api\CategoryRepositoryInterface;
 use Magento\Catalog\Model\Category as Category;
 use Magento\Catalog\Model\ResourceModel\Category as CategoryResource;
@@ -17,6 +18,7 @@ use Magento\Catalog\Model\ResourceModel\Product\Collection as ProductCollection;
 use Magento\Eav\Model\Entity\Attribute\Exception as AttributeException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Math\Random;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Url;
 use Magento\Store\Api\StoreRepositoryInterface;
 use Magento\Store\Model\Store;
@@ -47,7 +49,7 @@ class CategoryTest extends TestCase
     protected $_model;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
 
@@ -56,20 +58,6 @@ class CategoryTest extends TestCase
 
     /** @var CategoryRepositoryInterface */
     private $categoryRepository;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        /** @var $storeManager StoreManagerInterface */
-        $storeManager = $this->objectManager->get(StoreManagerInterface::class);
-        $this->_store = $storeManager->getStore();
-        $this->_model = $this->objectManager->create(Category::class);
-        $this->categoryResource = $this->objectManager->get(CategoryResource::class);
-        $this->categoryRepository = $this->objectManager->get(CategoryRepositoryInterface::class);
-    }
 
     public function testGetUrlInstance(): void
     {
@@ -126,6 +114,15 @@ class CategoryTest extends TestCase
         $this->_model->unsetData();
         $this->_model = $this->getCategoryByName('Category 1.1.1');
         $this->assertNotEmpty($this->_model->getProductsPosition());
+    }
+
+    protected function getCategoryByName($categoryName)
+    {
+        /* @var Collection $collection */
+        $collection = $this->objectManager->create(Collection::class);
+        $collection->addNameToResult()->load();
+
+        return $collection->getItemByColumnValue('name', $categoryName);
     }
 
     public function testGetStoreIds(): void
@@ -425,7 +422,7 @@ class CategoryTest extends TestCase
      * Test for Category Description field to be able to contain >64kb of data
      *
      * @throws NoSuchEntityException
-     * @throws \Exception
+     * @throws Exception
      */
     public function testMaximumDescriptionLength(): void
     {
@@ -501,12 +498,17 @@ class CategoryTest extends TestCase
         $this->assertEquals($parentSecondStoreKey . '/test-category-100', $childCategorySecondStore->getUrlPath());
     }
 
-    protected function getCategoryByName($categoryName)
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
     {
-        /* @var Collection $collection */
-        $collection = $this->objectManager->create(Collection::class);
-        $collection->addNameToResult()->load();
-
-        return $collection->getItemByColumnValue('name', $categoryName);
+        $this->objectManager = Bootstrap::getObjectManager();
+        /** @var $storeManager StoreManagerInterface */
+        $storeManager = $this->objectManager->get(StoreManagerInterface::class);
+        $this->_store = $storeManager->getStore();
+        $this->_model = $this->objectManager->create(Category::class);
+        $this->categoryResource = $this->objectManager->get(CategoryResource::class);
+        $this->categoryRepository = $this->objectManager->get(CategoryRepositoryInterface::class);
     }
 }

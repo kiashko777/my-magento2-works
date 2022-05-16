@@ -101,6 +101,13 @@ abstract class AbstractUrlRewriteTest extends TestCase
     }
 
     /**
+     * Get entity type
+     *
+     * @return string
+     */
+    abstract protected function getEntityType(): string;
+
+    /**
      * Prepare expected data
      *
      * @param array $expectedData
@@ -116,13 +123,6 @@ abstract class AbstractUrlRewriteTest extends TestCase
 
         return $newData;
     }
-
-    /**
-     * Get entity type
-     *
-     * @return string
-     */
-    abstract protected function getEntityType(): string;
 
     /**
      * Get config value for url suffix

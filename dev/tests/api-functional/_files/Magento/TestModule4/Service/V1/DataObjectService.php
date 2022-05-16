@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestModule4\Service\V1;
 
 use Magento\TestModule4\Service\V1\Entity\DataObjectRequest;
@@ -10,7 +11,7 @@ use Magento\TestModule4\Service\V1\Entity\DataObjectResponseFactory;
 use Magento\TestModule4\Service\V1\Entity\ExtensibleRequestInterface;
 use Magento\TestModule4\Service\V1\Entity\NestedDataObjectRequest;
 
-class DataObjectService implements \Magento\TestModule4\Service\V1\DataObjectServiceInterface
+class DataObjectService implements DataObjectServiceInterface
 {
     /**
      * @var DataObjectResponseFactory

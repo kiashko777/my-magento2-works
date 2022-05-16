@@ -8,18 +8,16 @@
 
 namespace Magento\Customer\Model;
 
-class AddressRegistryTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class AddressRegistryTest extends TestCase
 {
     /**
-     * @var \Magento\Customer\Model\AddressRegistry
+     * @var AddressRegistry
      */
     protected $_model;
-
-    protected function setUp(): void
-    {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Customer\Model\AddressRegistry::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
@@ -29,7 +27,7 @@ class AddressRegistryTest extends \PHPUnit\Framework\TestCase
     {
         $addressId = 1;
         $address = $this->_model->retrieve($addressId);
-        $this->assertInstanceOf(\Magento\Customer\Model\Address::class, $address);
+        $this->assertInstanceOf(Address::class, $address);
         $this->assertEquals($addressId, $address->getId());
     }
 
@@ -41,13 +39,13 @@ class AddressRegistryTest extends \PHPUnit\Framework\TestCase
     {
         $addressId = 1;
         $addressBeforeDeletion = $this->_model->retrieve($addressId);
-        $address2 = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Customer\Model\Address::class);
+        $address2 = Bootstrap::getObjectManager()
+            ->create(Address::class);
         $address2->load($addressId)
             ->delete();
         $addressAfterDeletion = $this->_model->retrieve($addressId);
         $this->assertEquals($addressBeforeDeletion, $addressAfterDeletion);
-        $this->assertInstanceOf(\Magento\Customer\Model\Address::class, $addressAfterDeletion);
+        $this->assertInstanceOf(Address::class, $addressAfterDeletion);
         $this->assertEquals($addressId, $addressAfterDeletion->getId());
     }
 
@@ -55,7 +53,7 @@ class AddressRegistryTest extends \PHPUnit\Framework\TestCase
      */
     public function testRetrieveException()
     {
-        $this->expectException(\Magento\Framework\Exception\NoSuchEntityException::class);
+        $this->expectException(NoSuchEntityException::class);
 
         $addressId = 1;
         $this->_model->retrieve($addressId);
@@ -67,13 +65,19 @@ class AddressRegistryTest extends \PHPUnit\Framework\TestCase
      */
     public function testRemove()
     {
-        $this->expectException(\Magento\Framework\Exception\NoSuchEntityException::class);
+        $this->expectException(NoSuchEntityException::class);
 
         $addressId = 1;
         $address = $this->_model->retrieve($addressId);
-        $this->assertInstanceOf(\Magento\Customer\Model\Address::class, $address);
+        $this->assertInstanceOf(Address::class, $address);
         $address->delete();
         $this->_model->remove($addressId);
         $this->_model->retrieve($addressId);
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()
+            ->create(AddressRegistry::class);
     }
 }

@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\ConfigurableProduct;
 
+use Exception;
 use Magento\ConfigurableProductGraphQl\Model\Options\SelectionUidFormatter;
 use Magento\Eav\Api\Data\AttributeInterface;
 use Magento\Eav\Model\AttributeRepository;
@@ -16,6 +17,7 @@ use Magento\Framework\GraphQl\Query\Uid;
 use Magento\Indexer\Model\IndexerFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
+use Throwable;
 
 /**
  * Test configurable product option selection.
@@ -45,17 +47,6 @@ class ConfigurableOptionsSelectionTest extends GraphQlAbstract
     private $firstConfigurableAttribute;
 
     private $secondConfigurableAttribute;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->attributeRepository = Bootstrap::getObjectManager()->create(AttributeRepository::class);
-        $this->selectionUidFormatter = Bootstrap::getObjectManager()->create(SelectionUidFormatter::class);
-        $this->indexerFactory = Bootstrap::getObjectManager()->create(IndexerFactory::class);
-        $this->idEncoder = Bootstrap::getObjectManager()->create(Uid::class);
-    }
 
     /**
      * Test the first option of the first attribute selected
@@ -94,6 +85,180 @@ class ConfigurableOptionsSelectionTest extends GraphQlAbstract
         );
 
         $this->assertMediaGallery($product);
+    }
+
+    /**
+     * Get first configurable attribute.
+     *
+     * @return AttributeInterface
+     * @throws NoSuchEntityException
+     */
+    private function getFirstConfigurableAttribute(): AttributeInterface
+    {
+        if (!$this->firstConfigurableAttribute) {
+            $this->firstConfigurableAttribute = $this->attributeRepository->get(
+                'catalog_product',
+                'test_configurable_first'
+            );
+        }
+
+        return $this->firstConfigurableAttribute;
+    }
+
+    /**
+     * Make fulltext catalog search reindex
+     *
+     * @return void
+     * @throws Throwable
+     */
+    private function reindexAll(): void
+    {
+        $indexLists = [
+            'catalog_category_product',
+            'catalog_product_attribute',
+            'cataloginventory_stock',
+            'catalogsearch_fulltext',
+        ];
+
+        foreach ($indexLists as $indexerId) {
+            $indexer = $this->indexerFactory->create();
+            $indexer->load($indexerId)->reindexAll();
+        }
+    }
+
+    /**
+     * Get GraphQL query to test configurable product options selection
+     *
+     * @param string $productSku
+     * @param array $optionValueUids
+     * @param int $pageSize
+     * @param int $currentPage
+     * @return string
+     */
+    private function getQuery(
+        string $productSku,
+        array  $optionValueUids = [],
+        int    $pageSize = 20,
+        int    $currentPage = 1
+    ): string
+    {
+        if (empty($optionValueUids)) {
+            $configurableOptionValueUids = '';
+        } else {
+            $configurableOptionValueUids = '(configurableOptionValueUids: [';
+            foreach ($optionValueUids as $configurableOptionValueUid) {
+                $configurableOptionValueUids .= '"' . $configurableOptionValueUid . '",';
+            }
+            $configurableOptionValueUids .= '])';
+        }
+
+        return <<<QUERY
+{
+products(filter:{
+     sku: {eq: "{$productSku}"}
+     },
+     pageSize: {$pageSize}, currentPage: {$currentPage}
+  )
+  {
+    items {
+      __typename
+      sku
+      ... on ConfigurableProduct {
+        configurable_product_options_selection {$configurableOptionValueUids} {
+          configurable_options {
+            uid
+            attribute_code
+            label
+            values {
+              uid
+              is_available
+              is_use_default
+              label
+              swatch {
+                value
+              }
+            }
+          }
+          variant {
+            uid
+            sku
+            url_key
+          }
+          media_gallery {
+            url
+            label
+            disabled
+          }
+        }
+      }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
+     * Get second configurable attribute.
+     *
+     * @return AttributeInterface
+     * @throws NoSuchEntityException
+     */
+    private function getSecondConfigurableAttribute(): AttributeInterface
+    {
+        if (!$this->secondConfigurableAttribute) {
+            $this->secondConfigurableAttribute = $this->attributeRepository->get(
+                'catalog_product',
+                'test_configurable_second'
+            );
+        }
+
+        return $this->secondConfigurableAttribute;
+    }
+
+    /**
+     * Assert option uid.
+     *
+     * @param $attributeId
+     * @param $expectedOptions
+     * @param $selectedOptions
+     */
+    private function assertAvailableOptionUids($attributeId, $expectedOptions, $selectedOptions): void
+    {
+        unset($expectedOptions[0]);
+        foreach ($expectedOptions as $option) {
+            self::assertContains(
+                $this->selectionUidFormatter->encode((int)$attributeId, (int)$option->getValue()),
+                $selectedOptions
+            );
+        }
+    }
+
+    /**
+     * Retrieve options UIDs
+     *
+     * @param array $options
+     * @return array
+     */
+    private function getOptionsUids(array $options): array
+    {
+        $uids = [];
+        foreach ($options as $option) {
+            $uids[] = $option['uid'];
+        }
+        return $uids;
+    }
+
+    /**
+     * Assert media gallery fields
+     *
+     * @param array $product
+     */
+    private function assertMediaGallery(array $product): void
+    {
+        self::assertNotEmpty($product['configurable_product_options_selection']['media_gallery']);
+        $image = current($product['configurable_product_options_selection']['media_gallery']);
+        self::assertIsString($image['url']);
+        self::assertEquals(false, $image['disabled']);
     }
 
     /**
@@ -189,7 +354,7 @@ class ConfigurableOptionsSelectionTest extends GraphQlAbstract
      */
     public function testWithWrongSelectedOptions(): void
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('configurableOptionValueUids values are incorrect');
 
         $attribute = $this->getFirstConfigurableAttribute();
@@ -205,175 +370,13 @@ class ConfigurableOptionsSelectionTest extends GraphQlAbstract
     }
 
     /**
-     * Get GraphQL query to test configurable product options selection
-     *
-     * @param string $productSku
-     * @param array $optionValueUids
-     * @param int $pageSize
-     * @param int $currentPage
-     * @return string
+     * @inheritdoc
      */
-    private function getQuery(
-        string $productSku,
-        array $optionValueUids = [],
-        int $pageSize = 20,
-        int $currentPage = 1
-    ): string {
-        if (empty($optionValueUids)) {
-            $configurableOptionValueUids = '';
-        } else {
-            $configurableOptionValueUids = '(configurableOptionValueUids: [';
-            foreach ($optionValueUids as $configurableOptionValueUid) {
-                $configurableOptionValueUids .= '"' . $configurableOptionValueUid . '",';
-            }
-            $configurableOptionValueUids .= '])';
-        }
-
-        return <<<QUERY
-{
-products(filter:{
-     sku: {eq: "{$productSku}"}
-     },
-     pageSize: {$pageSize}, currentPage: {$currentPage}
-  )
-  {
-    items {
-      __typename
-      sku
-      ... on ConfigurableProduct {
-        configurable_product_options_selection {$configurableOptionValueUids} {
-          configurable_options {
-            uid
-            attribute_code
-            label
-            values {
-              uid
-              is_available
-              is_use_default
-              label
-              swatch {
-                value
-              }
-            }
-          }
-          variant {
-            uid
-            sku
-            url_key
-          }
-          media_gallery {
-            url
-            label
-            disabled
-          }
-        }
-      }
-    }
-  }
-}
-QUERY;
-    }
-
-    /**
-     * Get first configurable attribute.
-     *
-     * @return AttributeInterface
-     * @throws NoSuchEntityException
-     */
-    private function getFirstConfigurableAttribute(): AttributeInterface
+    protected function setUp(): void
     {
-        if (!$this->firstConfigurableAttribute) {
-            $this->firstConfigurableAttribute = $this->attributeRepository->get(
-                'catalog_product',
-                'test_configurable_first'
-            );
-        }
-
-        return $this->firstConfigurableAttribute;
-    }
-
-    /**
-     * Get second configurable attribute.
-     *
-     * @return AttributeInterface
-     * @throws NoSuchEntityException
-     */
-    private function getSecondConfigurableAttribute(): AttributeInterface
-    {
-        if (!$this->secondConfigurableAttribute) {
-            $this->secondConfigurableAttribute = $this->attributeRepository->get(
-                'catalog_product',
-                'test_configurable_second'
-            );
-        }
-
-        return $this->secondConfigurableAttribute;
-    }
-
-    /**
-     * Assert option uid.
-     *
-     * @param $attributeId
-     * @param $expectedOptions
-     * @param $selectedOptions
-     */
-    private function assertAvailableOptionUids($attributeId, $expectedOptions, $selectedOptions): void
-    {
-        unset($expectedOptions[0]);
-        foreach ($expectedOptions as $option) {
-            self::assertContains(
-                $this->selectionUidFormatter->encode((int)$attributeId, (int)$option->getValue()),
-                $selectedOptions
-            );
-        }
-    }
-
-    /**
-     * Make fulltext catalog search reindex
-     *
-     * @return void
-     * @throws \Throwable
-     */
-    private function reindexAll(): void
-    {
-        $indexLists = [
-            'catalog_category_product',
-            'catalog_product_attribute',
-            'cataloginventory_stock',
-            'catalogsearch_fulltext',
-        ];
-
-        foreach ($indexLists as $indexerId) {
-            $indexer = $this->indexerFactory->create();
-            $indexer->load($indexerId)->reindexAll();
-        }
-    }
-
-    /**
-     * Retrieve options UIDs
-     *
-     * @param array $options
-     * @return array
-     */
-    private function getOptionsUids(array $options): array
-    {
-        $uids = [];
-        foreach ($options as $option) {
-            $uids[] = $option['uid'];
-        }
-        return $uids;
-    }
-
-    /**
-     * Assert media gallery fields
-     *
-     * @param array $product
-     */
-    private function assertMediaGallery(array $product): void
-    {
-        self::assertNotEmpty($product['configurable_product_options_selection']['media_gallery']);
-        $image = current($product['configurable_product_options_selection']['media_gallery']);
-        self::assertIsString($image['url']);
-        self::assertEquals(false, $image['disabled']);
+        $this->attributeRepository = Bootstrap::getObjectManager()->create(AttributeRepository::class);
+        $this->selectionUidFormatter = Bootstrap::getObjectManager()->create(SelectionUidFormatter::class);
+        $this->indexerFactory = Bootstrap::getObjectManager()->create(IndexerFactory::class);
+        $this->idEncoder = Bootstrap::getObjectManager()->create(Uid::class);
     }
 }

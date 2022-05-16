@@ -3,13 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Analytics\Api;
 
+use Exception;
 use Magento\Analytics\Model\FileInfoManager;
 use Magento\Framework\UrlInterface;
 use Magento\Framework\Webapi\Rest\Request;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
@@ -24,17 +27,9 @@ class LinkProviderTest extends WebapiAbstract
     const RESOURCE_PATH = '/V1/analytics/link';
 
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     protected $objectManager;
-
-    /**
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoApiDataFixture Magento/Analytics/_files/create_link.php
@@ -66,7 +61,7 @@ class LinkProviderTest extends WebapiAbstract
         if (!$this->isTestBaseUrlSecure()) {
             try {
                 $this->_webApiCall($serviceInfo);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->assertStringContainsString(
                     'Operation allowed only in HTTPS',
                     $e->getMessage()
@@ -96,5 +91,13 @@ class LinkProviderTest extends WebapiAbstract
     private function isTestBaseUrlSecure()
     {
         return strpos(TESTS_BASE_URL, 'https://') !== false;
+    }
+
+    /**
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

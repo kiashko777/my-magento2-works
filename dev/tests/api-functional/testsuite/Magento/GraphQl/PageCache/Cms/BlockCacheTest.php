@@ -18,16 +18,6 @@ use Magento\TestFramework\TestCase\GraphQlAbstract;
 class BlockCacheTest extends GraphQlAbstract
 {
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->markTestSkipped(
-            'This test will stay skipped until DEVOPS-4924 is resolved'
-        );
-    }
-
-    /**
      * Test that X-Magento-Tags are correct
      *
      * @magentoApiDataFixture Magento/Cms/_files/block.php
@@ -47,6 +37,29 @@ class BlockCacheTest extends GraphQlAbstract
         $actualTags = explode(',', $response['headers']['X-Magento-Tags']);
         $expectedTags = ["cms_b", "cms_b_{$blockId}", "cms_b_{$blockIdentifier}", "FPC"];
         $this->assertEquals($expectedTags, $actualTags);
+    }
+
+    /**
+     * Get cmsBlocks query
+     *
+     * @param array $identifiers
+     * @return string
+     */
+    private function getBlockQuery(array $identifiers): string
+    {
+        $identifiersString = implode(',', $identifiers);
+        $query = <<<QUERY
+    {
+        cmsBlocks(identifiers: ["$identifiersString"]) {
+            items {
+                title
+                identifier
+                content
+            }
+        }
+    }
+QUERY;
+        return $query;
     }
 
     /**
@@ -136,25 +149,12 @@ class BlockCacheTest extends GraphQlAbstract
     }
 
     /**
-     * Get cmsBlocks query
-     *
-     * @param array $identifiers
-     * @return string
+     * @inheritdoc
      */
-    private function getBlockQuery(array $identifiers): string
+    protected function setUp(): void
     {
-        $identifiersString = implode(',', $identifiers);
-        $query = <<<QUERY
-    { 
-        cmsBlocks(identifiers: ["$identifiersString"]) {
-            items {
-                title
-                identifier
-                content
-            }
-        }
-    }
-QUERY;
-        return $query;
+        $this->markTestSkipped(
+            'This test will stay skipped until DEVOPS-4924 is resolved'
+        );
     }
 }

@@ -6,10 +6,16 @@
 
 namespace Magento\Backend\Controller\Adminhtml;
 
+use Magento\Framework\App\Cache\Frontend\Pool;
+use Magento\Framework\Cache\FrontendInterface;
+use Magento\Framework\Message\MessageInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractBackendController;
+
 /**
  * @magentoAppArea Adminhtml
  */
-class CacheTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class CacheTest extends AbstractBackendController
 {
     /**
      * @magentoDataFixture Magento/Backend/controllers/_files/cache/application_cache.php
@@ -18,20 +24,20 @@ class CacheTest extends \Magento\TestFramework\TestCase\AbstractBackendControlle
     public function testFlushAllAction()
     {
         /** @var $cache \Magento\Framework\App\Cache */
-        $cache = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+        $cache = Bootstrap::getObjectManager()->create(
             \Magento\Framework\App\Cache::class
         );
         $this->assertNotEmpty($cache->load('APPLICATION_FIXTURE'));
 
         $this->dispatch('backend/admin/cache/flushAll');
 
-        /** @var $cachePool \Magento\Framework\App\Cache\Frontend\Pool */
+        /** @var $cachePool Pool */
         $this->assertFalse($cache->load('APPLICATION_FIXTURE'));
 
-        $cachePool = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\App\Cache\Frontend\Pool::class
+        $cachePool = Bootstrap::getObjectManager()->create(
+            Pool::class
         );
-        /** @var $cacheFrontend \Magento\Framework\Cache\FrontendInterface */
+        /** @var $cacheFrontend FrontendInterface */
         foreach ($cachePool as $cacheFrontend) {
             $this->assertFalse($cacheFrontend->getBackend()->load('NON_APPLICATION_FIXTURE'));
         }
@@ -46,16 +52,16 @@ class CacheTest extends \Magento\TestFramework\TestCase\AbstractBackendControlle
         $this->dispatch('backend/admin/cache/flushSystem');
 
         /** @var $cache \Magento\Framework\App\Cache */
-        $cache = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+        $cache = Bootstrap::getObjectManager()->create(
             \Magento\Framework\App\Cache::class
         );
-        /** @var $cachePool \Magento\Framework\App\Cache\Frontend\Pool */
+        /** @var $cachePool Pool */
         $this->assertFalse($cache->load('APPLICATION_FIXTURE'));
 
-        $cachePool = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\App\Cache\Frontend\Pool::class
+        $cachePool = Bootstrap::getObjectManager()->create(
+            Pool::class
         );
-        /** @var $cacheFrontend \Magento\Framework\Cache\FrontendInterface */
+        /** @var $cacheFrontend FrontendInterface */
         foreach ($cachePool as $cacheFrontend) {
             $this->assertSame(
                 'non-application cache data',
@@ -74,7 +80,7 @@ class CacheTest extends \Magento\TestFramework\TestCase\AbstractBackendControlle
         $this->dispatch('backend/admin/cache/' . $action);
         $this->assertSessionMessages(
             $this->containsEqual("These cache type(s) don&#039;t exist: invalid_type_1, invalid_type_2"),
-            \Magento\Framework\Message\MessageInterface::TYPE_ERROR
+            MessageInterface::TYPE_ERROR
         );
     }
 

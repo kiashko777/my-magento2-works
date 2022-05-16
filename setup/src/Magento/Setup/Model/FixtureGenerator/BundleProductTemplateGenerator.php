@@ -8,6 +8,7 @@ namespace Magento\Setup\Model\FixtureGenerator;
 
 use Magento\Bundle\Api\Data\LinkInterfaceFactory;
 use Magento\Bundle\Api\Data\OptionInterfaceFactory;
+use Magento\Bundle\Model\Product\Price;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use Magento\Catalog\Model\Product\Type;
@@ -47,11 +48,12 @@ class BundleProductTemplateGenerator implements TemplateEntityGeneratorInterface
      * @param LinkInterfaceFactory $linkFactory
      */
     public function __construct(
-        ProductFactory $productFactory,
-        array $fixture,
+        ProductFactory         $productFactory,
+        array                  $fixture,
         OptionInterfaceFactory $optionFactory,
-        LinkInterfaceFactory $linkFactory
-    ) {
+        LinkInterfaceFactory   $linkFactory
+    )
+    {
         $this->fixture = $fixture;
         $this->productFactory = $productFactory;
         $this->optionFactory = $optionFactory;
@@ -99,7 +101,7 @@ class BundleProductTemplateGenerator implements TemplateEntityGeneratorInterface
                 'description' => 'description',
                 'short_description' => 'short description',
                 'tax_class_id' => 2, //'taxable goods',
-                'price_type' => \Magento\Bundle\Model\Product\Price::PRICE_TYPE_FIXED,
+                'price_type' => Price::PRICE_TYPE_FIXED,
                 'price_view' => 1,
                 'stock_data' => [
                     'use_config_manage_stock' => 1,

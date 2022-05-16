@@ -26,6 +26,49 @@ abstract class AbstractAttributeDataWithOptions extends AbstractBaseAttributeDat
     }
 
     /**
+     * Return attribute options data.
+     *
+     * @return array
+     */
+    protected function getOptionsDataArr(): array
+    {
+        return [
+            [
+                'option' => [
+                    'order' => [
+                        'option_0' => '1',
+                    ],
+                    'value' => [
+                        'option_0' => [
+                            'Admin value 1',
+                            'Default store view value 1',
+                        ],
+                    ],
+                    'delete' => [
+                        'option_0' => '',
+                    ],
+                ],
+            ],
+            [
+                'option' => [
+                    'order' => [
+                        'option_1' => '2',
+                    ],
+                    'value' => [
+                        'option_1' => [
+                            'Admin value 2',
+                            'Default store view value 2',
+                        ],
+                    ],
+                    'delete' => [
+                        'option_1' => '',
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
      * @inheritdoc
      */
     public function getAttributeData(): array
@@ -129,49 +172,6 @@ abstract class AbstractAttributeDataWithOptions extends AbstractBaseAttributeDat
                             'value' => [],
                             'delete' => '1',
                         ],
-                    ],
-                ],
-            ],
-        ];
-    }
-
-    /**
-     * Return attribute options data.
-     *
-     * @return array
-     */
-    protected function getOptionsDataArr(): array
-    {
-        return [
-            [
-                'option' => [
-                    'order' => [
-                        'option_0' => '1',
-                    ],
-                    'value' => [
-                        'option_0' => [
-                            'Admin value 1',
-                            'Default store view value 1',
-                        ],
-                    ],
-                    'delete' => [
-                        'option_0' => '',
-                    ],
-                ],
-            ],
-            [
-                'option' => [
-                    'order' => [
-                        'option_1' => '2',
-                    ],
-                    'value' => [
-                        'option_1' => [
-                            'Admin value 2',
-                            'Default store view value 2',
-                        ],
-                    ],
-                    'delete' => [
-                        'option_1' => '',
                     ],
                 ],
             ],

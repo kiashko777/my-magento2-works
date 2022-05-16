@@ -19,19 +19,6 @@ class ConfigTest extends TestCase
     private $object;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->object = $this->getMockBuilder(Config::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['getClassConfig', 'getMethodConfig', 'getDataSetConfig'])
-            ->getMock();
-    }
-
-    /**
      * @dataProvider skipValuesProvider
      *
      * @param bool $skip
@@ -118,5 +105,18 @@ class ConfigTest extends TestCase
                 'skipMessage' => '',
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->object = $this->getMockBuilder(Config::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['getClassConfig', 'getMethodConfig', 'getDataSetConfig'])
+            ->getMock();
     }
 }

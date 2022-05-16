@@ -6,26 +6,26 @@
 
 namespace Magento\Webapi\Controller;
 
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Webapi\Request;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Webapi\Model\Soap\Server;
+use PHPUnit\Framework\TestCase;
+
 /**
  * Test for Magento\Webapi\Controller\Soap class.
  */
-class SoapTest extends \PHPUnit\Framework\TestCase
+class SoapTest extends TestCase
 {
     /**
-     * @var \Magento\Webapi\Controller\Soap
+     * @var Soap
      */
     protected $soapController;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->soapController = $this->objectManager->get(\Magento\Webapi\Controller\Soap::class);
-    }
 
     /**
      * Get the public wsdl with anonymous credentials
@@ -34,8 +34,8 @@ class SoapTest extends \PHPUnit\Framework\TestCase
      */
     public function testDispatchWsdlRequest(): void
     {
-        $request = $this->objectManager->get(\Magento\Framework\Webapi\Request::class);
-        $request->setParam(\Magento\Webapi\Model\Soap\Server::REQUEST_PARAM_LIST_WSDL, true);
+        $request = $this->objectManager->get(Request::class);
+        $request->setParam(Server::REQUEST_PARAM_LIST_WSDL, true);
         $response = $this->soapController->dispatch($request);
         $decodedWsdl = json_decode($response->getContent(), true);
 
@@ -53,5 +53,11 @@ class SoapTest extends \PHPUnit\Framework\TestCase
     {
         $this->assertArrayHasKey('customerAccountManagementV1', $decodedWsdl);
         $this->assertArrayHasKey('integrationAdminTokenServiceV1', $decodedWsdl);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->soapController = $this->objectManager->get(Soap::class);
     }
 }

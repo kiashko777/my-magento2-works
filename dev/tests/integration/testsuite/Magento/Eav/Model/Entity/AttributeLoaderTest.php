@@ -3,17 +3,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Eav\Model\Entity;
 
 use Magento\Framework\DataObject;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\TestFramework\Helper\CacheCleaner;
+use PHPUnit\Framework\TestCase;
+use ReflectionObject;
 
 /**
  * @magentoAppIsolation enabled
  * @magentoDataFixture Magento/Eav/_files/attribute_for_search.php
  */
-class AttributeLoaderTest extends \PHPUnit\Framework\TestCase
+class AttributeLoaderTest extends TestCase
 {
     /**
      * @var AttributeLoader
@@ -21,31 +24,14 @@ class AttributeLoaderTest extends \PHPUnit\Framework\TestCase
     private $attributeLoader;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
     /**
-     * @var \Magento\Eav\Model\Entity\AbstractEntity
+     * @var AbstractEntity
      */
     private $resource;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->attributeLoader = $this->objectManager->get(AttributeLoader::class);
-        $entityType = $this->objectManager->create(\Magento\Eav\Model\Entity\Type::class)
-            ->loadByCode('test');
-        $context = $this->objectManager->get(\Magento\Eav\Model\Entity\Context::class);
-        $this->resource = $this->getMockBuilder(\Magento\Eav\Model\Entity\AbstractEntity::class)
-            ->setConstructorArgs([$context])
-            ->setMethods(['getEntityType', 'getLinkField'])
-            ->getMock();
-        $this->resource->method('getEntityType')
-            ->willReturn($entityType);
-        $this->resource->method('getLinkField')
-            ->willReturn('link_field');
-    }
 
     /**
      * @param int $expectedNumOfAttributesByCode
@@ -57,7 +43,8 @@ class AttributeLoaderTest extends \PHPUnit\Framework\TestCase
         $expectedNumOfAttributesByCode,
         $expectedNumOfAttributesByTable,
         $object
-    ) {
+    )
+    {
         // Before load all attributes
         $attributesByCode = $this->resource->getAttributesByCode();
         $attributesByTable = $this->resource->getAttributesByTable();
@@ -77,8 +64,8 @@ class AttributeLoaderTest extends \PHPUnit\Framework\TestCase
 
     public function loadAllAttributesDataProvider()
     {
-        /** @var \Magento\Eav\Model\Entity\Type $entityType */
-        $entityType = Bootstrap::getObjectManager()->create(\Magento\Eav\Model\Entity\Type::class)
+        /** @var Type $entityType */
+        $entityType = Bootstrap::getObjectManager()->create(Type::class)
             ->loadByCode('order');
         $attributeSetId = $entityType->getDefaultAttributeSetId();
         return [
@@ -110,13 +97,30 @@ class AttributeLoaderTest extends \PHPUnit\Framework\TestCase
         ];
     }
 
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->attributeLoader = $this->objectManager->get(AttributeLoader::class);
+        $entityType = $this->objectManager->create(Type::class)
+            ->loadByCode('test');
+        $context = $this->objectManager->get(Context::class);
+        $this->resource = $this->getMockBuilder(AbstractEntity::class)
+            ->setConstructorArgs([$context])
+            ->setMethods(['getEntityType', 'getLinkField'])
+            ->getMock();
+        $this->resource->method('getEntityType')
+            ->willReturn($entityType);
+        $this->resource->method('getLinkField')
+            ->willReturn('link_field');
+    }
+
     /**
      * @inheritDoc
      */
     protected function tearDown(): void
     {
         parent::tearDown();
-        $reflection = new \ReflectionObject($this);
+        $reflection = new ReflectionObject($this);
         foreach ($reflection->getProperties() as $property) {
             if (!$property->isStatic() && 0 !== strpos($property->getDeclaringClass()->getName(), 'PHPUnit')) {
                 $property->setAccessible(true);

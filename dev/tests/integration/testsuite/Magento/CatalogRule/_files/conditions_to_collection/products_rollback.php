@@ -5,18 +5,23 @@
  */
 declare(strict_types=1);
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\ResourceModel\Product\Collection;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var \Magento\Framework\Registry $registry */
-$registry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
+$objectManager = Bootstrap::getObjectManager();
+
+/** @var Registry $registry */
+$registry = Bootstrap::getObjectManager()->get(Registry::class);
 
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
-$collection = $objectManager->create(\Magento\Catalog\Model\ResourceModel\Product\Collection::class);
+$collection = $objectManager->create(Collection::class);
 
 foreach ($collection as $product) {
-    /** @var \Magento\Catalog\Model\Product $category */
+    /** @var Product $category */
     $product->delete();
 }
 

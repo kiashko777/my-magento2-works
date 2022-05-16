@@ -22,7 +22,7 @@ class ElasticsearchVersionChecker
     /**
      * @return int
      */
-    public function getVersion() : int
+    public function getVersion(): int
     {
         if (!$this->version) {
             $curl = new Curl();

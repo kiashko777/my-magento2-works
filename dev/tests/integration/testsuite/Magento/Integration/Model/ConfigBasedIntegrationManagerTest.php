@@ -8,61 +8,36 @@ declare(strict_types=1);
 
 namespace Magento\Integration\Model;
 
+use Magento\Integration\Api\IntegrationServiceInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+
 /**
  * Test class for \Magento\Integration\Model\ConfigBasedIntegrationManager.php.
  */
-class ConfigBasedIntegrationManagerTest extends \PHPUnit\Framework\TestCase
+class ConfigBasedIntegrationManagerTest extends TestCase
 {
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     protected $consolidatedMock;
 
     /**
-     * @var \Magento\Integration\Model\ConfigBasedIntegrationManager
+     * @var ConfigBasedIntegrationManager
      */
     protected $integrationManager;
 
     /**
-     * @var \Magento\Integration\Api\IntegrationServiceInterface
+     * @var IntegrationServiceInterface
      */
     protected $integrationService;
 
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     protected $objectManager;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->consolidatedMock = $this->createMock(\Magento\Integration\Model\ConsolidatedConfig::class);
-        $this->objectManager->addSharedInstance(
-            $this->consolidatedMock,
-            \Magento\Integration\Model\ConsolidatedConfig::class
-        );
-        $this->integrationManager = $this->objectManager->create(
-            \Magento\Integration\Model\ConfigBasedIntegrationManager::class,
-            []
-        );
-        $this->integrationService = $this->objectManager->create(
-            \Magento\Integration\Api\IntegrationServiceInterface::class,
-            []
-        );
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->objectManager->removeSharedInstance(\Magento\Integration\Model\ConsolidatedConfig::class);
-        parent::tearDown();
-    }
 
     /**
      * @magentoDbIsolation enabled
@@ -122,5 +97,36 @@ class ConfigBasedIntegrationManagerTest extends \PHPUnit\Framework\TestCase
                 'Integration status has changed'
             );
         }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->consolidatedMock = $this->createMock(ConsolidatedConfig::class);
+        $this->objectManager->addSharedInstance(
+            $this->consolidatedMock,
+            ConsolidatedConfig::class
+        );
+        $this->integrationManager = $this->objectManager->create(
+            ConfigBasedIntegrationManager::class,
+            []
+        );
+        $this->integrationService = $this->objectManager->create(
+            IntegrationServiceInterface::class,
+            []
+        );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->objectManager->removeSharedInstance(ConsolidatedConfig::class);
+        parent::tearDown();
     }
 }

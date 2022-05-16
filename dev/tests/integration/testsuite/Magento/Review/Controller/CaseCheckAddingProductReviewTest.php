@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Review\Controller;
 
 use Magento\Catalog\Api\Data\ProductInterface;
@@ -43,6 +44,24 @@ class CaseCheckAddingProductReviewTest extends AbstractController
             $this->equalTo(['Please enter a review.']),
             MessageInterface::TYPE_ERROR
         );
+    }
+
+    /**
+     * @return ProductInterface
+     */
+    private function getProduct()
+    {
+        return $this->_objectManager->get(ProductRepositoryInterface::class)->get('custom-design-simple-product');
+    }
+
+    /**
+     * @param array $postData
+     * @return void
+     */
+    private function prepareRequestData($postData)
+    {
+        $this->getRequest()->setMethod(Request::METHOD_POST);
+        $this->getRequest()->setPostValue($postData);
     }
 
     /**
@@ -98,23 +117,5 @@ class CaseCheckAddingProductReviewTest extends AbstractController
             $this->equalTo(['You submitted your review for moderation.']),
             MessageInterface::TYPE_SUCCESS
         );
-    }
-
-    /**
-     * @return ProductInterface
-     */
-    private function getProduct()
-    {
-        return $this->_objectManager->get(ProductRepositoryInterface::class)->get('custom-design-simple-product');
-    }
-
-    /**
-     * @param array $postData
-     * @return void
-     */
-    private function prepareRequestData($postData)
-    {
-        $this->getRequest()->setMethod(Request::METHOD_POST);
-        $this->getRequest()->setPostValue($postData);
     }
 }

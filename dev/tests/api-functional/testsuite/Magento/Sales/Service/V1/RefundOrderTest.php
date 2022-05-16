@@ -6,42 +6,43 @@
 
 namespace Magento\Sales\Service\V1;
 
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Sales\Api\CreditmemoRepositoryInterface;
+use Magento\Sales\Api\Data\CreditmemoInterface;
+use Magento\Sales\Api\Data\CreditmemoItemInterface;
+use Magento\Sales\Api\Data\OrderInterface;
+use Magento\Sales\Api\Data\OrderItemInterface;
 use Magento\Sales\Model\Order;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
  * API test for creation of Creditmemo for certain Order.
  */
-class RefundOrderTest extends \Magento\TestFramework\TestCase\WebapiAbstract
+class RefundOrderTest extends WebapiAbstract
 {
     const SERVICE_READ_NAME = 'salesRefundOrderV1';
     const SERVICE_VERSION = 'V1';
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
     /**
-     * @var \Magento\Sales\Api\CreditmemoRepositoryInterface
+     * @var CreditmemoRepositoryInterface
      */
     private $creditmemoRepository;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-
-        $this->creditmemoRepository = $this->objectManager->get(
-            \Magento\Sales\Api\CreditmemoRepositoryInterface::class
-        );
-    }
 
     /**
      * @magentoApiDataFixture Magento/Sales/_files/order_with_shipping_and_invoice.php
      */
     public function testShortRequest()
     {
-        /** @var \Magento\Sales\Model\Order $existingOrder */
-        $existingOrder = $this->objectManager->create(\Magento\Sales\Model\Order::class)
+        /** @var Order $existingOrder */
+        $existingOrder = $this->objectManager->create(Order::class)
             ->loadByIncrementId('100000001');
 
         $result = $this->_webApiCall(
@@ -54,8 +55,8 @@ class RefundOrderTest extends \Magento\TestFramework\TestCase\WebapiAbstract
             'Failed asserting that the received response is correct'
         );
 
-        /** @var \Magento\Sales\Model\Order $updatedOrder */
-        $updatedOrder = $this->objectManager->create(\Magento\Sales\Model\Order::class)
+        /** @var Order $updatedOrder */
+        $updatedOrder = $this->objectManager->create(Order::class)
             ->loadByIncrementId($existingOrder->getIncrementId());
 
         try {
@@ -94,9 +95,99 @@ class RefundOrderTest extends \Magento\TestFramework\TestCase\WebapiAbstract
                 $updatedOrder->getStatus(),
                 'Failed asserting that order status has not changed'
             );
-        } catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+        } catch (NoSuchEntityException $e) {
             $this->fail('Failed asserting that Creditmemo was created');
         }
+    }
+
+    /**
+     * Prepares and returns info for API service.
+     *
+     * @param OrderInterface $order
+     *
+     * @return array
+     */
+    private function getServiceData(OrderInterface $order)
+    {
+        return [
+            'rest' => [
+                'resourcePath' => '/V1/order/' . $order->getEntityId() . '/refund',
+                'httpMethod' => Request::HTTP_METHOD_POST,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_READ_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_READ_NAME . 'execute',
+            ]
+        ];
+    }
+
+    /**
+     * Gets all items of given Order in proper format.
+     *
+     * @param Order $order
+     *
+     * @return array
+     */
+    private function getOrderItems(Order $order)
+    {
+        $items = [];
+
+        /** @var OrderItemInterface $item */
+        foreach ($order->getAllItems() as $item) {
+            $items[] = [
+                'order_item_id' => $item->getItemId(),
+                'qty' => $item->getQtyOrdered(),
+            ];
+        }
+
+        return $items;
+    }
+
+    /**
+     * Gets all items of given Creditmemo in proper format.
+     *
+     * @param CreditmemoInterface $creditmemo
+     *
+     * @return array
+     */
+    private function getCreditmemoItems(CreditmemoInterface $creditmemo)
+    {
+        $items = [];
+
+        /** @var CreditmemoItemInterface $item */
+        foreach ($creditmemo->getItems() as $item) {
+            $items[] = [
+                'order_item_id' => $item->getOrderItemId(),
+                'qty' => $item->getQty(),
+            ];
+        }
+
+        return $items;
+    }
+
+    /**
+     * Gets refunded items of given Order in proper format.
+     *
+     * @param Order $order
+     *
+     * @return array
+     */
+    private function getRefundedOrderItems(Order $order)
+    {
+        $items = [];
+
+        /** @var OrderItemInterface $item */
+        foreach ($order->getAllItems() as $item) {
+            if ($item->getQtyRefunded() > 0) {
+                $items[] = [
+                    'order_item_id' => $item->getItemId(),
+                    'qty' => $item->getQtyRefunded(),
+                ];
+            }
+        }
+
+        return $items;
     }
 
     /**
@@ -104,8 +195,8 @@ class RefundOrderTest extends \Magento\TestFramework\TestCase\WebapiAbstract
      */
     public function testFullRequest()
     {
-        /** @var \Magento\Sales\Model\Order $existingOrder */
-        $existingOrder = $this->objectManager->create(\Magento\Sales\Model\Order::class)
+        /** @var Order $existingOrder */
+        $existingOrder = $this->objectManager->create(Order::class)
             ->loadByIncrementId('100000001');
 
         $expectedItems = $this->getOrderItems($existingOrder);
@@ -139,8 +230,8 @@ class RefundOrderTest extends \Magento\TestFramework\TestCase\WebapiAbstract
             'Failed asserting that the received response is correct'
         );
 
-        /** @var \Magento\Sales\Model\Order $updatedOrder */
-        $updatedOrder = $this->objectManager->create(\Magento\Sales\Model\Order::class)
+        /** @var Order $updatedOrder */
+        $updatedOrder = $this->objectManager->create(Order::class)
             ->loadByIncrementId($existingOrder->getIncrementId());
 
         try {
@@ -197,9 +288,32 @@ class RefundOrderTest extends \Magento\TestFramework\TestCase\WebapiAbstract
                 $updatedOrder->getStatus(),
                 'Failed asserting that order status was NOT changed'
             );
-        } catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+        } catch (NoSuchEntityException $e) {
             $this->fail('Failed asserting that Creditmemo was created');
         }
+    }
+
+    /**
+     * Gets the most recent comment of given Creditmemo in proper format.
+     *
+     * @param CreditmemoInterface $creditmemo
+     *
+     * @return array|null
+     */
+    private function getRecentComment(CreditmemoInterface $creditmemo)
+    {
+        $comments = $creditmemo->getComments();
+
+        if ($comments) {
+            $comment = reset($comments);
+
+            return [
+                'comment' => $comment->getComment(),
+                'is_visible_on_front' => $comment->getIsVisibleOnFront(),
+            ];
+        }
+
+        return null;
     }
 
     /**
@@ -209,8 +323,8 @@ class RefundOrderTest extends \Magento\TestFramework\TestCase\WebapiAbstract
      */
     public function testOrderStatusPartialRefund()
     {
-        /** @var \Magento\Sales\Model\Order $existingOrder */
-        $existingOrder = $this->objectManager->create(\Magento\Sales\Model\Order::class)
+        /** @var Order $existingOrder */
+        $existingOrder = $this->objectManager->create(Order::class)
             ->loadByIncrementId('100000001');
 
         $items = $this->getOrderItems($existingOrder);
@@ -228,8 +342,8 @@ class RefundOrderTest extends \Magento\TestFramework\TestCase\WebapiAbstract
             'Failed asserting that the received response is correct'
         );
 
-        /** @var \Magento\Sales\Model\Order $updatedOrder */
-        $updatedOrder = $this->objectManager->create(\Magento\Sales\Model\Order::class)
+        /** @var Order $updatedOrder */
+        $updatedOrder = $this->objectManager->create(Order::class)
             ->loadByIncrementId($existingOrder->getIncrementId());
 
         $this->assertSame('custom_processing', $updatedOrder->getStatus());
@@ -243,8 +357,8 @@ class RefundOrderTest extends \Magento\TestFramework\TestCase\WebapiAbstract
      */
     public function testOrderStatusTotalRefund()
     {
-        /** @var \Magento\Sales\Model\Order $existingOrder */
-        $existingOrder = $this->objectManager->create(\Magento\Sales\Model\Order::class)
+        /** @var Order $existingOrder */
+        $existingOrder = $this->objectManager->create(Order::class)
             ->loadByIncrementId('100000001');
 
         $items = $this->getOrderItems($existingOrder);
@@ -261,124 +375,20 @@ class RefundOrderTest extends \Magento\TestFramework\TestCase\WebapiAbstract
             'Failed asserting that the received response is correct'
         );
 
-        /** @var \Magento\Sales\Model\Order $updatedOrder */
-        $updatedOrder = $this->objectManager->create(\Magento\Sales\Model\Order::class)
+        /** @var Order $updatedOrder */
+        $updatedOrder = $this->objectManager->create(Order::class)
             ->loadByIncrementId($existingOrder->getIncrementId());
 
         $this->assertSame('complete', $updatedOrder->getStatus());
         $this->assertSame('complete', $updatedOrder->getState());
     }
 
-    /**
-     * Prepares and returns info for API service.
-     *
-     * @param \Magento\Sales\Api\Data\OrderInterface $order
-     *
-     * @return array
-     */
-    private function getServiceData(\Magento\Sales\Api\Data\OrderInterface $order)
+    protected function setUp(): void
     {
-        return [
-            'rest' => [
-                'resourcePath' => '/V1/order/' . $order->getEntityId() . '/refund',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_READ_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_READ_NAME . 'execute',
-            ]
-        ];
-    }
+        $this->objectManager = Bootstrap::getObjectManager();
 
-    /**
-     * Gets all items of given Order in proper format.
-     *
-     * @param \Magento\Sales\Model\Order $order
-     *
-     * @return array
-     */
-    private function getOrderItems(\Magento\Sales\Model\Order $order)
-    {
-        $items = [];
-
-        /** @var \Magento\Sales\Api\Data\OrderItemInterface $item */
-        foreach ($order->getAllItems() as $item) {
-            $items[] = [
-                'order_item_id' => $item->getItemId(),
-                'qty' => $item->getQtyOrdered(),
-            ];
-        }
-
-        return $items;
-    }
-
-    /**
-     * Gets refunded items of given Order in proper format.
-     *
-     * @param \Magento\Sales\Model\Order $order
-     *
-     * @return array
-     */
-    private function getRefundedOrderItems(\Magento\Sales\Model\Order $order)
-    {
-        $items = [];
-
-        /** @var \Magento\Sales\Api\Data\OrderItemInterface $item */
-        foreach ($order->getAllItems() as $item) {
-            if ($item->getQtyRefunded() > 0) {
-                $items[] = [
-                    'order_item_id' => $item->getItemId(),
-                    'qty' => $item->getQtyRefunded(),
-                ];
-            }
-        }
-
-        return $items;
-    }
-
-    /**
-     * Gets all items of given Creditmemo in proper format.
-     *
-     * @param \Magento\Sales\Api\Data\CreditmemoInterface $creditmemo
-     *
-     * @return array
-     */
-    private function getCreditmemoItems(\Magento\Sales\Api\Data\CreditmemoInterface $creditmemo)
-    {
-        $items = [];
-
-        /** @var \Magento\Sales\Api\Data\CreditmemoItemInterface $item */
-        foreach ($creditmemo->getItems() as $item) {
-            $items[] = [
-                'order_item_id' => $item->getOrderItemId(),
-                'qty' => $item->getQty(),
-            ];
-        }
-
-        return $items;
-    }
-
-    /**
-     * Gets the most recent comment of given Creditmemo in proper format.
-     *
-     * @param \Magento\Sales\Api\Data\CreditmemoInterface $creditmemo
-     *
-     * @return array|null
-     */
-    private function getRecentComment(\Magento\Sales\Api\Data\CreditmemoInterface $creditmemo)
-    {
-        $comments = $creditmemo->getComments();
-
-        if ($comments) {
-            $comment = reset($comments);
-
-            return [
-                'comment' => $comment->getComment(),
-                'is_visible_on_front' => $comment->getIsVisibleOnFront(),
-            ];
-        }
-
-        return null;
+        $this->creditmemoRepository = $this->objectManager->get(
+            CreditmemoRepositoryInterface::class
+        );
     }
 }

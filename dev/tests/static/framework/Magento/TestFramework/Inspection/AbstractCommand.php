@@ -7,6 +7,7 @@
 /**
  * Abstract shell command for the static code inspection
  */
+
 namespace Magento\TestFramework\Inspection;
 
 /**
@@ -64,47 +65,6 @@ abstract class AbstractCommand
     }
 
     /**
-     * Whether the command can be ran on the current environment
-     *
-     * @return bool
-     */
-    public function canRun()
-    {
-        return $this->_execShellCmd($this->_buildVersionShellCmd()) !== false;
-    }
-
-    /**
-     * Retrieve the shell command version
-     *
-     * @return string|null
-     */
-    public function getVersion()
-    {
-        $versionOutput = $this->_execShellCmd($this->_buildVersionShellCmd());
-        if (!$versionOutput) {
-            return null;
-        }
-        return preg_match('/[^\d]*([^\s]+)/', $versionOutput, $matches) ? $matches[1] : $versionOutput;
-    }
-
-    /**
-     * Get path to the report file
-     *
-     * @return string
-     */
-    public function getReportFile()
-    {
-        return $this->_reportFile;
-    }
-
-    /**
-     * Build the shell command that outputs the version
-     *
-     * @return string
-     */
-    abstract protected function _buildVersionShellCmd();
-
-    /**
      * Build the valid shell command
      *
      * @param array $whiteList
@@ -132,7 +92,7 @@ abstract class AbstractCommand
     /**
      * Generate message about last execution result, prepared for output to a user
      *
-     * @return \Magento\TestFramework\Inspection\AbstractCommand
+     * @return AbstractCommand
      */
     protected function _generateLastRunMessage()
     {
@@ -146,6 +106,47 @@ abstract class AbstractCommand
             $this->_lastRunMessage = 'Command-line tool reports: ' . $this->_lastOutput;
         }
         return $this;
+    }
+
+    /**
+     * Whether the command can be ran on the current environment
+     *
+     * @return bool
+     */
+    public function canRun()
+    {
+        return $this->_execShellCmd($this->_buildVersionShellCmd()) !== false;
+    }
+
+    /**
+     * Build the shell command that outputs the version
+     *
+     * @return string
+     */
+    abstract protected function _buildVersionShellCmd();
+
+    /**
+     * Retrieve the shell command version
+     *
+     * @return string|null
+     */
+    public function getVersion()
+    {
+        $versionOutput = $this->_execShellCmd($this->_buildVersionShellCmd());
+        if (!$versionOutput) {
+            return null;
+        }
+        return preg_match('/[^\d]*([^\s]+)/', $versionOutput, $matches) ? $matches[1] : $versionOutput;
+    }
+
+    /**
+     * Get path to the report file
+     *
+     * @return string
+     */
+    public function getReportFile()
+    {
+        return $this->_reportFile;
     }
 
     /**

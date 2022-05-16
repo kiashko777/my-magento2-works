@@ -3,13 +3,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Helper;
 
+use Exception;
 use Magento\Catalog\Model\Category;
 use Magento\Catalog\Model\Product;
+use Magento\Eav\Model\Config;
 use Magento\Framework\Phrase;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
+use StdClass;
 
 class OutputTest extends TestCase
 {
@@ -17,13 +21,6 @@ class OutputTest extends TestCase
      * @var Output
      */
     protected $_helper;
-
-    protected function setUp(): void
-    {
-        $this->_helper = Bootstrap::getObjectManager()->get(
-            Output::class
-        );
-    }
 
     /**
      * addHandler()
@@ -36,12 +33,12 @@ class OutputTest extends TestCase
         $this->assertEquals([], $this->_helper->getHandlers('method'));
 
         // add one handler
-        $objectOne = new \StdClass();
+        $objectOne = new StdClass();
         $this->_helper->addHandler('valid', $objectOne);
         $this->assertSame([$objectOne], $this->_helper->getHandlers('valid'));
 
         // add another one
-        $objectTwo = new \StdClass();
+        $objectTwo = new StdClass();
         $this->_helper->addHandler('valid', $objectTwo);
         $this->assertSame([$objectOne, $objectTwo], $this->_helper->getHandlers('valid'));
     }
@@ -59,6 +56,40 @@ class OutputTest extends TestCase
             Product::ENTITY,
             "&lt;p&gt;line1&lt;/p&gt;<br />\nline2"
         );
+    }
+
+    /**
+     * Test productAttribute() or categoryAttribute() method
+     *
+     * @param string $method
+     * @param string $entityCode
+     * @param string $expectedResult
+     * @throws Exception on assertion failure
+     */
+    protected function _testAttribute($method, $entityCode, $expectedResult)
+    {
+        $attributeName = 'description';
+        $attribute = Bootstrap::getObjectManager()->get(
+            Config::class
+        )->getAttribute(
+            $entityCode,
+            $attributeName
+        );
+        $isHtml = $attribute->getIsHtmlAllowedOnFront();
+        $isWysiwyg = $attribute->getIsWysiwygEnabled();
+        $attribute->setIsHtmlAllowedOnFront(0)->setIsWysiwygEnabled(0);
+
+        try {
+            $this->assertEquals(
+                $expectedResult,
+                $this->_helper->{$method}(uniqid(), __("<p>line1</p>\nline2"), $attributeName)
+            );
+
+            $attribute->setIsHtmlAllowedOnFront($isHtml)->setIsWysiwygEnabled($isWysiwyg);
+        } catch (Exception $e) {
+            $attribute->setIsHtmlAllowedOnFront($isHtml)->setIsWysiwygEnabled($isWysiwyg);
+            throw $e;
+        }
     }
 
     public function testCategoryAttribute()
@@ -113,37 +144,10 @@ class OutputTest extends TestCase
         return __CLASS__ . $string;
     }
 
-    /**
-     * Test productAttribute() or categoryAttribute() method
-     *
-     * @param string $method
-     * @param string $entityCode
-     * @param string $expectedResult
-     * @throws \Exception on assertion failure
-     */
-    protected function _testAttribute($method, $entityCode, $expectedResult)
+    protected function setUp(): void
     {
-        $attributeName = 'description';
-        $attribute = Bootstrap::getObjectManager()->get(
-            \Magento\Eav\Model\Config::class
-        )->getAttribute(
-            $entityCode,
-            $attributeName
+        $this->_helper = Bootstrap::getObjectManager()->get(
+            Output::class
         );
-        $isHtml = $attribute->getIsHtmlAllowedOnFront();
-        $isWysiwyg = $attribute->getIsWysiwygEnabled();
-        $attribute->setIsHtmlAllowedOnFront(0)->setIsWysiwygEnabled(0);
-
-        try {
-            $this->assertEquals(
-                $expectedResult,
-                $this->_helper->{$method}(uniqid(), __("<p>line1</p>\nline2"), $attributeName)
-            );
-
-            $attribute->setIsHtmlAllowedOnFront($isHtml)->setIsWysiwygEnabled($isWysiwyg);
-        } catch (\Exception $e) {
-            $attribute->setIsHtmlAllowedOnFront($isHtml)->setIsWysiwygEnabled($isWysiwyg);
-            throw $e;
-        }
     }
 }

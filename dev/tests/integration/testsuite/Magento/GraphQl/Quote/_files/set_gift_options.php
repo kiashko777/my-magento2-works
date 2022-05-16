@@ -5,6 +5,7 @@
  */
 declare(strict_types=1);
 
+use Magento\GiftMessage\Model\Message;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Model\QuoteFactory;
 use Magento\Quote\Model\ResourceModel\Quote as QuoteResource;
@@ -20,8 +21,8 @@ $quoteResource = $objectManager->get(QuoteResource::class);
 $cartRepository = $objectManager->get(CartRepositoryInterface::class);
 
 
-/** @var \Magento\GiftMessage\Model\Message $message */
-$message = $objectManager->create(\Magento\GiftMessage\Model\Message::class);
+/** @var Message $message */
+$message = $objectManager->create(Message::class);
 $message->setSender('Romeo');
 $message->setRecipient('Mercutio');
 $message->setMessage('I thought all for the best.');

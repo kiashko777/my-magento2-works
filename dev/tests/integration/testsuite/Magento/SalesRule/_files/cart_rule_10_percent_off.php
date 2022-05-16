@@ -7,6 +7,9 @@ declare(strict_types=1);
 
 use Magento\Customer\Model\GroupManagement;
 use Magento\SalesRule\Model\Rule;
+use Magento\SalesRule\Model\Rule\Condition\Combine;
+use Magento\SalesRule\Model\Rule\Condition\Product;
+use Magento\SalesRule\Model\Rule\Condition\Product\Subselect;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 
@@ -32,7 +35,7 @@ $salesRule->setData(
 );
 
 $salesRule->getConditions()->loadArray([
-    'type' => \Magento\SalesRule\Model\Rule\Condition\Combine::class,
+    'type' => Combine::class,
     'attribute' => null,
     'operator' => null,
     'value' => '1',
@@ -41,7 +44,7 @@ $salesRule->getConditions()->loadArray([
     'conditions' =>
         [
             [
-                'type' => \Magento\SalesRule\Model\Rule\Condition\Product\Subselect::class,
+                'type' => Subselect::class,
                 'attribute' => 'qty',
                 'operator' => '==',
                 'value' => '2',
@@ -50,7 +53,7 @@ $salesRule->getConditions()->loadArray([
                 'conditions' =>
                     [
                         [
-                            'type' => \Magento\SalesRule\Model\Rule\Condition\Product::class,
+                            'type' => Product::class,
                             'attribute' => 'attribute_set_id',
                             'operator' => '==',
                             'value' => '4',

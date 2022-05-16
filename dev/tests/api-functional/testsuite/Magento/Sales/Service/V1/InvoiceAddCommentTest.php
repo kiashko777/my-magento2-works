@@ -3,9 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Service\V1;
 
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\Sales\Api\Data\InvoiceCommentInterface;
+use Magento\Sales\Model\Order\Invoice;
+use Magento\Sales\Model\ResourceModel\Order\Invoice\Collection;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
@@ -30,9 +35,9 @@ class InvoiceAddCommentTest extends WebapiAbstract
      */
     public function testInvoiceAddComment()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var \Magento\Sales\Model\Order\Invoice $invoice */
-        $invoiceCollection = $objectManager->get(\Magento\Sales\Model\ResourceModel\Order\Invoice\Collection::class);
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var Invoice $invoice */
+        $invoiceCollection = $objectManager->get(Collection::class);
         $invoice = $invoiceCollection->getFirstItem();
 
         $commentData = [
@@ -48,7 +53,7 @@ class InvoiceAddCommentTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/invoices/comments',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_READ_NAME,

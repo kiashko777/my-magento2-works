@@ -3,12 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Paypal\Controller\Adminhtml\Billing\Agreement;
+
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class CancelTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class CancelTest extends AbstractBackendController
 {
     protected function setUp(): void
     {

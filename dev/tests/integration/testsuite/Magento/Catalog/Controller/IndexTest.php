@@ -7,9 +7,12 @@
 /**
  * Test class for \Magento\Catalog\Controller\index.
  */
+
 namespace Magento\Catalog\Controller;
 
-class IndexTest extends \Magento\TestFramework\TestCase\AbstractController
+use Magento\TestFramework\TestCase\AbstractController;
+
+class IndexTest extends AbstractController
 {
     public function testIndexAction()
     {

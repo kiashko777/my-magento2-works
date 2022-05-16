@@ -3,11 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogUrlRewrite\Model;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
+use Magento\UrlRewrite\Service\V1\Data\UrlRewrite;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -19,14 +21,6 @@ class ProductUrlRewriteGeneratorTest extends TestCase
      * @var ObjectManager
      */
     private $objectManager;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoDataFixture Magento/CatalogUrlRewrite/_files/product_with_category.php
@@ -48,7 +42,7 @@ class ProductUrlRewriteGeneratorTest extends TestCase
 
         $actualUrls = array_map(
             function ($url) {
-                /** @var \Magento\UrlRewrite\Service\V1\Data\UrlRewrite $url */
+                /** @var UrlRewrite $url */
                 return $url->getRequestPath();
             },
             $urls
@@ -57,5 +51,13 @@ class ProductUrlRewriteGeneratorTest extends TestCase
         self::assertTrue(in_array('p002.html', $actualUrls));
         self::assertTrue(in_array('cat-1/p002.html', $actualUrls));
         self::assertTrue(in_array('cat-1-2/p002.html', $actualUrls));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

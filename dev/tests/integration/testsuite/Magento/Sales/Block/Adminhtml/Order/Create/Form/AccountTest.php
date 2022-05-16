@@ -51,15 +51,6 @@ class AccountTest extends TestCase
     private $session;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        parent::setUp();
-    }
-
-    /**
      * Test for get form with existing customer
      *
      * @magentoDataFixture Magento/Customer/_files/customer.php
@@ -71,7 +62,7 @@ class AccountTest extends TestCase
 
         $this->session = $this->getMockBuilder(SessionQuote::class)
             ->disableOriginalConstructor()
-            ->setMethods(['getCustomerId','getQuote'])
+            ->setMethods(['getCustomerId', 'getQuote'])
             ->getMock();
         $this->session->method('getQuote')
             ->willReturn($quote);
@@ -110,13 +101,13 @@ class AccountTest extends TestCase
         }
 
         self::assertMatchesRegularExpression(
-            '/<option value="'.$customerGroup.'".*?selected="selected"\>Wholesale\<\/option\>/is',
+            '/<option value="' . $customerGroup . '".*?selected="selected"\>Wholesale\<\/option\>/is',
             $content,
             'The Customer Group specified for the chosen customer should be selected.'
         );
 
         self::assertStringContainsString(
-            'value="'.$customer->getEmail().'"',
+            'value="' . $customer->getEmail() . '"',
             $content,
             'The Customer Email specified for the chosen customer should be input '
         );
@@ -131,7 +122,7 @@ class AccountTest extends TestCase
      */
     public function testGetFormWithUserDefinedAttribute()
     {
-        /** @var StoreManagerInterface  $storeManager */
+        /** @var StoreManagerInterface $storeManager */
         $storeManager = Bootstrap::getObjectManager()->get(StoreManagerInterface::class);
         $secondStore = $storeManager->getStore('secondstore');
 
@@ -163,6 +154,66 @@ class AccountTest extends TestCase
             $content,
             'The Customer Group specified for the chosen store should be selected.'
         );
+    }
+
+    /**
+     * Creates a mock for Form object.
+     *
+     * @return MockObject
+     */
+    private function getFormFactoryMock(): MockObject
+    {
+        /** @var AttributeMetadataInterfaceFactory $attributeMetadataFactory */
+        $attributeMetadataFactory = $this->objectManager->create(AttributeMetadataInterfaceFactory::class);
+        $booleanAttribute = $attributeMetadataFactory->create()
+            ->setAttributeCode('boolean')
+            ->setBackendType('boolean')
+            ->setFrontendInput('boolean')
+            ->setDefaultValue('1')
+            ->setFrontendLabel('Yes/No');
+
+        /** @var Form|MockObject $form */
+        $form = $this->getMockBuilder(Form::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $form->method('getUserAttributes')->willReturn([$booleanAttribute]);
+        $form->method('getSystemAttributes')->willReturn([$this->createCustomerGroupAttribute()]);
+
+        $formFactory = $this->getMockBuilder(FormFactory::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $formFactory->method('create')->willReturn($form);
+
+        return $formFactory;
+    }
+
+    /**
+     * Creates a customer group attribute object.
+     *
+     * @return AttributeMetadataInterface
+     */
+    private function createCustomerGroupAttribute(): AttributeMetadataInterface
+    {
+        /** @var Option $option1 */
+        $option1 = $this->objectManager->create(Option::class);
+        $option1->setValue(2);
+        $option1->setLabel('Wholesale');
+
+        /** @var Option $option2 */
+        $option2 = $this->objectManager->create(Option::class);
+        $option2->setValue(3);
+        $option2->setLabel('Retailer');
+
+        /** @var AttributeMetadataInterfaceFactory $attributeMetadataFactory */
+        $attributeMetadataFactory = $this->objectManager->create(AttributeMetadataInterfaceFactory::class);
+        $attribute = $attributeMetadataFactory->create()
+            ->setAttributeCode('group_id')
+            ->setBackendType('static')
+            ->setFrontendInput('select')
+            ->setOptions([$option1, $option2])
+            ->setIsRequired(true);
+
+        return $attribute;
     }
 
     /**
@@ -216,11 +267,12 @@ class AccountTest extends TestCase
      * @return void
      */
     public function testGetFormWithVatValidatedCustomerGroup(
-        int $defaultCustomerGroupId,
-        int $vatValidatedCustomerGroupId,
+        int   $defaultCustomerGroupId,
+        int   $vatValidatedCustomerGroupId,
         array $customerDetails,
         array $orderDetails
-    ): void {
+    ): void
+    {
         $contextMock = $this->getMockBuilder(Context::class)
             ->disableOriginalConstructor()
             ->disableOriginalClone()
@@ -335,62 +387,11 @@ class AccountTest extends TestCase
     }
 
     /**
-     * Creates a mock for Form object.
-     *
-     * @return MockObject
+     * @inheritdoc
      */
-    private function getFormFactoryMock(): MockObject
+    protected function setUp(): void
     {
-        /** @var AttributeMetadataInterfaceFactory $attributeMetadataFactory */
-        $attributeMetadataFactory = $this->objectManager->create(AttributeMetadataInterfaceFactory::class);
-        $booleanAttribute = $attributeMetadataFactory->create()
-            ->setAttributeCode('boolean')
-            ->setBackendType('boolean')
-            ->setFrontendInput('boolean')
-            ->setDefaultValue('1')
-            ->setFrontendLabel('Yes/No');
-
-        /** @var Form|MockObject $form */
-        $form = $this->getMockBuilder(Form::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $form->method('getUserAttributes')->willReturn([$booleanAttribute]);
-        $form->method('getSystemAttributes')->willReturn([$this->createCustomerGroupAttribute()]);
-
-        $formFactory = $this->getMockBuilder(FormFactory::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $formFactory->method('create')->willReturn($form);
-
-        return $formFactory;
-    }
-
-    /**
-     * Creates a customer group attribute object.
-     *
-     * @return AttributeMetadataInterface
-     */
-    private function createCustomerGroupAttribute(): AttributeMetadataInterface
-    {
-        /** @var Option $option1 */
-        $option1 = $this->objectManager->create(Option::class);
-        $option1->setValue(2);
-        $option1->setLabel('Wholesale');
-
-        /** @var Option $option2 */
-        $option2 = $this->objectManager->create(Option::class);
-        $option2->setValue(3);
-        $option2->setLabel('Retailer');
-
-        /** @var AttributeMetadataInterfaceFactory $attributeMetadataFactory */
-        $attributeMetadataFactory = $this->objectManager->create(AttributeMetadataInterfaceFactory::class);
-        $attribute = $attributeMetadataFactory->create()
-            ->setAttributeCode('group_id')
-            ->setBackendType('static')
-            ->setFrontendInput('select')
-            ->setOptions([$option1, $option2])
-            ->setIsRequired(true);
-
-        return $attribute;
+        $this->objectManager = Bootstrap::getObjectManager();
+        parent::setUp();
     }
 }

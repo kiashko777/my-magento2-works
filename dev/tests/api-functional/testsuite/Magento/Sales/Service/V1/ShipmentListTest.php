@@ -3,8 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Service\V1;
 
+use Magento\Framework\Api\FilterBuilder;
+use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\Api\SortOrderBuilder;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
@@ -19,32 +26,27 @@ class ShipmentListTest extends WebapiAbstract
     const SERVICE_VERSION = 'V1';
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoApiDataFixture Magento/Sales/_files/shipment_list.php
      */
     public function testShipmentList()
     {
-        /** @var \Magento\Framework\Api\SortOrderBuilder $sortOrderBuilder */
+        /** @var SortOrderBuilder $sortOrderBuilder */
         $sortOrderBuilder = $this->objectManager->get(
-            \Magento\Framework\Api\SortOrderBuilder::class
+            SortOrderBuilder::class
         );
-        /** @var $searchCriteriaBuilder  \Magento\Framework\Api\SearchCriteriaBuilder */
+        /** @var $searchCriteriaBuilder  SearchCriteriaBuilder */
         $searchCriteriaBuilder = $this->objectManager->create(
-            \Magento\Framework\Api\SearchCriteriaBuilder::class
+            SearchCriteriaBuilder::class
         );
 
-        /** @var $filterBuilder  \Magento\Framework\Api\FilterBuilder */
+        /** @var $filterBuilder  FilterBuilder */
         $filterBuilder = $this->objectManager->create(
-            \Magento\Framework\Api\FilterBuilder::class
+            FilterBuilder::class
         );
         $filter1 = $filterBuilder
             ->setField('shipment_status')
@@ -74,7 +76,7 @@ class ShipmentListTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '?' . http_build_query($requestData),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_READ_NAME,
@@ -93,5 +95,10 @@ class ShipmentListTest extends WebapiAbstract
         $this->assertEquals('100000003', $result['items'][1]['increment_id']);
         $this->assertEquals(base64_encode('shipping_label_100000002'), $result['items'][0]['shipping_label']);
         $this->assertEquals(base64_encode('shipping_label_100000003'), $result['items'][1]['shipping_label']);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

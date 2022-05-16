@@ -17,11 +17,6 @@ class BrakeMixinTest extends TestCase
      */
     private $mixin;
 
-    protected function setUp(): void
-    {
-        $this->mixin = new BrakeMixin();
-    }
-
     /**
      * @dataProvider getTestData
      */
@@ -49,5 +44,10 @@ class BrakeMixinTest extends TestCase
                 . 'Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
             ]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->mixin = new BrakeMixin();
     }
 }

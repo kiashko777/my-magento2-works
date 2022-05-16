@@ -44,16 +44,6 @@ class DiffOldSchemaTest extends SetupTestCase
      */
     private $schemaConfig;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->moduleManager = $objectManager->get(TestModuleManager::class);
-        $this->cliCommad = $objectManager->get(CliCommand::class);
-        $this->schemaConfig = $objectManager->get(SchemaConfigInterface::class);
-        $this->schemaDiff = $objectManager->get(SchemaDiff::class);
-        $this->changeRegistryFactory = $objectManager->get(DiffFactory::class);
-    }
-
     /**
      * @moduleName Magento_TestSetupDeclarationModule1
      */
@@ -94,6 +84,38 @@ class DiffOldSchemaTest extends SetupTestCase
             $this->getBigIntKeyDbSensitiveData(),
             reset($allChanges)['modify_column'][0]->getOld()->getDiffSensitiveParams()
         );
+    }
+
+    /**
+     * @return array
+     */
+    private function getBigIntKeyXmlSensitiveData()
+    {
+        return [
+            'type' => 'bigint',
+            'nullable' => true,
+            'padding' => null,
+            'unsigned' => false,
+            'identity' => false,
+            'default' => 1,
+            'comment' => 'Bigint',
+        ];
+    }
+
+    /**
+     * @return array
+     */
+    private function getBigIntKeyDbSensitiveData()
+    {
+        return [
+            'type' => 'bigint',
+            'nullable' => true,
+            'padding' => null,
+            'unsigned' => false,
+            'identity' => false,
+            'default' => 0,
+            'comment' => 'Bigint'
+        ];
     }
 
     /**
@@ -148,35 +170,13 @@ class DiffOldSchemaTest extends SetupTestCase
         ];
     }
 
-    /**
-     * @return array
-     */
-    private function getBigIntKeyDbSensitiveData()
+    protected function setUp(): void
     {
-        return [
-            'type' => 'bigint',
-            'nullable' => true,
-            'padding' => null,
-            'unsigned' => false,
-            'identity' => false,
-            'default' => 0,
-            'comment' => 'Bigint'
-        ];
-    }
-
-    /**
-     * @return array
-     */
-    private function getBigIntKeyXmlSensitiveData()
-    {
-        return [
-            'type' => 'bigint',
-            'nullable' => true,
-            'padding' => null,
-            'unsigned' => false,
-            'identity' => false,
-            'default' => 1,
-            'comment' => 'Bigint',
-        ];
+        $objectManager = Bootstrap::getObjectManager();
+        $this->moduleManager = $objectManager->get(TestModuleManager::class);
+        $this->cliCommad = $objectManager->get(CliCommand::class);
+        $this->schemaConfig = $objectManager->get(SchemaConfigInterface::class);
+        $this->schemaDiff = $objectManager->get(SchemaDiff::class);
+        $this->changeRegistryFactory = $objectManager->get(DiffFactory::class);
     }
 }

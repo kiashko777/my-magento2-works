@@ -38,24 +38,6 @@ class DataProviderTest extends TestCase
     private $dataProvider;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->initLocaleResolverMock();
-        $this->requestMock = $this->createMock(RequestInterface::class);
-        $this->dataProvider = Bootstrap::getObjectManager()->create(
-            DataProvider::class,
-            [
-                'name' => 'customer_address_listing_data_source',
-                'requestFieldName' => 'id',
-                'primaryFieldName' => 'entity_id',
-                'request' => $this->requestMock,
-            ]
-        );
-    }
-
-    /**
      * Test to filter by region name in custom locale
      *
      * @param array $filterData
@@ -100,6 +82,24 @@ class DataProviderTest extends TestCase
             [['condition_type' => 'fulltext', 'field' => 'fulltext', 'value' => 'アラバマ']],
             [['condition_type' => 'regular', 'field' => 'region', 'value' => 'アラバマ']],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->initLocaleResolverMock();
+        $this->requestMock = $this->createMock(RequestInterface::class);
+        $this->dataProvider = Bootstrap::getObjectManager()->create(
+            DataProvider::class,
+            [
+                'name' => 'customer_address_listing_data_source',
+                'requestFieldName' => 'id',
+                'primaryFieldName' => 'entity_id',
+                'request' => $this->requestMock,
+            ]
+        );
     }
 
     /**

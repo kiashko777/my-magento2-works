@@ -3,33 +3,28 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Cron\Model;
 
 use Magento\Framework\Stdlib\DateTime\DateTime;
-use \Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test \Magento\Cron\Model\Schedule
  *
  * @magentoDbIsolation enabled
  */
-class ScheduleTest extends \PHPUnit\Framework\TestCase
+class ScheduleTest extends TestCase
 {
-    /**
-     * @var ScheduleFactory
-     */
-    private $scheduleFactory;
-
     /**
      * @var DateTime
      */
     protected $dateTime;
-
-    protected function setUp(): void
-    {
-        $this->dateTime = Bootstrap::getObjectManager()->create(DateTime::class);
-        $this->scheduleFactory = Bootstrap::getObjectManager()->create(ScheduleFactory::class);
-    }
+    /**
+     * @var ScheduleFactory
+     */
+    private $scheduleFactory;
 
     /**
      * If there are no currently locked jobs, locking one of them should succeed
@@ -42,6 +37,27 @@ class ScheduleTest extends \PHPUnit\Framework\TestCase
         $schedule = $this->createSchedule("test_job", Schedule::STATUS_PENDING);
 
         $this->assertTrue($schedule->tryLockJob());
+    }
+
+    /**
+     * Creates a schedule with the given job code, status, and schedule time offset
+     *
+     * @param string $jobCode
+     * @param string $status
+     * @param int $timeOffset
+     * @return Schedule
+     */
+    private function createSchedule($jobCode, $status, $timeOffset = 0)
+    {
+        $schedule = $this->scheduleFactory->create()
+            ->setCronExpr("* * * * *")
+            ->setJobCode($jobCode)
+            ->setStatus($status)
+            ->setCreatedAt(strftime('%Y-%m-%d %H:%M:%S', $this->dateTime->gmtTimestamp()))
+            ->setScheduledAt(strftime('%Y-%m-%d %H:%M', $this->dateTime->gmtTimestamp() + $timeOffset));
+        $schedule->save();
+
+        return $schedule;
     }
 
     /**
@@ -59,7 +75,7 @@ class ScheduleTest extends \PHPUnit\Framework\TestCase
      */
     public function testTryLockJobAlreadyLockedSucceeds()
     {
-        $offsetInThePast = 2*24*60*60;
+        $offsetInThePast = 2 * 24 * 60 * 60;
 
         $oldSchedule = $this->scheduleFactory->create()
             ->setCronExpr("* * * * *")
@@ -97,24 +113,9 @@ class ScheduleTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue($schedule->tryLockJob());
     }
 
-    /**
-     * Creates a schedule with the given job code, status, and schedule time offset
-     *
-     * @param string $jobCode
-     * @param string $status
-     * @param int $timeOffset
-     * @return Schedule
-     */
-    private function createSchedule($jobCode, $status, $timeOffset = 0)
+    protected function setUp(): void
     {
-        $schedule = $this->scheduleFactory->create()
-            ->setCronExpr("* * * * *")
-            ->setJobCode($jobCode)
-            ->setStatus($status)
-            ->setCreatedAt(strftime('%Y-%m-%d %H:%M:%S', $this->dateTime->gmtTimestamp()))
-            ->setScheduledAt(strftime('%Y-%m-%d %H:%M', $this->dateTime->gmtTimestamp() + $timeOffset));
-        $schedule->save();
-
-        return $schedule;
+        $this->dateTime = Bootstrap::getObjectManager()->create(DateTime::class);
+        $this->scheduleFactory = Bootstrap::getObjectManager()->create(ScheduleFactory::class);
     }
 }

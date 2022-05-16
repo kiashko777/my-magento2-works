@@ -20,13 +20,16 @@ define([
         window.FORM_KEY = 'magentoFormKey';
         registry.set('provName', {
             /** Stub */
-            on: function () {},
+            on: function () {
+            },
 
             /** Stub */
-            get: function () {},
+            get: function () {
+            },
 
             /** Stub */
-            set: function () {}
+            set: function () {
+            }
         });
 
         describe('"initObservable" method', function () {

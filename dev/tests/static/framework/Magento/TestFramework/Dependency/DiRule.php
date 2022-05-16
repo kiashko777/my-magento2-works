@@ -5,8 +5,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Dependency;
 
+use DOMDocument;
+use DOMElement;
+use DOMXPath;
+use Exception;
 use Magento\Framework\App\Utility\Classes;
 use Magento\Framework\App\Utility\Files;
 use Magento\TestFramework\Dependency\VirtualType\VirtualTypeMapper;
@@ -17,10 +22,21 @@ use Magento\TestFramework\Dependency\VirtualType\VirtualTypeMapper;
 class DiRule implements RuleInterface
 {
     /**
+     * @var array
+     */
+    private static $tagNameMap = [
+        'type' => ['name'],
+        'preference' => [
+            'type',
+            'for'
+        ],
+        'plugin' => ['type'],
+        'virtualType' => ['type']
+    ];
+    /**
      * @var VirtualTypeMapper
      */
     private $mapper;
-
     /**
      * @var string
      */
@@ -35,36 +51,6 @@ class DiRule implements RuleInterface
     }
 
     /**
-     * Get class name pattern.
-     *
-     * @return string
-     * @throws \Exception
-     */
-    private function getPattern()
-    {
-        if ($this->pattern === null) {
-            $this->pattern = '~\b(?<class>(?<module>('
-                . implode('[_\\\\]|', Files::init()->getNamespaces())
-                . '[_\\\\])[a-zA-Z0-9]+)[a-zA-Z0-9_\\\\]*)\b~';
-        }
-
-        return $this->pattern;
-    }
-
-    /**
-     * @var array
-     */
-    private static $tagNameMap = [
-        'type' => ['name'],
-        'preference' => [
-            'type',
-            'for'
-        ],
-        'plugin' => ['type'],
-        'virtualType' => ['type']
-    ];
-
-    /**
      * Gets alien dependencies information for current module by analyzing file's contents
      *
      * @param string $currentModule
@@ -72,7 +58,7 @@ class DiRule implements RuleInterface
      * @param string $file
      * @param string $contents
      * @return array
-     * @throws \Exception
+     * @throws Exception
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function getDependencyInfo($currentModule, $fileType, $file, &$contents)
@@ -111,7 +97,7 @@ class DiRule implements RuleInterface
      */
     private function fetchPossibleDependencies($contents)
     {
-        $doc = new \DOMDocument();
+        $doc = new DOMDocument();
         $doc->loadXML($contents);
         return [
             RuleInterface::TYPE_SOFT => $this->getSoftDependencies($doc),
@@ -122,15 +108,15 @@ class DiRule implements RuleInterface
     /**
      * Collect soft dependencies.
      *
-     * @param \DOMDocument $doc
+     * @param DOMDocument $doc
      * @return array
      */
-    private function getSoftDependencies(\DOMDocument $doc)
+    private function getSoftDependencies(DOMDocument $doc)
     {
         $result = [];
         foreach (self::$tagNameMap as $tagName => $attributeNames) {
             $nodes = $doc->getElementsByTagName($tagName);
-        /** @var \DOMElement $node */
+            /** @var DOMElement $node */
             foreach ($nodes as $node) {
                 if ($tagName === 'virtualType' && !$node->getAttribute('type')) {
                     $result[] = Classes::resolveVirtualType($node->getAttribute('name'));
@@ -148,19 +134,36 @@ class DiRule implements RuleInterface
     /**
      * Collect hard dependencies.
      *
-     * @param \DOMDocument $doc
+     * @param DOMDocument $doc
      * @return array
      */
-    private function getHardDependencies(\DOMDocument $doc)
+    private function getHardDependencies(DOMDocument $doc)
     {
         $result = [];
-        $xpath = new \DOMXPath($doc);
+        $xpath = new DOMXPath($doc);
         $textNodes = $xpath->query('//*[@xsi:type="object"]');
-        /** @var \DOMElement $node */
+        /** @var DOMElement $node */
         foreach ($textNodes as $node) {
             $result[] = $node->nodeValue;
         }
 
         return $result;
+    }
+
+    /**
+     * Get class name pattern.
+     *
+     * @return string
+     * @throws Exception
+     */
+    private function getPattern()
+    {
+        if ($this->pattern === null) {
+            $this->pattern = '~\b(?<class>(?<module>('
+                . implode('[_\\\\]|', Files::init()->getNamespaces())
+                . '[_\\\\])[a-zA-Z0-9]+)[a-zA-Z0-9_\\\\]*)\b~';
+        }
+
+        return $this->pattern;
     }
 }

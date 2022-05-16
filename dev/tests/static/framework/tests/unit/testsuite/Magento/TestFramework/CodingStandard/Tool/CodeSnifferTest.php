@@ -3,44 +3,34 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\CodingStandard\Tool;
 
+use Magento\TestFramework\CodingStandard\Tool\CodeSniffer\Wrapper;
 use PHP_CodeSniffer\Runner;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Unit test to check CodeSniffer tool.
  */
-class CodeSnifferTest extends \PHPUnit\Framework\TestCase
+class CodeSnifferTest extends TestCase
 {
-    /**
-     * @var \Magento\TestFramework\CodingStandard\Tool\CodeSniffer
-     */
-    protected $_tool;
-
-    /**
-     * @var Runner
-     */
-    protected $_wrapper;
-
     /**
      * Rule set directory
      */
     const RULE_SET = 'some/ruleset/directory';
-
     /**
      * Report file
      */
     const REPORT_FILE = 'some/report/file.xml';
-
-    protected function setUp(): void
-    {
-        $this->_wrapper = $this->createMock(\Magento\TestFramework\CodingStandard\Tool\CodeSniffer\Wrapper::class);
-        $this->_tool = new \Magento\TestFramework\CodingStandard\Tool\CodeSniffer(
-            self::RULE_SET,
-            self::REPORT_FILE,
-            $this->_wrapper
-        );
-    }
+    /**
+     * @var CodeSniffer
+     */
+    protected $_tool;
+    /**
+     * @var Runner
+     */
+    protected $_wrapper;
 
     public function testRun()
     {
@@ -64,5 +54,15 @@ class CodeSnifferTest extends \PHPUnit\Framework\TestCase
             ->method('runPHPCS');
 
         $this->_tool->run($whiteList);
+    }
+
+    protected function setUp(): void
+    {
+        $this->_wrapper = $this->createMock(Wrapper::class);
+        $this->_tool = new CodeSniffer(
+            self::RULE_SET,
+            self::REPORT_FILE,
+            $this->_wrapper
+        );
     }
 }

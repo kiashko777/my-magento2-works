@@ -7,18 +7,21 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Model\Indexer\Product\Price;
 
-use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Catalog\Api\Data\ProductTierPriceInterfaceFactory;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Api\ScopedProductTierPriceManagementInterface;
-use Magento\Catalog\Api\Data\ProductTierPriceInterfaceFactory;
+use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\Catalog\Pricing\Price\TierPrice;
 use Magento\Customer\Model\Group as CustomerGroup;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @group indexer_dimension
  */
-class SimpleWithOptionsTierPriceWithDimensionTest extends \PHPUnit\Framework\TestCase
+class SimpleWithOptionsTierPriceWithDimensionTest extends TestCase
 {
     /**
      * @var ProductRepositoryInterface
@@ -26,7 +29,7 @@ class SimpleWithOptionsTierPriceWithDimensionTest extends \PHPUnit\Framework\Tes
     private $productRepository;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
@@ -34,16 +37,6 @@ class SimpleWithOptionsTierPriceWithDimensionTest extends \PHPUnit\Framework\Tes
      * @var CollectionFactory
      */
     private $productCollectionFactory;
-
-    /**
-     * set up
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
-        $this->productCollectionFactory = $this->objectManager->create(CollectionFactory::class);
-    }
 
     /**
      * @magentoDbIsolation disabled
@@ -66,7 +59,7 @@ class SimpleWithOptionsTierPriceWithDimensionTest extends \PHPUnit\Framework\Tes
         $productCollection->addIdFilter(333);
         $productCollection->addPriceData();
         $productCollection->load();
-        /** @var \Magento\Catalog\Model\Product $product */
+        /** @var Product $product */
         $product = $productCollection->getFirstItem();
         $tierPrice = $product->getPriceInfo()
             ->getPrice(TierPrice::PRICE_CODE)
@@ -82,5 +75,15 @@ class SimpleWithOptionsTierPriceWithDimensionTest extends \PHPUnit\Framework\Tes
 
         $minPrice = $product->getData('min_price');
         $this->assertEquals($tierPriceValue, $minPrice);
+    }
+
+    /**
+     * set up
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+        $this->productCollectionFactory = $this->objectManager->create(CollectionFactory::class);
     }
 }

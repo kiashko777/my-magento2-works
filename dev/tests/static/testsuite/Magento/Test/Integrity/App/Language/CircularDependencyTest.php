@@ -8,8 +8,13 @@ namespace Magento\Test\Integrity\App\Language;
 
 use Magento\Framework\App\Language\Config;
 use Magento\Framework\Component\ComponentRegistrar;
+use Magento\Framework\Config\Dom;
+use Magento\Framework\Config\DomFactory;
+use Magento\Framework\Config\ValidationStateInterface;
+use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
-class CircularDependencyTest extends \PHPUnit\Framework\TestCase
+class CircularDependencyTest extends TestCase
 {
     /**
      * @var Config[][]
@@ -21,18 +26,18 @@ class CircularDependencyTest extends \PHPUnit\Framework\TestCase
      */
     public function testCircularDependencies()
     {
-        $objectManager = new \Magento\Framework\TestFramework\Unit\Helper\ObjectManager($this);
+        $objectManager = new ObjectManager($this);
         $componentRegistrar = new ComponentRegistrar();
         $declaredLanguages = $componentRegistrar->getPaths(ComponentRegistrar::LANGUAGE);
-        $validationStateMock = $this->createMock(\Magento\Framework\Config\ValidationStateInterface::class);
+        $validationStateMock = $this->createMock(ValidationStateInterface::class);
         $validationStateMock->method('isValidationRequired')
             ->willReturn(true);
-        $domFactoryMock = $this->createMock(\Magento\Framework\Config\DomFactory::class);
+        $domFactoryMock = $this->createMock(DomFactory::class);
         $domFactoryMock->expects($this->any())
             ->method('createDom')
             ->willReturnCallback(
                 function ($arguments) use ($validationStateMock) {
-                    return new \Magento\Framework\Config\Dom(
+                    return new Dom(
                         $arguments['xml'],
                         $validationStateMock,
                         [],
@@ -45,7 +50,7 @@ class CircularDependencyTest extends \PHPUnit\Framework\TestCase
         $packs = [];
         foreach ($declaredLanguages as $language) {
             $languageConfig = $objectManager->getObject(
-                \Magento\Framework\App\Language\Config::class,
+                Config::class,
                 [
                     'source' => file_get_contents($language . '/language.xml'),
                     'domFactory' => $domFactoryMock

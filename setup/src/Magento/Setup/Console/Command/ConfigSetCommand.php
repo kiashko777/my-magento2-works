@@ -6,8 +6,10 @@
 
 namespace Magento\Setup\Console\Command;
 
+use InvalidArgumentException;
 use Magento\Framework\App\DeploymentConfig;
 use Magento\Framework\Config\ConfigOptionsListConstants;
+use Magento\Framework\Console\Cli;
 use Magento\Framework\Module\ModuleList;
 use Magento\Setup\Model\ConfigModel;
 use Symfony\Component\Console\Input\InputInterface;
@@ -36,15 +38,16 @@ class ConfigSetCommand extends AbstractSetupCommand
     /**
      * Constructor
      *
-     * @param \Magento\Setup\Model\ConfigModel $configModel
+     * @param ConfigModel $configModel
      * @param ModuleList $moduleList
      * @param DeploymentConfig $deploymentConfig
      */
     public function __construct(
-        ConfigModel $configModel,
-        ModuleList $moduleList,
+        ConfigModel      $configModel,
+        ModuleList       $moduleList,
         DeploymentConfig $deploymentConfig
-    ) {
+    )
+    {
         $this->configModel = $configModel;
         $this->moduleList = $moduleList;
         $this->deploymentConfig = $deploymentConfig;
@@ -132,7 +135,7 @@ class ConfigSetCommand extends AbstractSetupCommand
                 $output->writeln('<info>You made no changes to the configuration.</info>');
             }
         }
-        return \Magento\Framework\Console\Cli::RETURN_SUCCESS;
+        return Cli::RETURN_SUCCESS;
     }
 
     /**
@@ -148,7 +151,7 @@ class ConfigSetCommand extends AbstractSetupCommand
             foreach ($errors as $error) {
                 $output->writeln("<error>$error</error>");
             }
-            throw new \InvalidArgumentException('Parameter validation failed');
+            throw new InvalidArgumentException('Parameter validation failed');
         }
     }
 }

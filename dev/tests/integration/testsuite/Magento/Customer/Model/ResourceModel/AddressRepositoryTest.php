@@ -22,6 +22,7 @@ use Magento\Framework\Api\SortOrderBuilder;
 use Magento\Framework\Config\CacheInterface;
 use Magento\Framework\Exception\InputException;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
@@ -38,7 +39,7 @@ class AddressRepositoryTest extends TestCase
     /** @var AddressRepositoryInterface */
     private $repository;
 
-    /** @var \Magento\Framework\ObjectManagerInterface */
+    /** @var ObjectManagerInterface */
     private $objectManager;
 
     /** @var \Magento\Customer\Model\Data\Address[] */
@@ -61,62 +62,6 @@ class AddressRepositoryTest extends TestCase
 
     /** @var CustomerRepositoryInterface */
     private $customerRepository;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        /* @var CacheInterface $cache */
-        $cache = $this->objectManager->get(CacheInterface::class);
-        $cache->remove('extension_attributes_config');
-        $this->repository = $this->objectManager->get(AddressRepositoryInterface::class);
-        $this->addressFactory = $this->objectManager->get(AddressInterfaceFactory::class);
-        $this->dataObjectHelper = $this->objectManager->get(DataObjectHelper::class);
-        $this->customerRegistry = $this->objectManager->get(CustomerRegistry::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-        $this->regionFactory = $this->objectManager->get(RegionInterfaceFactory::class);
-        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
-        $region = $this->regionFactory->create()
-            ->setRegionCode('AL')
-            ->setRegion('Alabama')
-            ->setRegionId(1);
-        $address = $this->addressFactory->create()
-            ->setId('1')
-            ->setCountryId('US')
-            ->setCustomerId('1')
-            ->setPostcode('75477')
-            ->setRegion($region)
-            ->setRegionId(1)
-            ->setStreet(['Green str, 67'])
-            ->setTelephone('3468676')
-            ->setCity('CityM')
-            ->setFirstname('John')
-            ->setLastname('Smith')
-            ->setCompany('CompanyName');
-        $address2 = $this->addressFactory->create()
-            ->setId('2')
-            ->setCountryId('US')
-            ->setCustomerId('1')
-            ->setPostcode('47676')
-            ->setRegion($region)
-            ->setRegionId(1)
-            ->setStreet(['Black str, 48'])
-            ->setCity('CityX')
-            ->setTelephone('3234676')
-            ->setFirstname('John')
-            ->setLastname('Smith');
-        $this->expectedAddresses = [$address, $address2];
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->customerRegistry->remove(1);
-    }
 
     /**
      * Test for save address changes.
@@ -165,6 +110,24 @@ class AddressRepositoryTest extends TestCase
 
         $proposedAddress = $this->_createSecondAddress()->setId(4200);
         $this->repository->save($proposedAddress);
+    }
+
+    /**
+     * Helper function that returns an Address Data Object that matches the data from customer_two_address fixture
+     *
+     * @return AddressInterface
+     */
+    private function _createSecondAddress(): AddressInterface
+    {
+        $address = $this->addressFactory->create();
+        $this->dataObjectHelper->mergeDataObjects(
+            AddressInterface::class,
+            $address,
+            $this->expectedAddresses[1]
+        );
+        $address->setId(null);
+        $address->setRegion($this->expectedAddresses[1]->getRegion());
+        return $address;
     }
 
     /**
@@ -259,6 +222,24 @@ class AddressRepositoryTest extends TestCase
             $savedAddress->getCustomAttributes(),
             'Only valid attributes should be available.'
         );
+    }
+
+    /**
+     * Helper function that returns an Address Data Object that matches the data from customer_address fixture
+     *
+     * @return AddressInterface
+     */
+    private function _createFirstAddress(): AddressInterface
+    {
+        $address = $this->addressFactory->create();
+        $this->dataObjectHelper->mergeDataObjects(
+            AddressInterface::class,
+            $address,
+            $this->expectedAddresses[0]
+        );
+        $address->setId(null);
+        $address->setRegion($this->expectedAddresses[0]->getRegion());
+        return $address;
     }
 
     /**
@@ -425,7 +406,8 @@ class AddressRepositoryTest extends TestCase
         $filterOrders,
         array $expectedResult,
         int $currentPage
-    ): void {
+    ): void
+    {
         /** @var SearchCriteriaBuilder $searchBuilder */
         $searchBuilder = $this->objectManager->create(SearchCriteriaBuilder::class);
         foreach ($filters as $filter) {
@@ -671,38 +653,58 @@ class AddressRepositoryTest extends TestCase
     }
 
     /**
-     * Helper function that returns an Address Data Object that matches the data from customer_address fixture
-     *
-     * @return AddressInterface
+     * @inheritdoc
      */
-    private function _createFirstAddress(): AddressInterface
+    protected function setUp(): void
     {
-        $address = $this->addressFactory->create();
-        $this->dataObjectHelper->mergeDataObjects(
-            AddressInterface::class,
-            $address,
-            $this->expectedAddresses[0]
-        );
-        $address->setId(null);
-        $address->setRegion($this->expectedAddresses[0]->getRegion());
-        return $address;
+        $this->objectManager = Bootstrap::getObjectManager();
+        /* @var CacheInterface $cache */
+        $cache = $this->objectManager->get(CacheInterface::class);
+        $cache->remove('extension_attributes_config');
+        $this->repository = $this->objectManager->get(AddressRepositoryInterface::class);
+        $this->addressFactory = $this->objectManager->get(AddressInterfaceFactory::class);
+        $this->dataObjectHelper = $this->objectManager->get(DataObjectHelper::class);
+        $this->customerRegistry = $this->objectManager->get(CustomerRegistry::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
+        $this->regionFactory = $this->objectManager->get(RegionInterfaceFactory::class);
+        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
+        $region = $this->regionFactory->create()
+            ->setRegionCode('AL')
+            ->setRegion('Alabama')
+            ->setRegionId(1);
+        $address = $this->addressFactory->create()
+            ->setId('1')
+            ->setCountryId('US')
+            ->setCustomerId('1')
+            ->setPostcode('75477')
+            ->setRegion($region)
+            ->setRegionId(1)
+            ->setStreet(['Green str, 67'])
+            ->setTelephone('3468676')
+            ->setCity('CityM')
+            ->setFirstname('John')
+            ->setLastname('Smith')
+            ->setCompany('CompanyName');
+        $address2 = $this->addressFactory->create()
+            ->setId('2')
+            ->setCountryId('US')
+            ->setCustomerId('1')
+            ->setPostcode('47676')
+            ->setRegion($region)
+            ->setRegionId(1)
+            ->setStreet(['Black str, 48'])
+            ->setCity('CityX')
+            ->setTelephone('3234676')
+            ->setFirstname('John')
+            ->setLastname('Smith');
+        $this->expectedAddresses = [$address, $address2];
     }
 
     /**
-     * Helper function that returns an Address Data Object that matches the data from customer_two_address fixture
-     *
-     * @return AddressInterface
+     * @inheritdoc
      */
-    private function _createSecondAddress(): AddressInterface
+    protected function tearDown(): void
     {
-        $address = $this->addressFactory->create();
-        $this->dataObjectHelper->mergeDataObjects(
-            AddressInterface::class,
-            $address,
-            $this->expectedAddresses[1]
-        );
-        $address->setId(null);
-        $address->setRegion($this->expectedAddresses[1]->getRegion());
-        return $address;
+        $this->customerRegistry->remove(1);
     }
 }

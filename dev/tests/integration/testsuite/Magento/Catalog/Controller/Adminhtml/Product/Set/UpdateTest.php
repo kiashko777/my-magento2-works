@@ -51,19 +51,6 @@ class UpdateTest extends AbstractBackendController
     private $getAttributeSetByName;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->json = $this->_objectManager->get(Json::class);
-        $this->attributeSetRepository = $this->_objectManager->get(AttributeSetRepositoryInterface::class);
-        $this->attributeManagement = $this->_objectManager->get(AttributeManagementInterface::class);
-        $this->attributeGroupCollectionFactory = $this->_objectManager->get(CollectionFactory::class);
-        $this->getAttributeSetByName = $this->_objectManager->get(GetAttributeSetByName::class);
-    }
-
-    /**
      * Test that name of attribute set will update/change correctly.
      *
      * @magentoDataFixture Magento/Catalog/_files/attribute_set_based_on_default.php
@@ -89,6 +76,76 @@ class UpdateTest extends AbstractBackendController
         $this->assertEquals($updateName, $updatedAttributeSet->getAttributeSetName());
         $updatedAttributeSet->setAttributeSetName($currentAttrSetName);
         $this->attributeSetRepository->save($updatedAttributeSet);
+    }
+
+    /**
+     * Prepare default data to request from attribute set.
+     *
+     * @param AttributeSetInterface $attributeSet
+     * @return array
+     */
+    private function prepareDataToRequest(AttributeSetInterface $attributeSet): array
+    {
+        $result = [
+            'attribute_set_name' => $attributeSet->getAttributeSetName(),
+            'removeGroups' => [],
+            'not_attributes' => [],
+        ];
+        $groups = $attributes = [];
+        /** @var AttributeGroupInterface $group */
+        foreach ($this->getAttributeSetGroupCollection((int)$attributeSet->getAttributeSetId()) as $group) {
+            $groups[] = [
+                $group->getAttributeGroupId(),
+                $group->getAttributeGroupName(),
+                $group->getSortOrder(),
+            ];
+        }
+        $attributeSetAttributes = $this->attributeManagement->getAttributes(
+            ProductAttributeInterface::ENTITY_TYPE_CODE,
+            $attributeSet->getAttributeSetId()
+        );
+        foreach ($attributeSetAttributes as $attribute) {
+            $attributes[] = [
+                $attribute->getAttributeId(),
+                $attribute->getAttributeGroupId(),
+                $attribute->getSortOrder(),
+            ];
+        }
+        $result['groups'] = $groups;
+        $result['attributes'] = $attributes;
+
+        return $result;
+    }
+
+    /**
+     * Build attribute set groups collection by attribute set id.
+     *
+     * @param int $attributeSetId
+     * @return Collection
+     */
+    private function getAttributeSetGroupCollection(int $attributeSetId): Collection
+    {
+        $groupCollection = $this->attributeGroupCollectionFactory->create();
+        $groupCollection->setAttributeSetFilter($attributeSetId);
+
+        return $groupCollection;
+    }
+
+    /**
+     * Process attribute set save request.
+     *
+     * @param int $attributeSetId
+     * @param array $postData
+     * @return void
+     */
+    private function performRequest(int $attributeSetId, array $postData = []): void
+    {
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
+        $this->getRequest()->setPostValue(
+            'data',
+            $this->json->serialize($postData)
+        );
+        $this->dispatch('backend/catalog/product_set/save/id/' . $attributeSetId);
     }
 
     /**
@@ -167,72 +224,15 @@ class UpdateTest extends AbstractBackendController
     }
 
     /**
-     * Process attribute set save request.
-     *
-     * @param int $attributeSetId
-     * @param array $postData
-     * @return void
+     * @inheritdoc
      */
-    private function performRequest(int $attributeSetId, array $postData = []): void
+    protected function setUp(): void
     {
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
-        $this->getRequest()->setPostValue(
-            'data',
-            $this->json->serialize($postData)
-        );
-        $this->dispatch('backend/catalog/product_set/save/id/' . $attributeSetId);
-    }
-
-    /**
-     * Prepare default data to request from attribute set.
-     *
-     * @param AttributeSetInterface $attributeSet
-     * @return array
-     */
-    private function prepareDataToRequest(AttributeSetInterface $attributeSet): array
-    {
-        $result = [
-            'attribute_set_name' => $attributeSet->getAttributeSetName(),
-            'removeGroups' => [],
-            'not_attributes' => [],
-        ];
-        $groups = $attributes = [];
-        /** @var AttributeGroupInterface $group */
-        foreach ($this->getAttributeSetGroupCollection((int)$attributeSet->getAttributeSetId()) as $group) {
-            $groups[] = [
-                $group->getAttributeGroupId(),
-                $group->getAttributeGroupName(),
-                $group->getSortOrder(),
-            ];
-        }
-        $attributeSetAttributes = $this->attributeManagement->getAttributes(
-            ProductAttributeInterface::ENTITY_TYPE_CODE,
-            $attributeSet->getAttributeSetId()
-        );
-        foreach ($attributeSetAttributes as $attribute) {
-            $attributes[] = [
-                $attribute->getAttributeId(),
-                $attribute->getAttributeGroupId(),
-                $attribute->getSortOrder(),
-            ];
-        }
-        $result['groups'] = $groups;
-        $result['attributes'] = $attributes;
-
-        return $result;
-    }
-
-    /**
-     * Build attribute set groups collection by attribute set id.
-     *
-     * @param int $attributeSetId
-     * @return Collection
-     */
-    private function getAttributeSetGroupCollection(int $attributeSetId): Collection
-    {
-        $groupCollection = $this->attributeGroupCollectionFactory->create();
-        $groupCollection->setAttributeSetFilter($attributeSetId);
-
-        return $groupCollection;
+        parent::setUp();
+        $this->json = $this->_objectManager->get(Json::class);
+        $this->attributeSetRepository = $this->_objectManager->get(AttributeSetRepositoryInterface::class);
+        $this->attributeManagement = $this->_objectManager->get(AttributeManagementInterface::class);
+        $this->attributeGroupCollectionFactory = $this->_objectManager->get(CollectionFactory::class);
+        $this->getAttributeSetByName = $this->_objectManager->get(GetAttributeSetByName::class);
     }
 }

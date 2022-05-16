@@ -7,13 +7,18 @@ declare(strict_types=1);
 
 namespace Magento\Quote\Model;
 
+use LogicException;
+use Magento\Checkout\Model\Session;
+use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
+use Magento\TestModuleQuoteTotalsObserver\Model\Config;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class QuoteInfiniteLoopTest extends \PHPUnit\Framework\TestCase
+class QuoteInfiniteLoopTest extends TestCase
 {
     /**
      * @var ObjectManager
@@ -21,28 +26,9 @@ class QuoteInfiniteLoopTest extends \PHPUnit\Framework\TestCase
     private $objectManager;
 
     /**
-     * @var \Magento\TestModuleQuoteTotalsObserver\Model\Config
+     * @var Config
      */
     private $config;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->config = $this->objectManager->get(\Magento\TestModuleQuoteTotalsObserver\Model\Config::class);
-        $this->config->disableObserver();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->config->disableObserver();
-        $this->objectManager->removeSharedInstance(\Magento\Checkout\Model\Session::class);
-    }
 
     /**
      * @dataProvider getLoadQuoteParametersProvider
@@ -67,14 +53,35 @@ class QuoteInfiniteLoopTest extends \PHPUnit\Framework\TestCase
             $this->config->enableObserver();
         }
 
-        /** @var  $session \Magento\Checkout\Model\Session */
-        $this->objectManager->removeSharedInstance(\Magento\Checkout\Model\Session::class);
-        $session = $this->objectManager->get(\Magento\Checkout\Model\Session::class);
+        /** @var  $session Session */
+        $this->objectManager->removeSharedInstance(Session::class);
+        $session = $this->objectManager->get(Session::class);
         $session->setQuoteId($quoteId);
 
         $quote = $session->getQuote();
         $this->assertEquals($quoteId, $quote->getId(), "The loaded quote should have the same ID as the initial quote");
         $this->assertEquals(0, $quote->getTriggerRecollect(), "trigger_recollect should be unset after a quote reload");
+    }
+
+    /**
+     * Generate a quote with trigger_recollect and save it in the database.
+     *
+     * @param int $triggerRecollect
+     * @return Quote
+     */
+    private function generateQuote($triggerRecollect = 1)
+    {
+        //Fully init a quote with standard quote session procedure
+        /** @var  $session Session */
+        $session = $this->objectManager->create(Session::class);
+        $session->setQuoteId(null);
+        $quote = $session->getQuote();
+        $quote->setTriggerRecollect($triggerRecollect);
+
+        /** @var CartRepositoryInterface $quoteRepository */
+        $quoteRepository = $this->objectManager->create('\Magento\Quote\Api\CartRepositoryInterface');
+        $quoteRepository->save($quote);
+        return $quote;
     }
 
     /**
@@ -96,7 +103,7 @@ class QuoteInfiniteLoopTest extends \PHPUnit\Framework\TestCase
      */
     public function testLoadQuoteWithTriggerRecollectInfiniteLoop(): void
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage('Infinite loop detected, review the trace for the looping path');
 
         $originalQuote = $this->generateQuote();
@@ -109,31 +116,29 @@ class QuoteInfiniteLoopTest extends \PHPUnit\Framework\TestCase
         // The observer hooks into part of the collect totals process for an easy demonstration of the loop.
         $this->config->enableObserver();
 
-        /** @var  $session \Magento\Checkout\Model\Session */
-        $this->objectManager->removeSharedInstance(\Magento\Checkout\Model\Session::class);
-        $session = $this->objectManager->get(\Magento\Checkout\Model\Session::class);
+        /** @var  $session Session */
+        $this->objectManager->removeSharedInstance(Session::class);
+        $session = $this->objectManager->get(Session::class);
         $session->setQuoteId($quoteId);
         $session->getQuote();
     }
 
     /**
-     * Generate a quote with trigger_recollect and save it in the database.
-     *
-     * @param int $triggerRecollect
-     * @return Quote
+     * @inheritdoc
      */
-    private function generateQuote($triggerRecollect = 1)
+    protected function setUp(): void
     {
-        //Fully init a quote with standard quote session procedure
-        /** @var  $session \Magento\Checkout\Model\Session */
-        $session = $this->objectManager->create(\Magento\Checkout\Model\Session::class);
-        $session->setQuoteId(null);
-        $quote = $session->getQuote();
-        $quote->setTriggerRecollect($triggerRecollect);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->config = $this->objectManager->get(Config::class);
+        $this->config->disableObserver();
+    }
 
-        /** @var \Magento\Quote\Api\CartRepositoryInterface $quoteRepository */
-        $quoteRepository = $this->objectManager->create('\Magento\Quote\Api\CartRepositoryInterface');
-        $quoteRepository->save($quote);
-        return $quote;
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->config->disableObserver();
+        $this->objectManager->removeSharedInstance(Session::class);
     }
 }

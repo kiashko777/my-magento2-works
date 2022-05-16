@@ -3,19 +3,24 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity;
 
 use Magento\Framework\App\Utility\Files;
+use Magento\Framework\Event\ObserverInterface;
+use PHPUnit\Framework\TestCase;
+use ReflectionClass;
+use ReflectionMethod;
 
 /**
  * PAY ATTENTION: Current implementation does not support of virtual types
  */
-class ObserverImplementationTest extends \PHPUnit\Framework\TestCase
+class ObserverImplementationTest extends TestCase
 {
     /**
      * Observer interface
      */
-    const OBSERVER_INTERFACE = \Magento\Framework\Event\ObserverInterface::class;
+    const OBSERVER_INTERFACE = ObserverInterface::class;
 
     /**
      * @var array
@@ -27,53 +32,6 @@ class ObserverImplementationTest extends \PHPUnit\Framework\TestCase
         self::$observerClasses = array_merge(
             self::getObserverClasses('{*/events.xml,events.xml}', '//observer')
         );
-    }
-
-    public function testObserverInterfaceImplementation()
-    {
-        $errors = [];
-        foreach (self::$observerClasses as $observerClass) {
-            if (!is_subclass_of($observerClass, self::OBSERVER_INTERFACE)) {
-                $errors[] = $observerClass;
-            }
-        }
-
-        if ($errors) {
-            $errors = array_unique($errors);
-            sort($errors);
-            $this->fail(
-                sprintf(
-                    '%d of observers which not implement \Magento\Framework\Event\ObserverInterface: %s',
-                    count($errors),
-                    "\n" . implode("\n", $errors)
-                )
-            );
-        }
-    }
-
-    public function testObserverHasNoExtraPublicMethods()
-    {
-        $errors = [];
-        foreach (self::$observerClasses as $observerClass) {
-            $reflection = (new \ReflectionClass($observerClass));
-            $maxCountMethod = $reflection->getConstructor() ? 2 : 1;
-
-            if (count($reflection->getMethods(\ReflectionMethod::IS_PUBLIC)) > $maxCountMethod) {
-                $errors[] = $observerClass;
-            }
-        }
-
-        if ($errors) {
-            $errors = array_unique($errors);
-            sort($errors);
-            $this->fail(
-                sprintf(
-                    '%d of observers have extra public methods: %s',
-                    count($errors),
-                    implode("\n", $errors)
-                )
-            );
-        }
     }
 
     /**
@@ -106,5 +64,52 @@ class ObserverImplementationTest extends \PHPUnit\Framework\TestCase
             array_unique($observerClasses),
             $blacklistExceptions
         );
+    }
+
+    public function testObserverInterfaceImplementation()
+    {
+        $errors = [];
+        foreach (self::$observerClasses as $observerClass) {
+            if (!is_subclass_of($observerClass, self::OBSERVER_INTERFACE)) {
+                $errors[] = $observerClass;
+            }
+        }
+
+        if ($errors) {
+            $errors = array_unique($errors);
+            sort($errors);
+            $this->fail(
+                sprintf(
+                    '%d of observers which not implement \Magento\Framework\Event\ObserverInterface: %s',
+                    count($errors),
+                    "\n" . implode("\n", $errors)
+                )
+            );
+        }
+    }
+
+    public function testObserverHasNoExtraPublicMethods()
+    {
+        $errors = [];
+        foreach (self::$observerClasses as $observerClass) {
+            $reflection = (new ReflectionClass($observerClass));
+            $maxCountMethod = $reflection->getConstructor() ? 2 : 1;
+
+            if (count($reflection->getMethods(ReflectionMethod::IS_PUBLIC)) > $maxCountMethod) {
+                $errors[] = $observerClass;
+            }
+        }
+
+        if ($errors) {
+            $errors = array_unique($errors);
+            sort($errors);
+            $this->fail(
+                sprintf(
+                    '%d of observers have extra public methods: %s',
+                    count($errors),
+                    implode("\n", $errors)
+                )
+            );
+        }
     }
 }

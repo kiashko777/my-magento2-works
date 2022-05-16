@@ -7,17 +7,22 @@
 /**
  * Legacy tests to find obsolete menu declaration
  */
+
 namespace Magento\Test\Legacy;
 
-class ObsoleteMenuTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\App\Utility\AggregateInvoker;
+use Magento\Framework\App\Utility\Files;
+use PHPUnit\Framework\TestCase;
+
+class ObsoleteMenuTest extends TestCase
 {
     public function testMenuDeclaration()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
-            /**
-             * @param string $menuFile
-             */
+        /**
+         * @param string $menuFile
+         */
             function ($menuFile) {
                 $menuXml = simplexml_load_file($menuFile);
                 $xpath = '/config/menu/*[boolean(./children) or boolean(./title) or boolean(./action)]';
@@ -26,7 +31,7 @@ class ObsoleteMenuTest extends \PHPUnit\Framework\TestCase
                     'Obsolete menu structure detected in file ' . $menuFile . '.'
                 );
             },
-            \Magento\Framework\App\Utility\Files::init()->getMainConfigFiles()
+            Files::init()->getMainConfigFiles()
         );
     }
 }

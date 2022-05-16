@@ -6,33 +6,31 @@
 
 namespace Magento\Sales\Block\Adminhtml\Report\Filter\Form;
 
+use Magento\Framework\DataObject;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
 /**
  * @magentoAppArea Adminhtml
  */
-class CouponTest extends \PHPUnit\Framework\TestCase
+class CouponTest extends TestCase
 {
     /**
      * Layout
      *
-     * @var \Magento\Framework\View\LayoutInterface
+     * @var LayoutInterface
      */
     protected $_layout;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->_layout = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\View\LayoutInterface::class);
-    }
 
     /**
      * @covers \Magento\Sales\Block\Adminhtml\Report\Filter\Form\Coupon::_afterToHtml
      */
     public function testAfterToHtml()
     {
-        /** @var $block \Magento\Sales\Block\Adminhtml\Report\Filter\Form\Coupon */
-        $block = $this->_layout->createBlock(\Magento\Sales\Block\Adminhtml\Report\Filter\Form\Coupon::class);
-        $block->setFilterData(new \Magento\Framework\DataObject());
+        /** @var $block Coupon */
+        $block = $this->_layout->createBlock(Coupon::class);
+        $block->setFilterData(new DataObject());
         $html = $block->toHtml();
 
         $expectedStrings = [
@@ -43,5 +41,12 @@ class CouponTest extends \PHPUnit\Framework\TestCase
         foreach ($expectedStrings as $expectedString) {
             $this->assertStringContainsString($expectedString, $html);
         }
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->_layout = Bootstrap::getObjectManager()
+            ->get(LayoutInterface::class);
     }
 }

@@ -7,12 +7,22 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Model\Indexer\Product\Flat\Action;
 
-use Magento\TestFramework\Indexer\TestCase as IndexerTestCase;
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\Catalog\Model\Indexer\Product\Flat\Processor;
-use Magento\Catalog\Block\Product\ListProduct;
 use Magento\Catalog\Api\CategoryRepositoryInterface;
+use Magento\Catalog\Api\Data\CategoryInterface;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Block\Product\ListProduct;
+use Magento\Catalog\Model\Indexer\Product\Flat\Processor;
+use Magento\Catalog\Model\Layer;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\ResourceModel\Product\Collection;
+use Magento\Framework\Exception\CouldNotSaveException;
+use Magento\Framework\Exception\InputException;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Exception\StateException;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Indexer\TestCase as IndexerTestCase;
 
 /**
  * Class RowTest
@@ -25,7 +35,7 @@ class RowTest extends IndexerTestCase
     private $processor;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
@@ -40,17 +50,6 @@ class RowTest extends IndexerTestCase
     private $categoryRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->processor = $this->objectManager->get(Processor::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->categoryRepository = $this->objectManager->get(CategoryRepositoryInterface::class);
-    }
-
-    /**
      * Tests product update
      *
      * @magentoDbIsolation disabled
@@ -59,11 +58,11 @@ class RowTest extends IndexerTestCase
      * @magentoAppArea frontend
      *
      * @return void
-     * @throws \Magento\Framework\Exception\CouldNotSaveException
-     * @throws \Magento\Framework\Exception\InputException
-     * @throws \Magento\Framework\Exception\LocalizedException
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
-     * @throws \Magento\Framework\Exception\StateException
+     * @throws CouldNotSaveException
+     * @throws InputException
+     * @throws LocalizedException
+     * @throws NoSuchEntityException
+     * @throws StateException
      */
     public function testProductUpdate(): void
     {
@@ -85,12 +84,12 @@ class RowTest extends IndexerTestCase
         $product->setName('Updated Products');
         $this->productRepository->save($product);
 
-        /** @var \Magento\Catalog\Api\Data\CategoryInterface $category */
+        /** @var CategoryInterface $category */
         $category = $this->categoryRepository->get(9);
-        /** @var \Magento\Catalog\Model\Layer $layer */
+        /** @var Layer $layer */
         $layer = $listProduct->getLayer();
         $layer->setCurrentCategory($category);
-        /** @var \Magento\Catalog\Model\ResourceModel\Product\Collection $productCollection */
+        /** @var Collection $productCollection */
         $productCollection = $layer->getProductCollection();
         self::assertTrue(
             $productCollection->isEnabledFlat(),
@@ -104,7 +103,7 @@ class RowTest extends IndexerTestCase
         );
 
         foreach ($productCollection as $product) {
-            /** @var $product \Magento\Catalog\Model\Product */
+            /** @var $product Product */
             if ($product->getSku() === 'simple') {
                 self::assertEquals(
                     'Updated Products',
@@ -113,5 +112,16 @@ class RowTest extends IndexerTestCase
                 );
             }
         }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->processor = $this->objectManager->get(Processor::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->categoryRepository = $this->objectManager->get(CategoryRepositoryInterface::class);
     }
 }

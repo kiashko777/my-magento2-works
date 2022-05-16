@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Catalog\CategoriesQuery;
 
+use Exception;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
 
 /**
@@ -162,7 +163,7 @@ QUERY;
      */
     public function testCurrentPageZero()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('currentPage value must be greater than 0.');
 
         $query = <<<QUERY
@@ -190,7 +191,7 @@ QUERY;
      */
     public function testPageSizeZero()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('pageSize value must be greater than 0.');
 
         $query = <<<QUERY
@@ -219,7 +220,7 @@ QUERY;
      */
     public function testCurrentPageTooLarge()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('currentPage value 6 specified is greater than the 2 page(s) available.');
 
         $query = <<<QUERY

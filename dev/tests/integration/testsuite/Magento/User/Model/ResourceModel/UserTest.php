@@ -14,11 +14,12 @@ use Magento\TestFramework\Helper\Bootstrap;
 use Magento\User\Model\ResourceModel\User as UserResourceModel;
 use Magento\User\Model\User;
 use Magento\User\Model\UserFactory;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class UserTest extends \PHPUnit\Framework\TestCase
+class UserTest extends TestCase
 {
     /**
      * @var UserResourceModel
@@ -34,16 +35,6 @@ class UserTest extends \PHPUnit\Framework\TestCase
      * @var UserFactory
      */
     private $userFactory;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->model = Bootstrap::getObjectManager()->get(UserResourceModel::class);
-        $this->userRoleCollectionFactory = Bootstrap::getObjectManager()->get(UserRoleCollectionFactory::class);
-        $this->userFactory = Bootstrap::getObjectManager()->get(UserFactory::class);
-    }
 
     /**
      * Tests if latest password is stored after user creating
@@ -112,5 +103,15 @@ class UserTest extends \PHPUnit\Framework\TestCase
     {
         $rules = $this->model->getValidationRulesBeforeSave();
         $this->assertInstanceOf('Zend_Validate_Interface', $rules);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->model = Bootstrap::getObjectManager()->get(UserResourceModel::class);
+        $this->userRoleCollectionFactory = Bootstrap::getObjectManager()->get(UserRoleCollectionFactory::class);
+        $this->userFactory = Bootstrap::getObjectManager()->get(UserFactory::class);
     }
 }

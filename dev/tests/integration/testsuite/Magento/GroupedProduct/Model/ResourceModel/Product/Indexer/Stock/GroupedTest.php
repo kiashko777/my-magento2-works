@@ -6,19 +6,19 @@
 
 namespace Magento\GroupedProduct\Model\ResourceModel\Product\Indexer\Stock;
 
-class GroupedTest extends \PHPUnit\Framework\TestCase
+use Magento\Catalog\Model\CategoryFactory;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\ResourceModel\Product\Collection;
+use Magento\CatalogInventory\Model\Indexer\Stock\Processor;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class GroupedTest extends TestCase
 {
     /**
-     * @var \Magento\CatalogInventory\Model\Indexer\Stock\Processor
+     * @var Processor
      */
     protected $processor;
-
-    protected function setUp(): void
-    {
-        $this->processor = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\CatalogInventory\Model\Indexer\Stock\Processor::class
-        );
-    }
 
     /**
      * @magentoDbIsolation disabled
@@ -29,14 +29,14 @@ class GroupedTest extends \PHPUnit\Framework\TestCase
     {
         $this->processor->reindexAll();
 
-        /** @var \Magento\Catalog\Model\CategoryFactory $categoryFactory */
-        $categoryFactory = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Catalog\Model\CategoryFactory::class
+        /** @var CategoryFactory $categoryFactory */
+        $categoryFactory = Bootstrap::getObjectManager()->get(
+            CategoryFactory::class
         );
         $category = $categoryFactory->create()->load(2);
-        /** @var \Magento\Catalog\Model\ResourceModel\Product\Collection $productCollection */
-        $productCollection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Catalog\Model\ResourceModel\Product\Collection::class
+        /** @var Collection $productCollection */
+        $productCollection = Bootstrap::getObjectManager()->get(
+            Collection::class
         );
 
         $productCollection->addAttributeToSelect('name');
@@ -58,9 +58,16 @@ class GroupedTest extends \PHPUnit\Framework\TestCase
             'Grouped Products' => 0
         ];
 
-        /** @var $product \Magento\Catalog\Model\Product */
+        /** @var $product Product */
         foreach ($productCollection as $product) {
             $this->assertEquals($expectedResult[$product->getName()], $product->getQty());
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->processor = Bootstrap::getObjectManager()->get(
+            Processor::class
+        );
     }
 }

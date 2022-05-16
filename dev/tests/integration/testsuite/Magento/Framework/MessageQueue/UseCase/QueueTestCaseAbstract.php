@@ -3,19 +3,23 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\MessageQueue\UseCase;
 
+use Magento\Amqp\Model\Config;
+use Magento\Framework\MessageQueue\PublisherInterface;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Framework\MessageQueue\PublisherInterface;
-use Magento\TestFramework\MessageQueue\PublisherConsumerController;
 use Magento\TestFramework\MessageQueue\EnvironmentPreconditionException;
 use Magento\TestFramework\MessageQueue\PreconditionFailedException;
+use Magento\TestFramework\MessageQueue\PublisherConsumerController;
+use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 
 /**
  * Base test case for message queue tests.
  */
-class QueueTestCaseAbstract extends \PHPUnit\Framework\TestCase
+class QueueTestCaseAbstract extends TestCase
 {
     /**
      * @var string[]
@@ -48,6 +52,35 @@ class QueueTestCaseAbstract extends \PHPUnit\Framework\TestCase
     protected $publisherConsumerController;
 
     /**
+     * Workaround for https://bugs.php.net/bug.php?id=72286
+     * phpcs:disable Magento2.Functions.StaticFunction
+     */
+    public static function tearDownAfterClass(): void
+    {
+        // phpcs:enable Magento2.Functions.StaticFunction
+        if (version_compare(phpversion(), '7') == -1) {
+            $closeConnection = new ReflectionMethod(Config::class, 'closeConnection');
+            $closeConnection->setAccessible(true);
+
+            $config = Bootstrap::getObjectManager()->get(Config::class);
+            $closeConnection->invoke($config);
+        }
+    }
+
+    /**
+     * Checks that logs exist
+     *
+     * @param int $expectedLinesCount
+     * @return bool
+     */
+    public function checkLogsExists($expectedLinesCount)
+    {
+        //phpcs:ignore Magento2.Functions.DiscouragedFunction
+        $actualCount = file_exists($this->logFilePath) ? count(file($this->logFilePath)) : 0;
+        return $expectedLinesCount === $actualCount;
+    }
+
+    /**
      * @inheritdoc
      */
     protected function setUp(): void
@@ -60,7 +93,7 @@ class QueueTestCaseAbstract extends \PHPUnit\Framework\TestCase
                 'consumers' => $this->consumers,
                 'logFilePath' => $this->logFilePath,
                 'maxMessages' => $this->maxMessages,
-                'appInitParams' => \Magento\TestFramework\Helper\Bootstrap::getInstance()->getAppInitParams()
+                'appInitParams' => Bootstrap::getInstance()->getAppInitParams()
             ]
         );
 
@@ -100,35 +133,6 @@ class QueueTestCaseAbstract extends \PHPUnit\Framework\TestCase
             );
         } catch (PreconditionFailedException $e) {
             $this->fail($e->getMessage());
-        }
-    }
-
-    /**
-     * Checks that logs exist
-     *
-     * @param int $expectedLinesCount
-     * @return bool
-     */
-    public function checkLogsExists($expectedLinesCount)
-    {
-        //phpcs:ignore Magento2.Functions.DiscouragedFunction
-        $actualCount = file_exists($this->logFilePath) ? count(file($this->logFilePath)) : 0;
-        return $expectedLinesCount === $actualCount;
-    }
-
-    /**
-     * Workaround for https://bugs.php.net/bug.php?id=72286
-     * phpcs:disable Magento2.Functions.StaticFunction
-     */
-    public static function tearDownAfterClass(): void
-    {
-        // phpcs:enable Magento2.Functions.StaticFunction
-        if (version_compare(phpversion(), '7') == -1) {
-            $closeConnection = new \ReflectionMethod(\Magento\Amqp\Model\Config::class, 'closeConnection');
-            $closeConnection->setAccessible(true);
-
-            $config = Bootstrap::getObjectManager()->get(\Magento\Amqp\Model\Config::class);
-            $closeConnection->invoke($config);
         }
     }
 }

@@ -4,6 +4,11 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Framework\Registry;
+use Magento\ImportExport\Model\ResourceModel\Import\Data;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+
 $bunches = [
     0 => [
         'entity' => 'customer',
@@ -103,17 +108,17 @@ $bunches = [
     ],
 ];
 
-$importDataResource = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\ImportExport\Model\ResourceModel\Import\Data::class
+$importDataResource = Bootstrap::getObjectManager()->create(
+    Data::class
 );
 
 foreach ($bunches as $bunch) {
     $importDataResource->saveBunch($bunch['entity'], $bunch['behavior'], $bunch['data']);
 }
 
-/** @var $objectManager \Magento\TestFramework\ObjectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-$objectManager->get(\Magento\Framework\Registry::class)->unregister('_fixture/Magento_ImportExport_Import_Data');
+/** @var $objectManager ObjectManager */
+$objectManager = Bootstrap::getObjectManager();
+$objectManager->get(Registry::class)->unregister('_fixture/Magento_ImportExport_Import_Data');
 $objectManager->get(
-    \Magento\Framework\Registry::class
+    Registry::class
 )->register('_fixture/Magento_ImportExport_Import_Data', $bunches);

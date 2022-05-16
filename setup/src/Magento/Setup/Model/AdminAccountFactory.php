@@ -8,6 +8,7 @@ namespace Magento\Setup\Model;
 
 use Laminas\ServiceManager\ServiceLocatorInterface;
 use Magento\Framework\DB\Adapter\AdapterInterface;
+use Magento\Framework\Encryption\Encryptor;
 
 /**
  * Factory for \Magento\Setup\Model\AdminAccount
@@ -38,7 +39,7 @@ class AdminAccountFactory
     {
         return new AdminAccount(
             $connection,
-            $this->serviceLocator->get(\Magento\Framework\Encryption\Encryptor::class),
+            $this->serviceLocator->get(Encryptor::class),
             $data
         );
     }

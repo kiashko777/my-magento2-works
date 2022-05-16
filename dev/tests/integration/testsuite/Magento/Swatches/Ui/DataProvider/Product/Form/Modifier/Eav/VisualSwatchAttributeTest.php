@@ -32,20 +32,6 @@ class VisualSwatchAttributeTest extends SelectAttributeTest
     }
 
     /**
-     * @return void
-     */
-    public function testModifyData(): void
-    {
-        $product = $this->getProduct();
-        $attributeData = [
-            'color_swatch' => $this->getOptionValueByLabel('color_swatch', 'option 1')
-        ];
-        $this->saveProduct($product, $attributeData);
-        $expectedData = $this->addDataNesting($attributeData);
-        $this->callModifyDataAndAssert($product, $expectedData);
-    }
-
-    /**
      * @return array
      */
     private function getAttributeMeta(): array
@@ -67,5 +53,19 @@ class VisualSwatchAttributeTest extends SelectAttributeTest
                 'required-entry' => true,
             ],
         ];
+    }
+
+    /**
+     * @return void
+     */
+    public function testModifyData(): void
+    {
+        $product = $this->getProduct();
+        $attributeData = [
+            'color_swatch' => $this->getOptionValueByLabel('color_swatch', 'option 1')
+        ];
+        $this->saveProduct($product, $attributeData);
+        $expectedData = $this->addDataNesting($attributeData);
+        $this->callModifyDataAndAssert($product, $expectedData);
     }
 }

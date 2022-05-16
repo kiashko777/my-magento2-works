@@ -5,6 +5,7 @@
  */
 
 use Magento\Catalog\Api\Data\ProductInterfaceFactory;
+use Magento\Catalog\Api\Data\ProductLinkInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
@@ -13,7 +14,6 @@ use Magento\Catalog\Model\Product\Visibility;
 use Magento\Eav\Model\Config;
 use Magento\Store\Api\WebsiteRepositoryInterface;
 use Magento\Store\Model\StoreManagerInterface;
-use Magento\Catalog\Api\Data\ProductLinkInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 
 $objectManager = Bootstrap::getObjectManager();
@@ -43,7 +43,7 @@ $product->setTypeId(Type::TYPE_SIMPLE)
 
 $simple = $productRepository->save($product);
 $simple->setStoreId($storeManager->getDefaultStoreView()->getId())
-->setStatus(Status::STATUS_DISABLED);
+    ->setStatus(Status::STATUS_DISABLED);
 $productRepository->save($simple);
 /** @var ProductLinkInterface $productLink */
 $productLink = $objectManager->create(ProductLinkInterface::class);

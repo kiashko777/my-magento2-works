@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Quote\Customer;
 
+use Exception;
 use Magento\GraphQl\Quote\GetMaskedQuoteIdByReservedOrderId;
 use Magento\GraphQl\Quote\GetQuoteItemIdByReservedQuoteIdAndSku;
 use Magento\Integration\Api\CustomerTokenServiceInterface;
@@ -33,16 +34,6 @@ class RemoveItemFromCartTest extends GraphQlAbstract
      */
     private $getQuoteItemIdByReservedQuoteIdAndSku;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->getQuoteItemIdByReservedQuoteIdAndSku = $objectManager->get(
-            GetQuoteItemIdByReservedQuoteIdAndSku::class
-        );
-    }
-
     /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
@@ -63,11 +54,48 @@ class RemoveItemFromCartTest extends GraphQlAbstract
     }
 
     /**
+     * @param string $maskedQuoteId
+     * @param int $itemId
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId, int $itemId): string
+    {
+        return <<<QUERY
+mutation {
+  removeItemFromCart(
+    input: {
+      cart_id: "{$maskedQuoteId}"
+      cart_item_id: {$itemId}
+    }
+  ) {
+    cart {
+      items {
+        quantity
+      }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
+     * @param string $username
+     * @param string $password
+     * @return array
+     */
+    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
+        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
+        return $headerMap;
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      */
     public function testRemoveItemFromNonExistentCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Could not find a cart with ID "non_existent_masked_id"');
 
         $query = $this->getQuery('non_existent_masked_id', 1);
@@ -190,40 +218,13 @@ class RemoveItemFromCartTest extends GraphQlAbstract
         $this->graphQlMutation($query, [], '', $this->getHeaderMap());
     }
 
-    /**
-     * @param string $maskedQuoteId
-     * @param int $itemId
-     * @return string
-     */
-    private function getQuery(string $maskedQuoteId, int $itemId): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-mutation {
-  removeItemFromCart(
-    input: {
-      cart_id: "{$maskedQuoteId}"
-      cart_item_id: {$itemId}
-    }
-  ) {
-    cart {
-      items {
-        quantity
-      }
-    }
-  }
-}
-QUERY;
-    }
-
-    /**
-     * @param string $username
-     * @param string $password
-     * @return array
-     */
-    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
-    {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
-        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
-        return $headerMap;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->getQuoteItemIdByReservedQuoteIdAndSku = $objectManager->get(
+            GetQuoteItemIdByReservedQuoteIdAndSku::class
+        );
     }
 }

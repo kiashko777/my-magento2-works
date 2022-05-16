@@ -6,19 +6,20 @@
 
 namespace Magento\Widget\Model\Widget;
 
-class InstanceTest extends \PHPUnit\Framework\TestCase
+use Magento\Catalog\Block\Product\Widget\NewWidget;
+use Magento\CatalogWidget\Model\Rule\Condition\Combine;
+use Magento\CatalogWidget\Model\Rule\Condition\Product;
+use Magento\Framework\App\State;
+use Magento\Framework\View\DesignInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class InstanceTest extends TestCase
 {
     /**
-     * @var \Magento\Widget\Model\Widget\Instance
+     * @var Instance
      */
     protected $_model;
-
-    protected function setUp(): void
-    {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Widget\Model\Widget\Instance::class
-        );
-    }
 
     public function testSetGetType()
     {
@@ -29,10 +30,10 @@ class InstanceTest extends \PHPUnit\Framework\TestCase
 
     public function testSetThemeId()
     {
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\App\State::class)
+        Bootstrap::getObjectManager()->get(State::class)
             ->setAreaCode('frontend');
-        $theme = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\DesignInterface::class
+        $theme = Bootstrap::getObjectManager()->get(
+            DesignInterface::class
         )->setDefaultDesignTheme()->getDesignTheme();
         $this->_model->setThemeId($theme->getId());
 
@@ -40,23 +41,23 @@ class InstanceTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @return \Magento\Widget\Model\Widget\Instance
+     * @return Instance
      */
     public function testGetWidgetConfigAsArray()
     {
-        $config = $this->_model->setType(\Magento\Catalog\Block\Product\Widget\NewWidget::class)
+        $config = $this->_model->setType(NewWidget::class)
             ->getWidgetConfigAsArray();
         $this->assertIsArray($config);
         $element = null;
         if (isset(
-            $config['parameters']
-        ) && isset(
-            $config['parameters']['template']
-        ) && isset(
-            $config['parameters']['template']['values']
-        ) && isset(
-            $config['parameters']['template']['values']['list']
-        )
+                $config['parameters']
+            ) && isset(
+                $config['parameters']['template']
+            ) && isset(
+                $config['parameters']['template']['values']
+            ) && isset(
+                $config['parameters']['template']['values']['list']
+            )
         ) {
             $element = $config['parameters']['template']['values']['list'];
         }
@@ -71,11 +72,11 @@ class InstanceTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @return \Magento\Widget\Model\Widget\Instance
+     * @return Instance
      */
     public function testGetWidgetSupportedContainers()
     {
-        $this->_model->setType(\Magento\Catalog\Block\Product\Widget\NewWidget::class);
+        $this->_model->setType(NewWidget::class);
         $containers = $this->_model->getWidgetSupportedContainers();
         $this->assertIsArray($containers);
         $this->assertContains('sidebar.main', $containers);
@@ -86,7 +87,7 @@ class InstanceTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @param \Magento\Widget\Model\Widget\Instance $model
+     * @param Instance $model
      * @depends testGetWidgetSupportedContainers
      */
     public function testGetWidgetSupportedTemplatesByContainer($model)
@@ -103,23 +104,23 @@ class InstanceTest extends \PHPUnit\Framework\TestCase
     /**
      * @covers  \Magento\Widget\Model\Widget\Instance::generateLayoutUpdateXml()
      * @covers  \Magento\Widget\Model\Widget\Instance::getWidgetParameters()
-     * @param \Magento\Widget\Model\Widget\Instance $model
+     * @param Instance $model
      * @depends testGetWidgetConfigAsArray
      */
-    public function testGenerateLayoutUpdateXml(\Magento\Widget\Model\Widget\Instance $model)
+    public function testGenerateLayoutUpdateXml(Instance $model)
     {
         $params = [
             'display_mode' => 'fixed',
             'types' => ['type_1', 'type_2'],
             'conditions' => [
                 '1' => [
-                    'type' => \Magento\CatalogWidget\Model\Rule\Condition\Combine::class,
+                    'type' => Combine::class,
                     'aggregator' => 'all',
                     'value' => '1',
                     'new_child' => '',
                 ],
                 '1--1' => [
-                    'type' => \Magento\CatalogWidget\Model\Rule\Condition\Product::class,
+                    'type' => Product::class,
                     'attribute' => 'attribute_set_id',
                     'value' => '4',
                     'operator' => '==',
@@ -146,7 +147,7 @@ class InstanceTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @covers \Magento\Widget\Model\Widget\Instance::beforeSave()
+     * @covers       \Magento\Widget\Model\Widget\Instance::beforeSave()
      * @magentoDataFixture Magento/Widget/_files/new_widget.php
      * @dataProvider beforeSaveDataProvider
      * @param array $expected
@@ -154,7 +155,7 @@ class InstanceTest extends \PHPUnit\Framework\TestCase
     public function testBeforeSave(array $expected)
     {
         /** @var \Magento\Widget\Model\ResourceModel\Widget\Instance $resourceModel */
-        $resourceModel = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
+        $resourceModel = Bootstrap::getObjectManager()
             ->get(\Magento\Widget\Model\ResourceModel\Widget\Instance::class);
         $resourceModel->load($this->_model, 'Magento\Widget\NewSampleWidget', 'instance_type');
 
@@ -178,7 +179,7 @@ class InstanceTest extends \PHPUnit\Framework\TestCase
      * @param Instance $model
      * @depends testGetWidgetConfigAsArray
      */
-    public function testGenerateLayoutUpdateXmlWithInvalidParamName(\Magento\Widget\Model\Widget\Instance $model)
+    public function testGenerateLayoutUpdateXmlWithInvalidParamName(Instance $model)
     {
         $params = [
             'block_id' => '2',
@@ -190,5 +191,12 @@ class InstanceTest extends \PHPUnit\Framework\TestCase
         $this->expectExceptionMessage('Layout update is invalid');
         $model->setData('widget_parameters', $params);
         $model->generateLayoutUpdateXml('content');
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Instance::class
+        );
     }
 }

@@ -3,15 +3,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\ReleaseNotification\Model\ResourceModel\Viewer;
 
 use Magento\ReleaseNotification\Model\Viewer\Log;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\User\Model\User;
+use PHPUnit\Framework\TestCase;
+use Zend_Db_Statement_Exception;
 
 /**
  * @magentoDbIsolation enabled
  */
-class LoggerTest extends \PHPUnit\Framework\TestCase
+class LoggerTest extends TestCase
 {
     /**
      * @var Logger
@@ -19,20 +23,11 @@ class LoggerTest extends \PHPUnit\Framework\TestCase
     private $logger;
 
     /**
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->logger = $objectManager->get(Logger::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/User/_files/user_with_role.php
      */
     public function testLogAndGet()
     {
-        $userModel = Bootstrap::getObjectManager()->get(\Magento\User\Model\User::class);
+        $userModel = Bootstrap::getObjectManager()->get(User::class);
         $adminUserNameFromFixture = 'adminUser';
         $adminUserId = $userModel->loadByUsername($adminUserNameFromFixture)->getId();
         $this->assertEmpty($this->logger->get($adminUserId)->getId());
@@ -56,8 +51,17 @@ class LoggerTest extends \PHPUnit\Framework\TestCase
      */
     public function testLogNonExistUser()
     {
-        $this->expectException(\Zend_Db_Statement_Exception::class);
+        $this->expectException(Zend_Db_Statement_Exception::class);
 
         $this->logger->log(200, '2.2.2');
+    }
+
+    /**
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->logger = $objectManager->get(Logger::class);
     }
 }

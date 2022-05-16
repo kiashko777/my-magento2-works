@@ -13,11 +13,12 @@ use Magento\Quote\Model\BillingAddressManagement;
 use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\Quote\Address as QuoteAddress;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for \Magento\Checkout\Plugin\Model\Quote\ResetQuoteAddresses
  */
-class ResetQuoteAddressesTest extends \PHPUnit\Framework\TestCase
+class ResetQuoteAddressesTest extends TestCase
 {
     /**
      * @magentoDataFixture Magento/Checkout/_files/quote_with_virtual_product_and_address.php

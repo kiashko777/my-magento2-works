@@ -7,11 +7,13 @@ declare(strict_types=1);
 
 namespace Magento\Ups\Model;
 
+use Magento\Shipping\Model\CollectRatesAbstract;
+
 /**
  * Integration tests for online shipping carriers.
  * @magentoAppIsolation enabled
  */
-class CollectRatesTest extends \Magento\Shipping\Model\CollectRatesAbstract
+class CollectRatesTest extends CollectRatesAbstract
 {
     /**
      * @var string

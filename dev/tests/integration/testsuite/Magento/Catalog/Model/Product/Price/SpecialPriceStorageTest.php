@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Model\Product\Price;
 
+use Datetime;
 use Magento\Catalog\Api\Data\SpecialPriceInterface;
 use Magento\Catalog\Api\Data\SpecialPriceInterfaceFactory;
 use Magento\TestFramework\Helper\Bootstrap;
@@ -27,24 +28,13 @@ class SpecialPriceStorageTest extends TestCase
     private $specialPriceFactory;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $objectManager = Bootstrap::getObjectManager();
-        $this->model = $objectManager->get(SpecialPriceStorage::class);
-        $this->specialPriceFactory = $objectManager->get(SpecialPriceInterfaceFactory::class);
-    }
-
-    /**
      * Test that price update validation works correctly
      *
      * @magentoDataFixture Magento/Catalog/_files/category_product.php
      */
     public function testUpdateValidationResult()
     {
-        $date = new \Datetime('+2 days');
+        $date = new Datetime('+2 days');
         $date->setTime(0, 0);
         /** @var SpecialPriceInterface $price */
         $price = $this->specialPriceFactory->create();
@@ -60,10 +50,21 @@ class SpecialPriceStorageTest extends TestCase
         $this->assertCount(1, $result);
         $this->assertStringContainsString(
             'The product that was requested doesn\'t exist.',
-            (string) $result[0]->getMessage()
+            (string)$result[0]->getMessage()
         );
         $price->setSku('simple333');
         $result = $this->model->update([$price]);
         $this->assertCount(0, $result);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $objectManager = Bootstrap::getObjectManager();
+        $this->model = $objectManager->get(SpecialPriceStorage::class);
+        $this->specialPriceFactory = $objectManager->get(SpecialPriceInterfaceFactory::class);
     }
 }

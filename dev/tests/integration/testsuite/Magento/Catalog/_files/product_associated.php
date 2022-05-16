@@ -5,8 +5,14 @@
  */
 
 /* Create simple product */
-/** @var $product \Magento\Catalog\Model\Product */
-$product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Product::class);
+/** @var $product Product */
+
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$product = Bootstrap::getObjectManager()->create(Product::class);
 $product->setTypeId(
     'simple'
 )->setId(
@@ -30,9 +36,9 @@ $product->setTypeId(
 )->setMetaDescription(
     'meta description'
 )->setVisibility(
-    \Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH
+    Visibility::VISIBILITY_BOTH
 )->setStatus(
-    \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED
+    Status::STATUS_ENABLED
 )->setStockData(
     ['use_config_manage_stock' => 1, 'qty' => 22, 'is_in_stock' => 1]
 )->save();

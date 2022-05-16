@@ -34,17 +34,6 @@ class DataProviderTest extends TestCase
     private $translationDataProvider;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->stringUtils = $objectManager->get(StringUtils::class);
-        $this->translate = $objectManager->get(TranslateInterface::class);
-        $this->translationDataProvider = $objectManager->get(DataProviderInterface::class);
-    }
-
-    /**
      * Test translation data.
      *
      * @magentoAppArea frontend
@@ -58,6 +47,17 @@ class DataProviderTest extends TestCase
         $this->translate->setLocale('en_US')->loadData('frontend', true);
         $dictionary = $this->translationDataProvider->getData('Magento/luma');
         $this->assertEquals($expectedDictionary, $dictionary);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->stringUtils = $objectManager->get(StringUtils::class);
+        $this->translate = $objectManager->get(TranslateInterface::class);
+        $this->translationDataProvider = $objectManager->get(DataProviderInterface::class);
     }
 
     /**

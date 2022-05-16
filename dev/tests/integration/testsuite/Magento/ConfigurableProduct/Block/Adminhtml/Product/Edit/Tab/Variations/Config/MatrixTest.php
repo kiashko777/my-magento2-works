@@ -3,12 +3,22 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\ConfigurableProduct\Block\Adminhtml\Product\Edit\Tab\Variations\Config;
+
+use Magento\Catalog\Model\Entity\Attribute;
+use Magento\Catalog\Model\Product;
+use Magento\Eav\Model\Config;
+use Magento\Framework\Registry;
+use Magento\Framework\View\Element\Text;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class MatrixTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class MatrixTest extends AbstractBackendController
 {
     const ATTRIBUTE_LABEL = 'New Attribute Label';
     const ATTRIBUTE_POSITION = 42;
@@ -20,34 +30,34 @@ class MatrixTest extends \Magento\TestFramework\TestCase\AbstractBackendControll
     public function testGetVariations()
     {
         $this->_objectManager->get(
-            \Magento\Framework\Registry::class
+            Registry::class
         )->register(
             'current_product',
-            \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-                \Magento\Catalog\Model\Product::class
+            Bootstrap::getObjectManager()->create(
+                Product::class
             )->load(1)
         );
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
+        Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
         )->createBlock(
-            \Magento\Framework\View\Element\Text::class,
+            Text::class,
             'head'
         );
-        /** @var $usedAttribute \Magento\Catalog\Model\Entity\Attribute */
-        $usedAttribute = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Catalog\Model\Entity\Attribute::class
+        /** @var $usedAttribute Attribute */
+        $usedAttribute = Bootstrap::getObjectManager()->get(
+            Attribute::class
         )->loadByCode(
-            \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-                \Magento\Eav\Model\Config::class
+            Bootstrap::getObjectManager()->get(
+                Config::class
             )->getEntityType(
                 'catalog_product'
             )->getId(),
             'test_configurable'
         );
         $attributeOptions = $usedAttribute->getSource()->getAllOptions(false);
-        /** @var $block \Magento\ConfigurableProduct\Block\Adminhtml\Product\Edit\Tab\Variations\Config\Matrix */
-        $block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
+        /** @var $block Matrix */
+        $block = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
         )->createBlock(
             preg_replace('/Test$/', '', __CLASS__)
         );

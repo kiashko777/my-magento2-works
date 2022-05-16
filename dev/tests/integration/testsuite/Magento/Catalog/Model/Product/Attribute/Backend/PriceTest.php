@@ -3,11 +3,23 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Model\Product\Attribute\Backend;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product\Action;
 use Magento\Catalog\Observer\SwitchPriceAttributeScopeOnConfigChange;
+use Magento\Directory\Model\ResourceModel\Currency;
+use Magento\Eav\Model\Config;
+use Magento\Eav\Model\Entity\Attribute\ScopedAttributeInterface;
+use Magento\Framework\App\Config\MutableScopeConfigInterface;
 use Magento\Framework\App\Config\ReinitableConfigInterface;
+use Magento\Framework\Event\Observer;
+use Magento\Store\Model\ScopeInterface;
+use Magento\Store\Model\Store;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\Catalog\Model\Products\Attribute\Backend\Price.
@@ -15,48 +27,37 @@ use Magento\Framework\App\Config\ReinitableConfigInterface;
  * @magentoAppArea Adminhtml
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class PriceTest extends \PHPUnit\Framework\TestCase
+class PriceTest extends TestCase
 {
     /**
-     * @var \Magento\Catalog\Model\Product\Attribute\Backend\Price
+     * @var Price
      */
     private $model;
 
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     private $objectManager;
 
     /** @var ProductRepositoryInterface */
     private $productRepository;
 
-    protected function setUp(): void
+    public static function tearDownAfterClass(): void
     {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        parent::tearDownAfterClass();
         /** @var ReinitableConfigInterface $reinitiableConfig */
-        $reinitiableConfig = $this->objectManager->get(ReinitableConfigInterface::class);
+        $reinitiableConfig = Bootstrap::getObjectManager()->get(
+            ReinitableConfigInterface::class
+        );
         $reinitiableConfig->setValue(
             'catalog/price/scope',
-            \Magento\Store\Model\Store::PRICE_SCOPE_WEBSITE
+            Store::PRICE_SCOPE_GLOBAL
         );
-        $observer = $this->objectManager->get(\Magento\Framework\Event\Observer::class);
-        $this->objectManager->get(SwitchPriceAttributeScopeOnConfigChange::class)
+        $observer = Bootstrap::getObjectManager()->get(
+            Observer::class
+        );
+        Bootstrap::getObjectManager()->get(SwitchPriceAttributeScopeOnConfigChange::class)
             ->execute($observer);
-
-        $this->model = $this->objectManager->create(
-            \Magento\Catalog\Model\Product\Attribute\Backend\Price::class
-        );
-        $this->productRepository = $this->objectManager->create(
-            ProductRepositoryInterface::class
-        );
-        $this->model->setAttribute(
-            $this->objectManager->get(
-                \Magento\Eav\Model\Config::class
-            )->getAttribute(
-                'catalog_product',
-                'price'
-            )
-        );
     }
 
     /**
@@ -66,12 +67,12 @@ class PriceTest extends \PHPUnit\Framework\TestCase
     {
         /* validate result of setAttribute */
         $this->assertEquals(
-            \Magento\Eav\Model\Entity\Attribute\ScopedAttributeInterface::SCOPE_GLOBAL,
+            ScopedAttributeInterface::SCOPE_GLOBAL,
             $this->model->getAttribute()->getIsGlobal()
         );
         $this->model->setScope($this->model->getAttribute());
         $this->assertEquals(
-            \Magento\Eav\Model\Entity\Attribute\ScopedAttributeInterface::SCOPE_GLOBAL,
+            ScopedAttributeInterface::SCOPE_GLOBAL,
             $this->model->getAttribute()->getIsGlobal()
         );
     }
@@ -84,7 +85,7 @@ class PriceTest extends \PHPUnit\Framework\TestCase
     {
         $this->model->setScope($this->model->getAttribute());
         $this->assertEquals(
-            \Magento\Eav\Model\Entity\Attribute\ScopedAttributeInterface::SCOPE_WEBSITE,
+            ScopedAttributeInterface::SCOPE_WEBSITE,
             $this->model->getAttribute()->getIsGlobal()
         );
     }
@@ -97,8 +98,8 @@ class PriceTest extends \PHPUnit\Framework\TestCase
      */
     public function testAfterSave()
     {
-        /** @var \Magento\Store\Model\Store $store */
-        $store = $this->objectManager->create(\Magento\Store\Model\Store::class);
+        /** @var Store $store */
+        $store = $this->objectManager->create(Store::class);
         $globalStoreId = $store->load('admin')->getId();
         $product = $this->productRepository->get('simple');
         $product->setPrice('9.99');
@@ -117,16 +118,16 @@ class PriceTest extends \PHPUnit\Framework\TestCase
      */
     public function testAfterSaveWithDifferentStores()
     {
-        /** @var \Magento\Store\Model\Store $store */
+        /** @var Store $store */
         $store = $this->objectManager->create(
-            \Magento\Store\Model\Store::class
+            Store::class
         );
         $globalStoreId = $store->load('admin')->getId();
         $secondStoreId = $store->load('fixture_second_store')->getId();
         $thirdStoreId = $store->load('fixture_third_store')->getId();
-        /** @var \Magento\Catalog\Model\Product\Action $productAction */
+        /** @var Action $productAction */
         $productAction = $this->objectManager->create(
-            \Magento\Catalog\Model\Product\Action::class
+            Action::class
         );
 
         $product = $this->productRepository->get('simple');
@@ -155,16 +156,16 @@ class PriceTest extends \PHPUnit\Framework\TestCase
      */
     public function testAfterSaveWithSameCurrency()
     {
-        /** @var \Magento\Store\Model\Store $store */
+        /** @var Store $store */
         $store = $this->objectManager->create(
-            \Magento\Store\Model\Store::class
+            Store::class
         );
         $globalStoreId = $store->load('admin')->getId();
         $secondStoreId = $store->load('fixture_second_store')->getId();
         $thirdStoreId = $store->load('fixture_third_store')->getId();
-        /** @var \Magento\Catalog\Model\Product\Action $productAction */
+        /** @var Action $productAction */
         $productAction = $this->objectManager->create(
-            \Magento\Catalog\Model\Product\Action::class
+            Action::class
         );
 
         $product = $this->productRepository->get('simple');
@@ -194,16 +195,16 @@ class PriceTest extends \PHPUnit\Framework\TestCase
      */
     public function testAfterSaveWithUseDefault()
     {
-        /** @var \Magento\Store\Model\Store $store */
+        /** @var Store $store */
         $store = $this->objectManager->create(
-            \Magento\Store\Model\Store::class
+            Store::class
         );
         $globalStoreId = $store->load('admin')->getId();
         $secondStoreId = $store->load('fixture_second_store')->getId();
         $thirdStoreId = $store->load('fixture_third_store')->getId();
-        /** @var \Magento\Catalog\Model\Product\Action $productAction */
+        /** @var Action $productAction */
         $productAction = $this->objectManager->create(
-            \Magento\Catalog\Model\Product\Action::class
+            Action::class
         );
 
         $product = $this->productRepository->get('simple');
@@ -246,13 +247,13 @@ class PriceTest extends \PHPUnit\Framework\TestCase
      */
     public function testAfterSaveForWebsitesWithDifferentCurrencies()
     {
-        /** @var \Magento\Store\Model\Store $store */
+        /** @var Store $store */
         $store = $this->objectManager->create(
-            \Magento\Store\Model\Store::class
+            Store::class
         );
 
-        /** @var \Magento\Directory\Model\ResourceModel\Currency $rate */
-        $rate = $this->objectManager->create(\Magento\Directory\Model\ResourceModel\Currency::class);
+        /** @var Currency $rate */
+        $rate = $this->objectManager->create(Currency::class);
         $rate->saveRates([
             'USD' => ['EUR' => 2],
             'EUR' => ['USD' => 0.5]
@@ -263,17 +264,17 @@ class PriceTest extends \PHPUnit\Framework\TestCase
         $secondStoreId = $store->load('fixture_second_store')->getId();
         $thirdStoreId = $store->load('fixture_third_store')->getId();
 
-        /** @var \Magento\Framework\App\Config\ReinitableConfigInterface $config */
-        $config = $this->objectManager->get(\Magento\Framework\App\Config\MutableScopeConfigInterface::class);
+        /** @var ReinitableConfigInterface $config */
+        $config = $this->objectManager->get(MutableScopeConfigInterface::class);
         $config->setValue(
             'currency/options/default',
             'EUR',
-            \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITES,
+            ScopeInterface::SCOPE_WEBSITES,
             'test'
         );
 
         $productAction = $this->objectManager->create(
-            \Magento\Catalog\Model\Product\Action::class
+            Action::class
         );
         $product = $this->productRepository->get('simple');
         $productId = $product->getId();
@@ -293,21 +294,32 @@ class PriceTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(100, $product->getPrice());
     }
 
-    public static function tearDownAfterClass(): void
+    protected function setUp(): void
     {
-        parent::tearDownAfterClass();
+        $this->objectManager = Bootstrap::getObjectManager();
         /** @var ReinitableConfigInterface $reinitiableConfig */
-        $reinitiableConfig = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            ReinitableConfigInterface::class
-        );
+        $reinitiableConfig = $this->objectManager->get(ReinitableConfigInterface::class);
         $reinitiableConfig->setValue(
             'catalog/price/scope',
-            \Magento\Store\Model\Store::PRICE_SCOPE_GLOBAL
+            Store::PRICE_SCOPE_WEBSITE
         );
-        $observer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\Event\Observer::class
-        );
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(SwitchPriceAttributeScopeOnConfigChange::class)
+        $observer = $this->objectManager->get(Observer::class);
+        $this->objectManager->get(SwitchPriceAttributeScopeOnConfigChange::class)
             ->execute($observer);
+
+        $this->model = $this->objectManager->create(
+            Price::class
+        );
+        $this->productRepository = $this->objectManager->create(
+            ProductRepositoryInterface::class
+        );
+        $this->model->setAttribute(
+            $this->objectManager->get(
+                Config::class
+            )->getAttribute(
+                'catalog_product',
+                'price'
+            )
+        );
     }
 }

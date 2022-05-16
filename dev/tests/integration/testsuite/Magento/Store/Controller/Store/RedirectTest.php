@@ -33,28 +33,6 @@ class RedirectTest extends AbstractController
     private $preprocessorMock;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->preprocessor = $this->_objectManager->get(RedirectDataPreprocessorInterface::class);
-        $this->preprocessorMock = $this->createMock(RedirectDataPreprocessorInterface::class);
-        $this->_objectManager->addSharedInstance($this->preprocessorMock, $this->getClassName($this->preprocessor));
-    }
-
-    /**
-     * @inheritDoc
-     */
-    protected function tearDown(): void
-    {
-        if ($this->preprocessor) {
-            $this->_objectManager->addSharedInstance($this->preprocessor, $this->getClassName($this->preprocessor));
-        }
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Store/_files/second_store.php
      * @magentoConfigFixture web/url/use_store 0
      * @magentoConfigFixture fixture_second_store_store web/unsecure/base_url http://second_store.test/
@@ -87,21 +65,6 @@ class RedirectTest extends AbstractController
     }
 
     /**
-     * Return class name of the given object
-     *
-     * @param mixed $instance
-     */
-    private function getClassName($instance): string
-    {
-        if ($instance instanceof InterceptorInterface) {
-            $actionClass = get_parent_class($instance);
-        } else {
-            $actionClass = get_class($instance);
-        }
-        return $actionClass;
-    }
-
-    /**
      * Check that there's no SID in redirect URL.
      *
      * @return void
@@ -119,5 +82,42 @@ class RedirectTest extends AbstractController
         $result = (string)$this->getResponse()->getHeader('location');
         $this->assertNotEmpty($result);
         $this->assertStringNotContainsString(SidResolverInterface::SESSION_ID_QUERY_PARAM . '=', $result);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->preprocessor = $this->_objectManager->get(RedirectDataPreprocessorInterface::class);
+        $this->preprocessorMock = $this->createMock(RedirectDataPreprocessorInterface::class);
+        $this->_objectManager->addSharedInstance($this->preprocessorMock, $this->getClassName($this->preprocessor));
+    }
+
+    /**
+     * Return class name of the given object
+     *
+     * @param mixed $instance
+     */
+    private function getClassName($instance): string
+    {
+        if ($instance instanceof InterceptorInterface) {
+            $actionClass = get_parent_class($instance);
+        } else {
+            $actionClass = get_class($instance);
+        }
+        return $actionClass;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function tearDown(): void
+    {
+        if ($this->preprocessor) {
+            $this->_objectManager->addSharedInstance($this->preprocessor, $this->getClassName($this->preprocessor));
+        }
+        parent::tearDown();
     }
 }

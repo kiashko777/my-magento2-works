@@ -3,12 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Search\Model\ResourceModel;
+
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for class \Magento\Search\Model\ResourceModel\SynonymGroup
  */
-class SynonymGroupTest extends \PHPUnit\Framework\TestCase
+class SynonymGroupTest extends TestCase
 {
     /**
      * Test Get By Scope
@@ -17,7 +21,7 @@ class SynonymGroupTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetByScope()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
         /** @var \Magento\Search\Model\SynonymGroup $synonymGroupModel1 */
         $synonymGroupModel1 = $objectManager->create(\Magento\Search\Model\SynonymGroup::class);
         $synonymGroupModel1->setWebsiteId(0);
@@ -47,8 +51,8 @@ class SynonymGroupTest extends \PHPUnit\Framework\TestCase
         $synonymGroupModel4->save();
         $group4 = $synonymGroupModel4->getGroupId();
 
-        /** @var \Magento\Search\Model\ResourceModel\SynonymGroup $resourceModel */
-        $resourceModel = $objectManager->create(\Magento\Search\Model\ResourceModel\SynonymGroup::class);
+        /** @var SynonymGroup $resourceModel */
+        $resourceModel = $objectManager->create(SynonymGroup::class);
         $this->assertEquals(
             [['group_id' => $group1, 'synonyms' => 'a,b,c'], ['group_id' => $group4, 'synonyms' => 'd,e,f']],
             $resourceModel->getByScope(0, 0)

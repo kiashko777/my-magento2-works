@@ -56,14 +56,14 @@ interface FakeAddressInterface extends ExtensibleDataInterface
     /**
      * Get region
      *
-     * @return \Magento\TestModuleExtensionAttributes\Api\Data\FakeRegionInterface|null
+     * @return FakeRegionInterface|null
      */
     public function getRegion();
 
     /**
      * Get region
      *
-     * @return \Magento\TestModuleExtensionAttributes\Api\Data\FakeRegionInterface[]|null
+     * @return FakeRegionInterface[]|null
      */
     public function getRegions();
 
@@ -175,17 +175,17 @@ interface FakeAddressInterface extends ExtensibleDataInterface
     /**
      * Retrieve existing extension attributes object or create a new one.
      *
-     * @return \Magento\TestModuleExtensionAttributes\Api\Data\FakeAddressExtensionInterface|null
+     * @return FakeAddressExtensionInterface|null
      */
     public function getExtensionAttributes();
 
     /**
      * Set an extension attributes object.
      *
-     * @param \Magento\TestModuleExtensionAttributes\Api\Data\FakeAddressExtensionInterface $extensionAttributes
+     * @param FakeAddressExtensionInterface $extensionAttributes
      * @return $this
      */
     public function setExtensionAttributes(
-        \Magento\TestModuleExtensionAttributes\Api\Data\FakeAddressExtensionInterface $extensionAttributes
+        FakeAddressExtensionInterface $extensionAttributes
     );
 }

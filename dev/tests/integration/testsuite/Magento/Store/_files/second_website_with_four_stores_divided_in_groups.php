@@ -13,13 +13,15 @@ use Magento\Store\Api\Data\GroupInterfaceFactory;
 use Magento\Store\Model\ResourceModel\Group as GroupResource;
 use Magento\Store\Model\Store;
 use Magento\Store\Model\StoreManagerInterface;
+use Magento\Store\Model\Website;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Store/_files/second_website_with_two_stores.php');
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 
-/** @var $website \Magento\Store\Model\Website */
-$website = $objectManager->create(\Magento\Store\Model\Website::class);
+/** @var $website Website */
+$website = $objectManager->create(Website::class);
 $website->load('test', 'code')->getId();
 $websiteId = $website->getId();
 

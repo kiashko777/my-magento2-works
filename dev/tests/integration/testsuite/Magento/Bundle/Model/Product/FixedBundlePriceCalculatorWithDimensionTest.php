@@ -7,7 +7,9 @@ declare(strict_types=1);
 
 namespace Magento\Bundle\Model\Product;
 
-use \Magento\Bundle\Api\Data\LinkInterface;
+use Magento\Bundle\Api\Data\LinkInterface;
+use Magento\Catalog\Pricing\Price\FinalPrice;
+use Magento\Framework\Pricing\PriceInfo\Base;
 
 /**
  * @magentoDbIsolation disabled
@@ -29,9 +31,9 @@ class FixedBundlePriceCalculatorWithDimensionTest extends BundlePriceAbstract
         $this->prepareFixture($strategyModifiers, 'bundle_product');
         $bundleProduct = $this->productRepository->get('bundle_product', false, null, true);
 
-        /** @var \Magento\Framework\Pricing\PriceInfo\Base $priceInfo */
+        /** @var Base $priceInfo */
         $priceInfo = $bundleProduct->getPriceInfo();
-        $priceCode = \Magento\Catalog\Pricing\Price\FinalPrice::PRICE_CODE;
+        $priceCode = FinalPrice::PRICE_CODE;
 
         $this->assertEquals(
             $expectedResults['minimalPrice'],
@@ -68,9 +70,9 @@ class FixedBundlePriceCalculatorWithDimensionTest extends BundlePriceAbstract
         $this->prepareFixture($strategyModifiers, 'bundle_product');
         $bundleProduct = $this->productRepository->get('bundle_product', false, null, true);
 
-        /** @var \Magento\Framework\Pricing\PriceInfo\Base $priceInfo */
+        /** @var Base $priceInfo */
         $priceInfo = $bundleProduct->getPriceInfo();
-        $priceCode = \Magento\Catalog\Pricing\Price\FinalPrice::PRICE_CODE;
+        $priceCode = FinalPrice::PRICE_CODE;
 
         $this->assertEquals(
             $expectedResults['minimalPrice'],
@@ -142,7 +144,7 @@ class FixedBundlePriceCalculatorWithDimensionTest extends BundlePriceAbstract
             ],
 
             '
-                #5 Testing price for fixed bundle product 
+                #5 Testing price for fixed bundle product
                 with fixed sub items, fixed options and without any discounts
             ' => [
                 'strategy' => $this->getBundleConfiguration3(
@@ -159,7 +161,7 @@ class FixedBundlePriceCalculatorWithDimensionTest extends BundlePriceAbstract
             ],
 
             '
-                #6 Testing price for fixed bundle product 
+                #6 Testing price for fixed bundle product
                 with percent sub items, percent options and without any discounts
             ' => [
                 'strategy' => $this->getBundleConfiguration3(
@@ -176,7 +178,7 @@ class FixedBundlePriceCalculatorWithDimensionTest extends BundlePriceAbstract
             ],
 
             '
-                #7 Testing price for fixed bundle product 
+                #7 Testing price for fixed bundle product
                 with fixed sub items, percent options and without any discounts
             ' => [
                 'strategy' => $this->getBundleConfiguration3(
@@ -193,7 +195,7 @@ class FixedBundlePriceCalculatorWithDimensionTest extends BundlePriceAbstract
             ],
 
             '
-                #8 Testing price for fixed bundle product 
+                #8 Testing price for fixed bundle product
                 with percent sub items, fixed options and without any discounts
             ' => [
                 'strategy' => $this->getBundleConfiguration3(
@@ -284,48 +286,6 @@ class FixedBundlePriceCalculatorWithDimensionTest extends BundlePriceAbstract
     }
 
     /**
-     * Fixed bundle product with three simples and different price
-     * @return array
-     */
-    private function getProductWithSamePrice()
-    {
-        $optionsData = [
-            [
-                'title' => 'Op1',
-                'required' => true,
-                'type' => 'checkbox',
-                'links' => [
-                    [
-                        'sku' => 'simple1',
-                        'price' => 10,
-                        'qty' => 1,
-                        'price_type' => LinkInterface::PRICE_TYPE_FIXED,
-                    ],
-                    [
-                        'sku' => 'simple2',
-                        'price' => 10,
-                        'qty' => 1,
-                        'price_type' => LinkInterface::PRICE_TYPE_FIXED,
-                    ],
-                    [
-                        'sku' => 'simple3',
-                        'price' => 10,
-                        'qty' => 1,
-                        'price_type' => LinkInterface::PRICE_TYPE_FIXED,
-                    ]
-                ]
-            ]
-        ];
-
-        return [
-            [
-                'modifierName' => 'addSimpleProduct',
-                'data' => [$optionsData]
-            ],
-        ];
-    }
-
-    /**
      * Fixed bundle product with three simples
      * @return array
      */
@@ -352,6 +312,48 @@ class FixedBundlePriceCalculatorWithDimensionTest extends BundlePriceAbstract
                     [
                         'sku' => 'simple3',
                         'price' => 30,
+                        'qty' => 1,
+                        'price_type' => LinkInterface::PRICE_TYPE_FIXED,
+                    ]
+                ]
+            ]
+        ];
+
+        return [
+            [
+                'modifierName' => 'addSimpleProduct',
+                'data' => [$optionsData]
+            ],
+        ];
+    }
+
+    /**
+     * Fixed bundle product with three simples and different price
+     * @return array
+     */
+    private function getProductWithSamePrice()
+    {
+        $optionsData = [
+            [
+                'title' => 'Op1',
+                'required' => true,
+                'type' => 'checkbox',
+                'links' => [
+                    [
+                        'sku' => 'simple1',
+                        'price' => 10,
+                        'qty' => 1,
+                        'price_type' => LinkInterface::PRICE_TYPE_FIXED,
+                    ],
+                    [
+                        'sku' => 'simple2',
+                        'price' => 10,
+                        'qty' => 1,
+                        'price_type' => LinkInterface::PRICE_TYPE_FIXED,
+                    ],
+                    [
+                        'sku' => 'simple3',
+                        'price' => 10,
                         'qty' => 1,
                         'price_type' => LinkInterface::PRICE_TYPE_FIXED,
                     ]

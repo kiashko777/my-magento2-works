@@ -7,11 +7,12 @@
 namespace Magento\Ui\Config;
 
 use Magento\Framework\Config\FileIterator;
+use Magento\Framework\Config\FileResolverInterface;
 use Magento\Framework\Filesystem\DriverPool;
 use Magento\Framework\Filesystem\File\ReadFactory;
 use Magento\Framework\Module\Dir;
 
-class FileResolverStub implements \Magento\Framework\Config\FileResolverInterface
+class FileResolverStub implements FileResolverInterface
 {
     /**
      * @var array

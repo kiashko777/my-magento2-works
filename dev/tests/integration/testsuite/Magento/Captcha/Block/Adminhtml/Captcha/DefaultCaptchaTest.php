@@ -3,23 +3,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Captcha\Block\Adminhtml\Captcha;
 
-class DefaultCaptchaTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class DefaultCaptchaTest extends TestCase
 {
     /**
      * @var \Magento\Captcha\Block\Captcha\DefaultCaptcha
      */
     protected $_block;
-
-    protected function setUp(): void
-    {
-        $this->_block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
-        )->createBlock(
-            \Magento\Captcha\Block\Adminhtml\Captcha\DefaultCaptcha::class
-        );
-    }
 
     /**
      * @magentoDbIsolation enabled
@@ -29,5 +25,14 @@ class DefaultCaptchaTest extends \PHPUnit\Framework\TestCase
     public function testGetRefreshUrl()
     {
         $this->assertStringContainsString('backend/admin/refresh/refresh', $this->_block->getRefreshUrl());
+    }
+
+    protected function setUp(): void
+    {
+        $this->_block = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
+        )->createBlock(
+            DefaultCaptcha::class
+        );
     }
 }

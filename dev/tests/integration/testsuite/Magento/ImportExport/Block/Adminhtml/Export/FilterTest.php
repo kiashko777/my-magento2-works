@@ -7,23 +7,33 @@
 /**
  * Test class for \Magento\ImportExport\Block\Adminhtml\Export\Filter
  */
+
 namespace Magento\ImportExport\Block\Adminhtml\Export;
 
-class FilterTest extends \PHPUnit\Framework\TestCase
+use IntlDateFormatter;
+use Magento\Backend\App\Area\FrontNameResolver;
+use Magento\Eav\Model\Entity\Attribute;
+use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
+use Magento\Framework\View\DesignInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
+
+class FilterTest extends TestCase
 {
     /**
      * @magentoAppIsolation enabled
      */
     public function testGetDateFromToHtmlWithValue()
     {
-        \Magento\TestFramework\Helper\Bootstrap::getInstance()
-            ->loadArea(\Magento\Backend\App\Area\FrontNameResolver::AREA_CODE);
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\View\DesignInterface::class)
+        Bootstrap::getInstance()
+            ->loadArea(FrontNameResolver::AREA_CODE);
+        Bootstrap::getObjectManager()->get(DesignInterface::class)
             ->setDefaultDesignTheme();
-        $block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\ImportExport\Block\Adminhtml\Export\Filter::class);
-        $method = new \ReflectionMethod(
-            \Magento\ImportExport\Block\Adminhtml\Export\Filter::class,
+        $block = Bootstrap::getObjectManager()
+            ->create(Filter::class);
+        $method = new ReflectionMethod(
+            Filter::class,
             '_getDateFromToHtmlWithValue'
         );
         $method->setAccessible(true);
@@ -36,17 +46,17 @@ class FilterTest extends \PHPUnit\Framework\TestCase
                 'frontend_label' => 'Date',
             ],
         ];
-        $attribute = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Eav\Model\Entity\Attribute::class,
+        $attribute = Bootstrap::getObjectManager()->create(
+            Attribute::class,
             $arguments
         );
         $html = $method->invoke($block, $attribute, null);
         $this->assertNotEmpty($html);
 
-        $dateFormat = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\Stdlib\DateTime\TimezoneInterface::class
+        $dateFormat = Bootstrap::getObjectManager()->get(
+            TimezoneInterface::class
         )->getDateFormat(
-            \IntlDateFormatter::SHORT
+            IntlDateFormatter::SHORT
         );
         $pieces = array_filter(explode('<strong>', $html));
         foreach ($pieces as $piece) {

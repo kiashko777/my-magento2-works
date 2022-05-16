@@ -223,7 +223,7 @@ define([
          * @param {Object} data - ids
          */
         sendRequest: function (name, data) {
-            var params  = utils.copy(this.storagesConfiguration[name].requestConfig),
+            var params = utils.copy(this.storagesConfiguration[name].requestConfig),
                 url = params.syncUrl,
                 typeId = params.typeId;
 

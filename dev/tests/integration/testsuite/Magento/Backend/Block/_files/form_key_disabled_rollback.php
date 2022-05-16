@@ -4,6 +4,9 @@
  * See COPYING.txt for license details.
  */
 
-\Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-    \Magento\Backend\Model\UrlInterface::class
+use Magento\Backend\Model\UrlInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+
+Bootstrap::getObjectManager()->get(
+    UrlInterface::class
 )->turnOnSecretKey();

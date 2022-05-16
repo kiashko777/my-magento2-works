@@ -63,21 +63,6 @@ class RenderConfigurableOptionsTest extends TestCase
     private $json;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->configurableHelper = $this->objectManager->get(Data::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->configurableAttributeData = $this->objectManager->get(ConfigurableAttributeData::class);
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->page = $this->objectManager->create(Page::class);
-        $this->json = $this->objectManager->get(Json::class);
-        parent::setUp();
-    }
-
-    /**
      * Assert that all configurable options was rendered correctly if one of
      * child product is visible on catalog\search.
      *
@@ -141,5 +126,20 @@ class RenderConfigurableOptionsTest extends TestCase
         $productInfoOptionsWrapper->unsetChild('html_calendar');
 
         return $productInfoOptionsWrapper;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->configurableHelper = $this->objectManager->get(Data::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->configurableAttributeData = $this->objectManager->get(ConfigurableAttributeData::class);
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->page = $this->objectManager->create(Page::class);
+        $this->json = $this->objectManager->get(Json::class);
+        parent::setUp();
     }
 }

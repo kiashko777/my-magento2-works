@@ -64,7 +64,7 @@ $catalogRule->loadPost(
         'customer_group_ids' => [Group::NOT_LOGGED_IN_ID, 1],
         'discount_amount' => 50,
         'simple_action' => 'by_percent',
-        'from_date' => (new \DateTime('+1 day'))->format('m/d/Y'),
+        'from_date' => (new DateTime('+1 day'))->format('m/d/Y'),
         'to_date' => '',
         'sort_order' => 0,
         'sub_is_enable' => 0,

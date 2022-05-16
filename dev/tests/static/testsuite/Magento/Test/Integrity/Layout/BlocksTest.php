@@ -5,11 +5,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Layout;
 
+use Exception;
+use Magento\Framework\App\Utility\AggregateInvoker;
+use Magento\Framework\App\Utility\Classes;
 use Magento\Framework\App\Utility\Files;
+use PHPUnit\Framework\TestCase;
+use SimpleXMLElement;
 
-class BlocksTest extends \PHPUnit\Framework\TestCase
+class BlocksTest extends TestCase
 {
     /**
      * @var array
@@ -29,7 +35,7 @@ class BlocksTest extends \PHPUnit\Framework\TestCase
         foreach (Files::init()->getLayoutFiles([], false) as $file) {
             $xml = simplexml_load_file($file);
             $elements = $xml->xpath('/layout//*[self::container or self::block]') ?: [];
-            /** @var $node \SimpleXMLElement */
+            /** @var $node SimpleXMLElement */
             foreach ($elements as $node) {
                 $alias = (string)$node['as'];
                 if (empty($alias)) {
@@ -48,15 +54,15 @@ class BlocksTest extends \PHPUnit\Framework\TestCase
 
     public function testBlocksNotContainers()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
-            /**
-             * Check that containers are not used as blocks in templates
-             *
-             * @param string $alias
-             * @param string $file
-             * @throws \Exception|PHPUnit\Framework\ExpectationFailedException
-             */
+        /**
+         * Check that containers are not used as blocks in templates
+         *
+         * @param string $alias
+         * @param string $file
+         * @throws Exception|PHPUnit\Framework\ExpectationFailedException
+         */
             function ($alias, $file) {
                 if (isset(self::$_containerAliases[$alias])) {
                     if (!isset(self::$_blockAliases[$alias])) {
@@ -102,7 +108,7 @@ class BlocksTest extends \PHPUnit\Framework\TestCase
             | Files::INCLUDE_NON_CLASSES
         );
         foreach ($collectedFiles as $file) {
-            $aliases = \Magento\Framework\App\Utility\Classes::getAllMatches(
+            $aliases = Classes::getAllMatches(
                 file_get_contents($file),
                 '/\->getChildBlock\(\'([^\']+)\'\)/x'
             );

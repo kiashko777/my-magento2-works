@@ -3,9 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Tax\Model\ResourceModel;
 
-class CalculationTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\DataObject;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
+
+class CalculationTest extends TestCase
 {
     /**
      * Test that Tax Rate applied only once
@@ -15,16 +22,16 @@ class CalculationTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetRate()
     {
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        /** @var $objectManager ObjectManager */
+        $objectManager = Bootstrap::getObjectManager();
 
-        $taxRule = $objectManager->get(\Magento\Framework\Registry::class)
+        $taxRule = $objectManager->get(Registry::class)
             ->registry('_fixture/Magento_Tax_Model_Calculation_Rule');
         $customerTaxClasses = $taxRule->getCustomerTaxClassIds();
         $productTaxClasses = $taxRule->getProductTaxClassIds();
-        $taxRate = $objectManager->get(\Magento\Framework\Registry::class)
+        $taxRate = $objectManager->get(Registry::class)
             ->registry('_fixture/Magento_Tax_Model_Calculation_Rate');
-        $data = new \Magento\Framework\DataObject();
+        $data = new DataObject();
         $data->setData(
             [
                 'tax_country_id' => 'US',
@@ -34,7 +41,7 @@ class CalculationTest extends \PHPUnit\Framework\TestCase
                 'product_class_id' => $productTaxClasses[0],
             ]
         );
-        $taxCalculation = $objectManager->get(\Magento\Tax\Model\ResourceModel\Calculation::class);
+        $taxCalculation = $objectManager->get(Calculation::class);
         $this->assertEquals($taxRate->getRateIds(), $taxCalculation->getRate($data));
     }
 }

@@ -5,6 +5,7 @@
  */
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
@@ -15,5 +16,5 @@ $productRepository = Bootstrap::getObjectManager()
     ->create(ProductRepositoryInterface::class);
 
 $product = $productRepository->get('simple_1020');
-$product->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_DISABLED);
+$product->setStatus(Status::STATUS_DISABLED);
 $productRepository->save($product);

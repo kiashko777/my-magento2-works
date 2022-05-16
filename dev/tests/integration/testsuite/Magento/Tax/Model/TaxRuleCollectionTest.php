@@ -6,9 +6,13 @@
 
 namespace Magento\Tax\Model;
 
+use Magento\Framework\Registry;
+use Magento\Tax\Model\Calculation\Rule;
+use Magento\Tax\Model\ResourceModel\Calculation\Rule\Collection;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class TaxRuleCollectionTest extends \PHPUnit\Framework\TestCase
+class TaxRuleCollectionTest extends TestCase
 {
     /**
      * @magentoAppIsolation enabled
@@ -16,23 +20,23 @@ class TaxRuleCollectionTest extends \PHPUnit\Framework\TestCase
      */
     public function testCreateTaxRuleCollectionItem()
     {
-        /** @var \Magento\Tax\Model\ResourceModel\Calculation\Rule\Collection $collection */
+        /** @var Collection $collection */
         $collection = Bootstrap::getObjectManager()->get(
-            \Magento\Tax\Model\ResourceModel\Calculation\Rule\Collection::class
+            Collection::class
         );
         $dbTaxRulesQty = $collection->count();
 
-        /** @var \Magento\Tax\Model\Calculation\Rule $firstTaxRuleFixture */
-        $firstTaxRuleFixture = Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class)
+        /** @var Rule $firstTaxRuleFixture */
+        $firstTaxRuleFixture = Bootstrap::getObjectManager()->get(Registry::class)
             ->registry('_fixture/Magento_Tax_Model_Calculation_Rule');
         $expectedFirstTaxRuleId = $firstTaxRuleFixture->getId();
 
         if (($dbTaxRulesQty == 0) || ($collection->getFirstItem()->getId() != $expectedFirstTaxRuleId)) {
             $this->fail("Preconditions failed.");
         }
-        /** @var \Magento\Tax\Model\TaxRuleCollection $taxRulesCollection */
+        /** @var TaxRuleCollection $taxRulesCollection */
         $taxRulesCollection = Bootstrap::getObjectManager()
-            ->create(\Magento\Tax\Model\TaxRuleCollection::class);
+            ->create(TaxRuleCollection::class);
         $collectionTaxRulesQty = $taxRulesCollection->count();
         $this->assertEquals($dbTaxRulesQty, $collectionTaxRulesQty, 'Tax rules quantity is invalid.');
         $taxRule = $taxRulesCollection->getFirstItem()->getData();

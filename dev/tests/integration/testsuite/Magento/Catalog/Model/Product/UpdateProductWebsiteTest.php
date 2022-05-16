@@ -36,19 +36,6 @@ class UpdateProductWebsiteTest extends TestCase
     private $productRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productWebsiteLink = $this->objectManager->get(Link::class);
-        $this->websiteRepository = $this->objectManager->get(WebsiteRepositoryInterface::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Store/_files/website.php
      * @magentoDataFixture Magento/Catalog/_files/second_product_simple.php
      * @return void
@@ -62,6 +49,21 @@ class UpdateProductWebsiteTest extends TestCase
             [$defaultWebsiteId, $secondWebsiteId],
             $this->productWebsiteLink->getWebsiteIdsByProductId($product->getId())
         );
+    }
+
+    /**
+     * Update product websites attribute
+     *
+     * @param string $productSku
+     * @param array $websiteIds
+     * @return ProductInterface
+     */
+    private function updateProductWebsites(string $productSku, array $websiteIds): ProductInterface
+    {
+        $product = $this->productRepository->get($productSku);
+        $product->setWebsiteIds($websiteIds);
+
+        return $this->productRepository->save($product);
     }
 
     /**
@@ -90,17 +92,15 @@ class UpdateProductWebsiteTest extends TestCase
     }
 
     /**
-     * Update product websites attribute
-     *
-     * @param string $productSku
-     * @param array $websiteIds
-     * @return ProductInterface
+     * @inheritdoc
      */
-    private function updateProductWebsites(string $productSku, array $websiteIds): ProductInterface
+    protected function setUp(): void
     {
-        $product = $this->productRepository->get($productSku);
-        $product->setWebsiteIds($websiteIds);
+        parent::setUp();
 
-        return $this->productRepository->save($product);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productWebsiteLink = $this->objectManager->get(Link::class);
+        $this->websiteRepository = $this->objectManager->get(WebsiteRepositoryInterface::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
     }
 }

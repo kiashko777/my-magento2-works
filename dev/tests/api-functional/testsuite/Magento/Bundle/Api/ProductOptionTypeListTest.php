@@ -4,9 +4,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Bundle\Api;
 
-class ProductOptionTypeListTest extends \Magento\TestFramework\TestCase\WebapiAbstract
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\TestFramework\TestCase\WebapiAbstract;
+
+class ProductOptionTypeListTest extends WebapiAbstract
 {
     const SERVICE_READ_NAME = 'bundleProductOptionTypeListV1';
     const SERVICE_VERSION = 'V1';
@@ -33,7 +37,7 @@ class ProductOptionTypeListTest extends \Magento\TestFramework\TestCase\WebapiAb
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_READ_NAME,

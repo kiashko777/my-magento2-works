@@ -8,12 +8,13 @@ declare(strict_types=1);
 
 namespace Magento\CodeMessDetector\Rule\Design;
 
+use Magento\Framework\App\ActionInterface;
 use PDepend\Source\AST\ASTClass;
 use PHPMD\AbstractNode;
 use PHPMD\AbstractRule;
 use PHPMD\Node\ClassNode;
 use PHPMD\Rule\ClassAware;
-use Magento\Framework\App\ActionInterface;
+use Throwable;
 
 /**
  * Actions must process a defined list of HTTP methods.
@@ -33,7 +34,7 @@ class AllPurposeAction extends AbstractRule implements ClassAware
         }
         try {
             $impl = class_implements($node->getFullQualifiedName(), true);
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             //Couldn't load a class.
             return;
         }

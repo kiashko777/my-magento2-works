@@ -3,38 +3,26 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Customer\Controller;
 
 use Magento\Customer\Api\AccountManagementInterface;
 use Magento\Customer\Model\CustomerRegistry;
-use Magento\Framework\Data\Form\FormKey;
-use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Customer\Model\Session;
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\Data\Form\FormKey;
+use Magento\Framework\Message\MessageInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractController;
+use Psr\Log\LoggerInterface;
 
-class AddressTest extends \Magento\TestFramework\TestCase\AbstractController
+class AddressTest extends AbstractController
 {
     /** @var AccountManagementInterface */
     private $accountManagement;
 
     /** @var FormKey */
     private $formKey;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $logger = $this->createMock(\Psr\Log\LoggerInterface::class);
-        $session = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Model\Session::class,
-            [$logger]
-        );
-        $this->accountManagement = Bootstrap::getObjectManager()->create(AccountManagementInterface::class);
-        $this->formKey = Bootstrap::getObjectManager()->create(FormKey::class);
-        $customer = $this->accountManagement->authenticate('customer@example.com', 'password');
-        $session->setCustomerDataAsLoggedIn($customer);
-    }
 
     /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
@@ -76,7 +64,7 @@ class AddressTest extends \Magento\TestFramework\TestCase\AbstractController
             'POST'
         )->setPostValue(
             [
-                'form_key' => $this->_objectManager->get(\Magento\Framework\Data\Form\FormKey::class)->getFormKey(),
+                'form_key' => $this->_objectManager->get(FormKey::class)->getFormKey(),
                 'firstname' => 'James',
                 'lastname' => 'Bond',
                 'company' => 'Magento Commerce Inc.',
@@ -99,7 +87,7 @@ class AddressTest extends \Magento\TestFramework\TestCase\AbstractController
         $this->assertRedirect($this->stringContains('customer/address/index'));
         $this->assertSessionMessages(
             $this->equalTo(['You saved the address.']),
-            \Magento\Framework\Message\MessageInterface::TYPE_SUCCESS
+            MessageInterface::TYPE_SUCCESS
         );
         $address = $this->accountManagement->getDefaultBillingAddress(1);
 
@@ -131,7 +119,7 @@ class AddressTest extends \Magento\TestFramework\TestCase\AbstractController
             'POST'
         )->setPostValue(
             [
-                'form_key' => $this->_objectManager->get(\Magento\Framework\Data\Form\FormKey::class)->getFormKey(),
+                'form_key' => $this->_objectManager->get(FormKey::class)->getFormKey(),
                 'firstname' => 'James',
                 'lastname' => 'Bond',
                 'company' => 'Magento Commerce Inc.',
@@ -158,7 +146,7 @@ class AddressTest extends \Magento\TestFramework\TestCase\AbstractController
                     '&quot;city&quot; is required. Enter and try again.',
                 ]
             ),
-            \Magento\Framework\Message\MessageInterface::TYPE_ERROR
+            MessageInterface::TYPE_ERROR
         );
     }
 
@@ -176,7 +164,7 @@ class AddressTest extends \Magento\TestFramework\TestCase\AbstractController
         $this->assertRedirect($this->stringContains('customer/address/index'));
         $this->assertSessionMessages(
             $this->equalTo(['You deleted the address.']),
-            \Magento\Framework\Message\MessageInterface::TYPE_SUCCESS
+            MessageInterface::TYPE_SUCCESS
         );
     }
 
@@ -194,7 +182,24 @@ class AddressTest extends \Magento\TestFramework\TestCase\AbstractController
         $this->assertRedirect($this->stringContains('customer/address/index'));
         $this->assertSessionMessages(
             $this->equalTo(['We can\'t delete the address right now.']),
-            \Magento\Framework\Message\MessageInterface::TYPE_ERROR
+            MessageInterface::TYPE_ERROR
         );
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $logger = $this->createMock(LoggerInterface::class);
+        $session = Bootstrap::getObjectManager()->create(
+            Session::class,
+            [$logger]
+        );
+        $this->accountManagement = Bootstrap::getObjectManager()->create(AccountManagementInterface::class);
+        $this->formKey = Bootstrap::getObjectManager()->create(FormKey::class);
+        $customer = $this->accountManagement->authenticate('customer@example.com', 'password');
+        $session->setCustomerDataAsLoggedIn($customer);
     }
 }

@@ -23,15 +23,6 @@ class ProductSwatchDataTest extends GraphQlAbstract
     private $swatchMediaHelper;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->swatchMediaHelper = $objectManager->get(SwatchesMedia::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Swatches/_files/configurable_product_text_swatch_attribute.php
      */
     public function testTextSwatchDataValues()
@@ -150,5 +141,14 @@ QUERY;
             $configurableProductOptionsSelection['values'][1]['swatch']['thumbnail'],
             $this->swatchMediaHelper->getSwatchAttributeImage(Swatch::SWATCH_THUMBNAIL_NAME, $imageName)
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->swatchMediaHelper = $objectManager->get(SwatchesMedia::class);
     }
 }

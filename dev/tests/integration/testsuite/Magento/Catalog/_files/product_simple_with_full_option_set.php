@@ -4,30 +4,42 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Catalog\Api\CategoryLinkManagementInterface;
+use Magento\Catalog\Api\Data\ProductCustomOptionInterface;
+use Magento\Catalog\Api\Data\ProductCustomOptionInterfaceFactory;
 use Magento\Catalog\Api\Data\ProductTierPriceExtensionFactory;
+use Magento\Catalog\Api\Data\ProductTierPriceInterfaceFactory;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Customer\Model\Group;
+use Magento\Store\Api\WebsiteRepositoryInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 
-\Magento\TestFramework\Helper\Bootstrap::getInstance()->reinitialize();
+Bootstrap::getInstance()->reinitialize();
 
-/** @var \Magento\TestFramework\ObjectManager $objectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+/** @var ObjectManager $objectManager */
+$objectManager = Bootstrap::getObjectManager();
 
-/** @var \Magento\Catalog\Api\CategoryLinkManagementInterface $categoryLinkManagement */
-$categoryLinkManagement = $objectManager->get(\Magento\Catalog\Api\CategoryLinkManagementInterface::class);
+/** @var CategoryLinkManagementInterface $categoryLinkManagement */
+$categoryLinkManagement = $objectManager->get(CategoryLinkManagementInterface::class);
 
 $tierPrices = [];
-/** @var \Magento\Catalog\Api\Data\ProductTierPriceInterfaceFactory $tierPriceFactory */
-$tierPriceFactory = $objectManager->get(\Magento\Catalog\Api\Data\ProductTierPriceInterfaceFactory::class);
+/** @var ProductTierPriceInterfaceFactory $tierPriceFactory */
+$tierPriceFactory = $objectManager->get(ProductTierPriceInterfaceFactory::class);
 /** @var  $tpExtensionAttributes */
 $tpExtensionAttributesFactory = $objectManager->get(ProductTierPriceExtensionFactory::class);
 
-$adminWebsite = $objectManager->get(\Magento\Store\Api\WebsiteRepositoryInterface::class)->get('admin');
+$adminWebsite = $objectManager->get(WebsiteRepositoryInterface::class)->get('admin');
 $tierPriceExtensionAttributes1 = $tpExtensionAttributesFactory->create()
     ->setWebsiteId($adminWebsite->getId());
 
 $tierPrices[] = $tierPriceFactory->create(
     [
         'data' => [
-            'customer_group_id' => \Magento\Customer\Model\Group::CUST_GROUP_ALL,
+            'customer_group_id' => Group::CUST_GROUP_ALL,
             'qty' => 2,
             'value' => 8
         ]
@@ -37,7 +49,7 @@ $tierPrices[] = $tierPriceFactory->create(
 $tierPrices[] = $tierPriceFactory->create(
     [
         'data' => [
-            'customer_group_id' => \Magento\Customer\Model\Group::CUST_GROUP_ALL,
+            'customer_group_id' => Group::CUST_GROUP_ALL,
             'qty' => 5,
             'value' => 5
         ]
@@ -47,7 +59,7 @@ $tierPrices[] = $tierPriceFactory->create(
 $tierPrices[] = $tierPriceFactory->create(
     [
         'data' => [
-            'customer_group_id' => \Magento\Customer\Model\Group::NOT_LOGGED_IN_ID,
+            'customer_group_id' => Group::NOT_LOGGED_IN_ID,
             'qty' => 3,
             'value' => 5
         ]
@@ -61,14 +73,14 @@ $tierPriceExtensionAttributes2 = $tpExtensionAttributesFactory->create()
 $tierPrices[] = $tierPriceFactory->create(
     [
         'data' => [
-            'customer_group_id' => \Magento\Customer\Model\Group::NOT_LOGGED_IN_ID,
+            'customer_group_id' => Group::NOT_LOGGED_IN_ID,
             'qty' => 10
         ]
     ]
 )->setExtensionAttributes($tierPriceExtensionAttributes2);
 
-/** @var $product \Magento\Catalog\Model\Product */
-$product = $objectManager->create(\Magento\Catalog\Model\Product::class);
+/** @var $product Product */
+$product = $objectManager->create(Product::class);
 $product->isObjectNew(true);
 $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setId(1)
@@ -85,14 +97,14 @@ $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setMetaTitle('meta title')
     ->setMetaKeyword('meta keyword')
     ->setMetaDescription('meta description')
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setStockData(
         [
-            'use_config_manage_stock'   => 1,
-            'qty'                       => 100,
-            'is_qty_decimal'            => 0,
-            'is_in_stock'               => 1,
+            'use_config_manage_stock' => 1,
+            'qty' => 100,
+            'is_qty_decimal' => 0,
+            'is_in_stock' => 1,
         ]
     )->setCanSaveCustomOptions(true)
     ->setHasOptions(true);
@@ -100,68 +112,68 @@ $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
 $oldOptions = [
     [
         'previous_group' => 'text',
-        'title'     => 'Test Field',
-        'type'      => 'field',
+        'title' => 'Test Field',
+        'type' => 'field',
         'is_require' => 1,
         'sort_order' => 0,
-        'price'     => 1,
+        'price' => 1,
         'price_type' => 'fixed',
-        'sku'       => '1-text',
+        'sku' => '1-text',
         'max_characters' => 100,
     ],
     [
         'previous_group' => 'date',
-        'title'     => 'Test Date and Time',
-        'type'      => 'date_time',
+        'title' => 'Test Date and Time',
+        'type' => 'date_time',
         'is_require' => 1,
         'sort_order' => 0,
-        'price'     => 2,
+        'price' => 2,
         'price_type' => 'fixed',
-        'sku'       => '2-date',
+        'sku' => '2-date',
     ],
     [
         'previous_group' => 'select',
-        'title'     => 'Test Select',
-        'type'      => 'drop_down',
+        'title' => 'Test Select',
+        'type' => 'drop_down',
         'is_require' => 1,
         'sort_order' => 0,
-        'values'    => [
+        'values' => [
             [
                 'option_type_id' => null,
-                'title'         => 'Option 1',
-                'price'         => 3,
-                'price_type'    => 'fixed',
-                'sku'           => '3-1-select',
+                'title' => 'Option 1',
+                'price' => 3,
+                'price_type' => 'fixed',
+                'sku' => '3-1-select',
             ],
             [
                 'option_type_id' => null,
-                'title'         => 'Option 2',
-                'price'         => 3,
-                'price_type'    => 'fixed',
-                'sku'           => '3-2-select',
+                'title' => 'Option 2',
+                'price' => 3,
+                'price_type' => 'fixed',
+                'sku' => '3-2-select',
             ],
         ]
     ],
     [
         'previous_group' => 'select',
-        'title'     => 'Test Radio',
-        'type'      => 'radio',
+        'title' => 'Test Radio',
+        'type' => 'radio',
         'is_require' => 1,
         'sort_order' => 0,
-        'values'    => [
+        'values' => [
             [
                 'option_type_id' => null,
-                'title'         => 'Option 1',
-                'price'         => 3,
-                'price_type'    => 'fixed',
-                'sku'           => '4-1-radio',
+                'title' => 'Option 1',
+                'price' => 3,
+                'price_type' => 'fixed',
+                'sku' => '4-1-radio',
             ],
             [
                 'option_type_id' => null,
-                'title'         => 'Option 2',
-                'price'         => 3,
-                'price_type'    => 'fixed',
-                'sku'           => '4-2-radio',
+                'title' => 'Option 2',
+                'price' => 3,
+                'price_type' => 'fixed',
+                'sku' => '4-2-radio',
             ],
         ]
     ],
@@ -236,11 +248,11 @@ $oldOptions = [
 
 $options = [];
 
-/** @var \Magento\Catalog\Api\Data\ProductCustomOptionInterfaceFactory $customOptionFactory */
-$customOptionFactory = $objectManager->create(\Magento\Catalog\Api\Data\ProductCustomOptionInterfaceFactory::class);
+/** @var ProductCustomOptionInterfaceFactory $customOptionFactory */
+$customOptionFactory = $objectManager->create(ProductCustomOptionInterfaceFactory::class);
 
 foreach ($oldOptions as $option) {
-    /** @var \Magento\Catalog\Api\Data\ProductCustomOptionInterface $option */
+    /** @var ProductCustomOptionInterface $option */
     $option = $customOptionFactory->create(['data' => $option]);
     $option->setProductSku($product->getSku());
 
@@ -249,8 +261,8 @@ foreach ($oldOptions as $option) {
 
 $product->setOptions($options);
 
-/** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-$productRepository = $objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+/** @var ProductRepositoryInterface $productRepository */
+$productRepository = $objectManager->create(ProductRepositoryInterface::class);
 $productRepository->save($product);
 
 $categoryLinkManagement->assignProductToCategories(

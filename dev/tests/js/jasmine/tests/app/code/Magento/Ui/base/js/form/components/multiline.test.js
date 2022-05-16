@@ -16,10 +16,12 @@ define([
             prepareDataProvider = function (value) { // jscs:ignore jsDoc
                 registry.set(providerName, {
                     /** Stub */
-                    on: function () {},
+                    on: function () {
+                    },
 
                     /** Stub */
-                    set: function () {},
+                    set: function () {
+                    },
 
                     /** Stub */
                     get: function () {

@@ -9,7 +9,9 @@ declare(strict_types=1);
 namespace Magento\TestModuleExtensionAttributes\Model;
 
 use Magento\Framework\Model\AbstractExtensibleModel;
+use Magento\TestModuleExtensionAttributes\Api\Data\FakeAddressExtensionInterface;
 use Magento\TestModuleExtensionAttributes\Api\Data\FakeAddressInterface;
+use Magento\TestModuleExtensionAttributes\Api\Data\FakeRegionInterface;
 
 class FakeAddress extends AbstractExtensibleModel implements FakeAddressInterface
 {
@@ -36,7 +38,7 @@ class FakeAddress extends AbstractExtensibleModel implements FakeAddressInterfac
     /**
      * Get region
      *
-     * @return \Magento\TestModuleExtensionAttributes\Api\Data\FakeRegionInterface|null
+     * @return FakeRegionInterface|null
      */
     public function getRegion()
     {
@@ -46,7 +48,7 @@ class FakeAddress extends AbstractExtensibleModel implements FakeAddressInterfac
     /**
      * Get region
      *
-     * @return \Magento\TestModuleExtensionAttributes\Api\Data\FakeRegionInterface[]|null
+     * @return FakeRegionInterface[]|null
      */
     public function getRegions()
     {
@@ -206,7 +208,7 @@ class FakeAddress extends AbstractExtensibleModel implements FakeAddressInterfac
     /**
      * {@inheritdoc}
      *
-     * @return \Magento\TestModuleExtensionAttributes\Api\Data\FakeAddressExtensionInterface|null
+     * @return FakeAddressExtensionInterface|null
      */
     public function getExtensionAttributes()
     {
@@ -216,12 +218,13 @@ class FakeAddress extends AbstractExtensibleModel implements FakeAddressInterfac
     /**
      * {@inheritdoc}
      *
-     * @param \Magento\TestModuleExtensionAttributes\Api\Data\FakeAddressExtensionInterface $extensionAttributes
+     * @param FakeAddressExtensionInterface $extensionAttributes
      * @return $this
      */
     public function setExtensionAttributes(
-        \Magento\TestModuleExtensionAttributes\Api\Data\FakeAddressExtensionInterface $extensionAttributes
-    ) {
+        FakeAddressExtensionInterface $extensionAttributes
+    )
+    {
         return $this->_setExtensionAttributes($extensionAttributes);
     }
 }

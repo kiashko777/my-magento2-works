@@ -4,11 +4,14 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Model\Customer;
 use Magento\Customer\Model\CustomerRegistry;
+use Magento\TestFramework\Helper\Bootstrap;
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-$repository = $objectManager->create(\Magento\Customer\Api\CustomerRepositoryInterface::class);
-$customer = $objectManager->create(\Magento\Customer\Model\Customer::class);
+$objectManager = Bootstrap::getObjectManager();
+$repository = $objectManager->create(CustomerRepositoryInterface::class);
+$customer = $objectManager->create(Customer::class);
 $customerRegistry = $objectManager->get(CustomerRegistry::class);
 $customer->setWebsiteId(1)
     ->setId(1)

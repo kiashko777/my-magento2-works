@@ -6,14 +6,17 @@
 
 namespace Magento\Webapi;
 
-use Magento\TestFramework\Helper\Bootstrap;
+use Exception;
 use Magento\Framework\App\ProductMetadataInterface;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
  * Test REST schema generation mechanisms.
  */
-class JsonGenerationFromDataObjectTest extends \Magento\TestFramework\TestCase\WebapiAbstract
+class JsonGenerationFromDataObjectTest extends WebapiAbstract
 {
     /** @var string */
     protected $baseUrl = TESTS_BASE_URL;
@@ -29,18 +32,6 @@ class JsonGenerationFromDataObjectTest extends \Magento\TestFramework\TestCase\W
      */
     protected $productMetadata;
 
-    protected function setUp(): void
-    {
-        $this->_markTestAsRestOnly("JSON generation tests are intended to be executed for REST adapter only.");
-
-        $this->storeCode = Bootstrap::getObjectManager()->get(StoreManagerInterface::class)
-            ->getStore()->getCode();
-
-        $this->productMetadata =  Bootstrap::getObjectManager()->get(ProductMetadataInterface::class);
-
-        parent::setUp();
-    }
-
     public function testMultiServiceRetrieval()
     {
         $this->isSingleService = false;
@@ -50,70 +41,17 @@ class JsonGenerationFromDataObjectTest extends \Magento\TestFramework\TestCase\W
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => $resourcePath,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
         ];
 
-        $schemaContent =  $this->_webApiCall($serviceInfo);
+        $schemaContent = $this->_webApiCall($serviceInfo);
         $this->checkActualData($this->getExpectedMultiServiceData(), $schemaContent);
     }
 
-    public function testSingleServiceRetrieval()
+    public function checkActualData($expected, $actual)
     {
-        $this->isSingleService = false;
-
-        $resourcePath = '/schema?services=testModule5AllSoapAndRestV2';
-
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => $resourcePath,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
-            ],
-        ];
-
-        $schemaContent =  $this->_webApiCall($serviceInfo);
-
-        $this->checkActualData($this->getExpectedSingleServiceData(), $schemaContent);
-    }
-
-    /**
-     */
-    public function testInvalidRestUrlNoServices()
-    {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Specified request cannot be processed.');
-
-        $resourcePath = '';
-
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => $resourcePath,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
-            ],
-        ];
-
-        $this->_webApiCall($serviceInfo);
-    }
-
-    /**
-     */
-    public function testInvalidRestUrlInvalidServiceName()
-    {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Incorrect format of request URI or Requested services are missing.');
-
-        $this->isSingleService = false;
-
-        $resourcePath = '/schema?services=invalidServiceName';
-
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => $resourcePath,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
-            ],
-        ];
-
-        $this->_webApiCall($serviceInfo);
+        $this->assertRecursiveArray($expected, $actual, true);
     }
 
     private function assertRecursiveArray($expected, $actual, $checkVal)
@@ -131,34 +69,6 @@ class JsonGenerationFromDataObjectTest extends \Magento\TestFramework\TestCase\W
         }
     }
 
-    public function checkActualData($expected, $actual)
-    {
-        $this->assertRecursiveArray($expected, $actual, true);
-    }
-
-    public function getExpectedCommonData()
-    {
-        $versionParts = explode('.', $this->productMetadata->getVersion());
-        if (!isset($versionParts[0]) || !isset($versionParts[1])) {
-            return []; // Major and minor version are not set - return empty response
-        }
-        $majorMinorVersion = $versionParts[0] . '.' . $versionParts[1];
-        $url = str_replace('://', '', strstr($this->baseUrl, '://'));
-        $host = strpos($url, '/') ? strstr($url, '/', true) : $url;
-        $basePath = strstr(rtrim($url, '/'), '/');
-        $basePath = $basePath ? trim($basePath, '/') . '/' : '';
-        $basePath = '/' . $basePath . 'rest/' . $this->storeCode;
-        return [
-            'swagger' => '2.0',
-            'info' => [
-                'version' => $majorMinorVersion,
-                'title' => $this->productMetadata->getName() . ' ' .$this->productMetadata->getEdition(),
-            ],
-            'host' => $host,
-            'basePath' => $basePath,
-        ];
-    }
-
     /**
      * @return array
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
@@ -168,16 +78,16 @@ class JsonGenerationFromDataObjectTest extends \Magento\TestFramework\TestCase\W
         $expected = [
             'tags' => [
                 [
-                  'name' => 'testModule5AllSoapAndRestV1',
-                  'description' => 'Both SOAP and REST Version ONE',
+                    'name' => 'testModule5AllSoapAndRestV1',
+                    'description' => 'Both SOAP and REST Version ONE',
                 ],
                 [
-                  'name' => 'testModule5AllSoapAndRestV2',
-                  'description' => 'Both SOAP and REST Version TWO',
+                    'name' => 'testModule5AllSoapAndRestV2',
+                    'description' => 'Both SOAP and REST Version TWO',
                 ],
             ],
             'paths' => [
-                '/V1/TestModule5/{parentId}/nestedResource/{entityId}' =>    [
+                '/V1/TestModule5/{parentId}/nestedResource/{entityId}' => [
                     'put' => [
                         'tags' => [
                             'testModule5AllSoapAndRestV1',
@@ -261,27 +171,27 @@ class JsonGenerationFromDataObjectTest extends \Magento\TestFramework\TestCase\W
                     'properties' => [
                         'entity_id' => [
                             'type' => 'integer',
-                                'description' => 'Item ID',
+                            'description' => 'Item ID',
+                        ],
+                        'name' => [
+                            'type' => 'string',
+                            'description' => 'Item name',
+                        ],
+                        'enabled' => [
+                            'type' => 'boolean',
+                            'description' => 'If entity is enabled',
+                        ],
+                        'orders' => [
+                            'type' => 'boolean',
+                            'description' => 'If current entity has a property defined',
+                        ],
+                        'custom_attributes' => [
+                            'type' => 'array',
+                            'description' => 'Custom attributes values.',
+                            'items' => [
+                                '$ref' => '#/definitions/framework-attribute-interface',
                             ],
-                            'name' => [
-                                'type' => 'string',
-                                'description' => 'Item name',
-                            ],
-                            'enabled' => [
-                                'type' => 'boolean',
-                                'description' => 'If entity is enabled',
-                            ],
-                            'orders' => [
-                                'type' => 'boolean',
-                                'description' => 'If current entity has a property defined',
-                            ],
-                            'custom_attributes' => [
-                                'type' => 'array',
-                                'description' => 'Custom attributes values.',
-                                'items' => [
-                                    '$ref' => '#/definitions/framework-attribute-interface',
-                                ],
-                            ],
+                        ],
                     ],
                     'required' => [
                         'entity_id',
@@ -294,6 +204,47 @@ class JsonGenerationFromDataObjectTest extends \Magento\TestFramework\TestCase\W
         return array_merge_recursive($expected, $this->getExpectedCommonData());
     }
 
+    public function getExpectedCommonData()
+    {
+        $versionParts = explode('.', $this->productMetadata->getVersion());
+        if (!isset($versionParts[0]) || !isset($versionParts[1])) {
+            return []; // Major and minor version are not set - return empty response
+        }
+        $majorMinorVersion = $versionParts[0] . '.' . $versionParts[1];
+        $url = str_replace('://', '', strstr($this->baseUrl, '://'));
+        $host = strpos($url, '/') ? strstr($url, '/', true) : $url;
+        $basePath = strstr(rtrim($url, '/'), '/');
+        $basePath = $basePath ? trim($basePath, '/') . '/' : '';
+        $basePath = '/' . $basePath . 'rest/' . $this->storeCode;
+        return [
+            'swagger' => '2.0',
+            'info' => [
+                'version' => $majorMinorVersion,
+                'title' => $this->productMetadata->getName() . ' ' . $this->productMetadata->getEdition(),
+            ],
+            'host' => $host,
+            'basePath' => $basePath,
+        ];
+    }
+
+    public function testSingleServiceRetrieval()
+    {
+        $this->isSingleService = false;
+
+        $resourcePath = '/schema?services=testModule5AllSoapAndRestV2';
+
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => $resourcePath,
+                'httpMethod' => Request::HTTP_METHOD_GET,
+            ],
+        ];
+
+        $schemaContent = $this->_webApiCall($serviceInfo);
+
+        $this->checkActualData($this->getExpectedSingleServiceData(), $schemaContent);
+    }
+
     /**
      * @return array
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
@@ -303,8 +254,8 @@ class JsonGenerationFromDataObjectTest extends \Magento\TestFramework\TestCase\W
         $expected = [
             'tags' => [
                 [
-                  'name' => 'testModule5AllSoapAndRestV2',
-                  'description' => 'Both SOAP and REST Version TWO',
+                    'name' => 'testModule5AllSoapAndRestV2',
+                    'description' => 'Both SOAP and REST Version TWO',
                 ],
             ],
             'paths' => [
@@ -362,5 +313,57 @@ class JsonGenerationFromDataObjectTest extends \Magento\TestFramework\TestCase\W
             ],
         ];
         return array_merge($expected, $this->getExpectedCommonData());
+    }
+
+    /**
+     */
+    public function testInvalidRestUrlNoServices()
+    {
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Specified request cannot be processed.');
+
+        $resourcePath = '';
+
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => $resourcePath,
+                'httpMethod' => Request::HTTP_METHOD_GET,
+            ],
+        ];
+
+        $this->_webApiCall($serviceInfo);
+    }
+
+    /**
+     */
+    public function testInvalidRestUrlInvalidServiceName()
+    {
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Incorrect format of request URI or Requested services are missing.');
+
+        $this->isSingleService = false;
+
+        $resourcePath = '/schema?services=invalidServiceName';
+
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => $resourcePath,
+                'httpMethod' => Request::HTTP_METHOD_GET,
+            ],
+        ];
+
+        $this->_webApiCall($serviceInfo);
+    }
+
+    protected function setUp(): void
+    {
+        $this->_markTestAsRestOnly("JSON generation tests are intended to be executed for REST adapter only.");
+
+        $this->storeCode = Bootstrap::getObjectManager()->get(StoreManagerInterface::class)
+            ->getStore()->getCode();
+
+        $this->productMetadata = Bootstrap::getObjectManager()->get(ProductMetadataInterface::class);
+
+        parent::setUp();
     }
 }

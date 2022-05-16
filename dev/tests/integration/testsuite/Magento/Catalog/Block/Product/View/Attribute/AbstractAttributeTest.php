@@ -81,7 +81,8 @@ abstract class AbstractAttributeTest extends TestCase
         string $sku,
         string $attributeValue,
         string $expectedAttributeValue
-    ): void {
+    ): void
+    {
         $this->updateAttribute(['is_visible_on_front' => true]);
         $product = $this->updateProduct($sku, $attributeValue);
         $this->registerProduct($product);
@@ -90,93 +91,17 @@ abstract class AbstractAttributeTest extends TestCase
     }
 
     /**
-     * Process custom attribute with default value view when new value set
+     * Update attribute
      *
-     * @param string $sku
-     * @param string $attributeValue
-     * @param string $expectedAttributeValue
+     * @param array $data
      * @return void
      */
-    protected function processNonDefaultAttributeValueView(
-        string $sku,
-        string $attributeValue,
-        string $expectedAttributeValue
-    ): void {
-        $this->updateAttribute(['is_visible_on_front' => true, 'default_value' => $this->getDefaultAttributeValue()]);
-        $product = $this->updateProduct($sku, $attributeValue);
-        $this->registerProduct($product);
-        $data = $this->block->getAdditionalData();
-        $this->assertEquals($this->prepareExpectedData($expectedAttributeValue), $data);
-    }
-
-    /**
-     * Procces custom attribute view with default value
-     *
-     * @param string $sku
-     * @param string $expectedAttributeValue
-     * @return void
-     */
-    protected function processDefaultValueAttributeView(string $sku, string $expectedAttributeValue): void
+    private function updateAttribute(array $data): void
     {
-        $this->updateAttribute(['is_visible_on_front' => true, 'default_value' => $this->getDefaultAttributeValue()]);
-        $product = $this->productRepository->save($this->productRepository->get($sku));
-        $this->registerProduct($product);
-        $data = $this->block->getAdditionalData();
-        $this->assertEquals($this->prepareExpectedData($expectedAttributeValue), $data);
-    }
+        $attribute = $this->getAttribute();
+        $attribute->addData($data);
 
-    /**
-     * Procces attribute value view with html tags
-     *
-     * @param string $sku
-     * @param bool $allowHtmlTags
-     * @param string $attributeValue
-     * @param string $expectedAttributeValue
-     * @return void
-     */
-    protected function processAttributeHtmlOutput(
-        string $sku,
-        bool $allowHtmlTags,
-        string $attributeValue,
-        string $expectedAttributeValue
-    ): void {
-        $this->updateAttribute(['is_visible_on_front' => true, 'is_html_allowed_on_front' => $allowHtmlTags]);
-        $product = $this->updateProduct($sku, $attributeValue);
-        $this->registerProduct($product);
-        $data = $this->block->getAdditionalData();
-        $dataItem = $data[$this->getAttributeCode()] ?? null;
-        $this->assertNotNull($dataItem);
-        $output = $this->outputHelper->productAttribute($product, $dataItem['value'], $dataItem['code']);
-        $this->assertEquals($expectedAttributeValue, $output);
-    }
-
-    /**
-     * Process attribute view per store views
-     *
-     * @param string $sku
-     * @param int $attributeScopeValue
-     * @param string $attributeValue
-     * @param string $expectedAttributeValue
-     * @param string $storeCode
-     * @return void
-     */
-    protected function processMultiStoreView(
-        string $sku,
-        int $attributeScopeValue,
-        string $attributeValue,
-        string $storeCode
-    ): void {
-        $currentStore = $this->storeManager->getStore();
-        $this->updateAttribute(['is_global' => $attributeScopeValue, 'is_visible_on_front' => true]);
-        $this->storeManager->setCurrentStore($storeCode);
-
-        try {
-            $product = $this->updateProduct($sku, $attributeValue);
-            $this->registerProduct($product);
-            $this->assertEquals($this->prepareExpectedData($attributeValue), $this->block->getAdditionalData());
-        } finally {
-            $this->storeManager->setCurrentStore($currentStore);
-        }
+        $this->attributeRepository->save($attribute);
     }
 
     /**
@@ -194,21 +119,11 @@ abstract class AbstractAttributeTest extends TestCase
     }
 
     /**
-     * Prepare expected data
+     * Get attribute code for current test
      *
-     * @param string $expectedValue
-     * @return array
+     * @return string
      */
-    private function prepareExpectedData(string $expectedValue): array
-    {
-        return [
-            $this->getAttributeCode() => [
-                'label' => $this->getAttribute()->getStoreLabel(),
-                'value' => $expectedValue,
-                'code' => $this->getAttributeCode(),
-            ],
-        ];
-    }
+    abstract protected function getAttributeCode(): string;
 
     /**
      * Update product
@@ -241,25 +156,42 @@ abstract class AbstractAttributeTest extends TestCase
     }
 
     /**
-     * Update attribute
+     * Prepare expected data
      *
-     * @param array $data
-     * @return void
+     * @param string $expectedValue
+     * @return array
      */
-    private function updateAttribute(array $data): void
+    private function prepareExpectedData(string $expectedValue): array
     {
-        $attribute = $this->getAttribute();
-        $attribute->addData($data);
-
-        $this->attributeRepository->save($attribute);
+        return [
+            $this->getAttributeCode() => [
+                'label' => $this->getAttribute()->getStoreLabel(),
+                'value' => $expectedValue,
+                'code' => $this->getAttributeCode(),
+            ],
+        ];
     }
 
     /**
-     * Get attribute code for current test
+     * Process custom attribute with default value view when new value set
      *
-     * @return string
+     * @param string $sku
+     * @param string $attributeValue
+     * @param string $expectedAttributeValue
+     * @return void
      */
-    abstract protected function getAttributeCode(): string;
+    protected function processNonDefaultAttributeValueView(
+        string $sku,
+        string $attributeValue,
+        string $expectedAttributeValue
+    ): void
+    {
+        $this->updateAttribute(['is_visible_on_front' => true, 'default_value' => $this->getDefaultAttributeValue()]);
+        $product = $this->updateProduct($sku, $attributeValue);
+        $this->registerProduct($product);
+        $data = $this->block->getAdditionalData();
+        $this->assertEquals($this->prepareExpectedData($expectedAttributeValue), $data);
+    }
 
     /**
      * Get default value for current attribute
@@ -267,4 +199,76 @@ abstract class AbstractAttributeTest extends TestCase
      * @return string
      */
     abstract protected function getDefaultAttributeValue(): string;
+
+    /**
+     * Procces custom attribute view with default value
+     *
+     * @param string $sku
+     * @param string $expectedAttributeValue
+     * @return void
+     */
+    protected function processDefaultValueAttributeView(string $sku, string $expectedAttributeValue): void
+    {
+        $this->updateAttribute(['is_visible_on_front' => true, 'default_value' => $this->getDefaultAttributeValue()]);
+        $product = $this->productRepository->save($this->productRepository->get($sku));
+        $this->registerProduct($product);
+        $data = $this->block->getAdditionalData();
+        $this->assertEquals($this->prepareExpectedData($expectedAttributeValue), $data);
+    }
+
+    /**
+     * Procces attribute value view with html tags
+     *
+     * @param string $sku
+     * @param bool $allowHtmlTags
+     * @param string $attributeValue
+     * @param string $expectedAttributeValue
+     * @return void
+     */
+    protected function processAttributeHtmlOutput(
+        string $sku,
+        bool   $allowHtmlTags,
+        string $attributeValue,
+        string $expectedAttributeValue
+    ): void
+    {
+        $this->updateAttribute(['is_visible_on_front' => true, 'is_html_allowed_on_front' => $allowHtmlTags]);
+        $product = $this->updateProduct($sku, $attributeValue);
+        $this->registerProduct($product);
+        $data = $this->block->getAdditionalData();
+        $dataItem = $data[$this->getAttributeCode()] ?? null;
+        $this->assertNotNull($dataItem);
+        $output = $this->outputHelper->productAttribute($product, $dataItem['value'], $dataItem['code']);
+        $this->assertEquals($expectedAttributeValue, $output);
+    }
+
+    /**
+     * Process attribute view per store views
+     *
+     * @param string $sku
+     * @param int $attributeScopeValue
+     * @param string $attributeValue
+     * @param string $expectedAttributeValue
+     * @param string $storeCode
+     * @return void
+     */
+    protected function processMultiStoreView(
+        string $sku,
+        int    $attributeScopeValue,
+        string $attributeValue,
+        string $storeCode
+    ): void
+    {
+        $currentStore = $this->storeManager->getStore();
+        $this->updateAttribute(['is_global' => $attributeScopeValue, 'is_visible_on_front' => true]);
+        $this->storeManager->setCurrentStore($storeCode);
+
+        try {
+            $product = $this->updateProduct($sku, $attributeValue);
+            $this->registerProduct($product);
+            $this->assertEquals($this->prepareExpectedData($attributeValue), $this->block->getAdditionalData());
+        } finally {
+            $this->storeManager->setCurrentStore($currentStore);
+        }
+    }
 }

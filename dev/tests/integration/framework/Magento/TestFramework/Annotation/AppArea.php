@@ -3,14 +3,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Annotation;
+
+use Magento\Framework\App\Area;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\TestFramework\Application;
+use PHPUnit\Framework\TestCase;
 
 class AppArea
 {
     const ANNOTATION_NAME = 'magentoAppArea';
 
     /**
-     * @var \Magento\TestFramework\Application
+     * @var Application
      */
     private $_application;
 
@@ -20,21 +26,38 @@ class AppArea
      * @var array
      */
     private $_allowedAreas = [
-        \Magento\Framework\App\Area::AREA_GLOBAL,
-        \Magento\Framework\App\Area::AREA_ADMINHTML,
-        \Magento\Framework\App\Area::AREA_FRONTEND,
-        \Magento\Framework\App\Area::AREA_WEBAPI_REST,
-        \Magento\Framework\App\Area::AREA_WEBAPI_SOAP,
-        \Magento\Framework\App\Area::AREA_CRONTAB,
-        \Magento\Framework\App\Area::AREA_GRAPHQL
+        Area::AREA_GLOBAL,
+        Area::AREA_ADMINHTML,
+        Area::AREA_FRONTEND,
+        Area::AREA_WEBAPI_REST,
+        Area::AREA_WEBAPI_SOAP,
+        Area::AREA_CRONTAB,
+        Area::AREA_GRAPHQL
     ];
 
     /**
-     * @param \Magento\TestFramework\Application $application
+     * @param Application $application
      */
-    public function __construct(\Magento\TestFramework\Application $application)
+    public function __construct(Application $application)
     {
         $this->_application = $application;
+    }
+
+    /**
+     * Start test case event observer
+     *
+     * @param TestCase $test
+     */
+    public function startTest(TestCase $test)
+    {
+        $area = $this->_getTestAppArea($test->getAnnotations());
+        if ($this->_application->getArea() !== $area) {
+            $this->_application->reinitialize();
+
+            if ($this->_application->getArea() !== $area) {
+                $this->_application->loadArea($area);
+            }
+        }
     }
 
     /**
@@ -42,7 +65,7 @@ class AppArea
      *
      * @param array $annotations
      * @return string
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @throws LocalizedException
      */
     protected function _getTestAppArea($annotations)
     {
@@ -54,10 +77,10 @@ class AppArea
             $annotations['class'][self::ANNOTATION_NAME]
         ) ? current(
             $annotations['class'][self::ANNOTATION_NAME]
-        ) : \Magento\TestFramework\Application::DEFAULT_APP_AREA);
+        ) : Application::DEFAULT_APP_AREA);
 
         if (false == in_array($area, $this->_allowedAreas)) {
-            throw new \Magento\Framework\Exception\LocalizedException(
+            throw new LocalizedException(
                 __(
                     'Invalid "@magentoAppArea" annotation, can be "%1" only.',
                     implode('", "', $this->_allowedAreas)
@@ -66,22 +89,5 @@ class AppArea
         }
 
         return $area;
-    }
-
-    /**
-     * Start test case event observer
-     *
-     * @param \PHPUnit\Framework\TestCase $test
-     */
-    public function startTest(\PHPUnit\Framework\TestCase $test)
-    {
-        $area = $this->_getTestAppArea($test->getAnnotations());
-        if ($this->_application->getArea() !== $area) {
-            $this->_application->reinitialize();
-
-            if ($this->_application->getArea() !== $area) {
-                $this->_application->loadArea($area);
-            }
-        }
     }
 }

@@ -3,38 +3,32 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Customer\Block\Widget;
 
+use Magento\Customer\Api\Data\CustomerInterfaceFactory;
+use Magento\Framework\App\State;
+use Magento\Framework\View\LayoutInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test \Magento\Customer\Block\Widget\Name
  * @magentoAppArea frontend
  */
-class NameTest extends \PHPUnit\Framework\TestCase
+class NameTest extends TestCase
 {
     /** @var Name */
     protected $_block;
-
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $objectManager->get(\Magento\Framework\App\State::class)->setAreaCode('frontend');
-        $this->_block = $objectManager->get(
-            \Magento\Framework\View\LayoutInterface::class
-        )->createBlock(
-            \Magento\Customer\Block\Widget\Name::class
-        );
-    }
 
     /**
      * @magentoAppIsolation enabled
      */
     public function testToHtmlSimpleName()
     {
-        /** @var \Magento\Customer\Api\Data\CustomerInterfaceFactory $customerFactory */
+        /** @var CustomerInterfaceFactory $customerFactory */
         $customerFactory = Bootstrap::getObjectManager()->get(
-            \Magento\Customer\Api\Data\CustomerInterfaceFactory::class
+            CustomerInterfaceFactory::class
         );
         $customerDataObject = $customerFactory->create();
         $customerDataObject->setFirstname('Jane');
@@ -58,9 +52,9 @@ class NameTest extends \PHPUnit\Framework\TestCase
      */
     public function testToHtmlFancyName()
     {
-        /** @var \Magento\Customer\Api\Data\CustomerInterfaceFactory $customerFactory */
+        /** @var CustomerInterfaceFactory $customerFactory */
         $customerFactory = Bootstrap::getObjectManager()->get(
-            \Magento\Customer\Api\Data\CustomerInterfaceFactory::class
+            CustomerInterfaceFactory::class
         );
         $customerDataObject = $customerFactory->create();
         $customerDataObject->setPrefix(
@@ -88,5 +82,16 @@ class NameTest extends \PHPUnit\Framework\TestCase
         $this->assertStringContainsString('value="Dr."', $html);
         $this->assertStringContainsString('title="Name&#x20;Suffix"', $html);
         $this->assertStringContainsString('value="Ph.D."', $html);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->get(State::class)->setAreaCode('frontend');
+        $this->_block = $objectManager->get(
+            LayoutInterface::class
+        )->createBlock(
+            Name::class
+        );
     }
 }

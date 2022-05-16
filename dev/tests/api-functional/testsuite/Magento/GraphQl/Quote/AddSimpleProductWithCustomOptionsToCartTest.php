@@ -32,17 +32,6 @@ class AddSimpleProductWithCustomOptionsToCartTest extends GraphQlAbstract
     private $getCustomOptionsValuesForQueryBySku;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->productCustomOptionsRepository = $objectManager->get(ProductCustomOptionRepositoryInterface::class);
-        $this->getCustomOptionsValuesForQueryBySku = $objectManager->get(GetCustomOptionsValuesForQueryBySku::class);
-    }
-
-    /**
      * Test adding a simple product to the shopping cart with all supported
      * customizable options assigned
      *
@@ -81,6 +70,68 @@ class AddSimpleProductWithCustomOptionsToCartTest extends GraphQlAbstract
             );
             $count++;
         }
+    }
+
+    /**
+     * @param string $maskedQuoteId
+     * @param string $sku
+     * @param float $quantity
+     * @param string $customizableOptions
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId, string $sku, float $quantity, string $customizableOptions): string
+    {
+        return <<<QUERY
+mutation {
+  addSimpleProductsToCart(
+    input: {
+      cart_id: "{$maskedQuoteId}",
+      cart_items: [
+        {
+          data: {
+            quantity: $quantity
+            sku: "$sku"
+          }
+          {$customizableOptions}
+        }
+      ]
+    }
+  ) {
+    cart {
+      items {
+        ... on SimpleCartItem {
+          customizable_options {
+            label
+              values {
+                value
+              }
+            }
+        }
+      }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
+     * Build the part of expected response.
+     *
+     * @param string $assignedValue
+     * @param string $type option type
+     * @return array
+     */
+    private function buildExpectedValuesArray(string $assignedValue, string $type): array
+    {
+        if ($type === 'date') {
+            return [['value' => date('M d, Y', strtotime($assignedValue))]];
+        }
+        $assignedOptionsArray = explode(',', trim($assignedValue, '[]'));
+        $expectedArray = [];
+        foreach ($assignedOptionsArray as $assignedOption) {
+            $expectedArray[] = ['value' => $assignedOption];
+        }
+        return $expectedArray;
     }
 
     /**
@@ -132,64 +183,13 @@ class AddSimpleProductWithCustomOptionsToCartTest extends GraphQlAbstract
     }
 
     /**
-     * @param string $maskedQuoteId
-     * @param string $sku
-     * @param float $quantity
-     * @param string $customizableOptions
-     * @return string
+     * @inheritdoc
      */
-    private function getQuery(string $maskedQuoteId, string $sku, float $quantity, string $customizableOptions): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-mutation {  
-  addSimpleProductsToCart(
-    input: {
-      cart_id: "{$maskedQuoteId}", 
-      cart_items: [
-        {
-          data: {
-            quantity: $quantity
-            sku: "$sku"
-          }
-          {$customizableOptions}
-        }
-      ]
-    }
-  ) {
-    cart {
-      items {
-        ... on SimpleCartItem {
-          customizable_options {
-            label
-              values {
-                value
-              }
-            }
-        }
-      }
-    }
-  }
-}
-QUERY;
-    }
-
-    /**
-     * Build the part of expected response.
-     *
-     * @param string $assignedValue
-     * @param string $type option type
-     * @return array
-     */
-    private function buildExpectedValuesArray(string $assignedValue, string $type) : array
-    {
-        if ($type === 'date') {
-            return [['value' => date('M d, Y', strtotime($assignedValue))]];
-        }
-        $assignedOptionsArray = explode(',', trim($assignedValue, '[]'));
-        $expectedArray = [];
-        foreach ($assignedOptionsArray as $assignedOption) {
-            $expectedArray[] = ['value' => $assignedOption];
-        }
-        return $expectedArray;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->productCustomOptionsRepository = $objectManager->get(ProductCustomOptionRepositoryInterface::class);
+        $this->getCustomOptionsValuesForQueryBySku = $objectManager->get(GetCustomOptionsValuesForQueryBySku::class);
     }
 }

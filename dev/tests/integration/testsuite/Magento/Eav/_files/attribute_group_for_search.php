@@ -4,7 +4,11 @@
  * See COPYING.txt for license details.
  */
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\Eav\Model\Entity\Attribute\Group;
+use Magento\Eav\Model\Entity\Attribute\Set;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
 
 /**
  * Create attribute set
@@ -13,8 +17,8 @@ $entityTypeId = $objectManager->create(\Magento\Eav\Model\Entity\Type::class)
     ->loadByCode('catalog_product')
     ->getId();
 
-/** @var \Magento\Eav\Model\Entity\Attribute\Set $attributeSet */
-$attributeSet = $objectManager->create(\Magento\Eav\Model\Entity\Attribute\Set::class);
+/** @var Set $attributeSet */
+$attributeSet = $objectManager->create(Set::class);
 $attributeSet->setData([
     'attribute_set_name' => 'attribute_set_1_for_search',
     'entity_type_id' => $entityTypeId,
@@ -48,8 +52,8 @@ $attributeGroupData = [
 ];
 
 foreach ($attributeGroupData as $data) {
-    /** @var \Magento\Eav\Model\Entity\Attribute\Group $attributeGroup */
-    $attributeGroup = $objectManager->create(\Magento\Eav\Model\Entity\Attribute\Group::class);
+    /** @var Group $attributeGroup */
+    $attributeGroup = $objectManager->create(Group::class);
     $attributeGroup->setData($data);
     $attributeGroup->save();
 }

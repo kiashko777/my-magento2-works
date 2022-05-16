@@ -6,17 +6,25 @@
 
 namespace Magento\Framework\ObjectManager\Config\Reader;
 
+use DOMDocument;
+use Magento\Framework\App\Arguments\FileResolver\Primary;
+use Magento\Framework\App\Arguments\ValidationState;
+use Magento\Framework\App\State;
+use Magento\Framework\ObjectManager\Config\SchemaLocator;
 use Magento\Framework\Phrase;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class DomTest @covers \Magento\Framework\ObjectManager\Config\Reader\Dom
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class DomTest extends \PHPUnit\Framework\TestCase
+class DomTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManager\Config\Reader\Dom
+     * @var Dom
      */
     protected $_model;
 
@@ -26,22 +34,22 @@ class DomTest extends \PHPUnit\Framework\TestCase
     protected $_fileList;
 
     /**
-     * @var \Magento\Framework\App\Arguments\FileResolver\Primary
+     * @var Primary
      */
     protected $_fileResolverMock;
 
     /**
-     * @var \DOMDocument
+     * @var DOMDocument
      */
     protected $_mergedConfig;
 
     /**
-     * @var \Magento\Framework\App\Arguments\ValidationState
+     * @var ValidationState
      */
     protected $_validationState;
 
     /**
-     * @var \Magento\Framework\ObjectManager\Config\SchemaLocator
+     * @var SchemaLocator
      */
     protected $_schemaLocator;
 
@@ -49,6 +57,17 @@ class DomTest extends \PHPUnit\Framework\TestCase
      * @var \Magento\Framework\ObjectManager\Config\Mapper\Dom
      */
     protected $_mapper;
+
+    public function testRead()
+    {
+        $model = new Dom(
+            $this->_fileResolverMock,
+            $this->_mapper,
+            $this->_schemaLocator,
+            $this->_validationState
+        );
+        $this->assertEquals($this->_mapper->convert($this->_mergedConfig), $model->read('scope'));
+    }
 
     protected function setUp(): void
     {
@@ -58,10 +77,10 @@ class DomTest extends \PHPUnit\Framework\TestCase
             file_get_contents($fixturePath . 'config_two.xml'),
         ];
 
-        $this->_fileResolverMock = $this->createMock(\Magento\Framework\App\Arguments\FileResolver\Primary::class);
+        $this->_fileResolverMock = $this->createMock(Primary::class);
         $this->_fileResolverMock->expects($this->once())->method('get')->willReturn($this->_fileList);
 
-        /** @var Phrase\Renderer\Composite|\PHPUnit\Framework\MockObject\MockObject $renderer */
+        /** @var Phrase\Renderer\Composite|MockObject $renderer */
         $renderer = $this->getMockBuilder(Phrase\Renderer\Composite::class)
             ->disableOriginalConstructor()
             ->getMock();
@@ -70,26 +89,15 @@ class DomTest extends \PHPUnit\Framework\TestCase
             ->method('render');
         Phrase::setRenderer($renderer);
 
-        $this->_mapper = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
+        $this->_mapper = Bootstrap::getObjectManager()->get(
             \Magento\Framework\ObjectManager\Config\Mapper\Dom::class
         );
-        $this->_validationState = new \Magento\Framework\App\Arguments\ValidationState(
-            \Magento\Framework\App\State::MODE_DEFAULT
+        $this->_validationState = new ValidationState(
+            State::MODE_DEFAULT
         );
-        $this->_schemaLocator = new \Magento\Framework\ObjectManager\Config\SchemaLocator();
+        $this->_schemaLocator = new SchemaLocator();
 
-        $this->_mergedConfig = new \DOMDocument();
+        $this->_mergedConfig = new DOMDocument();
         $this->_mergedConfig->load($fixturePath . 'config_merged.xml');
-    }
-
-    public function testRead()
-    {
-        $model = new \Magento\Framework\ObjectManager\Config\Reader\Dom(
-            $this->_fileResolverMock,
-            $this->_mapper,
-            $this->_schemaLocator,
-            $this->_validationState
-        );
-        $this->assertEquals($this->_mapper->convert($this->_mergedConfig), $model->read('scope'));
     }
 }

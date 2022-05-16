@@ -54,35 +54,6 @@ class ConfigurableProductPriceTest extends TestCase
     private $executeInStoreContext;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->page = $this->objectManager->get(PageFactory::class)->create();
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->productCustomOption = $this->objectManager->get(ProductCustomOptionInterface::class);
-        $this->json = $this->objectManager->get(SerializerInterface::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-        $this->executeInStoreContext = $this->objectManager->get(ExecuteInStoreContext::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->registry->unregister('product');
-        $this->registry->unregister('current_product');
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/ConfigurableProduct/_files/product_configurable.php
      *
      * @return void
@@ -90,6 +61,79 @@ class ConfigurableProductPriceTest extends TestCase
     public function testConfigurablePrice(): void
     {
         $this->assertPrice('configurable', 10.00);
+    }
+
+    /**
+     * Assert that html contain price label and expected final price amount.
+     *
+     * @param string $sku
+     * @param float $expectedPrice
+     * @return void
+     */
+    public function assertPrice(string $sku, float $expectedPrice): void
+    {
+        $priceBlockHtml = $this->processPriceView($sku);
+        $regexp = '/<span class="price-label">As low as<\/span>.*';
+        $regexp .= '<span.*data-price-amount="%s".*<span class="price">\$%.2f<\/span><\/span>/';
+        $this->assertMatchesRegularExpression(
+            sprintf($regexp, round($expectedPrice, 2), $expectedPrice),
+            preg_replace('/[\n\r]/', '', $priceBlockHtml)
+        );
+    }
+
+    /**
+     * Process view product final price block html.
+     *
+     * @param string $sku
+     * @return string
+     */
+    private function processPriceView(string $sku): string
+    {
+        $product = $this->getProduct($sku);
+        $this->registerProduct($product);
+        $this->preparePageLayout();
+
+        return $this->page->getLayout()->getBlock('product.price.final')->toHtml();
+    }
+
+    /**
+     * Loads product by sku.s
+     *
+     * @param string $sku
+     * @return ProductInterface
+     */
+    private function getProduct(string $sku): ProductInterface
+    {
+        return $this->productRepository->get($sku, false, $this->storeManager->getStore()->getId(), true);
+    }
+
+    /**
+     * Register the product.
+     *
+     * @param ProductInterface $product
+     * @return void
+     */
+    private function registerProduct(ProductInterface $product): void
+    {
+        $this->registry->unregister('product');
+        $this->registry->register('product', $product);
+        $this->registry->unregister('current_product');
+        $this->registry->register('current_product', $product);
+    }
+
+    /**
+     * Prepare configurable product page.
+     *
+     * @return void
+     */
+    private function preparePageLayout(): void
+    {
+        $this->page->addHandle([
+            'default',
+            'catalog_product_view',
+            'catalog_product_view_type_configurable',
+        ]);
+        $this->page->getLayout()->generateXml();
     }
 
     /**
@@ -103,6 +147,16 @@ class ConfigurableProductPriceTest extends TestCase
         $this->executeInStoreContext->execute('fixture_second_store', [$this, 'assertPrice'], 'configurable', 10.00);
         $this->resetPageLayout();
         $this->assertPrice('configurable', 150.00);
+    }
+
+    /**
+     * Reset layout page to get new block html.
+     *
+     * @return void
+     */
+    private function resetPageLayout(): void
+    {
+        $this->page = $this->objectManager->get(PageFactory::class)->create();
     }
 
     /**
@@ -158,78 +212,6 @@ class ConfigurableProductPriceTest extends TestCase
     }
 
     /**
-     * Register the product.
-     *
-     * @param ProductInterface $product
-     * @return void
-     */
-    private function registerProduct(ProductInterface $product): void
-    {
-        $this->registry->unregister('product');
-        $this->registry->register('product', $product);
-        $this->registry->unregister('current_product');
-        $this->registry->register('current_product', $product);
-    }
-
-    /**
-     * Prepare configurable product page.
-     *
-     * @return void
-     */
-    private function preparePageLayout(): void
-    {
-        $this->page->addHandle([
-            'default',
-            'catalog_product_view',
-            'catalog_product_view_type_configurable',
-        ]);
-        $this->page->getLayout()->generateXml();
-    }
-
-    /**
-     * Reset layout page to get new block html.
-     *
-     * @return void
-     */
-    private function resetPageLayout(): void
-    {
-        $this->page = $this->objectManager->get(PageFactory::class)->create();
-    }
-
-    /**
-     * Process view product final price block html.
-     *
-     * @param string $sku
-     * @return string
-     */
-    private function processPriceView(string $sku): string
-    {
-        $product = $this->getProduct($sku);
-        $this->registerProduct($product);
-        $this->preparePageLayout();
-
-        return $this->page->getLayout()->getBlock('product.price.final')->toHtml();
-    }
-
-    /**
-     * Assert that html contain price label and expected final price amount.
-     *
-     * @param string $sku
-     * @param float $expectedPrice
-     * @return void
-     */
-    public function assertPrice(string $sku, float $expectedPrice): void
-    {
-        $priceBlockHtml = $this->processPriceView($sku);
-        $regexp = '/<span class="price-label">As low as<\/span>.*';
-        $regexp .= '<span.*data-price-amount="%s".*<span class="price">\$%.2f<\/span><\/span>/';
-        $this->assertMatchesRegularExpression(
-            sprintf($regexp, round($expectedPrice, 2), $expectedPrice),
-            preg_replace('/[\n\r]/', '', $priceBlockHtml)
-        );
-    }
-
-    /**
      * Assert custom option price json config.
      *
      * @param string $config
@@ -245,13 +227,31 @@ class ConfigurableProductPriceTest extends TestCase
     }
 
     /**
-     * Loads product by sku.s
-     *
-     * @param string $sku
-     * @return ProductInterface
+     * @inheritdoc
      */
-    private function getProduct(string $sku): ProductInterface
+    protected function setUp(): void
     {
-        return $this->productRepository->get($sku, false, $this->storeManager->getStore()->getId(), true);
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->page = $this->objectManager->get(PageFactory::class)->create();
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->productCustomOption = $this->objectManager->get(ProductCustomOptionInterface::class);
+        $this->json = $this->objectManager->get(SerializerInterface::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
+        $this->executeInStoreContext = $this->objectManager->get(ExecuteInStoreContext::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->registry->unregister('product');
+        $this->registry->unregister('current_product');
+
+        parent::tearDown();
     }
 }

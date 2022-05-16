@@ -45,27 +45,6 @@ class AreaTest extends TestCase
      */
     private $configChain;
 
-    protected function setUp(): void
-    {
-        $this->areaListMock = $this->getMockBuilder(AreaList::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $this->areaInstancesNamesList =
-            $this->getMockBuilder(\Magento\Setup\Module\Di\Code\Reader\Decorator\Area::class)
-                ->disableOriginalConstructor()
-                ->getMock();
-        $this->configReaderMock = $this->getMockBuilder(Reader::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $this->configWriterMock =
-            $this->getMockBuilder(ConfigWriterInterface::class)
-                ->disableOriginalConstructor()
-                ->getMockForAbstractClass();
-        $this->configChain = $this->getMockBuilder(ModificationChain::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-    }
-
     public function testDoOperationEmptyPath()
     {
         $areaOperation = new Area(
@@ -125,5 +104,26 @@ class AreaTest extends TestCase
             );
 
         $areaOperation->doOperation();
+    }
+
+    protected function setUp(): void
+    {
+        $this->areaListMock = $this->getMockBuilder(AreaList::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->areaInstancesNamesList =
+            $this->getMockBuilder(\Magento\Setup\Module\Di\Code\Reader\Decorator\Area::class)
+                ->disableOriginalConstructor()
+                ->getMock();
+        $this->configReaderMock = $this->getMockBuilder(Reader::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->configWriterMock =
+            $this->getMockBuilder(ConfigWriterInterface::class)
+                ->disableOriginalConstructor()
+                ->getMockForAbstractClass();
+        $this->configChain = $this->getMockBuilder(ModificationChain::class)
+            ->disableOriginalConstructor()
+            ->getMock();
     }
 }

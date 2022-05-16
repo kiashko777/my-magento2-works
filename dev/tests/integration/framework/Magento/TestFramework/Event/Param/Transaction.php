@@ -7,6 +7,7 @@
 /**
  * Parameter holder for transaction events
  */
+
 namespace Magento\TestFramework\Event\Param;
 
 class Transaction

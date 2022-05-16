@@ -7,21 +7,26 @@
 /**
  * Scans source code for references to classes and see if they indeed exist
  */
+
 namespace Magento\Test\Legacy;
 
+use Magento\Framework\App\Utility\AggregateInvoker;
+use Magento\Framework\App\Utility\Classes;
 use Magento\Framework\App\Utility\Files;
+use PHPUnit\Framework\AssertionFailedError;
+use PHPUnit\Framework\TestCase;
 
-class ClassesTest extends \PHPUnit\Framework\TestCase
+class ClassesTest extends TestCase
 {
     public function testPhpCode()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
-            /**
-             * @param string $file
-             */
+        /**
+         * @param string $file
+         */
             function ($file) {
-                $classes = \Magento\Framework\App\Utility\Classes::collectPhpCodeClasses(file_get_contents($file));
+                $classes = Classes::collectPhpCodeClasses(file_get_contents($file));
                 $this->_assertNonFactoryName($classes, $file);
             },
             Files::init()->getPhpFiles(
@@ -32,59 +37,6 @@ class ClassesTest extends \PHPUnit\Framework\TestCase
                 | Files::AS_DATA_SET
                 | Files::INCLUDE_NON_CLASSES
             )
-        );
-    }
-
-    public function testConfiguration()
-    {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
-        $invoker(
-            /**
-             * @param string $path
-             */
-            function ($path) {
-                $xml = simplexml_load_file($path);
-
-                $classes = \Magento\Framework\App\Utility\Classes::collectClassesInConfig($xml);
-                $this->_assertNonFactoryName($classes, $path);
-
-                $modules = \Magento\Framework\App\Utility\Classes::getXmlAttributeValues($xml, '//@module', 'module');
-                $this->_assertNonFactoryName(array_unique($modules), $path, false, true);
-            },
-            Files::init()->getConfigFiles()
-        );
-    }
-
-    public function testLayouts()
-    {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
-        $invoker(
-            /**
-             * @param string $path
-             */
-            function ($path) {
-                $xml = simplexml_load_file($path);
-                $classes = \Magento\Framework\App\Utility\Classes::collectLayoutClasses($xml);
-                foreach (\Magento\Framework\App\Utility\Classes::getXmlAttributeValues(
-                    $xml,
-                    '/layout//@helper',
-                    'helper'
-                ) as $class) {
-                    $classes[] = \Magento\Framework\App\Utility\Classes::getCallbackClass($class);
-                }
-                $classes = array_merge(
-                    $classes,
-                    \Magento\Framework\App\Utility\Classes::getXmlAttributeValues($xml, '/layout//@module', 'module')
-                );
-                $this->_assertNonFactoryName(array_unique($classes), $path);
-
-                $tabs = \Magento\Framework\App\Utility\Classes::getXmlNodeValues(
-                    $xml,
-                    '/layout//action[@method="addTab"]/block'
-                );
-                $this->_assertNonFactoryName(array_unique($tabs), $path, true);
-            },
-            Files::init()->getLayoutFiles()
         );
     }
 
@@ -117,12 +69,65 @@ class ClassesTest extends \PHPUnit\Framework\TestCase
                     $this->assertFalse(false === strpos($name, '\\'));
                     $this->assertMatchesRegularExpression('/^([A-Z\\\\][A-Za-z\d\\\\]+)+$/', $name);
                 }
-            } catch (\PHPUnit\Framework\AssertionFailedError $e) {
+            } catch (AssertionFailedError $e) {
                 $factoryNames[] = $name;
             }
         }
         if ($factoryNames) {
             $this->fail("Obsolete factory name(s) detected in {$file}:" . "\n" . implode("\n", $factoryNames));
         }
+    }
+
+    public function testConfiguration()
+    {
+        $invoker = new AggregateInvoker($this);
+        $invoker(
+        /**
+         * @param string $path
+         */
+            function ($path) {
+                $xml = simplexml_load_file($path);
+
+                $classes = Classes::collectClassesInConfig($xml);
+                $this->_assertNonFactoryName($classes, $path);
+
+                $modules = Classes::getXmlAttributeValues($xml, '//@module', 'module');
+                $this->_assertNonFactoryName(array_unique($modules), $path, false, true);
+            },
+            Files::init()->getConfigFiles()
+        );
+    }
+
+    public function testLayouts()
+    {
+        $invoker = new AggregateInvoker($this);
+        $invoker(
+        /**
+         * @param string $path
+         */
+            function ($path) {
+                $xml = simplexml_load_file($path);
+                $classes = Classes::collectLayoutClasses($xml);
+                foreach (Classes::getXmlAttributeValues(
+                    $xml,
+                    '/layout//@helper',
+                    'helper'
+                ) as $class) {
+                    $classes[] = Classes::getCallbackClass($class);
+                }
+                $classes = array_merge(
+                    $classes,
+                    Classes::getXmlAttributeValues($xml, '/layout//@module', 'module')
+                );
+                $this->_assertNonFactoryName(array_unique($classes), $path);
+
+                $tabs = Classes::getXmlNodeValues(
+                    $xml,
+                    '/layout//action[@method="addTab"]/block'
+                );
+                $this->_assertNonFactoryName(array_unique($tabs), $path, true);
+            },
+            Files::init()->getLayoutFiles()
+        );
     }
 }

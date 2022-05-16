@@ -6,7 +6,13 @@
 
 namespace Magento\Multishipping\Controller;
 
+use Magento\Checkout\Model\Session;
+use Magento\Customer\Api\AccountManagementInterface;
+use Magento\Framework\Data\Form\FormKey;
 use Magento\Multishipping\Model\Checkout\Type\Multishipping\State;
+use Magento\Quote\Model\Quote;
+use Magento\TestFramework\TestCase\AbstractController;
+use Psr\Log\LoggerInterface;
 
 /**
  * Test class for \Magento\Multishipping\Controller\Checkout
@@ -15,31 +21,17 @@ use Magento\Multishipping\Model\Checkout\Type\Multishipping\State;
  * @magentoDataFixture Magento/Sales/_files/quote.php
  * @magentoDataFixture Magento/Customer/_files/customer.php
  */
-class CheckoutTest extends \Magento\TestFramework\TestCase\AbstractController
+class CheckoutTest extends AbstractController
 {
     /**
-     * @var \Magento\Quote\Model\Quote
+     * @var Quote
      */
     protected $quote;
 
     /**
-     * @var \Magento\Checkout\Model\Session
+     * @var Session
      */
     protected $checkoutSession;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->quote = $this->_objectManager->create(\Magento\Quote\Model\Quote::class);
-        $this->checkoutSession = $this->_objectManager->get(\Magento\Checkout\Model\Session::class);
-
-        $this->quote->load('test01', 'reserved_order_id');
-        $this->checkoutSession->setQuoteId($this->quote->getId());
-        $this->checkoutSession->setCartWasUpdated(false);
-    }
 
     /**
      * Covers \Magento\Multishipping\Block\Checkout\Payment\Info and \Magento\Multishipping\Block\Checkout\Overview
@@ -48,11 +40,11 @@ class CheckoutTest extends \Magento\TestFramework\TestCase\AbstractController
      */
     public function testOverviewAction()
     {
-        /** @var \Magento\Framework\Data\Form\FormKey $formKey */
-        $formKey = $this->_objectManager->get(\Magento\Framework\Data\Form\FormKey::class);
-        $logger = $this->createMock(\Psr\Log\LoggerInterface::class);
-        /** @var \Magento\Customer\Api\AccountManagementInterface $service */
-        $service = $this->_objectManager->create(\Magento\Customer\Api\AccountManagementInterface::class);
+        /** @var FormKey $formKey */
+        $formKey = $this->_objectManager->get(FormKey::class);
+        $logger = $this->createMock(LoggerInterface::class);
+        /** @var AccountManagementInterface $service */
+        $service = $this->_objectManager->create(AccountManagementInterface::class);
         $customer = $service->authenticate('customer@example.com', 'password');
         /** @var \Magento\Customer\Model\Session $customerSession */
         $customerSession = $this->_objectManager->create(\Magento\Customer\Model\Session::class, [$logger]);
@@ -72,5 +64,19 @@ class CheckoutTest extends \Magento\TestFramework\TestCase\AbstractController
             '<input name="form_key" type="hidden" value="' . $formKey->getFormKey(),
             $html
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->quote = $this->_objectManager->create(Quote::class);
+        $this->checkoutSession = $this->_objectManager->get(Session::class);
+
+        $this->quote->load('test01', 'reserved_order_id');
+        $this->checkoutSession->setQuoteId($this->quote->getId());
+        $this->checkoutSession->setCartWasUpdated(false);
     }
 }

@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Magento\MediaGallery\Model\ResourceModel;
 
 use Behat\Gherkin\Keywords\KeywordsInterface;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\MediaGalleryApi\Api\Data\AssetKeywordsInterface;
 use Magento\MediaGalleryApi\Api\Data\AssetKeywordsInterfaceFactory;
 use Magento\MediaGalleryApi\Api\Data\KeywordInterfaceFactory;
@@ -50,25 +51,13 @@ class AssetKeywordsTest extends TestCase
     private $getAssetsByPath;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->saveAssetsKeywords = Bootstrap::getObjectManager()->get(SaveAssetsKeywordsInterface::class);
-        $this->getAssetsKeywords = Bootstrap::getObjectManager()->get(GetAssetsKeywordsInterface::class);
-        $this->assetsKeywordsFactory = Bootstrap::getObjectManager()->get(AssetKeywordsInterfaceFactory::class);
-        $this->keywordFactory = Bootstrap::getObjectManager()->get(KeywordInterfaceFactory::class);
-        $this->getAssetsByPath = Bootstrap::getObjectManager()->get(GetAssetsByPathsInterface::class);
-    }
-
-    /**
      * Testing assets keywords save and get
      *
      * @magentoDataFixture Magento/MediaGallery/_files/media_asset.php
      * @dataProvider keywordsProvider
      * @param string[] $keywords
      * @param string[] $updatedKeywords
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @throws LocalizedException
      */
     public function testSaveAndGetKeywords(array $keywords, array $updatedKeywords): void
     {
@@ -123,28 +112,6 @@ class AssetKeywordsTest extends TestCase
     }
 
     /**
-     * Data provider of paths matching existing asset
-     *
-     * @return array
-     */
-    public function keywordsProvider(): array
-    {
-        return [
-            [['one-keyword'],['plum','orange']],
-            [['кириллица'],[]],
-            [[],['plum']],
-            [['plum', 'pear'],['plum','pear']],
-            [['plum', 'pear'],['plum','orange']],
-            [['plum', 'pear','grape'],['plum','orange']],
-            [['plum', 'pear','grape'],['mango']],
-            [['plum', 'pear','grape'],['orange']],
-            [['plum', 'pear','grape'],[]],
-            [['plum', 'pear'],['plum', 'pear','grape','mango','orange']],
-            [[],[]]
-        ];
-    }
-
-    /**
      * Create keywords
      *
      * @param string[] $keywords
@@ -161,5 +128,39 @@ class AssetKeywordsTest extends TestCase
             );
         }
         return $keywordObjects;
+    }
+
+    /**
+     * Data provider of paths matching existing asset
+     *
+     * @return array
+     */
+    public function keywordsProvider(): array
+    {
+        return [
+            [['one-keyword'], ['plum', 'orange']],
+            [['кириллица'], []],
+            [[], ['plum']],
+            [['plum', 'pear'], ['plum', 'pear']],
+            [['plum', 'pear'], ['plum', 'orange']],
+            [['plum', 'pear', 'grape'], ['plum', 'orange']],
+            [['plum', 'pear', 'grape'], ['mango']],
+            [['plum', 'pear', 'grape'], ['orange']],
+            [['plum', 'pear', 'grape'], []],
+            [['plum', 'pear'], ['plum', 'pear', 'grape', 'mango', 'orange']],
+            [[], []]
+        ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->saveAssetsKeywords = Bootstrap::getObjectManager()->get(SaveAssetsKeywordsInterface::class);
+        $this->getAssetsKeywords = Bootstrap::getObjectManager()->get(GetAssetsKeywordsInterface::class);
+        $this->assetsKeywordsFactory = Bootstrap::getObjectManager()->get(AssetKeywordsInterfaceFactory::class);
+        $this->keywordFactory = Bootstrap::getObjectManager()->get(KeywordInterfaceFactory::class);
+        $this->getAssetsByPath = Bootstrap::getObjectManager()->get(GetAssetsByPathsInterface::class);
     }
 }

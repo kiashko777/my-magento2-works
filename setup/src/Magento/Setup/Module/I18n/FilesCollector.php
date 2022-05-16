@@ -3,7 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\I18n;
+
+use FilesystemIterator;
+use InvalidArgumentException;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use RegexIterator;
+use UnexpectedValueException;
 
 /**
  *  Files collector
@@ -34,22 +42,22 @@ class FilesCollector
      *
      * @param string $path
      * @param bool $fileMask
-     * @return \RecursiveIteratorIterator|\RegexIterator
-     * @throws \InvalidArgumentException
+     * @return RecursiveIteratorIterator|RegexIterator
+     * @throws InvalidArgumentException
      */
     protected function _getIterator($path, $fileMask = false)
     {
         try {
-            $directoryIterator = new \RecursiveDirectoryIterator(
+            $directoryIterator = new RecursiveDirectoryIterator(
                 $path,
-                \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::UNIX_PATHS | \FilesystemIterator::FOLLOW_SYMLINKS
+                FilesystemIterator::SKIP_DOTS | FilesystemIterator::UNIX_PATHS | FilesystemIterator::FOLLOW_SYMLINKS
             );
-            $iterator = new \RecursiveIteratorIterator($directoryIterator);
-        } catch (\UnexpectedValueException $valueException) {
-            throw new \InvalidArgumentException(sprintf('Cannot read directory for parse phrase: "%s".', $path));
+            $iterator = new RecursiveIteratorIterator($directoryIterator);
+        } catch (UnexpectedValueException $valueException) {
+            throw new InvalidArgumentException(sprintf('Cannot read directory for parse phrase: "%s".', $path));
         }
         if ($fileMask) {
-            $iterator = new \RegexIterator($iterator, $fileMask);
+            $iterator = new RegexIterator($iterator, $fileMask);
         }
         return $iterator;
     }

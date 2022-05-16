@@ -3,14 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestModuleDefaultHydrator\Model\ResourceModel;
 
-use Magento\Framework\EntityManager\Operation\ExtensionInterface;
-use Magento\Framework\EntityManager\MetadataPool;
-use Magento\Framework\EntityManager\EntityManager;
-use Magento\Framework\App\ResourceConnection;
-use Magento\Customer\Api\Data\CustomerInterface;
+use Exception;
 use Magento\Customer\Api\Data\CustomerExtensionFactory;
+use Magento\Customer\Api\Data\CustomerInterface;
+use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\EntityManager\EntityManager;
+use Magento\Framework\EntityManager\MetadataPool;
+use Magento\Framework\EntityManager\Operation\ExtensionInterface;
 use Magento\TestModuleDefaultHydrator\Api\Data\ExtensionAttributeInterface;
 use Magento\TestModuleDefaultHydrator\Api\Data\ExtensionAttributeInterfaceFactory as ExtensionAttributeFactory;
 
@@ -49,12 +51,13 @@ class ReadHandler implements ExtensionInterface
      * @param ResourceConnection $resourceConnection
      */
     public function __construct(
-        EntityManager $entityManager,
+        EntityManager             $entityManager,
         ExtensionAttributeFactory $extensionAttributeFactory,
-        CustomerExtensionFactory $customerExtensionFactory,
-        MetadataPool $metadataPool,
-        ResourceConnection $resourceConnection
-    ) {
+        CustomerExtensionFactory  $customerExtensionFactory,
+        MetadataPool              $metadataPool,
+        ResourceConnection        $resourceConnection
+    )
+    {
         $this->entityManager = $entityManager;
         $this->extensionAttributeFactory = $extensionAttributeFactory;
         $this->customerExtensionFactory = $customerExtensionFactory;
@@ -66,7 +69,7 @@ class ReadHandler implements ExtensionInterface
      * @param CustomerInterface $entity
      * @param array $arguments
      * @return CustomerInterface
-     * @throws \Exception
+     * @throws Exception
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function execute($entity, $arguments = [])

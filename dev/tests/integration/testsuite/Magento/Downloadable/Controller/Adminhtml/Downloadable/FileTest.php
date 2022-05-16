@@ -7,42 +7,19 @@
 namespace Magento\Downloadable\Controller\Adminhtml\Downloadable;
 
 use Magento\Framework\Serialize\Serializer\Json;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * Magento\Downloadable\Controller\Adminhtml\Downloadable\File
  *
  * @magentoAppArea Adminhtml
  */
-class FileTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class FileTest extends AbstractBackendController
 {
     /**
      * @var Json
      */
     private $jsonSerializer;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->jsonSerializer = $this->_objectManager->get(Json::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        // phpcs:ignore Magento2.Functions.DiscouragedFunction
-        $filePath = dirname(__DIR__) . '/_files/sample.tmp';
-        // phpcs:ignore Magento2.Functions.DiscouragedFunction
-        if (is_file($filePath)) {
-        // phpcs:ignore Magento2.Functions.DiscouragedFunction
-            unlink($filePath);
-        }
-    }
 
     public function testUploadAction()
     {
@@ -147,5 +124,29 @@ class FileTest extends \Magento\TestFramework\TestCase\AbstractBackendController
                 ],
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->jsonSerializer = $this->_objectManager->get(Json::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        // phpcs:ignore Magento2.Functions.DiscouragedFunction
+        $filePath = dirname(__DIR__) . '/_files/sample.tmp';
+        // phpcs:ignore Magento2.Functions.DiscouragedFunction
+        if (is_file($filePath)) {
+            // phpcs:ignore Magento2.Functions.DiscouragedFunction
+            unlink($filePath);
+        }
     }
 }

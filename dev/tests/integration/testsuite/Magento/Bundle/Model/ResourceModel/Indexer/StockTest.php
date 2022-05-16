@@ -6,19 +6,19 @@
 
 namespace Magento\Bundle\Model\ResourceModel\Indexer;
 
-class StockTest extends \PHPUnit\Framework\TestCase
+use Magento\Catalog\Block\Product\ListProduct;
+use Magento\Catalog\Model\CategoryFactory;
+use Magento\Catalog\Model\Product;
+use Magento\CatalogInventory\Model\Indexer\Stock\Processor;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class StockTest extends TestCase
 {
     /**
-     * @var \Magento\CatalogInventory\Model\Indexer\Stock\Processor
+     * @var Processor
      */
     protected $processor;
-
-    protected function setUp(): void
-    {
-        $this->processor = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\CatalogInventory\Model\Indexer\Stock\Processor::class
-        );
-    }
 
     /**
      * @magentoDbIsolation disabled
@@ -29,12 +29,12 @@ class StockTest extends \PHPUnit\Framework\TestCase
     {
         $this->processor->reindexAll();
 
-        $categoryFactory = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Catalog\Model\CategoryFactory::class
+        $categoryFactory = Bootstrap::getObjectManager()->get(
+            CategoryFactory::class
         );
-        /** @var \Magento\Catalog\Block\Product\ListProduct $listProduct */
-        $listProduct = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Catalog\Block\Product\ListProduct::class
+        /** @var ListProduct $listProduct */
+        $listProduct = Bootstrap::getObjectManager()->get(
+            ListProduct::class
         );
 
         $category = $categoryFactory->create()->load(2);
@@ -58,9 +58,16 @@ class StockTest extends \PHPUnit\Framework\TestCase
             'Bundle Products' => 0
         ];
 
-        /** @var $product \Magento\Catalog\Model\Product */
+        /** @var $product Product */
         foreach ($productCollection as $product) {
             $this->assertEquals($expectedResult[$product->getName()], $product->getQty());
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->processor = Bootstrap::getObjectManager()->get(
+            Processor::class
+        );
     }
 }

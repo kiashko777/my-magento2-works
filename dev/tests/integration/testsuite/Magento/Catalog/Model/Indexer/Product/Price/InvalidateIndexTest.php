@@ -32,19 +32,6 @@ class InvalidateIndexTest extends TestCase
     private $customerGroupDataFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->invalidatePriceIndex = $this->objectManager->get(InvalidateIndex::class);
-        $this->priceIndexerProcessor = $this->objectManager->get(Processor::class);
-        $this->customerGroupDataFactory = $this->objectManager->get(GroupInterfaceFactory::class);
-    }
-
-    /**
      * @magentoDbIsolation disabled
      * @return void
      */
@@ -55,5 +42,18 @@ class InvalidateIndexTest extends TestCase
         $customerGroupData = $this->customerGroupDataFactory->create();
         $this->invalidatePriceIndex->update($customerGroupData, true);
         $this->assertTrue($this->priceIndexerProcessor->getIndexer()->isInvalid());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->invalidatePriceIndex = $this->objectManager->get(InvalidateIndex::class);
+        $this->priceIndexerProcessor = $this->objectManager->get(Processor::class);
+        $this->customerGroupDataFactory = $this->objectManager->get(GroupInterfaceFactory::class);
     }
 }

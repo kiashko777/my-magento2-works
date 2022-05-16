@@ -32,15 +32,6 @@ class GridTest extends TestCase
     private $registryManager;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = ObjectManager::getInstance();
-        $this->registryManager = $this->objectManager->get(Registry::class);
-    }
-
-    /**
      * Test to load wishlist collection by customer on second website
      *
      * @magentoDbIsolation disabled
@@ -72,5 +63,14 @@ class GridTest extends TestCase
         $customer->loadByEmail('customer2@example.com');
 
         return $customer;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = ObjectManager::getInstance();
+        $this->registryManager = $this->objectManager->get(Registry::class);
     }
 }

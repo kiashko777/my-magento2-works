@@ -3,15 +3,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Console\Command;
 
+use LogicException;
 use Magento\Framework\App\ObjectManagerFactory;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Console\Cli;
+use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Indexer\Console\Command\IndexerReindexCommand;
 use Magento\Setup\Fixtures\FixtureModel;
+use Magento\TestFramework\App\Config;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Indexer\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
@@ -19,7 +24,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  *
  * @magentoDbIsolation disabled
  */
-class GenerateFixturesCommandTest extends \Magento\TestFramework\Indexer\TestCase
+class GenerateFixturesCommandTest extends TestCase
 {
     /** @var  CommandTester */
     private $indexerCommand;
@@ -36,6 +41,47 @@ class GenerateFixturesCommandTest extends \Magento\TestFramework\Indexer\TestCas
     /** @var  CommandTester */
     private $commandTester;
 
+    public static function setUpBeforeClass(): void
+    {
+        $db = Bootstrap::getInstance()->getBootstrap()
+            ->getApplication()
+            ->getDbInstance();
+        if (!$db->isDbDumpExists()) {
+            throw new LogicException('DB dump does not exist.');
+        }
+        $db->restoreFromDbDump();
+
+        parent::setUpBeforeClass();
+    }
+
+    /**
+     * @magentoAppArea Adminhtml
+     * @magentoAppIsolation enabled
+     */
+    public function testExecute()
+    {
+        $profile = realpath(__DIR__ . "/_files/min_profile.xml");
+        $this->commandTester->execute(
+            [
+                GenerateFixturesCommand::PROFILE_ARGUMENT => $profile,
+                '--' . GenerateFixturesCommand::SKIP_REINDEX_OPTION => true
+            ]
+        );
+        $this->indexerCommand->execute([]);
+
+        static::assertEquals(
+            Cli::RETURN_SUCCESS,
+            $this->indexerCommand->getStatusCode(),
+            $this->indexerCommand->getDisplay(true)
+        );
+
+        static::assertEquals(
+            Cli::RETURN_SUCCESS,
+            $this->commandTester->getStatusCode(),
+            $this->commandTester->getDisplay(true)
+        );
+    }
+
     /**
      * Setup
      */
@@ -43,7 +89,7 @@ class GenerateFixturesCommandTest extends \Magento\TestFramework\Indexer\TestCas
     {
         $this->objectManager = Bootstrap::getObjectManager();
 
-        $this->objectManager->get(\Magento\TestFramework\App\Config::class)->clean();
+        $this->objectManager->get(Config::class)->clean();
 
         $this->fixtureModelMock = $this->getMockBuilder(FixtureModel::class)
             ->setMethods(['getObjectManager'])
@@ -81,6 +127,17 @@ class GenerateFixturesCommandTest extends \Magento\TestFramework\Indexer\TestCas
     }
 
     /**
+     * @param $value
+     */
+    private function setIncrement($value)
+    {
+        /** @var AdapterInterface $db */
+        $db = Bootstrap::getObjectManager()->get(ResourceConnection::class)->getConnection();
+        $db->query("SET @@session.auto_increment_increment=$value");
+        $db->query("SET @@session.auto_increment_offset=$value");
+    }
+
+    /**
      * teardown
      */
     protected function tearDown(): void
@@ -91,57 +148,5 @@ class GenerateFixturesCommandTest extends \Magento\TestFramework\Indexer\TestCas
         self::$dbRestored = true;
 
         parent::tearDown();
-    }
-
-    public static function setUpBeforeClass(): void
-    {
-        $db = Bootstrap::getInstance()->getBootstrap()
-            ->getApplication()
-            ->getDbInstance();
-        if (!$db->isDbDumpExists()) {
-            throw new \LogicException('DB dump does not exist.');
-        }
-        $db->restoreFromDbDump();
-
-        parent::setUpBeforeClass();
-    }
-
-    /**
-     * @magentoAppArea Adminhtml
-     * @magentoAppIsolation enabled
-     */
-    public function testExecute()
-    {
-        $profile = realpath(__DIR__ . "/_files/min_profile.xml");
-        $this->commandTester->execute(
-            [
-                GenerateFixturesCommand::PROFILE_ARGUMENT => $profile,
-                '--' . GenerateFixturesCommand::SKIP_REINDEX_OPTION => true
-            ]
-        );
-        $this->indexerCommand->execute([]);
-
-        static::assertEquals(
-            Cli::RETURN_SUCCESS,
-            $this->indexerCommand->getStatusCode(),
-            $this->indexerCommand->getDisplay(true)
-        );
-
-        static::assertEquals(
-            Cli::RETURN_SUCCESS,
-            $this->commandTester->getStatusCode(),
-            $this->commandTester->getDisplay(true)
-        );
-    }
-
-    /**
-     * @param $value
-     */
-    private function setIncrement($value)
-    {
-        /** @var \Magento\Framework\DB\Adapter\AdapterInterface $db */
-        $db = Bootstrap::getObjectManager()->get(ResourceConnection::class)->getConnection();
-        $db->query("SET @@session.auto_increment_increment=$value");
-        $db->query("SET @@session.auto_increment_offset=$value");
     }
 }

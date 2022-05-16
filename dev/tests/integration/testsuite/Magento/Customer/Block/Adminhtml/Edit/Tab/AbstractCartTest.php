@@ -9,7 +9,6 @@ namespace Magento\Customer\Block\Adminhtml\Edit\Tab;
 
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Controller\RegistryConstants;
-use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Registry;
 use Magento\Framework\View\LayoutInterface;
@@ -28,19 +27,14 @@ use PHPUnit\Framework\TestCase;
 abstract class AbstractCartTest extends TestCase
 {
     const CUSTOMER_ID_VALUE = 1234;
-
-    /** @var Registry */
-    private $registry;
-
     /** @var Cart */
     protected $block;
-
     /** @var ObjectManagerInterface */
     protected $objectManager;
-
     /** @var CartRepositoryInterface */
     protected $quoteRepository;
-
+    /** @var Registry */
+    private $registry;
     /** @var CustomerRepositoryInterface */
     private $customerRepository;
 
@@ -59,6 +53,18 @@ abstract class AbstractCartTest extends TestCase
         $this->quoteRepository = $this->objectManager->get(CartRepositoryInterface::class);
         $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
         $this->quoteFactory = $this->objectManager->get(QuoteFactory::class);
+    }
+
+    /**
+     * Add customer id to registry.
+     *
+     * @param int $customerId
+     * @return void
+     */
+    private function registerCustomerId(int $customerId): void
+    {
+        $this->registry->unregister(RegistryConstants::CURRENT_CUSTOMER_ID);
+        $this->registry->register(RegistryConstants::CURRENT_CUSTOMER_ID, $customerId);
     }
 
     /**
@@ -97,37 +103,6 @@ abstract class AbstractCartTest extends TestCase
     }
 
     /**
-     * Checks that customer's shopping cart block is empty
-     *
-     * @param string $customerEmail
-     * @return void
-     */
-    protected function processCheckWithoutQuoteItems(string $customerEmail): void
-    {
-        $customer = $this->customerRepository->get($customerEmail);
-        $this->registerCustomerId((int)$customer->getId());
-        $this->block->toHtml();
-
-        $this->assertCount(
-            0,
-            $this->block->getPreparedCollection(),
-            "Item's count in the customer cart grid block doesn't match expected count."
-        );
-    }
-
-    /**
-     * Add customer id to registry.
-     *
-     * @param int $customerId
-     * @return void
-     */
-    private function registerCustomerId(int $customerId): void
-    {
-        $this->registry->unregister(RegistryConstants::CURRENT_CUSTOMER_ID);
-        $this->registry->register(RegistryConstants::CURRENT_CUSTOMER_ID, $customerId);
-    }
-
-    /**
      * Get shopping cart quote item identifiers by customer id.
      *
      * @param int $customerId
@@ -144,5 +119,24 @@ abstract class AbstractCartTest extends TestCase
         }
 
         return $ids;
+    }
+
+    /**
+     * Checks that customer's shopping cart block is empty
+     *
+     * @param string $customerEmail
+     * @return void
+     */
+    protected function processCheckWithoutQuoteItems(string $customerEmail): void
+    {
+        $customer = $this->customerRepository->get($customerEmail);
+        $this->registerCustomerId((int)$customer->getId());
+        $this->block->toHtml();
+
+        $this->assertCount(
+            0,
+            $this->block->getPreparedCollection(),
+            "Item's count in the customer cart grid block doesn't match expected count."
+        );
     }
 }

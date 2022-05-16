@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Api;
 
 use Magento\Framework\Api\FilterBuilder;
@@ -11,18 +12,14 @@ use Magento\Framework\Api\SortOrder;
 use Magento\Framework\Api\SortOrderBuilder;
 use Magento\Sales\Api\Data\CreditmemoCommentInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class CreditmemoCommentRepositoryInterfaceTest extends \PHPUnit\Framework\TestCase
+class CreditmemoCommentRepositoryInterfaceTest extends TestCase
 {
     /**
      * @var CreditmemoCommentRepositoryInterface
      */
     private $repository;
-
-    protected function setUp(): void
-    {
-        $this->repository = Bootstrap::getObjectManager()->create(CreditmemoCommentRepositoryInterface::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Sales/_files/creditmemo_comments_for_search.php
@@ -57,7 +54,7 @@ class CreditmemoCommentRepositoryInterfaceTest extends \PHPUnit\Framework\TestCa
             ->create();
 
         /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
-        $searchCriteriaBuilder =  Bootstrap::getObjectManager()->create(SearchCriteriaBuilder::class);
+        $searchCriteriaBuilder = Bootstrap::getObjectManager()->create(SearchCriteriaBuilder::class);
 
         $searchCriteriaBuilder->addFilters([$filter1, $filter2, $filter3, $filter4]);
         $searchCriteriaBuilder->addFilters([$filter5]);
@@ -73,5 +70,10 @@ class CreditmemoCommentRepositoryInterfaceTest extends \PHPUnit\Framework\TestCa
         $items = array_values($searchResult->getItems());
         $this->assertCount(1, $items);
         $this->assertEquals('comment 2', $items[0][CreditmemoCommentInterface::COMMENT]);
+    }
+
+    protected function setUp(): void
+    {
+        $this->repository = Bootstrap::getObjectManager()->create(CreditmemoCommentRepositoryInterface::class);
     }
 }

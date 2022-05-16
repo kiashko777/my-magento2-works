@@ -6,6 +6,10 @@
 
 namespace Magento\Bundle\Model\Product;
 
+use Magento\Catalog\Pricing\Price\FinalPrice;
+use Magento\Catalog\Pricing\Price\RegularPrice;
+use Magento\Framework\Pricing\PriceInfo\Base;
+
 /**
  * @magentoAppArea frontend
  */
@@ -24,9 +28,9 @@ class DynamicBundleWithSpecialPriceCalculatorTest extends BundlePriceAbstract
         $this->prepareFixture($strategyModifiers, 'bundle_product');
         $bundleProduct = $this->productRepository->get('bundle_product', false, null, true);
 
-        /** @var \Magento\Framework\Pricing\PriceInfo\Base $priceInfo */
+        /** @var Base $priceInfo */
         $priceInfo = $bundleProduct->getPriceInfo();
-        $priceCode = \Magento\Catalog\Pricing\Price\FinalPrice::PRICE_CODE;
+        $priceCode = FinalPrice::PRICE_CODE;
 
         $this->assertEquals(
             $expectedResults['minimalPrice'],
@@ -40,7 +44,7 @@ class DynamicBundleWithSpecialPriceCalculatorTest extends BundlePriceAbstract
         );
 
         if (isset($expectedResults['regularMinimalPrice'])) {
-            $priceCode = \Magento\Catalog\Pricing\Price\RegularPrice::PRICE_CODE;
+            $priceCode = RegularPrice::PRICE_CODE;
             $this->assertEquals(
                 $expectedResults['regularMinimalPrice'],
                 $priceInfo->getPrice($priceCode)->getMinimalPrice()->getValue(),
@@ -49,7 +53,7 @@ class DynamicBundleWithSpecialPriceCalculatorTest extends BundlePriceAbstract
         }
 
         if (isset($expectedResults['regularMaximalPrice'])) {
-            $priceCode = \Magento\Catalog\Pricing\Price\RegularPrice::PRICE_CODE;
+            $priceCode = RegularPrice::PRICE_CODE;
             $this->assertEquals(
                 $expectedResults['regularMaximalPrice'],
                 $priceInfo->getPrice($priceCode)->getMaximalPrice()->getValue(),
@@ -97,7 +101,7 @@ class DynamicBundleWithSpecialPriceCalculatorTest extends BundlePriceAbstract
             ],
 
             '
-                #3 Testing price for dynamic bundle 
+                #3 Testing price for dynamic bundle
                 with one required checkbox type option, two simples and special price
             ' => [
                 'strategy' => $this->getBundleConfiguration3(),
@@ -110,7 +114,7 @@ class DynamicBundleWithSpecialPriceCalculatorTest extends BundlePriceAbstract
             ],
 
             '
-                #4 Testing price for dynamic bundle 
+                #4 Testing price for dynamic bundle
                 with one required multi type option, two simples with special price
             ' => [
                 'strategy' => $this->getBundleConfiguration4(),

@@ -3,28 +3,28 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Message;
+
+use InvalidArgumentException;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * \Magento\Framework\Message\Factory test case
  */
-class FactoryTest extends \PHPUnit\Framework\TestCase
+class FactoryTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Message\Factory
+     * @var Factory
      */
     protected $model;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->model = $this->objectManager->create(\Magento\Framework\Message\Factory::class);
-    }
 
     /**
      * @dataProvider createProvider
@@ -32,7 +32,7 @@ class FactoryTest extends \PHPUnit\Framework\TestCase
     public function testCreate($messageType)
     {
         $message = $this->model->create($messageType, 'some text');
-        $this->assertInstanceOf(\Magento\Framework\Message\MessageInterface::class, $message);
+        $this->assertInstanceOf(MessageInterface::class, $message);
     }
 
     public function createProvider()
@@ -49,9 +49,15 @@ class FactoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testCreateWrong()
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Wrong message type');
 
         $this->model->create('Wrong', 'some text');
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->model = $this->objectManager->create(Factory::class);
     }
 }

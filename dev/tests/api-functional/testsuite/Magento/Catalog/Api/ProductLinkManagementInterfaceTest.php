@@ -4,8 +4,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Api;
 
+use Magento\Catalog\Api\Data\ProductLinkInterface;
+use Magento\Catalog\Model\ProductLink\Management;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
@@ -19,14 +24,9 @@ class ProductLinkManagementInterfaceTest extends WebapiAbstract
     const RESOURCE_PATH = '/V1/products/';
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoApiDataFixture Magento/Catalog/_files/products_crosssell.php
@@ -37,6 +37,32 @@ class ProductLinkManagementInterfaceTest extends WebapiAbstract
         $linkType = 'crosssell';
 
         $this->assertLinkedProducts($productSku, $linkType);
+    }
+
+    /**
+     * @param string $productSku
+     * @param int $linkType
+     */
+    protected function assertLinkedProducts($productSku, $linkType)
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH . $productSku . '/links/' . $linkType,
+                'httpMethod' => Request::HTTP_METHOD_GET,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'GetLinkedItemsByType',
+            ],
+        ];
+
+        $actual = $this->_webApiCall($serviceInfo, ['sku' => $productSku, 'type' => $linkType]);
+
+        $this->assertArrayHasKey(0, $actual);
+        $this->assertEquals('simple', $actual[0]['linked_product_type']);
+        $this->assertEquals('simple', $actual[0]['linked_product_sku']);
+        $this->assertEquals(1, $actual[0]['position']);
     }
 
     /**
@@ -62,32 +88,6 @@ class ProductLinkManagementInterfaceTest extends WebapiAbstract
     }
 
     /**
-     * @param string $productSku
-     * @param int $linkType
-     */
-    protected function assertLinkedProducts($productSku, $linkType)
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . $productSku . '/links/' . $linkType,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'GetLinkedItemsByType',
-            ],
-        ];
-
-        $actual = $this->_webApiCall($serviceInfo, ['sku' => $productSku, 'type' => $linkType]);
-
-        $this->assertArrayHasKey(0, $actual);
-        $this->assertEquals('simple', $actual[0]['linked_product_type']);
-        $this->assertEquals('simple', $actual[0]['linked_product_sku']);
-        $this->assertEquals(1, $actual[0]['position']);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Catalog/_files/products_related.php
      * @magentoApiDataFixture Magento/Catalog/_files/product_virtual_in_stock.php
      */
@@ -106,7 +106,7 @@ class ProductLinkManagementInterfaceTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $productSku . '/links',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -126,7 +126,7 @@ class ProductLinkManagementInterfaceTest extends WebapiAbstract
         array_walk(
             $actual,
             function (&$item) {
-                /** @var \Magento\Catalog\Api\Data\ProductLinkInterface $item */
+                /** @var ProductLinkInterface $item */
                 $item = $item->__toArray();
             }
         );
@@ -138,14 +138,19 @@ class ProductLinkManagementInterfaceTest extends WebapiAbstract
      *
      * @param string $sku
      * @param string $linkType
-     * @return \Magento\Catalog\Api\Data\ProductLinkInterface[]
+     * @return ProductLinkInterface[]
      */
     protected function getLinkedProducts($sku, $linkType)
     {
-        /** @var \Magento\Catalog\Model\ProductLink\Management $linkManagement */
-        $linkManagement = $this->objectManager->get(\Magento\Catalog\Api\ProductLinkManagementInterface::class);
+        /** @var Management $linkManagement */
+        $linkManagement = $this->objectManager->get(ProductLinkManagementInterface::class);
         $linkedProducts = $linkManagement->getLinkedItemsByType($sku, $linkType);
 
         return $linkedProducts;
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

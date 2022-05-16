@@ -519,9 +519,11 @@
         @_breadcrumbs-link-background: #f4f4f4,
         @_breadcrumbs-link-background-hover: #ccc
     );
+
     .item a {
         position: relative;
         margin: 0 11px 0 0;
+
         &:after {
             .lib-arrow(right, 12px, #f4f4f4);
             content: "";
@@ -530,6 +532,7 @@
             top: 0;
             right: -23px;
         }
+
         &:hover:after {
             border-color: transparent transparent transparent #ccc;
         }

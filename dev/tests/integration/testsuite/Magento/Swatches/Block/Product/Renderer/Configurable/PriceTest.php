@@ -44,31 +44,6 @@ class PriceTest extends TestCase
     private $json;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->page = $this->objectManager->get(Page::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->json = $this->objectManager->get(SerializerInterface::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->registry->unregister('product');
-
-        parent::tearDown();
-    }
-
-    /**
      * @dataProvider childProductsDataProvider
      * @magentoDataFixture Magento/Swatches/_files/configurable_product_visual_swatch_attribute.php
      * @magentoCache config disabled
@@ -86,6 +61,50 @@ class PriceTest extends TestCase
         $optionsData = $this->json->unserialize($configurableOptions);
         $this->assertArrayHasKey('optionPrices', $optionsData);
         $this->assertEquals($expectedData, array_values($optionsData['optionPrices']));
+    }
+
+    /**
+     * Update products.
+     *
+     * @param array $data
+     * @return void
+     */
+    private function updateProducts(array $data): void
+    {
+        foreach ($data as $sku => $updateData) {
+            $product = $this->productRepository->get($sku);
+            $product->addData($updateData);
+            $this->productRepository->save($product);
+        }
+    }
+
+    /**
+     * Register the product.
+     *
+     * @param ProductInterface $product
+     * @return void
+     */
+    private function registerProduct(ProductInterface $product): void
+    {
+        $this->registry->unregister('product');
+        $this->registry->register('product', $product);
+    }
+
+    /**
+     * Get product swatch options block.
+     *
+     * @return Configurable
+     */
+    private function getProductSwatchOptionsBlock(): Configurable
+    {
+        $this->page->addHandle([
+            'default',
+            'catalog_product_view',
+            'catalog_product_view_type_configurable',
+        ]);
+        $this->page->getLayout()->generateXml();
+
+        return $this->page->getLayout()->getChildBlock('product.info.options.wrapper', 'swatch_options');
     }
 
     /**
@@ -145,46 +164,27 @@ class PriceTest extends TestCase
     }
 
     /**
-     * Update products.
-     *
-     * @param array $data
-     * @return void
+     * @inheritdoc
      */
-    private function updateProducts(array $data): void
+    protected function setUp(): void
     {
-        foreach ($data as $sku => $updateData) {
-            $product = $this->productRepository->get($sku);
-            $product->addData($updateData);
-            $this->productRepository->save($product);
-        }
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->page = $this->objectManager->get(Page::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->json = $this->objectManager->get(SerializerInterface::class);
     }
 
     /**
-     * Register the product.
-     *
-     * @param ProductInterface $product
-     * @return void
+     * @inheritdoc
      */
-    private function registerProduct(ProductInterface $product): void
+    protected function tearDown(): void
     {
         $this->registry->unregister('product');
-        $this->registry->register('product', $product);
-    }
 
-    /**
-     * Get product swatch options block.
-     *
-     * @return Configurable
-     */
-    private function getProductSwatchOptionsBlock(): Configurable
-    {
-        $this->page->addHandle([
-            'default',
-            'catalog_product_view',
-            'catalog_product_view_type_configurable',
-        ]);
-        $this->page->getLayout()->generateXml();
-
-        return $this->page->getLayout()->getChildBlock('product.info.options.wrapper', 'swatch_options');
+        parent::tearDown();
     }
 }

@@ -3,46 +3,24 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Newsletter\Controller\Adminhtml;
 
+use Magento\Backend\Model\Session;
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\Message\MessageInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class NewsletterQueueTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class NewsletterQueueTest extends AbstractBackendController
 {
     /**
      * @var \Magento\Newsletter\Model\Template
      */
     protected $_model;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Newsletter\Model\Template::class
-        );
-    }
-
-    /**
-     * @inheritDoc
-     */
-    protected function tearDown(): void
-    {
-        /**
-         * Unset messages
-         */
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Backend\Model\Session::class
-        )->getMessages(
-            true
-        );
-        $this->_model = null;
-    }
 
     /**
      * @magentoDataFixture Magento/Newsletter/_files/newsletter_sample.php
@@ -71,14 +49,41 @@ class NewsletterQueueTest extends \Magento\TestFramework\TestCase\AbstractBacken
         /**
          * Check that errors was generated and set to session
          */
-        $this->assertSessionMessages($this->isEmpty(), \Magento\Framework\Message\MessageInterface::TYPE_ERROR);
+        $this->assertSessionMessages($this->isEmpty(), MessageInterface::TYPE_ERROR);
 
         /**
          * Check that success message is set
          */
         $this->assertSessionMessages(
             $this->equalTo(['You saved the newsletter queue.']),
-            \Magento\Framework\Message\MessageInterface::TYPE_SUCCESS
+            MessageInterface::TYPE_SUCCESS
         );
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->_model = Bootstrap::getObjectManager()->create(
+            \Magento\Newsletter\Model\Template::class
+        );
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function tearDown(): void
+    {
+        /**
+         * Unset messages
+         */
+        Bootstrap::getObjectManager()->get(
+            Session::class
+        )->getMessages(
+            true
+        );
+        $this->_model = null;
     }
 }

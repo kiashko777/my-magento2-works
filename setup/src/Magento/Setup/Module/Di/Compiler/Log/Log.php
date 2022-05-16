@@ -3,7 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Di\Compiler\Log;
+
+use Magento\Framework\Validator\Exception;
 
 class Log
 {
@@ -80,7 +83,7 @@ class Log
      * Write entries
      *
      * @return void
-     * @throws \Magento\Framework\Validator\Exception
+     * @throws Exception
      */
     public function report()
     {
@@ -89,7 +92,7 @@ class Log
         //do not take into account empty items since they are initialized in constructor.
         $errors = array_filter($this->_errorEntries);
         if (count($errors) > 0) {
-            throw new \Magento\Framework\Validator\Exception(__('Error during compilation'));
+            throw new Exception(__('Error during compilation'));
         }
     }
 

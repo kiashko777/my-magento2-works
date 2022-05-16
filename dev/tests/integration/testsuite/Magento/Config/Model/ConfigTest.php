@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Config\Model;
 
 use Magento\Backend\App\Area\FrontNameResolver;
@@ -19,7 +20,7 @@ use PHPUnit\Framework\TestCase;
 class ConfigTest extends TestCase
 {
     /**
-     * @covers \Magento\Config\Model\Config::save
+     * @covers       \Magento\Config\Model\Config::save
      * @param array $groups
      * @magentoDbIsolation enabled
      * @dataProvider saveWithSingleStoreModeEnabledDataProvider
@@ -58,7 +59,7 @@ class ConfigTest extends TestCase
     }
 
     /**
-     * @covers \Magento\Config\Model\Config::save
+     * @covers       \Magento\Config\Model\Config::save
      * @param string $section
      * @param array $groups
      * @param array $expected
@@ -103,12 +104,13 @@ class ConfigTest extends TestCase
     public function testSaveUseDefault(
         string $website,
         string $section,
-        array $override,
-        array $inherit,
-        array $expected
-    ): void {
+        array  $override,
+        array  $inherit,
+        array  $expected
+    ): void
+    {
         $objectManager = Bootstrap::getObjectManager();
-        /** @var Config $config*/
+        /** @var Config $config */
         $configFactory = $objectManager->create(ConfigFactory::class);
         $config = $configFactory->create()
             ->setSection($section)
@@ -132,6 +134,28 @@ class ConfigTest extends TestCase
         $this->assertEmpty(
             $this->getConfigValues($config->getScope(), $config->getScopeId(), $paths)
         );
+    }
+
+    /**
+     * @param string $scope
+     * @param int $scopeId
+     * @param array $paths
+     * @return array
+     */
+    private function getConfigValues(string $scope, int $scopeId, array $paths): array
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var Collection $configCollection */
+        $configCollectionFactory = $objectManager->create(CollectionFactory::class);
+        $configCollection = $configCollectionFactory->create();
+        $configCollection->addFieldToFilter('scope', $scope);
+        $configCollection->addFieldToFilter('scope_id', $scopeId);
+        $configCollection->addFieldToFilter('path', ['in' => $paths]);
+        $result = [];
+        foreach ($configCollection as $data) {
+            $result[$data->getPath()] = $data->getValue();
+        }
+        return $result;
     }
 
     /**
@@ -166,27 +190,5 @@ class ConfigTest extends TestCase
                 ],
             ]
         ];
-    }
-
-    /**
-     * @param string $scope
-     * @param int $scopeId
-     * @param array $paths
-     * @return array
-     */
-    private function getConfigValues(string $scope, int $scopeId, array $paths): array
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        /** @var Collection $configCollection */
-        $configCollectionFactory = $objectManager->create(CollectionFactory::class);
-        $configCollection = $configCollectionFactory->create();
-        $configCollection->addFieldToFilter('scope', $scope);
-        $configCollection->addFieldToFilter('scope_id', $scopeId);
-        $configCollection->addFieldToFilter('path', ['in' => $paths]);
-        $result = [];
-        foreach ($configCollection as $data) {
-            $result[$data->getPath()] = $data->getValue();
-        }
-        return $result;
     }
 }

@@ -3,22 +3,32 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Controller\Adminhtml\Order;
 
-use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Backend\App\Action\Context;
 use Magento\Backend\Model\Session\Quote as SessionQuote;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Api\Data\CustomerInterface;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\Config\MutableScopeConfigInterface;
+use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\Exception\AuthenticationException;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Quote\Api\CartRepositoryInterface;
-use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Quote\Model\Quote;
+use Magento\Sales\Controller\Adminhtml\Order\Stub\OrderCreateStub;
 use Magento\Store\Api\Data\StoreInterface;
 use Magento\Store\Api\Data\WebsiteInterface;
 use Magento\Store\Api\StoreRepositoryInterface;
 use Magento\Store\Api\WebsiteRepositoryInterface;
 use Magento\Store\Model\ScopeInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Helper\Xpath;
+use Magento\TestFramework\TestCase\AbstractBackendController;
+use ReflectionMethod;
 
 /**
  * @magentoAppArea Adminhtml
@@ -27,24 +37,12 @@ use Magento\Store\Model\ScopeInterface;
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  */
-class CreateTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class CreateTest extends AbstractBackendController
 {
     /**
-     * @var \Magento\Catalog\Api\ProductRepositoryInterface
+     * @var ProductRepositoryInterface
      */
     protected $productRepository;
-
-    /**
-     * @inheritDoc
-     *
-     * @throws \Magento\Framework\Exception\AuthenticationException
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->productRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
-    }
 
     /**
      * Test LoadBlock being dispatched.
@@ -130,6 +128,71 @@ class CreateTest extends \Magento\TestFramework\TestCase\AbstractBackendControll
     }
 
     /**
+     * Gets store by code.
+     *
+     * @param string $code
+     * @return StoreInterface
+     * @throws NoSuchEntityException
+     */
+    private function getStore(string $code): StoreInterface
+    {
+        /** @var StoreRepositoryInterface $repository */
+        $repository = $this->_objectManager->get(StoreRepositoryInterface::class);
+        return $repository->get($code);
+    }
+
+    /**
+     * Gets website entity.
+     *
+     * @param string $code
+     * @return WebsiteInterface
+     * @throws NoSuchEntityException
+     */
+    private function getWebsite(string $code): WebsiteInterface
+    {
+        /** @var WebsiteRepositoryInterface $repository */
+        $repository = $this->_objectManager->get(WebsiteRepositoryInterface::class);
+        return $repository->get($code);
+    }
+
+    /**
+     * Gets customer entity.
+     *
+     * @param string $email
+     * @param int $websiteId
+     * @return CustomerInterface
+     * @throws NoSuchEntityException
+     * @throws LocalizedException
+     */
+    private function getCustomer(string $email, int $websiteId): CustomerInterface
+    {
+        /** @var CustomerRepositoryInterface $repository */
+        $repository = $this->_objectManager->get(CustomerRepositoryInterface::class);
+        return $repository->get($email, $websiteId);
+    }
+
+    /**
+     * Gets quote entity by reserved order id.
+     *
+     * @param string $reservedOrderId
+     * @return Quote
+     */
+    private function getQuoteById(string $reservedOrderId): Quote
+    {
+        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
+        $searchCriteriaBuilder = $this->_objectManager->get(SearchCriteriaBuilder::class);
+        $searchCriteria = $searchCriteriaBuilder->addFilter('reserved_order_id', $reservedOrderId)
+            ->create();
+
+        /** @var CartRepositoryInterface $repository */
+        $repository = $this->_objectManager->get(CartRepositoryInterface::class);
+        $items = $repository->getList($searchCriteria)
+            ->getItems();
+
+        return array_pop($items);
+    }
+
+    /**
      * Tests LoadBlock actions.
      *
      * @param string $block Block name.
@@ -197,35 +260,35 @@ class CreateTest extends \Magento\TestFramework\TestCase\AbstractBackendControll
 
         $this->assertGreaterThanOrEqual(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//div[@id="order-customer-selector"]',
                 $html
             )
         );
         $this->assertGreaterThanOrEqual(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//*[@data-grid-id="sales_order_create_customer_grid"]',
                 $html
             )
         );
         $this->assertGreaterThanOrEqual(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//div[@id="order-billing_method_form"]',
                 $html
             )
         );
         $this->assertGreaterThanOrEqual(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//*[@id="shipping-method-overlay"]',
                 $html
             )
         );
         $this->assertGreaterThanOrEqual(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//div[@id="sales_order_create_search_grid"]',
                 $html
             )
@@ -233,7 +296,7 @@ class CreateTest extends \Magento\TestFramework\TestCase\AbstractBackendControll
 
         $this->assertGreaterThanOrEqual(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath('//*[@id="coupons:code"]', $html)
+            Xpath::getElementsCountForXpath('//*[@id="coupons:code"]', $html)
         );
     }
 
@@ -251,12 +314,12 @@ class CreateTest extends \Magento\TestFramework\TestCase\AbstractBackendControll
     {
         $this->_objectManager->get(SessionQuote::class)->setReordered($reordered);
         $orderController = $this->_objectManager->get(
-            \Magento\Sales\Controller\Adminhtml\Order\Stub\OrderCreateStub::class
+            OrderCreateStub::class
         );
 
         $this->getRequest()->setActionName($actionName);
 
-        $method = new \ReflectionMethod(\Magento\Sales\Controller\Adminhtml\Order\Create::class, '_getAclResource');
+        $method = new ReflectionMethod(Create::class, '_getAclResource');
         $method->setAccessible(true);
         $result = $method->invoke($orderController);
         $this->assertEquals($result, $expectedResult);
@@ -305,21 +368,21 @@ class CreateTest extends \Magento\TestFramework\TestCase\AbstractBackendControll
     /**
      * Test not allowing to save.
      *
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @throws LocalizedException
      */
     public function testDeniedSaveAction()
     {
         $this->_objectManager->configure(
-            [\Magento\Backend\App\Action\Context::class => [
-                    'arguments' => [
-                        'authorization' => [
-                            'instance' => \Magento\Sales\Controller\Adminhtml\Order\AuthorizationMock::class,
-                        ],
+            [Context::class => [
+                'arguments' => [
+                    'authorization' => [
+                        'instance' => AuthorizationMock::class,
                     ],
                 ],
+            ],
             ]
         );
-        \Magento\TestFramework\Helper\Bootstrap::getInstance()
+        Bootstrap::getInstance()
             ->loadArea('Adminhtml');
 
         $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
@@ -382,67 +445,14 @@ class CreateTest extends \Magento\TestFramework\TestCase\AbstractBackendControll
     }
 
     /**
-     * Gets quote entity by reserved order id.
+     * @inheritDoc
      *
-     * @param string $reservedOrderId
-     * @return Quote
+     * @throws AuthenticationException
      */
-    private function getQuoteById(string $reservedOrderId): Quote
+    protected function setUp(): void
     {
-        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
-        $searchCriteriaBuilder = $this->_objectManager->get(SearchCriteriaBuilder::class);
-        $searchCriteria = $searchCriteriaBuilder->addFilter('reserved_order_id', $reservedOrderId)
-            ->create();
-
-        /** @var CartRepositoryInterface $repository */
-        $repository = $this->_objectManager->get(CartRepositoryInterface::class);
-        $items = $repository->getList($searchCriteria)
-            ->getItems();
-
-        return array_pop($items);
-    }
-
-    /**
-     * Gets website entity.
-     *
-     * @param string $code
-     * @return WebsiteInterface
-     * @throws NoSuchEntityException
-     */
-    private function getWebsite(string $code): WebsiteInterface
-    {
-        /** @var WebsiteRepositoryInterface $repository */
-        $repository = $this->_objectManager->get(WebsiteRepositoryInterface::class);
-        return $repository->get($code);
-    }
-
-    /**
-     * Gets customer entity.
-     *
-     * @param string $email
-     * @param int $websiteId
-     * @return CustomerInterface
-     * @throws NoSuchEntityException
-     * @throws \Magento\Framework\Exception\LocalizedException
-     */
-    private function getCustomer(string $email, int $websiteId): CustomerInterface
-    {
-        /** @var CustomerRepositoryInterface $repository */
-        $repository = $this->_objectManager->get(CustomerRepositoryInterface::class);
-        return $repository->get($email, $websiteId);
-    }
-
-    /**
-     * Gets store by code.
-     *
-     * @param string $code
-     * @return StoreInterface
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
-     */
-    private function getStore(string $code): StoreInterface
-    {
-        /** @var StoreRepositoryInterface $repository */
-        $repository = $this->_objectManager->get(StoreRepositoryInterface::class);
-        return $repository->get($code);
+        parent::setUp();
+        $this->productRepository = Bootstrap::getObjectManager()
+            ->get(ProductRepositoryInterface::class);
     }
 }

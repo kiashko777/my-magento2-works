@@ -11,9 +11,14 @@
  * Due to current architecture of DB adapters, they are copy-pasted.
  * So we need to make sure all these classes have exactly the same behavior.
  */
+
 namespace Magento\Test\Db\Adapter;
 
-class TransactionInterfaceTest extends \PHPUnit\Framework\TestCase
+use Magento\TestFramework\Db\Adapter\TransactionInterface;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+
+class TransactionInterfaceTest extends TestCase
 {
     /**
      * @param string $class
@@ -27,6 +32,19 @@ class TransactionInterfaceTest extends \PHPUnit\Framework\TestCase
         $this->assertSame(0, $connectionMock->getTransactionLevel());
         $this->assertEquals($uniqid, $connectionMock->beginTransparentTransaction());
         $this->assertSame(0, $connectionMock->getTransactionLevel());
+    }
+
+    /**
+     * Instantiate specified adapter class and block all methods that would try to execute real queries
+     *
+     * @param string $class
+     * @return TransactionInterface|MockObject
+     */
+    protected function _getConnectionMock($class)
+    {
+        $connection = $this->createPartialMock($class, ['beginTransaction', 'rollback', 'commit']);
+        $this->assertInstanceOf(TransactionInterface::class, $connection);
+        return $connection;
     }
 
     /**
@@ -71,18 +89,5 @@ class TransactionInterfaceTest extends \PHPUnit\Framework\TestCase
             }
         }
         return $result;
-    }
-
-    /**
-     * Instantiate specified adapter class and block all methods that would try to execute real queries
-     *
-     * @param string $class
-     * @return \Magento\TestFramework\Db\Adapter\TransactionInterface|\PHPUnit\Framework\MockObject\MockObject
-     */
-    protected function _getConnectionMock($class)
-    {
-        $connection = $this->createPartialMock($class, ['beginTransaction', 'rollback', 'commit']);
-        $this->assertInstanceOf(\Magento\TestFramework\Db\Adapter\TransactionInterface::class, $connection);
-        return $connection;
     }
 }

@@ -6,6 +6,12 @@
 
 namespace Magento\CatalogInventory\Api;
 
+use Magento\CatalogInventory\Api\Data\StockItemInterface;
+use Magento\CatalogInventory\Api\Data\StockItemInterfaceFactory;
+use Magento\CatalogInventory\Model\ResourceModel\Stock\Item;
+use Magento\Framework\Api\DataObjectHelper;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
@@ -34,41 +40,8 @@ class StockItemTest extends WebapiAbstract
      */
     const RESOURCE_PUT_PATH = '/V1/products/:productSku/stockItems/:itemId';
 
-    /** @var \Magento\Framework\ObjectManagerInterface */
+    /** @var ObjectManagerInterface */
     protected $objectManager;
-
-    /**
-     * Execute per test initialization
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
-
-    /**
-     * @param array $result
-     * @return array
-     */
-    protected function getStockItemBySku($result)
-    {
-        $productSku = 'simple1';
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_GET_PATH . "/$productSku",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
-            ],
-            'soap' => [
-                'service' => 'catalogInventoryStockRegistryV1',
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => 'catalogInventoryStockRegistryV1GetStockItemBySku',
-            ],
-        ];
-        $arguments = ['productSku' => $productSku];
-        $apiResult = $this->_webApiCall($serviceInfo, $arguments);
-        $result['item_id'] = $apiResult['item_id'];
-        $this->assertEquals($result, array_intersect_key($apiResult, $result), 'The stock data does not match.');
-        return $apiResult;
-    }
 
     /**
      * @param array $newData
@@ -88,7 +61,7 @@ class StockItemTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => $resourcePath,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => 'catalogInventoryStockRegistryV1',
@@ -97,31 +70,56 @@ class StockItemTest extends WebapiAbstract
             ],
         ];
 
-        /** @var \Magento\CatalogInventory\Api\Data\StockItemInterfaceFactory $stockItemDetailsDo */
+        /** @var StockItemInterfaceFactory $stockItemDetailsDo */
         $stockItemDetailsDo = $this->objectManager
-            ->get(\Magento\CatalogInventory\Api\Data\StockItemInterfaceFactory::class)
+            ->get(StockItemInterfaceFactory::class)
             ->create();
-        /** @var \Magento\Framework\Api\DataObjectHelper $dataObjectHelper */
-        $dataObjectHelper = $this->objectManager->get(\Magento\Framework\Api\DataObjectHelper::class);
+        /** @var DataObjectHelper $dataObjectHelper */
+        $dataObjectHelper = $this->objectManager->get(DataObjectHelper::class);
         $dataObjectHelper->populateWithArray(
             $stockItemDetailsDo,
             $newData,
-            \Magento\CatalogInventory\Api\Data\StockItemInterface::class
+            StockItemInterface::class
         );
         $data = $stockItemDetailsDo->getData();
         $data['show_default_notification_message'] = false;
         $arguments = ['productSku' => $productSku, 'stockItem' => $data];
         $this->assertEquals($stockItemOld['item_id'], $this->_webApiCall($serviceInfo, $arguments));
 
-        /** @var \Magento\CatalogInventory\Api\Data\StockItemInterfaceFactory $stockItemFactory */
+        /** @var StockItemInterfaceFactory $stockItemFactory */
         $stockItemFactory = $this->objectManager
-            ->get(\Magento\CatalogInventory\Api\Data\StockItemInterfaceFactory::class);
+            ->get(StockItemInterfaceFactory::class);
         $stockItem = $stockItemFactory->create();
-        /** @var \Magento\CatalogInventory\Model\ResourceModel\Stock\Item $stockItemResource */
-        $stockItemResource = $this->objectManager->get(\Magento\CatalogInventory\Model\ResourceModel\Stock\Item::class);
+        /** @var Item $stockItemResource */
+        $stockItemResource = $this->objectManager->get(Item::class);
         $stockItemResource->loadByProductId($stockItem, $stockItemOld['product_id'], $stockItemOld['stock_id']);
         $expectedResult['item_id'] = $stockItem->getItemId();
         $this->assertEquals($expectedResult, array_intersect_key($stockItem->getData(), $expectedResult));
+    }
+
+    /**
+     * @param array $result
+     * @return array
+     */
+    protected function getStockItemBySku($result)
+    {
+        $productSku = 'simple1';
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_GET_PATH . "/$productSku",
+                'httpMethod' => Request::HTTP_METHOD_GET,
+            ],
+            'soap' => [
+                'service' => 'catalogInventoryStockRegistryV1',
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => 'catalogInventoryStockRegistryV1GetStockItemBySku',
+            ],
+        ];
+        $arguments = ['productSku' => $productSku];
+        $apiResult = $this->_webApiCall($serviceInfo, $arguments);
+        $result['item_id'] = $apiResult['item_id'];
+        $this->assertEquals($result, array_intersect_key($apiResult, $result), 'The stock data does not match.');
+        return $apiResult;
     }
 
     /**
@@ -216,5 +214,13 @@ class StockItemTest extends WebapiAbstract
                 ],
             ],
         ];
+    }
+
+    /**
+     * Execute per test initialization
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

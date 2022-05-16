@@ -8,10 +8,14 @@ declare(strict_types=1);
 namespace Magento\Framework\Interception;
 
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Config\Scope;
 use Magento\Framework\Filesystem\DriverInterface;
+use Magento\Framework\Interception\ObjectManager\Config\Developer;
+use Magento\Framework\ObjectManager\Definition\Runtime;
 use Magento\TestFramework\Application;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface\Proxy;
 
 /**
  * Provide tests for PluginListGeneratorTest
@@ -51,46 +55,6 @@ class PluginListGeneratorTest extends TestCase
      * @var Application
      */
     private $application;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->application = Bootstrap::getInstance()->getBootstrap()->getApplication();
-        $this->directoryList = new DirectoryList(BP, $this->getCustomDirs());
-        $this->file = Bootstrap::getObjectManager()->create(DriverInterface::class);
-        $reader = Bootstrap::getObjectManager()->create(
-        // phpstan:ignore "Class Magento\Framework\ObjectManager\Config\Reader\Dom\Proxy not found."
-            \Magento\Framework\ObjectManager\Config\Reader\Dom\Proxy::class
-        );
-        $scopeConfig = Bootstrap::getObjectManager()->create(\Magento\Framework\Config\Scope::class);
-        $omConfig = Bootstrap::getObjectManager()->create(
-            \Magento\Framework\Interception\ObjectManager\Config\Developer::class
-        );
-        $relations = Bootstrap::getObjectManager()->create(
-            \Magento\Framework\ObjectManager\Relations\Runtime::class
-        );
-        $definitions = Bootstrap::getObjectManager()->create(
-            \Magento\Framework\Interception\Definition\Runtime::class
-        );
-        $classDefinitions = Bootstrap::getObjectManager()->create(
-            \Magento\Framework\ObjectManager\Definition\Runtime::class
-        );
-        // phpstan:ignore "Class Psr\Log\LoggerInterface\Proxy not found."
-        $logger = Bootstrap::getObjectManager()->create(\Psr\Log\LoggerInterface\Proxy::class);
-        $this->model = new PluginListGenerator(
-            $reader,
-            $scopeConfig,
-            $omConfig,
-            $relations,
-            $definitions,
-            $classDefinitions,
-            $logger,
-            $this->directoryList,
-            ['primary', 'global']
-        );
-    }
 
     /**
      * Test plugin list configuration generation and load.
@@ -141,6 +105,46 @@ class PluginListGeneratorTest extends TestCase
             $globalPlugin,
             $configDataDummy[2]['Magento\\Framework\\App\\Response\\Http_sendResponse___self'][1],
             'Plugin configurations are not equal. "dummy" scope should contain plugins from "global" scope'
+        );
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->application = Bootstrap::getInstance()->getBootstrap()->getApplication();
+        $this->directoryList = new DirectoryList(BP, $this->getCustomDirs());
+        $this->file = Bootstrap::getObjectManager()->create(DriverInterface::class);
+        $reader = Bootstrap::getObjectManager()->create(
+        // phpstan:ignore "Class Magento\Framework\ObjectManager\Config\Reader\Dom\Proxy not found."
+            \Magento\Framework\ObjectManager\Config\Reader\Dom\Proxy::class
+        );
+        $scopeConfig = Bootstrap::getObjectManager()->create(Scope::class);
+        $omConfig = Bootstrap::getObjectManager()->create(
+            Developer::class
+        );
+        $relations = Bootstrap::getObjectManager()->create(
+            \Magento\Framework\ObjectManager\Relations\Runtime::class
+        );
+        $definitions = Bootstrap::getObjectManager()->create(
+            \Magento\Framework\Interception\Definition\Runtime::class
+        );
+        $classDefinitions = Bootstrap::getObjectManager()->create(
+            Runtime::class
+        );
+        // phpstan:ignore "Class Psr\Log\LoggerInterface\Proxy not found."
+        $logger = Bootstrap::getObjectManager()->create(Proxy::class);
+        $this->model = new PluginListGenerator(
+            $reader,
+            $scopeConfig,
+            $omConfig,
+            $relations,
+            $definitions,
+            $classDefinitions,
+            $logger,
+            $this->directoryList,
+            ['primary', 'global']
         );
     }
 

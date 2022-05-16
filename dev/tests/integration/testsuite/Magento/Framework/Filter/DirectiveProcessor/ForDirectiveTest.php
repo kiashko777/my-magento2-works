@@ -31,17 +31,6 @@ class ForDirectiveTest extends TestCase
      */
     private $filter;
 
-    protected function setUp(): void
-    {
-        $objectManager = ObjectManager::getInstance();
-        $this->variableResolver = $objectManager->get(StrictResolver::class);
-        $this->filter = $objectManager->get(Template::class);
-        $this->processor = $objectManager->create(
-            ForDirective::class,
-            ['variableResolver' => $this->variableResolver]
-        );
-    }
-
     /**
      * @dataProvider invalidFormatProvider
      */
@@ -49,6 +38,13 @@ class ForDirectiveTest extends TestCase
     {
         $result = $this->processor->process($this->createConstruction($this->processor, $template), $this->filter, []);
         self::assertEquals($template, $result);
+    }
+
+    private function createConstruction(ForDirective $directive, string $value): array
+    {
+        preg_match($directive->getRegularExpression(), $value, $construction);
+
+        return $construction;
     }
 
     /**
@@ -80,8 +76,8 @@ class ForDirectiveTest extends TestCase
         $body = '{{var loop.index}}a:{{var item.a}},b:{{var item.b.world.foo}}';
 
         return [
-            ['{{for item in foo}}' . $body . '{{/for}}',['foo' => $items], $expect],
-            ['{{for item in foo.bar}}' . $body . '{{/for}}',['foo' => ['bar' => $items]], $expect],
+            ['{{for item in foo}}' . $body . '{{/for}}', ['foo' => $items], $expect],
+            ['{{for item in foo.bar}}' . $body . '{{/for}}', ['foo' => ['bar' => $items]], $expect],
             [
                 '{{for item in foo.getBar().baz}}' . $body . '{{/for}}',
                 ['foo' => new DataObject(['bar' => ['baz' => $items]])],
@@ -98,10 +94,14 @@ class ForDirectiveTest extends TestCase
         ];
     }
 
-    private function createConstruction(ForDirective $directive, string $value): array
+    protected function setUp(): void
     {
-        preg_match($directive->getRegularExpression(), $value, $construction);
-
-        return $construction;
+        $objectManager = ObjectManager::getInstance();
+        $this->variableResolver = $objectManager->get(StrictResolver::class);
+        $this->filter = $objectManager->get(Template::class);
+        $this->processor = $objectManager->create(
+            ForDirective::class,
+            ['variableResolver' => $this->variableResolver]
+        );
     }
 }

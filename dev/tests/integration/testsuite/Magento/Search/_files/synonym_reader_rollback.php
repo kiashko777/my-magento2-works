@@ -4,9 +4,13 @@
  * See COPYING.txt for license details.
  */
 
-/** @var \Magento\Framework\App\ResourceConnection $resource */
-$resource = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->get(\Magento\Framework\App\ResourceConnection::class);
+/** @var ResourceConnection $resource */
+
+use Magento\Framework\App\ResourceConnection;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$resource = Bootstrap::getObjectManager()
+    ->get(ResourceConnection::class);
 
 $connection = $resource->getConnection('default');
 $connection->truncateTable($resource->getTableName('search_synonyms'));

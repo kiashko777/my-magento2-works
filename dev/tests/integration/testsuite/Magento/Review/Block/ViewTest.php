@@ -44,33 +44,6 @@ class ViewTest extends TestCase
     private $block;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->customerSession = $this->objectManager->get(Session::class);
-        $this->collectionFactory = $this->objectManager->get(CollectionFactory::class);
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(View::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->registry->unregister('current_review');
-        $this->registry->unregister('current_product');
-        $this->registry->unregister('product');
-        $this->customerSession->setCustomerId(null);
-
-        parent::tearDown();
-    }
-
-    /**
      * Test product review block
      *
      * @magentoDataFixture Magento/Review/_files/product_review_with_rating.php
@@ -116,6 +89,18 @@ class ViewTest extends TestCase
     }
 
     /**
+     * Register the current review
+     *
+     * @param Product $review
+     * @return void
+     */
+    private function registerReview(Product $review): void
+    {
+        $this->registry->unregister('current_review');
+        $this->registry->register('current_review', $review);
+    }
+
+    /**
      * Register the product
      *
      * @param ProductInterface $product
@@ -130,14 +115,29 @@ class ViewTest extends TestCase
     }
 
     /**
-     * Register the current review
-     *
-     * @param Product $review
-     * @return void
+     * @inheritdoc
      */
-    private function registerReview(Product $review): void
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->customerSession = $this->objectManager->get(Session::class);
+        $this->collectionFactory = $this->objectManager->get(CollectionFactory::class);
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(View::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
     {
         $this->registry->unregister('current_review');
-        $this->registry->register('current_review', $review);
+        $this->registry->unregister('current_product');
+        $this->registry->unregister('product');
+        $this->customerSession->setCustomerId(null);
+
+        parent::tearDown();
     }
 }

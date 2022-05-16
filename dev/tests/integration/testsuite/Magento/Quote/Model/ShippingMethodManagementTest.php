@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Quote\Model;
 
 use Magento\Customer\Api\AddressRepositoryInterface;
@@ -11,7 +12,6 @@ use Magento\Customer\Api\Data\AddressInterface;
 use Magento\Customer\Api\Data\GroupInterface;
 use Magento\Customer\Api\GroupRepositoryInterface;
 use Magento\Customer\Model\Vat;
-use Magento\Customer\Observer\AfterAddressSaveObserver;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\Config\MutableScopeConfigInterface;
 use Magento\Framework\DataObject;
@@ -23,7 +23,6 @@ use Magento\Quote\Api\Data\EstimateAddressInterface;
 use Magento\Quote\Api\GuestShippingMethodManagementInterface;
 use Magento\Quote\Api\ShippingMethodManagementInterface;
 use Magento\Quote\Observer\Frontend\Quote\Address\CollectTotalsObserver;
-use Magento\Quote\Observer\Frontend\Quote\Address\VatValidator;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Tax\Api\Data\TaxClassInterface;
 use Magento\Tax\Api\TaxClassRepositoryInterface;
@@ -49,16 +48,6 @@ class ShippingMethodManagementTest extends TestCase
 
     /** @var TaxClassRepositoryInterface $taxClassRepository */
     private $taxClassRepository;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->groupRepository = $this->objectManager->get(GroupRepositoryInterface::class);
-        $this->taxClassRepository = $this->objectManager->get(TaxClassRepositoryInterface::class);
-    }
 
     /**
      * @magentoDataFixture Magento/SalesRule/_files/cart_rule_100_percent_off.php
@@ -165,8 +154,8 @@ class ShippingMethodManagementTest extends TestCase
         $this->assertCount(1, $result);
         $rate = reset($result);
         $expectedResult = [
-                'method_code' => 'bestway',
-                'amount' => 10
+            'method_code' => 'bestway',
+            'amount' => 10
         ];
         $this->assertEquals($expectedResult['method_code'], $rate->getMethodCode());
         $this->assertEquals($expectedResult['amount'], $rate->getAmount());
@@ -203,34 +192,6 @@ class ShippingMethodManagementTest extends TestCase
     public function testEstimateByAddressWithCartPriceRuleByItem()
     {
         $this->executeTestFlow(0, 0);
-    }
-
-    /**
-     * @magentoConfigFixture current_store carriers/tablerate/active 1
-     * @magentoConfigFixture current_store carriers/tablerate/condition_name package_qty
-     * @magentoDataFixture Magento/SalesRule/_files/cart_rule_free_shipping_by_cart.php
-     * @magentoDataFixture Magento/Sales/_files/quote.php
-     * @magentoDataFixture Magento/OfflineShipping/_files/tablerates.php
-     * @return void
-     */
-    public function testEstimateByAddressWithCartPriceRuleByShipment()
-    {
-        $this->markTestSkipped('According to MAGETWO-69940 it is an incorrect behavior');
-        // Rule applied to entire shipment should not overwrite flat or table rate shipping prices
-        // Only rules applied to specific items should modify those prices (MAGETWO-63844)
-        $this->executeTestFlow(5, 10);
-    }
-
-    /**
-     * @magentoConfigFixture current_store carriers/tablerate/active 1
-     * @magentoConfigFixture current_store carriers/tablerate/condition_name package_qty
-     * @magentoDataFixture Magento/Sales/_files/quote.php
-     * @magentoDataFixture Magento/OfflineShipping/_files/tablerates.php
-     * @return void
-     */
-    public function testEstimateByAddress()
-    {
-        $this->executeTestFlow(5, 10);
     }
 
     /**
@@ -288,6 +249,34 @@ class ShippingMethodManagementTest extends TestCase
     }
 
     /**
+     * @magentoConfigFixture current_store carriers/tablerate/active 1
+     * @magentoConfigFixture current_store carriers/tablerate/condition_name package_qty
+     * @magentoDataFixture Magento/SalesRule/_files/cart_rule_free_shipping_by_cart.php
+     * @magentoDataFixture Magento/Sales/_files/quote.php
+     * @magentoDataFixture Magento/OfflineShipping/_files/tablerates.php
+     * @return void
+     */
+    public function testEstimateByAddressWithCartPriceRuleByShipment()
+    {
+        $this->markTestSkipped('According to MAGETWO-69940 it is an incorrect behavior');
+        // Rule applied to entire shipment should not overwrite flat or table rate shipping prices
+        // Only rules applied to specific items should modify those prices (MAGETWO-63844)
+        $this->executeTestFlow(5, 10);
+    }
+
+    /**
+     * @magentoConfigFixture current_store carriers/tablerate/active 1
+     * @magentoConfigFixture current_store carriers/tablerate/condition_name package_qty
+     * @magentoDataFixture Magento/Sales/_files/quote.php
+     * @magentoDataFixture Magento/OfflineShipping/_files/tablerates.php
+     * @return void
+     */
+    public function testEstimateByAddress()
+    {
+        $this->executeTestFlow(5, 10);
+    }
+
+    /**
      * Test for estimate shipping with tax and changed VAT customer group
      *
      * @magentoDbIsolation disabled
@@ -329,6 +318,24 @@ class ShippingMethodManagementTest extends TestCase
     }
 
     /**
+     * Find the group with a given code.
+     *
+     * @param string $code
+     * @return GroupInterface
+     */
+    protected function findCustomerGroupByCode(string $code): ?GroupInterface
+    {
+        /** @var SearchCriteriaBuilder $searchBuilder */
+        $searchBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
+        $searchCriteria = $searchBuilder->addFilter('code', $code)
+            ->create();
+        $groups = $this->groupRepository->getList($searchCriteria)
+            ->getItems();
+
+        return array_shift($groups);
+    }
+
+    /**
      * Create a test double fot customer vat class
      *
      * @param int $customerGroupId
@@ -362,43 +369,6 @@ class ShippingMethodManagementTest extends TestCase
 
         // Remove instances where the customer vat object is cached
         $this->objectManager->removeSharedInstance(CollectTotalsObserver::class);
-    }
-
-    /**
-     * Find the group with a given code.
-     *
-     * @param string $code
-     * @return GroupInterface
-     */
-    protected function findCustomerGroupByCode(string $code): ?GroupInterface
-    {
-        /** @var SearchCriteriaBuilder $searchBuilder */
-        $searchBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
-        $searchCriteria = $searchBuilder->addFilter('code', $code)
-            ->create();
-        $groups = $this->groupRepository->getList($searchCriteria)
-            ->getItems();
-
-        return array_shift($groups);
-    }
-
-    /**
-     * Change customer address
-     *
-     * @param int $customerAddressId
-     *
-     * @return AddressInterface
-     */
-    private function changeCustomerAddress(int $customerAddressId): AddressInterface
-    {
-        $addressRepository = $this->objectManager->get(AddressRepositoryInterface::class);
-        $address = $addressRepository->getById($customerAddressId);
-        $address->setVatId(12345);
-        $address->setCountryId('DE');
-        $address->setRegionId(0);
-        $address->setPostcode(10178);
-
-        return $addressRepository->save($address);
     }
 
     /**
@@ -446,5 +416,34 @@ class ShippingMethodManagementTest extends TestCase
         foreach ($configData as $data) {
             $config->setValue($data['path'], $data['value'], $data['scope']);
         }
+    }
+
+    /**
+     * Change customer address
+     *
+     * @param int $customerAddressId
+     *
+     * @return AddressInterface
+     */
+    private function changeCustomerAddress(int $customerAddressId): AddressInterface
+    {
+        $addressRepository = $this->objectManager->get(AddressRepositoryInterface::class);
+        $address = $addressRepository->getById($customerAddressId);
+        $address->setVatId(12345);
+        $address->setCountryId('DE');
+        $address->setRegionId(0);
+        $address->setPostcode(10178);
+
+        return $addressRepository->save($address);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->groupRepository = $this->objectManager->get(GroupRepositoryInterface::class);
+        $this->taxClassRepository = $this->objectManager->get(TaxClassRepositoryInterface::class);
     }
 }

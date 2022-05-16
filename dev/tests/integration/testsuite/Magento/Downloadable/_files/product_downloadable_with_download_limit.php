@@ -10,12 +10,12 @@ use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use Magento\Catalog\Model\Product\Visibility;
 use Magento\Downloadable\Api\Data\LinkInterface;
+use Magento\Downloadable\Api\DomainManagerInterface;
 use Magento\Downloadable\Api\LinkRepositoryInterface;
 use Magento\Downloadable\Helper\Download;
 use Magento\Downloadable\Model\Link;
 use Magento\Downloadable\Model\Product\Type;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Downloadable\Api\DomainManagerInterface;
 
 /** @var DomainManagerInterface $domainManager */
 $domainManager = Bootstrap::getObjectManager()->get(DomainManagerInterface::class);

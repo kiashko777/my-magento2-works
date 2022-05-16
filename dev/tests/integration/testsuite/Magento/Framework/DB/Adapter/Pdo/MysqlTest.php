@@ -3,45 +3,40 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\DB\Adapter\Pdo;
 
+use Exception;
 use Magento\Framework\App\ResourceConnection;
-use Magento\TestFramework\Helper\CacheCleaner;
 use Magento\Framework\DB\Ddl\Table;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+use Zend_Db_Adapter_Exception;
+use Zend_Db_Exception;
+use Zend_Db_Expr;
+use Zend_Db_Statement_Pdo;
 
 /**
  * Class checks Mysql adapter behaviour
  *
  * @magentoDbIsolation disabled
  */
-class MysqlTest extends \PHPUnit\Framework\TestCase
+class MysqlTest extends TestCase
 {
     /**
      * @var ResourceConnection
      */
     private $resourceConnection;
 
-    protected function setUp(): void
-    {
-        set_error_handler(null);
-        $this->resourceConnection = Bootstrap::getObjectManager()
-            ->get(ResourceConnection::class);
-    }
-
-    protected function tearDown(): void
-    {
-        restore_error_handler();
-    }
-
     /**
      * Test lost connection re-initializing
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function testWaitTimeout()
     {
-        if (!$this->getDbAdapter() instanceof \Magento\Framework\DB\Adapter\Pdo\Mysql) {
+        if (!$this->getDbAdapter() instanceof Mysql) {
             $this->markTestSkipped('This test is for \Magento\Framework\DB\Adapter\Pdo\Mysql');
         }
         try {
@@ -59,14 +54,13 @@ class MysqlTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Get session wait_timeout
+     * Retrieve database adapter instance
      *
-     * @return int
+     * @return Mysql
      */
-    private function getWaitTimeout()
+    private function getDbAdapter()
     {
-        $result = $this->executeQuery('SELECT @@session.wait_timeout');
-        return (int)$result->fetchColumn();
+        return $this->resourceConnection->getConnection();
     }
 
     /**
@@ -83,9 +77,9 @@ class MysqlTest extends \PHPUnit\Framework\TestCase
      * Execute SQL query and return result statement instance
      *
      * @param $sql
-     * @return void|\Zend_Db_Statement_Pdo
-     * @throws \Magento\Framework\Exception\LocalizedException
-     * @throws \Zend_Db_Adapter_Exception
+     * @return void|Zend_Db_Statement_Pdo
+     * @throws LocalizedException
+     * @throws Zend_Db_Adapter_Exception
      */
     private function executeQuery($sql)
     {
@@ -93,13 +87,14 @@ class MysqlTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Retrieve database adapter instance
+     * Get session wait_timeout
      *
-     * @return \Magento\Framework\DB\Adapter\Pdo\Mysql
+     * @return int
      */
-    private function getDbAdapter()
+    private function getWaitTimeout()
     {
-        return $this->resourceConnection->getConnection();
+        $result = $this->executeQuery('SELECT @@session.wait_timeout');
+        return (int)$result->fetchColumn();
     }
 
     public function testGetCreateTable()
@@ -160,7 +155,7 @@ class MysqlTest extends \PHPUnit\Framework\TestCase
                 'created_at',
                 Table::TYPE_DATETIME,
                 null,
-                ['default' => new \Zend_Db_Expr('CURRENT_TIMESTAMP')]
+                ['default' => new Zend_Db_Expr('CURRENT_TIMESTAMP')]
             )
             ->addColumn(
                 'integer_column',
@@ -213,7 +208,7 @@ class MysqlTest extends \PHPUnit\Framework\TestCase
      *
      * @param array $options
      * @param string|bool $expected
-     * @throws \Zend_Db_Exception
+     * @throws Zend_Db_Exception
      * @dataProvider getAutoIncrementFieldDataProvider
      */
     public function testGetAutoIncrementField(array $options, $expected)
@@ -234,7 +229,7 @@ class MysqlTest extends \PHPUnit\Framework\TestCase
                 'created_at',
                 Table::TYPE_DATETIME,
                 null,
-                ['default' => new \Zend_Db_Expr('CURRENT_TIMESTAMP')]
+                ['default' => new Zend_Db_Expr('CURRENT_TIMESTAMP')]
             )
             ->addColumn(
                 'integer_column',
@@ -268,5 +263,17 @@ class MysqlTest extends \PHPUnit\Framework\TestCase
                 'expected result' => false,
             ]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        set_error_handler(null);
+        $this->resourceConnection = Bootstrap::getObjectManager()
+            ->get(ResourceConnection::class);
+    }
+
+    protected function tearDown(): void
+    {
+        restore_error_handler();
     }
 }

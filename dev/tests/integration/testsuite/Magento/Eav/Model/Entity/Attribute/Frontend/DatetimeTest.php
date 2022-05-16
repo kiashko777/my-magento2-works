@@ -14,6 +14,7 @@ use Magento\Framework\Stdlib\DateTime\DateTime;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Store\ExecuteInStoreContext;
 use PHPUnit\Framework\TestCase;
+use ReflectionObject;
 
 /**
  * Checks Datetime attribute's frontend model
@@ -55,21 +56,6 @@ class DatetimeTest extends TestCase
     private $executeInStoreContext;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->attributeRepository = $this->objectManager->get(ProductAttributeRepositoryInterface::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->dateTime = $this->objectManager->create(DateTime::class);
-        $this->executeInStoreContext = $this->objectManager->get(ExecuteInStoreContext::class);
-    }
-
-    /**
      * @magentoDbIsolation disabled
      *
      * @magentoDataFixture Magento/Catalog/_files/product_two_websites.php
@@ -103,12 +89,27 @@ class DatetimeTest extends TestCase
     }
 
     /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->attributeRepository = $this->objectManager->get(ProductAttributeRepositoryInterface::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->dateTime = $this->objectManager->create(DateTime::class);
+        $this->executeInStoreContext = $this->objectManager->get(ExecuteInStoreContext::class);
+    }
+
+    /**
      * @inheritDoc
      */
     protected function tearDown(): void
     {
         parent::tearDown();
-        $reflection = new \ReflectionObject($this);
+        $reflection = new ReflectionObject($this);
         foreach ($reflection->getProperties() as $property) {
             if (!$property->isStatic() && 0 !== strpos($property->getDeclaringClass()->getName(), 'PHPUnit')) {
                 $property->setAccessible(true);

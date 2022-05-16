@@ -7,18 +7,24 @@
 /**
  * Test theme data validator
  */
+
 namespace Magento\Framework\View\Design\Theme;
 
-class ValidatorTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\Model\AbstractModel;
+use Magento\Framework\View\Design\ThemeInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class ValidatorTest extends TestCase
 {
     /**
      * Test validator with valid data
      */
     public function testValidateWithValidData()
     {
-        /** @var $validator \Magento\Framework\View\Design\Theme\Validator */
-        $validator = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\View\Design\Theme\Validator::class
+        /** @var $validator Validator */
+        $validator = Bootstrap::getObjectManager()->create(
+            Validator::class
         );
 
         $themeModel = $this->_getThemeModel();
@@ -28,30 +34,14 @@ class ValidatorTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Test validator with invalid data
-     */
-    public function testValidateWithInvalidData()
-    {
-        /** @var $validator \Magento\Framework\View\Design\Theme\Validator */
-        $validator = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\View\Design\Theme\Validator::class
-        );
-
-        $themeModel = $this->_getThemeModel();
-        $themeModel->setData($this->_getThemeInvalidData());
-
-        $this->assertFalse($validator->validate($themeModel));
-    }
-
-    /**
      * Get theme model
      *
-     * @return \Magento\Framework\Model\AbstractModel
+     * @return AbstractModel
      */
     protected function _getThemeModel()
     {
-        return \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\View\Design\ThemeInterface::class
+        return Bootstrap::getObjectManager()->create(
+            ThemeInterface::class
         );
     }
 
@@ -69,6 +59,22 @@ class ValidatorTest extends \PHPUnit\Framework\TestCase
             'theme_path' => 'default/space',
             'preview_image' => 'images/preview.png'
         ];
+    }
+
+    /**
+     * Test validator with invalid data
+     */
+    public function testValidateWithInvalidData()
+    {
+        /** @var $validator Validator */
+        $validator = Bootstrap::getObjectManager()->create(
+            Validator::class
+        );
+
+        $themeModel = $this->_getThemeModel();
+        $themeModel->setData($this->_getThemeInvalidData());
+
+        $this->assertFalse($validator->validate($themeModel));
     }
 
     /**

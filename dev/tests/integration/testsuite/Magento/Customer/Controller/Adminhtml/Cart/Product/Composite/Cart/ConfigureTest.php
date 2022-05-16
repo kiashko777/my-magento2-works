@@ -56,6 +56,22 @@ class ConfigureTest extends AbstractBackendController
     }
 
     /**
+     * Dispatch configure quote item in customer shopping cart
+     * using backend/customer/cart_product_composite_cart/configure action.
+     *
+     * @param array $params
+     * @param array $postValue
+     * @return void
+     */
+    private function dispatchCompositeCartConfigure(array $params = [], array $postValue = []): void
+    {
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
+        $this->getRequest()->setParams($params);
+        $this->getRequest()->setPostValue($postValue);
+        $this->dispatch('backend/customer/cart_product_composite_cart/configure');
+    }
+
+    /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
      * @return void
      */
@@ -120,21 +136,5 @@ class ConfigureTest extends AbstractBackendController
                     . ' Verify the quote items and try again."}',
             ],
         ];
-    }
-
-    /**
-     * Dispatch configure quote item in customer shopping cart
-     * using backend/customer/cart_product_composite_cart/configure action.
-     *
-     * @param array $params
-     * @param array $postValue
-     * @return void
-     */
-    private function dispatchCompositeCartConfigure(array $params = [], array $postValue = []): void
-    {
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
-        $this->getRequest()->setParams($params);
-        $this->getRequest()->setPostValue($postValue);
-        $this->dispatch('backend/customer/cart_product_composite_cart/configure');
     }
 }

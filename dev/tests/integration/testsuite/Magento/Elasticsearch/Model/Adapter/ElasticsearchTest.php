@@ -70,27 +70,21 @@ class ElasticsearchTest extends TestCase
     /**
      * @inheritdoc
      */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->indexNameResolver = $this->objectManager->get(IndexNameResolver::class);
-        $this->adapter = $this->objectManager->get(Elasticsearch::class);
-        $this->storeManager = $this->objectManager->create(StoreManagerInterface::class);
-        $connectionManager = $this->objectManager->create(ConnectionManager::class);
-        $this->client = $connectionManager->getConnection();
-        $this->indexBuilder = $this->objectManager->get(BuilderInterface::class);
-        $this->arrayManager = $this->objectManager->get(ArrayManager::class);
-        $indexer = $this->objectManager->create(Indexer::class);
-        $indexer->load('catalogsearch_fulltext');
-        $indexer->reindexAll();
-    }
-
-    /**
-     * @inheritdoc
-     */
     public function tearDown(): void
     {
         $this->deleteIndex($this->newIndex);
+    }
+
+    /**
+     * Delete index by name if exists
+     *
+     * @param $newIndex
+     */
+    private function deleteIndex($newIndex): void
+    {
+        if ($this->client->indexExists($newIndex)) {
+            $this->client->deleteIndex($newIndex);
+        }
     }
 
     /**
@@ -107,6 +101,29 @@ class ElasticsearchTest extends TestCase
         $pathField = $this->arrayManager->findPath('properties', $mapping);
         $attributes = $this->arrayManager->get($pathField, $mapping, []);
         $this->assertArrayHasKey('multiselect_attribute', $attributes);
+    }
+
+    /**
+     * Prepare new index and delete old. Keep cache alive.
+     *
+     * @return void
+     */
+    private function updateElasticsearchIndex(): void
+    {
+        $storeId = (int)$this->storeManager->getDefaultStoreView()->getId();
+        $mappedIndexerId = 'product';
+        $this->adapter->updateIndexMapping($storeId, $mappedIndexerId, 'select_attribute');
+        $oldIndex = $this->indexNameResolver->getIndexFromAlias($storeId, $mappedIndexerId);
+        $this->newIndex = $oldIndex . '1';
+        $this->deleteIndex($this->newIndex);
+        $this->indexBuilder->setStoreId($storeId);
+        $this->client->createIndex($this->newIndex, ['settings' => $this->indexBuilder->build()]);
+        $this->client->updateAlias(
+            $this->indexNameResolver->getIndexNameForAlias($storeId, $mappedIndexerId),
+            $this->newIndex,
+            $oldIndex
+        );
+        $this->client->deleteIndex($oldIndex);
     }
 
     /**
@@ -158,37 +175,20 @@ class ElasticsearchTest extends TestCase
     }
 
     /**
-     * Prepare new index and delete old. Keep cache alive.
-     *
-     * @return void
+     * @inheritdoc
      */
-    private function updateElasticsearchIndex(): void
+    protected function setUp(): void
     {
-        $storeId = (int)$this->storeManager->getDefaultStoreView()->getId();
-        $mappedIndexerId = 'product';
-        $this->adapter->updateIndexMapping($storeId, $mappedIndexerId, 'select_attribute');
-        $oldIndex = $this->indexNameResolver->getIndexFromAlias($storeId, $mappedIndexerId);
-        $this->newIndex = $oldIndex . '1';
-        $this->deleteIndex($this->newIndex);
-        $this->indexBuilder->setStoreId($storeId);
-        $this->client->createIndex($this->newIndex, ['settings' => $this->indexBuilder->build()]);
-        $this->client->updateAlias(
-            $this->indexNameResolver->getIndexNameForAlias($storeId, $mappedIndexerId),
-            $this->newIndex,
-            $oldIndex
-        );
-        $this->client->deleteIndex($oldIndex);
-    }
-
-    /**
-     * Delete index by name if exists
-     *
-     * @param $newIndex
-     */
-    private function deleteIndex($newIndex): void
-    {
-        if ($this->client->indexExists($newIndex)) {
-            $this->client->deleteIndex($newIndex);
-        }
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->indexNameResolver = $this->objectManager->get(IndexNameResolver::class);
+        $this->adapter = $this->objectManager->get(Elasticsearch::class);
+        $this->storeManager = $this->objectManager->create(StoreManagerInterface::class);
+        $connectionManager = $this->objectManager->create(ConnectionManager::class);
+        $this->client = $connectionManager->getConnection();
+        $this->indexBuilder = $this->objectManager->get(BuilderInterface::class);
+        $this->arrayManager = $this->objectManager->get(ArrayManager::class);
+        $indexer = $this->objectManager->create(Indexer::class);
+        $indexer->load('catalogsearch_fulltext');
+        $indexer->reindexAll();
     }
 }

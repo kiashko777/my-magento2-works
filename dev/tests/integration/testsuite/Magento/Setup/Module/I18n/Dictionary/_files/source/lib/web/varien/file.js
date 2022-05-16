@@ -3,6 +3,6 @@
  * See COPYING.txt for license details.
  */
 
-(function() {
+(function () {
     $.mage.__('Lib js')
 });

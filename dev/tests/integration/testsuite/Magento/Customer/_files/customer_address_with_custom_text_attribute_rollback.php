@@ -5,10 +5,10 @@
  */
 declare(strict_types=1);
 
+use Magento\Customer\Model\Attribute;
 use Magento\Customer\Model\Customer;
 use Magento\Framework\Registry;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Customer\Model\Attribute;
 
 /** @var Registry $registry */
 $registry = Bootstrap::getObjectManager()->get(Registry::class);

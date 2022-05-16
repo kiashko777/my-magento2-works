@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace Magento\Shipping\Controller\Adminhtml\Order\Shipment;
 
+use Magento\Framework\Message\MessageInterface;
+use Magento\Sales\Api\Data\OrderInterface;
 use PHPUnit\Framework\Constraint\StringContains;
 
 /**
@@ -40,7 +42,7 @@ class SaveTest extends AbstractShipmentControllerTest
 
         $this->assertSessionMessages(
             $this->equalTo([(string)__('The shipment has been created.')]),
-            \Magento\Framework\Message\MessageInterface::TYPE_SUCCESS
+            MessageInterface::TYPE_SUCCESS
         );
         $this->assertRedirect($this->stringContains('sales/order/view/order_id/' . $order->getEntityId()));
 
@@ -71,6 +73,27 @@ class SaveTest extends AbstractShipmentControllerTest
     }
 
     /**
+     * @param array $params
+     * @return OrderInterface|null
+     */
+    private function prepareRequest(array $params = [])
+    {
+        $order = $this->getOrder('100000001');
+        $this->getRequest()->setMethod('POST');
+        $this->getRequest()->setParams(
+            [
+                'order_id' => $order->getEntityId(),
+                'form_key' => $this->formKey->getFormKey(),
+            ]
+        );
+
+        $data = $params ?? [];
+        $this->getRequest()->setPostValue($data);
+
+        return $order;
+    }
+
+    /**
      * @inheritdoc
      */
     public function testAclHasAccess()
@@ -88,26 +111,5 @@ class SaveTest extends AbstractShipmentControllerTest
         $this->prepareRequest();
 
         parent::testAclNoAccess();
-    }
-
-    /**
-     * @param array $params
-     * @return \Magento\Sales\Api\Data\OrderInterface|null
-     */
-    private function prepareRequest(array $params = [])
-    {
-        $order = $this->getOrder('100000001');
-        $this->getRequest()->setMethod('POST');
-        $this->getRequest()->setParams(
-            [
-                'order_id' => $order->getEntityId(),
-                'form_key' => $this->formKey->getFormKey(),
-            ]
-        );
-
-        $data = $params ?? [];
-        $this->getRequest()->setPostValue($data);
-
-        return $order;
     }
 }

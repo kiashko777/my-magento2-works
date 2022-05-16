@@ -64,20 +64,6 @@ class CreateCustomOptionsTest extends TestCase
     private $storeManager;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->optionRepository = $this->objectManager->get(ProductCustomOptionRepositoryInterface::class);
-        $this->customOptionFactory = $this->objectManager->get(ProductCustomOptionInterfaceFactory::class);
-        $this->customOptionValueFactory = $this->objectManager
-            ->get(ProductCustomOptionValuesInterfaceFactory::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-    }
-
-    /**
      * Test to save option price by store.
      *
      * @magentoDataFixture Magento/Catalog/_files/product_with_options.php
@@ -131,6 +117,29 @@ class CreateCustomOptionsTest extends TestCase
         $this->assertEquals($optionData['sku'], $option->getSku());
         $maxCharacters = $optionData['max_characters'] ?? 0;
         $this->assertEquals($maxCharacters, $option->getMaxCharacters());
+    }
+
+    /**
+     * Create custom option and save product with created option, check base assertions.
+     *
+     * @param array $optionData
+     * @return ProductCustomOptionInterface
+     */
+    private function baseCreateCustomOptionAndAssert(array $optionData): ProductCustomOptionInterface
+    {
+        $product = $this->productRepository->get('simple');
+        $createdOption = $this->customOptionFactory->create(['data' => $optionData]);
+        $createdOption->setProductSku($product->getSku());
+        $product->setOptions([$createdOption]);
+        $this->productRepository->save($product);
+        $productCustomOptions = $this->optionRepository->getProductOptions($product);
+        $this->assertCount(1, $productCustomOptions);
+        $option = reset($productCustomOptions);
+        $this->assertEquals($optionData['title'], $option->getTitle());
+        $this->assertEquals($optionData['type'], $option->getType());
+        $this->assertEquals($optionData['is_require'], $option->getIsRequire());
+
+        return $option;
     }
 
     /**
@@ -915,25 +924,16 @@ class CreateCustomOptionsTest extends TestCase
     }
 
     /**
-     * Create custom option and save product with created option, check base assertions.
-     *
-     * @param array $optionData
-     * @return ProductCustomOptionInterface
+     * @inheritdoc
      */
-    private function baseCreateCustomOptionAndAssert(array $optionData): ProductCustomOptionInterface
+    protected function setUp(): void
     {
-        $product = $this->productRepository->get('simple');
-        $createdOption = $this->customOptionFactory->create(['data' => $optionData]);
-        $createdOption->setProductSku($product->getSku());
-        $product->setOptions([$createdOption]);
-        $this->productRepository->save($product);
-        $productCustomOptions = $this->optionRepository->getProductOptions($product);
-        $this->assertCount(1, $productCustomOptions);
-        $option = reset($productCustomOptions);
-        $this->assertEquals($optionData['title'], $option->getTitle());
-        $this->assertEquals($optionData['type'], $option->getType());
-        $this->assertEquals($optionData['is_require'], $option->getIsRequire());
-
-        return $option;
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->optionRepository = $this->objectManager->get(ProductCustomOptionRepositoryInterface::class);
+        $this->customOptionFactory = $this->objectManager->get(ProductCustomOptionInterfaceFactory::class);
+        $this->customOptionValueFactory = $this->objectManager
+            ->get(ProductCustomOptionValuesInterfaceFactory::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
     }
 }

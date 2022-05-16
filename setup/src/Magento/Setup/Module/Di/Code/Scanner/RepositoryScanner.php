@@ -3,8 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Di\Code\Scanner;
 
+use DOMDocument;
+use DOMNode;
+use DOMXPath;
 use Magento\Framework\Autoload\AutoloaderRegistry;
 
 /**
@@ -27,10 +31,10 @@ class RepositoryScanner implements ScannerInterface
     {
         $repositoryClassNames = [];
         foreach ($files as $fileName) {
-            $dom = new \DOMDocument();
+            $dom = new DOMDocument();
             $dom->loadXML(file_get_contents($fileName));
-            $xpath = new \DOMXPath($dom);
-            /** @var $node \DOMNode */
+            $xpath = new DOMXPath($dom);
+            /** @var $node DOMNode */
             foreach ($xpath->query('//preference') as $node) {
                 $forType = $node->attributes->getNamedItem('for');
                 $replacementType = $node->attributes->getNamedItem('type');

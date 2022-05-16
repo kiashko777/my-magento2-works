@@ -7,11 +7,12 @@
 namespace Magento\TestFramework\Mail;
 
 use Magento\Framework\Mail\EmailMessageInterface;
+use Magento\Framework\Mail\TransportInterface;
 
 /**
  * Class TransportInterfaceMock
  */
-class TransportInterfaceMock implements \Magento\Framework\Mail\TransportInterface
+class TransportInterfaceMock implements TransportInterface
 {
     /**
      * @var null|EmailMessageInterface

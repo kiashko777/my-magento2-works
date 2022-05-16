@@ -6,19 +6,15 @@
 
 namespace Magento\Fedex\Model;
 
-class CarrierTest extends \PHPUnit\Framework\TestCase
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class CarrierTest extends TestCase
 {
     /**
-     * @var \Magento\Fedex\Model\Carrier
+     * @var Carrier
      */
     protected $_model;
-
-    protected function setUp(): void
-    {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Fedex\Model\Carrier::class
-        );
-    }
 
     /**
      * @dataProvider getCodeDataProvider
@@ -67,5 +63,12 @@ class CarrierTest extends \PHPUnit\Framework\TestCase
             ['LB'],
             ['KG'],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Carrier::class
+        );
     }
 }

@@ -3,8 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Directory\Api;
 
+use Magento\Directory\Api\Data\CurrencyInformationInterface;
+use Magento\Framework\Registry;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Store\Model\Group;
+use Magento\Store\Model\Store;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 class CurrencyInformationAcquirerTest extends WebapiAbstract
@@ -16,12 +23,37 @@ class CurrencyInformationAcquirerTest extends WebapiAbstract
     const STORE_CODE_FROM_FIXTURE = 'fixturestore';
 
     /**
+     * Remove test store
+     */
+    public static function tearDownAfterClass(): void
+    {
+        parent::tearDownAfterClass();
+        /** @var Registry $registry */
+        $registry = Bootstrap::getObjectManager()
+            ->get(Registry::class);
+
+        $registry->unregister('isSecureArea');
+        $registry->register('isSecureArea', true);
+
+        /** @var $store Store */
+        $store = Bootstrap::getObjectManager()
+            ->create(Store::class);
+        $store->load(self::STORE_CODE_FROM_FIXTURE);
+        if ($store->getId()) {
+            $store->delete();
+        }
+
+        $registry->unregister('isSecureArea');
+        $registry->register('isSecureArea', false);
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Store/_files/core_fixturestore.php
      */
     public function testGet()
     {
-        /** @var $store \Magento\Store\Model\Group   */
-        $store = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Store\Model\Store::class);
+        /** @var $store Group */
+        $store = Bootstrap::getObjectManager()->create(Store::class);
         $store->load(self::STORE_CODE_FROM_FIXTURE);
         $this->assertNotEmpty($store->getId(), 'Precondition failed: fixture store was not created.');
 
@@ -49,6 +81,30 @@ class CurrencyInformationAcquirerTest extends WebapiAbstract
     }
 
     /**
+     * Retrieve existing currency information for the store
+     *
+     * @param string $storeCode
+     * @return CurrencyInformationInterface
+     */
+    protected function getCurrencyInfo($storeCode = 'default')
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH,
+                'httpMethod' => Request::HTTP_METHOD_GET,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'GetCurrencyInfo',
+            ],
+        ];
+        $requestData = ['storeId' => $storeCode];
+
+        return $this->_webApiCall($serviceInfo, $requestData);
+    }
+
+    /**
      * @param string $code
      * @param float $rate
      * @param array $exchangeRates
@@ -70,54 +126,5 @@ class CurrencyInformationAcquirerTest extends WebapiAbstract
 
         $this->assertTrue($foundCode, 'Did not find currency code in the exchange rates: ' . $code);
         $this->assertTrue($foundRate, 'Did not find the expected rate for currency ' . $code . ': ' . $rate);
-    }
-
-    /**
-     * Retrieve existing currency information for the store
-     *
-     * @param string $storeCode
-     * @return \Magento\Directory\Api\Data\CurrencyInformationInterface
-     */
-    protected function getCurrencyInfo($storeCode = 'default')
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'GetCurrencyInfo',
-            ],
-        ];
-        $requestData = ['storeId' => $storeCode];
-
-        return $this->_webApiCall($serviceInfo, $requestData);
-    }
-
-    /**
-     * Remove test store
-     */
-    public static function tearDownAfterClass(): void
-    {
-        parent::tearDownAfterClass();
-        /** @var \Magento\Framework\Registry $registry */
-        $registry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\Registry::class);
-
-        $registry->unregister('isSecureArea');
-        $registry->register('isSecureArea', true);
-
-        /** @var $store \Magento\Store\Model\Store */
-        $store = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Store\Model\Store::class);
-        $store->load(self::STORE_CODE_FROM_FIXTURE);
-        if ($store->getId()) {
-            $store->delete();
-        }
-
-        $registry->unregister('isSecureArea');
-        $registry->register('isSecureArea', false);
     }
 }

@@ -4,11 +4,13 @@ declare(strict_types=1);
 namespace Devall\Customform\Controller\Adminhtml\Customform;
 
 use Devall\Customform\Model\Customform;
+use Exception;
+use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
 use Magento\Framework\Controller\Result\JsonFactory;
 use Magento\Framework\Controller\ResultInterface;
 
-class InlineEdit extends \Magento\Backend\App\Action
+class InlineEdit extends Action
 {
 
     protected $jsonFactory;
@@ -45,11 +47,11 @@ class InlineEdit extends \Magento\Backend\App\Action
             } else {
                 foreach (array_keys($postItems) as $modelid) {
                     /** @var Customform $model */
-                    $model = $this->_objectManager->create(\Devall\Customform\Model\Customform::class)->load($modelid);
+                    $model = $this->_objectManager->create(Customform::class)->load($modelid);
                     try {
                         $model->setData(array_merge($model->getData(), $postItems[$modelid]));
                         $model->save();
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         $messages[] = "[Customform ID: {$modelid}]  {$e->getMessage()}";
                         $error = true;
                     }

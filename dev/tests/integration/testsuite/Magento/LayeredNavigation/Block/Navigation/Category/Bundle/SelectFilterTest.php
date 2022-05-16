@@ -7,10 +7,10 @@ declare(strict_types=1);
 
 namespace Magento\LayeredNavigation\Block\Navigation\Category\Bundle;
 
+use Magento\Catalog\Model\Layer\Filter\AbstractFilter;
 use Magento\Catalog\Model\Layer\Resolver;
 use Magento\Framework\Module\Manager;
 use Magento\LayeredNavigation\Block\Navigation\AbstractFiltersTest;
-use Magento\Catalog\Model\Layer\Filter\AbstractFilter;
 
 /**
  * Provides tests for custom select filter for bundle products in navigation block on category page.
@@ -25,19 +25,6 @@ class SelectFilterTest extends AbstractFiltersTest
      * @var Manager
      */
     private $moduleManager;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->moduleManager = $this->objectManager->get(Manager::class);
-        //This check is needed because LayeredNavigation independent of Magento_Bundle
-        if (!$this->moduleManager->isEnabled('Magento_Bundle')) {
-            $this->markTestSkipped('Magento_Bundle module disabled.');
-        }
-    }
 
     /**
      * @magentoDataFixture Magento/Catalog/_files/product_dropdown_attribute.php
@@ -88,6 +75,19 @@ class SelectFilterTest extends AbstractFiltersTest
                 ],
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->moduleManager = $this->objectManager->get(Manager::class);
+        //This check is needed because LayeredNavigation independent of Magento_Bundle
+        if (!$this->moduleManager->isEnabled('Magento_Bundle')) {
+            $this->markTestSkipped('Magento_Bundle module disabled.');
+        }
     }
 
     /**

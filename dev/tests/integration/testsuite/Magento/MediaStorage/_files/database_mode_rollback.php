@@ -5,8 +5,12 @@
  */
 declare(strict_types=1);
 
-/** @var $objectManager \Magento\TestFramework\ObjectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+/** @var $objectManager ObjectManager */
+
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+
+$objectManager = Bootstrap::getObjectManager();
 
 /** @var Magento\Framework\App\Config\ConfigResource\ConfigInterface $config */
 $config = $objectManager->get(Magento\Framework\App\Config\ConfigResource\ConfigInterface::class);

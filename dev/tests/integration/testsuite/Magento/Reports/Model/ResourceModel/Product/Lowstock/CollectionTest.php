@@ -6,26 +6,21 @@
 
 namespace Magento\Reports\Model\ResourceModel\Product\Lowstock;
 
+use Magento\Framework\DB\Select;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
 /**
  * Test for \Magento\Reports\Model\ResourceModel\Products\Lowstock\Collection
  */
-class CollectionTest extends \PHPUnit\Framework\TestCase
+class CollectionTest extends TestCase
 {
 
     /**
-     * @var \Magento\Reports\Model\ResourceModel\Product\Lowstock\Collection
+     * @var Collection
      */
     private $collection;
-
-    protected function setUp(): void
-    {
-        /**
-         * @var  \Magento\Reports\Model\ResourceModel\Product\Lowstock\Collection
-         */
-        $this->collection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Reports\Model\ResourceModel\Product\Lowstock\Collection::class
-        );
-    }
 
     /**
      * Assert that filterByProductType method throws LocalizedException if not String or Array is passed to it
@@ -33,7 +28,7 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
      */
     public function testFilterByProductTypeException()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
 
         $this->collection->filterByProductType(100);
     }
@@ -45,7 +40,7 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
     public function testFilterByProductTypeString()
     {
         $this->collection->filterByProductType('simple');
-        $whereParts = $this->collection->getSelect()->getPart(\Magento\Framework\DB\Select::WHERE);
+        $whereParts = $this->collection->getSelect()->getPart(Select::WHERE);
         $this->assertStringContainsString('simple', $whereParts[0]);
     }
 
@@ -56,7 +51,7 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
     public function testFilterByProductTypeArray()
     {
         $this->collection->filterByProductType(['simple', 'configurable']);
-        $whereParts = $this->collection->getSelect()->getPart(\Magento\Framework\DB\Select::WHERE);
+        $whereParts = $this->collection->getSelect()->getPart(Select::WHERE);
 
         $this->assertThat(
             $whereParts[0],
@@ -64,6 +59,16 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
                 $this->stringContains('simple'),
                 $this->stringContains('configurable')
             )
+        );
+    }
+
+    protected function setUp(): void
+    {
+        /**
+         * @var  Collection
+         */
+        $this->collection = Bootstrap::getObjectManager()->create(
+            Collection::class
         );
     }
 }

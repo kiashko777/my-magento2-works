@@ -20,7 +20,7 @@ $listToDelete = $repo->getList($criteriaBuilder->addFilter('sku', $rootSku, 'lik
 foreach ($listToDelete->getItems() as $item) {
     try {
         $repo->delete($item);
-    } catch (\Throwable $exception) {
+    } catch (Throwable $exception) {
         //Could be deleted before
     }
 }
@@ -28,7 +28,7 @@ $listToDelete = $repo->getList($criteriaBuilder->addFilter('sku', $linkedSku, 'l
 foreach ($listToDelete->getItems() as $item) {
     try {
         $repo->delete($item);
-    } catch (\Throwable $exception) {
+    } catch (Throwable $exception) {
         //Could be deleted before
     }
 }

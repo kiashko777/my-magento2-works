@@ -3,20 +3,26 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Paypal\Model\Report;
 
-class SettlementTest extends \PHPUnit\Framework\TestCase
+use InvalidArgumentException;
+use Magento\Framework\Filesystem\Io\Sftp;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class SettlementTest extends TestCase
 {
     /**
      * @magentoDbIsolation enabled
      */
     public function testFetchAndSave()
     {
-        /** @var $model \Magento\Paypal\Model\Report\Settlement; */
-        $model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Paypal\Model\Report\Settlement::class
+        /** @var $model Settlement; */
+        $model = Bootstrap::getObjectManager()->create(
+            Settlement::class
         );
-        $connection = $this->createPartialMock(\Magento\Framework\Filesystem\Io\Sftp::class, ['rawls', 'read']);
+        $connection = $this->createPartialMock(Sftp::class, ['rawls', 'read']);
         $filename = 'STL-00000000.00.abc.CSV';
         $connection->expects($this->once())->method('rawls')->willReturn([$filename => []]);
         $connection->expects($this->once())->method('read')->with($filename, $this->anything());
@@ -29,9 +35,9 @@ class SettlementTest extends \PHPUnit\Framework\TestCase
      */
     public function testCreateConnectionException($config)
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
-        \Magento\Paypal\Model\Report\Settlement::createConnection($config);
+        Settlement::createConnection($config);
     }
 
     /**
@@ -52,9 +58,9 @@ class SettlementTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetSftpCredentials($automaticMode, $expectedResult)
     {
-        /** @var $model \Magento\Paypal\Model\Report\Settlement; */
-        $model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Paypal\Model\Report\Settlement::class
+        /** @var $model Settlement; */
+        $model = Bootstrap::getObjectManager()->create(
+            Settlement::class
         );
 
         $result = $model->getSftpCredentials($automaticMode);

@@ -7,10 +7,12 @@ declare(strict_types=1);
 
 namespace Magento\TestModuleExtensionAttributes\Api\Data;
 
+use Magento\Framework\Api\MetadataObjectInterface;
+
 /**
  * Customer attribute metadata interface.
  */
-interface FakeAttributeMetadataInterface extends \Magento\Framework\Api\MetadataObjectInterface
+interface FakeAttributeMetadataInterface extends MetadataObjectInterface
 {
     /**#@+
      * Constants used as keys of data array

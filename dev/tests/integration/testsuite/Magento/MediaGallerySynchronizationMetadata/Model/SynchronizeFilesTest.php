@@ -9,14 +9,15 @@ namespace Magento\MediaGallerySynchronizationMetadata\Model;
 
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Exception\FileSystemException;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Filesystem;
 use Magento\Framework\Filesystem\Directory\WriteInterface;
 use Magento\Framework\Filesystem\DriverInterface;
 use Magento\MediaGalleryApi\Api\Data\AssetInterface;
 use Magento\MediaGalleryApi\Api\Data\KeywordInterface;
 use Magento\MediaGalleryApi\Api\GetAssetsByPathsInterface;
-use Magento\MediaGallerySynchronizationApi\Api\SynchronizeFilesInterface;
 use Magento\MediaGalleryApi\Api\GetAssetsKeywordsInterface;
+use Magento\MediaGallerySynchronizationApi\Api\SynchronizeFilesInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
 
@@ -51,19 +52,6 @@ class SynchronizeFilesTest extends TestCase
     private $getAssetKeywords;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->driver = Bootstrap::getObjectManager()->get(DriverInterface::class);
-        $this->synchronizeFiles = Bootstrap::getObjectManager()->get(SynchronizeFilesInterface::class);
-        $this->getAssetsByPath = Bootstrap::getObjectManager()->get(GetAssetsByPathsInterface::class);
-        $this->getAssetKeywords = Bootstrap::getObjectManager()->get(GetAssetsKeywordsInterface::class);
-        $this->mediaDirectory = Bootstrap::getObjectManager()->get(Filesystem::class)
-            ->getDirectoryWrite(DirectoryList::MEDIA);
-    }
-
-    /**
      * Test for SynchronizeFiles::execute
      *
      * @dataProvider filesProvider
@@ -72,14 +60,15 @@ class SynchronizeFilesTest extends TestCase
      * @param null|string $description
      * @param null|array $keywords
      * @throws FileSystemException
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @throws LocalizedException
      */
     public function testExecute(
         ?string $file,
         ?string $title,
         ?string $description,
-        ?array $keywords
-    ): void {
+        ?array  $keywords
+    ): void
+    {
         $path = realpath(__DIR__ . '/../_files/' . $file);
         $modifiableFilePath = $this->mediaDirectory->getAbsolutePath($file);
         $this->driver->copy(
@@ -97,6 +86,30 @@ class SynchronizeFilesTest extends TestCase
         $this->assertEquals($keywords, $loadedKeywords);
 
         $this->driver->deleteFile($modifiableFilePath);
+    }
+
+    /**
+     * Key asset keywords
+     *
+     * @param AssetInterface $asset
+     * @return string[]
+     */
+    private function getKeywords(AssetInterface $asset): array
+    {
+        $assetKeywords = $this->getAssetKeywords->execute([$asset->getId()]);
+
+        if (empty($assetKeywords)) {
+            return [];
+        }
+
+        $keywords = current($assetKeywords)->getKeywords();
+
+        return array_map(
+            function (KeywordInterface $keyword) {
+                return $keyword->getKeyword();
+            },
+            $keywords
+        );
     }
 
     /**
@@ -126,26 +139,15 @@ class SynchronizeFilesTest extends TestCase
     }
 
     /**
-     * Key asset keywords
-     *
-     * @param AssetInterface $asset
-     * @return string[]
+     * @inheritdoc
      */
-    private function getKeywords(AssetInterface $asset): array
+    protected function setUp(): void
     {
-        $assetKeywords = $this->getAssetKeywords->execute([$asset->getId()]);
-
-        if (empty($assetKeywords)) {
-            return [];
-        }
-
-        $keywords = current($assetKeywords)->getKeywords();
-
-        return array_map(
-            function (KeywordInterface $keyword) {
-                return $keyword->getKeyword();
-            },
-            $keywords
-        );
+        $this->driver = Bootstrap::getObjectManager()->get(DriverInterface::class);
+        $this->synchronizeFiles = Bootstrap::getObjectManager()->get(SynchronizeFilesInterface::class);
+        $this->getAssetsByPath = Bootstrap::getObjectManager()->get(GetAssetsByPathsInterface::class);
+        $this->getAssetKeywords = Bootstrap::getObjectManager()->get(GetAssetsKeywordsInterface::class);
+        $this->mediaDirectory = Bootstrap::getObjectManager()->get(Filesystem::class)
+            ->getDirectoryWrite(DirectoryList::MEDIA);
     }
 }

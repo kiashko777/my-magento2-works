@@ -7,10 +7,11 @@ declare(strict_types=1);
 
 namespace Magento\PaypalGraphQl\Model\Resolver\Customer;
 
-use Magento\PaypalGraphQl\PaypalPayflowProAbstractTest;
-use Magento\Framework\Serialize\SerializerInterface;
-use Magento\Quote\Model\QuoteIdToMaskedQuoteId;
 use Magento\Framework\DataObject;
+use Magento\Framework\Serialize\SerializerInterface;
+use Magento\Integration\Model\Oauth\Token;
+use Magento\PaypalGraphQl\PaypalPayflowProAbstractTest;
+use Magento\Quote\Model\QuoteIdToMaskedQuoteId;
 
 /**
  * End to end place order test using payflowpro via graphql endpoint for customer
@@ -28,14 +29,6 @@ class PlaceOrderWithPayflowProTest extends PaypalPayflowProAbstractTest
      * @var QuoteIdToMaskedQuoteId
      */
     private $quoteIdToMaskedId;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->json = $this->objectManager->get(SerializerInterface::class);
-        $this->quoteIdToMaskedId = $this->objectManager->get(QuoteIdToMaskedQuoteId::class);
-    }
 
     /**
      * Test end to end test to process a paypal payflow pro order
@@ -128,8 +121,8 @@ mutation {
 }
 QUERY;
 
-        /** @var \Magento\Integration\Model\Oauth\Token $tokenModel */
-        $tokenModel = $this->objectManager->create(\Magento\Integration\Model\Oauth\Token::class);
+        /** @var Token $tokenModel */
+        $tokenModel = $this->objectManager->create(Token::class);
         $customerToken = $tokenModel->createCustomerToken(1)->getToken();
 
         $requestHeaders = [
@@ -213,5 +206,13 @@ QUERY;
             'test_quote',
             $responseData['data']['placeOrder']['order']['order_number']
         );
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->json = $this->objectManager->get(SerializerInterface::class);
+        $this->quoteIdToMaskedId = $this->objectManager->get(QuoteIdToMaskedQuoteId::class);
     }
 }

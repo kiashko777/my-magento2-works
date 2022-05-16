@@ -8,24 +8,25 @@ declare(strict_types=1);
 
 namespace Magento\OfflineShipping\Controller\Adminhtml\System\Config;
 
+use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\Filesystem;
 use Magento\Framework\Filesystem\Directory\WriteInterface;
 use Magento\Framework\Message\MessageInterface;
 use Magento\Framework\View\LayoutInterface;
 use Magento\OfflineShipping\Block\Adminhtml\Carrier\Tablerate\Grid;
 use Magento\OfflineShipping\Model\ResourceModel\Carrier\Tablerate\Collection;
 use Magento\Store\Model\StoreManagerInterface;
-use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Framework\Filesystem;
-use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\TestFramework\ObjectManager;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * Test tablerates import and export.
  *
  * @magentoAppArea Adminhtml
  */
-class ImportExportTableratesTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class ImportExportTableratesTest extends AbstractBackendController
 {
     /**
      * @var ObjectManager
@@ -48,19 +49,6 @@ class ImportExportTableratesTest extends \Magento\TestFramework\TestCase\Abstrac
     private $websiteId;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->fileSystem = $this->objectManager->get(Filesystem::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-        $this->websiteId = $this->storeManager->getWebsite()->getId();
-
-        parent::setUp();
-    }
-
-    /**
      * Import Table Rates to be used in Configuration Settings.
      *
      * @magentoDataFixture Magento/OfflineShipping/_files/tablerate_create_file_in_tmp.php
@@ -76,7 +64,7 @@ class ImportExportTableratesTest extends \Magento\TestFramework\TestCase\Abstrac
             'name' => ['tablerate' => ['fields' => ['import' => ['value' => $importCsv]]]],
             'type' => ['tablerate' => ['fields' => ['import' => ['value' => 'text/csv']]]],
             'tmp_name' => ['tablerate' => ['fields' => ['import' => ['value' => $importCsvPath]]]],
-            'error'=> ['tablerate' => ['fields' => ['import' => ['value' => 0]]]],
+            'error' => ['tablerate' => ['fields' => ['import' => ['value' => 0]]]],
             'size' => ['tablerate' => ['fields' => ['import' => ['value' => 102]]]],
         ];
 
@@ -126,5 +114,18 @@ class ImportExportTableratesTest extends \Magento\TestFramework\TestCase\Abstrac
         $exportCsvContent = $varDirectory->openFile($exportCsv['value'], 'r')->readAll();
 
         return $exportCsvContent;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->fileSystem = $this->objectManager->get(Filesystem::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
+        $this->websiteId = $this->storeManager->getWebsite()->getId();
+
+        parent::setUp();
     }
 }

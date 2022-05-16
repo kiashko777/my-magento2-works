@@ -26,15 +26,6 @@ class SetOfflinePaymentMethodsOnCartTest extends GraphQlAbstract
     private $getMaskedQuoteIdByReservedOrderId;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
      * @magentoApiDataFixture Magento/GraphQl/Quote/_files/guest/create_empty_cart.php
      * @magentoApiDataFixture Magento/GraphQl/Quote/_files/add_simple_product.php
@@ -65,6 +56,35 @@ class SetOfflinePaymentMethodsOnCartTest extends GraphQlAbstract
 
         self::assertArrayHasKey('title', $selectedPaymentMethod);
         self::assertEquals($methodTitle, $selectedPaymentMethod['title']);
+    }
+
+    /**
+     * @param string $maskedQuoteId
+     * @param string $methodCode
+     * @return string
+     */
+    private function getQuery(
+        string $maskedQuoteId,
+        string $methodCode
+    ): string
+    {
+        return <<<QUERY
+mutation {
+  setPaymentMethodOnCart(input: {
+    cart_id: "{$maskedQuoteId}",
+    payment_method: {
+      code: "{$methodCode}"
+    }
+  }) {
+    cart {
+      selected_payment_method {
+        code
+        title
+      }
+    }
+  }
+}
+QUERY;
     }
 
     /**
@@ -134,30 +154,11 @@ QUERY;
     }
 
     /**
-     * @param string $maskedQuoteId
-     * @param string $methodCode
-     * @return string
+     * @inheritdoc
      */
-    private function getQuery(
-        string $maskedQuoteId,
-        string $methodCode
-    ) : string {
-        return <<<QUERY
-mutation {
-  setPaymentMethodOnCart(input: {
-    cart_id: "{$maskedQuoteId}",
-    payment_method: {
-      code: "{$methodCode}"
-    }
-  }) {
-    cart {
-      selected_payment_method {
-        code
-        title
-      }
-    }
-  }
-}
-QUERY;
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
     }
 }

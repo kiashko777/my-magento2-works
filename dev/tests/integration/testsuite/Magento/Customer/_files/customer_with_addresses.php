@@ -6,13 +6,13 @@
 
 declare(strict_types=1);
 
+use Magento\Customer\Api\AddressRepositoryInterface;
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Model\Address;
+use Magento\Customer\Model\AddressRegistry;
+use Magento\Customer\Model\Customer;
 use Magento\Customer\Model\CustomerRegistry;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Customer\Api\CustomerRepositoryInterface;
-use Magento\Customer\Model\Customer;
-use Magento\Customer\Model\Address;
-use Magento\Customer\Api\AddressRepositoryInterface;
-use Magento\Customer\Model\AddressRegistry;
 
 $objectManager = Bootstrap::getObjectManager();
 //Creating customer

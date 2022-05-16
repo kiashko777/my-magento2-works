@@ -8,11 +8,16 @@ declare(strict_types=1);
 
 namespace Magento\EncryptionKey\Setup\Patch\Data;
 
-use Magento\Framework\ObjectManagerInterface;
+use Magento\Config\Model\Config\Structure\Proxy;
+use Magento\Config\Model\ResourceModel\Config;
 use Magento\Framework\App\DeploymentConfig;
 use Magento\Framework\Encryption\Encryptor;
+use Magento\Framework\Encryption\EncryptorInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class SodiumChachaPatchTest extends \PHPUnit\Framework\TestCase
+class SodiumChachaPatchTest extends TestCase
 {
     const PATH_KEY = 'crypt/key';
 
@@ -26,18 +31,12 @@ class SodiumChachaPatchTest extends \PHPUnit\Framework\TestCase
      */
     private $deployConfig;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->deployConfig = $this->objectManager->get(DeploymentConfig::class);
-    }
-
     public function testChangeEncryptionKey()
     {
         $testPath = 'test/config';
         $testValue = 'test';
 
-        $structureMock = $this->createMock(\Magento\Config\Model\Config\Structure\Proxy::class);
+        $structureMock = $this->createMock(Proxy::class);
         $structureMock->expects($this->once())
             ->method('getFieldPathsByAttribute')
             ->willReturn([$testPath]);
@@ -45,13 +44,13 @@ class SodiumChachaPatchTest extends \PHPUnit\Framework\TestCase
             ->method('getFieldPaths')
             ->willReturn([]);
 
-        /** @var \Magento\Config\Model\ResourceModel\Config $configModel */
-        $configModel = $this->objectManager->create(\Magento\Config\Model\ResourceModel\Config::class);
+        /** @var Config $configModel */
+        $configModel = $this->objectManager->create(Config::class);
         $configModel->saveConfig($testPath, $this->legacyEncrypt($testValue), 'default', 0);
 
-        /** @var \Magento\EncryptionKey\Setup\Patch\Data\SodiumChachaPatch $patch */
+        /** @var SodiumChachaPatch $patch */
         $patch = $this->objectManager->create(
-            \Magento\EncryptionKey\Setup\Patch\Data\SodiumChachaPatch::class,
+            SodiumChachaPatch::class,
             [
                 'structure' => $structureMock,
             ]
@@ -72,8 +71,8 @@ class SodiumChachaPatchTest extends \PHPUnit\Framework\TestCase
             )
         );
 
-        /** @var \Magento\Framework\Encryption\EncryptorInterface $encyptor */
-        $encyptor = $this->objectManager->get(\Magento\Framework\Encryption\EncryptorInterface::class);
+        /** @var EncryptorInterface $encyptor */
+        $encyptor = $this->objectManager->get(EncryptorInterface::class);
 
         $rawConfigValue = array_pop($values);
 
@@ -97,5 +96,11 @@ class SodiumChachaPatchTest extends \PHPUnit\Framework\TestCase
         // @codingStandardsIgnoreEnd
 
         return '0:' . Encryptor::CIPHER_RIJNDAEL_256 . ':' . base64_encode($encrpted);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->deployConfig = $this->objectManager->get(DeploymentConfig::class);
     }
 }

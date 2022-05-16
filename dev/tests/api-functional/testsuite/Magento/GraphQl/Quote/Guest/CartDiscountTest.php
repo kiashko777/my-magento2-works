@@ -21,12 +21,6 @@ class CartDiscountTest extends GraphQlAbstract
      */
     private $getMaskedQuoteIdByReservedOrderId;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-    }
-
     /**
      * @magentoApiDataFixture Magento/GraphQl/Quote/_files/cart_rule_discount_no_coupon.php
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
@@ -41,6 +35,31 @@ class CartDiscountTest extends GraphQlAbstract
         $discountResponse = $response['cart']['prices']['discount'];
         self::assertEquals(-10, $discountResponse['amount']['value']);
         self::assertEquals(['50% Off for all orders'], $discountResponse['label']);
+    }
+
+    /**
+     * Generates GraphQl query for retrieving cart discount.
+     *
+     * @param string $maskedQuoteId
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId): string
+    {
+        return <<<QUERY
+{
+  cart(cart_id: "$maskedQuoteId") {
+    prices {
+      discount {
+        label
+        amount {
+          value
+          currency
+        }
+      }
+    }
+  }
+}
+QUERY;
     }
 
     /**
@@ -74,28 +93,9 @@ class CartDiscountTest extends GraphQlAbstract
         self::assertNull($response['cart']['prices']['discount']);
     }
 
-    /**
-     * Generates GraphQl query for retrieving cart discount.
-     *
-     * @param string $maskedQuoteId
-     * @return string
-     */
-    private function getQuery(string $maskedQuoteId): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-{
-  cart(cart_id: "$maskedQuoteId") {
-    prices {
-      discount {
-        label
-        amount {
-          value
-          currency
-        }
-      }
-    }
-  }
-}
-QUERY;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
     }
 }

@@ -30,20 +30,6 @@ class SelectAttributeTest extends AbstractEavTest
     }
 
     /**
-     * @return void
-     */
-    public function testModifyData(): void
-    {
-        $product = $this->getProduct();
-        $attributeData = [
-            'dropdown_attribute' => $this->getOptionValueByLabel('dropdown_attribute', 'Option 3')
-        ];
-        $this->saveProduct($product, $attributeData);
-        $expectedData = $this->addDataNesting($attributeData);
-        $this->callModifyDataAndAssert($product, $expectedData);
-    }
-
-    /**
      * @return array
      */
     private function getAttributeMeta(): array
@@ -62,5 +48,19 @@ class SelectAttributeTest extends AbstractEavTest
             'options' => $this->getAttributeOptions('dropdown_attribute'),
             'componentType' => 'field',
         ];
+    }
+
+    /**
+     * @return void
+     */
+    public function testModifyData(): void
+    {
+        $product = $this->getProduct();
+        $attributeData = [
+            'dropdown_attribute' => $this->getOptionValueByLabel('dropdown_attribute', 'Option 3')
+        ];
+        $this->saveProduct($product, $attributeData);
+        $expectedData = $this->addDataNesting($attributeData);
+        $this->callModifyDataAndAssert($product, $expectedData);
     }
 }

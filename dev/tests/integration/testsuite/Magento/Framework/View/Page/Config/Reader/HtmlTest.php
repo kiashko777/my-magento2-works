@@ -3,18 +3,24 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\View\Page\Config\Reader;
 
-class HtmlTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\View\Layout\Element;
+use Magento\Framework\View\Layout\Reader\Context;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class HtmlTest extends TestCase
 {
     public function testInterpret()
     {
-        /** @var \Magento\Framework\View\Layout\Reader\Context $readerContext */
-        $readerContext = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\View\Layout\Reader\Context::class
+        /** @var Context $readerContext */
+        $readerContext = Bootstrap::getObjectManager()->create(
+            Context::class
         );
-        $pageXml = new \Magento\Framework\View\Layout\Element(__DIR__ . '/_files/_layout_update.xml', 0, true);
-        $parentElement = new \Magento\Framework\View\Layout\Element('<page></page>');
+        $pageXml = new Element(__DIR__ . '/_files/_layout_update.xml', 0, true);
+        $parentElement = new Element('<page></page>');
 
         $html = new Html();
         foreach ($pageXml->xpath('html') as $htmlElement) {

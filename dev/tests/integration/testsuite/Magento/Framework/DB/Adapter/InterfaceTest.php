@@ -7,15 +7,22 @@
 /**
  * Test for an environment-dependent DB adapter that implements \Magento\Framework\DB\Adapter\AdapterInterface
  */
+
 namespace Magento\Framework\DB\Adapter;
+
+use Magento\Framework\DB\Ddl\Table;
+use Magento\Framework\Setup\ModuleDataSetupInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+use Zend_Db_Exception;
 
 /**
  * @magentoDbIsolation disabled
  */
-class InterfaceTest extends \PHPUnit\Framework\TestCase
+class InterfaceTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\DB\Adapter\AdapterInterface
+     * @var AdapterInterface
      */
     protected $_connection;
 
@@ -33,91 +40,6 @@ class InterfaceTest extends \PHPUnit\Framework\TestCase
      * @var string
      */
     protected $_twoColumnIdxName;
-
-    protected function setUp(): void
-    {
-        /** @var \Magento\Framework\Setup\ModuleDataSetupInterface $installer */
-        $installer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\Setup\ModuleDataSetupInterface::class
-        );
-        $this->_connection = $installer->getConnection();
-        $this->_tableName = $this->_connection->getTableName('table_two_column_idx');
-        $this->_oneColumnIdxName = $this->_connection->getIndexName($this->_tableName, ['column1']);
-        $this->_twoColumnIdxName = $this->_connection->getIndexName($this->_tableName, ['column1', 'column2']);
-
-        $table = $this->_connection->newTable(
-            $this->_tableName
-        )->addColumn(
-            'id',
-            \Magento\Framework\DB\Ddl\Table::TYPE_INTEGER,
-            null,
-            ['identity' => true, 'unsigned' => true, 'nullable' => false, 'primary' => true],
-            'Id'
-        )->addColumn(
-            'column1',
-            \Magento\Framework\DB\Ddl\Table::TYPE_INTEGER
-        )->addColumn(
-            'column2',
-            \Magento\Framework\DB\Ddl\Table::TYPE_INTEGER
-        )->addIndex(
-            $this->_oneColumnIdxName,
-            ['column1']
-        )->addIndex(
-            $this->_twoColumnIdxName,
-            ['column1', 'column2']
-        );
-        $this->_connection->createTable($table);
-    }
-
-    /**
-     * Cleanup DDL cache for the fixture table
-     */
-    protected function tearDown(): void
-    {
-        $this->_connection->dropTable($this->_tableName);
-        $this->_connection->resetDdlCache($this->_tableName);
-        $this->_connection = null;
-    }
-
-    protected function assertPreConditions(): void
-    {
-        $this->assertTrue(
-            $this->_connection->tableColumnExists($this->_tableName, 'column1'),
-            'Table column "column1" must be provided by the fixture.'
-        );
-        $this->assertTrue(
-            $this->_connection->tableColumnExists($this->_tableName, 'column2'),
-            'Table column "column2" must be provided by the fixture.'
-        );
-        $this->assertEquals(
-            ['column1'],
-            $this->_getIndexColumns($this->_tableName, $this->_oneColumnIdxName),
-            'Single-column index must be provided by the fixture.'
-        );
-        $this->assertEquals(
-            ['column1', 'column2'],
-            $this->_getIndexColumns($this->_tableName, $this->_twoColumnIdxName),
-            'Multiple-column index must be provided by the fixture.'
-        );
-    }
-
-    /**
-     * Retrieve list of columns used for an index or return false, if an index with a given name does not exist
-     *
-     * @param string $tableName
-     * @param string $indexName
-     * @param string|null $schemaName
-     * @return array|false
-     */
-    protected function _getIndexColumns($tableName, $indexName, $schemaName = null)
-    {
-        foreach ($this->_connection->getIndexList($tableName, $schemaName) as $idxData) {
-            if ($idxData['KEY_NAME'] == $indexName) {
-                return $idxData['COLUMNS_LIST'];
-            }
-        }
-        return false;
-    }
 
     public function testDropColumn()
     {
@@ -215,7 +137,7 @@ class InterfaceTest extends \PHPUnit\Framework\TestCase
      */
     public function testInsertArrayTwoColumnsWithSimpleData()
     {
-        $this->expectException(\Zend_Db_Exception::class);
+        $this->expectException(Zend_Db_Exception::class);
 
         $this->_connection->insertArray($this->_tableName, ['column1', 'column2'], [1, 2]);
     }
@@ -267,5 +189,90 @@ class InterfaceTest extends \PHPUnit\Framework\TestCase
     public function insertDataProvider()
     {
         return ['column with identity field' => [['id' => 1, 'column1' => 10, 'column2' => 20]]];
+    }
+
+    protected function setUp(): void
+    {
+        /** @var ModuleDataSetupInterface $installer */
+        $installer = Bootstrap::getObjectManager()->create(
+            ModuleDataSetupInterface::class
+        );
+        $this->_connection = $installer->getConnection();
+        $this->_tableName = $this->_connection->getTableName('table_two_column_idx');
+        $this->_oneColumnIdxName = $this->_connection->getIndexName($this->_tableName, ['column1']);
+        $this->_twoColumnIdxName = $this->_connection->getIndexName($this->_tableName, ['column1', 'column2']);
+
+        $table = $this->_connection->newTable(
+            $this->_tableName
+        )->addColumn(
+            'id',
+            Table::TYPE_INTEGER,
+            null,
+            ['identity' => true, 'unsigned' => true, 'nullable' => false, 'primary' => true],
+            'Id'
+        )->addColumn(
+            'column1',
+            Table::TYPE_INTEGER
+        )->addColumn(
+            'column2',
+            Table::TYPE_INTEGER
+        )->addIndex(
+            $this->_oneColumnIdxName,
+            ['column1']
+        )->addIndex(
+            $this->_twoColumnIdxName,
+            ['column1', 'column2']
+        );
+        $this->_connection->createTable($table);
+    }
+
+    /**
+     * Cleanup DDL cache for the fixture table
+     */
+    protected function tearDown(): void
+    {
+        $this->_connection->dropTable($this->_tableName);
+        $this->_connection->resetDdlCache($this->_tableName);
+        $this->_connection = null;
+    }
+
+    protected function assertPreConditions(): void
+    {
+        $this->assertTrue(
+            $this->_connection->tableColumnExists($this->_tableName, 'column1'),
+            'Table column "column1" must be provided by the fixture.'
+        );
+        $this->assertTrue(
+            $this->_connection->tableColumnExists($this->_tableName, 'column2'),
+            'Table column "column2" must be provided by the fixture.'
+        );
+        $this->assertEquals(
+            ['column1'],
+            $this->_getIndexColumns($this->_tableName, $this->_oneColumnIdxName),
+            'Single-column index must be provided by the fixture.'
+        );
+        $this->assertEquals(
+            ['column1', 'column2'],
+            $this->_getIndexColumns($this->_tableName, $this->_twoColumnIdxName),
+            'Multiple-column index must be provided by the fixture.'
+        );
+    }
+
+    /**
+     * Retrieve list of columns used for an index or return false, if an index with a given name does not exist
+     *
+     * @param string $tableName
+     * @param string $indexName
+     * @param string|null $schemaName
+     * @return array|false
+     */
+    protected function _getIndexColumns($tableName, $indexName, $schemaName = null)
+    {
+        foreach ($this->_connection->getIndexList($tableName, $schemaName) as $idxData) {
+            if ($idxData['KEY_NAME'] == $indexName) {
+                return $idxData['COLUMNS_LIST'];
+            }
+        }
+        return false;
     }
 }

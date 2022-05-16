@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Model\Order;
 
 use Magento\Framework\Api\SearchCriteriaBuilder;
@@ -10,12 +11,13 @@ use Magento\Framework\ObjectManagerInterface;
 use Magento\Sales\Api\InvoiceRepositoryInterface;
 use Magento\Sales\Model\Order;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for CreditmemoFactory class.
  * @magentoDbIsolation enabled
  */
-class CreditmemoFactoryTest extends \PHPUnit\Framework\TestCase
+class CreditmemoFactoryTest extends TestCase
 {
     /**
      * Placeholder for order item id field.
@@ -33,15 +35,6 @@ class CreditmemoFactoryTest extends \PHPUnit\Framework\TestCase
     private $creditmemoFactory;
 
     /**
-     * {@inheritdoc}
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->creditmemoFactory = $this->objectManager->create(CreditmemoFactory::class);
-    }
-
-    /**
      * Checks a case when creditmemo created from the order.
      *
      * @magentoDataFixture Magento/Sales/_files/order_with_bundle_and_invoiced.php
@@ -55,6 +48,51 @@ class CreditmemoFactoryTest extends \PHPUnit\Framework\TestCase
         $creditmemoData = $this->prepareCreditMemoData($order, $creditmemoData);
         $creditmemo = $this->creditmemoFactory->createByOrder($order, $creditmemoData);
         self::assertEquals($expectedQty, $creditmemo->getTotalQty(), 'Creditmemo has wrong total qty.');
+    }
+
+    /**
+     * Retrieves order by increment ID.
+     *
+     * @param string $incrementId
+     * @return Order
+     */
+    private function getOrder(string $incrementId): Order
+    {
+        /** @var Order $order */
+        $order = $this->objectManager->create(Order::class);
+        $order->loadByIncrementId($incrementId);
+
+        return $order;
+    }
+
+    /**
+     * Prepare Creditmemo data.
+     *
+     * @param Order $order
+     * @param array $creditmemoData
+     * @return array
+     */
+    private function prepareCreditMemoData(Order $order, array $creditmemoData): array
+    {
+        $result = [];
+        $orderItems = $order->getAllItems();
+        foreach ($creditmemoData['qtys'] as $key => $item) {
+            $result[$orderItems[$this->prepareOrderItemKey($key)]->getId()] = $item;
+        }
+        $creditmemoData['qtys'] = $result;
+
+        return $creditmemoData;
+    }
+
+    /**
+     * Prepare order item key.
+     *
+     * @param string $key
+     * @return int
+     */
+    private function prepareOrderItemKey($key)
+    {
+        return str_replace(self::ORDER_ITEM_ID_PLACEHOLDER, '', $key) - 1;
     }
 
     /**
@@ -100,51 +138,6 @@ class CreditmemoFactoryTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Prepare Creditmemo data.
-     *
-     * @param Order $order
-     * @param array $creditmemoData
-     * @return array
-     */
-    private function prepareCreditMemoData(Order $order, array $creditmemoData): array
-    {
-        $result = [];
-        $orderItems = $order->getAllItems();
-        foreach ($creditmemoData['qtys'] as $key => $item) {
-            $result[$orderItems[$this->prepareOrderItemKey($key)]->getId()] = $item;
-        }
-        $creditmemoData['qtys'] = $result;
-
-        return $creditmemoData;
-    }
-
-    /**
-     * Prepare order item key.
-     *
-     * @param string $key
-     * @return int
-     */
-    private function prepareOrderItemKey($key)
-    {
-        return str_replace(self::ORDER_ITEM_ID_PLACEHOLDER, '', $key) - 1;
-    }
-
-    /**
-     * Retrieves order by increment ID.
-     *
-     * @param string $incrementId
-     * @return Order
-     */
-    private function getOrder(string $incrementId): Order
-    {
-        /** @var Order $order */
-        $order = $this->objectManager->create(Order::class);
-        $order->loadByIncrementId($incrementId);
-
-        return $order;
-    }
-
-    /**
      * Retrieves invoice by increment ID.
      *
      * @param string $incrementId
@@ -162,5 +155,14 @@ class CreditmemoFactoryTest extends \PHPUnit\Framework\TestCase
         $items = $repository->getList($searchCriteria)->getItems();
 
         return array_pop($items);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->creditmemoFactory = $this->objectManager->create(CreditmemoFactory::class);
     }
 }

@@ -15,6 +15,7 @@ use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Locator\LocatorInterface;
 use Magento\Catalog\Ui\DataProvider\Product\Form\Modifier\Eav\CompositeConfigProcessor;
 use Magento\Eav\Model\Entity\Type;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Phrase;
 use Magento\Store\Api\Data\StoreInterface;
@@ -132,19 +133,6 @@ abstract class AbstractEavTest extends TestCase
     }
 
     /**
-     * @param ProductInterface $product
-     * @param array $expectedData
-     * @return void
-     */
-    protected function callModifyDataAndAssert(ProductInterface $product, array $expectedData): void
-    {
-        $this->locatorMock->expects($this->any())->method('getProduct')->willReturn($product);
-        $actualData = $this->eavModifier->modifyData([]);
-        $this->prepareDataForComparison($actualData, $expectedData);
-        $this->assertEquals($expectedData, $actualData);
-    }
-
-    /**
      * Prepare data for comparison to avoid false positive failures.
      *
      * Make sure that $data contains all the data contained in $expectedData,
@@ -172,6 +160,19 @@ abstract class AbstractEavTest extends TestCase
     }
 
     /**
+     * @param ProductInterface $product
+     * @param array $expectedData
+     * @return void
+     */
+    protected function callModifyDataAndAssert(ProductInterface $product, array $expectedData): void
+    {
+        $this->locatorMock->expects($this->any())->method('getProduct')->willReturn($product);
+        $actualData = $this->eavModifier->modifyData([]);
+        $this->prepareDataForComparison($actualData, $expectedData);
+        $this->assertEquals($expectedData, $actualData);
+    }
+
+    /**
      * Updates attribute default value.
      *
      * @param string $attributeCode
@@ -183,19 +184,6 @@ abstract class AbstractEavTest extends TestCase
         $attribute = $this->attributeRepository->get($attributeCode);
         $attribute->setDefaultValue($defaultValue);
         $this->attributeRepository->save($attribute);
-    }
-
-    /**
-     * Returns attribute options list.
-     *
-     * @param string $attributeCode
-     * @return array
-     */
-    protected function getAttributeOptions(string $attributeCode): array
-    {
-        $attribute = $this->attributeRepository->get($attributeCode);
-
-        return $attribute->usesSource() ? $attribute->getSource()->getAllOptions() : [];
     }
 
     /**
@@ -218,11 +206,24 @@ abstract class AbstractEavTest extends TestCase
     }
 
     /**
+     * Returns attribute options list.
+     *
+     * @param string $attributeCode
+     * @return array
+     */
+    protected function getAttributeOptions(string $attributeCode): array
+    {
+        $attribute = $this->attributeRepository->get($attributeCode);
+
+        return $attribute->usesSource() ? $attribute->getSource()->getAllOptions() : [];
+    }
+
+    /**
      * Returns product for testing.
      *
      * @param bool $forceReload
      * @return ProductInterface
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @throws NoSuchEntityException
      */
     protected function getProduct($forceReload = false): ProductInterface
     {

@@ -27,17 +27,6 @@ class MsrpPriceCalculatorTest extends TestCase
     private $model;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
-        $this->model = $objectManager->get(MsrpPriceCalculator::class);
-    }
-
-    /**
      * Test grouped product minimum advertised price
      *
      * @magentoAppIsolation enabled
@@ -51,7 +40,8 @@ class MsrpPriceCalculatorTest extends TestCase
         ?float $simpleProductPriceMsrp,
         ?float $virtualProductMsrp,
         ?float $expectedMsrp
-    ): void {
+    ): void
+    {
         $this->setProductMinimumAdvertisedPrice('simple', $simpleProductPriceMsrp);
         $this->setProductMinimumAdvertisedPrice('virtual-product', $virtualProductMsrp);
         $groupedProduct = $this->getProduct('grouped-product');
@@ -104,5 +94,16 @@ class MsrpPriceCalculatorTest extends TestCase
                 0.0
             ]
         ];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
+        $this->model = $objectManager->get(MsrpPriceCalculator::class);
     }
 }

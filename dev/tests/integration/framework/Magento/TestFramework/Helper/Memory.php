@@ -8,7 +8,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Helper;
+
+use InvalidArgumentException;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Shell;
+use OutOfBoundsException;
 
 /**
  * Integration Test Framework memory management logic.
@@ -24,16 +30,16 @@ class Memory
     const MEMORY_UNITS = 'BKMGTPE';
 
     /**
-     * @var \Magento\Framework\Shell
+     * @var Shell
      */
     private $_shell;
 
     /**
      * Inject dependencies
      *
-     * @param \Magento\Framework\Shell $shell
+     * @param Shell $shell
      */
-    public function __construct(\Magento\Framework\Shell $shell)
+    public function __construct(Shell $shell)
     {
         $this->_shell = $shell;
     }
@@ -52,7 +58,7 @@ class Memory
         try {
             // fall back to the Unix command line
             $result = $this->_getUnixProcessMemoryUsage($pid);
-        } catch (\Magento\Framework\Exception\LocalizedException $e) {
+        } catch (LocalizedException $e) {
             // try to use the Windows command line
             // some ports of Unix commands on Windows, such as MinGW, have limited capabilities and cannot be used
             $result = $this->_getWinProcessMemoryUsage($pid);
@@ -81,19 +87,16 @@ class Memory
     }
 
     /**
-     * Retrieve the current process' memory usage using Windows command line interface
+     * Whether the operating system belongs to the Mac family
      *
-     * @link http://technet.microsoft.com/en-us/library/bb491010.aspx
-     * @param int $pid
-     * @return int Memory usage in bytes
+     * @link http://php.net/manual/en/function.php-uname.php
+     * @return boolean
+     * phpcs:disable Magento2.Functions.StaticFunction
      */
-    protected function _getWinProcessMemoryUsage($pid)
+    public static function isMacOs()
     {
-        $output = $this->_shell->execute('tasklist.exe /fi %s /fo CSV /nh', ["PID eq {$pid}"]);
-
-        $arr = str_getcsv($output);
-        $memory = $arr[4];
-        return self::convertToBytes($memory);
+        // phpcs:enable Magento2.Functions.StaticFunction
+        return strtoupper(PHP_OS) === 'DARWIN';
     }
 
     /**
@@ -101,25 +104,25 @@ class Memory
      *
      * @param string $number String representation of a number
      * @return int
-     * @throws \InvalidArgumentException
-     * @throws \OutOfBoundsException
+     * @throws InvalidArgumentException
+     * @throws OutOfBoundsException
      * phpcs:disable Magento2.Functions.StaticFunction
      */
     public static function convertToBytes($number)
     {
         // phpcs:enable Magento2.Functions.StaticFunction
         if (!preg_match('/^(.*\d)\h*(\D)$/', $number, $matches)) {
-            throw new \InvalidArgumentException("Number format '{$number}' is not recognized.");
+            throw new InvalidArgumentException("Number format '{$number}' is not recognized.");
         }
         $unitSymbol = strtoupper($matches[2]);
         if (false === strpos(self::MEMORY_UNITS, $unitSymbol)) {
-            throw new \InvalidArgumentException("The number '{$number}' has an unrecognized unit: '{$unitSymbol}'.");
+            throw new InvalidArgumentException("The number '{$number}' has an unrecognized unit: '{$unitSymbol}'.");
         }
         $result = self::_convertToNumber($matches[1]);
         $pow = $unitSymbol ? strpos(self::MEMORY_UNITS, $unitSymbol) : 0;
         $is32Bit = PHP_INT_SIZE == 4;
         if ($is32Bit && $pow >= 4) {
-            throw new \OutOfBoundsException("A 32-bit system is unable to process such a number.");
+            throw new OutOfBoundsException("A 32-bit system is unable to process such a number.");
         }
         if ($unitSymbol) {
             $result *= pow(1024, $pow);
@@ -139,7 +142,7 @@ class Memory
      *
      * @param string $number
      * @return string
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      * phpcs:disable Magento2.Functions.StaticFunction
      */
     protected static function _convertToNumber($number)
@@ -147,7 +150,7 @@ class Memory
         // phpcs:enable Magento2.Functions.StaticFunction
         preg_match_all('/(\D+)/', $number, $matches);
         if (count(array_unique($matches[0])) > 1) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 "The number '{$number}' seems to have decimal part. Only integer numbers are supported."
             );
         }
@@ -155,15 +158,18 @@ class Memory
     }
 
     /**
-     * Whether the operating system belongs to the Mac family
+     * Retrieve the current process' memory usage using Windows command line interface
      *
-     * @link http://php.net/manual/en/function.php-uname.php
-     * @return boolean
-     * phpcs:disable Magento2.Functions.StaticFunction
+     * @link http://technet.microsoft.com/en-us/library/bb491010.aspx
+     * @param int $pid
+     * @return int Memory usage in bytes
      */
-    public static function isMacOs()
+    protected function _getWinProcessMemoryUsage($pid)
     {
-        // phpcs:enable Magento2.Functions.StaticFunction
-        return strtoupper(PHP_OS) === 'DARWIN';
+        $output = $this->_shell->execute('tasklist.exe /fi %s /fo CSV /nh', ["PID eq {$pid}"]);
+
+        $arr = str_getcsv($output);
+        $memory = $arr[4];
+        return self::convertToBytes($memory);
     }
 }

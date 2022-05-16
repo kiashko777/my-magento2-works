@@ -3,19 +3,22 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Model\Order\Payment;
 
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Framework\Api\FilterBuilder;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Api\SortOrderBuilder;
+use Magento\Sales\Api\Data\OrderPaymentSearchResultInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class RepositoryTest
  * @package Magento\Sales\Model\Order\Payment\
  * @magentoDbIsolation enabled
  */
-class RepositoryTest extends \PHPUnit\Framework\TestCase
+class RepositoryTest extends TestCase
 {
     /** @var Repository */
     protected $repository;
@@ -28,21 +31,6 @@ class RepositoryTest extends \PHPUnit\Framework\TestCase
 
     /** @var SearchCriteriaBuilder */
     private $searchCriteriaBuilder;
-
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->repository = $objectManager->create(Repository::class);
-        $this->searchCriteriaBuilder = $objectManager->create(
-            \Magento\Framework\Api\SearchCriteriaBuilder::class
-        );
-        $this->filterBuilder = $objectManager->get(
-            \Magento\Framework\Api\FilterBuilder::class
-        );
-        $this->sortOrderBuilder = $objectManager->get(
-            \Magento\Framework\Api\SortOrderBuilder::class
-        );
-    }
 
     /**
      * @magentoDataFixture Magento/Sales/_files/order_payment_list.php
@@ -70,11 +58,26 @@ class RepositoryTest extends \PHPUnit\Framework\TestCase
         $this->searchCriteriaBuilder->addFilters([$filter3]);
         $this->searchCriteriaBuilder->addSortOrder($sortOrder);
         $searchCriteria = $this->searchCriteriaBuilder->create();
-        /** @var \Magento\Sales\Api\Data\OrderPaymentSearchResultInterface $result */
+        /** @var OrderPaymentSearchResultInterface $result */
         $result = $this->repository->getList($searchCriteria);
         $items = $result->getItems();
         $this->assertCount(2, $items);
         $this->assertEquals('456', array_shift($items)->getCcLast4());
         $this->assertEquals('123', array_shift($items)->getCcLast4());
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->repository = $objectManager->create(Repository::class);
+        $this->searchCriteriaBuilder = $objectManager->create(
+            SearchCriteriaBuilder::class
+        );
+        $this->filterBuilder = $objectManager->get(
+            FilterBuilder::class
+        );
+        $this->sortOrderBuilder = $objectManager->get(
+            SortOrderBuilder::class
+        );
     }
 }

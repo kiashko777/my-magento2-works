@@ -21,12 +21,6 @@ class GetCartIsVirtualTest extends GraphQlAbstract
      */
     private $getMaskedQuoteIdByReservedOrderId;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-    }
-
     /**
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
      * @magentoApiDataFixture Magento/GraphQl/Quote/_files/guest/create_empty_cart.php
@@ -42,6 +36,21 @@ class GetCartIsVirtualTest extends GraphQlAbstract
         $this->assertArrayHasKey('cart', $response);
         $this->assertArrayHasKey('is_virtual', $response['cart']);
         $this->assertFalse($response['cart']['is_virtual']);
+    }
+
+    /**
+     * @param string $maskedQuoteId
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId): string
+    {
+        return <<<QUERY
+{
+  cart(cart_id:"$maskedQuoteId") {
+    is_virtual
+  }
+}
+QUERY;
     }
 
     /**
@@ -80,18 +89,9 @@ class GetCartIsVirtualTest extends GraphQlAbstract
         $this->assertTrue($response['cart']['is_virtual']);
     }
 
-    /**
-     * @param string $maskedQuoteId
-     * @return string
-     */
-    private function getQuery(string $maskedQuoteId): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-{
-  cart(cart_id:"$maskedQuoteId") {    
-    is_virtual
-  }
-}
-QUERY;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
     }
 }

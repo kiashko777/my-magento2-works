@@ -37,17 +37,6 @@ class UpdateItemOptionsTest extends AbstractController
     private $productRepository;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->formKey = $this->_objectManager->get(FormKey::class);
-        $this->checkoutSession = $this->_objectManager->get(CheckoutSession::class);
-        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
-    }
-
-    /**
      * Tests that product is successfully updated in the shopping cart.
      *
      * @magentoAppArea frontend
@@ -68,28 +57,6 @@ class UpdateItemOptionsTest extends AbstractController
         $this->assertSessionMessages(
             $this->containsEqual($message),
             MessageInterface::TYPE_SUCCESS
-        );
-    }
-
-    /**
-     * Tests that product can't be updated with an empty shopping cart.
-     *
-     * @magentoAppArea frontend
-     * @magentoDataFixture Magento/Checkout/_files/quote_with_simple_product.php
-     */
-    public function testUpdateProductOptionsWithEmptyQuote()
-    {
-        $product = $this->productRepository->get('simple');
-        $quoteItem = $this->checkoutSession->getQuote()->getItemByProduct($product);
-        $postData = $this->preparePostData($product, $quoteItem);
-        $this->checkoutSession->clearQuote();
-        $this->dispatchUpdateItemOptionsRequest($postData);
-        $this->assertTrue($this->getResponse()->isRedirect());
-        $this->assertRedirect($this->stringContains('/checkout/cart/'));
-        $message = (string)__('The quote item isn&#039;t found. Verify the item and try again.');
-        $this->assertSessionMessages(
-            $this->containsEqual($message),
-            MessageInterface::TYPE_ERROR
         );
     }
 
@@ -123,5 +90,38 @@ class UpdateItemOptionsTest extends AbstractController
         $this->getRequest()->setPostValue($postData);
         $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
         $this->dispatch('checkout/cart/updateItemOptions/id/' . $postData['item']);
+    }
+
+    /**
+     * Tests that product can't be updated with an empty shopping cart.
+     *
+     * @magentoAppArea frontend
+     * @magentoDataFixture Magento/Checkout/_files/quote_with_simple_product.php
+     */
+    public function testUpdateProductOptionsWithEmptyQuote()
+    {
+        $product = $this->productRepository->get('simple');
+        $quoteItem = $this->checkoutSession->getQuote()->getItemByProduct($product);
+        $postData = $this->preparePostData($product, $quoteItem);
+        $this->checkoutSession->clearQuote();
+        $this->dispatchUpdateItemOptionsRequest($postData);
+        $this->assertTrue($this->getResponse()->isRedirect());
+        $this->assertRedirect($this->stringContains('/checkout/cart/'));
+        $message = (string)__('The quote item isn&#039;t found. Verify the item and try again.');
+        $this->assertSessionMessages(
+            $this->containsEqual($message),
+            MessageInterface::TYPE_ERROR
+        );
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->formKey = $this->_objectManager->get(FormKey::class);
+        $this->checkoutSession = $this->_objectManager->get(CheckoutSession::class);
+        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
     }
 }

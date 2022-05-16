@@ -5,7 +5,6 @@
  */
 declare(strict_types=1);
 
-use Magento\Customer\Model\GroupManagement;
 use Magento\Customer\Model\ResourceModel\Group\Collection;
 use Magento\SalesRule\Api\CouponRepositoryInterface;
 use Magento\SalesRule\Model\Coupon;

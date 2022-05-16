@@ -22,15 +22,6 @@ class ExportTest extends ExportBase
     private $invoiceFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->invoiceFactory = $this->_objectManager->get(InvoiceInterfaceFactory::class);
-    }
-
-    /**
      * @magentoDbIsolation disabled
      * @magentoAppArea Adminhtml
      * @magentoConfigFixture general/locale/timezone America/Chicago
@@ -44,9 +35,10 @@ class ExportTest extends ExportBase
      */
     public function testExportInvoice(
         string $format,
-        bool $addIdToUrl,
+        bool   $addIdToUrl,
         string $namespace
-    ): void {
+    ): void
+    {
         $order = $this->getOrder('200000001');
         $url = $this->getExportUrl($format, $addIdToUrl ? (int)$order->getId() : null);
         $response = $this->dispatchExport(
@@ -65,6 +57,17 @@ class ExportTest extends ExportBase
             $this->prepareDate($order->getCreatedAt(), 'America/Chicago'),
             $exportedInvoice['Order Date']
         );
+    }
+
+    /**
+     * Returns invoice by increment id.
+     *
+     * @param string $incrementId
+     * @return InvoiceInterface
+     */
+    private function getInvoice(string $incrementId): InvoiceInterface
+    {
+        return $this->invoiceFactory->create()->loadByIncrementId($incrementId);
     }
 
     /**
@@ -97,13 +100,11 @@ class ExportTest extends ExportBase
     }
 
     /**
-     * Returns invoice by increment id.
-     *
-     * @param string $incrementId
-     * @return InvoiceInterface
+     * @inheritdoc
      */
-    private function getInvoice(string $incrementId): InvoiceInterface
+    protected function setUp(): void
     {
-        return $this->invoiceFactory->create()->loadByIncrementId($incrementId);
+        parent::setUp();
+        $this->invoiceFactory = $this->_objectManager->get(InvoiceInterfaceFactory::class);
     }
 }

@@ -9,14 +9,14 @@ var tasks = {};
 
 function init(config) {
     var serveStatic = require('serve-static'),
-        grunt       = require('grunt'),
-        _           = require('underscore'),
-        path        = require('path'),
+        grunt = require('grunt'),
+        _ = require('underscore'),
+        path = require('path'),
         ignoredPaths, middleware, themes, files, port;
 
-    port         = config.port;
-    files        = config.files;
-    themes       = config.themes;
+    port = config.port;
+    files = config.files;
+    themes = config.themes;
     ignoredPaths = config.server.serveAsIs;
 
     function serveAsIs(path) {
@@ -50,7 +50,7 @@ function init(config) {
 
         _.defaults(options, config.server.options);
 
-        tasks[themeName] = { options: options };
+        tasks[themeName] = {options: options};
     });
 }
 

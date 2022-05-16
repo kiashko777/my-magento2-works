@@ -8,10 +8,10 @@ declare(strict_types=1);
 
 namespace Magento\Test\Integrity\Dependency;
 
-use Magento\Framework\GraphQlSchemaStitching\GraphQlReader;
-use Magento\Framework\GraphQlSchemaStitching\GraphQlReader\TypeReaderComposite;
 use Magento\Framework\App\ObjectManager;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\GraphQlSchemaStitching\GraphQlReader;
+use Magento\Framework\GraphQlSchemaStitching\GraphQlReader\TypeReaderComposite;
 use Magento\TestFramework\Inspection\Exception as InspectionException;
 
 /**
@@ -59,42 +59,6 @@ class GraphQlSchemaDependencyProvider
     }
 
     /**
-     * Provide undeclared dependencies between modules based on the declarative schema configuration.
-     *
-     * [
-     *     $dependencyId => [$module1, $module2, $module3 ...],
-     *     ...
-     * ]
-     *
-     * @param string $moduleName
-     * @return array
-     * @throws InspectionException
-     * @throws LocalizedException
-     */
-    public function getUndeclaredModuleDependencies(string $moduleName): array
-    {
-        $dependencies = $this->getDependenciesFromSchema($moduleName);
-        return $this->collectDependencies($moduleName, $dependencies);
-    }
-
-    /**
-     * Get parsed GraphQl schema
-     *
-     * @return array
-     */
-    private function getGraphQlSchemaDeclaration(): array
-    {
-        if (!$this->parsedSchema) {
-            $objectManager = ObjectManager::getInstance();
-            $typeReader = $objectManager->create(TypeReaderComposite::class);
-            $reader = $objectManager->create(GraphQlReader::class, ['typeReader' => $typeReader]);
-            $this->parsedSchema = $reader->read();
-        }
-
-        return $this->parsedSchema;
-    }
-
-    /**
      * Get dependencies from GraphQl schema
      *
      * @param string $moduleName
@@ -119,6 +83,42 @@ class GraphQlSchemaDependencyProvider
             }
         }
         return array_unique($dependencies);
+    }
+
+    /**
+     * Get parsed GraphQl schema
+     *
+     * @return array
+     */
+    private function getGraphQlSchemaDeclaration(): array
+    {
+        if (!$this->parsedSchema) {
+            $objectManager = ObjectManager::getInstance();
+            $typeReader = $objectManager->create(TypeReaderComposite::class);
+            $reader = $objectManager->create(GraphQlReader::class, ['typeReader' => $typeReader]);
+            $this->parsedSchema = $reader->read();
+        }
+
+        return $this->parsedSchema;
+    }
+
+    /**
+     * Provide undeclared dependencies between modules based on the declarative schema configuration.
+     *
+     * [
+     *     $dependencyId => [$module1, $module2, $module3 ...],
+     *     ...
+     * ]
+     *
+     * @param string $moduleName
+     * @return array
+     * @throws InspectionException
+     * @throws LocalizedException
+     */
+    public function getUndeclaredModuleDependencies(string $moduleName): array
+    {
+        $dependencies = $this->getDependenciesFromSchema($moduleName);
+        return $this->collectDependencies($moduleName, $dependencies);
     }
 
     /**

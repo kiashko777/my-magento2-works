@@ -8,13 +8,8 @@ declare(strict_types=1);
 namespace Magento\CatalogImportExport\Model\Import\ProductTest;
 
 use Magento\CatalogImportExport\Model\Import\ProductTestBase;
-use Magento\Framework\App\Filesystem\DirectoryList;
-use Magento\Framework\App\ObjectManager;
+use Magento\Framework\Data\Collection;
 use Magento\Framework\DataObject;
-use Magento\Framework\Filesystem;
-use Magento\ImportExport\Model\Import;
-use Magento\ImportExport\Model\Import\Source\Csv;
-use Magento\TestFramework\Helper\Bootstrap as BootstrapHelper;
 
 /**
  * Integration test for \Magento\CatalogImportExport\Model\Import\Products class.
@@ -43,33 +38,33 @@ class ProductImagesTest extends ProductTestBase
         $this->assertEquals('/m/a/magento_image.jpg', $product->getData('swatch_image'));
 
         $gallery = $product->getMediaGalleryImages();
-        $this->assertInstanceOf(\Magento\Framework\Data\Collection::class, $gallery);
+        $this->assertInstanceOf(Collection::class, $gallery);
 
         $items = $gallery->getItems();
         $this->assertCount(5, $items);
 
         $imageItem = array_shift($items);
-        $this->assertInstanceOf(\Magento\Framework\DataObject::class, $imageItem);
+        $this->assertInstanceOf(DataObject::class, $imageItem);
         $this->assertEquals('/m/a/magento_image.jpg', $imageItem->getFile());
         $this->assertEquals('Image Label', $imageItem->getLabel());
 
         $smallImageItem = array_shift($items);
-        $this->assertInstanceOf(\Magento\Framework\DataObject::class, $smallImageItem);
+        $this->assertInstanceOf(DataObject::class, $smallImageItem);
         $this->assertEquals('/m/a/magento_small_image.jpg', $smallImageItem->getFile());
         $this->assertEquals('Small Image Label', $smallImageItem->getLabel());
 
         $thumbnailItem = array_shift($items);
-        $this->assertInstanceOf(\Magento\Framework\DataObject::class, $thumbnailItem);
+        $this->assertInstanceOf(DataObject::class, $thumbnailItem);
         $this->assertEquals('/m/a/magento_thumbnail.jpg', $thumbnailItem->getFile());
         $this->assertEquals('Thumbnail Label', $thumbnailItem->getLabel());
 
         $additionalImageOneItem = array_shift($items);
-        $this->assertInstanceOf(\Magento\Framework\DataObject::class, $additionalImageOneItem);
+        $this->assertInstanceOf(DataObject::class, $additionalImageOneItem);
         $this->assertEquals('/m/a/magento_additional_image_one.jpg', $additionalImageOneItem->getFile());
         $this->assertEquals('Additional Image Label One', $additionalImageOneItem->getLabel());
 
         $additionalImageTwoItem = array_shift($items);
-        $this->assertInstanceOf(\Magento\Framework\DataObject::class, $additionalImageTwoItem);
+        $this->assertInstanceOf(DataObject::class, $additionalImageTwoItem);
         $this->assertEquals('/m/a/magento_additional_image_two.jpg', $additionalImageTwoItem->getFile());
         $this->assertEquals('Additional Image Label Two', $additionalImageTwoItem->getLabel());
     }
@@ -146,7 +141,7 @@ class ProductImagesTest extends ProductTestBase
         $this->assertEquals(
             $images,
             array_map(
-                function (\Magento\Framework\DataObject $item) {
+                function (DataObject $item) {
                     return $item->toArray(['file', 'label']);
                 },
                 $items
@@ -162,7 +157,7 @@ class ProductImagesTest extends ProductTestBase
         $this->assertEquals(
             $images,
             array_map(
-                function (\Magento\Framework\DataObject $item) {
+                function (DataObject $item) {
                     return $item->toArray(['file', 'label']);
                 },
                 $items

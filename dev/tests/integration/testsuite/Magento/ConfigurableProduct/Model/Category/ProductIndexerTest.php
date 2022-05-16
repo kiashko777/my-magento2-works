@@ -3,9 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\ConfigurableProduct\Model\Category;
 
 use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\CategoryRepository;
+use Magento\Catalog\Model\ProductRepository;
+use Magento\Catalog\Model\ResourceModel\Product;
+use Magento\Framework\Indexer\IndexerInterface;
+use Magento\Indexer\Model\Indexer;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+use ReflectionObject;
 
 /**
  * @magentoDataFixture Magento/Catalog/_files/indexer_catalog_category.php
@@ -13,78 +22,29 @@ use Magento\Catalog\Model\Category;
  * @magentoAppIsolation enabled
  * @magentoDbIsolation disabled
  */
-class ProductIndexerTest extends \PHPUnit\Framework\TestCase
+class ProductIndexerTest extends TestCase
 {
     const DEFAULT_ROOT_CATEGORY = 2;
 
     /**
-     * @var \Magento\Framework\Indexer\IndexerInterface
+     * @var IndexerInterface
      */
     private $indexer;
 
     /**
-     * @var \Magento\Catalog\Model\ResourceModel\Product
+     * @var Product
      */
     private $productResource;
 
     /**
-     * @var \Magento\Catalog\Model\ProductRepository
+     * @var ProductRepository
      */
     private $productRepository;
 
     /**
-     * @var \Magento\Catalog\Model\CategoryRepository
+     * @var CategoryRepository
      */
     private $categoryRepository;
-
-    protected function setUp(): void
-    {
-        $this->indexer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Indexer\Model\Indexer::class
-        );
-        $this->indexer->load('catalog_category_product');
-
-        $this->productResource = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Catalog\Model\ResourceModel\Product::class
-        );
-        $this->productRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Catalog\Model\ProductRepository::class
-        );
-        $this->categoryRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Catalog\Model\CategoryRepository::class
-        );
-    }
-
-    /**
-     * @magentoAppArea Adminhtml
-     */
-    public function testReindex()
-    {
-        $categories = $this->getCategories();
-
-        /** @var Category $categoryFourth */
-        $categoryFourth = end($categories);
-        /** @var \Magento\Catalog\Model\Product $configurableProduct */
-        $configurableProduct = $this->productRepository->get('configurable');
-        $configurableProduct->setCategoryIds([$categoryFourth->getId()]);
-        $this->productRepository->save($configurableProduct);
-
-        /** @var Category $categoryThird */
-        $categoryThird = $categories[2];
-        $categoryThird->setIsAnchor(true);
-        $this->categoryRepository->save($categoryThird);
-
-        $this->indexer->reindexAll();
-
-        $categories = [self::DEFAULT_ROOT_CATEGORY, $categoryThird->getId(), $categoryFourth->getId()];
-        foreach ($categories as $categoryId) {
-            $this->assertTrue((bool)$this->productResource->canBeShowInCategory($configurableProduct, $categoryId));
-        }
-
-        $this->assertTrue(
-            (bool)$this->productResource->canBeShowInCategory($configurableProduct, $categoryThird->getParentId())
-        );
-    }
 
     /**
      * @magentoAppArea Adminhtml
@@ -125,6 +85,22 @@ class ProductIndexerTest extends \PHPUnit\Framework\TestCase
         $this->assertFalse(
             (bool)$this->productResource->canBeShowInCategory($configurableProduct, $categoryThird->getId())
         );
+    }
+
+    /**
+     * @return Category[]
+     */
+    private function getCategories()
+    {
+        /** @var Category $category */
+        $category = Bootstrap::getObjectManager()->create(
+            Category::class
+        );
+
+        $result = $category->getCollection()->addAttributeToSelect('name')->getItems();
+        $result = array_slice($result, 2);
+
+        return array_slice($result, 0, 4);
     }
 
     /**
@@ -174,8 +150,8 @@ class ProductIndexerTest extends \PHPUnit\Framework\TestCase
         $categoryFourth = end($categories);
 
         /** @var Category $categorySixth */
-        $categorySixth = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\Category::class
+        $categorySixth = Bootstrap::getObjectManager()->create(
+            Category::class
         );
         $categorySixth->setName(
             'Category 6'
@@ -204,19 +180,52 @@ class ProductIndexerTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @return Category[]
+     * @magentoAppArea Adminhtml
      */
-    private function getCategories()
+    public function testReindex()
     {
-        /** @var Category $category */
-        $category = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\Category::class
+        $categories = $this->getCategories();
+
+        /** @var Category $categoryFourth */
+        $categoryFourth = end($categories);
+        /** @var \Magento\Catalog\Model\Product $configurableProduct */
+        $configurableProduct = $this->productRepository->get('configurable');
+        $configurableProduct->setCategoryIds([$categoryFourth->getId()]);
+        $this->productRepository->save($configurableProduct);
+
+        /** @var Category $categoryThird */
+        $categoryThird = $categories[2];
+        $categoryThird->setIsAnchor(true);
+        $this->categoryRepository->save($categoryThird);
+
+        $this->indexer->reindexAll();
+
+        $categories = [self::DEFAULT_ROOT_CATEGORY, $categoryThird->getId(), $categoryFourth->getId()];
+        foreach ($categories as $categoryId) {
+            $this->assertTrue((bool)$this->productResource->canBeShowInCategory($configurableProduct, $categoryId));
+        }
+
+        $this->assertTrue(
+            (bool)$this->productResource->canBeShowInCategory($configurableProduct, $categoryThird->getParentId())
         );
+    }
 
-        $result = $category->getCollection()->addAttributeToSelect('name')->getItems();
-        $result = array_slice($result, 2);
+    protected function setUp(): void
+    {
+        $this->indexer = Bootstrap::getObjectManager()->create(
+            Indexer::class
+        );
+        $this->indexer->load('catalog_category_product');
 
-        return array_slice($result, 0, 4);
+        $this->productResource = Bootstrap::getObjectManager()->get(
+            Product::class
+        );
+        $this->productRepository = Bootstrap::getObjectManager()->get(
+            ProductRepository::class
+        );
+        $this->categoryRepository = Bootstrap::getObjectManager()->get(
+            CategoryRepository::class
+        );
     }
 
     /**
@@ -225,7 +234,7 @@ class ProductIndexerTest extends \PHPUnit\Framework\TestCase
     protected function tearDown(): void
     {
         parent::tearDown();
-        $reflection = new \ReflectionObject($this);
+        $reflection = new ReflectionObject($this);
         foreach ($reflection->getProperties() as $property) {
             if (!$property->isStatic() && 0 !== strpos($property->getDeclaringClass()->getName(), 'PHPUnit')) {
                 $property->setAccessible(true);

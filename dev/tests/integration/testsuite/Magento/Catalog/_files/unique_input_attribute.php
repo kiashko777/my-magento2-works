@@ -7,20 +7,24 @@
  */
 
 /** @var \Magento\Eav\Model\Entity\Type $entityType */
-$entityType = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+
+use Magento\Eav\Model\Entity\Attribute\Set;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$entityType = Bootstrap::getObjectManager()->create(
     \Magento\Eav\Model\Entity\Type::class
 );
 $entityType->loadByCode('catalog_product');
 $defaultSetId = $entityType->getDefaultAttributeSetId();
-/** @var \Magento\Eav\Model\Entity\Attribute\Set $defaultSet */
-$defaultSet = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Eav\Model\Entity\Attribute\Set::class
+/** @var Set $defaultSet */
+$defaultSet = Bootstrap::getObjectManager()->create(
+    Set::class
 );
 $defaultSet->load($defaultSetId);
 $defaultGroupId = $defaultSet->getDefaultGroupId();
 
 /** @var $attribute \Magento\Catalog\Model\ResourceModel\Eav\Attribute */
-$attribute = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+$attribute = Bootstrap::getObjectManager()->create(
     \Magento\Catalog\Model\ResourceModel\Eav\Attribute::class
 );
 $attribute->setAttributeCode(

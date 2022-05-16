@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Api;
 
 use Magento\Catalog\Api\Data\ProductInterface;
@@ -43,16 +44,6 @@ class SpecialPriceStorageTest extends WebapiAbstract
      * @var StoreManagerInterface
      */
     private $storeManager;
-
-    /**
-     * @ingeritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productResource = $this->objectManager->get(ProductResource::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-    }
 
     /**
      * Test get method.
@@ -224,7 +215,7 @@ class SpecialPriceStorageTest extends WebapiAbstract
             $serviceInfo,
             [
                 'prices' => [
-                        $data
+                    $data
                 ]
             ]
         );
@@ -355,5 +346,15 @@ class SpecialPriceStorageTest extends WebapiAbstract
 
         $product = $productRepository->get($data['sku'], false, $secondStoreViewId, true);
         $this->assertNull($product->getSpecialPrice());
+    }
+
+    /**
+     * @ingeritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productResource = $this->objectManager->get(ProductResource::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
     }
 }

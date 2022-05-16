@@ -9,6 +9,7 @@ namespace Magento\Test\Workaround\Override\Fixture\Applier;
 
 use Magento\TestFramework\Workaround\Override\Fixture\Applier\AdminConfigFixture;
 use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 
 /**
  * Provide tests for \Magento\TestFramework\Workaround\Override\Fixture\Applier\AdminConfigFixture
@@ -17,16 +18,6 @@ class AdminConfigFixtureTest extends TestCase
 {
     /** @var AdminConfigFixture */
     private $object;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->object = new AdminConfigFixture();
-    }
 
     /**
      * @dataProvider annotationsProvider
@@ -38,6 +29,20 @@ class AdminConfigFixtureTest extends TestCase
     public function testIsFixtureMatch(string $fixture, array $attributes): void
     {
         $this->assertTrue($this->invokeIsFixtureMatchMethod($attributes, $fixture));
+    }
+
+    /**
+     * Invove object method
+     *
+     * @param array $attributes
+     * @param string $fixture
+     * @return bool
+     */
+    private function invokeIsFixtureMatchMethod(array $attributes, string $fixture): bool
+    {
+        $reflectionMethod = new ReflectionMethod(AdminConfigFixture::class, 'isFixtureMatch');
+        $reflectionMethod->setAccessible(true);
+        return $reflectionMethod->invoke($this->object, $attributes, $fixture);
     }
 
     /**
@@ -100,7 +105,7 @@ class AdminConfigFixtureTest extends TestCase
      */
     public function testInitConfigFixture(array $attributes, string $expectedValue): void
     {
-        $reflectionMethod = new \ReflectionMethod(AdminConfigFixture::class, 'initConfigFixture');
+        $reflectionMethod = new ReflectionMethod(AdminConfigFixture::class, 'initConfigFixture');
         $reflectionMethod->setAccessible(true);
         $value = $reflectionMethod->invoke($this->object, $attributes);
         $this->assertEquals($expectedValue, $value);
@@ -130,16 +135,12 @@ class AdminConfigFixtureTest extends TestCase
     }
 
     /**
-     * Invove object method
-     *
-     * @param array $attributes
-     * @param string $fixture
-     * @return bool
+     * @inheritdoc
      */
-    private function invokeIsFixtureMatchMethod(array $attributes, string $fixture): bool
+    protected function setUp(): void
     {
-        $reflectionMethod = new \ReflectionMethod(AdminConfigFixture::class, 'isFixtureMatch');
-        $reflectionMethod->setAccessible(true);
-        return $reflectionMethod->invoke($this->object, $attributes, $fixture);
+        parent::setUp();
+
+        $this->object = new AdminConfigFixture();
     }
 }

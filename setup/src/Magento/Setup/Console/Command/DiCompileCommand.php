@@ -3,26 +3,39 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Console\Command;
 
-use Magento\Framework\App\ObjectManager;
-use Magento\Framework\Filesystem\DriverInterface;
-use Magento\Framework\Filesystem\Io\File;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
-use Magento\Framework\Filesystem;
-use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\App\Cache;
 use Magento\Framework\App\DeploymentConfig;
+use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\App\Interception\Cache\CompiledConfig;
+use Magento\Framework\App\ObjectManager;
+use Magento\Framework\App\ObjectManager\ConfigWriterInterface;
 use Magento\Framework\Component\ComponentRegistrar;
 use Magento\Framework\Config\ConfigOptionsListConstants;
+use Magento\Framework\Console\Cli;
+use Magento\Framework\Filesystem;
+use Magento\Framework\Filesystem\DriverInterface;
+use Magento\Framework\Filesystem\Io\File;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Setup\Exception;
 use Magento\Setup\Model\ObjectManagerProvider;
 use Magento\Setup\Module\Di\App\Task\Manager;
-use Magento\Setup\Module\Di\App\Task\OperationFactory;
 use Magento\Setup\Module\Di\App\Task\OperationException;
+use Magento\Setup\Module\Di\App\Task\OperationFactory;
 use Magento\Setup\Module\Di\App\Task\OperationInterface;
+use Magento\Setup\Module\Di\Code\Generator\PluginList;
+use Magento\Setup\Module\Di\Code\Reader\ClassesScanner;
+use Magento\Setup\Module\Di\Compiler\Config\Chain\BackslashTrim;
+use Magento\Setup\Module\Di\Compiler\Config\Chain\InterceptorSubstitution;
+use Magento\Setup\Module\Di\Compiler\Config\Chain\PreferencesResolving;
+use Magento\Setup\Module\Di\Compiler\Config\ModificationChain;
+use Magento\Setup\Module\Di\Compiler\Log\Writer\Console;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
-use Magento\Framework\Console\Cli;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Command to run compile in single-tenant mode
@@ -34,27 +47,27 @@ class DiCompileCommand extends Command
     const NAME = 'setup:di:compile';
 
     /**
-     * @var \Magento\Framework\App\DeploymentConfig
+     * @var DeploymentConfig
      */
     private $deploymentConfig;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
     /**
-     * @var \Magento\Setup\Module\Di\App\Task\Manager
+     * @var Manager
      */
     private $taskManager;
 
     /**
-     * @var \Magento\Framework\App\Filesystem\DirectoryList
+     * @var DirectoryList
      */
     private $directoryList;
 
     /**
-     * @var \Magento\Framework\Filesystem
+     * @var Filesystem
      */
     private $filesystem;
 
@@ -64,7 +77,7 @@ class DiCompileCommand extends Command
     private $excludedPathsList;
 
     /**
-     * @var \Magento\Framework\Filesystem\DriverInterface
+     * @var DriverInterface
      */
     private $fileDriver;
 
@@ -87,27 +100,28 @@ class DiCompileCommand extends Command
      * @param ObjectManagerProvider $objectManagerProvider
      * @param Filesystem $filesystem
      * @param DriverInterface $fileDriver
-     * @param \Magento\Framework\Component\ComponentRegistrar $componentRegistrar
+     * @param ComponentRegistrar $componentRegistrar
      * @param File|null $file
-     * @throws \Magento\Setup\Exception
+     * @throws Exception
      */
     public function __construct(
-        DeploymentConfig $deploymentConfig,
-        DirectoryList $directoryList,
-        Manager $taskManager,
+        DeploymentConfig      $deploymentConfig,
+        DirectoryList         $directoryList,
+        Manager               $taskManager,
         ObjectManagerProvider $objectManagerProvider,
-        Filesystem $filesystem,
-        DriverInterface $fileDriver,
-        ComponentRegistrar $componentRegistrar,
-        File $file = null
-    ) {
+        Filesystem            $filesystem,
+        DriverInterface       $fileDriver,
+        ComponentRegistrar    $componentRegistrar,
+        File                  $file = null
+    )
+    {
         $this->deploymentConfig = $deploymentConfig;
-        $this->directoryList    = $directoryList;
-        $this->objectManager    = $objectManagerProvider->get();
-        $this->taskManager      = $taskManager;
-        $this->filesystem       = $filesystem;
-        $this->fileDriver       = $fileDriver;
-        $this->componentRegistrar  = $componentRegistrar;
+        $this->directoryList = $directoryList;
+        $this->objectManager = $objectManagerProvider->get();
+        $this->taskManager = $taskManager;
+        $this->filesystem = $filesystem;
+        $this->fileDriver = $fileDriver;
+        $this->componentRegistrar = $componentRegistrar;
         $this->file = $file ?: ObjectManager::getInstance()->get(File::class);
         parent::__construct();
     }
@@ -122,23 +136,6 @@ class DiCompileCommand extends Command
                 'Generates DI configuration and all missing classes that can be auto-generated'
             );
         parent::configure();
-    }
-
-    /**
-     * Checks that application is installed and DI resources are cleared
-     *
-     * @return string[]
-     */
-    private function checkEnvironment()
-    {
-        $messages = [];
-        $config = $this->deploymentConfig->get(ConfigOptionsListConstants::KEY_MODULES);
-        if (!$config) {
-            $messages[] = 'You cannot run this command because modules are not enabled. You can enable modules by'
-             . ' running the \'module:enable --all\' command.';
-        }
-
-        return $messages;
     }
 
     /**
@@ -160,7 +157,7 @@ class DiCompileCommand extends Command
         $setupPath = $this->directoryList->getPath(DirectoryList::SETUP);
         $generationPath = $this->directoryList->getPath(DirectoryList::GENERATED_CODE);
 
-        $this->objectManager->get(\Magento\Framework\App\Cache::class)->clean();
+        $this->objectManager->get(Cache::class)->clean();
         $compiledPathsList = [
             'application' => $modulePaths,
             'library' => $libraryPaths,
@@ -193,7 +190,7 @@ class DiCompileCommand extends Command
 
             /** @var ProgressBar $progressBar */
             $progressBar = $this->objectManager->create(
-                \Symfony\Component\Console\Helper\ProgressBar::class,
+                ProgressBar::class,
                 [
                     'output' => $output,
                     'max' => count($operations)
@@ -225,6 +222,23 @@ class DiCompileCommand extends Command
             return Cli::RETURN_FAILURE;
         }
         return Cli::RETURN_SUCCESS;
+    }
+
+    /**
+     * Checks that application is installed and DI resources are cleared
+     *
+     * @return string[]
+     */
+    private function checkEnvironment()
+    {
+        $messages = [];
+        $config = $this->deploymentConfig->get(ConfigOptionsListConstants::KEY_MODULES);
+        if (!$config) {
+            $messages[] = 'You cannot run this command because modules are not enabled. You can enable modules by'
+                . ' running the \'module:enable --all\' command.';
+        }
+
+        return $messages;
     }
 
     /**
@@ -298,19 +312,6 @@ class DiCompileCommand extends Command
     }
 
     /**
-     * Delete directories by their code from "var" directory
-     *
-     * @param array $directoryCodeList
-     * @return void
-     */
-    private function cleanupFilesystem($directoryCodeList)
-    {
-        foreach ($directoryCodeList as $code) {
-            $this->filesystem->getDirectoryWrite($code)->delete();
-        }
-    }
-
-    /**
      * Configure Object Manager
      *
      * @param OutputInterface $output
@@ -320,43 +321,43 @@ class DiCompileCommand extends Command
     {
         $this->objectManager->configure(
             [
-                'preferences' => [\Magento\Framework\App\ObjectManager\ConfigWriterInterface::class =>
-                    \Magento\Framework\App\ObjectManager\ConfigWriter\Filesystem::class,
-                ], \Magento\Setup\Module\Di\Compiler\Config\ModificationChain::class => [
-                    'arguments' => [
-                        'modificationsList' => [
-                            'BackslashTrim' => [
-                                'instance' =>
-                                    \Magento\Setup\Module\Di\Compiler\Config\Chain\BackslashTrim::class
-                            ],
-                            'PreferencesResolving' => [
-                                'instance' =>
-                                    \Magento\Setup\Module\Di\Compiler\Config\Chain\PreferencesResolving::class
-                            ],
-                            'InterceptorSubstitution' => [
-                                'instance' =>
-                                    \Magento\Setup\Module\Di\Compiler\Config\Chain\InterceptorSubstitution::class
-                            ],
-                            'InterceptionPreferencesResolving' => [
-                                'instance' => \Magento\Setup\Module\Di\Compiler\Config\Chain\PreferencesResolving::class
-                            ],
-                        ]
+                'preferences' => [ConfigWriterInterface::class =>
+                    ObjectManager\ConfigWriter\Filesystem::class,
+                ], ModificationChain::class => [
+                'arguments' => [
+                    'modificationsList' => [
+                        'BackslashTrim' => [
+                            'instance' =>
+                                BackslashTrim::class
+                        ],
+                        'PreferencesResolving' => [
+                            'instance' =>
+                                PreferencesResolving::class
+                        ],
+                        'InterceptorSubstitution' => [
+                            'instance' =>
+                                InterceptorSubstitution::class
+                        ],
+                        'InterceptionPreferencesResolving' => [
+                            'instance' => PreferencesResolving::class
+                        ],
                     ]
-                ], \Magento\Setup\Module\Di\Code\Generator\PluginList::class => [
-                    'arguments' => [
-                        'cache' => [
-                            'instance' => \Magento\Framework\App\Interception\Cache\CompiledConfig::class
-                        ]
+                ]
+            ], PluginList::class => [
+                'arguments' => [
+                    'cache' => [
+                        'instance' => CompiledConfig::class
                     ]
-                ], \Magento\Setup\Module\Di\Code\Reader\ClassesScanner::class => [
-                    'arguments' => [
-                        'excludePatterns' => $this->excludedPathsList
-                    ]
-                ], \Magento\Setup\Module\Di\Compiler\Log\Writer\Console::class => [
-                    'arguments' => [
-                        'output' => $output,
-                    ]
-                ],
+                ]
+            ], ClassesScanner::class => [
+                'arguments' => [
+                    'excludePatterns' => $this->excludedPathsList
+                ]
+            ], Console::class => [
+                'arguments' => [
+                    'output' => $output,
+                ]
+            ],
             ]
         );
     }
@@ -369,7 +370,8 @@ class DiCompileCommand extends Command
      */
     private function getOperationsConfiguration(
         array $compiledPathsList
-    ) {
+    )
+    {
         $excludePatterns = array_merge([], ...array_values($this->excludedPathsList));
 
         return [
@@ -409,5 +411,18 @@ class DiCompileCommand extends Command
             OperationFactory::APPLICATION_ACTION_LIST_GENERATOR => [],
             OperationFactory::PLUGIN_LIST_GENERATOR => [],
         ];
+    }
+
+    /**
+     * Delete directories by their code from "var" directory
+     *
+     * @param array $directoryCodeList
+     * @return void
+     */
+    private function cleanupFilesystem($directoryCodeList)
+    {
+        foreach ($directoryCodeList as $code) {
+            $this->filesystem->getDirectoryWrite($code)->delete();
+        }
     }
 }

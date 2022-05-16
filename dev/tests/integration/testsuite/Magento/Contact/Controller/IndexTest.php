@@ -7,55 +7,14 @@
 namespace Magento\Contact\Controller;
 
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\Message\MessageInterface;
+use Magento\TestFramework\TestCase\AbstractController;
 
 /**
  * Contact index controller test
  */
-class IndexTest extends \Magento\TestFramework\TestCase\AbstractController
+class IndexTest extends AbstractController
 {
-    /**
-     * Test contacting.
-     */
-    public function testPostAction()
-    {
-        $params = [
-            'name' => 'customer name',
-            'comment' => 'comment',
-            'email' => 'user@example.com',
-            'hideit' => '',
-        ];
-        $this->getRequest()->setPostValue($params)->setMethod(HttpRequest::METHOD_POST);
-
-        $this->dispatch('contact/index/post');
-        $this->assertRedirect($this->stringContains('contact/index'));
-        $this->assertSessionMessages(
-            $this->containsEqual(
-                "Thanks for contacting us with your comments and questions. We&#039;ll respond to you very soon."
-            ),
-            \Magento\Framework\Message\MessageInterface::TYPE_SUCCESS
-        );
-    }
-
-    /**
-     * Test validation.
-     *
-     * @param array $params For Request.
-     * @param string $expectedMessage Expected response.
-     *
-     * @dataProvider dataInvalidPostAction
-     */
-    public function testInvalidPostAction($params, $expectedMessage)
-    {
-        $this->getRequest()->setPostValue($params)->setMethod(HttpRequest::METHOD_POST);
-
-        $this->dispatch('contact/index/post');
-        $this->assertRedirect($this->stringContains('contact/index'));
-        $this->assertSessionMessages(
-            $this->containsEqual($expectedMessage),
-            \Magento\Framework\Message\MessageInterface::TYPE_ERROR
-        );
-    }
-
     /**
      * @return array
      */
@@ -90,5 +49,48 @@ class IndexTest extends \Magento\TestFramework\TestCase\AbstractController
                 'expectedMessage' => "The email address is invalid. Verify the email address and try again.",
             ],
         ];
+    }
+
+    /**
+     * Test contacting.
+     */
+    public function testPostAction()
+    {
+        $params = [
+            'name' => 'customer name',
+            'comment' => 'comment',
+            'email' => 'user@example.com',
+            'hideit' => '',
+        ];
+        $this->getRequest()->setPostValue($params)->setMethod(HttpRequest::METHOD_POST);
+
+        $this->dispatch('contact/index/post');
+        $this->assertRedirect($this->stringContains('contact/index'));
+        $this->assertSessionMessages(
+            $this->containsEqual(
+                "Thanks for contacting us with your comments and questions. We&#039;ll respond to you very soon."
+            ),
+            MessageInterface::TYPE_SUCCESS
+        );
+    }
+
+    /**
+     * Test validation.
+     *
+     * @param array $params For Request.
+     * @param string $expectedMessage Expected response.
+     *
+     * @dataProvider dataInvalidPostAction
+     */
+    public function testInvalidPostAction($params, $expectedMessage)
+    {
+        $this->getRequest()->setPostValue($params)->setMethod(HttpRequest::METHOD_POST);
+
+        $this->dispatch('contact/index/post');
+        $this->assertRedirect($this->stringContains('contact/index'));
+        $this->assertSessionMessages(
+            $this->containsEqual($expectedMessage),
+            MessageInterface::TYPE_ERROR
+        );
     }
 }

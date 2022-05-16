@@ -7,29 +7,29 @@ declare(strict_types=1);
 
 namespace Magento\PaypalGraphQl;
 
+use Magento\Config\Model\Config;
 use Magento\Customer\Helper\Address;
 use Magento\Directory\Model\CountryFactory;
 use Magento\Directory\Model\RegionFactory;
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Exception\LocalizedExceptionFactory;
 use Magento\Framework\HTTP\Adapter\CurlFactory;
 use Magento\Framework\Locale\ResolverInterface;
 use Magento\GraphQl\Controller\GraphQl;
 use Magento\GraphQl\Service\GraphQlRequest;
 use Magento\Payment\Model\Method\Logger;
+use Magento\Paypal\Model\Api\AbstractApi;
 use Magento\Paypal\Model\Api\Nvp;
 use Magento\Paypal\Model\Api\PayflowNvp;
-use Magento\Paypal\Model\Api\AbstractApi;
 use Magento\Paypal\Model\Api\ProcessableExceptionFactory;
+use Magento\Paypal\Model\Api\Type\Factory as ApiFactory;
 use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\QuoteFactory;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Paypal\Model\Api\Type\Factory as ApiFactory;
 use Psr\Log\LoggerInterface;
-use Magento\Config\Model\Config;
-use Magento\Framework\App\Config\ScopeConfigInterface;
 
 /**
  * Abstract class with common logic for Paypal GraphQl tests
@@ -81,10 +81,62 @@ abstract class PaypalExpressAbstractTest extends TestCase
         $this->graphQlRequest = $this->objectManager->create(GraphQlRequest::class);
     }
 
+    /**
+     * Get mock of Nvp class
+     *
+     * @param string $nvpClass
+     * @return AbstractApi|MockObject
+     */
+    private function getNvpMock(string $nvpClass)
+    {
+        if (empty($this->nvpMock)) {
+            $this->nvpMock = $this->getMockBuilder($nvpClass)
+                ->setConstructorArgs(
+                    [
+                        'customerAddress' => $this->objectManager->get(Address::class),
+                        'logger' => $this->objectManager->get(LoggerInterface::class),
+                        'customerLogger' => $this->objectManager->get(Logger::class),
+                        'resolverInterface' => $this->objectManager->get(ResolverInterface::class),
+                        'regionFactory' => $this->objectManager->get(RegionFactory::class),
+                        'countryFactory' => $this->objectManager->get(CountryFactory::class),
+                        'processableExceptionFactory' => $this->objectManager->get(ProcessableExceptionFactory::class),
+                        'frameworkExceptionFactory' => $this->objectManager->get(LocalizedExceptionFactory::class),
+                        'curlFactory' => $this->objectManager->get(CurlFactory::class),
+                        'data' => []
+                    ]
+                )
+                ->setMethods(['call'])
+                ->getMock();
+        }
+        return $this->nvpMock;
+    }
+
     protected function tearDown(): void
     {
         $this->disablePaypalPaymentMethods();
         $this->objectManager->removeSharedInstance(ApiFactory::class);
+    }
+
+    /**
+     * Disables list of Paypal payment methods
+     *
+     * @return void
+     */
+    protected function disablePaypalPaymentMethods(): void
+    {
+        $paypalMethods = [
+            'paypal_express',
+            'payflow_express',
+            'payflow_link'
+        ];
+        $config = $this->objectManager->get(Config::class);
+        $config->setScope(ScopeConfigInterface::SCOPE_TYPE_DEFAULT);
+
+        foreach ($paypalMethods as $method) {
+            $paymentMethodActive = 'payment/' . $method . '/active';
+            $config->setDataByPath($paymentMethodActive, '0');
+            $config->save();
+        }
     }
 
     /**
@@ -117,58 +169,6 @@ abstract class PaypalExpressAbstractTest extends TestCase
 
         $config->setDataByPath($paymentMethodActive, '1');
         $config->save();
-    }
-
-    /**
-     * Disables list of Paypal payment methods
-     *
-     * @return void
-     */
-    protected function disablePaypalPaymentMethods(): void
-    {
-        $paypalMethods = [
-            'paypal_express',
-            'payflow_express',
-            'payflow_link'
-        ];
-        $config = $this->objectManager->get(Config::class);
-        $config->setScope(ScopeConfigInterface::SCOPE_TYPE_DEFAULT);
-
-        foreach ($paypalMethods as $method) {
-            $paymentMethodActive = 'payment/' . $method . '/active';
-            $config->setDataByPath($paymentMethodActive, '0');
-            $config->save();
-        }
-    }
-
-    /**
-     * Get mock of Nvp class
-     *
-     * @param string $nvpClass
-     * @return AbstractApi|MockObject
-     */
-    private function getNvpMock(string $nvpClass)
-    {
-        if (empty($this->nvpMock)) {
-            $this->nvpMock = $this->getMockBuilder($nvpClass)
-                ->setConstructorArgs(
-                    [
-                        'customerAddress' => $this->objectManager->get(Address::class),
-                        'logger' => $this->objectManager->get(LoggerInterface::class),
-                        'customerLogger' => $this->objectManager->get(Logger::class),
-                        'resolverInterface' => $this->objectManager->get(ResolverInterface::class),
-                        'regionFactory' => $this->objectManager->get(RegionFactory::class),
-                        'countryFactory' => $this->objectManager->get(CountryFactory::class),
-                        'processableExceptionFactory' => $this->objectManager->get(ProcessableExceptionFactory::class),
-                        'frameworkExceptionFactory' => $this->objectManager->get(LocalizedExceptionFactory::class),
-                        'curlFactory' => $this->objectManager->get(CurlFactory::class),
-                        'data' => []
-                    ]
-                )
-                ->setMethods(['call'])
-                ->getMock();
-        }
-        return $this->nvpMock;
     }
 
     /**

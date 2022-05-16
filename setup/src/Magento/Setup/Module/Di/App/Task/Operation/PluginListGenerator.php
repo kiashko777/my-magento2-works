@@ -8,8 +8,8 @@ declare(strict_types=1);
 namespace Magento\Setup\Module\Di\App\Task\Operation;
 
 use Magento\Framework\Config\ScopeInterface;
-use Magento\Setup\Module\Di\App\Task\OperationInterface;
 use Magento\Framework\Interception\ConfigWriterInterface;
+use Magento\Setup\Module\Di\App\Task\OperationInterface;
 
 /**
  * Writes plugin list configuration data per scope to generated metadata.
@@ -31,9 +31,10 @@ class PluginListGenerator implements OperationInterface
      * @param ConfigWriterInterface $configWriter
      */
     public function __construct(
-        ScopeInterface $scopeConfig,
+        ScopeInterface        $scopeConfig,
         ConfigWriterInterface $configWriter
-    ) {
+    )
+    {
         $this->scopeConfig = $scopeConfig;
         $this->configWriter = $configWriter;
     }

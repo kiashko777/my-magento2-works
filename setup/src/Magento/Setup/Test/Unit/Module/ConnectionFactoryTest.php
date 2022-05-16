@@ -21,29 +21,6 @@ class ConnectionFactoryTest extends TestCase
      */
     private $connectionFactory;
 
-    protected function setUp(): void
-    {
-        $objectManager = new ObjectManager($this);
-        $serviceLocatorMock = $this->getMockForAbstractClass(ServiceLocatorInterface::class);
-        $objectManagerProviderMock = $this->createMock(ObjectManagerProvider::class);
-        $serviceLocatorMock->expects($this->once())
-            ->method('get')
-            ->with(
-                ObjectManagerProvider::class
-            )
-            ->willReturn($objectManagerProviderMock);
-        $objectManagerMock = $this->getMockForAbstractClass(ObjectManagerInterface::class);
-        $objectManagerProviderMock->expects($this->once())
-            ->method('get')
-            ->willReturn($objectManagerMock);
-        $this->connectionFactory = $objectManager->getObject(
-            ConnectionFactory::class,
-            [
-                'serviceLocator' => $serviceLocatorMock
-            ]
-        );
-    }
-
     /**
      * @param array $config
      * @dataProvider createDataProvider
@@ -71,5 +48,28 @@ class ConnectionFactoryTest extends TestCase
                 ['active' => 0]
             ],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = new ObjectManager($this);
+        $serviceLocatorMock = $this->getMockForAbstractClass(ServiceLocatorInterface::class);
+        $objectManagerProviderMock = $this->createMock(ObjectManagerProvider::class);
+        $serviceLocatorMock->expects($this->once())
+            ->method('get')
+            ->with(
+                ObjectManagerProvider::class
+            )
+            ->willReturn($objectManagerProviderMock);
+        $objectManagerMock = $this->getMockForAbstractClass(ObjectManagerInterface::class);
+        $objectManagerProviderMock->expects($this->once())
+            ->method('get')
+            ->willReturn($objectManagerMock);
+        $this->connectionFactory = $objectManager->getObject(
+            ConnectionFactory::class,
+            [
+                'serviceLocator' => $serviceLocatorMock
+            ]
+        );
     }
 }

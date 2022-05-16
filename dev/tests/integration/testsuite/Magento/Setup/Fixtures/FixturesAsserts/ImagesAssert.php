@@ -6,7 +6,15 @@
 
 namespace Magento\Setup\Fixtures\FixturesAsserts;
 
+use AssertionError;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Gallery\ReadHandler;
+use Magento\Catalog\Model\Product\Media\Config;
+use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Filesystem;
+use Magento\Framework\Filesystem\Directory\ReadInterface;
 
 /**
  * Class ImagesAssert
@@ -17,49 +25,50 @@ use Magento\Framework\App\Filesystem\DirectoryList;
 class ImagesAssert
 {
     /**
-     * @var \Magento\Catalog\Api\ProductRepositoryInterface
+     * @var ProductRepositoryInterface
      */
     private $productRepository;
 
     /**
-     * @var \Magento\Framework\Api\SearchCriteriaBuilder
+     * @var SearchCriteriaBuilder
      */
     private $searchCriteriaBuilder;
 
     /**
-     * @var \Magento\Catalog\Model\Product\Gallery\ReadHandler
+     * @var ReadHandler
      */
     private $readHandler;
 
     /**
-     * @var \Magento\Framework\Filesystem
+     * @var Filesystem
      */
     private $filesystem;
 
     /**
-     * @var \Magento\Catalog\Model\Product\Media\Config
+     * @var Config
      */
     private $mediaConfig;
 
     /**
-     * @var \Magento\Framework\Filesystem\Directory\ReadInterface
+     * @var ReadInterface
      */
     private $mediaDirectory;
 
     /**
-     * @param \Magento\Framework\Api\SearchCriteriaBuilder $searchCriteriaBuilder
-     * @param \Magento\Catalog\Api\ProductRepositoryInterface $productRepository
-     * @param \Magento\Catalog\Model\Product\Gallery\ReadHandler $readHandler
-     * @param \Magento\Framework\Filesystem $filesystem
-     * @param \Magento\Catalog\Model\Product\Media\Config $mediaConfig
+     * @param SearchCriteriaBuilder $searchCriteriaBuilder
+     * @param ProductRepositoryInterface $productRepository
+     * @param ReadHandler $readHandler
+     * @param Filesystem $filesystem
+     * @param Config $mediaConfig
      */
     public function __construct(
-        \Magento\Framework\Api\SearchCriteriaBuilder $searchCriteriaBuilder,
-        \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
-        \Magento\Catalog\Model\Product\Gallery\ReadHandler $readHandler,
-        \Magento\Framework\Filesystem $filesystem,
-        \Magento\Catalog\Model\Product\Media\Config $mediaConfig
-    ) {
+        SearchCriteriaBuilder       $searchCriteriaBuilder,
+        ProductRepositoryInterface    $productRepository,
+        ReadHandler $readHandler,
+        Filesystem                      $filesystem,
+        Config        $mediaConfig
+    )
+    {
         $this->productRepository = $productRepository;
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
         $this->readHandler = $readHandler;
@@ -71,7 +80,7 @@ class ImagesAssert
      * Performs assertions over images
      *
      * @return bool
-     * @throws \AssertionError
+     * @throws AssertionError
      */
     public function assert()
     {
@@ -90,22 +99,22 @@ class ImagesAssert
     /**
      * Performs assertions over media_gallery product attribute
      *
-     * @param \Magento\Catalog\Model\Product $product
-     * @throws \AssertionError
+     * @param Product $product
+     * @throws AssertionError
      */
-    private function assertProductMediaGallery(\Magento\Catalog\Model\Product $product)
+    private function assertProductMediaGallery(Product $product)
     {
         $extendedProduct = $this->readHandler->execute($product);
         $mediaGalleryImages = $extendedProduct->getMediaGalleryEntries();
 
         if (count($mediaGalleryImages) !== 1) {
-            throw new \AssertionError('Products supposed to contain one image');
+            throw new AssertionError('Products supposed to contain one image');
         }
 
         $image = reset($mediaGalleryImages);
 
         if ($image->getFile() === null) {
-            throw new \AssertionError('Image path should not be null');
+            throw new AssertionError('Image path should not be null');
         }
     }
 
@@ -113,14 +122,14 @@ class ImagesAssert
      * Performs assertions over product media attributes
      * e.g. image|small_image|swatch_image|thumbnail
      *
-     * @param \Magento\Catalog\Model\Product $product
-     * @throws \AssertionError
+     * @param Product $product
+     * @throws AssertionError
      */
-    private function assertProductMediaAttributes(\Magento\Catalog\Model\Product $product)
+    private function assertProductMediaAttributes(Product $product)
     {
         foreach ($product->getMediaAttributeValues() as $attributeCode => $attributeValue) {
             if (empty($attributeValue)) {
-                throw new \AssertionError(
+                throw new AssertionError(
                     sprintf('Attribute: %s should not be empty', $attributeCode)
                 );
             }
@@ -130,23 +139,23 @@ class ImagesAssert
     /**
      * Performs assertions over image files in FS
      *
-     * @param \Magento\Catalog\Model\Product $product
-     * @throws \AssertionError
+     * @param Product $product
+     * @throws AssertionError
      */
-    private function assertProductImageExistsInFS(\Magento\Catalog\Model\Product $product)
+    private function assertProductImageExistsInFS(Product $product)
     {
         $mediaDirectory = $this->getMediaDirectory();
         $mediaAttributes = $product->getMediaAttributeValues();
 
         if (!$mediaDirectory->isExist($this->mediaConfig->getBaseMediaPath() . $mediaAttributes['image'])) {
-            throw new \AssertionError('Image file for product supposed to exist');
+            throw new AssertionError('Image file for product supposed to exist');
         }
     }
 
     /**
      * Local cache for $mediaDirectory
      *
-     * @return \Magento\Framework\Filesystem\Directory\ReadInterface
+     * @return ReadInterface
      */
     private function getMediaDirectory()
     {

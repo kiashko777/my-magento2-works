@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestSetupDeclarationModule5\Setup\Patch\Data;
 
 use Magento\Framework\App\ResourceConnection;
@@ -44,6 +45,14 @@ class SomePatch implements
     /**
      * @return array
      */
+    public static function getDependencies()
+    {
+        return [];
+    }
+
+    /**
+     * @return array
+     */
     public function getAliases()
     {
         return [];
@@ -60,13 +69,5 @@ class SomePatch implements
 
     public function revert()
     {
-    }
-
-    /**
-     * @return array
-     */
-    public static function getDependencies()
-    {
-        return [];
     }
 }

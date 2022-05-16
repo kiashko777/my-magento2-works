@@ -76,18 +76,6 @@ class LinksTest extends TestCase
     private $productLinkInterfaceFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
-        $this->productResource = $this->objectManager->create(ProductResource::class);
-        $this->productLinkInterfaceFactory = $this->objectManager->create(ProductLinkInterfaceFactory::class);
-    }
-
-    /**
      * Test edit and remove simple related, up-sells, cross-sells products in an existing product
      *
      * @dataProvider editDeleteRelatedUpSellCrossSellProductsProvider
@@ -119,6 +107,87 @@ class LinksTest extends TestCase
             $this->getActualLinks($product),
             "Expected linked products do not match actual linked products!"
         );
+    }
+
+    /**
+     * link related, up-sells, cross-sells products received from the array
+     *
+     * @param ProductInterface|Product $product
+     * @param array $productData
+     * @return void
+     */
+    private function setCustomProductLinks(ProductInterface $product, array $productData): void
+    {
+        $productLinks = [];
+        foreach ($productData as $linkType => $links) {
+            foreach ($links as $data) {
+                /** @var ProductLinkInterface|Link $productLink */
+                $productLink = $this->productLinkInterfaceFactory->create();
+                $productLink->setSku('simple');
+                $productLink->setLinkedProductSku($data['sku']);
+                if (isset($data['position'])) {
+                    $productLink->setPosition($data['position']);
+                }
+                $productLink->setLinkType($linkType);
+                $productLinks[] = $productLink;
+            }
+        }
+        $product->setProductLinks($productLinks);
+    }
+
+    /**
+     * Create an array of products by link type that will be linked
+     *
+     * @param array $productFixture
+     * @return array
+     */
+    private function getProductData(array $productFixture): array
+    {
+        $productData = [];
+        foreach ($this->linkTypes as $linkType) {
+            $productData[$linkType] = [];
+            foreach ($productFixture as $data) {
+                $productData[$linkType][] = $data;
+            }
+        }
+
+        return $productData;
+    }
+
+    /**
+     * Get an array of received related, up-sells, cross-sells products
+     *
+     * @param ProductInterface|Product $product
+     * @return array
+     */
+    private function getActualLinks(ProductInterface $product): array
+    {
+        $actualLinks = [];
+        foreach ($this->linkTypes as $linkType) {
+            $products = [];
+            $actualLinks[$linkType] = [];
+            switch ($linkType) {
+                case 'upsell':
+                    $products = $product->getUpSellProducts();
+                    break;
+                case 'crosssell':
+                    $products = $product->getCrossSellProducts();
+                    break;
+                case 'related':
+                    $products = $product->getRelatedProducts();
+                    break;
+            }
+            /** @var ProductInterface|Product $productItem */
+            foreach ($products as $productItem) {
+                $actualLinks[$linkType][] = [
+                    'id' => $productItem->getId(),
+                    'sku' => $productItem->getSku(),
+                    'position' => $productItem->getPosition(),
+                ];
+            }
+        }
+
+        return $actualLinks;
     }
 
     /**
@@ -185,83 +254,14 @@ class LinksTest extends TestCase
     }
 
     /**
-     * Create an array of products by link type that will be linked
-     *
-     * @param array $productFixture
-     * @return array
+     * @inheritdoc
      */
-    private function getProductData(array $productFixture): array
+    protected function setUp(): void
     {
-        $productData = [];
-        foreach ($this->linkTypes as $linkType) {
-            $productData[$linkType] = [];
-            foreach ($productFixture as $data) {
-                $productData[$linkType][] = $data;
-            }
-        }
-
-        return $productData;
-    }
-
-    /**
-     * link related, up-sells, cross-sells products received from the array
-     *
-     * @param ProductInterface|Product $product
-     * @param array $productData
-     * @return void
-     */
-    private function setCustomProductLinks(ProductInterface $product, array $productData): void
-    {
-        $productLinks = [];
-        foreach ($productData as $linkType => $links) {
-            foreach ($links as $data) {
-                /** @var ProductLinkInterface|Link $productLink */
-                $productLink = $this->productLinkInterfaceFactory->create();
-                $productLink->setSku('simple');
-                $productLink->setLinkedProductSku($data['sku']);
-                if (isset($data['position'])) {
-                    $productLink->setPosition($data['position']);
-                }
-                $productLink->setLinkType($linkType);
-                $productLinks[] = $productLink;
-            }
-        }
-        $product->setProductLinks($productLinks);
-    }
-
-    /**
-     * Get an array of received related, up-sells, cross-sells products
-     *
-     * @param ProductInterface|Product $product
-     * @return array
-     */
-    private function getActualLinks(ProductInterface $product): array
-    {
-        $actualLinks = [];
-        foreach ($this->linkTypes as $linkType) {
-            $products = [];
-            $actualLinks[$linkType] = [];
-            switch ($linkType) {
-                case 'upsell':
-                    $products = $product->getUpSellProducts();
-                    break;
-                case 'crosssell':
-                    $products = $product->getCrossSellProducts();
-                    break;
-                case 'related':
-                    $products = $product->getRelatedProducts();
-                    break;
-            }
-            /** @var ProductInterface|Product $productItem */
-            foreach ($products as $productItem) {
-                $actualLinks[$linkType][] = [
-                    'id' => $productItem->getId(),
-                    'sku' => $productItem->getSku(),
-                    'position' => $productItem->getPosition(),
-                ];
-            }
-        }
-
-        return $actualLinks;
+        parent::setUp();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+        $this->productResource = $this->objectManager->create(ProductResource::class);
+        $this->productLinkInterfaceFactory = $this->objectManager->create(ProductLinkInterfaceFactory::class);
     }
 }

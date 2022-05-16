@@ -24,20 +24,6 @@ class ConfirmationTest extends TestCase
     private $confirmation;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->confirmation = Bootstrap::getObjectManager()->create(
-            Confirmation::class,
-            [
-                'components' => [],
-                'data' => ['name' => 'confirmation'],
-            ]
-        );
-    }
-
-    /**
      * Verify Confirmation::prepareDataSource() won't throw exception in case requested website doesn't exist.
      *
      * @param array $customerDataSource
@@ -114,7 +100,7 @@ class ConfirmationTest extends TestCase
                                 'group_id' => ['1'],
                                 'created_at' => '2020-12-28 07:06:17',
                                 'website_id' => ['999999999'],
-                                'confirmation' =>  __('Confirmed'),
+                                'confirmation' => __('Confirmed'),
                                 'created_in' => 'CustomStoreViewWhichDoesNotExistAnymore',
                             ],
                         ],
@@ -123,5 +109,19 @@ class ConfirmationTest extends TestCase
                 ],
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->confirmation = Bootstrap::getObjectManager()->create(
+            Confirmation::class,
+            [
+                'components' => [],
+                'data' => ['name' => 'confirmation'],
+            ]
+        );
     }
 }

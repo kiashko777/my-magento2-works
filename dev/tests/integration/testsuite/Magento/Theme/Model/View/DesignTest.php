@@ -3,36 +3,50 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Theme\Model\View;
 
+use Exception;
+use Magento\Framework\App\Area;
+use Magento\Framework\App\Config\MutableScopeConfigInterface;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\App\State;
+use Magento\Framework\Config\View;
+use Magento\Framework\View\ConfigInterface;
+use Magento\Framework\View\Design\ThemeInterface;
+use Magento\Framework\View\DesignInterface;
+use Magento\Framework\View\FileSystem;
 use Magento\Store\Model\ScopeInterface;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Theme\Model\Theme\Registration;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoComponentsDir Magento/Theme/Model/_files/design
  * @magentoDbIsolation enabled
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class DesignTest extends \PHPUnit\Framework\TestCase
+class DesignTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\View\DesignInterface
+     * @var DesignInterface
      */
     protected $_model;
 
     /**
-     * @var \Magento\Framework\View\FileSystem
+     * @var FileSystem
      */
     protected $_viewFileSystem;
 
     /**
-     * @var \Magento\Framework\View\ConfigInterface
+     * @var ConfigInterface
      */
     protected $_viewConfig;
 
     public static function setUpBeforeClass(): void
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
         /** @var \Magento\Framework\Filesystem $filesystem */
         $filesystem = $objectManager->get(\Magento\Framework\Filesystem::class);
         $themeDir = $filesystem->getDirectoryWrite(DirectoryList::MEDIA);
@@ -46,47 +60,18 @@ class DesignTest extends \PHPUnit\Framework\TestCase
     public static function tearDownAfterClass(): void
     {
         /** @var \Magento\Framework\Filesystem $filesystem */
-        $filesystem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
+        $filesystem = Bootstrap::getObjectManager()
             ->get(\Magento\Framework\Filesystem::class);
         $libDir = $filesystem->getDirectoryWrite(DirectoryList::LIB_WEB);
         $libDir->delete('prototype/prototype.min.js');
     }
 
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var \Magento\Theme\Model\Theme\Registration $registration */
-        $registration = $objectManager->get(
-            \Magento\Theme\Model\Theme\Registration::class
-        );
-        $registration->register();
-        $this->_model = $objectManager->create(\Magento\Framework\View\DesignInterface::class);
-        $this->_viewFileSystem = $objectManager->create(\Magento\Framework\View\FileSystem::class);
-        $this->_viewConfig = $objectManager->create(\Magento\Framework\View\ConfigInterface::class);
-        $objectManager->get(\Magento\Framework\App\State::class)->setAreaCode('frontend');
-    }
-
-    /**
-     * Emulate fixture design theme
-     *
-     * @param string $themePath
-     */
-    protected function _emulateFixtureTheme($themePath = 'Test_FrameworkThemeTest/default')
-    {
-        \Magento\TestFramework\Helper\Bootstrap::getInstance()->loadArea('frontend');
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $objectManager->get(\Magento\Framework\View\DesignInterface::class)->setDesignTheme($themePath);
-
-        $this->_viewFileSystem = $objectManager->create(\Magento\Framework\View\FileSystem::class);
-        $this->_viewConfig = $objectManager->create(\Magento\Framework\View\ConfigInterface::class);
-    }
-
     public function testSetGetArea()
     {
-        $this->assertEquals(\Magento\Framework\View\DesignInterface::DEFAULT_AREA, $this->_model->getArea());
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\App\State::class)
-            ->setAreaCode(\Magento\Framework\App\Area::AREA_ADMINHTML);
-        $this->assertEquals(\Magento\Framework\App\Area::AREA_ADMINHTML, $this->_model->getArea());
+        $this->assertEquals(DesignInterface::DEFAULT_AREA, $this->_model->getArea());
+        Bootstrap::getObjectManager()->get(State::class)
+            ->setAreaCode(Area::AREA_ADMINHTML);
+        $this->assertEquals(Area::AREA_ADMINHTML, $this->_model->getArea());
     }
 
     public function testSetDesignTheme()
@@ -97,7 +82,7 @@ class DesignTest extends \PHPUnit\Framework\TestCase
 
     public function testGetDesignTheme()
     {
-        $this->assertInstanceOf(\Magento\Framework\View\Design\ThemeInterface::class, $this->_model->getDesignTheme());
+        $this->assertInstanceOf(ThemeInterface::class, $this->_model->getDesignTheme());
     }
 
     /**
@@ -105,13 +90,13 @@ class DesignTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetConfigurationDesignThemeDefaults()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
 
         $themes = ['frontend' => 'test_f', 'Adminhtml' => 'test_a'];
-        $design = $objectManager->create(\Magento\Theme\Model\View\Design::class, ['themes' => $themes]);
-        $objectManager->addSharedInstance($design, \Magento\Theme\Model\View\Design::class);
+        $design = $objectManager->create(Design::class, ['themes' => $themes]);
+        $objectManager->addSharedInstance($design, Design::class);
 
-        $model = $objectManager->get(\Magento\Theme\Model\View\Design::class);
+        $model = $objectManager->get(Design::class);
 
         $this->assertEquals('test_f', $model->getConfigurationDesignTheme());
         $this->assertEquals('test_f', $model->getConfigurationDesignTheme('frontend'));
@@ -127,13 +112,13 @@ class DesignTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetConfigurationDesignThemeStore()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
 
-        /** @var \Magento\Framework\App\Config\MutableScopeConfigInterface $mutableConfig */
-        $mutableConfig = $objectManager->get(\Magento\Framework\App\Config\MutableScopeConfigInterface::class);
+        /** @var MutableScopeConfigInterface $mutableConfig */
+        $mutableConfig = $objectManager->get(MutableScopeConfigInterface::class);
         $mutableConfig->setValue('design/theme/theme_id', 'two', ScopeInterface::SCOPE_STORE, 'fixturestore');
 
-        $storeId = $objectManager->get(\Magento\Store\Model\StoreManagerInterface::class)
+        $storeId = $objectManager->get(StoreManagerInterface::class)
             ->getStore()
             ->getId();
         $this->assertEquals('one', $this->_model->getConfigurationDesignTheme());
@@ -157,6 +142,21 @@ class DesignTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Emulate fixture design theme
+     *
+     * @param string $themePath
+     */
+    protected function _emulateFixtureTheme($themePath = 'Test_FrameworkThemeTest/default')
+    {
+        Bootstrap::getInstance()->loadArea('frontend');
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->get(DesignInterface::class)->setDesignTheme($themePath);
+
+        $this->_viewFileSystem = $objectManager->create(FileSystem::class);
+        $this->_viewConfig = $objectManager->create(ConfigInterface::class);
+    }
+
+    /**
      * @return array
      */
     public function getFilenameDataProvider()
@@ -176,7 +176,7 @@ class DesignTest extends \PHPUnit\Framework\TestCase
     {
         $this->_emulateFixtureTheme();
         $config = $this->_viewConfig->getViewConfig();
-        $this->assertInstanceOf(\Magento\Framework\Config\View::class, $config);
+        $this->assertInstanceOf(View::class, $config);
         $this->assertEquals(['var1' => 'value1', 'var2' => 'value2'], $config->getVars('Namespace_Module'));
     }
 
@@ -186,13 +186,13 @@ class DesignTest extends \PHPUnit\Framework\TestCase
     public function testGetConfigCustomized()
     {
         $this->_emulateFixtureTheme();
-        /** @var $theme \Magento\Framework\View\Design\ThemeInterface */
-        $theme = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\DesignInterface::class
+        /** @var $theme ThemeInterface */
+        $theme = Bootstrap::getObjectManager()->get(
+            DesignInterface::class
         )->getDesignTheme();
         $customConfigFile = $theme->getCustomization()->getCustomViewConfigPath();
         /** @var $filesystem \Magento\Framework\Filesystem */
-        $filesystem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
+        $filesystem = Bootstrap::getObjectManager()
             ->create(\Magento\Framework\Filesystem::class);
         $directory = $filesystem->getDirectoryWrite(DirectoryList::ROOT);
         $relativePath = $directory->getRelativePath($customConfigFile);
@@ -204,12 +204,26 @@ class DesignTest extends \PHPUnit\Framework\TestCase
             );
 
             $config = $this->_viewConfig->getViewConfig();
-            $this->assertInstanceOf(\Magento\Framework\Config\View::class, $config);
+            $this->assertInstanceOf(View::class, $config);
             $this->assertEquals(['customVar' => 'custom value'], $config->getVars('Namespace_Module'));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $directory->delete($relativePath);
             throw $e;
         }
         $directory->delete($relativePath);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var Registration $registration */
+        $registration = $objectManager->get(
+            Registration::class
+        );
+        $registration->register();
+        $this->_model = $objectManager->create(DesignInterface::class);
+        $this->_viewFileSystem = $objectManager->create(FileSystem::class);
+        $this->_viewConfig = $objectManager->create(ConfigInterface::class);
+        $objectManager->get(State::class)->setAreaCode('frontend');
     }
 }

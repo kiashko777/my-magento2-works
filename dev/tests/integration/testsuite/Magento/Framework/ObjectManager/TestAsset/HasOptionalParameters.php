@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\ObjectManager\TestAsset;
 
 class HasOptionalParameters
@@ -50,12 +51,13 @@ class HasOptionalParameters
      */
     public function __construct(
         TestAssetInterface $requiredInterfaceParameter,
-        Basic $requiredObjectParameter,
+        Basic              $requiredObjectParameter,
         TestAssetInterface $optionalInterfaceParameter = null,
-        Basic $optionalObjectParameter = null,
-        $optionalStringParameter = self::CONSTRUCTOR_STRING_PARAM_DEFAULT,
-        $optionalIntegerParameter = self::CONSTRUCTOR_INT_PARAM_DEFAULT
-    ) {
+        Basic              $optionalObjectParameter = null,
+                           $optionalStringParameter = self::CONSTRUCTOR_STRING_PARAM_DEFAULT,
+                           $optionalIntegerParameter = self::CONSTRUCTOR_INT_PARAM_DEFAULT
+    )
+    {
         $this->optionalObjectParameter = $optionalObjectParameter;
         $this->optionalStringParameter = $optionalStringParameter;
         $this->optionalIntegerParameter = $optionalIntegerParameter;

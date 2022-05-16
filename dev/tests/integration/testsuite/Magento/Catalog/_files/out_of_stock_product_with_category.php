@@ -41,10 +41,10 @@ $product->setTypeId(Type::TYPE_SIMPLE)
     ->setCategoryIds([333])
     ->setStockData(
         [
-            'use_config_manage_stock'   => 1,
-            'qty'                       => 0,
-            'is_qty_decimal'            => 0,
-            'is_in_stock'               => 0,
+            'use_config_manage_stock' => 1,
+            'qty' => 0,
+            'is_qty_decimal' => 0,
+            'is_in_stock' => 0,
         ]
     )
     ->setCanSaveCustomOptions(true)

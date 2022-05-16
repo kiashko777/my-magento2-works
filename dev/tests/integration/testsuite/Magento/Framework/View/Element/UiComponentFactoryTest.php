@@ -9,12 +9,12 @@ declare(strict_types=1);
 namespace Magento\Framework\View\Element;
 
 use Magento\Framework\Api\Search\SearchCriteria;
+use Magento\Framework\Config\DataInterface as ConfigData;
+use Magento\Framework\Config\DataInterfaceFactory as ConfigDataFactory;
 use Magento\Framework\View\Element\UiComponent\DataProvider\DataProviderInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Magento\Framework\Config\DataInterface as ConfigData;
-use Magento\Framework\Config\DataInterfaceFactory as ConfigDataFactory;
 
 /**
  * Test the component factory.
@@ -25,36 +25,6 @@ class UiComponentFactoryTest extends TestCase
      * @var UiComponentFactoryFactory
      */
     private $factory;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->factory = Bootstrap::getObjectManager()->get(UiComponentFactoryFactory::class);
-    }
-
-    /**
-     * Create factory with mock config provided.
-     *
-     * @param array $mockConfig
-     * @return UiComponentFactory
-     */
-    private function createFactory(array $mockConfig): UiComponentFactory
-    {
-        $dataMock = $this->getMockForAbstractClass(ConfigData::class);
-        $dataMock->method('get')->willReturnCallback(
-            function (string $id) use ($mockConfig) : array {
-                return $mockConfig[$id];
-            }
-        );
-        $dataFactoryMock = $this->getMockBuilder(ConfigDataFactory::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $dataFactoryMock->method('create')->willReturn($dataMock);
-
-        return $this->factory->create(['configFactory' => $dataFactoryMock]);
-    }
 
     /**
      * Test creating a component.
@@ -123,6 +93,28 @@ class UiComponentFactoryTest extends TestCase
     }
 
     /**
+     * Create factory with mock config provided.
+     *
+     * @param array $mockConfig
+     * @return UiComponentFactory
+     */
+    private function createFactory(array $mockConfig): UiComponentFactory
+    {
+        $dataMock = $this->getMockForAbstractClass(ConfigData::class);
+        $dataMock->method('get')->willReturnCallback(
+            function (string $id) use ($mockConfig): array {
+                return $mockConfig[$id];
+            }
+        );
+        $dataFactoryMock = $this->getMockBuilder(ConfigDataFactory::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $dataFactoryMock->method('create')->willReturn($dataMock);
+
+        return $this->factory->create(['configFactory' => $dataFactoryMock]);
+    }
+
+    /**
      * Generate provider for the test.
      *
      * @return DataProviderInterface
@@ -164,5 +156,13 @@ class UiComponentFactoryTest extends TestCase
         );
 
         return $mock;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->factory = Bootstrap::getObjectManager()->get(UiComponentFactoryFactory::class);
     }
 }

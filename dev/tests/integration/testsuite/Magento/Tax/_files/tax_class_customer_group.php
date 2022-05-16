@@ -4,22 +4,29 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Customer\Model\Customer;
+use Magento\Customer\Model\Group;
+use Magento\Framework\Registry;
+use Magento\Tax\Model\Calculation\Rate;
+use Magento\Tax\Model\Calculation\Rule;
+use Magento\Tax\Model\ClassModel;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 
-/** @var $objectManager \Magento\TestFramework\ObjectManager */
+/** @var $objectManager ObjectManager */
 $objectManager = Bootstrap::getObjectManager();
 $customerTaxClass = $objectManager->create(
-    \Magento\Tax\Model\ClassModel::class
+    ClassModel::class
 )->setClassName(
     'CustomerTaxClass'
 )->setClassType(
-    \Magento\Tax\Model\ClassModel::TAX_CLASS_TYPE_CUSTOMER
+    ClassModel::TAX_CLASS_TYPE_CUSTOMER
 )->save();
 
-/** @var \Magento\Customer\Model\Customer $customer */
-$customer = $objectManager->create(\Magento\Customer\Model\Customer::class)->load(1);
-/** @var \Magento\Customer\Model\Group $customerGroup */
-$customerGroup = $objectManager->create(\Magento\Customer\Model\Group::class)
+/** @var Customer $customer */
+$customer = $objectManager->create(Customer::class)->load(1);
+/** @var Group $customerGroup */
+$customerGroup = $objectManager->create(Group::class)
     ->load('custom_group', 'customer_group_code');
 $customerGroup->setTaxClassId($customerTaxClass->getId())->save();
 $customer->setGroupId($customerGroup->getId())->save();
@@ -31,10 +38,10 @@ $taxRate = [
     'code' => 'US-AL-*-Rate-1',
     'rate' => '7.5',
 ];
-$rate = $objectManager->create(\Magento\Tax\Model\Calculation\Rate::class)->setData($taxRate)->save();
+$rate = $objectManager->create(Rate::class)->setData($taxRate)->save();
 
 /** @var Magento\Framework\Registry $registry */
-$registry = $objectManager->get(\Magento\Framework\Registry::class);
+$registry = $objectManager->get(Registry::class);
 $registry->unregister('_fixture/Magento_Tax_Model_Calculation_Rate');
 $registry->register('_fixture/Magento_Tax_Model_Calculation_Rate', $rate);
 
@@ -48,7 +55,7 @@ $ruleData = [
     'tax_rates_codes' => [$rate->getId() => $rate->getCode()],
 ];
 
-$taxRule = $objectManager->create(\Magento\Tax\Model\Calculation\Rule::class)->setData($ruleData)->save();
+$taxRule = $objectManager->create(Rule::class)->setData($ruleData)->save();
 
 $registry->unregister('_fixture/Magento_Tax_Model_Calculation_Rule');
 $registry->register('_fixture/Magento_Tax_Model_Calculation_Rule', $taxRule);

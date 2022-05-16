@@ -6,17 +6,18 @@
 
 namespace Magento\Framework\Backup;
 
+use LogicException;
 use Magento\Backup\Helper\Data;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Filesystem;
 use Magento\Framework\Module\Setup;
 use Magento\TestFramework\Helper\Bootstrap;
-use PHPUnit\Framework\TestCase;
+use Magento\TestFramework\Indexer\TestCase;
 
 /**
  * Provide tests for \Magento\Framework\Backup\Db.
  */
-class DbTest extends \Magento\TestFramework\Indexer\TestCase
+class DbTest extends TestCase
 {
     public static function setUpBeforeClass(): void
     {
@@ -24,7 +25,7 @@ class DbTest extends \Magento\TestFramework\Indexer\TestCase
             ->getApplication()
             ->getDbInstance();
         if (!$db->isDbDumpExists()) {
-            throw new \LogicException('DB dump does not exist.');
+            throw new LogicException('DB dump does not exist.');
         }
         $db->restoreFromDbDump();
 
@@ -57,7 +58,7 @@ class DbTest extends \Magento\TestFramework\Indexer\TestCase
         $tableName = Bootstrap::getObjectManager()->get(Setup::class)
             ->getTable('test_table_with_custom_trigger');
         $this->assertMatchesRegularExpression(
-            '/CREATE  TRIGGER `?test_custom_trigger`? AFTER INSERT ON `?'. $tableName . '`? FOR EACH ROW/',
+            '/CREATE  TRIGGER `?test_custom_trigger`? AFTER INSERT ON `?' . $tableName . '`? FOR EACH ROW/',
             $content
         );
         //Clean up.

@@ -7,8 +7,11 @@
 /**
  * Environment initialization
  */
+
+use Magento\Framework\App\Bootstrap;
+
 error_reporting(E_ALL);
-if (in_array('phar', \stream_get_wrappers())) {
+if (in_array('phar', stream_get_wrappers())) {
     stream_wrapper_unregister('phar');
 }
 #ini_set('display_errors', 1);
@@ -32,7 +35,7 @@ HTML;
 
 require_once __DIR__ . '/autoload.php';
 // Sets default autoload mappings, may be overridden in Bootstrap::create
-\Magento\Framework\App\Bootstrap::populateAutoloader(BP, []);
+Bootstrap::populateAutoloader(BP, []);
 
 /* Custom umask value may be provided in optional mage_umask file in root */
 $umaskFile = BP . '/magento_umask';

@@ -3,27 +3,24 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 /**
  * Tests for \Magento\Framework\Data\Form\Element\Image
  */
+
 namespace Magento\Framework\Data\Form\Element;
 
-class ImageTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\Data\Form;
+use Magento\Framework\Data\Form\ElementFactory;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class ImageTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Data\Form\Element\Image
+     * @var Image
      */
     protected $imageElement;
-
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var $elementFactory \Magento\Framework\Data\Form\ElementFactory */
-        $elementFactory = $objectManager->create(\Magento\Framework\Data\Form\ElementFactory::class);
-        $this->imageElement = $elementFactory->create(\Magento\Framework\Data\Form\Element\Image::class, []);
-        $form = $objectManager->create(\Magento\Framework\Data\Form::class);
-        $this->imageElement->setForm($form);
-    }
 
     public function testGetElementHtml()
     {
@@ -32,5 +29,15 @@ class ImageTest extends \PHPUnit\Framework\TestCase
         $html = $this->imageElement->getElementHtml();
 
         $this->assertStringContainsString('media/' . $filePath, $html);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var $elementFactory ElementFactory */
+        $elementFactory = $objectManager->create(ElementFactory::class);
+        $this->imageElement = $elementFactory->create(Image::class, []);
+        $form = $objectManager->create(Form::class);
+        $this->imageElement->setForm($form);
     }
 }

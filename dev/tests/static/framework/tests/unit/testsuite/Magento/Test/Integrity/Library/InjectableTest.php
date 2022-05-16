@@ -3,14 +3,23 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Library;
 
+use Laminas\Code\Reflection\ClassReflection;
+use Laminas\Code\Reflection\FileReflection;
+use Laminas\Code\Reflection\MethodReflection;
+use Laminas\Code\Reflection\ParameterReflection;
+use Magento\Framework\DataObject;
 use Magento\TestFramework\Integrity\Library\Injectable;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use ReflectionException;
 
 /**
  * Test for Magento\TestFramework\Integrity\Library\Injectable
  */
-class InjectableTest extends \PHPUnit\Framework\TestCase
+class InjectableTest extends TestCase
 {
     /**
      * @var Injectable
@@ -18,19 +27,106 @@ class InjectableTest extends \PHPUnit\Framework\TestCase
     protected $injectable;
 
     /**
-     * @var \Laminas\Code\Reflection\FileReflection
+     * @var FileReflection
      */
     protected $fileReflection;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     protected $parameterReflection;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     protected $declaredClass;
+
+    /**
+     * Covered getDependencies
+     *
+     * @test
+     */
+    public function testGetDependencies()
+    {
+        $classReflection = $this->getMockBuilder(
+            ClassReflection::class
+        )->disableOriginalConstructor()->getMock();
+
+        $classReflection->expects(
+            $this->once()
+        )->method(
+            'getName'
+        )->willReturn(
+            DataObject::class
+        );
+
+        $this->parameterReflection->expects(
+            $this->once()
+        )->method(
+            'getClass'
+        )->willReturn(
+            $classReflection
+        );
+
+        $this->assertEquals(
+            [DataObject::class],
+            $this->injectable->getDependencies($this->fileReflection)
+        );
+    }
+
+    /**
+     * Covered getDependencies
+     *
+     * @test
+     */
+    public function testGetDependenciesWithException()
+    {
+        $this->parameterReflection->expects($this->once())->method('getClass')->willReturnCallback(
+
+            function () {
+                throw new ReflectionException('Class Magento\Framework\DataObject does not exist');
+            }
+
+        );
+
+        $this->assertEquals(
+
+            [DataObject::class],
+            $this->injectable->getDependencies($this->fileReflection)
+        );
+    }
+
+    /**
+     * Covered with some different exception method
+     *
+     * @test
+     */
+    public function testGetDependenciesWithOtherException()
+    {
+        $this->expectException(ReflectionException::class);
+
+        $this->parameterReflection->expects($this->once())->method('getClass')->willReturnCallback(
+
+            function () {
+                throw new ReflectionException('Some message');
+            }
+
+        );
+
+        $this->injectable->getDependencies($this->fileReflection);
+    }
+
+    /**
+     * Covered when method declared in parent class
+     *
+     * @test
+     */
+    public function testGetDependenciesWhenMethodDeclaredInParentClass()
+    {
+        $this->declaredClass->expects($this->once())->method('getName')->willReturn('ParentClass');
+
+        $this->injectable->getDependencies($this->fileReflection);
+    }
 
     /**
      * @inheritdoc
@@ -39,23 +135,23 @@ class InjectableTest extends \PHPUnit\Framework\TestCase
     {
         $this->injectable = new Injectable();
         $this->fileReflection = $this->getMockBuilder(
-            \Laminas\Code\Reflection\FileReflection::class
+            FileReflection::class
         )->disableOriginalConstructor()->getMock();
 
         $classReflection = $this->getMockBuilder(
-            \Laminas\Code\Reflection\ClassReflection::class
+            ClassReflection::class
         )->disableOriginalConstructor()->getMock();
 
         $methodReflection = $this->getMockBuilder(
-            \Laminas\Code\Reflection\MethodReflection::class
+            MethodReflection::class
         )->disableOriginalConstructor()->getMock();
 
         $this->parameterReflection = $this->getMockBuilder(
-            \Laminas\Code\Reflection\ParameterReflection::class
+            ParameterReflection::class
         )->disableOriginalConstructor()->getMock();
 
         $this->declaredClass = $this->getMockBuilder(
-            \Laminas\Code\Reflection\ClassReflection::class
+            ClassReflection::class
         )->disableOriginalConstructor()->getMock();
 
         $methodReflection->expects(
@@ -89,92 +185,5 @@ class InjectableTest extends \PHPUnit\Framework\TestCase
         )->willReturn(
             [$classReflection]
         );
-    }
-
-    /**
-     * Covered getDependencies
-     *
-     * @test
-     */
-    public function testGetDependencies()
-    {
-        $classReflection = $this->getMockBuilder(
-            \Laminas\Code\Reflection\ClassReflection::class
-        )->disableOriginalConstructor()->getMock();
-
-        $classReflection->expects(
-            $this->once()
-        )->method(
-            'getName'
-        )->willReturn(
-            \Magento\Framework\DataObject::class
-        );
-
-        $this->parameterReflection->expects(
-            $this->once()
-        )->method(
-            'getClass'
-        )->willReturn(
-            $classReflection
-        );
-
-        $this->assertEquals(
-            [\Magento\Framework\DataObject::class],
-            $this->injectable->getDependencies($this->fileReflection)
-        );
-    }
-
-    /**
-     * Covered getDependencies
-     *
-     * @test
-     */
-    public function testGetDependenciesWithException()
-    {
-        $this->parameterReflection->expects($this->once())->method('getClass')->willReturnCallback(
-            
-                function () {
-                    throw new \ReflectionException('Class Magento\Framework\DataObject does not exist');
-                }
-            
-        );
-
-        $this->assertEquals(
-
-            [\Magento\Framework\DataObject::class],
-            $this->injectable->getDependencies($this->fileReflection)
-        );
-    }
-
-    /**
-     * Covered with some different exception method
-     *
-     * @test
-     */
-    public function testGetDependenciesWithOtherException()
-    {
-        $this->expectException(\ReflectionException::class);
-
-        $this->parameterReflection->expects($this->once())->method('getClass')->willReturnCallback(
-            
-                function () {
-                    throw new \ReflectionException('Some message');
-                }
-            
-        );
-
-        $this->injectable->getDependencies($this->fileReflection);
-    }
-
-    /**
-     * Covered when method declared in parent class
-     *
-     * @test
-     */
-    public function testGetDependenciesWhenMethodDeclaredInParentClass()
-    {
-        $this->declaredClass->expects($this->once())->method('getName')->willReturn('ParentClass');
-
-        $this->injectable->getDependencies($this->fileReflection);
     }
 }

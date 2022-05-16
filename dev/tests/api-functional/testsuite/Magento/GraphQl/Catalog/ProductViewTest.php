@@ -12,7 +12,11 @@ use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\Data\ProductLinkInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\Product\Option;
+use Magento\Catalog\Model\Product\Option\Value;
 use Magento\Framework\DataObject;
+use Magento\Integration\Api\CustomerTokenServiceInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
 
@@ -22,14 +26,9 @@ use Magento\TestFramework\TestCase\GraphQlAbstract;
 class ProductViewTest extends GraphQlAbstract
 {
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
@@ -253,9 +252,9 @@ class ProductViewTest extends GraphQlAbstract
 QUERY;
 
         // get customer ID token
-        /** @var \Magento\Integration\Api\CustomerTokenServiceInterface $customerTokenService */
+        /** @var CustomerTokenServiceInterface $customerTokenService */
         $customerTokenService = $this->objectManager->create(
-            \Magento\Integration\Api\CustomerTokenServiceInterface::class
+            CustomerTokenServiceInterface::class
         );
         $customerToken = $customerTokenService->createCustomerAccessToken('customer@example.com', 'password');
 
@@ -282,6 +281,190 @@ QUERY;
         );
         //canonical_url will be null unless the admin setting catalog/seo/product_canonical_tag is turned ON
         self::assertNull($responseObject->getData('products/items/0/canonical_url'));
+    }
+
+    /**
+     * @param ProductInterface $product
+     * @param array $actualResponse
+     */
+    private function assertBaseFields($product, $actualResponse)
+    {
+        $assertionMap = [
+            ['response_field' => 'id', 'expected_value' => $product->getId()],
+            ['response_field' => 'uid', 'expected_value' => base64_encode($product->getId())],
+            ['response_field' => 'name', 'expected_value' => $product->getName()],
+            ['response_field' => 'price', 'expected_value' => [
+                'minimalPrice' => [
+                    'amount' => [
+                        'value' => $product->getSpecialPrice(),
+                        'currency' => 'USD'
+                    ],
+                    'adjustments' => []
+                ],
+                'regularPrice' => [
+                    'amount' => [
+                        'value' => $product->getPrice(),
+                        'currency' => 'USD'
+                    ],
+                    'adjustments' => []
+                ],
+                'maximalPrice' => [
+                    'amount' => [
+                        'value' => $product->getSpecialPrice(),
+                        'currency' => 'USD'
+                    ],
+                    'adjustments' => []
+                ],
+            ]
+            ],
+            ['response_field' => 'sku', 'expected_value' => $product->getSku()],
+            ['response_field' => 'type_id', 'expected_value' => $product->getTypeId()],
+            ['response_field' => 'weight', 'expected_value' => $product->getWeight()],
+        ];
+
+        $this->assertResponseFields($actualResponse, $assertionMap);
+    }
+
+    /**
+     * @param ProductInterface $product
+     * @param array $actualResponse
+     */
+    private function assertEavAttributes($product, $actualResponse)
+    {
+        $eavAttributes = [
+            'url_key',
+            'meta_description',
+            'meta_keyword',
+            'meta_title',
+            'country_of_manufacture',
+            'gift_message_available',
+            'options_container',
+            'special_price',
+            'special_to_date',
+        ];
+        $assertionMap = [];
+        foreach ($eavAttributes as $attributeCode) {
+            $expectedAttribute = $product->getCustomAttribute($attributeCode);
+
+            $assertionMap[] = [
+                'response_field' => $this->eavAttributesToGraphQlSchemaFieldTranslator($attributeCode),
+                'expected_value' => $expectedAttribute ? $expectedAttribute->getValue() : null
+            ];
+        }
+
+        $this->assertResponseFields($actualResponse, $assertionMap);
+    }
+
+    /**
+     * @param string $eavAttributeCode
+     * @return string
+     */
+    private function eavAttributesToGraphQlSchemaFieldTranslator(string $eavAttributeCode)
+    {
+        return $eavAttributeCode;
+    }
+
+    /**
+     * @param ProductInterface $product
+     * @param $actualResponse
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     */
+    private function assertOptions($product, $actualResponse)
+    {
+        $productOptions = $product->getOptions();
+        $this->assertNotEmpty($actualResponse['options'], "Precondition failed: 'options' must not be empty");
+        foreach ($actualResponse['options'] as $optionsArray) {
+            $option = null;
+            /** @var Option $optionSelect */
+            foreach ($productOptions as $optionSelect) {
+                $match = false;
+                if ($optionSelect->getTitle() == $optionsArray['title']) {
+                    $option = $optionSelect;
+                    if (!empty($option->getValues())) {
+                        $values = $option->getValues();
+                        /** @var Value $value */
+                        $value = current($values);
+                        $findValueKeyName = $option->getType() . '_option';
+                        if ($value->getTitle() === $optionsArray[$findValueKeyName][0]['title']) {
+                            $match = true;
+                        }
+                    } else {
+                        $match = true;
+                    }
+                    if ($match) {
+                        break;
+                    }
+                }
+            }
+            $assertionMap = [
+                ['response_field' => 'sort_order', 'expected_value' => $option->getSortOrder()],
+                ['response_field' => 'title', 'expected_value' => $option->getTitle()],
+                ['response_field' => 'required', 'expected_value' => $option->getIsRequire()],
+                ['response_field' => 'option_id', 'expected_value' => $option->getOptionId()],
+                [
+                    'response_field' => 'uid',
+                    'expected_value' => base64_encode('custom-option/' . $option->getOptionId())
+                ]
+            ];
+
+            if (!empty($option->getValues())) {
+                $valueKeyName = $option->getType() . '_option';
+                $value = current($optionsArray[$valueKeyName]);
+                /** @var Value $productValue */
+                $productValue = current($option->getValues());
+                $assertionMapValues = [
+                    ['response_field' => 'title', 'expected_value' => $productValue->getTitle()],
+                    ['response_field' => 'sort_order', 'expected_value' => $productValue->getSortOrder()],
+                    ['response_field' => 'price', 'expected_value' => $productValue->getPrice()],
+                    ['response_field' => 'price_type', 'expected_value' => strtoupper($productValue->getPriceType())],
+                    ['response_field' => 'sku', 'expected_value' => $productValue->getSku()],
+                    ['response_field' => 'option_type_id', 'expected_value' => $productValue->getOptionTypeId()]
+                ];
+                $this->assertResponseFields($value, $assertionMapValues);
+            } else {
+                // phpcs:ignore Magento2.Performance.ForeachArrayMerge
+                $assertionMap = array_merge(
+                    $assertionMap,
+                    [
+                        ['response_field' => 'product_sku', 'expected_value' => $option->getProductSku()],
+                    ]
+                );
+
+                if ($option->getType() === 'file') {
+                    $valueKeyName = 'file_option';
+                    $valueAssertionMap = [
+                        ['response_field' => 'file_extension', 'expected_value' => $option->getFileExtension()],
+                        ['response_field' => 'image_size_x', 'expected_value' => $option->getImageSizeX()],
+                        ['response_field' => 'image_size_y', 'expected_value' => $option->getImageSizeY()]
+                    ];
+                } elseif ($option->getType() === 'area') {
+                    $valueKeyName = 'area_option';
+                    $valueAssertionMap = [
+                        ['response_field' => 'max_characters', 'expected_value' => $option->getMaxCharacters()],
+                    ];
+                } elseif ($option->getType() === 'field') {
+                    $valueKeyName = 'field_option';
+                    $valueAssertionMap = [
+                        ['response_field' => 'max_characters', 'expected_value' => $option->getMaxCharacters()]
+                    ];
+                } else {
+                    $valueKeyName = 'date_option';
+                    $valueAssertionMap = [];
+                }
+                // phpcs:ignore Magento2.Performance.ForeachArrayMerge
+                $valueAssertionMap = array_merge(
+                    $valueAssertionMap,
+                    [
+                        ['response_field' => 'price', 'expected_value' => $option->getPrice()],
+                        ['response_field' => 'price_type', 'expected_value' => strtoupper($option->getPriceType())],
+                        ['response_field' => 'sku', 'expected_value' => $option->getSku()]
+                    ]
+                );
+
+                $this->assertResponseFields($optionsArray[$valueKeyName], $valueAssertionMap);
+            }
+            $this->assertResponseFields($optionsArray, $assertionMap);
+        }
     }
 
     /**
@@ -495,6 +678,46 @@ QUERY;
     }
 
     /**
+     * @param ProductInterface $product
+     * @param array $actualResponse
+     */
+    private function assertMediaGalleryEntries($product, $actualResponse)
+    {
+        $mediaGalleryEntries = $product->getMediaGalleryEntries();
+        $this->assertCount(1, $mediaGalleryEntries, "Precondition failed, incorrect number of media gallery entries.");
+        $this->assertIsArray(
+            [$actualResponse['media_gallery_entries']],
+            "Media galleries field must be of an array type."
+        );
+        $this->assertCount(1, $actualResponse['media_gallery_entries'], "There must be 1 record in media gallery.");
+        $mediaGalleryEntry = $mediaGalleryEntries[0];
+        $this->assertResponseFields(
+            $actualResponse['media_gallery_entries'][0],
+            [
+                'disabled' => (bool)$mediaGalleryEntry->isDisabled(),
+                'file' => $mediaGalleryEntry->getFile(),
+                'id' => $mediaGalleryEntry->getId(),
+                'uid' => base64_encode($mediaGalleryEntry->getId()),
+                'label' => $mediaGalleryEntry->getLabel(),
+                'media_type' => $mediaGalleryEntry->getMediaType(),
+                'position' => $mediaGalleryEntry->getPosition(),
+            ]
+        );
+        $videoContent = $mediaGalleryEntry->getExtensionAttributes()->getVideoContent();
+        $this->assertResponseFields(
+            $actualResponse['media_gallery_entries'][0]['video_content'],
+            [
+                'media_type' => $videoContent->getMediaType(),
+                'video_description' => $videoContent->getVideoDescription(),
+                'video_metadata' => $videoContent->getVideoMetadata(),
+                'video_provider' => $videoContent->getVideoProvider(),
+                'video_title' => $videoContent->getVideoTitle(),
+                'video_url' => $videoContent->getVideoUrl(),
+            ]
+        );
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Catalog/_files/product_simple_with_custom_attribute.php
      */
     public function testQueryCustomAttributeField()
@@ -523,6 +746,16 @@ QUERY;
         $this->assertCount(1, $response['products']['items']);
         $this->assertArrayHasKey(0, $response['products']['items']);
         $this->assertCustomAttribute($response['products']['items'][0]);
+    }
+
+    /**
+     * @param ProductInterface $product
+     * @param array $actualResponse
+     */
+    private function assertCustomAttribute($actualResponse)
+    {
+        $customAttribute = 'customAttributeValue';
+        $this->assertEquals($customAttribute, $actualResponse['attribute_code_custom']);
     }
 
     /**
@@ -559,6 +792,25 @@ QUERY;
         $product = $productRepository->get($productSku, false, null, true);
         $this->assertNotNull($response['products']['items'][0]['product_links'], "product_links must not be null");
         $this->assertProductLinks($product, $response['products']['items'][0]['product_links'][0]);
+    }
+
+    /**
+     * @param ProductInterface $product
+     * @param array $actualResponse
+     */
+    private function assertProductLinks($product, $actualResponse)
+    {
+        /** @var ProductLinkInterface $productLinks */
+        $productLinks = $product->getProductLinks();
+        $productLink = $productLinks[0];
+        $assertionMap = [
+            ['response_field' => 'link_type', 'expected_value' => $productLink->getLinkType()],
+            ['response_field' => 'linked_product_sku', 'expected_value' => $productLink->getLinkedProductSku()],
+            ['response_field' => 'linked_product_type', 'expected_value' => $productLink->getLinkedProductType()],
+            ['response_field' => 'position', 'expected_value' => $productLink->getPosition()],
+            ['response_field' => 'sku', 'expected_value' => $productLink->getSku()],
+        ];
+        $this->assertResponseFields($actualResponse, $assertionMap);
     }
 
     /**
@@ -646,259 +898,6 @@ QUERY;
     }
 
     /**
-     * @param ProductInterface $product
-     * @param array $actualResponse
-     */
-    private function assertMediaGalleryEntries($product, $actualResponse)
-    {
-        $mediaGalleryEntries = $product->getMediaGalleryEntries();
-        $this->assertCount(1, $mediaGalleryEntries, "Precondition failed, incorrect number of media gallery entries.");
-        $this->assertIsArray(
-            [$actualResponse['media_gallery_entries']],
-            "Media galleries field must be of an array type."
-        );
-        $this->assertCount(1, $actualResponse['media_gallery_entries'], "There must be 1 record in media gallery.");
-        $mediaGalleryEntry = $mediaGalleryEntries[0];
-        $this->assertResponseFields(
-            $actualResponse['media_gallery_entries'][0],
-            [
-                'disabled' => (bool)$mediaGalleryEntry->isDisabled(),
-                'file' => $mediaGalleryEntry->getFile(),
-                'id' => $mediaGalleryEntry->getId(),
-                'uid' => base64_encode($mediaGalleryEntry->getId()),
-                'label' => $mediaGalleryEntry->getLabel(),
-                'media_type' => $mediaGalleryEntry->getMediaType(),
-                'position' => $mediaGalleryEntry->getPosition(),
-            ]
-        );
-        $videoContent = $mediaGalleryEntry->getExtensionAttributes()->getVideoContent();
-        $this->assertResponseFields(
-            $actualResponse['media_gallery_entries'][0]['video_content'],
-            [
-                'media_type' => $videoContent->getMediaType(),
-                'video_description' => $videoContent->getVideoDescription(),
-                'video_metadata' => $videoContent->getVideoMetadata(),
-                'video_provider' => $videoContent->getVideoProvider(),
-                'video_title' => $videoContent->getVideoTitle(),
-                'video_url' => $videoContent->getVideoUrl(),
-            ]
-        );
-    }
-
-    /**
-     * @param ProductInterface $product
-     * @param array $actualResponse
-     */
-    private function assertCustomAttribute($actualResponse)
-    {
-        $customAttribute = 'customAttributeValue';
-        $this->assertEquals($customAttribute, $actualResponse['attribute_code_custom']);
-    }
-
-    /**
-     * @param ProductInterface $product
-     * @param $actualResponse
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-     */
-    private function assertOptions($product, $actualResponse)
-    {
-        $productOptions = $product->getOptions();
-        $this->assertNotEmpty($actualResponse['options'], "Precondition failed: 'options' must not be empty");
-        foreach ($actualResponse['options'] as $optionsArray) {
-            $option = null;
-            /** @var \Magento\Catalog\Model\Product\Option $optionSelect */
-            foreach ($productOptions as $optionSelect) {
-                $match = false;
-                if ($optionSelect->getTitle() == $optionsArray['title']) {
-                    $option = $optionSelect;
-                    if (!empty($option->getValues())) {
-                        $values = $option->getValues();
-                        /** @var \Magento\Catalog\Model\Product\Option\Value $value */
-                        $value = current($values);
-                        $findValueKeyName = $option->getType() . '_option';
-                        if ($value->getTitle() === $optionsArray[$findValueKeyName][0]['title']) {
-                            $match = true;
-                        }
-                    } else {
-                        $match = true;
-                    }
-                    if ($match) {
-                        break;
-                    }
-                }
-            }
-            $assertionMap = [
-                ['response_field' => 'sort_order', 'expected_value' => $option->getSortOrder()],
-                ['response_field' => 'title', 'expected_value' => $option->getTitle()],
-                ['response_field' => 'required', 'expected_value' => $option->getIsRequire()],
-                ['response_field' => 'option_id', 'expected_value' => $option->getOptionId()],
-                [
-                    'response_field' => 'uid',
-                    'expected_value' => base64_encode('custom-option/' . $option->getOptionId())
-                ]
-            ];
-
-            if (!empty($option->getValues())) {
-                $valueKeyName = $option->getType() . '_option';
-                $value = current($optionsArray[$valueKeyName]);
-                /** @var \Magento\Catalog\Model\Product\Option\Value $productValue */
-                $productValue = current($option->getValues());
-                $assertionMapValues = [
-                    ['response_field' => 'title', 'expected_value' => $productValue->getTitle()],
-                    ['response_field' => 'sort_order', 'expected_value' => $productValue->getSortOrder()],
-                    ['response_field' => 'price', 'expected_value' => $productValue->getPrice()],
-                    ['response_field' => 'price_type', 'expected_value' => strtoupper($productValue->getPriceType())],
-                    ['response_field' => 'sku', 'expected_value' => $productValue->getSku()],
-                    ['response_field' => 'option_type_id', 'expected_value' => $productValue->getOptionTypeId()]
-                ];
-                $this->assertResponseFields($value, $assertionMapValues);
-            } else {
-                // phpcs:ignore Magento2.Performance.ForeachArrayMerge
-                $assertionMap = array_merge(
-                    $assertionMap,
-                    [
-                        ['response_field' => 'product_sku', 'expected_value' => $option->getProductSku()],
-                    ]
-                );
-
-                if ($option->getType() === 'file') {
-                    $valueKeyName = 'file_option';
-                    $valueAssertionMap = [
-                        ['response_field' => 'file_extension', 'expected_value' => $option->getFileExtension()],
-                        ['response_field' => 'image_size_x', 'expected_value' => $option->getImageSizeX()],
-                        ['response_field' => 'image_size_y', 'expected_value' => $option->getImageSizeY()]
-                    ];
-                } elseif ($option->getType() === 'area') {
-                    $valueKeyName = 'area_option';
-                    $valueAssertionMap = [
-                        ['response_field' => 'max_characters', 'expected_value' => $option->getMaxCharacters()],
-                    ];
-                } elseif ($option->getType() === 'field') {
-                    $valueKeyName = 'field_option';
-                    $valueAssertionMap = [
-                        ['response_field' => 'max_characters', 'expected_value' => $option->getMaxCharacters()]
-                    ];
-                } else {
-                    $valueKeyName = 'date_option';
-                    $valueAssertionMap = [];
-                }
-                // phpcs:ignore Magento2.Performance.ForeachArrayMerge
-                $valueAssertionMap = array_merge(
-                    $valueAssertionMap,
-                    [
-                        ['response_field' => 'price', 'expected_value' => $option->getPrice()],
-                        ['response_field' => 'price_type', 'expected_value' => strtoupper($option->getPriceType())],
-                        ['response_field' => 'sku', 'expected_value' => $option->getSku()]
-                    ]
-                );
-
-                $this->assertResponseFields($optionsArray[$valueKeyName], $valueAssertionMap);
-            }
-            $this->assertResponseFields($optionsArray, $assertionMap);
-        }
-    }
-
-    /**
-     * @param ProductInterface $product
-     * @param array $actualResponse
-     */
-    private function assertBaseFields($product, $actualResponse)
-    {
-        $assertionMap = [
-            ['response_field' => 'id', 'expected_value' => $product->getId()],
-            ['response_field' => 'uid', 'expected_value' => base64_encode($product->getId())],
-            ['response_field' => 'name', 'expected_value' => $product->getName()],
-            ['response_field' => 'price', 'expected_value' => [
-                    'minimalPrice' => [
-                        'amount' => [
-                            'value' => $product->getSpecialPrice(),
-                            'currency' => 'USD'
-                        ],
-                        'adjustments' => []
-                    ],
-                    'regularPrice' => [
-                        'amount' => [
-                            'value' => $product->getPrice(),
-                            'currency' => 'USD'
-                        ],
-                        'adjustments' => []
-                    ],
-                    'maximalPrice' => [
-                        'amount' => [
-                            'value' => $product->getSpecialPrice(),
-                            'currency' => 'USD'
-                        ],
-                        'adjustments' => []
-                    ],
-                ]
-            ],
-            ['response_field' => 'sku', 'expected_value' => $product->getSku()],
-            ['response_field' => 'type_id', 'expected_value' => $product->getTypeId()],
-            ['response_field' => 'weight', 'expected_value' => $product->getWeight()],
-        ];
-
-        $this->assertResponseFields($actualResponse, $assertionMap);
-    }
-
-    /**
-     * @param ProductInterface $product
-     * @param array $actualResponse
-     */
-    private function assertProductLinks($product, $actualResponse)
-    {
-        /** @var ProductLinkInterface $productLinks */
-        $productLinks = $product->getProductLinks();
-        $productLink = $productLinks[0];
-        $assertionMap = [
-            ['response_field' => 'link_type', 'expected_value' => $productLink->getLinkType()],
-            ['response_field' => 'linked_product_sku', 'expected_value' => $productLink->getLinkedProductSku()],
-            ['response_field' => 'linked_product_type', 'expected_value' => $productLink->getLinkedProductType()],
-            ['response_field' => 'position', 'expected_value' => $productLink->getPosition()],
-            ['response_field' => 'sku', 'expected_value' => $productLink->getSku()],
-        ];
-        $this->assertResponseFields($actualResponse, $assertionMap);
-    }
-
-    /**
-     * @param ProductInterface $product
-     * @param array $actualResponse
-     */
-    private function assertEavAttributes($product, $actualResponse)
-    {
-        $eavAttributes = [
-            'url_key',
-            'meta_description',
-            'meta_keyword',
-            'meta_title',
-            'country_of_manufacture',
-            'gift_message_available',
-            'options_container',
-            'special_price',
-            'special_to_date',
-        ];
-        $assertionMap = [];
-        foreach ($eavAttributes as $attributeCode) {
-            $expectedAttribute = $product->getCustomAttribute($attributeCode);
-
-            $assertionMap[] = [
-                'response_field' => $this->eavAttributesToGraphQlSchemaFieldTranslator($attributeCode),
-                'expected_value' => $expectedAttribute ? $expectedAttribute->getValue() : null
-            ];
-        }
-
-        $this->assertResponseFields($actualResponse, $assertionMap);
-    }
-
-    /**
-     * @param string $eavAttributeCode
-     * @return string
-     */
-    private function eavAttributesToGraphQlSchemaFieldTranslator(string $eavAttributeCode)
-    {
-        return $eavAttributeCode;
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Catalog/_files/categories.php
      */
     public function testProductInAllAnchoredCategories()
@@ -925,7 +924,7 @@ QUERY;
         $this->assertNotEmpty($response['products']['items'][0]['categories'], "Categories must not be empty");
         /** @var CategoryRepositoryInterface $categoryRepository */
         $categoryRepository = ObjectManager::getInstance()->get(CategoryRepositoryInterface::class);
-        $categoryIds  = [3, 4, 5];
+        $categoryIds = [3, 4, 5];
 
         $productItemsInResponse = $response['products']['items'];
         $this->assertCount(1, $productItemsInResponse);
@@ -979,7 +978,7 @@ QUERY;
         $nonAnchorCategory = $categoryRepository->get(4);
         $nonAnchorCategory->setIsAnchor(false);
         $categoryRepository->save($nonAnchorCategory);
-        $categoryIds  = [3, 4, 5];
+        $categoryIds = [3, 4, 5];
 
         $response = $this->graphQlQuery($query);
         $this->assertNotEmpty($response['products']['items'][0]['categories'], "Categories must not be empty");
@@ -1003,6 +1002,7 @@ QUERY;
             );
         }
     }
+
     /**
      * Set as non-anchored, one of the categories not directly assigned to the product
      * Verify that the category doesn't show in the response
@@ -1042,7 +1042,7 @@ QUERY;
         //Set the parent category as non-anchored
         $nonAnchorCategory->setIsAnchor(false);
         $categoryRepository->save($nonAnchorCategory);
-        $categoryIds  = [4, 5];
+        $categoryIds = [4, 5];
 
         $response = $this->graphQlQuery($query);
         $this->assertNotEmpty($response['products']['items'][0]['categories'], "Categories must not be empty");
@@ -1065,5 +1065,10 @@ QUERY;
                 ]
             );
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

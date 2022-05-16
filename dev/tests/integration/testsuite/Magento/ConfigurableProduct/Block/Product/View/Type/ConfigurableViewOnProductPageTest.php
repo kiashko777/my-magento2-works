@@ -53,23 +53,6 @@ class ConfigurableViewOnProductPageTest extends TestCase
     private $storeManager;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->block = $this->layout->createBlock(Configurable::class);
-        $this->json = $this->objectManager->get(SerializerInterface::class);
-        $this->productResource = $this->objectManager->get(ProductResource::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-    }
-
-    /**
      * @dataProvider oneChildNotVisibleDataProvider
      * @magentoDbIsolation disabled
      *
@@ -83,6 +66,93 @@ class ConfigurableViewOnProductPageTest extends TestCase
         $configurableProduct = $this->prepareConfigurableProduct($sku, $data);
         $result = $this->renderStockBlock($configurableProduct);
         $this->performAsserts($result, $expectedData);
+    }
+
+    /**
+     * Prepare configurable product with children to test
+     *
+     * @param string $sku
+     * @param array $data
+     * @return ProductInterface
+     */
+    private function prepareConfigurableProduct(string $sku, array $data): ProductInterface
+    {
+        $this->updateProduct($sku, $data);
+
+        return $this->productRepository->get('configurable', false, null, true);
+    }
+
+    /**
+     * Update product with data
+     *
+     * @param array $sku
+     * @param array $data
+     * @return void
+     */
+    private function updateProduct(string $sku, array $data): void
+    {
+        $currentStore = $this->storeManager->getStore();
+        try {
+            $this->storeManager->setCurrentStore(Store::DEFAULT_STORE_ID);
+            $product = $this->productRepository->get($sku);
+            $product->addData($data);
+            $this->productRepository->save($product);
+        } finally {
+            $this->storeManager->setCurrentStore($currentStore);
+        }
+    }
+
+    /**
+     * Render stock block
+     *
+     * @param ProductInterface $configurableProduct
+     * @return string
+     */
+    private function renderStockBlock(ProductInterface $configurableProduct): string
+    {
+        $this->block->setProduct($configurableProduct);
+        $this->block->setTemplate(self::STOCK_DISPLAY_TEMPLATE);
+
+        return $this->block->toHtml();
+    }
+
+    /**
+     * Perform test asserts
+     *
+     * @param string $result
+     * @param array $expectedData
+     * @return void
+     */
+    private function performAsserts(string $result, array $expectedData): void
+    {
+        $this->assertEquals((string)__($expectedData['stock_status']), trim(strip_tags($result)));
+        $config = $this->json->unserialize($this->block->getJsonConfig());
+        $dataToCheck = ['attributes' => reset($config['attributes']), 'options_data' => $config['index']];
+        $this->assertConfig($dataToCheck, $expectedData['options']);
+    }
+
+    /**
+     * Check attribute options
+     *
+     * @param array $actualData
+     * @param array $expectedData
+     * @return void
+     */
+    private function assertConfig(array $actualData, array $expectedData): void
+    {
+        $this->assertCount(count($expectedData), $actualData['options_data'], 'Redundant options were loaded');
+        $sku = array_column($expectedData, 'product');
+        $idBySkuMapping = $this->productResource->getProductsIdsBySkus($sku);
+        foreach ($expectedData as $expectedOption) {
+            $expectedId = $idBySkuMapping[$expectedOption['product']];
+            $itemToCheck = $actualData['options_data'][$expectedId] ?? null;
+            $this->assertNotNull($itemToCheck);
+            foreach ($actualData['attributes']['options'] as $actualAttributeDataItem) {
+                if ($actualAttributeDataItem['id'] === reset($itemToCheck)) {
+                    $this->assertEquals($expectedOption['label'], $actualAttributeDataItem['label']);
+                }
+            }
+        }
     }
 
     /**
@@ -143,9 +213,10 @@ class ConfigurableViewOnProductPageTest extends TestCase
      */
     public function testOneChildNotVisibleWithEnabledShowOutOfStockProducts(
         string $sku,
-        array $data,
-        array $expectedData
-    ): void {
+        array  $data,
+        array  $expectedData
+    ): void
+    {
         $configurableProduct = $this->prepareConfigurableProduct($sku, $data);
         $result = $this->renderStockBlock($configurableProduct);
         $this->performAsserts($result, $expectedData);
@@ -202,89 +273,19 @@ class ConfigurableViewOnProductPageTest extends TestCase
     }
 
     /**
-     * Update product with data
-     *
-     * @param array $sku
-     * @param array $data
-     * @return void
+     * @inheritdoc
      */
-    private function updateProduct(string $sku, array $data): void
+    protected function setUp(): void
     {
-        $currentStore = $this->storeManager->getStore();
-        try {
-            $this->storeManager->setCurrentStore(Store::DEFAULT_STORE_ID);
-            $product = $this->productRepository->get($sku);
-            $product->addData($data);
-            $this->productRepository->save($product);
-        } finally {
-            $this->storeManager->setCurrentStore($currentStore);
-        }
-    }
+        parent::setUp();
 
-    /**
-     * Check attribute options
-     *
-     * @param array $actualData
-     * @param array $expectedData
-     * @return void
-     */
-    private function assertConfig(array $actualData, array $expectedData): void
-    {
-        $this->assertCount(count($expectedData), $actualData['options_data'], 'Redundant options were loaded');
-        $sku = array_column($expectedData, 'product');
-        $idBySkuMapping = $this->productResource->getProductsIdsBySkus($sku);
-        foreach ($expectedData as $expectedOption) {
-            $expectedId = $idBySkuMapping[$expectedOption['product']];
-            $itemToCheck = $actualData['options_data'][$expectedId] ?? null;
-            $this->assertNotNull($itemToCheck);
-            foreach ($actualData['attributes']['options'] as $actualAttributeDataItem) {
-                if ($actualAttributeDataItem['id'] === reset($itemToCheck)) {
-                    $this->assertEquals($expectedOption['label'], $actualAttributeDataItem['label']);
-                }
-            }
-        }
-    }
-
-    /**
-     * Render stock block
-     *
-     * @param ProductInterface $configurableProduct
-     * @return string
-     */
-    private function renderStockBlock(ProductInterface $configurableProduct): string
-    {
-        $this->block->setProduct($configurableProduct);
-        $this->block->setTemplate(self::STOCK_DISPLAY_TEMPLATE);
-
-        return $this->block->toHtml();
-    }
-
-    /**
-     * Perform test asserts
-     *
-     * @param string $result
-     * @param array $expectedData
-     * @return void
-     */
-    private function performAsserts(string $result, array $expectedData): void
-    {
-        $this->assertEquals((string)__($expectedData['stock_status']), trim(strip_tags($result)));
-        $config = $this->json->unserialize($this->block->getJsonConfig());
-        $dataToCheck = ['attributes' => reset($config['attributes']), 'options_data' =>  $config['index']];
-        $this->assertConfig($dataToCheck, $expectedData['options']);
-    }
-
-    /**
-     * Prepare configurable product with children to test
-     *
-     * @param string $sku
-     * @param array $data
-     * @return ProductInterface
-     */
-    private function prepareConfigurableProduct(string $sku, array $data): ProductInterface
-    {
-        $this->updateProduct($sku, $data);
-
-        return $this->productRepository->get('configurable', false, null, true);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->block = $this->layout->createBlock(Configurable::class);
+        $this->json = $this->objectManager->get(SerializerInterface::class);
+        $this->productResource = $this->objectManager->get(ProductResource::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
     }
 }

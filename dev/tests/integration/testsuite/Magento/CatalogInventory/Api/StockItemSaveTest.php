@@ -3,13 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogInventory\Api;
 
 use Magento\Catalog\Api\Data\ProductExtensionInterface;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class StockItemSaveTest extends \PHPUnit\Framework\TestCase
+class StockItemSaveTest extends TestCase
 {
     /**
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
@@ -17,7 +20,7 @@ class StockItemSaveTest extends \PHPUnit\Framework\TestCase
      */
     public function testSave()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
         /** @var ProductRepositoryInterface $productRepository */
         $productRepository = $objectManager->get(ProductRepositoryInterface::class);
         /** @var ProductInterface $product */

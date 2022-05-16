@@ -24,22 +24,6 @@ class AttributeDateTest extends AbstractAttributeTest
     }
 
     /**
-     * @inheritdoc
-     */
-    protected function getAttributeCode(): string
-    {
-        return 'date_attribute';
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function getDefaultAttributeValue(): string
-    {
-        return $this->getAttribute()->getBackend()->formatDate('11/20/19');
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/product_date_attribute.php
      * @magentoDataFixture Magento/Catalog/_files/second_product_simple.php
      * @magentoDataFixture Magento/Catalog/_files/product_simple_out_of_stock.php
@@ -75,5 +59,21 @@ class AttributeDateTest extends AbstractAttributeTest
                 'second_product_sku' => 'simple-out-of-stock',
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function getAttributeCode(): string
+    {
+        return 'date_attribute';
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function getDefaultAttributeValue(): string
+    {
+        return $this->getAttribute()->getBackend()->formatDate('11/20/19');
     }
 }

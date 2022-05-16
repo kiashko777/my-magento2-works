@@ -8,18 +8,19 @@ declare(strict_types=1);
 namespace Magento\Customer\Controller\Adminhtml\Index;
 
 use Magento\Backend\Model\Session;
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Api\Data\CustomerInterface;
 use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Framework\Message\MessageInterface;
 use Magento\Newsletter\Model\Subscriber;
 use Magento\Newsletter\Model\SubscriberFactory;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Customer\Api\CustomerRepositoryInterface;
-use Magento\Customer\Api\Data\CustomerInterface;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class MassSubscribeTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class MassSubscribeTest extends AbstractBackendController
 {
     /**
      * Base controller URL
@@ -27,19 +28,6 @@ class MassSubscribeTest extends \Magento\TestFramework\TestCase\AbstractBackendC
      * @var string
      */
     protected $baseControllerUrl = 'http://localhost/index.php/backend/customer/index/index';
-
-    protected function tearDown(): void
-    {
-        /**
-         * Unset customer data
-         */
-        Bootstrap::getObjectManager()->get(Session::class)->setCustomerData(null);
-
-        /**
-         * Unset messages
-         */
-        Bootstrap::getObjectManager()->get(Session::class)->getMessages(true);
-    }
 
     /**
      * Tests subscriber status of customers.
@@ -120,5 +108,18 @@ class MassSubscribeTest extends \Magento\TestFramework\TestCase\AbstractBackendC
             self::equalTo(['An item needs to be selected. Select and try again.']),
             MessageInterface::TYPE_ERROR
         );
+    }
+
+    protected function tearDown(): void
+    {
+        /**
+         * Unset customer data
+         */
+        Bootstrap::getObjectManager()->get(Session::class)->setCustomerData(null);
+
+        /**
+         * Unset messages
+         */
+        Bootstrap::getObjectManager()->get(Session::class)->getMessages(true);
     }
 }

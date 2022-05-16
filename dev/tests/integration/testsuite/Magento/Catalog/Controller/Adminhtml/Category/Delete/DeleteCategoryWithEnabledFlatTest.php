@@ -47,29 +47,6 @@ class DeleteCategoryWithEnabledFlatTest extends AbstractBackendController
     private $categoryFlatCollectionFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->indexerRegistry = $this->_objectManager->get(IndexerRegistry::class);
-        $this->categoryRepository = $this->_objectManager->get(CategoryRepositoryInterface::class);
-        $this->categoryFlatResource = $this->_objectManager->get(CategoryFlatResource::class);
-        $this->categoryFlatCollectionFactory = $this->_objectManager->get(CollectionFactory::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        parent::tearDown();
-        $categoryFlatIndexer = $this->indexerRegistry->get(State::INDEXER_ID);
-        $categoryFlatIndexer->invalidate();
-        $this->categoryFlatResource->getConnection()->dropTable($this->categoryFlatResource->getMainTable());
-    }
-
-    /**
      * Check that product is deleted from flat table.
      *
      * @magentoConfigFixture current_store catalog/frontend/flat_catalog_category true
@@ -108,6 +85,19 @@ class DeleteCategoryWithEnabledFlatTest extends AbstractBackendController
     }
 
     /**
+     * Method passes the request to Backend to remove given category.
+     *
+     * @param int $categoryId
+     * @return void
+     */
+    private function sendDeleteCategoryRequest(int $categoryId): void
+    {
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
+        $this->getRequest()->setPostValue(['id' => $categoryId]);
+        $this->dispatch('backend/catalog/category/delete');
+    }
+
+    /**
      * Assert that category is deleted.
      *
      * @param int $categoryId
@@ -122,15 +112,25 @@ class DeleteCategoryWithEnabledFlatTest extends AbstractBackendController
     }
 
     /**
-     * Method passes the request to Backend to remove given category.
-     *
-     * @param int $categoryId
-     * @return void
+     * @inheritdoc
      */
-    private function sendDeleteCategoryRequest(int $categoryId): void
+    protected function setUp(): void
     {
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
-        $this->getRequest()->setPostValue(['id' => $categoryId]);
-        $this->dispatch('backend/catalog/category/delete');
+        parent::setUp();
+        $this->indexerRegistry = $this->_objectManager->get(IndexerRegistry::class);
+        $this->categoryRepository = $this->_objectManager->get(CategoryRepositoryInterface::class);
+        $this->categoryFlatResource = $this->_objectManager->get(CategoryFlatResource::class);
+        $this->categoryFlatCollectionFactory = $this->_objectManager->get(CollectionFactory::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+        $categoryFlatIndexer = $this->indexerRegistry->get(State::INDEXER_ID);
+        $categoryFlatIndexer->invalidate();
+        $this->categoryFlatResource->getConnection()->dropTable($this->categoryFlatResource->getMainTable());
     }
 }

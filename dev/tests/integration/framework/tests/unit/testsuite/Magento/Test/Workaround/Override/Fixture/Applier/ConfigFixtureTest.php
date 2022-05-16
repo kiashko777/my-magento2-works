@@ -9,6 +9,7 @@ namespace Magento\Test\Workaround\Override\Fixture\Applier;
 
 use Magento\TestFramework\Workaround\Override\Fixture\Applier\ConfigFixture;
 use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 
 /**
  * Provide tests for \Magento\TestFramework\Workaround\Override\Fixture\Applier\ConfigFixture
@@ -17,16 +18,6 @@ class ConfigFixtureTest extends TestCase
 {
     /** @var ConfigFixture */
     private $object;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->object = new ConfigFixture();
-    }
 
     /**
      * @dataProvider annotationsProvider
@@ -38,6 +29,20 @@ class ConfigFixtureTest extends TestCase
     public function testIsFixtureMatch(string $fixture, array $attributes): void
     {
         $this->assertTrue($this->invokeIsFixtureMatchMethod($attributes, $fixture));
+    }
+
+    /**
+     * Invove object method
+     *
+     * @param array $attributes
+     * @param string $fixture
+     * @return bool
+     */
+    private function invokeIsFixtureMatchMethod(array $attributes, string $fixture): bool
+    {
+        $reflectionMethod = new ReflectionMethod(ConfigFixture::class, 'isFixtureMatch');
+        $reflectionMethod->setAccessible(true);
+        return $reflectionMethod->invoke($this->object, $attributes, $fixture);
     }
 
     /**
@@ -232,7 +237,7 @@ class ConfigFixtureTest extends TestCase
      */
     public function testInitConfigFixture(array $attributes, string $expectedValue): void
     {
-        $reflectionMethod = new \ReflectionMethod(ConfigFixture::class, 'initConfigFixture');
+        $reflectionMethod = new ReflectionMethod(ConfigFixture::class, 'initConfigFixture');
         $reflectionMethod->setAccessible(true);
         $value = $reflectionMethod->invoke($this->object, $attributes);
         $this->assertEquals($expectedValue, $value);
@@ -304,6 +309,35 @@ class ConfigFixtureTest extends TestCase
     {
         $fixtures = $this->processApply($existingFixtures, $config);
         $this->assertEquals($expectedOrder, $fixtures);
+    }
+
+    /**
+     * Process apply configurations
+     *
+     * @param array $existingFixtures
+     * @param array $config
+     * @return array
+     */
+    private function processApply(array $existingFixtures, array $config): array
+    {
+        $this->setConfig($config);
+        $fixtures = $this->object->apply($existingFixtures);
+
+        return array_values($fixtures);
+    }
+
+    /**
+     * Set config to method scope
+     *
+     * @param array $config
+     * @return void
+     */
+    private function setConfig(array $config): void
+    {
+        $this->object->setGlobalConfig([]);
+        $this->object->setClassConfig([]);
+        $this->object->setDataSetConfig([]);
+        $this->object->setMethodConfig($config);
     }
 
     /**
@@ -462,45 +496,12 @@ class ConfigFixtureTest extends TestCase
     }
 
     /**
-     * Process apply configurations
-     *
-     * @param array $existingFixtures
-     * @param array $config
-     * @return array
+     * @inheritdoc
      */
-    private function processApply(array $existingFixtures, array $config): array
+    protected function setUp(): void
     {
-        $this->setConfig($config);
-        $fixtures = $this->object->apply($existingFixtures);
+        parent::setUp();
 
-        return array_values($fixtures);
-    }
-
-    /**
-     * Set config to method scope
-     *
-     * @param array $config
-     * @return void
-     */
-    private function setConfig(array $config): void
-    {
-        $this->object->setGlobalConfig([]);
-        $this->object->setClassConfig([]);
-        $this->object->setDataSetConfig([]);
-        $this->object->setMethodConfig($config);
-    }
-
-    /**
-     * Invove object method
-     *
-     * @param array $attributes
-     * @param string $fixture
-     * @return bool
-     */
-    private function invokeIsFixtureMatchMethod(array $attributes, string $fixture): bool
-    {
-        $reflectionMethod = new \ReflectionMethod(ConfigFixture::class, 'isFixtureMatch');
-        $reflectionMethod->setAccessible(true);
-        return $reflectionMethod->invoke($this->object, $attributes, $fixture);
+        $this->object = new ConfigFixture();
     }
 }

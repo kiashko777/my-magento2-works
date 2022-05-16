@@ -10,10 +10,10 @@ namespace Magento\Checkout\Api;
 use Magento\Checkout\Api\Data\ShippingInformationInterface;
 use Magento\Checkout\Api\Data\ShippingInformationInterfaceFactory;
 use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Framework\Exception\InputException;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Api\Data\ShippingAssignmentInterface;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Framework\Exception\InputException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -40,18 +40,6 @@ class ShippingInformationManagementTest extends TestCase
      * @var ShippingInformationInterfaceFactory
      */
     private $shippingFactory;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->management = $objectManager->get(ShippingInformationManagementInterface::class);
-        $this->cartRepo = $objectManager->get(CartRepositoryInterface::class);
-        $this->customerRepo = $objectManager->get(CustomerRepositoryInterface::class);
-        $this->shippingFactory = $objectManager->get(ShippingInformationInterfaceFactory::class);
-    }
 
     /**
      * Test using another address for quote.
@@ -110,5 +98,17 @@ class ShippingInformationManagementTest extends TestCase
             'Shipping address swap' => [true],
             'Billing address swap' => [false]
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->management = $objectManager->get(ShippingInformationManagementInterface::class);
+        $this->cartRepo = $objectManager->get(CartRepositoryInterface::class);
+        $this->customerRepo = $objectManager->get(CustomerRepositoryInterface::class);
+        $this->shippingFactory = $objectManager->get(ShippingInformationInterfaceFactory::class);
     }
 }

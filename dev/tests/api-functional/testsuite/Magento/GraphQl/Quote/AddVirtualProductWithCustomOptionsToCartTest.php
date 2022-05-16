@@ -7,9 +7,9 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Quote;
 
+use Magento\Catalog\Api\ProductCustomOptionRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
-use Magento\Catalog\Api\ProductCustomOptionRepositoryInterface;
 
 /**
  * Add virtual product with custom options to cart testcases
@@ -30,17 +30,6 @@ class AddVirtualProductWithCustomOptionsToCartTest extends GraphQlAbstract
      * @var GetCustomOptionsValuesForQueryBySku
      */
     private $getCustomOptionsValuesForQueryBySku;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->productCustomOptionsRepository = $objectManager->get(ProductCustomOptionRepositoryInterface::class);
-        $this->getCustomOptionsValuesForQueryBySku = $objectManager->get(GetCustomOptionsValuesForQueryBySku::class);
-    }
 
     /**
      * Test adding a virtual product to the shopping cart with all supported
@@ -84,27 +73,6 @@ class AddVirtualProductWithCustomOptionsToCartTest extends GraphQlAbstract
     }
 
     /**
-     * Test adding a virtual product with empty values for required options
-     *
-     * @magentoApiDataFixture Magento/Catalog/_files/product_virtual_with_options.php
-     * @magentoApiDataFixture Magento/Checkout/_files/active_quote.php
-     */
-    public function testAddSimpleProductWithMissedRequiredOptionsSet()
-    {
-        $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_order_1');
-        $sku = 'virtual';
-        $quantity = 1;
-        $customizableOptions = '';
-
-        $query = $this->getQuery($maskedQuoteId, $sku, $quantity, $customizableOptions);
-
-        self::expectExceptionMessage(
-            'The product\'s required option(s) weren\'t entered. Make sure the options are entered and try again.'
-        );
-        $this->graphQlMutation($query);
-    }
-
-    /**
      * @param string $maskedQuoteId
      * @param string $sku
      * @param float $quantity
@@ -114,10 +82,10 @@ class AddVirtualProductWithCustomOptionsToCartTest extends GraphQlAbstract
     private function getQuery(string $maskedQuoteId, string $sku, float $quantity, string $customizableOptions): string
     {
         return <<<QUERY
-mutation {  
+mutation {
   addVirtualProductsToCart(
     input: {
-      cart_id: "{$maskedQuoteId}", 
+      cart_id: "{$maskedQuoteId}",
       cart_items: [
         {
           data: {
@@ -152,7 +120,7 @@ QUERY;
      * @param string $assignedValue
      * @return array
      */
-    private function buildExpectedValuesArray(string $assignedValue) : array
+    private function buildExpectedValuesArray(string $assignedValue): array
     {
         $assignedOptionsArray = explode(',', trim($assignedValue, '[]'));
         $expectedArray = [];
@@ -160,5 +128,37 @@ QUERY;
             $expectedArray[] = ['value' => $assignedOption];
         }
         return $expectedArray;
+    }
+
+    /**
+     * Test adding a virtual product with empty values for required options
+     *
+     * @magentoApiDataFixture Magento/Catalog/_files/product_virtual_with_options.php
+     * @magentoApiDataFixture Magento/Checkout/_files/active_quote.php
+     */
+    public function testAddSimpleProductWithMissedRequiredOptionsSet()
+    {
+        $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_order_1');
+        $sku = 'virtual';
+        $quantity = 1;
+        $customizableOptions = '';
+
+        $query = $this->getQuery($maskedQuoteId, $sku, $quantity, $customizableOptions);
+
+        self::expectExceptionMessage(
+            'The product\'s required option(s) weren\'t entered. Make sure the options are entered and try again.'
+        );
+        $this->graphQlMutation($query);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->productCustomOptionsRepository = $objectManager->get(ProductCustomOptionRepositoryInterface::class);
+        $this->getCustomOptionsValuesForQueryBySku = $objectManager->get(GetCustomOptionsValuesForQueryBySku::class);
     }
 }

@@ -6,13 +6,13 @@
 declare(strict_types=1);
 
 use Magento\Customer\Model\Address;
+use Magento\Customer\Model\Attribute;
 use Magento\Customer\Model\Customer;
 use Magento\Eav\Model\Config;
+use Magento\Eav\Model\Entity\Attribute\Set;
 use Magento\Eav\Model\Entity\Type;
 use Magento\Framework\Registry;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Customer\Model\Attribute;
-use Magento\Eav\Model\Entity\Attribute\Set;
 
 $objectManager = Bootstrap::getObjectManager();
 /** @var $entityType Type */

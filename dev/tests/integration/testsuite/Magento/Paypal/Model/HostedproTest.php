@@ -3,54 +3,38 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Paypal\Model;
 
 use Magento\Framework\DataObject;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Paypal\Model\Api\Nvp;
-use Magento\Paypal\Model\Config;
-use Magento\Paypal\Model\Hostedpro;
 use Magento\Paypal\Model\Hostedpro\RequestFactory;
-use Magento\Paypal\Model\ProFactory;
 use Magento\Sales\Model\Order;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class HostedproTest
  * @package Magento\Paypal\Model
  */
-class HostedproTest extends \PHPUnit\Framework\TestCase
+class HostedproTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
     /**
-     * @var \Magento\Paypal\Model\Hostedpro
+     * @var Hostedpro
      */
     private $model;
 
     /**
-     * @var \Magento\Paypal\Model\Api\Nvp|\PHPUnit\Framework\MockObject\MockObject
+     * @var Nvp|MockObject
      */
     private $api;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-
-        $this->api = $this->getMockBuilder(Nvp::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['call'])
-            ->getMock();
-
-        $proFactory = $this->getProFactory();
-
-        $this->model = $this->objectManager
-            ->create(Hostedpro::class, [
-                'proFactory' => $proFactory
-            ]);
-    }
 
     /**
      * @covers \Magento\Paypal\Model\Hostedpro::initialize
@@ -58,7 +42,7 @@ class HostedproTest extends \PHPUnit\Framework\TestCase
      */
     public function testInitialize()
     {
-        /** @var \Magento\Sales\Model\Order $order */
+        /** @var Order $order */
         $order = $this->objectManager->create(Order::class);
         $order->loadByIncrementId('100000001');
         $payment = $order->getPayment();
@@ -79,26 +63,26 @@ class HostedproTest extends \PHPUnit\Framework\TestCase
         static::assertFalse($state->getIsNotified());
     }
 
-    /**
-     * Get mock for config
-     * @return \PHPUnit\Framework\MockObject\MockObject
-     */
-    protected function getConfig()
+    protected function setUp(): void
     {
-        $config = $this->getMockBuilder(Config::class)
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->api = $this->getMockBuilder(Nvp::class)
             ->disableOriginalConstructor()
-            ->setMethods(['getValue'])
+            ->setMethods(['call'])
             ->getMock();
-        $config->expects(static::any())
-            ->method('getValue')
-            ->with('payment_action')
-            ->willReturn(Config::PAYMENT_ACTION_AUTH);
-        return $config;
+
+        $proFactory = $this->getProFactory();
+
+        $this->model = $this->objectManager
+            ->create(Hostedpro::class, [
+                'proFactory' => $proFactory
+            ]);
     }
 
     /**
      * Create mock for Pro factory
-     * @return \PHPUnit\Framework\MockObject\MockObject
+     * @return MockObject
      */
     protected function getProFactory()
     {
@@ -123,5 +107,22 @@ class HostedproTest extends \PHPUnit\Framework\TestCase
             ->method('create')
             ->willReturn($pro);
         return $proFactory;
+    }
+
+    /**
+     * Get mock for config
+     * @return MockObject
+     */
+    protected function getConfig()
+    {
+        $config = $this->getMockBuilder(Config::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['getValue'])
+            ->getMock();
+        $config->expects(static::any())
+            ->method('getValue')
+            ->with('payment_action')
+            ->willReturn(Config::PAYMENT_ACTION_AUTH);
+        return $config;
     }
 }

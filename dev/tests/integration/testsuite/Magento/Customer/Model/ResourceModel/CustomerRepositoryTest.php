@@ -8,105 +8,60 @@ namespace Magento\Customer\Model\ResourceModel;
 
 use Magento\Customer\Api\AccountManagementInterface;
 use Magento\Customer\Api\CustomerRepositoryInterface;
-use Magento\Customer\Api\Data\CustomerInterfaceFactory;
+use Magento\Customer\Api\Data\AddressInterface;
 use Magento\Customer\Api\Data\AddressInterfaceFactory;
-use Magento\Customer\Api\Data\RegionInterfaceFactory;
-use Magento\Framework\Api\ExtensibleDataObjectConverter;
-use Magento\Framework\Api\DataObjectHelper;
-use Magento\Framework\Encryption\EncryptorInterface;
 use Magento\Customer\Api\Data\CustomerInterface;
+use Magento\Customer\Api\Data\CustomerInterfaceFactory;
+use Magento\Customer\Api\Data\RegionInterfaceFactory;
+use Magento\Customer\Model\Customer;
 use Magento\Customer\Model\CustomerRegistry;
+use Magento\Framework\Api\DataObjectHelper;
+use Magento\Framework\Api\ExtensibleDataObjectConverter;
+use Magento\Framework\Api\Filter;
+use Magento\Framework\Api\FilterBuilder;
+use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Api\SortOrder;
+use Magento\Framework\Api\SortOrderBuilder;
 use Magento\Framework\Config\CacheInterface;
+use Magento\Framework\Encryption\EncryptorInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\ObjectManagerInterface;
-use Magento\Sales\Api\Data\InvoiceInterface;
 use Magento\Sales\Api\Data\OrderInterface;
-use Magento\Sales\Api\InvoiceOrderInterface;
-use Magento\Sales\Api\InvoiceRepositoryInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Customer\Api\Data\AddressInterface;
-use Magento\Framework\Api\SearchCriteriaBuilder;
-use Magento\Framework\Api\FilterBuilder;
-use Magento\Framework\Api\SortOrderBuilder;
-use Magento\Framework\Exception\NoSuchEntityException;
-use Magento\Customer\Model\Customer;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Checks Customer insert, update, search with repository
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class CustomerRepositoryTest extends \PHPUnit\Framework\TestCase
+class CustomerRepositoryTest extends TestCase
 {
     const NEW_CUSTOMER_EMAIL = 'new.customer@example.com';
     const CUSTOMER_ID = 1;
-
-    /** @var AccountManagementInterface */
-    private $accountManagement;
-
-    /** @var CustomerRepositoryInterface */
-    private $customerRepository;
-
-    /** @var OrderRepositoryInterface */
-    private $orderRepository;
-
-    /** @var ObjectManagerInterface */
-    private $objectManager;
-
-    /** @var CustomerInterfaceFactory */
-    private $customerFactory;
-
-    /** @var AddressInterfaceFactory */
-    private $addressFactory;
-
-    /** @var RegionInterfaceFactory */
-    private $regionFactory;
-
-    /** @var ExtensibleDataObjectConverter */
-    private $converter;
-
-    /** @var DataObjectHelper  */
+    /** @var DataObjectHelper */
     protected $dataObjectHelper;
-
     /** @var EncryptorInterface */
     protected $encryptor;
-
     /** @var CustomerRegistry */
     protected $customerRegistry;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->customerRepository = $this->objectManager->create(CustomerRepositoryInterface::class);
-        $this->orderRepository = $this->objectManager->create(OrderRepositoryInterface::class);
-        $this->customerFactory = $this->objectManager->create(CustomerInterfaceFactory::class);
-        $this->addressFactory = $this->objectManager->create(AddressInterfaceFactory::class);
-        $this->regionFactory = $this->objectManager->create(RegionInterfaceFactory::class);
-        $this->accountManagement = $this->objectManager->create(AccountManagementInterface::class);
-        $this->converter = $this->objectManager->create(ExtensibleDataObjectConverter::class);
-        $this->dataObjectHelper = $this->objectManager->create(DataObjectHelper::class);
-        $this->encryptor = $this->objectManager->create(EncryptorInterface::class);
-        $this->customerRegistry = $this->objectManager->create(CustomerRegistry::class);
-
-        /** @var CacheInterface $cache */
-        $cache = $this->objectManager->create(CacheInterface::class);
-        $cache->remove('extension_attributes_config');
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        /** @var \Magento\Customer\Model\CustomerRegistry $customerRegistry */
-        $customerRegistry = $objectManager->get(CustomerRegistry::class);
-        $customerRegistry->remove(1);
-    }
+    /** @var AccountManagementInterface */
+    private $accountManagement;
+    /** @var CustomerRepositoryInterface */
+    private $customerRepository;
+    /** @var OrderRepositoryInterface */
+    private $orderRepository;
+    /** @var ObjectManagerInterface */
+    private $objectManager;
+    /** @var CustomerInterfaceFactory */
+    private $customerFactory;
+    /** @var AddressInterfaceFactory */
+    private $addressFactory;
+    /** @var RegionInterfaceFactory */
+    private $regionFactory;
+    /** @var ExtensibleDataObjectConverter */
+    private $converter;
 
     /**
      * Check if first name update was successful
@@ -192,15 +147,15 @@ class CustomerRepositoryTest extends \PHPUnit\Framework\TestCase
         $newPasswordHash = $this->encryptor->getHash($newPassword, true);
         $customerBefore = $this->customerRepository->getById($existingCustomerId);
         $customerData = array_merge($customerBefore->__toArray(), [
-                'id' => 1,
-                'email' => $email,
-                'firstname' => $firstName,
-                'lastname' => $lastName,
-                'created_in' => 'Admin',
-                'password' => 'notsaved',
-                'default_billing' => $defaultBilling,
-                'default_shipping' => $defaultShipping
-            ]);
+            'id' => 1,
+            'email' => $email,
+            'firstname' => $firstName,
+            'lastname' => $lastName,
+            'created_in' => 'Admin',
+            'password' => 'notsaved',
+            'default_billing' => $defaultBilling,
+            'default_shipping' => $defaultShipping
+        ]);
         $customerDetails = $this->customerFactory->create();
         $this->dataObjectHelper->populateWithArray(
             $customerDetails,
@@ -249,6 +204,37 @@ class CustomerRepositoryTest extends \PHPUnit\Framework\TestCase
         $this->assertContains('lastname', array_keys($inAfterOnly));
         $this->assertContains('email', array_keys($inAfterOnly));
         $this->assertNotContains('password_hash', array_keys($inAfterOnly));
+    }
+
+    /**
+     * Check defaults billing and shipping in customer model
+     *
+     * @param $customerId
+     * @param $defaultBilling
+     * @param $defaultShipping
+     */
+    protected function expectedDefaultShippingsInCustomerModelAttributes(
+        $customerId,
+        $defaultBilling,
+        $defaultShipping
+    )
+    {
+        /**
+         * @var Customer $customer
+         */
+        $customer = $this->objectManager->create(Customer::class);
+        /** @var Customer $customer */
+        $customer->load($customerId);
+        $this->assertEquals(
+            $defaultBilling,
+            $customer->getDefaultBilling(),
+            'default_billing customer attribute did not updated'
+        );
+        $this->assertEquals(
+            $defaultShipping,
+            $customer->getDefaultShipping(),
+            'default_shipping customer attribute did not updated'
+        );
     }
 
     /**
@@ -394,8 +380,8 @@ class CustomerRepositoryTest extends \PHPUnit\Framework\TestCase
     /**
      * Test search customers
      *
-     * @param \Magento\Framework\Api\Filter[] $filters
-     * @param \Magento\Framework\Api\Filter[] $filterGroup
+     * @param Filter[] $filters
+     * @param Filter[] $filterGroup
      * @param array $expectedResult array of expected results indexed by ID
      *
      * @dataProvider searchCustomersDataProvider
@@ -569,36 +555,6 @@ class CustomerRepositoryTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Check defaults billing and shipping in customer model
-     *
-     * @param $customerId
-     * @param $defaultBilling
-     * @param $defaultShipping
-     */
-    protected function expectedDefaultShippingsInCustomerModelAttributes(
-        $customerId,
-        $defaultBilling,
-        $defaultShipping
-    ) {
-        /**
-         * @var Customer $customer
-         */
-        $customer = $this->objectManager->create(Customer::class);
-        /** @var \Magento\Customer\Model\Customer $customer */
-        $customer->load($customerId);
-        $this->assertEquals(
-            $defaultBilling,
-            $customer->getDefaultBilling(),
-            'default_billing customer attribute did not updated'
-        );
-        $this->assertEquals(
-            $defaultShipping,
-            $customer->getDefaultShipping(),
-            'default_shipping customer attribute did not updated'
-        );
-    }
-
-    /**
      * Test update default shipping and default billing address
      *
      * @magentoDataFixture Magento/Customer/_files/customer.php
@@ -687,5 +643,38 @@ class CustomerRepositoryTest extends \PHPUnit\Framework\TestCase
         foreach ($customerOrders as $customerOrder) {
             $this->assertEquals('customer@null.com', $customerOrder->getCustomerEmail());
         }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->customerRepository = $this->objectManager->create(CustomerRepositoryInterface::class);
+        $this->orderRepository = $this->objectManager->create(OrderRepositoryInterface::class);
+        $this->customerFactory = $this->objectManager->create(CustomerInterfaceFactory::class);
+        $this->addressFactory = $this->objectManager->create(AddressInterfaceFactory::class);
+        $this->regionFactory = $this->objectManager->create(RegionInterfaceFactory::class);
+        $this->accountManagement = $this->objectManager->create(AccountManagementInterface::class);
+        $this->converter = $this->objectManager->create(ExtensibleDataObjectConverter::class);
+        $this->dataObjectHelper = $this->objectManager->create(DataObjectHelper::class);
+        $this->encryptor = $this->objectManager->create(EncryptorInterface::class);
+        $this->customerRegistry = $this->objectManager->create(CustomerRegistry::class);
+
+        /** @var CacheInterface $cache */
+        $cache = $this->objectManager->create(CacheInterface::class);
+        $cache->remove('extension_attributes_config');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var CustomerRegistry $customerRegistry */
+        $customerRegistry = $objectManager->get(CustomerRegistry::class);
+        $customerRegistry->remove(1);
     }
 }

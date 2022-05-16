@@ -3,22 +3,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Directory\Model\Country\Postcode;
 
+use InvalidArgumentException;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class ValidatorTest extends \PHPUnit\Framework\TestCase
+class ValidatorTest extends TestCase
 {
     /**
-     * @var \Magento\Directory\Model\Country\Postcode\ValidatorInterface
+     * @var ValidatorInterface
      */
     protected $validator;
-
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->validator = $objectManager->create(\Magento\Directory\Model\Country\Postcode\ValidatorInterface::class);
-    }
 
     /**
      * @dataProvider getPostcodesDataProvider
@@ -28,7 +25,7 @@ class ValidatorTest extends \PHPUnit\Framework\TestCase
         try {
             $this->assertTrue($this->validator->validate($validPostcode, $countryId));
             $this->assertFalse($this->validator->validate('INVALID-100', $countryId));
-        } catch (\InvalidArgumentException $ex) {
+        } catch (InvalidArgumentException $ex) {
             //skip validation test for none existing countryId
         }
     }
@@ -37,7 +34,7 @@ class ValidatorTest extends \PHPUnit\Framework\TestCase
      */
     public function testPostCodesThrowsExceptionIfCountryDoesNotExist()
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Provided countryId does not exist.');
 
         $this->validator->validate('12345', 'INVALID-CODE');
@@ -272,5 +269,11 @@ class ValidatorTest extends \PHPUnit\Framework\TestCase
             ['countryId' => 'ZA', 'postcode' => '1234'],
             ['countryId' => 'ZM', 'postcode' => '12345'],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->validator = $objectManager->create(ValidatorInterface::class);
     }
 }

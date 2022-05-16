@@ -10,24 +10,22 @@ namespace Magento\Framework\Filesystem;
 
 use Magento\Framework\App\Filesystem\DirectoryList as AppDirectoryList;
 use Magento\Framework\Filesystem;
+use Magento\Framework\Filesystem\Directory\Read;
+use Magento\Framework\Filesystem\Directory\Write;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class FilesystemTest
  * Test for Magento\Framework\Filesystem class
  *
  */
-class FilesystemTest extends \PHPUnit\Framework\TestCase
+class FilesystemTest extends TestCase
 {
     /**
      * @var Filesystem
      */
     protected $filesystem;
-
-    protected function setUp(): void
-    {
-        $this->filesystem = Bootstrap::getObjectManager()->create(\Magento\Framework\Filesystem::class);
-    }
 
     /**
      * Test getDirectoryRead method return valid instance
@@ -35,7 +33,7 @@ class FilesystemTest extends \PHPUnit\Framework\TestCase
     public function testGetDirectoryReadInstance()
     {
         $dir = $this->filesystem->getDirectoryRead(AppDirectoryList::VAR_DIR);
-        $this->assertInstanceOf(\Magento\Framework\Filesystem\Directory\Read::class, $dir);
+        $this->assertInstanceOf(Read::class, $dir);
     }
 
     /**
@@ -44,7 +42,7 @@ class FilesystemTest extends \PHPUnit\Framework\TestCase
     public function testGetDirectoryWriteInstance()
     {
         $dir = $this->filesystem->getDirectoryWrite(AppDirectoryList::VAR_DIR);
-        $this->assertInstanceOf(\Magento\Framework\Filesystem\Directory\Write::class, $dir);
+        $this->assertInstanceOf(Write::class, $dir);
     }
 
     /**
@@ -56,5 +54,10 @@ class FilesystemTest extends \PHPUnit\Framework\TestCase
             'media',
             $this->filesystem->getDirectoryRead(AppDirectoryList::MEDIA)->getAbsolutePath()
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->filesystem = Bootstrap::getObjectManager()->create(Filesystem::class);
     }
 }

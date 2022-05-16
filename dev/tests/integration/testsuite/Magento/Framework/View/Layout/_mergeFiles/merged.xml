@@ -17,7 +17,8 @@
     </handle>
     <handle id="catalog_product_view_type_configurable">
         <body>
-            <container name="product.info.configurable.extra" as="product_type_data_extra" label="Configurable Product Extra Info"/>
+            <container name="product.info.configurable.extra" as="product_type_data_extra"
+                       label="Configurable Product Extra Info"/>
         </body>
     </handle>
     <handle id="catalog_product_view_type_simple"/>
@@ -30,7 +31,8 @@
     </handle>
     <handle id="fixture_handle_one">
         <body>
-            <block class="Magento\Framework\View\Element\Template" template="Magento_Framework::fixture_template_one.phtml"/>
+            <block class="Magento\Framework\View\Element\Template"
+                   template="Magento_Framework::fixture_template_one.phtml"/>
         </body>
     </handle>
     <layout id="fixture_handle_page_layout">
@@ -38,13 +40,15 @@
     </layout>
     <handle id="fixture_handle_two">
         <body>
-            <block class="Magento\Framework\View\Element\Template" template="Magento_Framework::fixture_template_two.phtml"/>
+            <block class="Magento\Framework\View\Element\Template"
+                   template="Magento_Framework::fixture_template_two.phtml"/>
         </body>
     </handle>
     <handle id="fixture_handle_with_page_layout" layout="fixture_handle_page_layout">
         <body>
             <referenceContainer name="main.container">
-                <block class="Magento\Framework\View\Element\Template" template="Magento_Framework::fixture_template_one.phtml"/>
+                <block class="Magento\Framework\View\Element\Template"
+                       template="Magento_Framework::fixture_template_one.phtml"/>
             </referenceContainer>
         </body>
     </handle>

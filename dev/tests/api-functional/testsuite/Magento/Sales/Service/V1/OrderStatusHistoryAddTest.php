@@ -6,7 +6,11 @@
 
 namespace Magento\Sales\Service\V1;
 
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\Sales\Api\Data\OrderStatusHistoryInterface;
+use Magento\Sales\Model\Order;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
@@ -23,14 +27,9 @@ class OrderStatusHistoryAddTest extends WebapiAbstract
     const ORDER_INCREMENT_ID = '100000001';
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoApiDataFixture Magento/Sales/_files/order.php
@@ -38,8 +37,8 @@ class OrderStatusHistoryAddTest extends WebapiAbstract
      */
     public function testOrderCommentAdd()
     {
-        /** @var \Magento\Sales\Model\Order $order */
-        $order = $this->objectManager->create(\Magento\Sales\Model\Order::class);
+        /** @var Order $order */
+        $order = $this->objectManager->create(Order::class);
         $order->loadByIncrementId(self::ORDER_INCREMENT_ID);
 
         $commentData = [
@@ -57,7 +56,7 @@ class OrderStatusHistoryAddTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/orders/' . $order->getId() . '/comments',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_READ_NAME,
@@ -92,5 +91,10 @@ class OrderStatusHistoryAddTest extends WebapiAbstract
             $commentData[OrderStatusHistoryInterface::STATUS],
             $comment->getStatus()
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

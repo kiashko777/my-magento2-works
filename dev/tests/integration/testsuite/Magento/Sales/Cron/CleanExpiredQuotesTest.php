@@ -7,10 +7,9 @@ declare(strict_types=1);
 
 namespace Magento\Sales\Cron;
 
-use Magento\Framework\Api\SearchCriteriaBuilder;
-use Magento\Quote\Model\QuoteRepository;
 use Magento\Quote\Model\ResourceModel\Quote\CollectionFactory as QuoteCollectionFactory;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for Magento\Sales\Cron\CleanExpiredQuotes class.
@@ -18,7 +17,7 @@ use Magento\TestFramework\Helper\Bootstrap;
  * @magentoAppIsolation enabled
  * @magentoDbIsolation enabled
  */
-class CleanExpiredQuotesTest extends \PHPUnit\Framework\TestCase
+class CleanExpiredQuotesTest extends TestCase
 {
     /**
      * @var CleanExpiredQuotes
@@ -29,16 +28,6 @@ class CleanExpiredQuotesTest extends \PHPUnit\Framework\TestCase
      * @var QuoteCollectionFactory
      */
     private $quoteCollectionFactory;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->cleanExpiredQuotes = $objectManager->get(CleanExpiredQuotes::class);
-        $this->quoteCollectionFactory = $objectManager->get(QuoteCollectionFactory::class);
-    }
 
     /**
      * Check if outdated quotes are deleted.
@@ -56,6 +45,18 @@ class CleanExpiredQuotesTest extends \PHPUnit\Framework\TestCase
 
         //Only 1 will be deleted for the store that has all of them expired by config (default_store)
         $this->assertQuotesCount(1);
+    }
+
+    /**
+     * Optimized assert quotes count
+     * Uses collection getSize in order to get quick result
+     *
+     * @param int $expected
+     */
+    private function assertQuotesCount(int $expected): void
+    {
+        $totalCount = $this->quoteCollectionFactory->create()->getSize();
+        $this->assertEquals($expected, $totalCount);
     }
 
     /**
@@ -77,14 +78,12 @@ class CleanExpiredQuotesTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Optimized assert quotes count
-     * Uses collection getSize in order to get quick result
-     *
-     * @param int $expected
+     * @inheritdoc
      */
-    private function assertQuotesCount(int $expected): void
+    protected function setUp(): void
     {
-        $totalCount = $this->quoteCollectionFactory->create()->getSize();
-        $this->assertEquals($expected, $totalCount);
+        $objectManager = Bootstrap::getObjectManager();
+        $this->cleanExpiredQuotes = $objectManager->get(CleanExpiredQuotes::class);
+        $this->quoteCollectionFactory = $objectManager->get(QuoteCollectionFactory::class);
     }
 }

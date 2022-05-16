@@ -13,6 +13,7 @@ use Magento\Setup\Console\Command\InfoBackupsListCommand;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Helper\Table;
+use Symfony\Component\Console\Helper\TableFactory;
 use Symfony\Component\Console\Tester\CommandTester;
 
 class InfoBackupsListCommandTest extends TestCase
@@ -22,8 +23,8 @@ class InfoBackupsListCommandTest extends TestCase
         $table = $this->createMock(Table::class);
         $table->expects($this->once())->method('setHeaders')->with(['Backup Filename', 'Backup Type']);
         $table->expects($this->once())->method('addRow')->with(['backupFile_media.tgz', 'media']);
-        /** @var \Symfony\Component\Console\Helper\TableFactory|MockObject $helperSet */
-        $tableFactoryMock = $this->createMock(\Symfony\Component\Console\Helper\TableFactory::class);
+        /** @var TableFactory|MockObject $helperSet */
+        $tableFactoryMock = $this->createMock(TableFactory::class);
         $tableFactoryMock->expects($this->once())->method('create')->willReturn($table);
         /** @var DirectoryList
          * |\PHPUnit\Framework\MockObject\MockObject $directoryList

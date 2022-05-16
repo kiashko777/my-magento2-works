@@ -8,7 +8,6 @@ declare(strict_types=1);
 namespace Magento\TestFramework\Catalog\Model\Product\Option\DataProvider\Type;
 
 use Magento\Catalog\Api\Data\ProductCustomOptionInterface;
-use Magento\TestFramework\Catalog\Model\Product\Option\DataProvider\Type\AbstractBase;
 
 /**
  * Data provider for options from file group with type "file".
@@ -61,6 +60,14 @@ class File extends AbstractBase
     /**
      * @inheritdoc
      */
+    protected function getType(): string
+    {
+        return ProductCustomOptionInterface::OPTION_TYPE_FILE;
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function getDataForUpdateOptions(): array
     {
         return array_merge_recursive(
@@ -79,13 +86,5 @@ class File extends AbstractBase
                 ],
             ]
         );
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function getType(): string
-    {
-        return ProductCustomOptionInterface::OPTION_TYPE_FILE;
     }
 }

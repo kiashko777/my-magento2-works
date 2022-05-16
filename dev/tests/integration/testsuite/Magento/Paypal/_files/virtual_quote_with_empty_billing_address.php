@@ -12,6 +12,7 @@ use Magento\Catalog\Model\Product\Type;
 use Magento\Catalog\Model\Product\Visibility;
 use Magento\CatalogInventory\Api\Data\StockItemInterface;
 use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Paypal\Model\Config;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\Quote\Address;
@@ -69,7 +70,7 @@ $item->setProduct($product)
     ->setPrice($product->getPrice())
     ->setQty(1);
 $quote->addItem($item);
-$quote->getPayment()->setMethod(\Magento\Paypal\Model\Config::METHOD_EXPRESS);
+$quote->getPayment()->setMethod(Config::METHOD_EXPRESS);
 
 /** @var CartRepositoryInterface $quoteRepository */
 $quoteRepository = $objectManager->create(CartRepositoryInterface::class);

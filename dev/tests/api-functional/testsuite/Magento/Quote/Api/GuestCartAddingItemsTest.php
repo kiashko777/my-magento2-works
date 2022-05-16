@@ -7,6 +7,10 @@ declare(strict_types=1);
 
 namespace Magento\Quote\Api;
 
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Quote\Model\Quote;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
@@ -19,14 +23,9 @@ class GuestCartAddingItemsTest extends WebapiAbstract
     const RESOURCE_PATH = '/V1/guest-carts/';
 
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * Test price for cart after deleting and adding product to.
@@ -40,7 +39,7 @@ class GuestCartAddingItemsTest extends WebapiAbstract
         $serviceInfoForCreatingEmptyCart = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -54,7 +53,7 @@ class GuestCartAddingItemsTest extends WebapiAbstract
         $serviceInfoForAddingProduct = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $quoteId . '/items',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => GuestCartItemRepositoryTest::SERVICE_NAME,
@@ -76,7 +75,7 @@ class GuestCartAddingItemsTest extends WebapiAbstract
         $serviceInfoForDeleteProduct = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $quoteId . '/items/' . $item['item_id'],
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
             ],
             'soap' => [
                 'service' => GuestCartItemRepositoryTest::SERVICE_NAME,
@@ -93,7 +92,7 @@ class GuestCartAddingItemsTest extends WebapiAbstract
         $serviceInfoForAddingProduct = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $quoteId . '/items',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => GuestCartItemRepositoryTest::SERVICE_NAME,
@@ -112,9 +111,14 @@ class GuestCartAddingItemsTest extends WebapiAbstract
         $this->assertNotEmpty($item);
         $this->assertEquals($item['price'], 10);
 
-        /** @var \Magento\Quote\Model\Quote $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load($quoteId);
         $quote->delete();
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

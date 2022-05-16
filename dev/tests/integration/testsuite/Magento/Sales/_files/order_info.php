@@ -4,14 +4,35 @@
  * See COPYING.txt for license details.
  */
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\Backend\App\Area\FrontNameResolver;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Quote\Api\CartItemRepositoryInterface;
+use Magento\Quote\Api\CartManagementInterface;
+use Magento\Quote\Api\CartRepositoryInterface;
+use Magento\Quote\Api\Data\CartItemInterface;
+use Magento\Quote\Api\Data\CartItemInterfaceFactory;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\Quote\Address;
+use Magento\Sales\Api\CreditmemoManagementInterface;
+use Magento\Sales\Api\InvoiceManagementInterface;
+use Magento\Sales\Api\InvoiceRepositoryInterface;
+use Magento\Sales\Model\Order\CreditmemoFactory;
+use Magento\Sales\Model\Order\Invoice;
+use Magento\Sales\Model\Order\InvoiceFactory;
+use Magento\Sales\Model\Order\Item;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 
-\Magento\TestFramework\Helper\Bootstrap::getInstance()->loadArea(
-    \Magento\Backend\App\Area\FrontNameResolver::AREA_CODE
+$objectManager = Bootstrap::getObjectManager();
+
+Bootstrap::getInstance()->loadArea(
+    FrontNameResolver::AREA_CODE
 );
 
-/** @var $product \Magento\Catalog\Model\Product */
-$product = $objectManager->create(\Magento\Catalog\Model\Product::class);
+/** @var $product Product */
+$product = $objectManager->create(Product::class);
 $product->setTypeId('virtual')
     ->setId(1)
     ->setAttributeSetId(4)
@@ -20,29 +41,29 @@ $product->setTypeId('virtual')
     ->setPrice(10)
     ->setStockData([
         'use_config_manage_stock' => 1,
-        'qty'                     => 100,
-        'is_qty_decimal'          => 0,
-        'is_in_stock'             => 1,
+        'qty' => 100,
+        'is_qty_decimal' => 0,
+        'is_in_stock' => 1,
     ])
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->save();
 $product->load(1);
 
 $addressData = include __DIR__ . '/address_data.php';
 
-$billingAddress = $objectManager->create(\Magento\Quote\Model\Quote\Address::class, ['data' => $addressData]);
+$billingAddress = $objectManager->create(Address::class, ['data' => $addressData]);
 $billingAddress->setAddressType('billing');
 
 $shippingAddress = clone $billingAddress;
 $shippingAddress->setId(null)->setAddressType('shipping');
 $shippingAddress->setShippingMethod('flatrate_flatrate');
 
-/** @var $quote \Magento\Quote\Model\Quote */
-$quote = $objectManager->create(\Magento\Quote\Model\Quote::class);
+/** @var $quote Quote */
+$quote = $objectManager->create(Quote::class);
 $quote->setCustomerEmail('admin@example.com');
 $quote->setCustomerIsGuest(true);
-$quote->setStoreId($objectManager->get(\Magento\Store\Model\StoreManagerInterface::class)->getStore()->getId());
+$quote->setStoreId($objectManager->get(StoreManagerInterface::class)->getStore()->getId());
 $quote->setReservedOrderId('100000001');
 $quote->setBillingAddress($billingAddress);
 $quote->setShippingAddress($shippingAddress);
@@ -51,46 +72,46 @@ $quote->getShippingAddress()->setShippingMethod('flatrate_flatrate');
 $quote->getShippingAddress()->setCollectShippingRates(true);
 $quote->getShippingAddress()->collectShippingRates();
 
-/** @var \Magento\Quote\Api\CartRepositoryInterface $quoteRepository */
-$quoteRepository = $objectManager->create(\Magento\Quote\Api\CartRepositoryInterface::class);
+/** @var CartRepositoryInterface $quoteRepository */
+$quoteRepository = $objectManager->create(CartRepositoryInterface::class);
 $quoteRepository->save($quote);
 
-/** @var \Magento\Quote\Api\Data\CartItemInterfaceFactory $cartItemFactory */
-$cartItemFactory = $objectManager->get(\Magento\Quote\Api\Data\CartItemInterfaceFactory::class);
+/** @var CartItemInterfaceFactory $cartItemFactory */
+$cartItemFactory = $objectManager->get(CartItemInterfaceFactory::class);
 
-/** @var \Magento\Quote\Api\Data\CartItemInterface $cartItem */
+/** @var CartItemInterface $cartItem */
 $cartItem = $cartItemFactory->create();
 $cartItem->setQty(10);
 $cartItem->setQuoteId($quote->getId());
 $cartItem->setSku($product->getSku());
 $cartItem->setProductType(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE);
 
-/** @var \Magento\Quote\Api\CartItemRepositoryInterface $cartItemRepository */
-$cartItemRepository = $objectManager->get(\Magento\Quote\Api\CartItemRepositoryInterface::class);
+/** @var CartItemRepositoryInterface $cartItemRepository */
+$cartItemRepository = $objectManager->get(CartItemRepositoryInterface::class);
 $cartItemRepository->save($cartItem);
 
-/** @var \Magento\Quote\Api\CartManagementInterface $quoteManagement */
-$quoteManagement = $objectManager->create(\Magento\Quote\Api\CartManagementInterface::class);
+/** @var CartManagementInterface $quoteManagement */
+$quoteManagement = $objectManager->create(CartManagementInterface::class);
 
 $quote = $quoteRepository->get($quote->getId());
 $order = $quoteManagement->submit($quote, ['increment_id' => '100000001']);
 
-/** @var $item \Magento\Sales\Model\Order\Item */
+/** @var $item Item */
 $item = $order->getAllItems()[0];
 
-/** @var \Magento\Sales\Model\Order\InvoiceFactory $invoiceFactory */
-$invoiceFactory = $objectManager->get(\Magento\Sales\Api\InvoiceManagementInterface::class);
+/** @var InvoiceFactory $invoiceFactory */
+$invoiceFactory = $objectManager->get(InvoiceManagementInterface::class);
 
-/** @var $invoice \Magento\Sales\Model\Order\Invoice */
+/** @var $invoice Invoice */
 $invoice = $invoiceFactory->prepareInvoice($order, [$item->getId() => 10]);
 $invoice->register();
 $invoice->save();
 $order->save();
 
-$invoice = $objectManager->get(\Magento\Sales\Api\InvoiceRepositoryInterface::class)->get($invoice->getId());
+$invoice = $objectManager->get(InvoiceRepositoryInterface::class)->get($invoice->getId());
 
-/** @var \Magento\Sales\Model\Order\CreditmemoFactory $creditmemoFactory */
-$creditmemoFactory = $objectManager->get(\Magento\Sales\Model\Order\CreditmemoFactory::class);
+/** @var CreditmemoFactory $creditmemoFactory */
+$creditmemoFactory = $objectManager->get(CreditmemoFactory::class);
 $creditmemo = $creditmemoFactory->createByInvoice($invoice, ['qtys' => [$item->getId() => 5]]);
 
 foreach ($creditmemo->getAllItems() as $creditmemoItem) {
@@ -98,5 +119,5 @@ foreach ($creditmemo->getAllItems() as $creditmemoItem) {
     $creditmemoItem->setBackToStock(true);
 }
 
-$creditmemoManagement = $objectManager->create(\Magento\Sales\Api\CreditmemoManagementInterface::class);
+$creditmemoManagement = $objectManager->create(CreditmemoManagementInterface::class);
 $creditmemoManagement->refund($creditmemo);

@@ -3,21 +3,23 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFixture\Controller\Adminhtml;
 
-use Magento\Framework\App\RequestInterface;
+use Magento\Framework\App\ActionInterface;
 use Magento\Framework\App\ResponseInterface;
+use Magento\Framework\Exception\NotFoundException;
 
 /**
  * Mock index controller class
  */
-class Noroute implements \Magento\Framework\App\ActionInterface
+class Noroute implements ActionInterface
 {
     /**
      * Dispatch request
      *
      * @return ResponseInterface
-     * @throws \Magento\Framework\Exception\NotFoundException
+     * @throws NotFoundException
      */
     public function execute()
     {

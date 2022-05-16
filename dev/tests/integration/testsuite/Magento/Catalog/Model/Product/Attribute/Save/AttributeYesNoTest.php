@@ -15,22 +15,6 @@ namespace Magento\Catalog\Model\Product\Attribute\Save;
 class AttributeYesNoTest extends AbstractAttributeTest
 {
     /**
-     * @inheritdoc
-     */
-    protected function getAttributeCode(): string
-    {
-        return 'boolean_attribute';
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function getDefaultAttributeValue(): string
-    {
-        return '1';
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/product_boolean_attribute.php
      * @magentoDataFixture Magento/Catalog/_files/second_product_simple.php
      * @magentoDataFixture Magento/Catalog/_files/product_simple_out_of_stock.php
@@ -66,5 +50,21 @@ class AttributeYesNoTest extends AbstractAttributeTest
                 'second_product_sku' => 'simple-out-of-stock',
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function getAttributeCode(): string
+    {
+        return 'boolean_attribute';
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function getDefaultAttributeValue(): string
+    {
+        return '1';
     }
 }

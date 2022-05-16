@@ -48,7 +48,8 @@ define([
         try {
             injector.clean();
             injector.remove();
-        } catch (e) {}
+        } catch (e) {
+        }
 
         checkbox.remove();
         emailElem.remove();

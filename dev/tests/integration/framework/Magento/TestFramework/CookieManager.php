@@ -7,9 +7,12 @@
 /**
  * Replacement for PhpCookieManager model that doesn't send cookie headers in testing environment
  */
+
 namespace Magento\TestFramework;
 
-class CookieManager extends \Magento\Framework\Stdlib\Cookie\PhpCookieManager
+use Magento\Framework\Stdlib\Cookie\PhpCookieManager;
+
+class CookieManager extends PhpCookieManager
 {
     /**
      * Dummy function, which sets value directly to $_COOKIE super-global array instead of calling setcookie()

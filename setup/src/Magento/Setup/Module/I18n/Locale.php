@@ -3,7 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\I18n;
+
+use InvalidArgumentException;
 
 /**
  *  Locale
@@ -26,12 +29,12 @@ class Locale
      * Locale construct
      *
      * @param string $locale
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     public function __construct($locale)
     {
         if (!preg_match('/[a-z]{2}_[A-Z]{2}/', $locale)) {
-            throw new \InvalidArgumentException('Target locale must match the following format: "aa_AA".');
+            throw new InvalidArgumentException('Target locale must match the following format: "aa_AA".');
         }
         $this->_locale = $locale;
     }

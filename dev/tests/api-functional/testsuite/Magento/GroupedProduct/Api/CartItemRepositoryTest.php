@@ -4,11 +4,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\GroupedProduct\Api;
 
-use Magento\Catalog\Model\CustomOptions\CustomOptionProcessor;
+use Magento\Catalog\Model\Product;
 use Magento\Framework\Webapi\Rest\Request;
 use Magento\Quote\Model\Quote;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 class CartItemRepositoryTest extends WebapiAbstract
@@ -18,14 +21,9 @@ class CartItemRepositoryTest extends WebapiAbstract
     const RESOURCE_PATH = '/V1/carts/';
 
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoApiDataFixture Magento/Checkout/_files/quote_with_address_saved.php
@@ -35,16 +33,16 @@ class CartItemRepositoryTest extends WebapiAbstract
     {
         $this->_markTestAsRestOnly();
 
-        /** @var  \Magento\Catalog\Model\Product $product */
-        $product = $this->objectManager->create(\Magento\Catalog\Model\Product::class)->load('100000003');
+        /** @var  Product $product */
+        $product = $this->objectManager->create(Product::class)->load('100000003');
         $productSku = $product->getSku();
-        /** @var Quote  $quote */
+        /** @var Quote $quote */
         $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_1', 'reserved_order_id');
         $cartId = $quote->getId();
         $serviceInfo = [
             'rest' => [
-                'resourcePath' => self::RESOURCE_PATH .  $cartId . '/items',
+                'resourcePath' => self::RESOURCE_PATH . $cartId . '/items',
                 'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
@@ -64,5 +62,10 @@ class CartItemRepositoryTest extends WebapiAbstract
         $this->_webApiCall($serviceInfo, $requestData);
         $this->assertTrue($quote->hasProductId('100000001'));
         $this->assertFalse($quote->hasProductId('100000002'));
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

@@ -4,18 +4,24 @@
  * See COPYING.txt for license details.
  */
 
-/** @var \Magento\Framework\Registry $registry */
-$registry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
+/** @var Registry $registry */
+
+use Magento\Eav\Model\Config;
+use Magento\Eav\Model\Entity\Attribute\AbstractAttribute;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$registry = Bootstrap::getObjectManager()->get(Registry::class);
 
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
-$eavConfig = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Eav\Model\Config::class);
+$eavConfig = Bootstrap::getObjectManager()->get(Config::class);
 $attributesCode = ['test_advanced_search', 'test_quick_search', 'test_catalog_view'];
 
 foreach (['test_quick_search', 'test_catalog_view'] as $code) {
     $attribute = $eavConfig->getAttribute('catalog_product', $code);
-    if ($attribute instanceof \Magento\Eav\Model\Entity\Attribute\AbstractAttribute
+    if ($attribute instanceof AbstractAttribute
         && $attribute->getId()
     ) {
         $attribute->delete();

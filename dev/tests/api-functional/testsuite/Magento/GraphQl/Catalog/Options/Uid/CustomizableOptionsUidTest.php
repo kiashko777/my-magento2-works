@@ -43,31 +43,6 @@ class CustomizableOptionsUidTest extends GraphQlAbstract
     }
 
     /**
-     * Get uid for entered option
-     *
-     * @param int $optionId
-     *
-     * @return string
-     */
-    private function getUidForEnteredValue(int $optionId): string
-    {
-        return base64_encode('custom-option/' . $optionId);
-    }
-
-    /**
-     * Get uid for selected option
-     *
-     * @param int $optionId
-     * @param int $optionValueId
-     *
-     * @return string
-     */
-    private function getUidForSelectedValue(int $optionId, int $optionValueId): string
-    {
-        return base64_encode('custom-option/' . $optionId . '/' . $optionValueId);
-    }
-
-    /**
      * Get query
      *
      * @param string $sku
@@ -152,5 +127,30 @@ query {
   }
 }
 QUERY;
+    }
+
+    /**
+     * Get uid for entered option
+     *
+     * @param int $optionId
+     *
+     * @return string
+     */
+    private function getUidForEnteredValue(int $optionId): string
+    {
+        return base64_encode('custom-option/' . $optionId);
+    }
+
+    /**
+     * Get uid for selected option
+     *
+     * @param int $optionId
+     * @param int $optionValueId
+     *
+     * @return string
+     */
+    private function getUidForSelectedValue(int $optionId, int $optionValueId): string
+    {
+        return base64_encode('custom-option/' . $optionId . '/' . $optionValueId);
     }
 }

@@ -573,7 +573,7 @@ define([
                     'locale': 'ar_EG',
                     'localeInfo': {
                         'format': 'd‏/M‏/y',
-                        'expectedValue':  '17‏/11‏/2016'
+                        'expectedValue': '17‏/11‏/2016'
                     }
                 },
                 'fa_IR': {
@@ -685,12 +685,12 @@ define([
 
         it('Check ajaxSubmit method', function () {
             var options = {
-                data: {}
-            },
-            config = {
-                ajaxSaveType: 'default'
-            },
-            d = new $.Deferred();
+                    data: {}
+                },
+                config = {
+                    ajaxSaveType: 'default'
+                },
+                d = new $.Deferred();
 
             spyOn($, 'ajax').and.callFake(function () {
                 d.reject();

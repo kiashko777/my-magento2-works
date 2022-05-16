@@ -3,9 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Utility;
 
-class ClassNameExtractorTest extends \PHPUnit\Framework\TestCase
+use PHPUnit\Framework\TestCase;
+
+class ClassNameExtractorTest extends TestCase
 {
     /**
      * @param string $file
@@ -14,11 +17,20 @@ class ClassNameExtractorTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetNameWithNamespace($file, $className)
     {
-        $classNameExtractor = new \Magento\TestFramework\Utility\ClassNameExtractor();
+        $classNameExtractor = new ClassNameExtractor();
         $this->assertEquals(
             $classNameExtractor->getNameWithNamespace($this->getFileContent($file)),
             $className
         );
+    }
+
+    /**
+     * @param $file
+     * @return bool|string
+     */
+    private function getFileContent($file)
+    {
+        return file_get_contents(__DIR__ . '/_files/' . $file);
     }
 
     /**
@@ -48,7 +60,7 @@ class ClassNameExtractorTest extends \PHPUnit\Framework\TestCase
                 'Foo'
             ],
             [
-            'implements_keyword_on_different_line.txt',
+                'implements_keyword_on_different_line.txt',
                 'Foo'
             ],
             [
@@ -65,7 +77,7 @@ class ClassNameExtractorTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetName($file, $className)
     {
-        $classNameExtractor = new \Magento\TestFramework\Utility\ClassNameExtractor();
+        $classNameExtractor = new ClassNameExtractor();
         $this->assertEquals(
             $classNameExtractor->getName($this->getFileContent($file)),
             $className
@@ -104,7 +116,7 @@ class ClassNameExtractorTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetNamespace($file, $className)
     {
-        $classNameExtractor = new \Magento\TestFramework\Utility\ClassNameExtractor();
+        $classNameExtractor = new ClassNameExtractor();
         $this->assertEquals(
             $classNameExtractor->getNamespace($this->getFileContent($file)),
             $className
@@ -126,14 +138,5 @@ class ClassNameExtractorTest extends \PHPUnit\Framework\TestCase
                 false
             ]
         ];
-    }
-
-    /**
-     * @param $file
-     * @return bool|string
-     */
-    private function getFileContent($file)
-    {
-        return file_get_contents(__DIR__ . '/_files/' . $file);
     }
 }

@@ -41,29 +41,6 @@ class CollectionTest extends TestCase
     private $layout;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->executeInStoreContext = $this->objectManager->get(ExecuteInStoreContext::class);
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->registry->unregister(RegistryConstants::CURRENT_CUSTOMER_ID);
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Checkout/_files/quote_with_address_saved.php
      * @magentoDataFixture Magento/Checkout/_files/customer_quote_on_second_website.php
      *
@@ -97,5 +74,28 @@ class CollectionTest extends TestCase
     {
         $this->assertCount(1, $collection, 'Collection size does not match expected value');
         $this->assertEquals($itemName, $collection->getFirstItem()->getName());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->executeInStoreContext = $this->objectManager->get(ExecuteInStoreContext::class);
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->registry->unregister(RegistryConstants::CURRENT_CUSTOMER_ID);
+
+        parent::tearDown();
     }
 }

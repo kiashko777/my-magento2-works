@@ -29,7 +29,8 @@ class GetRegionIdByName
      */
     public function __construct(
         RegionFactory $regionFactory
-    ) {
+    )
+    {
         $this->regionFactory = $regionFactory;
     }
 

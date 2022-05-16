@@ -11,11 +11,12 @@ use Magento\Framework\DB\Adapter\ConnectionException;
 use Magento\Framework\DB\Adapter\SqlVersionProvider;
 use Magento\TestFramework\Annotation\DataProviderFromFile;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Instance of Setup test case. Used in order to tweak dataProviders functionality.
  */
-class SetupTestCase extends \PHPUnit\Framework\TestCase implements MutableDataInterface
+class SetupTestCase extends TestCase implements MutableDataInterface
 {
     /**
      * @var array
@@ -39,18 +40,11 @@ class SetupTestCase extends \PHPUnit\Framework\TestCase implements MutableDataIn
         $name = null,
         array $data = [],
         $dataName = ''
-    ) {
+    )
+    {
         parent::__construct($name, $data, $dataName);
 
         $this->sqlVersionProvider = Bootstrap::getObjectManager()->get(SqlVersionProvider::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setData(array $data)
-    {
-        $this->data = $data;
     }
 
     /**
@@ -74,14 +68,11 @@ class SetupTestCase extends \PHPUnit\Framework\TestCase implements MutableDataIn
     }
 
     /**
-     * Get database version.
-     *
-     * @return string
-     * @throws ConnectionException
+     * @inheritdoc
      */
-    protected function getDatabaseVersion(): string
+    public function setData(array $data)
     {
-        return $this->sqlVersionProvider->getSqlVersion();
+        $this->data = $data;
     }
 
     /**
@@ -104,5 +95,16 @@ class SetupTestCase extends \PHPUnit\Framework\TestCase implements MutableDataIn
         }
 
         return $this->dbKey;
+    }
+
+    /**
+     * Get database version.
+     *
+     * @return string
+     * @throws ConnectionException
+     */
+    protected function getDatabaseVersion(): string
+    {
+        return $this->sqlVersionProvider->getSqlVersion();
     }
 }

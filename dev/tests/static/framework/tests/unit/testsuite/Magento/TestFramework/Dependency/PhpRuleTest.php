@@ -6,16 +6,19 @@
 
 namespace Magento\TestFramework\Dependency;
 
+use Exception;
 use Magento\Framework\Config\Reader\Filesystem;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager as ObjectManagerHelper;
 use Magento\TestFramework\Dependency\Reader\ClassScanner;
 use Magento\TestFramework\Dependency\Route\RouteMapper;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for PhpRule dependency check
  */
-class PhpRuleTest extends \PHPUnit\Framework\TestCase
+class PhpRuleTest extends TestCase
 {
     /**
      * @var PhpRule
@@ -33,7 +36,7 @@ class PhpRuleTest extends \PHPUnit\Framework\TestCase
     private $classScanner;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject | Filesystem
+     * @var MockObject | Filesystem
      */
     private $webApiConfigReader;
 
@@ -43,35 +46,7 @@ class PhpRuleTest extends \PHPUnit\Framework\TestCase
     private $whitelist;
 
     /**
-     * @inheritDoc
-     * @throws \Exception
-     */
-    protected function setUp(): void
-    {
-        $this->mapRoutes = ['someModule' => ['Magento\SomeModule'], 'anotherModule' => ['Magento\OneModule']];
-        $this->mapLayoutBlocks = ['area' => ['block.name' => ['Magento\SomeModule' => 'Magento\SomeModule']]];
-        $this->pluginMap = [
-            'Magento\Module1\Plugin1' => 'Magento\Module1\Subject',
-            'Magento\Module1\Plugin2' => 'Magento\Module2\Subject',
-        ];
-        $this->whitelist = [];
-
-        $this->objectManagerHelper = new ObjectManagerHelper($this);
-        $this->classScanner = $this->createMock(ClassScanner::class);
-        $this->webApiConfigReader = $this->makeWebApiConfigReaderMock();
-
-        $this->model = new PhpRule(
-            $this->mapRoutes,
-            $this->mapLayoutBlocks,
-            $this->webApiConfigReader,
-            $this->pluginMap,
-            $this->whitelist,
-            $this->classScanner
-        );
-    }
-
-    /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testNonPhpGetDependencyInfo()
     {
@@ -85,7 +60,7 @@ class PhpRuleTest extends \PHPUnit\Framework\TestCase
      * @param int $expectedScans
      * @param array $expected
      *
-     * @throws \Exception
+     * @throws Exception
      * @dataProvider getDependencyInfoDataProvider
      */
     public function testGetDependencyInfo(string $class, string $content, int $expectedScans, array $expected): void
@@ -97,6 +72,30 @@ class PhpRuleTest extends \PHPUnit\Framework\TestCase
             ->with($file)
             ->willReturn($class);
         $this->assertEquals($expected, $this->model->getDependencyInfo($module, 'php', $file, $content));
+    }
+
+    /**
+     * Make some fake filepath to correspond to the class name
+     *
+     * @param string $class
+     * @return string
+     */
+    private function makeMockFilepath($class)
+    {
+        return 'ClassRoot' . DIRECTORY_SEPARATOR . str_replace('\\', DIRECTORY_SEPARATOR, $class) . '.php';
+    }
+
+    /**
+     * Get the module name like Magento\Module out of a classname, assuming for test purpose that
+     * all modules are from "Magento" vendor
+     *
+     * @param string $class
+     * @return string
+     */
+    private function getModuleFromClass(string $class): string
+    {
+        $moduleNameLength = strpos($class, '\\', strpos($class, '\\') + 1);
+        return substr($class, 0, $moduleNameLength);
     }
 
     /**
@@ -232,14 +231,15 @@ class PhpRuleTest extends \PHPUnit\Framework\TestCase
      * @param string $class
      * @param string $content
      * @param array $expected
-     * @throws \Exception
+     * @throws Exception
      * @dataProvider getDependencyInfoDataCaseGetUrlDataProvider
      */
     public function testGetDependencyInfoCaseGetUrl(
         string $class,
         string $content,
-        array $expected
-    ) {
+        array  $expected
+    )
+    {
         $file = $this->makeMockFilepath($class);
         $module = $this->getModuleFromClass($class);
 
@@ -316,14 +316,15 @@ class PhpRuleTest extends \PHPUnit\Framework\TestCase
      * @param string $template
      * @param string $content
      * @param array $expected
-     * @throws \Exception
+     * @throws Exception
      * @dataProvider getDependencyInfoDataCaseGetTemplateUrlDataProvider
      */
     public function testGetDependencyInfoCaseTemplateGetUrl(
         string $template,
         string $content,
-        array $expected
-    ) {
+        array  $expected
+    )
+    {
         $module = $this->getModuleFromClass($template);
 
         $this->assertEquals($expected, $this->model->getDependencyInfo($module, 'php', $template, $content));
@@ -334,7 +335,7 @@ class PhpRuleTest extends \PHPUnit\Framework\TestCase
      */
     public function getDependencyInfoDataCaseGetTemplateUrlDataProvider()
     {
-        return [ 'getUrl from ignore template' => [
+        return ['getUrl from ignore template' => [
             'app/code/Magento/Backend/view/Adminhtml/templates/dashboard/totalbar/script.phtml',
             '$getUrl("Adminhtml/*/ajaxBlock")',
             []]];
@@ -349,8 +350,9 @@ class PhpRuleTest extends \PHPUnit\Framework\TestCase
     public function testProcessWildcardUrl(
         string $class,
         string $content,
-        array $expected
-    ) {
+        array  $expected
+    )
+    {
         $routeMapper = $this->createMock(RouteMapper::class);
         $routeMapper->expects($this->once())
             ->method('getDependencyByRoutePath')
@@ -392,11 +394,11 @@ class PhpRuleTest extends \PHPUnit\Framework\TestCase
             'Adminhtml wildcard controller route' => [
                 'Magento\Backend\Controller\Adminhtml\System\Store\DeleteStore',
                 '$this->getUrl("Adminhtml/*/deleteStorePost")',
-                    [
-                        'route_id' => 'Adminhtml',
-                        'controller_name' => 'system_store',
-                        'action_name' => 'deletestorepost'
-                    ]
+                [
+                    'route_id' => 'Adminhtml',
+                    'controller_name' => 'system_store',
+                    'action_name' => 'deletestorepost'
+                ]
             ],
             'index wildcard' => [
                 'Magento\Backend\Controller\System\Store\DeleteStore',
@@ -413,15 +415,16 @@ class PhpRuleTest extends \PHPUnit\Framework\TestCase
     /**
      * @param string $class
      * @param string $content
-     * @param \Exception $expected
-     * @throws \Exception
+     * @param Exception $expected
+     * @throws Exception
      * @dataProvider getDependencyInfoDataCaseGetUrlExceptionDataProvider
      */
     public function testGetDependencyInfoCaseGetUrlException(
-        string $class,
-        string $content,
-        \Exception $expected
-    ) {
+        string     $class,
+        string     $content,
+        Exception $expected
+    )
+    {
         $file = $this->makeMockFilepath($class);
         $module = $this->getModuleFromClass($class);
         $this->expectExceptionObject($expected);
@@ -453,7 +456,7 @@ class PhpRuleTest extends \PHPUnit\Framework\TestCase
      * @param string $content
      * @param array $expected
      * @dataProvider getDefaultModelDependencyDataProvider
-     * @throws \Exception
+     * @throws Exception
      */
     public function testGetDefaultModelDependency($module, $content, array $expected)
     {
@@ -489,57 +492,61 @@ class PhpRuleTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Make some fake filepath to correspond to the class name
-     *
-     * @param string $class
-     * @return string
+     * @inheritDoc
+     * @throws Exception
      */
-    private function makeMockFilepath($class)
+    protected function setUp(): void
     {
-        return 'ClassRoot' . DIRECTORY_SEPARATOR . str_replace('\\', DIRECTORY_SEPARATOR, $class) . '.php';
-    }
+        $this->mapRoutes = ['someModule' => ['Magento\SomeModule'], 'anotherModule' => ['Magento\OneModule']];
+        $this->mapLayoutBlocks = ['area' => ['block.name' => ['Magento\SomeModule' => 'Magento\SomeModule']]];
+        $this->pluginMap = [
+            'Magento\Module1\Plugin1' => 'Magento\Module1\Subject',
+            'Magento\Module1\Plugin2' => 'Magento\Module2\Subject',
+        ];
+        $this->whitelist = [];
 
-    /**
-     * Get the module name like Magento\Module out of a classname, assuming for test purpose that
-     * all modules are from "Magento" vendor
-     *
-     * @param string $class
-     * @return string
-     */
-    private function getModuleFromClass(string $class): string
-    {
-        $moduleNameLength = strpos($class, '\\', strpos($class, '\\') + 1);
-        return substr($class, 0, $moduleNameLength);
+        $this->objectManagerHelper = new ObjectManagerHelper($this);
+        $this->classScanner = $this->createMock(ClassScanner::class);
+        $this->webApiConfigReader = $this->makeWebApiConfigReaderMock();
+
+        $this->model = new PhpRule(
+            $this->mapRoutes,
+            $this->mapLayoutBlocks,
+            $this->webApiConfigReader,
+            $this->pluginMap,
+            $this->whitelist,
+            $this->classScanner
+        );
     }
 
     /**
      *  Returns an example list of services that would be parsed via the configReader
      *
-     * @return \PHPUnit\Framework\MockObject\MockObject | Filesystem
+     * @return MockObject | Filesystem
      */
     private function makeWebApiConfigReaderMock()
     {
-        $services = [ 'routes' => [
+        $services = ['routes' => [
             '/V1/products/:sku' => [
                 'GET' => ['service' => [
                     'class' => 'Magento\Catalog\Api\ProductRepositoryInterface',
                     'method' => 'get'
-                ] ],
+                ]],
                 'PUT' => ['service' => [
                     'class' => 'Magento\Catalog\Api\ProductRepositoryInterface',
                     'method' => 'save'
-                ] ],
+                ]],
             ],
             '/V1/products/:sku/options' => ['GET' => ['service' => [
                 'class' => 'Magento\Catalog\Api\ProductCustomOptionRepositoryInterface',
                 'method' => 'getList'
-            ] ] ],
+            ]]],
             '/V1/products' => ['GET' => ['service' => [
                 'class' => 'Magento\Catalog\Api\ProductCustomOptionRepositoryInterface',
                 'method' => 'getList'
-            ] ] ]
-        ] ];
+            ]]]
+        ]];
 
-        return $this->createConfiguredMock(Filesystem::class, [ 'read' => $services ]);
+        return $this->createConfiguredMock(Filesystem::class, ['read' => $services]);
     }
 }

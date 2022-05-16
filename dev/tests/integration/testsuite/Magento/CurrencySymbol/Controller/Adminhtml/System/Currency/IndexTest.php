@@ -3,13 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CurrencySymbol\Controller\Adminhtml\System\Currency;
 
-use Magento\Framework\ObjectManagerInterface;
+use Magento\Config\Model\ResourceModel\Config;
 use Magento\Store\Model\ScopeInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
-class IndexTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class IndexTest extends AbstractBackendController
 {
     /**
      * Test index action
@@ -17,7 +19,7 @@ class IndexTest extends \Magento\TestFramework\TestCase\AbstractBackendControlle
     public function testIndexAction()
     {
         $objectManager = Bootstrap::getObjectManager();
-        $configResource = $objectManager->get(\Magento\Config\Model\ResourceModel\Config::class);
+        $configResource = $objectManager->get(Config::class);
         $configResource->saveConfig(
             'currency/options/base',
             'USD',

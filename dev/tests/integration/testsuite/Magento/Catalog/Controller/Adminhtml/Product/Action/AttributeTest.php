@@ -3,16 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Controller\Adminhtml\Product\Action;
 
 use Magento\Backend\Model\Session;
 use Magento\Catalog\Block\Product\ListProduct;
 use Magento\Catalog\Helper\Product\Edit\Action\Attribute;
+use Magento\Catalog\Model\Category;
 use Magento\Catalog\Model\CategoryFactory;
 use Magento\Catalog\Model\Product\Visibility;
-use Magento\Framework\Message\MessageInterface;
 use Magento\Catalog\Model\ProductRepository;
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\Message\MessageInterface;
 use Magento\Framework\UrlInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\MessageQueue\EnvironmentPreconditionException;
@@ -29,37 +31,6 @@ class AttributeTest extends AbstractBackendController
     /** @var PublisherConsumerController */
     private $publisherConsumerController;
     private $consumers = ['product_action_attribute.update'];
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->publisherConsumerController = $this->_objectManager->create(
-            PublisherConsumerController::class,
-            [
-                'consumers' => $this->consumers,
-                'logFilePath' => TESTS_TEMP_DIR . "/MessageQueueTestLog.txt",
-                'maxMessages' => null,
-                'appInitParams' => Bootstrap::getInstance()->getAppInitParams()
-            ]
-        );
-
-        try {
-            $this->publisherConsumerController->startConsumers();
-        } catch (EnvironmentPreconditionException $e) {
-            $this->markTestSkipped($e->getMessage());
-        } catch (PreconditionFailedException $e) {
-            $this->fail(
-                $e->getMessage()
-            );
-        }
-    }
-
-    protected function tearDown(): void
-    {
-        $this->publisherConsumerController->stopConsumers();
-        parent::tearDown();
-    }
 
     /**
      * @covers \Magento\Catalog\Controller\Adminhtml\Product\Action\Attribute\Save::execute
@@ -97,7 +68,7 @@ class AttributeTest extends AbstractBackendController
     }
 
     /**
-     * @covers \Magento\Catalog\Controller\Adminhtml\Product\Action\Attribute\Save::execute
+     * @covers       \Magento\Catalog\Controller\Adminhtml\Product\Action\Attribute\Save::execute
      *
      * @dataProvider saveActionVisibilityAttrDataProvider
      * @param array $attributes
@@ -121,7 +92,7 @@ class AttributeTest extends AbstractBackendController
 
         $this->dispatch('backend/catalog/product_action_attribute/save/store/0');
 
-        /** @var \Magento\Catalog\Model\Category $category */
+        /** @var Category $category */
         $categoryFactory = $this->_objectManager->get(CategoryFactory::class);
         /** @var ListProduct $listProduct */
         $listProduct = $this->_objectManager->get(ListProduct::class);
@@ -130,11 +101,11 @@ class AttributeTest extends AbstractBackendController
             function () use ($repository) {
                 sleep(10); // Should be refactored in the scope of MC-22947
                 return $repository->get(
-                    'simple',
-                    false,
-                    null,
-                    true
-                )->getVisibility() != Visibility::VISIBILITY_NOT_VISIBLE;
+                        'simple',
+                        false,
+                        null,
+                        true
+                    )->getVisibility() != Visibility::VISIBILITY_NOT_VISIBLE;
             },
             []
         );
@@ -150,7 +121,7 @@ class AttributeTest extends AbstractBackendController
     /**
      * @param array $attributes Request parameter.
      *
-     * @covers \Magento\Catalog\Controller\Adminhtml\Product\Action\Attribute\Validate::execute
+     * @covers       \Magento\Catalog\Controller\Adminhtml\Product\Action\Attribute\Validate::execute
      *
      * @dataProvider validateActionDataProvider
      *
@@ -188,14 +159,14 @@ class AttributeTest extends AbstractBackendController
         return [
             [
                 'arguments' => [
-                    'name'              => 'Name',
-                    'description'       => 'Description',
+                    'name' => 'Name',
+                    'description' => 'Description',
                     'short_description' => 'Short Description',
-                    'price'             => '512',
-                    'weight'            => '16',
-                    'meta_title'        => 'Meta Title',
-                    'meta_keyword'      => 'Meta Keywords',
-                    'meta_description'  => 'Meta Description',
+                    'price' => '512',
+                    'weight' => '16',
+                    'meta_title' => 'Meta Title',
+                    'meta_keyword' => 'Meta Keywords',
+                    'meta_description' => 'Meta Description',
                 ],
             ]
         ];
@@ -242,5 +213,36 @@ class AttributeTest extends AbstractBackendController
             MessageInterface::TYPE_ERROR
         );
         $this->assertEquals('test', $product->getData('custom_layout_update'));
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->publisherConsumerController = $this->_objectManager->create(
+            PublisherConsumerController::class,
+            [
+                'consumers' => $this->consumers,
+                'logFilePath' => TESTS_TEMP_DIR . "/MessageQueueTestLog.txt",
+                'maxMessages' => null,
+                'appInitParams' => Bootstrap::getInstance()->getAppInitParams()
+            ]
+        );
+
+        try {
+            $this->publisherConsumerController->startConsumers();
+        } catch (EnvironmentPreconditionException $e) {
+            $this->markTestSkipped($e->getMessage());
+        } catch (PreconditionFailedException $e) {
+            $this->fail(
+                $e->getMessage()
+            );
+        }
+    }
+
+    protected function tearDown(): void
+    {
+        $this->publisherConsumerController->stopConsumers();
+        parent::tearDown();
     }
 }

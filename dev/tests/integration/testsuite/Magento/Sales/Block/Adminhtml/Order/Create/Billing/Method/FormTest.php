@@ -3,18 +3,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Block\Adminhtml\Order\Create\Billing\Method;
 
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\View\LayoutInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for order billing method form.
  *
  * @magentoAppArea Adminhtml
  */
-class FormTest extends \PHPUnit\Framework\TestCase
+class FormTest extends TestCase
 {
     /**
      * @var ObjectManagerInterface
@@ -25,15 +27,6 @@ class FormTest extends \PHPUnit\Framework\TestCase
      * @var LayoutInterface
      */
     private $layout;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-    }
 
     /**
      * Checks if billing method form generates contentUpdated event
@@ -47,5 +40,14 @@ class FormTest extends \PHPUnit\Framework\TestCase
 
         $html = $block->toHtml();
         $this->assertStringContainsString('mage.apply()', $html);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
     }
 }

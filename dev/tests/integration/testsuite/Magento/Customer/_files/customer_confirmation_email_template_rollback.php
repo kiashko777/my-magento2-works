@@ -6,8 +6,8 @@
 declare(strict_types=1);
 
 use Magento\Email\Model\ResourceModel\Template as TemplateResource;
-use Magento\Email\Model\ResourceModel\Template\CollectionFactory;
 use Magento\Email\Model\ResourceModel\Template\Collection;
+use Magento\Email\Model\ResourceModel\Template\CollectionFactory;
 use Magento\Framework\Mail\TemplateInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 

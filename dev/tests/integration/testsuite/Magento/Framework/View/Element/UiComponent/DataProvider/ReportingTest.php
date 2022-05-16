@@ -26,14 +26,6 @@ class ReportingTest extends TestCase
     private $objectManager;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
-
-    /**
      * @magentoDataFixture Magento/Customer/_files/five_repository_customers.php
      * @magentoDbIsolation disabled
      * @dataProvider filtersDataProvider
@@ -171,5 +163,13 @@ class ReportingTest extends TestCase
                 'expected_count' => 1,
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

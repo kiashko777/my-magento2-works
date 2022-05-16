@@ -3,9 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Service\V1;
 
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\Sales\Api\Data\ShipmentCommentInterface;
+use Magento\Sales\Model\ResourceModel\Order\Shipment\Collection;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
@@ -29,14 +34,9 @@ class ShipmentAddCommentTest extends WebapiAbstract
     const SHIPMENT_INCREMENT_ID = '100000001';
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * Test shipment add comment service
@@ -45,9 +45,9 @@ class ShipmentAddCommentTest extends WebapiAbstract
      */
     public function testShipmentAddComment()
     {
-        /** @var \Magento\Sales\Model\ResourceModel\Order\Shipment\Collection $shipmentCollection */
+        /** @var Collection $shipmentCollection */
         $shipmentCollection = $this->objectManager->get(
-            \Magento\Sales\Model\ResourceModel\Order\Shipment\Collection::class
+            Collection::class
         );
         $shipment = $shipmentCollection->getFirstItem();
 
@@ -64,7 +64,7 @@ class ShipmentAddCommentTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/shipment/' . $shipment->getId() . '/comments',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_READ_NAME,
@@ -75,5 +75,10 @@ class ShipmentAddCommentTest extends WebapiAbstract
 
         $result = $this->_webApiCall($serviceInfo, $requestData);
         $this->assertNotEmpty($result);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

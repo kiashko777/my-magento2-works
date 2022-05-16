@@ -6,32 +6,29 @@
 
 namespace Magento\Integration\Block\Adminhtml\Integration\Edit;
 
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Registry;
+use Magento\Framework\View\Layout;
+use Magento\Framework\View\LayoutInterface;
+use Magento\Integration\Block\Adminhtml\Integration\Edit\Tab\Info;
 use Magento\Integration\Controller\Adminhtml\Integration;
-use Magento\Integration\Model\Integration as IntegrationModel;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for \Magento\Integration\Block\Adminhtml\Integration\Edit\Form
  */
-class FormTest extends \PHPUnit\Framework\TestCase
+class FormTest extends TestCase
 {
     /**
-     * @var \Magento\Integration\Block\Adminhtml\Integration\Edit\Form
+     * @var Form
      */
     private $block;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-
-        /** @var $layout \Magento\Framework\View\Layout */
-        $layout = $this->objectManager->create(\Magento\Framework\View\LayoutInterface::class);
-        $this->block = $layout->createBlock(\Magento\Integration\Block\Adminhtml\Integration\Edit\Form::class);
-    }
 
     /**
      * @magentoAppArea Adminhtml
@@ -50,12 +47,12 @@ class FormTest extends \PHPUnit\Framework\TestCase
      */
     public function testToHtmlWithIntegrationData()
     {
-        /** @var \Magento\Framework\Registry $coreRegistry */
-        $coreRegistry = $this->objectManager->get(\Magento\Framework\Registry::class);
+        /** @var Registry $coreRegistry */
+        $coreRegistry = $this->objectManager->get(Registry::class);
         $coreRegistry->unregister(Integration::REGISTRY_KEY_CURRENT_INTEGRATION);
         $id = 'idValue';
         $integrationData = [
-            \Magento\Integration\Block\Adminhtml\Integration\Edit\Tab\Info::DATA_ID => $id,
+            Info::DATA_ID => $id,
         ];
         $coreRegistry->register(Integration::REGISTRY_KEY_CURRENT_INTEGRATION, $integrationData);
 
@@ -65,5 +62,14 @@ class FormTest extends \PHPUnit\Framework\TestCase
             "/<input id=\"integration_id\" name=\"id\".*value=\"$id\".*type=\"hidden\".*>/",
             $html
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        /** @var $layout Layout */
+        $layout = $this->objectManager->create(LayoutInterface::class);
+        $this->block = $layout->createBlock(Form::class);
     }
 }

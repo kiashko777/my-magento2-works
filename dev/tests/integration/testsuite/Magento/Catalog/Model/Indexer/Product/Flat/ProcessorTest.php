@@ -8,9 +8,12 @@ declare(strict_types=1);
 namespace Magento\Catalog\Model\Indexer\Product\Flat;
 
 use Magento\Catalog\Model\Product\Attribute\Repository;
+use Magento\Catalog\Model\ResourceModel\Eav\Attribute;
+use Magento\Catalog\Model\ResourceModel\Product;
 use Magento\Framework\Indexer\StateInterface;
 use Magento\Framework\Indexer\StateInterfaceFactory;
 use Magento\Indexer\Model\ResourceModel\Indexer\State as StateResource;
+use Magento\Store\Model\Group;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Indexer\TestCase;
 use Magento\TestFramework\ObjectManager;
@@ -46,18 +49,6 @@ class ProcessorTest extends TestCase
     private $stateFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->state = $this->objectManager->get(State::class);
-        $this->processor = $this->objectManager->get(Processor::class);
-        $this->stateResource = $this->objectManager->get(StateResource::class);
-        $this->stateFactory = $this->objectManager->get(StateInterfaceFactory::class);
-    }
-
-    /**
      * @magentoDbIsolation enabled
      * @magentoAppIsolation enabled
      * @magentoAppArea Adminhtml
@@ -83,11 +74,11 @@ class ProcessorTest extends TestCase
     public function testSaveAttribute(): void
     {
         /** @var $product \Magento\Catalog\Model\Product */
-        $product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+        $product = Bootstrap::getObjectManager()->create(
             \Magento\Catalog\Model\Product::class
         );
 
-        /** @var \Magento\Catalog\Model\ResourceModel\Product $productResource */
+        /** @var Product $productResource */
         $productResource = $product->getResource();
         $productResource->getAttribute('sku')->setData('used_for_sort_by', 1)->save();
         $this->assertTrue($this->processor->getIndexer()->isInvalid());
@@ -104,11 +95,11 @@ class ProcessorTest extends TestCase
      */
     public function testDeleteAttribute(): void
     {
-        /** @var \Magento\Catalog\Model\ResourceModel\Eav\Attribute $model */
-        $model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Catalog\Model\ResourceModel\Eav\Attribute::class);
+        /** @var Attribute $model */
+        $model = Bootstrap::getObjectManager()
+            ->get(Attribute::class);
         /** @var Repository $productAttributeRepository */
-        $productAttributeRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
+        $productAttributeRepository = Bootstrap::getObjectManager()
             ->get(Repository::class);
         $productAttrubute = $productAttributeRepository->get('flat_attribute');
         $productAttributeId = $productAttrubute->getAttributeId();
@@ -140,9 +131,9 @@ class ProcessorTest extends TestCase
      */
     public function testAddNewStoreGroup(): void
     {
-        /** @var \Magento\Store\Model\Group $storeGroup */
-        $storeGroup = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Store\Model\Group::class
+        /** @var Group $storeGroup */
+        $storeGroup = Bootstrap::getObjectManager()->create(
+            Group::class
         );
         $storeGroup->setData(
             ['website_id' => 1, 'name' => 'New Store Group', 'root_category_id' => 2, 'group_id' => null]
@@ -188,5 +179,17 @@ class ProcessorTest extends TestCase
         $state = $this->stateFactory->create();
 
         return $state->loadByIndexer(State::INDEXER_ID);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->state = $this->objectManager->get(State::class);
+        $this->processor = $this->objectManager->get(Processor::class);
+        $this->stateResource = $this->objectManager->get(StateResource::class);
+        $this->stateFactory = $this->objectManager->get(StateInterfaceFactory::class);
     }
 }

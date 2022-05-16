@@ -3,11 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Console\Command;
 
+use InvalidArgumentException;
+use Magento\Setup\Module\I18n\ServiceLocator;
+use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
 use Symfony\Component\Console\Tester\CommandTester;
 
-class I18nCollectPhrasesCommandTest extends \PHPUnit\Framework\TestCase
+class I18nCollectPhrasesCommandTest extends TestCase
 {
     /**
      * @var I18nCollectPhrasesCommand
@@ -18,20 +23,6 @@ class I18nCollectPhrasesCommandTest extends \PHPUnit\Framework\TestCase
      * @var CommandTester
      */
     private $tester;
-
-    protected function setUp(): void
-    {
-        $this->command = new I18nCollectPhrasesCommand();
-        $this->tester = new CommandTester($this->command);
-    }
-
-    protected function tearDown(): void
-    {
-        $property = new \ReflectionProperty(\Magento\Setup\Module\I18n\ServiceLocator::class, '_dictionaryGenerator');
-        $property->setAccessible(true);
-        $property->setValue(null);
-        $property->setAccessible(false);
-    }
 
     public function testExecuteConsoleOutput()
     {
@@ -67,7 +58,7 @@ class I18nCollectPhrasesCommandTest extends \PHPUnit\Framework\TestCase
      */
     public function testExecuteNonExistingPath()
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Specified path doesn\'t exist');
 
         $this->tester->execute(
@@ -81,7 +72,7 @@ class I18nCollectPhrasesCommandTest extends \PHPUnit\Framework\TestCase
      */
     public function testExecuteMagentoFlagDirectoryPath()
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Directory path is not needed when --magento flag is set.');
 
         $this->tester->execute(['directory' => 'a', '--magento' => true]);
@@ -91,9 +82,23 @@ class I18nCollectPhrasesCommandTest extends \PHPUnit\Framework\TestCase
      */
     public function testExecuteNoMagentoFlagNoDirectoryPath()
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Directory path is needed when --magento flag is not set.');
 
         $this->tester->execute([]);
+    }
+
+    protected function setUp(): void
+    {
+        $this->command = new I18nCollectPhrasesCommand();
+        $this->tester = new CommandTester($this->command);
+    }
+
+    protected function tearDown(): void
+    {
+        $property = new ReflectionProperty(ServiceLocator::class, '_dictionaryGenerator');
+        $property->setAccessible(true);
+        $property->setValue(null);
+        $property->setAccessible(false);
     }
 }

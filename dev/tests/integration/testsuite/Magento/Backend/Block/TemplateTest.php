@@ -3,29 +3,24 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Backend\Block;
+
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\Backend\Block\Template.
  *
  * @magentoAppArea Adminhtml
  */
-class TemplateTest extends \PHPUnit\Framework\TestCase
+class TemplateTest extends TestCase
 {
     /**
-     * @var \Magento\Backend\Block\Template
+     * @var Template
      */
     protected $_block;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->_block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
-        )->createBlock(
-            \Magento\Backend\Block\Template::class
-        );
-    }
 
     /**
      * @covers \Magento\Backend\Block\Template::getFormKey
@@ -55,5 +50,15 @@ class TemplateTest extends \PHPUnit\Framework\TestCase
     {
         $this->_block->setData('module_name', 'dummy');
         $this->assertTrue($this->_block->isOutputEnabled('dummy'));
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->_block = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
+        )->createBlock(
+            Template::class
+        );
     }
 }

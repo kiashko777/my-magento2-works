@@ -7,13 +7,20 @@ declare(strict_types=1);
 
 namespace Magento\Framework\GraphQl\Config;
 
+use Laminas\Http\Headers;
 use Magento\Framework\App\Cache;
 use Magento\Framework\App\Request\Http;
+use Magento\Framework\Config\FileResolverInterface;
 use Magento\Framework\GraphQl\Config;
 use Magento\Framework\GraphQl\Schema\SchemaGenerator;
+use Magento\Framework\GraphQl\Schema\Type\Output\OutputMapper;
+use Magento\Framework\GraphQlSchemaStitching\GraphQlReader;
+use Magento\Framework\GraphQlSchemaStitching\Reader;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Serialize\SerializerInterface;
 use Magento\GraphQl\Controller\GraphQl;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Tests the entire process of generating a schema from a given SDL and processing a request/query
@@ -21,7 +28,7 @@ use Magento\GraphQl\Controller\GraphQl;
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @magentoAppArea graphql
  */
-class GraphQlReaderTest extends \PHPUnit\Framework\TestCase
+class GraphQlReaderTest extends TestCase
 {
     /** @var Config */
     private $configModel;
@@ -34,58 +41,6 @@ class GraphQlReaderTest extends \PHPUnit\Framework\TestCase
 
     /** @var  SerializerInterface */
     private $jsonSerializer;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var Cache $cache */
-        $cache = $this->objectManager->get(Cache::class);
-        $cache->clean();
-        $fileResolverMock = $this->getMockBuilder(
-            \Magento\Framework\Config\FileResolverInterface::class
-        )->disableOriginalConstructor()->getMock();
-        $filePath1 = __DIR__ . '/../_files/schemaA.graphqls';
-        $filePath2 = __DIR__ . '/../_files/schemaB.graphqls';
-        $fileList = [
-            $filePath1 => file_get_contents($filePath1),
-            $filePath2 => file_get_contents($filePath2)
-        ];
-        $fileResolverMock->expects($this->any())->method('get')->willReturn($fileList);
-        $graphQlReader = $this->objectManager->create(
-            \Magento\Framework\GraphQlSchemaStitching\GraphQlReader::class,
-            ['fileResolver' => $fileResolverMock]
-        );
-        $reader = $this->objectManager->create(
-            // phpstan:ignore
-            \Magento\Framework\GraphQlSchemaStitching\Reader::class,
-            ['readers' => ['graphql_reader' => $graphQlReader]]
-        );
-        $data = $this->objectManager->create(
-            // phpstan:ignore
-            \Magento\Framework\GraphQl\Config\Data ::class,
-            ['reader' => $reader]
-        );
-        $this->configModel = $this->objectManager->create(
-            \Magento\Framework\GraphQl\Config::class,
-            ['data' => $data]
-        );
-        $outputMapper = $this->objectManager->create(
-            \Magento\Framework\GraphQl\Schema\Type\Output\OutputMapper::class,
-            ['config' => $this->configModel]
-        );
-        $schemaGenerator = $this->objectManager->create(
-            SchemaGenerator::class,
-            ['outputMapper' => $outputMapper]
-        );
-        $this->graphQlController = $this->objectManager->create(
-            GraphQl::class,
-            ['schemaGenerator' => $schemaGenerator]
-        );
-        $this->jsonSerializer = $this->objectManager->get(SerializerInterface::class);
-    }
 
     /**
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
@@ -178,8 +133,8 @@ fragment TypeRef on __Type {
 
 QUERY;
         $postData = [
-            'query'         => $query,
-            'variables'     => null,
+            'query' => $query,
+            'variables' => null,
             'operationName' => 'IntrospectionQuery'
         ];
         /** @var Http $request */
@@ -187,7 +142,7 @@ QUERY;
         $request->setPathInfo('/graphql');
         $request->setMethod('POST');
         $request->setContent(json_encode($postData));
-        $headers = $this->objectManager->create(\Laminas\Http\Headers::class)
+        $headers = $this->objectManager->create(Headers::class)
             ->addHeaders(['Content-Type' => 'application/json']);
         $request->setHeaders($headers);
 
@@ -205,13 +160,13 @@ QUERY;
             foreach ($sortFields as $sortField) {
                 isset($searchTerm[$sortField]) && is_array($searchTerm[$sortField])
                     ? usort(
-                        $searchTerm[$sortField],
-                        function ($a, $b) {
-                            $cmpField = 'name';
-                            return isset($a[$cmpField]) && isset($b[$cmpField])
+                    $searchTerm[$sortField],
+                    function ($a, $b) {
+                        $cmpField = 'name';
+                        return isset($a[$cmpField]) && isset($b[$cmpField])
                             ? strcmp($a[$cmpField], $b[$cmpField]) : 0;
-                        }
-                    ) : null;
+                    }
+                ) : null;
             }
 
             $this->assertTrue(
@@ -241,5 +196,57 @@ QUERY;
             ),
             $expectedOutput
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        /** @var Cache $cache */
+        $cache = $this->objectManager->get(Cache::class);
+        $cache->clean();
+        $fileResolverMock = $this->getMockBuilder(
+            FileResolverInterface::class
+        )->disableOriginalConstructor()->getMock();
+        $filePath1 = __DIR__ . '/../_files/schemaA.graphqls';
+        $filePath2 = __DIR__ . '/../_files/schemaB.graphqls';
+        $fileList = [
+            $filePath1 => file_get_contents($filePath1),
+            $filePath2 => file_get_contents($filePath2)
+        ];
+        $fileResolverMock->expects($this->any())->method('get')->willReturn($fileList);
+        $graphQlReader = $this->objectManager->create(
+            GraphQlReader::class,
+            ['fileResolver' => $fileResolverMock]
+        );
+        $reader = $this->objectManager->create(
+        // phpstan:ignore
+            Reader::class,
+            ['readers' => ['graphql_reader' => $graphQlReader]]
+        );
+        $data = $this->objectManager->create(
+        // phpstan:ignore
+            Data ::class,
+            ['reader' => $reader]
+        );
+        $this->configModel = $this->objectManager->create(
+            Config::class,
+            ['data' => $data]
+        );
+        $outputMapper = $this->objectManager->create(
+            OutputMapper::class,
+            ['config' => $this->configModel]
+        );
+        $schemaGenerator = $this->objectManager->create(
+            SchemaGenerator::class,
+            ['outputMapper' => $outputMapper]
+        );
+        $this->graphQlController = $this->objectManager->create(
+            GraphQl::class,
+            ['schemaGenerator' => $schemaGenerator]
+        );
+        $this->jsonSerializer = $this->objectManager->get(SerializerInterface::class);
     }
 }

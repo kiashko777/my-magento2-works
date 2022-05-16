@@ -30,18 +30,6 @@ class ItalicMixinTest extends TestCase
      */
     private $wordWrapperMock;
 
-    protected function setUp(): void
-    {
-        $this->randomWordSelectorMock =
-            $this->createMock(RandomWordSelector::class);
-        $this->wordWrapperMock = $this->createMock(WordWrapper::class);
-
-        $this->mixin = new ItalicMixin(
-            $this->randomWordSelectorMock,
-            $this->wordWrapperMock
-        );
-    }
-
     public function testEmptyApply()
     {
         $this->assertEquals('', $this->mixin->apply(''));
@@ -66,5 +54,17 @@ class ItalicMixinTest extends TestCase
             ->willReturn($fixtureStringResult);
 
         $this->assertEquals($fixtureStringResult, $this->mixin->apply($fixtureString));
+    }
+
+    protected function setUp(): void
+    {
+        $this->randomWordSelectorMock =
+            $this->createMock(RandomWordSelector::class);
+        $this->wordWrapperMock = $this->createMock(WordWrapper::class);
+
+        $this->mixin = new ItalicMixin(
+            $this->randomWordSelectorMock,
+            $this->wordWrapperMock
+        );
     }
 }

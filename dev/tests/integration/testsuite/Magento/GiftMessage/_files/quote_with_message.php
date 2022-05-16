@@ -4,17 +4,23 @@
  * See COPYING.txt for license details.
  */
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\GiftMessage\Model\Message;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\QuoteIdMask;
+use Magento\Quote\Model\QuoteIdMaskFactory;
+use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var \Magento\GiftMessage\Model\Message $message */
-$message = $objectManager->create(\Magento\GiftMessage\Model\Message::class);
+$objectManager = Bootstrap::getObjectManager();
+
+/** @var Message $message */
+$message = $objectManager->create(Message::class);
 $message->setSender('Romeo');
 $message->setRecipient('Mercutio');
 $message->setMessage('I thought all for the best.');
 $message->save();
 
-/** @var \Magento\Quote\Model\Quote $quote */
-$quote = $objectManager->create(\Magento\Quote\Model\Quote::class);
+/** @var Quote $quote */
+$quote = $objectManager->create(Quote::class);
 $quote->setData(
     [
         'store_id' => 1,
@@ -25,9 +31,9 @@ $quote->setData(
 );
 $quote->save();
 
-/** @var \Magento\Quote\Model\QuoteIdMask $quoteIdMask */
-$quoteIdMask = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->create(\Magento\Quote\Model\QuoteIdMaskFactory::class)
+/** @var QuoteIdMask $quoteIdMask */
+$quoteIdMask = Bootstrap::getObjectManager()
+    ->create(QuoteIdMaskFactory::class)
     ->create();
 $quoteIdMask->setQuoteId($quote->getId());
 $quoteIdMask->setDataChanges(true);

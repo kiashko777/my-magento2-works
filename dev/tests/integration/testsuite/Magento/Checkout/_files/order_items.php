@@ -5,6 +5,7 @@
  */
 
 use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Item;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
@@ -72,9 +73,9 @@ $orderItems = [
     ],
 ];
 
-/** @var $orderItem \Magento\Sales\Model\Order\Item */
+/** @var $orderItem Item */
 $orderItem = Bootstrap::getObjectManager()->create(
-    \Magento\Sales\Model\Order\Item::class
+    Item::class
 );
 foreach ($orderItems as $orderItemData) {
     $orderItem->isObjectNew(true);

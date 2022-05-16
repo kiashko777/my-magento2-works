@@ -4,8 +4,11 @@
  * See COPYING.txt for license details.
  */
 
-$variable = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Variable\Model\Variable::class
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Variable\Model\Variable;
+
+$variable = Bootstrap::getObjectManager()->create(
+    Variable::class
 );
 $variable->setCode(
     'variable_code'

@@ -3,13 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestSetupDeclarationModule3\Setup\Patch\Data;
 
 use Magento\Framework\App\ResourceConnection;
-use Magento\Setup\Exception;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
 use Magento\Framework\Setup\Patch\PatchRevertableInterface;
 use Magento\Framework\Setup\Patch\PatchVersionInterface;
+use Magento\Setup\Exception;
 
 /**
  * Class InstallData
@@ -45,6 +46,14 @@ class ZFirstPatch implements
     /**
      * @return array
      */
+    public static function getDependencies()
+    {
+        return [];
+    }
+
+    /**
+     * @return array
+     */
     public function getAliases()
     {
         return [];
@@ -60,13 +69,5 @@ class ZFirstPatch implements
     public function apply()
     {
         throw new Exception('This patch should be covered by old script!');
-    }
-
-    /**
-     * @return array
-     */
-    public static function getDependencies()
-    {
-        return [];
     }
 }

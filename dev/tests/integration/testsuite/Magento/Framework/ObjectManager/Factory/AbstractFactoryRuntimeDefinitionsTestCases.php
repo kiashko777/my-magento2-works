@@ -14,8 +14,9 @@ use Magento\Framework\ObjectManager\TestAsset\DependsOnAlias;
 use Magento\Framework\ObjectManager\TestAsset\DependsOnInterface;
 use Magento\Framework\ObjectManager\TestAsset\HasOptionalParameters;
 use Magento\Framework\ObjectManager\TestAsset\TestAssetInterface;
+use PHPUnit\Framework\TestCase;
 
-abstract class AbstractFactoryRuntimeDefinitionsTestCases extends \PHPUnit\Framework\TestCase
+abstract class AbstractFactoryRuntimeDefinitionsTestCases extends TestCase
 {
     const ALIAS_OVERRIDDEN_STRING = 'overridden';
     const ALIAS_OVERRIDDEN_INT = 99;
@@ -25,26 +26,6 @@ abstract class AbstractFactoryRuntimeDefinitionsTestCases extends \PHPUnit\Frame
 
     /** @var AbstractFactory */
     protected $factory;
-
-    /**
-     * Child test cases should create this object using the type of factory they are testing
-     *
-     * @return AbstractFactory
-     */
-    abstract protected function createFactoryToTest();
-
-    protected function setUp(): void
-    {
-        $this->factory = $this->createFactoryToTest();
-
-        /**
-         * Test creates one object which depends on all the other kind of objects whose creation we need to test. This
-         * means the test can not only test creating each of the varied constructor scenarios (e.g., a class with
-         * optional constructor parameters) but also test creating an object which *depends* on each of the varied
-         * scenarios.
-         */
-        $this->complexDependenciesObject = $this->factory->create(ComplexDependencies::class);
-    }
 
     public function testCreateComplexDependencies()
     {
@@ -127,4 +108,24 @@ abstract class AbstractFactoryRuntimeDefinitionsTestCases extends \PHPUnit\Frame
             $this->complexDependenciesObject->getDependsOnAlias()->getOverRiddenInteger()
         );
     }
+
+    protected function setUp(): void
+    {
+        $this->factory = $this->createFactoryToTest();
+
+        /**
+         * Test creates one object which depends on all the other kind of objects whose creation we need to test. This
+         * means the test can not only test creating each of the varied constructor scenarios (e.g., a class with
+         * optional constructor parameters) but also test creating an object which *depends* on each of the varied
+         * scenarios.
+         */
+        $this->complexDependenciesObject = $this->factory->create(ComplexDependencies::class);
+    }
+
+    /**
+     * Child test cases should create this object using the type of factory they are testing
+     *
+     * @return AbstractFactory
+     */
+    abstract protected function createFactoryToTest();
 }

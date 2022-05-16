@@ -64,24 +64,6 @@ class CategoryUrlRewriteTest extends TestCase
     private $config;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->categoryFactory = $this->objectManager->get(CategoryFactory::class);
-        $this->urlRewriteCollectionFactory = $this->objectManager->get(UrlRewriteCollectionFactory::class);
-        $this->categoryRepository = $this->objectManager->create(CategoryRepositoryInterface::class);
-        $this->categoryResourceFactory = $this->objectManager->get(CategoryResourceFactory::class);
-        $this->categoryLinkManagment = $this->objectManager->create(CategoryLinkManagementInterface::class);
-        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
-        $this->storeRepository = $this->objectManager->create(StoreRepositoryInterface::class);
-        $this->config = $this->objectManager->get(ScopeConfigInterface::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/category_with_position.php
      * @dataProvider categoryProvider
      * @param array $data
@@ -105,6 +87,22 @@ class CategoryUrlRewriteTest extends TestCase
                 );
             }
         }
+    }
+
+    /**
+     * Get category url rewrites collection
+     *
+     * @param string|array $categoryId
+     * @return UrlRewriteCollection
+     */
+    private function getCategoryRewriteCollection($categoryId): UrlRewriteCollection
+    {
+        $condition = is_array($categoryId) ? ['in' => $categoryId] : $categoryId;
+        $categoryRewriteCollection = $this->urlRewriteCollectionFactory->create();
+        $categoryRewriteCollection->addFieldToFilter(UrlRewrite::ENTITY_ID, $condition)
+            ->addFieldToFilter(UrlRewrite::ENTITY_TYPE, ['eq' => DataCategoryUrlRewriteDatabaseMap::ENTITY_TYPE]);
+
+        return $categoryRewriteCollection;
     }
 
     /**
@@ -159,6 +157,50 @@ class CategoryUrlRewriteTest extends TestCase
         $this->categoryLinkManagment->assignProductToCategories('simple2', [$category->getId()]);
         $productRewriteCollection = $this->getProductRewriteCollection(array_keys($category->getParentCategories()));
         $this->assertRewrites($productRewriteCollection, $data);
+    }
+
+    /**
+     * Get products url rewrites collection referred to categories
+     *
+     * @param string|array $categoryId
+     * @return UrlRewriteCollection
+     */
+    private function getProductRewriteCollection($categoryId): UrlRewriteCollection
+    {
+        $condition = is_array($categoryId) ? ['in' => $categoryId] : $categoryId;
+        $productRewriteCollection = $this->urlRewriteCollectionFactory->create();
+        $productRewriteCollection
+            ->join(
+                ['p' => Product::TABLE_NAME],
+                'main_table.url_rewrite_id = p.url_rewrite_id',
+                'category_id'
+            )
+            ->addFieldToFilter('category_id', $condition)
+            ->addFieldToFilter(UrlRewrite::ENTITY_TYPE, ['eq' => DataProductUrlRewriteDatabaseMap::ENTITY_TYPE]);
+
+        return $productRewriteCollection;
+    }
+
+    /**
+     * Check that actual data contains of expected values
+     *
+     * @param UrlRewriteCollection $collection
+     * @param array $expectedData
+     * @return void
+     */
+    private function assertRewrites(UrlRewriteCollection $collection, array $expectedData): void
+    {
+        $collectionItems = $collection->toArray()['items'];
+        foreach ($collectionItems as $item) {
+            $found = false;
+            foreach ($expectedData as $expectedItem) {
+                $found = array_intersect_assoc($item, $expectedItem) == $expectedItem;
+                if ($found) {
+                    break;
+                }
+            }
+            $this->assertTrue($found, 'The actual data does not contains of expected values');
+        }
     }
 
     /**
@@ -326,6 +368,18 @@ class CategoryUrlRewriteTest extends TestCase
     }
 
     /**
+     * Retrieve all rewrite ids
+     *
+     * @return array
+     */
+    private function getAllRewriteIds(): array
+    {
+        $urlRewriteCollection = $this->urlRewriteCollectionFactory->create();
+
+        return $urlRewriteCollection->getAllIds();
+    }
+
+    /**
      * @magentoAppArea Adminhtml
      * @magentoDataFixture Magento/CatalogUrlRewrite/_files/categories_with_product_ids.php
      * @return void
@@ -377,74 +431,20 @@ class CategoryUrlRewriteTest extends TestCase
     }
 
     /**
-     * Get products url rewrites collection referred to categories
-     *
-     * @param string|array $categoryId
-     * @return UrlRewriteCollection
+     * @inheritdoc
      */
-    private function getProductRewriteCollection($categoryId): UrlRewriteCollection
+    protected function setUp(): void
     {
-        $condition = is_array($categoryId) ? ['in' => $categoryId] : $categoryId;
-        $productRewriteCollection = $this->urlRewriteCollectionFactory->create();
-        $productRewriteCollection
-            ->join(
-                ['p' => Product::TABLE_NAME],
-                'main_table.url_rewrite_id = p.url_rewrite_id',
-                'category_id'
-            )
-            ->addFieldToFilter('category_id', $condition)
-            ->addFieldToFilter(UrlRewrite::ENTITY_TYPE, ['eq' => DataProductUrlRewriteDatabaseMap::ENTITY_TYPE]);
+        parent::setUp();
 
-        return $productRewriteCollection;
-    }
-
-    /**
-     * Retrieve all rewrite ids
-     *
-     * @return array
-     */
-    private function getAllRewriteIds(): array
-    {
-        $urlRewriteCollection = $this->urlRewriteCollectionFactory->create();
-
-        return $urlRewriteCollection->getAllIds();
-    }
-
-    /**
-     * Get category url rewrites collection
-     *
-     * @param string|array $categoryId
-     * @return UrlRewriteCollection
-     */
-    private function getCategoryRewriteCollection($categoryId): UrlRewriteCollection
-    {
-        $condition = is_array($categoryId) ? ['in' => $categoryId] : $categoryId;
-        $categoryRewriteCollection = $this->urlRewriteCollectionFactory->create();
-        $categoryRewriteCollection->addFieldToFilter(UrlRewrite::ENTITY_ID, $condition)
-            ->addFieldToFilter(UrlRewrite::ENTITY_TYPE, ['eq' => DataCategoryUrlRewriteDatabaseMap::ENTITY_TYPE]);
-
-        return $categoryRewriteCollection;
-    }
-
-    /**
-     * Check that actual data contains of expected values
-     *
-     * @param UrlRewriteCollection $collection
-     * @param array $expectedData
-     * @return void
-     */
-    private function assertRewrites(UrlRewriteCollection $collection, array $expectedData): void
-    {
-        $collectionItems = $collection->toArray()['items'];
-        foreach ($collectionItems as $item) {
-            $found = false;
-            foreach ($expectedData as $expectedItem) {
-                $found = array_intersect_assoc($item, $expectedItem) == $expectedItem;
-                if ($found) {
-                    break;
-                }
-            }
-            $this->assertTrue($found, 'The actual data does not contains of expected values');
-        }
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->categoryFactory = $this->objectManager->get(CategoryFactory::class);
+        $this->urlRewriteCollectionFactory = $this->objectManager->get(UrlRewriteCollectionFactory::class);
+        $this->categoryRepository = $this->objectManager->create(CategoryRepositoryInterface::class);
+        $this->categoryResourceFactory = $this->objectManager->get(CategoryResourceFactory::class);
+        $this->categoryLinkManagment = $this->objectManager->create(CategoryLinkManagementInterface::class);
+        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+        $this->storeRepository = $this->objectManager->create(StoreRepositoryInterface::class);
+        $this->config = $this->objectManager->get(ScopeConfigInterface::class);
     }
 }

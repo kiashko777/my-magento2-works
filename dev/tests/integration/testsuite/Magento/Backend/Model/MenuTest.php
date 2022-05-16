@@ -3,40 +3,38 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Backend\Model;
+
+use Magento\Backend\App\Area\FrontNameResolver;
+use Magento\Backend\Model\Menu\Config;
+use Magento\Backend\Model\Menu\Item\Factory;
+use Magento\Framework\Config\ScopeInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\Backend\Model\Auth.
  *
  * @magentoAppArea Adminhtml
  */
-class MenuTest extends \PHPUnit\Framework\TestCase
+class MenuTest extends TestCase
 {
     /**
-     * @var \Magento\Backend\Model\Menu
+     * @var Menu
      */
     private $model;
 
-    /** @var \Magento\Framework\ObjectManagerInterface */
+    /** @var ObjectManagerInterface */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        \Magento\TestFramework\Helper\Bootstrap::getInstance()
-            ->loadArea(\Magento\Backend\App\Area\FrontNameResolver::AREA_CODE);
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->model = $this->objectManager->create(\Magento\Backend\Model\Auth::class);
-        $this->objectManager->get(\Magento\Framework\Config\ScopeInterface::class)
-            ->setCurrentScope(\Magento\Backend\App\Area\FrontNameResolver::AREA_CODE);
-    }
 
     public function testMenuItemManipulation()
     {
-        /* @var $menu \Magento\Backend\Model\Menu */
-        $menu = $this->objectManager->create(\Magento\Backend\Model\Menu\Config::class)->getMenu();
-        /* @var $itemFactory \Magento\Backend\Model\Menu\Item\Factory */
-        $itemFactory = $this->objectManager->create(\Magento\Backend\Model\Menu\Item\Factory::class);
+        /* @var $menu Menu */
+        $menu = $this->objectManager->create(Config::class)->getMenu();
+        /* @var $itemFactory Factory */
+        $itemFactory = $this->objectManager->create(Factory::class);
 
         // Add new item in top level
         $menu->add(
@@ -84,9 +82,9 @@ class MenuTest extends \PHPUnit\Framework\TestCase
     public function testSerialize()
     {
         /** @var Menu $menu */
-        $menu = $this->objectManager->get(\Magento\Backend\Model\MenuFactory::class)->create();
-        /* @var \Magento\Backend\Model\Menu\Item\Factory $itemFactory */
-        $itemFactory = $this->objectManager->create(\Magento\Backend\Model\Menu\Item\Factory::class);
+        $menu = $this->objectManager->get(MenuFactory::class)->create();
+        /* @var Factory $itemFactory */
+        $itemFactory = $this->objectManager->create(Factory::class);
 
         // Add new item in top level
         $menu->add(
@@ -139,7 +137,7 @@ class MenuTest extends \PHPUnit\Framework\TestCase
             . '"path":"","action":"admin\/backend\/acl\/index","dependsOnModule":null,"toolTip":null,"title":"Acl",'
             . '"target":null,"sub_menu":null}]}]';
         /** @var Menu $menu */
-        $menu = $this->objectManager->get(\Magento\Backend\Model\MenuFactory::class)->create();
+        $menu = $this->objectManager->get(MenuFactory::class)->create();
         $menu->unserialize($serializedMenu);
         $expected = [
             [
@@ -176,5 +174,16 @@ class MenuTest extends \PHPUnit\Framework\TestCase
             ],
         ];
         $this->assertEquals($expected, $menu->toArray());
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Bootstrap::getInstance()
+            ->loadArea(FrontNameResolver::AREA_CODE);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->model = $this->objectManager->create(Auth::class);
+        $this->objectManager->get(ScopeInterface::class)
+            ->setCurrentScope(FrontNameResolver::AREA_CODE);
     }
 }

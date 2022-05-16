@@ -32,19 +32,6 @@ class TotalsTest extends TestCase
     private $orderFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Totals::class)
-            ->setTemplate('Magento_Sales::order/totals.phtml');
-        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Sales/_files/invoices_for_items.php
      *
      * @return void
@@ -93,5 +80,18 @@ class TotalsTest extends TestCase
             ),
             sprintf($message, __('Grand Total'), $invoice->getGrandTotal())
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Totals::class)
+            ->setTemplate('Magento_Sales::order/totals.phtml');
+        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
     }
 }

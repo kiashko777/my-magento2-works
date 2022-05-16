@@ -34,20 +34,6 @@ class PriceTest extends TestCase
     private $dataProviderPriceFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->layerResolver = $this->objectManager->get(Resolver::class);
-        $this->layer = $this->layerResolver->get();
-        $this->dataProviderPriceFactory = $this->objectManager->get(PriceFactory::class);
-        $this->model = $this->dataProviderPriceFactory->create(['layer' => $this->layer]);
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/categories.php
      * @magentoAppIsolation enabled
      * @magentoDbIsolation disabled
@@ -169,5 +155,19 @@ class PriceTest extends TestCase
                 'expected_request' => ',10-11',
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->layerResolver = $this->objectManager->get(Resolver::class);
+        $this->layer = $this->layerResolver->get();
+        $this->dataProviderPriceFactory = $this->objectManager->get(PriceFactory::class);
+        $this->model = $this->dataProviderPriceFactory->create(['layer' => $this->layer]);
     }
 }

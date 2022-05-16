@@ -30,19 +30,6 @@ class MultiselectAttributeTest extends AbstractEavTest
     }
 
     /**
-     * @return void
-     */
-    public function testModifyData(): void
-    {
-        $product = $this->getProduct();
-        $optionValue = $this->getOptionValueByLabel('multiselect_attribute', 'Option 3');
-        $attributeData = ['multiselect_attribute' => $optionValue];
-        $this->saveProduct($product, $attributeData);
-        $expectedData = $this->addDataNesting($attributeData);
-        $this->callModifyDataAndAssert($product, $expectedData);
-    }
-
-    /**
      * @return array
      */
     private function getAttributeMeta(): array
@@ -61,5 +48,18 @@ class MultiselectAttributeTest extends AbstractEavTest
             'options' => $this->getAttributeOptions('multiselect_attribute'),
             'componentType' => 'field',
         ];
+    }
+
+    /**
+     * @return void
+     */
+    public function testModifyData(): void
+    {
+        $product = $this->getProduct();
+        $optionValue = $this->getOptionValueByLabel('multiselect_attribute', 'Option 3');
+        $attributeData = ['multiselect_attribute' => $optionValue];
+        $this->saveProduct($product, $attributeData);
+        $expectedData = $this->addDataNesting($attributeData);
+        $this->callModifyDataAndAssert($product, $expectedData);
     }
 }

@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Catalog;
 
+use Exception;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
@@ -43,21 +44,13 @@ class CategoryEnabledTest extends GraphQlAbstract
     private $objectManager;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
-
-    /**
      * Verify that category enabled for specific store view
      *
      * @param string $query
      * @param string $storeCode
      * @param array $category
      * @return void
-     * @throws \Exception
+     * @throws Exception
      * @dataProvider categoryEnabledDataProvider
      */
     public function testCategoryEnabledForSpecificStoreView(string $query, string $storeCode, array $category): void
@@ -78,7 +71,7 @@ class CategoryEnabledTest extends GraphQlAbstract
      * @param string $storeCode
      * @param array $category
      * @return void
-     * @throws \Exception
+     * @throws Exception
      * @dataProvider categoryDisabledDataProvider
      */
     public function testCategoryDisabledForSpecificStoreView(string $query, string $storeCode, array $category): void
@@ -117,6 +110,24 @@ class CategoryEnabledTest extends GraphQlAbstract
     }
 
     /**
+     * Return GraphQL query string by categoryId
+     *
+     * @param int $categoryId
+     * @return string
+     */
+    private function getQuery(int $categoryId): string
+    {
+        return <<<QUERY
+{
+    category(id: {$categoryId}){
+        id
+        name
+    }
+}
+QUERY;
+    }
+
+    /**
      * Data provider for disabled category
      *
      * @return array[][]
@@ -135,20 +146,10 @@ class CategoryEnabledTest extends GraphQlAbstract
     }
 
     /**
-     * Return GraphQL query string by categoryId
-     *
-     * @param int $categoryId
-     * @return string
+     * @inheritdoc
      */
-    private function getQuery(int $categoryId): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-{
-    category(id: {$categoryId}){
-        id
-        name
-    }
-}
-QUERY;
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

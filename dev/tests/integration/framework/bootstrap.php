@@ -3,7 +3,24 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Framework\App\Utility\Files;
 use Magento\Framework\Autoload\AutoloaderRegistry;
+use Magento\Framework\Component\ComponentRegistrar;
+use Magento\Framework\Component\DirSearch;
+use Magento\Framework\Logger\Handler\Debug;
+use Magento\Framework\Logger\Handler\System;
+use Magento\Framework\Profiler\Driver\Standard;
+use Magento\Framework\Shell;
+use Magento\Framework\Shell\CommandRenderer;
+use Magento\Framework\View\Design\Theme\ThemePackageList;
+use Magento\TestFramework\Application;
+use Magento\TestFramework\Bootstrap\DocBlock;
+use Magento\TestFramework\Bootstrap\Environment;
+use Magento\TestFramework\Bootstrap\MemoryFactory;
+use Magento\TestFramework\Bootstrap\Settings;
+use Magento\TestFramework\Helper\Bootstrap;
+use Monolog\Logger;
 
 /**
  * phpcs:disable PSR1.Files.SideEffects
@@ -15,7 +32,7 @@ require_once __DIR__ . '/autoload.php';
 
 // phpcs:ignore Magento2.Functions.DiscouragedFunction
 $testsBaseDir = dirname(__DIR__);
-$fixtureBaseDir = $testsBaseDir. '/testsuite';
+$fixtureBaseDir = $testsBaseDir . '/testsuite';
 
 if (!defined('TESTS_TEMP_DIR')) {
     define('TESTS_TEMP_DIR', $testsBaseDir . '/tmp');
@@ -29,7 +46,7 @@ try {
     setCustomErrorHandler();
 
     /* Bootstrap the application */
-    $settings = new \Magento\TestFramework\Bootstrap\Settings($testsBaseDir, get_defined_constants());
+    $settings = new Settings($testsBaseDir, get_defined_constants());
 
     $testFrameworkDir = __DIR__;
     require_once 'deployTestModules.php';
@@ -38,15 +55,15 @@ try {
         $filesystem = new \Magento\Framework\Filesystem\Driver\File();
         $exceptionHandler = new \Magento\Framework\Logger\Handler\Exception($filesystem);
         $loggerHandlers = [
-            'system'    => new \Magento\Framework\Logger\Handler\System($filesystem, $exceptionHandler),
-            'debug'     => new \Magento\Framework\Logger\Handler\Debug($filesystem)
+            'system' => new System($filesystem, $exceptionHandler),
+            'debug' => new Debug($filesystem)
         ];
-        $shell = new \Magento\Framework\Shell(
-            new \Magento\Framework\Shell\CommandRenderer(),
-            new \Monolog\Logger('main', $loggerHandlers)
+        $shell = new Shell(
+            new CommandRenderer(),
+            new Logger('main', $loggerHandlers)
         );
     } else {
-        $shell = new \Magento\Framework\Shell(new \Magento\Framework\Shell\CommandRenderer());
+        $shell = new Shell(new CommandRenderer());
     }
 
     $installConfigFile = $settings->getAsConfigFile('TESTS_INSTALL_CONFIG_FILE');
@@ -64,7 +81,7 @@ try {
     }
     $sandboxUniqueId = hash('sha256', sha1_file($installConfigFile));
     $installDir = TESTS_TEMP_DIR . "/sandbox-{$settings->get('TESTS_PARALLEL_THREAD', 0)}-{$sandboxUniqueId}";
-    $application = new \Magento\TestFramework\Application(
+    $application = new Application(
         $shell,
         $installDir,
         $installConfigFile,
@@ -78,12 +95,12 @@ try {
 
     $bootstrap = new \Magento\TestFramework\Bootstrap(
         $settings,
-        new \Magento\TestFramework\Bootstrap\Environment(),
-        new \Magento\TestFramework\Bootstrap\DocBlock("{$testsBaseDir}/testsuite"),
-        new \Magento\TestFramework\Bootstrap\Profiler(new \Magento\Framework\Profiler\Driver\Standard()),
+        new Environment(),
+        new DocBlock("{$testsBaseDir}/testsuite"),
+        new \Magento\TestFramework\Bootstrap\Profiler(new Standard()),
         $shell,
         $application,
-        new \Magento\TestFramework\Bootstrap\MemoryFactory($shell)
+        new MemoryFactory($shell)
     );
     $bootstrap->runBootstrap();
     if ($settings->getAsBoolean('TESTS_CLEANUP')) {
@@ -94,20 +111,20 @@ try {
     }
     $application->initialize([]);
 
-    \Magento\TestFramework\Helper\Bootstrap::setInstance(new \Magento\TestFramework\Helper\Bootstrap($bootstrap));
+    Bootstrap::setInstance(new Bootstrap($bootstrap));
 
-    $dirSearch = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-        ->create(\Magento\Framework\Component\DirSearch::class);
-    $themePackageList = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-        ->create(\Magento\Framework\View\Design\Theme\ThemePackageList::class);
-    \Magento\Framework\App\Utility\Files::setInstance(
+    $dirSearch = Bootstrap::getObjectManager()
+        ->create(DirSearch::class);
+    $themePackageList = Bootstrap::getObjectManager()
+        ->create(ThemePackageList::class);
+    Files::setInstance(
         new Magento\Framework\App\Utility\Files(
-            new \Magento\Framework\Component\ComponentRegistrar(),
+            new ComponentRegistrar(),
             $dirSearch,
             $themePackageList
         )
     );
-    $overrideConfig = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+    $overrideConfig = Bootstrap::getObjectManager()->create(
         Magento\TestFramework\Workaround\Override\Config::class
     );
     $overrideConfig->init();
@@ -117,7 +134,7 @@ try {
     );
     /* Unset declared global variables to release the PHPUnit from maintaining their values between tests */
     unset($testsBaseDir, $settings, $shell, $application, $bootstrap, $overrideConfig);
-} catch (\Exception $e) {
+} catch (Exception $e) {
     // phpcs:ignore Magento2.Security.LanguageConstruct.DirectOutput
     echo $e . PHP_EOL;
     // phpcs:ignore Magento2.Security.LanguageConstruct.ExitUsage

@@ -34,29 +34,6 @@ class CompositeTest extends TestCase
     private $productRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->helper = $this->objectManager->get(Composite::class);
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->registry->unregister('composite_configure_result_error_message');
-        $this->registry->unregister(RegistryConstants::CURRENT_CUSTOMER_ID);
-        $this->registry->unregister('current_product');
-        $this->registry->unregister('product');
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
      * @magentoDataFixture Magento/Customer/_files/customer.php
      * @return void
@@ -139,5 +116,28 @@ class CompositeTest extends TestCase
                     . ' Verify the product and try again.',
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->helper = $this->objectManager->get(Composite::class);
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->registry->unregister('composite_configure_result_error_message');
+        $this->registry->unregister(RegistryConstants::CURRENT_CUSTOMER_ID);
+        $this->registry->unregister('current_product');
+        $this->registry->unregister('product');
     }
 }

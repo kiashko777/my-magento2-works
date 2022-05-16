@@ -78,19 +78,6 @@ class EmailMessageTest extends TestCase
     private $description = 'Test description';
 
     /**
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->di = Bootstrap::getObjectManager();
-        $this->mimePartFactory = $this->di->get(MimePartInterfaceFactory::class);
-        $this->mimeMessageFactory = $this->di->get(MimeMessageInterfaceFactory::class);
-        $this->messageConverter = $this->di->get(AddressConverter::class);
-        $this->messageFactory = $this->di->get(EmailMessageInterfaceFactory::class);
-    }
-
-    /**
      * @return array
      */
     public function getEmailMessageDataProvider(): array
@@ -287,5 +274,18 @@ class EmailMessageTest extends TestCase
     </type>
 </config>
 ';
+    }
+
+    /**
+     *
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        $this->di = Bootstrap::getObjectManager();
+        $this->mimePartFactory = $this->di->get(MimePartInterfaceFactory::class);
+        $this->mimeMessageFactory = $this->di->get(MimeMessageInterfaceFactory::class);
+        $this->messageConverter = $this->di->get(AddressConverter::class);
+        $this->messageFactory = $this->di->get(EmailMessageInterfaceFactory::class);
     }
 }

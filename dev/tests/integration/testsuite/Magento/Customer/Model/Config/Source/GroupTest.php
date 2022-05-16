@@ -3,19 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Customer\Model\Config\Source;
 
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class \Magento\Customer\Model\Config\Source\Group
  */
-class GroupTest extends \PHPUnit\Framework\TestCase
+class GroupTest extends TestCase
 {
     public function testToOptionArray()
     {
         /** @var Group $group */
-        $group = Bootstrap::getObjectManager()->get(\Magento\Customer\Model\Config\Source\Group::class);
+        $group = Bootstrap::getObjectManager()->get(Group::class);
         $options = $group->toOptionArray();
         $this->assertContainsOptionRecursive('', '-- Please Select --', $options);
     }

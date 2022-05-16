@@ -7,6 +7,7 @@
 declare(strict_types=1);
 
 use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Registry;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
@@ -23,7 +24,7 @@ $customerRepository = Bootstrap::getObjectManager()->create(CustomerRepositoryIn
 try {
     $customer = $customerRepository->get('customer+confirmation@example.com');
     $customerRepository->delete($customer);
-} catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+} catch (NoSuchEntityException $e) {
     // Customer with the specified email does not exist
 }
 

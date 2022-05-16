@@ -30,44 +30,6 @@ class SwatchesGeneratorTest extends TestCase
         'option_3' => '/|o|'
     ];
 
-    protected function setUp(): void
-    {
-        // Mock Swatch Media Helper
-        $swatchHelperMock = $this->getMockBuilder(Media::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $swatchHelperMock
-            ->expects($this->any())
-            ->method('moveImageFromTmp')
-            ->willReturnOnConsecutiveCalls(...array_values($this->imagePathFixture));
-
-        // Mock image generator
-        $imageGeneratorMock = $this->getMockBuilder(ImagesGenerator::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $imageGeneratorMock
-            ->expects($this->any())
-            ->method('generate');
-
-        // Mock image generator factory
-        $imageGeneratorFactoryMock = $this->getMockBuilder(ImagesGeneratorFactory::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['create'])
-            ->getMock();
-
-        $imageGeneratorFactoryMock
-            ->expects($this->once())
-            ->method('create')
-            ->willReturn($imageGeneratorMock);
-
-        $this->swatchesGeneratorMock = new SwatchesGenerator(
-            $swatchHelperMock,
-            $imageGeneratorFactoryMock
-        );
-    }
-
     public function testGenerateSwatchData()
     {
         $attributeColorType['swatch_input_type'] = Swatch::SWATCH_INPUT_TYPE_VISUAL;
@@ -105,6 +67,44 @@ class SwatchesGeneratorTest extends TestCase
         $this->assertEquals(
             $attributeImageType,
             $this->swatchesGeneratorMock->generateSwatchData(3, 'test', 'image')
+        );
+    }
+
+    protected function setUp(): void
+    {
+        // Mock Swatch Media Helper
+        $swatchHelperMock = $this->getMockBuilder(Media::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $swatchHelperMock
+            ->expects($this->any())
+            ->method('moveImageFromTmp')
+            ->willReturnOnConsecutiveCalls(...array_values($this->imagePathFixture));
+
+        // Mock image generator
+        $imageGeneratorMock = $this->getMockBuilder(ImagesGenerator::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $imageGeneratorMock
+            ->expects($this->any())
+            ->method('generate');
+
+        // Mock image generator factory
+        $imageGeneratorFactoryMock = $this->getMockBuilder(ImagesGeneratorFactory::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['create'])
+            ->getMock();
+
+        $imageGeneratorFactoryMock
+            ->expects($this->once())
+            ->method('create')
+            ->willReturn($imageGeneratorMock);
+
+        $this->swatchesGeneratorMock = new SwatchesGenerator(
+            $swatchHelperMock,
+            $imageGeneratorFactoryMock
         );
     }
 }

@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Model\Indexer\Category;
 
 use Magento\Catalog\Api\CategoryRepositoryInterface;
@@ -57,59 +58,6 @@ class ProductTest extends TestCase
     private $categoryResource;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        /** @var IndexerInterface indexer */
-        $this->indexer = Bootstrap::getObjectManager()->create(Indexer::class);
-        $this->indexer->load(CategoryProductIndexer::INDEXER_ID);
-
-        $this->productResource = Bootstrap::getObjectManager()->get(ProductResource::class);
-        $this->categoryRepository = Bootstrap::getObjectManager()->create(CategoryRepositoryInterface::class);
-        $this->categoryResource = Bootstrap::getObjectManager()->create(CategoryResource::class);
-        $this->getCategoryByName = Bootstrap::getObjectManager()->create(GetCategoryByName::class);
-    }
-
-    /**
-     * @magentoAppArea Adminhtml
-     */
-    public function testReindexAll()
-    {
-        $categories = $this->getCategories(4);
-        $products = $this->getProducts(2);
-
-        /** @var Category $categoryFourth */
-        $categoryFourth = end($categories);
-        foreach ($products as $product) {
-            /** @var ProductModel $product */
-            $product->setCategoryIds([$categoryFourth->getId()]);
-            $product->save();
-        }
-
-        /** @var Category $categoryThird */
-        $categoryThird = $categories[2];
-        $categoryThird->setIsAnchor(true);
-        $categoryThird->save();
-
-        $this->clearIndex();
-        $categories = [self::DEFAULT_ROOT_CATEGORY, $categoryThird->getId(), $categoryFourth->getId()];
-
-        $this->indexer->reindexAll();
-
-        foreach ($products as $product) {
-            /** @var ProductModel $product */
-            foreach ($categories as $categoryId) {
-                $this->assertTrue((bool)$this->productResource->canBeShowInCategory($product, $categoryId));
-            }
-
-            $this->assertTrue(
-                (bool)$this->productResource->canBeShowInCategory($product, $categoryThird->getParentId())
-            );
-        }
-    }
-
-    /**
      * @magentoAppArea Adminhtml
      */
     public function testCategoryMove()
@@ -156,6 +104,55 @@ class ProductTest extends TestCase
     }
 
     /**
+     * @param int $count
+     * @return Category[]
+     */
+    private function getCategories(int $count): array
+    {
+        /** @var Category $category */
+        $category = Bootstrap::getObjectManager()->create(Category::class);
+
+        $result = $category->getCollection()->addAttributeToSelect('name')->getItems();
+        $result = array_slice($result, 2);
+
+        return array_slice($result, 0, $count);
+    }
+
+    /**
+     * @param int $count
+     * @return ProductModel[]
+     */
+    private function getProducts(int $count): array
+    {
+        /** @var ProductModel $product */
+        $product = Bootstrap::getObjectManager()->create(ProductModel::class);
+
+        $result[] = $product->load(1);
+        $result[] = $product->load(2);
+        $result[] = $product->load(3);
+
+        return array_slice($result, 0, $count);
+    }
+
+    /**
+     * Clear index data
+     */
+    private function clearIndex()
+    {
+        $this->productResource->getConnection()->delete(
+            $this->productResource->getTable('catalog_category_product_index')
+        );
+
+        $actualResult = $this->productResource->getConnection()->fetchOne(
+            $this->productResource->getConnection()->select()->from(
+                $this->productResource->getTable('catalog_category_product_index'),
+                'product_id'
+            )
+        );
+        $this->assertFalse($actualResult);
+    }
+
+    /**
      * @magentoAppArea Adminhtml
      * @depends testReindexAll
      */
@@ -183,7 +180,6 @@ class ProductTest extends TestCase
             );
         }
     }
-
 
     /**
      * Verify that indexer still valid after deleting inactive category
@@ -254,6 +250,44 @@ class ProductTest extends TestCase
 
     /**
      * @magentoAppArea Adminhtml
+     */
+    public function testReindexAll()
+    {
+        $categories = $this->getCategories(4);
+        $products = $this->getProducts(2);
+
+        /** @var Category $categoryFourth */
+        $categoryFourth = end($categories);
+        foreach ($products as $product) {
+            /** @var ProductModel $product */
+            $product->setCategoryIds([$categoryFourth->getId()]);
+            $product->save();
+        }
+
+        /** @var Category $categoryThird */
+        $categoryThird = $categories[2];
+        $categoryThird->setIsAnchor(true);
+        $categoryThird->save();
+
+        $this->clearIndex();
+        $categories = [self::DEFAULT_ROOT_CATEGORY, $categoryThird->getId(), $categoryFourth->getId()];
+
+        $this->indexer->reindexAll();
+
+        foreach ($products as $product) {
+            /** @var ProductModel $product */
+            foreach ($categories as $categoryId) {
+                $this->assertTrue((bool)$this->productResource->canBeShowInCategory($product, $categoryId));
+            }
+
+            $this->assertTrue(
+                (bool)$this->productResource->canBeShowInCategory($product, $categoryThird->getParentId())
+            );
+        }
+    }
+
+    /**
+     * @magentoAppArea Adminhtml
      *
      * @magentoDataFixture Magento/Catalog/_files/category_tree.php
      *
@@ -275,52 +309,18 @@ class ProductTest extends TestCase
     }
 
     /**
-     * @param int $count
-     * @return Category[]
+     * @inheritdoc
      */
-    private function getCategories(int $count): array
+    protected function setUp(): void
     {
-        /** @var Category $category */
-        $category = Bootstrap::getObjectManager()->create(Category::class);
+        /** @var IndexerInterface indexer */
+        $this->indexer = Bootstrap::getObjectManager()->create(Indexer::class);
+        $this->indexer->load(CategoryProductIndexer::INDEXER_ID);
 
-        $result = $category->getCollection()->addAttributeToSelect('name')->getItems();
-        $result = array_slice($result, 2);
-
-        return array_slice($result, 0, $count);
-    }
-
-    /**
-     * @param int $count
-     * @return ProductModel[]
-     */
-    private function getProducts(int $count): array
-    {
-        /** @var ProductModel $product */
-        $product = Bootstrap::getObjectManager()->create(ProductModel::class);
-
-        $result[] = $product->load(1);
-        $result[] = $product->load(2);
-        $result[] = $product->load(3);
-
-        return array_slice($result, 0, $count);
-    }
-
-    /**
-     * Clear index data
-     */
-    private function clearIndex()
-    {
-        $this->productResource->getConnection()->delete(
-            $this->productResource->getTable('catalog_category_product_index')
-        );
-
-        $actualResult = $this->productResource->getConnection()->fetchOne(
-            $this->productResource->getConnection()->select()->from(
-                $this->productResource->getTable('catalog_category_product_index'),
-                'product_id'
-            )
-        );
-        $this->assertFalse($actualResult);
+        $this->productResource = Bootstrap::getObjectManager()->get(ProductResource::class);
+        $this->categoryRepository = Bootstrap::getObjectManager()->create(CategoryRepositoryInterface::class);
+        $this->categoryResource = Bootstrap::getObjectManager()->create(CategoryResource::class);
+        $this->getCategoryByName = Bootstrap::getObjectManager()->create(GetCategoryByName::class);
     }
 
     /**

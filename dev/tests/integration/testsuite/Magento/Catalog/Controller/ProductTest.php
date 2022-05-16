@@ -9,8 +9,10 @@ namespace Magento\Catalog\Controller;
 
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product\Attribute\LayoutUpdateManager;
 use Magento\Catalog\Model\Session;
 use Magento\Framework\Registry;
+use Magento\Framework\View\LayoutInterface;
 use Magento\TestFramework\Catalog\Model\ProductLayoutUpdateManager;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Helper\Xpath;
@@ -33,51 +35,6 @@ class ProductTest extends AbstractController
 
     /** @var Session */
     private $session;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        if (defined('HHVM_VERSION')) {
-            $this->markTestSkipped('Randomly fails due to known HHVM bug (DOMText mixed with DOMElement)');
-        }
-        Bootstrap::getObjectManager()->configure([
-            'preferences' => [
-                \Magento\Catalog\Model\Product\Attribute\LayoutUpdateManager::class =>
-                    \Magento\TestFramework\Catalog\Model\ProductLayoutUpdateManager::class
-            ]
-        ]);
-        parent::setUp();
-
-        $this->registry = $this->_objectManager->get(Registry::class);
-        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
-        $this->session = $this->_objectManager->get(Session::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function assert404NotFound()
-    {
-        parent::assert404NotFound();
-
-        $this->assertNull($this->registry->registry('current_product'));
-    }
-
-    /**
-     * Get product image file
-     *
-     * @return string
-     */
-    protected function getProductImageFile(): string
-    {
-        $product = $this->productRepository->get('simple_product_1');
-        $images = $product->getMediaGalleryImages()->getItems();
-        $image = reset($images);
-
-        return $image['file'];
-    }
 
     /**
      * @magentoDataFixture Magento/Catalog/controllers/_files/products.php
@@ -151,6 +108,16 @@ class ProductTest extends AbstractController
     }
 
     /**
+     * @inheritdoc
+     */
+    public function assert404NotFound()
+    {
+        parent::assert404NotFound();
+
+        $this->assertNull($this->registry->registry('current_product'));
+    }
+
+    /**
      * @return void
      */
     public function testViewActionRedirect(): void
@@ -174,6 +141,20 @@ class ProductTest extends AbstractController
             $this->getResponse()->getBody()
         );
         $this->assertStringContainsString($this->getProductImageFile(), $this->getResponse()->getBody());
+    }
+
+    /**
+     * Get product image file
+     *
+     * @return string
+     */
+    protected function getProductImageFile(): string
+    {
+        $product = $this->productRepository->get('simple_product_1');
+        $images = $product->getMediaGalleryImages()->getItems();
+        $image = reset($images);
+
+        return $image['file'];
     }
 
     /**
@@ -250,9 +231,30 @@ class ProductTest extends AbstractController
         //Viewing the product
         $this->dispatch("catalog/product/view/id/$productId");
         //Layout handles must contain the file.
-        $handles = Bootstrap::getObjectManager()->get(\Magento\Framework\View\LayoutInterface::class)
+        $handles = Bootstrap::getObjectManager()->get(LayoutInterface::class)
             ->getUpdate()
             ->getHandles();
         $this->assertContains("catalog_product_view_selectable_{$sku}_{$file}", $handles);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        if (defined('HHVM_VERSION')) {
+            $this->markTestSkipped('Randomly fails due to known HHVM bug (DOMText mixed with DOMElement)');
+        }
+        Bootstrap::getObjectManager()->configure([
+            'preferences' => [
+                LayoutUpdateManager::class =>
+                    ProductLayoutUpdateManager::class
+            ]
+        ]);
+        parent::setUp();
+
+        $this->registry = $this->_objectManager->get(Registry::class);
+        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
+        $this->session = $this->_objectManager->get(Session::class);
     }
 }

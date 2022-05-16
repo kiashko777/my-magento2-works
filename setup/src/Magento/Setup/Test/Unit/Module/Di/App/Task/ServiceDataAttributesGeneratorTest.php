@@ -31,6 +31,21 @@ class ServiceDataAttributesGeneratorTest extends TestCase
      */
     private $model;
 
+    public function testDoOperation()
+    {
+        $files = ['file1', 'file2'];
+        $this->configurationScannerMock->expects($this->once())
+            ->method('scan')
+            ->with('extension_attributes.xml')
+            ->willReturn($files);
+        $this->serviceDataAttributesScannerMock->expects($this->once())
+            ->method('collectEntities')
+            ->with($files)
+            ->willReturn([]);
+
+        $this->model->doOperation();
+    }
+
     protected function setUp(): void
     {
         $this->configurationScannerMock = $this->getMockBuilder(
@@ -49,20 +64,5 @@ class ServiceDataAttributesGeneratorTest extends TestCase
                 'configurationScanner' => $this->configurationScannerMock,
             ]
         );
-    }
-
-    public function testDoOperation()
-    {
-        $files = ['file1', 'file2'];
-        $this->configurationScannerMock->expects($this->once())
-            ->method('scan')
-            ->with('extension_attributes.xml')
-            ->willReturn($files);
-        $this->serviceDataAttributesScannerMock->expects($this->once())
-            ->method('collectEntities')
-            ->with($files)
-            ->willReturn([]);
-
-        $this->model->doOperation();
     }
 }

@@ -6,7 +6,9 @@
 
 namespace Magento\Catalog\Helper\Product\Stub;
 
-class ProductControllerStub extends \Magento\Catalog\Controller\Product
+use Magento\Catalog\Controller\Product;
+
+class ProductControllerStub extends Product
 {
     public function execute()
     {

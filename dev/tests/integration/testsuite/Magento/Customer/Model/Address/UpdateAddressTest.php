@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Customer\Model\Address;
 
+use Exception;
 use Magento\Customer\Api\AddressRepositoryInterface;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Api\Data\AddressInterface;
@@ -26,64 +27,33 @@ use PHPUnit\Framework\TestCase;
 class UpdateAddressTest extends TestCase
 {
     /**
-     * @var ObjectManager
-     */
-    private $objectManager;
-
-    /**
      * @var AddressRegistry
      */
     protected $addressRegistry;
-
     /**
      * @var Address
      */
     protected $addressResource;
-
     /**
      * @var CustomerRegistry
      */
     protected $customerRegistry;
-
     /**
      * @var AddressRepositoryInterface
      */
     protected $addressRepository;
-
     /**
      * @var CustomerRepositoryInterface
      */
     protected $customerRepository;
-
     /**
      * @var int[]
      */
     protected $processedAddressesIds = [];
-
     /**
-     * @inheritdoc
+     * @var ObjectManager
      */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->addressRegistry = $this->objectManager->get(AddressRegistry::class);
-        $this->addressResource = $this->objectManager->get(Address::class);
-        $this->customerRegistry = $this->objectManager->get(CustomerRegistry::class);
-        $this->addressRepository = $this->objectManager->get(AddressRepositoryInterface::class);
-        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
-        parent::setUp();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        foreach ($this->processedAddressesIds as $createdAddressesId) {
-            $this->addressRegistry->remove($createdAddressesId);
-        }
-        parent::tearDown();
-    }
+    private $objectManager;
 
     /**
      * Assert that default addresses properly updated for customer.
@@ -104,7 +74,8 @@ class UpdateAddressTest extends TestCase
         bool $isBillingDefault,
         ?int $expectedShipping,
         ?int $expectedBilling
-    ): void {
+    ): void
+    {
         $customer = $this->customerRepository->get('customer@example.com');
         $this->assertEquals(1, $customer->getDefaultShipping());
         $this->assertEquals(1, $customer->getDefaultBilling());
@@ -233,10 +204,10 @@ class UpdateAddressTest extends TestCase
      * @dataProvider updateWrongAddressesDataProvider
      *
      * @param array $updateData
-     * @param \Exception $expectException
+     * @param Exception $expectException
      * @return void
      */
-    public function testExceptionThrownDuringUpdateAddress(array $updateData, \Exception $expectException): void
+    public function testExceptionThrownDuringUpdateAddress(array $updateData, Exception $expectException): void
     {
         $this->processedAddressesIds[] = 1;
         $address = $this->addressRepository->getById(1);
@@ -290,5 +261,30 @@ class UpdateAddressTest extends TestCase
 //                null// It need to create some error but currently magento doesn't has validation for this field.,
 //            ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->addressRegistry = $this->objectManager->get(AddressRegistry::class);
+        $this->addressResource = $this->objectManager->get(Address::class);
+        $this->customerRegistry = $this->objectManager->get(CustomerRegistry::class);
+        $this->addressRepository = $this->objectManager->get(AddressRepositoryInterface::class);
+        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
+        parent::setUp();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        foreach ($this->processedAddressesIds as $createdAddressesId) {
+            $this->addressRegistry->remove($createdAddressesId);
+        }
+        parent::tearDown();
     }
 }

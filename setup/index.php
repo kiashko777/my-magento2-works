@@ -3,6 +3,8 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Framework\App\Bootstrap;
 use Magento\Setup\Application;
 use Magento\Setup\Model\ObjectManagerProvider;
 
@@ -13,7 +15,7 @@ if (PHP_SAPI == 'cli') {
 }
 try {
     require __DIR__ . '/../app/bootstrap.php';
-} catch (\Exception $e) {
+} catch (Exception $e) {
     echo <<<HTML
 <div style="font:12px/1.35em arial, helvetica, sans-serif;">
     <div style="margin:0 0 25px 0; border-bottom:1px solid #ccc;">
@@ -35,5 +37,5 @@ $bootstrap = new Application();
 $application = $bootstrap->bootstrap($configuration);
 $application->getServiceManager()
     ->get(ObjectManagerProvider::class)
-    ->setObjectManager(\Magento\Framework\App\Bootstrap::create(BP, $_SERVER)->getObjectManager());
+    ->setObjectManager(Bootstrap::create(BP, $_SERVER)->getObjectManager());
 $application->run();

@@ -5,21 +5,26 @@
  */
 declare(strict_types=1);
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\ResourceModel\Category\Collection;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var \Magento\Framework\Registry $registry */
-$registry = $objectManager->get(\Magento\Framework\Registry::class);
+$objectManager = Bootstrap::getObjectManager();
+
+/** @var Registry $registry */
+$registry = $objectManager->get(Registry::class);
 
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
 //Remove categories
 /** @var Magento\Catalog\Model\ResourceModel\Category\Collection $collection */
-$collection = $objectManager->create(\Magento\Catalog\Model\ResourceModel\Category\Collection::class);
+$collection = $objectManager->create(Collection::class);
 $collection->addAttributeToFilter('level', ['gt' => 1]);
 
 foreach ($collection as $category) {
-    /** @var \Magento\Catalog\Model\Category $category */
+    /** @var Category $category */
     if ($category->getLevel() !== 1) {
         $category->delete();
     }

@@ -4,10 +4,15 @@
  * See COPYING.txt for license details.
  */
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\CatalogRule\Api\CatalogRuleRepositoryInterface;
+use Magento\CatalogRule\Model\Indexer\IndexBuilder;
+use Magento\CatalogRule\Model\ResourceModel\Rule;
+use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var \Magento\CatalogRule\Model\ResourceModel\Rule $catalogRuleResource */
-$catalogRuleResource = $objectManager->create(\Magento\CatalogRule\Model\ResourceModel\Rule::class);
+$objectManager = Bootstrap::getObjectManager();
+
+/** @var Rule $catalogRuleResource */
+$catalogRuleResource = $objectManager->create(Rule::class);
 $connection = $catalogRuleResource->getConnection();
 
 //Retrieve rule id by name
@@ -17,13 +22,13 @@ $select->where('name = ?', 'Test Catalog Rule');
 $ruleId = $connection->fetchOne($select);
 
 try {
-    /** @var \Magento\CatalogRule\Api\CatalogRuleRepositoryInterface $ruleRepository */
-    $ruleRepository = $objectManager->create(\Magento\CatalogRule\Api\CatalogRuleRepositoryInterface::class);
+    /** @var CatalogRuleRepositoryInterface $ruleRepository */
+    $ruleRepository = $objectManager->create(CatalogRuleRepositoryInterface::class);
     $ruleRepository->deleteById($ruleId);
-} catch (\Exception $ex) {
+} catch (Exception $ex) {
     //Nothing to remove
 }
-/** @var \Magento\CatalogRule\Model\Indexer\IndexBuilder $indexBuilder */
-$indexBuilder = $objectManager->get(\Magento\CatalogRule\Model\Indexer\IndexBuilder::class);
+/** @var IndexBuilder $indexBuilder */
+$indexBuilder = $objectManager->get(IndexBuilder::class);
 $indexBuilder->reindexFull();
 sleep(1);

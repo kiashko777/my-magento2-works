@@ -7,12 +7,12 @@ declare(strict_types=1);
 
 namespace Magento\CatalogSearch\Model\Indexer\Fulltext\Plugin;
 
+use Magento\Catalog\Api\Data\EavAttributeInterface;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\ResourceModel\Eav\Attribute;
+use Magento\CatalogSearch\Model\Indexer\Fulltext\Processor;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
-use Magento\CatalogSearch\Model\Indexer\Fulltext\Processor;
-use Magento\Catalog\Api\Data\EavAttributeInterface;
 
 /**
  * Check catalogsearch_fulltext index status after create product attribute.
@@ -28,15 +28,6 @@ class AttributeTest extends TestCase
      * @var Attribute
      */
     private $attribute;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->indexerProcessor = Bootstrap::getObjectManager()->create(Processor::class);
-        $this->attribute = Bootstrap::getObjectManager()->create(Attribute::class);
-    }
 
     /**
      * Check index status on clean database.
@@ -137,5 +128,14 @@ class AttributeTest extends TestCase
         $this->assertFalse($this->attribute->isObjectNew());
         $this->attribute->setIsFilterable(false)->save();
         $this->assertFalse($this->indexerProcessor->getIndexer()->isValid());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->indexerProcessor = Bootstrap::getObjectManager()->create(Processor::class);
+        $this->attribute = Bootstrap::getObjectManager()->create(Attribute::class);
     }
 }

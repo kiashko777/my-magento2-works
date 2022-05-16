@@ -32,7 +32,7 @@ use PHPUnit\Framework\TestCase;
  */
 class ConfigurableViewOnCategoryPageTest extends TestCase
 {
-    /** @var ObjectManagerInterface  */
+    /** @var ObjectManagerInterface */
     private $objectManager;
 
     /** @var ProductRepositoryInterface */
@@ -52,6 +52,143 @@ class ConfigurableViewOnCategoryPageTest extends TestCase
 
     /** @var ExecuteInStoreContext */
     private $executeInStoreContext;
+
+    /**
+     * @magentoConfigFixture current_store cataloginventory/options/show_out_of_stock 1
+     *
+     * @return void
+     */
+    public function testOutOfStockProductWithEnabledConfigView(): void
+    {
+        $this->preparePageLayout();
+        $this->assertCollectionSize(1, $this->getListingBlock()->getLoadedProductCollection());
+    }
+
+    /**
+     * Prepare category page.
+     *
+     * @return void
+     */
+    private function preparePageLayout(): void
+    {
+        $this->registry->unregister('current_category');
+        $this->registry->register(
+            'current_category',
+            $this->categoryRepository->get(333, $this->storeManager->getStore()->getId())
+        );
+        $this->page->addHandle(['default', 'catalog_category_view']);
+        $this->page->getLayout()->generateXml();
+    }
+
+    /**
+     * Check collection size
+     *
+     * @param int $expectedSize
+     * @param AbstractCollection $collection
+     * @return void
+     */
+    private function assertCollectionSize(int $expectedSize, AbstractCollection $collection): void
+    {
+        $this->assertEquals($expectedSize, $collection->getSize());
+        $this->assertCount($expectedSize, $collection->getItems());
+    }
+
+    /**
+     * Returns product list block.
+     *
+     * @return null|ListProduct
+     */
+    private function getListingBlock(): ?ListProduct
+    {
+        $block = $this->page->getLayout()->getBlock('category.products.list');
+
+        return $block ? $block : null;
+    }
+
+    /**
+     * @magentoConfigFixture current_store cataloginventory/options/show_out_of_stock 0
+     *
+     * @return void
+     */
+    public function testOutOfStockProductWithDisabledConfigView(): void
+    {
+        $this->preparePageLayout();
+        $this->assertCollectionSize(0, $this->getListingBlock()->getLoadedProductCollection());
+    }
+
+    /**
+     * @magentoDataFixture Magento/ConfigurableProduct/_files/configurable_product_with_category.php
+     *
+     * @return void
+     */
+    public function testCheckConfigurablePrice(): void
+    {
+        $this->assertProductPrice('configurable', 'As low as $10.00');
+    }
+
+    /**
+     * Checks product price.
+     *
+     * @param string $sku
+     * @param string $priceString
+     * @return void
+     */
+    public function assertProductPrice(string $sku, string $priceString): void
+    {
+        $this->preparePageLayout();
+        $this->assertCollectionSize(1, $this->getListingBlock()->getLoadedProductCollection());
+        $priceHtml = $this->getListingBlock()->getProductPrice($this->getProduct($sku));
+        $this->assertEquals($priceString, $this->clearPriceHtml($priceHtml));
+    }
+
+    /**
+     * Loads product by sku.
+     *
+     * @param string $sku
+     * @return ProductInterface
+     */
+    private function getProduct(string $sku): ProductInterface
+    {
+        return $this->productRepository->get($sku, false, $this->storeManager->getStore()->getId(), true);
+    }
+
+    /**
+     * Removes html tags and spaces from price html string.
+     *
+     * @param string $priceHtml
+     * @return string
+     */
+    private function clearPriceHtml(string $priceHtml): string
+    {
+        return trim(preg_replace('/\s+/', ' ', strip_tags($priceHtml)));
+    }
+
+    /**
+     * @magentoDataFixture Magento/ConfigurableProduct/_files/configurable_product_with_price_on_second_website.php
+     *
+     * @return void
+     */
+    public function testCheckConfigurablePriceOnSecondWebsite(): void
+    {
+        $this->executeInStoreContext->execute(
+            'fixture_second_store',
+            [$this, 'assertProductPrice'],
+            'configurable',
+            __('As low as') . ' $10.00'
+        );
+        $this->resetPageLayout();
+        $this->assertProductPrice('configurable', __('As low as') . ' $150.00');
+    }
+
+    /**
+     * Reset layout page to get new block html.
+     *
+     * @return void
+     */
+    private function resetPageLayout(): void
+    {
+        $this->page = $this->objectManager->get(PageFactory::class)->create();
+    }
 
     /**
      * @inheritdoc
@@ -77,142 +214,5 @@ class ConfigurableViewOnCategoryPageTest extends TestCase
     {
         $this->registry->unregister('current_category');
         parent::tearDown();
-    }
-
-    /**
-     * @magentoConfigFixture current_store cataloginventory/options/show_out_of_stock 1
-     *
-     * @return void
-     */
-    public function testOutOfStockProductWithEnabledConfigView(): void
-    {
-        $this->preparePageLayout();
-        $this->assertCollectionSize(1, $this->getListingBlock()->getLoadedProductCollection());
-    }
-
-    /**
-     * @magentoConfigFixture current_store cataloginventory/options/show_out_of_stock 0
-     *
-     * @return void
-     */
-    public function testOutOfStockProductWithDisabledConfigView(): void
-    {
-        $this->preparePageLayout();
-        $this->assertCollectionSize(0, $this->getListingBlock()->getLoadedProductCollection());
-    }
-
-    /**
-     * @magentoDataFixture Magento/ConfigurableProduct/_files/configurable_product_with_category.php
-     *
-     * @return void
-     */
-    public function testCheckConfigurablePrice(): void
-    {
-        $this->assertProductPrice('configurable', 'As low as $10.00');
-    }
-
-    /**
-     * @magentoDataFixture Magento/ConfigurableProduct/_files/configurable_product_with_price_on_second_website.php
-     *
-     * @return void
-     */
-    public function testCheckConfigurablePriceOnSecondWebsite(): void
-    {
-        $this->executeInStoreContext->execute(
-            'fixture_second_store',
-            [$this, 'assertProductPrice'],
-            'configurable',
-            __('As low as') . ' $10.00'
-        );
-        $this->resetPageLayout();
-        $this->assertProductPrice('configurable', __('As low as') . ' $150.00');
-    }
-
-    /**
-     * Checks product price.
-     *
-     * @param string $sku
-     * @param string $priceString
-     * @return void
-     */
-    public function assertProductPrice(string $sku, string $priceString): void
-    {
-        $this->preparePageLayout();
-        $this->assertCollectionSize(1, $this->getListingBlock()->getLoadedProductCollection());
-        $priceHtml = $this->getListingBlock()->getProductPrice($this->getProduct($sku));
-        $this->assertEquals($priceString, $this->clearPriceHtml($priceHtml));
-    }
-
-    /**
-     * Check collection size
-     *
-     * @param int $expectedSize
-     * @param AbstractCollection $collection
-     * @return void
-     */
-    private function assertCollectionSize(int $expectedSize, AbstractCollection $collection): void
-    {
-        $this->assertEquals($expectedSize, $collection->getSize());
-        $this->assertCount($expectedSize, $collection->getItems());
-    }
-
-    /**
-     * Prepare category page.
-     *
-     * @return void
-     */
-    private function preparePageLayout(): void
-    {
-        $this->registry->unregister('current_category');
-        $this->registry->register(
-            'current_category',
-            $this->categoryRepository->get(333, $this->storeManager->getStore()->getId())
-        );
-        $this->page->addHandle(['default', 'catalog_category_view']);
-        $this->page->getLayout()->generateXml();
-    }
-
-    /**
-     * Reset layout page to get new block html.
-     *
-     * @return void
-     */
-    private function resetPageLayout(): void
-    {
-        $this->page = $this->objectManager->get(PageFactory::class)->create();
-    }
-
-    /**
-     * Removes html tags and spaces from price html string.
-     *
-     * @param string $priceHtml
-     * @return string
-     */
-    private function clearPriceHtml(string $priceHtml): string
-    {
-        return trim(preg_replace('/\s+/', ' ', strip_tags($priceHtml)));
-    }
-
-    /**
-     * Returns product list block.
-     *
-     * @return null|ListProduct
-     */
-    private function getListingBlock(): ?ListProduct
-    {
-        $block = $this->page->getLayout()->getBlock('category.products.list');
-
-        return $block ? $block : null;
-    }
-
-    /**
-     * Loads product by sku.
-     *
-     * @param string $sku
-     * @return ProductInterface
-     */
-    private function getProduct(string $sku): ProductInterface
-    {
-        return $this->productRepository->get($sku, false, $this->storeManager->getStore()->getId(), true);
     }
 }

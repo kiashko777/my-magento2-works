@@ -3,24 +3,31 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogInventory\Model\Indexer\Stock\Action;
+
+use Magento\Catalog\Block\Product\ListProduct;
+use Magento\Catalog\Model\CategoryFactory;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\ProductRepository;
+use Magento\CatalogInventory\Api\Data\StockItemInterface;
+use Magento\CatalogInventory\Api\StockItemRepositoryInterface;
+use Magento\CatalogInventory\Api\StockRegistryInterface;
+use Magento\CatalogInventory\Model\Indexer\Stock\Processor;
+use Magento\CatalogInventory\Model\ResourceModel\Stock\Item;
+use Magento\Framework\Api\DataObjectHelper;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class RowsTest
  */
-class RowsTest extends \PHPUnit\Framework\TestCase
+class RowsTest extends TestCase
 {
     /**
-     * @var \Magento\CatalogInventory\Model\Indexer\Stock\Processor
+     * @var Processor
      */
     protected $_processor;
-
-    protected function setUp(): void
-    {
-        $this->_processor = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\CatalogInventory\Model\Indexer\Stock\Processor::class
-        );
-    }
 
     /**
      * @magentoDbIsolation disabled
@@ -28,36 +35,36 @@ class RowsTest extends \PHPUnit\Framework\TestCase
      */
     public function testProductUpdate()
     {
-        $categoryFactory = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\CategoryFactory::class
+        $categoryFactory = Bootstrap::getObjectManager()->create(
+            CategoryFactory::class
         );
-        /** @var \Magento\Catalog\Block\Product\ListProduct $listProduct */
-        $listProduct = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Block\Product\ListProduct::class
-        );
-
-        /** @var \Magento\Framework\Api\DataObjectHelper $dataObjectHelper */
-        $dataObjectHelper = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\Api\DataObjectHelper::class
+        /** @var ListProduct $listProduct */
+        $listProduct = Bootstrap::getObjectManager()->create(
+            ListProduct::class
         );
 
-        /** @var \Magento\CatalogInventory\Api\StockRegistryInterface $stockRegistry */
-        $stockRegistry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\CatalogInventory\Api\StockRegistryInterface::class
-        );
-        /** @var \Magento\CatalogInventory\Api\StockItemRepositoryInterface $stockItemRepository */
-        $stockItemRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\CatalogInventory\Api\StockItemRepositoryInterface::class
+        /** @var DataObjectHelper $dataObjectHelper */
+        $dataObjectHelper = Bootstrap::getObjectManager()->get(
+            DataObjectHelper::class
         );
 
-        /** @var \Magento\CatalogInventory\Model\ResourceModel\Stock\Item $stockItemResource */
-        $stockItemResource = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\CatalogInventory\Model\ResourceModel\Stock\Item::class
+        /** @var StockRegistryInterface $stockRegistry */
+        $stockRegistry = Bootstrap::getObjectManager()->create(
+            StockRegistryInterface::class
+        );
+        /** @var StockItemRepositoryInterface $stockItemRepository */
+        $stockItemRepository = Bootstrap::getObjectManager()->create(
+            StockItemRepositoryInterface::class
         );
 
-        /** @var \Magento\Catalog\Model\ProductRepository $productRepository */
-        $productRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\ProductRepository::class
+        /** @var Item $stockItemResource */
+        $stockItemResource = Bootstrap::getObjectManager()->create(
+            Item::class
+        );
+
+        /** @var ProductRepository $productRepository */
+        $productRepository = Bootstrap::getObjectManager()->create(
+            ProductRepository::class
         );
 
         $product = $productRepository->get('simple');
@@ -71,7 +78,7 @@ class RowsTest extends \PHPUnit\Framework\TestCase
         $dataObjectHelper->populateWithArray(
             $stockItem,
             $stockItemData,
-            \Magento\CatalogInventory\Api\Data\StockItemInterface::class
+            StockItemInterface::class
         );
         $stockItemResource->setProcessIndexEvents(false);
 
@@ -93,11 +100,18 @@ class RowsTest extends \PHPUnit\Framework\TestCase
         );
 
         $this->assertEquals(1, $productCollection->count());
-        /** @var $product \Magento\Catalog\Model\Product */
+        /** @var $product Product */
         foreach ($productCollection as $product) {
             $this->assertEquals('Simple Products', $product->getName());
             $this->assertEquals('Short description', $product->getShortDescription());
             $this->assertEquals(112, $product->getQty());
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->_processor = Bootstrap::getObjectManager()->create(
+            Processor::class
+        );
     }
 }

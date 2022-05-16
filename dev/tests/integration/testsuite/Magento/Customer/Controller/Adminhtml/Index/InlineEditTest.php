@@ -52,22 +52,6 @@ class InlineEditTest extends AbstractBackendController
     private $coreRegistry;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
-        $this->json = $this->objectManager->get(SerializerInterface::class);
-        $this->websiteRepository = $this->objectManager->get(WebsiteRepositoryInterface::class);
-        $this->attributeRepository = $this->objectManager->get(AttributeRepository::class);
-        $this->addressRepository = $this->objectManager->get(AddressRepositoryInterface::class);
-        $this->coreRegistry = Bootstrap::getObjectManager()->get(Registry::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Customer/_files/two_customers.php
      *
      * @return void
@@ -102,6 +86,36 @@ class InlineEditTest extends AbstractBackendController
         $this->assertEmpty($actual['messages']);
         $this->assertFalse($actual['error']);
         $this->assertCustomersData($params);
+    }
+
+    /**
+     * Perform inline edit request.
+     *
+     * @param array $params
+     * @return array
+     */
+    private function performInlineEditRequest(array $params): array
+    {
+        $this->getRequest()->setParams($params)->setMethod(HttpRequest::METHOD_POST);
+        $this->dispatch('backend/customer/index/inlineEdit');
+
+        return $this->json->unserialize($this->getResponse()->getBody());
+    }
+
+    /**
+     * Assert customers data.
+     *
+     * @param array $data
+     * @return void
+     */
+    private function assertCustomersData(array $data): void
+    {
+        foreach ($data['items'] as $customerId => $expectedData) {
+            $customerData = $this->customerRepository->getById($customerId)->__toArray();
+            foreach ($expectedData as $key => $value) {
+                $this->assertEquals($value, $customerData[$key]);
+            }
+        }
     }
 
     /**
@@ -181,32 +195,18 @@ class InlineEditTest extends AbstractBackendController
     }
 
     /**
-     * Perform inline edit request.
-     *
-     * @param array $params
-     * @return array
+     * @inheritdoc
      */
-    private function performInlineEditRequest(array $params): array
+    protected function setUp(): void
     {
-        $this->getRequest()->setParams($params)->setMethod(HttpRequest::METHOD_POST);
-        $this->dispatch('backend/customer/index/inlineEdit');
+        parent::setUp();
 
-        return $this->json->unserialize($this->getResponse()->getBody());
-    }
-
-    /**
-     * Assert customers data.
-     *
-     * @param array $data
-     * @return void
-     */
-    private function assertCustomersData(array $data): void
-    {
-        foreach ($data['items'] as $customerId => $expectedData) {
-            $customerData = $this->customerRepository->getById($customerId)->__toArray();
-            foreach ($expectedData as $key => $value) {
-                $this->assertEquals($value, $customerData[$key]);
-            }
-        }
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
+        $this->json = $this->objectManager->get(SerializerInterface::class);
+        $this->websiteRepository = $this->objectManager->get(WebsiteRepositoryInterface::class);
+        $this->attributeRepository = $this->objectManager->get(AttributeRepository::class);
+        $this->addressRepository = $this->objectManager->get(AddressRepositoryInterface::class);
+        $this->coreRegistry = Bootstrap::getObjectManager()->get(Registry::class);
     }
 }

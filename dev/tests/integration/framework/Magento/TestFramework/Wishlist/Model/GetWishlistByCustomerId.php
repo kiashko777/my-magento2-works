@@ -28,17 +28,6 @@ class GetWishlistByCustomerId
     }
 
     /**
-     * Load wish list by customer id.
-     *
-     * @param int $customerId
-     * @return Wishlist
-     */
-    public function execute(int $customerId): Wishlist
-    {
-        return $this->wishlistFactory->create()->loadByCustomerId($customerId, true);
-    }
-
-    /**
      * Get wish list item by sku.
      *
      * @param int $customerId
@@ -57,5 +46,16 @@ class GetWishlistByCustomerId
         }
 
         return $result;
+    }
+
+    /**
+     * Load wish list by customer id.
+     *
+     * @param int $customerId
+     * @return Wishlist
+     */
+    public function execute(int $customerId): Wishlist
+    {
+        return $this->wishlistFactory->create()->loadByCustomerId($customerId, true);
     }
 }

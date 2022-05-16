@@ -8,6 +8,8 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Quote\Model\Quote\Address\Rate;
 use Magento\Quote\Model\QuoteFactory;
 use Magento\Quote\Model\ResourceModel\Quote as QuoteResource;
 use Magento\TestFramework\Helper\Bootstrap;
@@ -22,7 +24,7 @@ $quoteFactory = $objectManager->get(QuoteFactory::class);
 $quoteResource = $objectManager->get(QuoteResource::class);
 $quote = $quoteFactory->create();
 $quoteResource->load($quote, 'test_order_1', 'reserved_order_id');
-$rate = $objectManager->get(\Magento\Quote\Model\Quote\Address\Rate::class);
+$rate = $objectManager->get(Rate::class);
 
 $shippingAddress = $quote->getShippingAddress();
 $shippingAddress->setShippingMethod('flatrate_flatrate')

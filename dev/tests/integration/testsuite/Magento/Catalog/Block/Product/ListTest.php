@@ -3,7 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Block\Product;
+
+use Magento\Catalog\Block\Product\ProductList\Toolbar;
+use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\Layer;
+use Magento\Framework\App\State;
+use Magento\Framework\Data\Collection;
+use Magento\Framework\View\Element\Text;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\Catalog\Block\Products\List.
@@ -12,27 +23,16 @@ namespace Magento\Catalog\Block\Product;
  * @magentoAppArea frontend
  * @magentoDbIsolation disabled
  */
-class ListTest extends \PHPUnit\Framework\TestCase
+class ListTest extends TestCase
 {
     /**
-     * @var \Magento\Catalog\Block\Product\ListProduct
+     * @var ListProduct
      */
     protected $_block;
 
-    protected function setUp(): void
-    {
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\App\State::class)
-            ->setAreaCode('frontend');
-        $this->_block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
-        )->createBlock(
-            \Magento\Catalog\Block\Product\ListProduct::class
-        );
-    }
-
     public function testGetLayer()
     {
-        $this->assertInstanceOf(\Magento\Catalog\Model\Layer::class, $this->_block->getLayer());
+        $this->assertInstanceOf(Layer::class, $this->_block->getLayer());
     }
 
     public function testGetLoadedProductCollection()
@@ -52,22 +52,29 @@ class ListTest extends \PHPUnit\Framework\TestCase
      */
     public function testToolbarCoverage()
     {
-        /** @var $parent \Magento\Catalog\Block\Product\ListProduct */
-        $parent = $this->_getLayout()->createBlock(\Magento\Catalog\Block\Product\ListProduct::class, 'parent');
+        /** @var $parent ListProduct */
+        $parent = $this->_getLayout()->createBlock(ListProduct::class, 'parent');
 
         /* Prepare toolbar block */
         $this->_getLayout()
-            ->createBlock(\Magento\Catalog\Block\Product\ProductList\Toolbar::class, 'product_list_toolbar');
+            ->createBlock(Toolbar::class, 'product_list_toolbar');
         $parent->setToolbarBlockName('product_list_toolbar');
 
         $toolbar = $parent->getToolbarBlock();
-        $this->assertInstanceOf(\Magento\Catalog\Block\Product\ProductList\Toolbar::class, $toolbar, 'Default Toolbar');
+        $this->assertInstanceOf(Toolbar::class, $toolbar, 'Default Toolbar');
 
         $parent->setChild('toolbar', $toolbar);
         /* In order to initialize toolbar collection block toHtml should be called before toolbar toHtml */
         $this->assertEmpty($parent->toHtml(), 'Block HTML'); /* Template not specified */
         $this->assertEquals('grid', $parent->getMode(), 'Default Mode'); /* default mode */
         $this->assertNotEmpty($parent->getToolbarHtml(), 'Toolbar HTML'); /* toolbar for one simple product */
+    }
+
+    protected function _getLayout()
+    {
+        return Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
+        );
     }
 
     public function testGetAdditionalHtmlEmpty()
@@ -79,10 +86,10 @@ class ListTest extends \PHPUnit\Framework\TestCase
     public function testGetAdditionalHtml()
     {
         $layout = $this->_getLayout();
-        /** @var $parent \Magento\Catalog\Block\Product\ListProduct */
-        $parent = $layout->createBlock(\Magento\Catalog\Block\Product\ListProduct::class);
+        /** @var $parent ListProduct */
+        $parent = $layout->createBlock(ListProduct::class);
         $childBlock = $layout->createBlock(
-            \Magento\Framework\View\Element\Text::class,
+            Text::class,
             'test',
             ['data' => ['text' => 'test']]
         );
@@ -92,8 +99,8 @@ class ListTest extends \PHPUnit\Framework\TestCase
 
     public function testSetCollection()
     {
-        $collection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Framework\Data\Collection::class);
+        $collection = Bootstrap::getObjectManager()
+            ->create(Collection::class);
         $this->_block->setCollection($collection);
         $this->assertEquals($collection, $this->_block->getLoadedProductCollection());
     }
@@ -107,19 +114,23 @@ class ListTest extends \PHPUnit\Framework\TestCase
 
     public function testPrepareSortableFieldsByCategory()
     {
-        /** @var $category \Magento\Catalog\Model\Category */
-        $category = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\Category::class
+        /** @var $category Category */
+        $category = Bootstrap::getObjectManager()->create(
+            Category::class
         );
         $category->setDefaultSortBy('name');
         $this->_block->prepareSortableFieldsByCategory($category);
         $this->assertEquals('name', $this->_block->getSortBy());
     }
 
-    protected function _getLayout()
+    protected function setUp(): void
     {
-        return \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
+        Bootstrap::getObjectManager()->get(State::class)
+            ->setAreaCode('frontend');
+        $this->_block = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
+        )->createBlock(
+            ListProduct::class
         );
     }
 }

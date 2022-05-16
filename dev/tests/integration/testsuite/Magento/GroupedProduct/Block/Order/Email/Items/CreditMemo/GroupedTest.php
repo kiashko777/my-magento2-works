@@ -32,15 +32,6 @@ class GroupedTest extends TestCase
     private $creditMemo;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->block = Bootstrap::getObjectManager()->get(Grouped::class);
-        $this->creditMemo = Bootstrap::getObjectManager()->get(CreditMemo::class);
-    }
-
-    /**
      * Verify, grouped block will output correct product sku and name.
      *
      * @magentoDataFixture Magento/Sales/_files/creditmemo_with_grouped_product.php
@@ -56,5 +47,14 @@ class GroupedTest extends TestCase
         $output = $this->block->toHtml();
         self::assertStringContainsString('SKU: simple_11', $output);
         self::assertStringContainsString('"product-name">Simple 11', $output);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->block = Bootstrap::getObjectManager()->get(Grouped::class);
+        $this->creditMemo = Bootstrap::getObjectManager()->get(CreditMemo::class);
     }
 }

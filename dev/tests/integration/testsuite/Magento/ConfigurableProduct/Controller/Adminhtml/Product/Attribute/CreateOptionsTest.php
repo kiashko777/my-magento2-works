@@ -12,6 +12,7 @@ use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Framework\Serialize\SerializerInterface;
 use Magento\TestFramework\TestCase\AbstractBackendController;
+use ReflectionObject;
 
 /**
  * Checks creating attribute options process.
@@ -22,17 +23,6 @@ use Magento\TestFramework\TestCase\AbstractBackendController;
  */
 class CreateOptionsTest extends AbstractBackendController
 {
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
-        $productRepository->cleanCache();
-    }
-
     /**
      * @magentoDataFixture Magento/ConfigurableProduct/_files/product_configurable.php
      *
@@ -63,12 +53,23 @@ class CreateOptionsTest extends AbstractBackendController
     }
 
     /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
+        $productRepository->cleanCache();
+    }
+
+    /**
      * @inheritDoc
      */
     protected function tearDown(): void
     {
         parent::tearDown();
-        $reflection = new \ReflectionObject($this);
+        $reflection = new ReflectionObject($this);
         foreach ($reflection->getProperties() as $property) {
             if (!$property->isStatic() && 0 !== strpos($property->getDeclaringClass()->getName(), 'PHPUnit')) {
                 $property->setAccessible(true);

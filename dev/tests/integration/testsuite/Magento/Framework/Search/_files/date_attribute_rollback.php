@@ -5,25 +5,31 @@
  */
 
 /* Create attribute */
-/** @var $installer \Magento\Catalog\Setup\CategorySetup */
-$installer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Catalog\Setup\CategorySetup::class,
+/** @var $installer CategorySetup */
+
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Setup\CategorySetup;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$installer = Bootstrap::getObjectManager()->create(
+    CategorySetup::class,
     ['resourceName' => 'catalog_setup']
 );
-$registry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
+$registry = Bootstrap::getObjectManager()->get(Registry::class);
 
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
-/** @var $product \Magento\Catalog\Model\Product */
-$product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Product::class);
+/** @var $product Product */
+$product = Bootstrap::getObjectManager()->create(Product::class);
 $product = $product->loadByAttribute('sku', 'simple_product_with_date_attribute');
 if ($product->getId()) {
     $product->delete();
 }
 
 /** @var $attribute \Magento\Catalog\Model\ResourceModel\Eav\Attribute */
-$attribute = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+$attribute = Bootstrap::getObjectManager()->create(
     \Magento\Catalog\Model\ResourceModel\Eav\Attribute::class
 );
 $attribute->loadByCode($installer->getEntityTypeId('catalog_product'), 'date_attribute');

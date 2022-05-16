@@ -3,14 +3,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Legacy;
 
+use Magento\Framework\App\Utility\AggregateInvoker;
 use Magento\Framework\Component\ComponentRegistrar;
+use Magento\TestFramework\Utility\ChangedFiles;
+use Magento\TestFramework\Utility\CodeCheck;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Tests to find usage of restricted code
  */
-class RestrictedCodeTest extends \PHPUnit\Framework\TestCase
+class RestrictedCodeTest extends TestCase
 {
     /**@#+
      * Lists of restricted entities from fixtures
@@ -31,11 +36,6 @@ class RestrictedCodeTest extends \PHPUnit\Framework\TestCase
      * @var ComponentRegistrar
      */
     private $componentRegistrar;
-
-    protected function setUp(): void
-    {
-        $this->componentRegistrar = new ComponentRegistrar();
-    }
 
     /**
      * Read fixtures into memory as arrays
@@ -85,8 +85,8 @@ class RestrictedCodeTest extends \PHPUnit\Framework\TestCase
      */
     public function testPhpFiles()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
-        $testFiles = \Magento\TestFramework\Utility\ChangedFiles::getPhpFiles(__DIR__ . '/../_files/changed_files*');
+        $invoker = new AggregateInvoker($this);
+        $testFiles = ChangedFiles::getPhpFiles(__DIR__ . '/../_files/changed_files*');
         foreach (self::$_fixtureFiles as $fixtureFile) {
             if (array_key_exists($fixtureFile, $testFiles)) {
                 unset($testFiles[$fixtureFile]);
@@ -117,7 +117,7 @@ class RestrictedCodeTest extends \PHPUnit\Framework\TestCase
             }
 
             $this->assertFalse(
-                \Magento\TestFramework\Utility\CodeCheck::isClassUsed($restrictedClass, $content),
+                CodeCheck::isClassUsed($restrictedClass, $content),
                 sprintf(
                     "Class '%s' is restricted in %s. Suggested replacement: %s",
                     $restrictedClass,
@@ -140,5 +140,10 @@ class RestrictedCodeTest extends \PHPUnit\Framework\TestCase
             return $this->componentRegistrar->getPath($pathInfo['type'], $pathInfo['name']) . '/' . $pathInfo['path'];
         }
         return BP . '/setup/' . $pathInfo['path'];
+    }
+
+    protected function setUp(): void
+    {
+        $this->componentRegistrar = new ComponentRegistrar();
     }
 }

@@ -31,23 +31,23 @@ $ruleLabel = $ruleLabelFactory->create();
 $ruleLabel->setStoreId(0);
 $ruleLabel->setStoreLabel('50% Off for all orders');
 $ruleData = [
-        'name' => '50% Off for all orders',
-        'is_active' => 1,
-        'customer_group_ids' => [CustomerGroupManagement::NOT_LOGGED_IN_ID, 1],
-        'coupon_type' => RuleData::COUPON_TYPE_NO_COUPON,
-        'conditions' => [],
-        'simple_action' => 'by_percent',
-        'discount_amount' => 50,
-        'discount_step' => 0,
-        'website_ids' => [
-            $objectManager->get(
-                StoreManagerInterface::class
-            )->getWebsite()->getId(),
-        ],
-        'discount_qty' => 0,
-        'apply_to_shipping' => 1,
-        'simple_free_shipping' => 1,
-        'stop_rules_processing' => 0
+    'name' => '50% Off for all orders',
+    'is_active' => 1,
+    'customer_group_ids' => [CustomerGroupManagement::NOT_LOGGED_IN_ID, 1],
+    'coupon_type' => RuleData::COUPON_TYPE_NO_COUPON,
+    'conditions' => [],
+    'simple_action' => 'by_percent',
+    'discount_amount' => 50,
+    'discount_step' => 0,
+    'website_ids' => [
+        $objectManager->get(
+            StoreManagerInterface::class
+        )->getWebsite()->getId(),
+    ],
+    'discount_qty' => 0,
+    'apply_to_shipping' => 1,
+    'simple_free_shipping' => 1,
+    'stop_rules_processing' => 0
 ];
 $dataObjectHelper->populateWithArray($salesRule, $ruleData, RuleInterface::class);
 $salesRule->setStoreLabels([$ruleLabel]);

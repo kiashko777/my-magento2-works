@@ -44,20 +44,6 @@ class CategoryIndexTest extends AbstractBackendController
 
     /** @var DefaultCategory */
     private $defaultCategoryHelper;
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
-        $this->product = $this->productRepository->get('product_with_category');
-        $this->tableMaintainer = $this->_objectManager->create(TableMaintainer::class);
-        $this->productResource = $this->_objectManager->get(ProductResource::class);
-        $this->connection = $this->productResource->getConnection();
-        $this->defaultCategoryHelper = $this->_objectManager->get(DefaultCategory::class);
-    }
 
     /**
      * @return void
@@ -67,35 +53,6 @@ class CategoryIndexTest extends AbstractBackendController
         $postData = $this->preparePostData();
         $this->dispatchSaveProductRequest($postData);
         $this->assertEmpty($this->fetchIndexData());
-    }
-
-    /**
-     * @magentoDataFixture Magento/Catalog/_files/category_product_assigned_to_website.php
-     * @magentoDataFixture Magento/Catalog/_files/category.php
-     *
-     * @return void
-     */
-    public function testReassignCategory(): void
-    {
-        $postData = $this->preparePostData(333);
-        $this->dispatchSaveProductRequest($postData);
-        $result = $this->fetchIndexData();
-        $this->assertNotEmpty($result);
-        $this->assertEquals(333, reset($result)['category_id']);
-    }
-
-    /**
-     * Perform request
-     *
-     * @param array $postData
-     * @return void
-     */
-    private function dispatchSaveProductRequest(array $postData): void
-    {
-        $this->getRequest()->setPostValue($postData);
-        $this->getRequest()->setMethod(Http::METHOD_POST);
-        $this->dispatch('backend/catalog/product/save/id/' . $this->product->getEntityId());
-        $this->assertSessionMessages($this->equalTo(['You saved the product.']), MessageInterface::TYPE_SUCCESS);
     }
 
     /**
@@ -117,6 +74,20 @@ class CategoryIndexTest extends AbstractBackendController
     }
 
     /**
+     * Perform request
+     *
+     * @param array $postData
+     * @return void
+     */
+    private function dispatchSaveProductRequest(array $postData): void
+    {
+        $this->getRequest()->setPostValue($postData);
+        $this->getRequest()->setMethod(Http::METHOD_POST);
+        $this->dispatch('backend/catalog/product/save/id/' . $this->product->getEntityId());
+        $this->assertSessionMessages($this->equalTo(['You saved the product.']), MessageInterface::TYPE_SUCCESS);
+    }
+
+    /**
      * Fetch data from category product index table
      *
      * @return array
@@ -130,5 +101,35 @@ class CategoryIndexTest extends AbstractBackendController
             ->where('index_table.category_id != ?', $this->defaultCategoryHelper->getId());
 
         return $this->connection->fetchAll($select);
+    }
+
+    /**
+     * @magentoDataFixture Magento/Catalog/_files/category_product_assigned_to_website.php
+     * @magentoDataFixture Magento/Catalog/_files/category.php
+     *
+     * @return void
+     */
+    public function testReassignCategory(): void
+    {
+        $postData = $this->preparePostData(333);
+        $this->dispatchSaveProductRequest($postData);
+        $result = $this->fetchIndexData();
+        $this->assertNotEmpty($result);
+        $this->assertEquals(333, reset($result)['category_id']);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
+        $this->product = $this->productRepository->get('product_with_category');
+        $this->tableMaintainer = $this->_objectManager->create(TableMaintainer::class);
+        $this->productResource = $this->_objectManager->get(ProductResource::class);
+        $this->connection = $this->productResource->getConnection();
+        $this->defaultCategoryHelper = $this->_objectManager->get(DefaultCategory::class);
     }
 }

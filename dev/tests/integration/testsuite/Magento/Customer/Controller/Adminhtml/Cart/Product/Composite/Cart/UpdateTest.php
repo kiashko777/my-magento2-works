@@ -84,6 +84,22 @@ class UpdateTest extends AbstractBackendController
     }
 
     /**
+     * Dispatch update quote item in customer shopping cart
+     * using backend/customer/cart_product_composite_cart/update action.
+     *
+     * @param array $params
+     * @param array $postValue
+     * @return void
+     */
+    private function dispatchCompositeCartUpdate(array $params = [], array $postValue = []): void
+    {
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
+        $this->getRequest()->setParams($params);
+        $this->getRequest()->setPostValue($postValue);
+        $this->dispatch('backend/customer/cart_product_composite_cart/update');
+    }
+
+    /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
      * @return void
      */
@@ -205,85 +221,6 @@ class UpdateTest extends AbstractBackendController
     }
 
     /**
-     * Tests updating bundle item quantity in the customer's shopping cart.
-     *
-     * @magentoDataFixture Magento/Customer/_files/customer.php
-     * @magentoDataFixture Magento/Checkout/_files/quote_with_bundle_product.php
-     * @dataProvider bundleOptionQuantityProvider
-     * @param string $quantity
-     * @param string|null $message
-     * @return void
-     */
-    public function testUpdateBundleOptionQuantity(string $quantity, ?string $message): void
-    {
-        $productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
-        $bundleOptionList = $this->_objectManager->get(OptionList::class);
-        $getQuoteByReservedOrderId = $this->_objectManager->get(GetQuoteByReservedOrderId::class);
-
-        $bundleProduct = $productRepository->get('bundle-product');
-        $bundleOptions = $bundleOptionList->getItems($bundleProduct);
-        $option = reset($bundleOptions);
-        $productLinks = $option->getProductLinks();
-        $this->assertNotNull($productLinks[0]);
-
-        $customer = $this->customerRepository->get('customer@example.com');
-        $quote = $getQuoteByReservedOrderId->execute('test_cart_with_bundle');
-        $quote->assignCustomer($customer);
-        $this->quoteRepository->save($quote);
-        $quoteItem = $quote->getItemsCollection()->getFirstItem();
-        $this->assertNotEmpty($quoteItem->getId());
-
-        $postValue = [
-            'bundle_option' => [
-                $option->getOptionId() => $productLinks[0]->getId(),
-            ],
-            'qty' => $quantity,
-            'id' => $quoteItem->getId(),
-            'as_js_varname' => 'iFrameResponse',
-        ];
-
-        $this->dispatchCompositeCartUpdate(
-            [
-                'customer_id' => $customer->getId(),
-                'website_id' => $customer->getWebsiteId(),
-            ],
-            $postValue
-        );
-
-        $updateResult = $this->session->getCompositeProductResult();
-        $this->assertEquals($message, $updateResult->getMessage());
-    }
-
-    /**
-     * @return array
-     */
-    public function bundleOptionQuantityProvider(): array
-    {
-        return [
-            'Quantity, less than allowed in the Shopping Cart' => [
-                '0.1',
-                'The fewest you may purchase is 1.',
-            ],
-            'Decimal quantity not allowed' => [
-                '1.1',
-                'You cannot use decimal quantity for this product.',
-            ],
-            'Quantity, greater than available' => [
-                '1000',
-                'The requested qty is not available',
-            ],
-            'Quantity, greater than allowed in the Shopping Cart' => [
-                '100000',
-                'The requested qty exceeds the maximum qty allowed in shopping cart',
-            ],
-            'Allowed quantity' => [
-                '2',
-                null,
-            ],
-        ];
-    }
-
-    /**
      * Prepare quote item options and sku for update.
      *
      * @param QuoteItem $quoteItem
@@ -390,18 +327,81 @@ class UpdateTest extends AbstractBackendController
     }
 
     /**
-     * Dispatch update quote item in customer shopping cart
-     * using backend/customer/cart_product_composite_cart/update action.
+     * Tests updating bundle item quantity in the customer's shopping cart.
      *
-     * @param array $params
-     * @param array $postValue
+     * @magentoDataFixture Magento/Customer/_files/customer.php
+     * @magentoDataFixture Magento/Checkout/_files/quote_with_bundle_product.php
+     * @dataProvider bundleOptionQuantityProvider
+     * @param string $quantity
+     * @param string|null $message
      * @return void
      */
-    private function dispatchCompositeCartUpdate(array $params = [], array $postValue = []): void
+    public function testUpdateBundleOptionQuantity(string $quantity, ?string $message): void
     {
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
-        $this->getRequest()->setParams($params);
-        $this->getRequest()->setPostValue($postValue);
-        $this->dispatch('backend/customer/cart_product_composite_cart/update');
+        $productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
+        $bundleOptionList = $this->_objectManager->get(OptionList::class);
+        $getQuoteByReservedOrderId = $this->_objectManager->get(GetQuoteByReservedOrderId::class);
+
+        $bundleProduct = $productRepository->get('bundle-product');
+        $bundleOptions = $bundleOptionList->getItems($bundleProduct);
+        $option = reset($bundleOptions);
+        $productLinks = $option->getProductLinks();
+        $this->assertNotNull($productLinks[0]);
+
+        $customer = $this->customerRepository->get('customer@example.com');
+        $quote = $getQuoteByReservedOrderId->execute('test_cart_with_bundle');
+        $quote->assignCustomer($customer);
+        $this->quoteRepository->save($quote);
+        $quoteItem = $quote->getItemsCollection()->getFirstItem();
+        $this->assertNotEmpty($quoteItem->getId());
+
+        $postValue = [
+            'bundle_option' => [
+                $option->getOptionId() => $productLinks[0]->getId(),
+            ],
+            'qty' => $quantity,
+            'id' => $quoteItem->getId(),
+            'as_js_varname' => 'iFrameResponse',
+        ];
+
+        $this->dispatchCompositeCartUpdate(
+            [
+                'customer_id' => $customer->getId(),
+                'website_id' => $customer->getWebsiteId(),
+            ],
+            $postValue
+        );
+
+        $updateResult = $this->session->getCompositeProductResult();
+        $this->assertEquals($message, $updateResult->getMessage());
+    }
+
+    /**
+     * @return array
+     */
+    public function bundleOptionQuantityProvider(): array
+    {
+        return [
+            'Quantity, less than allowed in the Shopping Cart' => [
+                '0.1',
+                'The fewest you may purchase is 1.',
+            ],
+            'Decimal quantity not allowed' => [
+                '1.1',
+                'You cannot use decimal quantity for this product.',
+            ],
+            'Quantity, greater than available' => [
+                '1000',
+                'The requested qty is not available',
+            ],
+            'Quantity, greater than allowed in the Shopping Cart' => [
+                '100000',
+                'The requested qty exceeds the maximum qty allowed in shopping cart',
+            ],
+            'Allowed quantity' => [
+                '2',
+                null,
+            ],
+        ];
     }
 }

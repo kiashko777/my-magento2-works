@@ -3,19 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\View\Fixture\Block;
 
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Phrase;
+use Magento\Framework\View\Element\AbstractBlock;
 use Magento\Framework\View\LayoutInterface;
 
-class BrokenLayout extends \Magento\Framework\View\Element\AbstractBlock
+class BrokenLayout extends AbstractBlock
 {
     /**
      * @param LayoutInterface $layout
-     * @throws LocalizedException
      * @return void
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     * @throws LocalizedException
      */
     public function setLayout(LayoutInterface $layout)
     {

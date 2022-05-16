@@ -8,9 +8,12 @@
  * Scan source code for DB schema or data updates for patch releases in non-actual branches
  * Backwards compatibility test
  */
+
 namespace Magento\Test\Legacy;
 
-class ModuleDBChangeTest extends \PHPUnit\Framework\TestCase
+use PHPUnit\Framework\TestCase;
+
+class ModuleDBChangeTest extends TestCase
 {
     /**
      * @var string

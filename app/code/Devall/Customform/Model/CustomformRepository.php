@@ -21,25 +21,16 @@ use Magento\Store\Model\StoreManagerInterface;
 class CustomformRepository implements CustomformRepositoryInterface
 {
 
-    private $collectionProcessor;
-
     protected $dataObjectHelper;
-
     protected $extensionAttributesJoinProcessor;
-
     protected $customformCollectionFactory;
-
     protected $customformFactory;
-
     protected $searchResultsFactory;
-
     protected $dataObjectProcessor;
-
     protected $extensibleDataObjectConverter;
     protected $resource;
-
     protected $dataCustomformFactory;
-
+    private $collectionProcessor;
     private $storeManager;
 
 
@@ -113,19 +104,6 @@ class CustomformRepository implements CustomformRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function get($customformId)
-    {
-        $customform = $this->customformFactory->create();
-        $this->resource->load($customform, $customformId);
-        if (!$customform->getId()) {
-            throw new NoSuchEntityException(__('Customform with id "%1" does not exist.', $customformId));
-        }
-        return $customform->getDataModel();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function getList(
         \Magento\Framework\Api\SearchCriteriaInterface $criteria
     )
@@ -155,6 +133,14 @@ class CustomformRepository implements CustomformRepositoryInterface
     /**
      * {@inheritdoc}
      */
+    public function deleteById($customformId)
+    {
+        return $this->delete($this->get($customformId));
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function delete(
         \Devall\Customform\Api\Data\CustomformInterface $customform
     )
@@ -175,8 +161,13 @@ class CustomformRepository implements CustomformRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function deleteById($customformId)
+    public function get($customformId)
     {
-        return $this->delete($this->get($customformId));
+        $customform = $this->customformFactory->create();
+        $this->resource->load($customform, $customformId);
+        if (!$customform->getId()) {
+            throw new NoSuchEntityException(__('Customform with id "%1" does not exist.', $customformId));
+        }
+        return $customform->getDataModel();
     }
 }

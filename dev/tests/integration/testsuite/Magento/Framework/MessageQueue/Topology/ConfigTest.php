@@ -3,31 +3,30 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\MessageQueue\Topology;
 
 use Magento\Framework\MessageQueue\Topology\Config\ExchangeConfigItem\BindingInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test of queue topology configuration reading and parsing.
  *
  * @magentoCache config disabled
  */
-class ConfigTest extends \PHPUnit\Framework\TestCase
+class ConfigTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
-
     public function testGetExchangeByName()
     {
-        /** @var \Magento\Framework\MessageQueue\Topology\ConfigInterface $config */
-        $config = $this->objectManager->create(\Magento\Framework\MessageQueue\Topology\ConfigInterface::class);
+        /** @var ConfigInterface $config */
+        $config = $this->objectManager->create(ConfigInterface::class);
         $exchange = $config->getExchange('magento-topic-based-exchange1', 'amqp');
         $this->assertEquals('magento-topic-based-exchange1', $exchange->getName());
         $this->assertEquals('topic', $exchange->getType());
@@ -49,8 +48,8 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
 
     public function testGetExchangeByNameWithDefaultValues()
     {
-        /** @var \Magento\Framework\MessageQueue\Topology\ConfigInterface $config */
-        $config = $this->objectManager->create(\Magento\Framework\MessageQueue\Topology\ConfigInterface::class);
+        /** @var ConfigInterface $config */
+        $config = $this->objectManager->create(ConfigInterface::class);
         $exchange = $config->getExchange('magento-topic-based-exchange2', 'amqp');
         $this->assertEquals('magento-topic-based-exchange2', $exchange->getName());
         $this->assertEquals('topic', $exchange->getType());
@@ -78,8 +77,8 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
 
     public function testGetAllExchanges()
     {
-        /** @var \Magento\Framework\MessageQueue\Topology\ConfigInterface $config */
-        $config = $this->objectManager->create(\Magento\Framework\MessageQueue\Topology\ConfigInterface::class);
+        /** @var ConfigInterface $config */
+        $config = $this->objectManager->create(ConfigInterface::class);
         $exchanges = $config->getExchanges();
         $expectedResults = ['magento-topic-based-exchange1', 'magento-topic-based-exchange2'];
         $actual = [];
@@ -87,5 +86,10 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
             $actual[] = $exchange->getName();
         }
         $this->assertEmpty(array_diff($expectedResults, $actual));
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

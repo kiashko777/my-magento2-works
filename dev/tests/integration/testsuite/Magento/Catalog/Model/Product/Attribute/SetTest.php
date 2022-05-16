@@ -19,6 +19,7 @@ use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Eav\Model\GetAttributeGroupByName;
 use Magento\TestFramework\Eav\Model\ResourceModel\GetEntityIdByAttributeId;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Provides tests for attribute set model saving.
@@ -26,7 +27,7 @@ use Magento\TestFramework\Helper\Bootstrap;
  * @magentoDbIsolation enabled
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class SetTest extends \PHPUnit\Framework\TestCase
+class SetTest extends TestCase
 {
     /**
      * @var ObjectManagerInterface
@@ -74,23 +75,6 @@ class SetTest extends \PHPUnit\Framework\TestCase
     private $getEntityIdByAttributeId;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->setRepository = $this->objectManager->get(AttributeSetRepositoryInterface::class);
-        $this->attributeRepository = $this->objectManager->create(ProductAttributeRepositoryInterface::class);
-        $this->config = $this->objectManager->get(Config::class);
-        $this->defaultSetId = (int)$this->config->getEntityType(Product::ENTITY)->getDefaultAttributeSetId();
-        $this->attributeSetResource = $this->objectManager->get(AttributeSetResource::class);
-        $this->attributeCollectionFactory = $this->objectManager->get(CollectionFactory ::class);
-        $this->attributeGroupByName = $this->objectManager->get(GetAttributeGroupByName::class);
-        $this->getEntityIdByAttributeId = $this->objectManager->get(GetEntityIdByAttributeId::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Eav/_files/attribute_with_options.php
      * @dataProvider addAttributeToSetDataProvider
      * @param string $groupName
@@ -122,6 +106,36 @@ class SetTest extends \PHPUnit\Framework\TestCase
             $attributeId => [$this->defaultSetId => ['group_id' => $groupId, 'group_sort' => '1', 'sort' => '1']],
         ];
         $this->assertEquals($expectedInfo, $setInfo);
+    }
+
+    /**
+     * Returns attribute group by name.
+     *
+     * @param string $groupName
+     * @return AttributeGroupInterface|null
+     */
+    private function getAttributeGroup(string $groupName): ?AttributeGroupInterface
+    {
+        return $this->attributeGroupByName->execute($this->defaultSetId, $groupName);
+    }
+
+    /**
+     * Returns attribute set data for saving.
+     *
+     * @param array $additional
+     * @return array
+     */
+    private function getAttributeSetData(array $additional): array
+    {
+        $data = [
+            'attributes' => [],
+            'groups' => [],
+            'not_attributes' => [],
+            'removeGroups' => [],
+            'attribute_set_name' => 'Default',
+        ];
+
+        return array_merge($data, $additional);
     }
 
     /**
@@ -196,6 +210,21 @@ class SetTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Returns list of unused attributes in attribute set.
+     *
+     * @param int $setId
+     * @return array
+     */
+    private function getSetExcludedAttributes(int $setId): array
+    {
+        $collection = $this->attributeCollectionFactory->create()
+            ->setExcludeSetFilter($setId);
+        $result = $collection->getColumnValues(AttributeInterface::ATTRIBUTE_CODE);
+
+        return $result;
+    }
+
+    /**
      * @return void
      */
     public function testSaveWithRemovedAttribute(): void
@@ -218,51 +247,6 @@ class SetTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Returns attribute set data for saving.
-     *
-     * @param array $additional
-     * @return array
-     */
-    private function getAttributeSetData(array $additional): array
-    {
-        $data = [
-            'attributes' => [],
-            'groups' => [],
-            'not_attributes' => [],
-            'removeGroups' => [],
-            'attribute_set_name' => 'Default',
-        ];
-
-        return array_merge($data, $additional);
-    }
-
-    /**
-     * Returns attribute group by name.
-     *
-     * @param string $groupName
-     * @return AttributeGroupInterface|null
-     */
-    private function getAttributeGroup(string $groupName): ?AttributeGroupInterface
-    {
-        return $this->attributeGroupByName->execute($this->defaultSetId, $groupName);
-    }
-
-    /**
-     * Returns list of unused attributes in attribute set.
-     *
-     * @param int $setId
-     * @return array
-     */
-    private function getSetExcludedAttributes(int $setId): array
-    {
-        $collection = $this->attributeCollectionFactory->create()
-            ->setExcludeSetFilter($setId);
-        $result = $collection->getColumnValues(AttributeInterface::ATTRIBUTE_CODE);
-
-        return $result;
-    }
-
-    /**
      * Returns entity attribute id.
      *
      * @param int $setId
@@ -272,5 +256,22 @@ class SetTest extends \PHPUnit\Framework\TestCase
     private function getEntityAttributeId(int $setId, int $attributeId): int
     {
         return $this->getEntityIdByAttributeId->execute($setId, $attributeId);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->setRepository = $this->objectManager->get(AttributeSetRepositoryInterface::class);
+        $this->attributeRepository = $this->objectManager->create(ProductAttributeRepositoryInterface::class);
+        $this->config = $this->objectManager->get(Config::class);
+        $this->defaultSetId = (int)$this->config->getEntityType(Product::ENTITY)->getDefaultAttributeSetId();
+        $this->attributeSetResource = $this->objectManager->get(AttributeSetResource::class);
+        $this->attributeCollectionFactory = $this->objectManager->get(CollectionFactory ::class);
+        $this->attributeGroupByName = $this->objectManager->get(GetAttributeGroupByName::class);
+        $this->getEntityIdByAttributeId = $this->objectManager->get(GetEntityIdByAttributeId::class);
     }
 }

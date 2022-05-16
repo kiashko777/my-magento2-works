@@ -7,10 +7,12 @@
 
 namespace Magento\Backend\Controller\Adminhtml\Dashboard;
 
+use Magento\TestFramework\TestCase\AbstractBackendController;
+
 /**
  * Test product viewed backend controller.
  */
-class ProductsViewedTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class ProductsViewedTest extends AbstractBackendController
 {
     /**
      * @magentoAppArea Adminhtml

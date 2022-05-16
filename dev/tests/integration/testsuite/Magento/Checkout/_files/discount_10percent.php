@@ -6,30 +6,37 @@
  * See COPYING.txt for license details.
  */
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-/** @var \Magento\SalesRule\Model\RuleFactory $salesRule */
-$salesRuleFactory = $objectManager->get(\Magento\SalesRule\Model\RuleFactory::class);
+use Magento\Customer\Model\GroupManagement;
+use Magento\Framework\Registry;
+use Magento\SalesRule\Model\Rule;
+use Magento\SalesRule\Model\RuleFactory;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var \Magento\SalesRule\Model\Rule $salesRule */
+$objectManager = Bootstrap::getObjectManager();
+/** @var RuleFactory $salesRule */
+$salesRuleFactory = $objectManager->get(RuleFactory::class);
+
+/** @var Rule $salesRule */
 $salesRule = $salesRuleFactory->create();
 
 $data = [
     'name' => 'Test Coupon',
     'is_active' => true,
     'website_ids' => [
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Store\Model\StoreManagerInterface::class
+        Bootstrap::getObjectManager()->get(
+            StoreManagerInterface::class
         )->getStore()->getWebsiteId()
     ],
-    'customer_group_ids' => [\Magento\Customer\Model\GroupManagement::NOT_LOGGED_IN_ID, 1],
-    'coupon_type' => \Magento\SalesRule\Model\Rule::COUPON_TYPE_SPECIFIC,
+    'customer_group_ids' => [GroupManagement::NOT_LOGGED_IN_ID, 1],
+    'coupon_type' => Rule::COUPON_TYPE_SPECIFIC,
     'coupon_code' => uniqid(),
-    'simple_action' => \Magento\SalesRule\Model\Rule::BY_PERCENT_ACTION,
+    'simple_action' => Rule::BY_PERCENT_ACTION,
     'discount_amount' => 10,
     'discount_step' => 1
 ];
 
 $salesRule->loadPost($data)->setUseAutoGeneration(false)->save();
-$objectManager->get(\Magento\Framework\Registry::class)->unregister('Magento/Checkout/_file/discount_10percent');
-$objectManager->get(\Magento\Framework\Registry::class)
+$objectManager->get(Registry::class)->unregister('Magento/Checkout/_file/discount_10percent');
+$objectManager->get(Registry::class)
     ->register('Magento/Checkout/_file/discount_10percent', $salesRule->getRuleId());

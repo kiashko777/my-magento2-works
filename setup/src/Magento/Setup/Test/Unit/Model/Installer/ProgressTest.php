@@ -29,7 +29,7 @@ class ProgressTest extends TestCase
      */
     public function constructorExceptionInvalidTotalDataProvider()
     {
-        return [[0,0], [0, 1], [[], 1]];
+        return [[0, 0], [0, 1], [[], 1]];
     }
 
     public function testConstructorExceptionCurrentExceedsTotal()

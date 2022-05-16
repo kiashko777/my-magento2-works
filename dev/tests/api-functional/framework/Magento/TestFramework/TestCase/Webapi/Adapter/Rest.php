@@ -6,37 +6,42 @@
 
 namespace Magento\TestFramework\TestCase\Webapi\Adapter;
 
-use Magento\TestFramework\Helper\Bootstrap;
+use Exception;
+use LogicException;
 use Magento\Framework\Webapi\Rest\Request;
+use Magento\Integration\Model\Oauth\Consumer;
+use Magento\Integration\Model\Oauth\Token;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Authentication\OauthHelper;
+use Magento\TestFramework\Authentication\Rest\OauthClient;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use Magento\TestFramework\TestCase\Webapi\Adapter\Rest\DocumentationGenerator;
+use Magento\TestFramework\TestCase\Webapi\Adapter\Rest\RestClient;
+use Magento\TestFramework\TestCase\Webapi\AdapterInterface;
+use Magento\Webapi\Model\Config;
 
 /**
  * Test client for REST API testing.
  */
-class Rest implements \Magento\TestFramework\TestCase\Webapi\AdapterInterface
+class Rest implements AdapterInterface
 {
-    /** @var \Magento\Webapi\Model\Config */
-    protected $_config;
-
-    /** @var \Magento\Integration\Model\Oauth\Consumer */
+    /** @var Consumer */
     protected static $_consumer;
-
-    /** @var \Magento\Integration\Model\Oauth\Token */
+    /** @var Token */
     protected static $_token;
-
     /** @var string */
     protected static $_consumerKey;
-
     /** @var string */
     protected static $_consumerSecret;
-
     /** @var string */
     protected static $_verifier;
-
-    /** @var \Magento\TestFramework\TestCase\Webapi\Adapter\Rest\RestClient */
+    /** @var Config */
+    protected $_config;
+    /** @var RestClient */
     protected $restClient;
 
-    /** @var \Magento\TestFramework\TestCase\Webapi\Adapter\Rest\DocumentationGenerator */
+    /** @var DocumentationGenerator */
     protected $documentationGenerator;
 
     /** @var string */
@@ -47,22 +52,22 @@ class Rest implements \Magento\TestFramework\TestCase\Webapi\AdapterInterface
      */
     public function __construct()
     {
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
+        /** @var $objectManager ObjectManager */
         $objectManager = Bootstrap::getObjectManager();
-        $this->_config = $objectManager->get(\Magento\Webapi\Model\Config::class);
-        $this->restClient = $objectManager->get(\Magento\TestFramework\TestCase\Webapi\Adapter\Rest\RestClient::class);
+        $this->_config = $objectManager->get(Config::class);
+        $this->restClient = $objectManager->get(RestClient::class);
         $this->documentationGenerator = $objectManager->get(
-            \Magento\TestFramework\TestCase\Webapi\Adapter\Rest\DocumentationGenerator::class
+            DocumentationGenerator::class
         );
         $this->defaultStoreCode = Bootstrap::getObjectManager()
-            ->get(\Magento\Store\Model\StoreManagerInterface::class)
+            ->get(StoreManagerInterface::class)
             ->getStore()
             ->getCode();
     }
 
     /**
      * {@inheritdoc}
-     * @throws \LogicException
+     * @throws LogicException
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
      */
@@ -73,7 +78,7 @@ class Rest implements \Magento\TestFramework\TestCase\Webapi\AdapterInterface
         $httpMethod = $this->_getRestHttpMethod($serviceInfo);
         //Get a valid token
         $accessCredentials = OauthHelper::getApiAccessCredentials(null, $integration);
-        /** @var $oAuthClient \Magento\TestFramework\Authentication\Rest\OauthClient */
+        /** @var $oAuthClient OauthClient */
         $oAuthClient = $accessCredentials['oauth_client'];
         $urlFormEncoded = false;
         // we're always using JSON
@@ -105,7 +110,7 @@ class Rest implements \Magento\TestFramework\TestCase\Webapi\AdapterInterface
                 $response = $this->restClient->delete($resourcePath, $authHeader);
                 break;
             default:
-                throw new \LogicException("HTTP method '{$httpMethod}' is not supported.");
+                throw new LogicException("HTTP method '{$httpMethod}' is not supported.");
         }
         if (defined('GENERATE_REST_DOCUMENTATION') && GENERATE_REST_DOCUMENTATION) {
             $this->documentationGenerator->generateDocumentation($httpMethod, $resourcePath, $arguments, $response);
@@ -118,7 +123,7 @@ class Rest implements \Magento\TestFramework\TestCase\Webapi\AdapterInterface
      *
      * @param array $serviceInfo
      * @return string
-     * @throws \Exception
+     * @throws Exception
      */
     protected function _getRestResourcePath($serviceInfo)
     {
@@ -126,7 +131,7 @@ class Rest implements \Magento\TestFramework\TestCase\Webapi\AdapterInterface
             $resourcePath = $serviceInfo['rest']['resourcePath'];
         }
         if (!isset($resourcePath)) {
-            throw new \Exception("REST endpoint cannot be identified.");
+            throw new Exception("REST endpoint cannot be identified.");
         }
         return $resourcePath;
     }
@@ -136,7 +141,7 @@ class Rest implements \Magento\TestFramework\TestCase\Webapi\AdapterInterface
      *
      * @param array $serviceInfo
      * @return string
-     * @throws \Exception
+     * @throws Exception
      */
     protected function _getRestHttpMethod($serviceInfo)
     {
@@ -144,7 +149,7 @@ class Rest implements \Magento\TestFramework\TestCase\Webapi\AdapterInterface
             $httpMethod = $serviceInfo['rest']['httpMethod'];
         }
         if (!isset($httpMethod)) {
-            throw new \Exception("REST HTTP method cannot be identified.");
+            throw new Exception("REST HTTP method cannot be identified.");
         }
         return $httpMethod;
     }

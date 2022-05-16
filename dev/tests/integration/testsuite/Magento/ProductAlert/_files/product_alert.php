@@ -6,6 +6,8 @@
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Customer\Model\CustomerRegistry;
+use Magento\ProductAlert\Model\Price;
+use Magento\ProductAlert\Model\Stock;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
@@ -20,19 +22,19 @@ $product = $productRepository->get('simple');
 $customerRegistry = Bootstrap::getObjectManager()->create(CustomerRegistry::class);
 $customer = $customerRegistry->retrieve(1);
 
-$price = Bootstrap::getObjectManager()->create(\Magento\ProductAlert\Model\Price::class);
+$price = Bootstrap::getObjectManager()->create(Price::class);
 $price->setCustomerId(
     $customer->getId()
 )->setProductId(
     $product->getId()
 )->setPrice(
-    $product->getPrice()+1
+    $product->getPrice() + 1
 )->setWebsiteId(
     1
 );
 $price->save();
 
-$stock = Bootstrap::getObjectManager()->create(\Magento\ProductAlert\Model\Stock::class);
+$stock = Bootstrap::getObjectManager()->create(Stock::class);
 $stock->setCustomerId(
     $customer->getId()
 )->setProductId(

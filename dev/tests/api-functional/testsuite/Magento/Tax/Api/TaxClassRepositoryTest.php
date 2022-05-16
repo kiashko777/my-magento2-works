@@ -10,9 +10,12 @@ use Magento\Framework\Api\FilterBuilder;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Api\SortOrderBuilder;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Tax\Api\Data\TaxClassInterface;
 use Magento\Tax\Api\Data\TaxClassInterfaceFactory;
 use Magento\Tax\Model\ClassModel;
 use Magento\Tax\Model\ClassModelRegistry;
+use Magento\Tax\Model\TaxClass\Repository;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
@@ -25,52 +28,19 @@ class TaxClassRepositoryTest extends WebapiAbstract
     const SERVICE_NAME = 'taxTaxClassRepositoryV1';
     const SERVICE_VERSION = 'V1';
     const RESOURCE_PATH = '/V1/taxClasses';
-
+    const SAMPLE_TAX_CLASS_NAME = 'Wholesale Customer';
     /** @var SearchCriteriaBuilder */
     private $searchCriteriaBuilder;
-
     /** @var FilterBuilder */
     private $filterBuilder;
-
     /** @var  SortOrderBuilder */
     private $sortOrderBuilder;
-
     /** @var TaxClassInterfaceFactory */
     private $taxClassFactory;
-
     /** @var TaxClassRepositoryInterface */
     private $taxClassRepository;
-
     /** @var ClassModelRegistry */
     private $taxClassRegistry;
-
-    const SAMPLE_TAX_CLASS_NAME = 'Wholesale Customer';
-
-    /**
-     * Execute per test initialization.
-     */
-    protected function setUp(): void
-    {
-        $this->searchCriteriaBuilder = Bootstrap::getObjectManager()->create(
-            \Magento\Framework\Api\SearchCriteriaBuilder::class
-        );
-        $this->filterBuilder = Bootstrap::getObjectManager()->create(
-            \Magento\Framework\Api\FilterBuilder::class
-        );
-        $this->taxClassFactory = Bootstrap::getObjectManager()->create(
-            \Magento\Tax\Api\Data\TaxClassInterfaceFactory::class
-        );
-        $this->taxClassRegistry = Bootstrap::getObjectManager()->create(
-            \Magento\Tax\Model\ClassModelRegistry::class
-        );
-        $this->taxClassRepository = Bootstrap::getObjectManager()->create(
-            \Magento\Tax\Model\TaxClass\Repository::class,
-            ['classModelRegistry' => $this->taxClassRegistry]
-        );
-        $this->sortOrderBuilder = Bootstrap::getObjectManager()->create(
-            \Magento\Framework\Api\SortOrderBuilder::class
-        );
-    }
 
     /**
      * Test create Data\TaxClassInterface
@@ -78,14 +48,14 @@ class TaxClassRepositoryTest extends WebapiAbstract
     public function testCreateTaxClass()
     {
         $taxClassName = self::SAMPLE_TAX_CLASS_NAME . uniqid();
-        /** @var  \Magento\Tax\Api\Data\TaxClassInterface $taxClassDataObject */
+        /** @var  TaxClassInterface $taxClassDataObject */
         $taxClassDataObject = $this->taxClassFactory->create();
         $taxClassDataObject->setClassName($taxClassName)
             ->setClassType(TaxClassManagementInterface::TYPE_CUSTOMER);
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -95,10 +65,10 @@ class TaxClassRepositoryTest extends WebapiAbstract
         ];
 
         $requestData = ['taxClass' => [
-                'class_id' => $taxClassDataObject->getClassId(),
-                'class_name' => $taxClassDataObject->getClassName(),
-                'class_type' => $taxClassDataObject->getClassType(),
-            ],
+            'class_id' => $taxClassDataObject->getClassId(),
+            'class_name' => $taxClassDataObject->getClassName(),
+            'class_type' => $taxClassDataObject->getClassType(),
+        ],
         ];
         $taxClassId = $this->_webApiCall($serviceInfo, $requestData);
         $this->assertNotNull($taxClassId);
@@ -129,7 +99,7 @@ class TaxClassRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/' . $taxClassId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -139,10 +109,10 @@ class TaxClassRepositoryTest extends WebapiAbstract
         ];
 
         $taxClass = [
-                'class_id' => $updatedTaxClassDataObject->getClassId(),
-                'class_name' => $updatedTaxClassDataObject->getClassName(),
-                'class_type' => $updatedTaxClassDataObject->getClassType(),
-            ];
+            'class_id' => $updatedTaxClassDataObject->getClassId(),
+            'class_name' => $updatedTaxClassDataObject->getClassName(),
+            'class_type' => $updatedTaxClassDataObject->getClassType(),
+        ];
 
         $requestData = ['taxClass' => $taxClass, 'ClassId' => $taxClassId];
 
@@ -168,7 +138,7 @@ class TaxClassRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/' . $taxClassId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -200,7 +170,7 @@ class TaxClassRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/' . $taxClassId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -237,7 +207,7 @@ class TaxClassRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/search' . '?' . http_build_query($requestData),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -260,7 +230,7 @@ class TaxClassRepositoryTest extends WebapiAbstract
             ClassModel::KEY_TYPE => 'PRODUCT',
         ];
         $customerTaxClass = [ClassModel::KEY_NAME => 'Retail Customer',
-            ClassModel::KEY_TYPE => 'CUSTOMER', ];
+            ClassModel::KEY_TYPE => 'CUSTOMER',];
 
         $filter1 = $this->filterBuilder->setField(ClassModel::KEY_NAME)
             ->setValue($productTaxClass[ClassModel::KEY_NAME])
@@ -290,7 +260,7 @@ class TaxClassRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/search' . '?' . http_build_query($requestData),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -321,6 +291,32 @@ class TaxClassRepositoryTest extends WebapiAbstract
         $this->assertEquals(
             $customerTaxClass[ClassModel::KEY_NAME],
             $searchResults['items'][0][ClassModel::KEY_NAME]
+        );
+    }
+
+    /**
+     * Execute per test initialization.
+     */
+    protected function setUp(): void
+    {
+        $this->searchCriteriaBuilder = Bootstrap::getObjectManager()->create(
+            SearchCriteriaBuilder::class
+        );
+        $this->filterBuilder = Bootstrap::getObjectManager()->create(
+            FilterBuilder::class
+        );
+        $this->taxClassFactory = Bootstrap::getObjectManager()->create(
+            TaxClassInterfaceFactory::class
+        );
+        $this->taxClassRegistry = Bootstrap::getObjectManager()->create(
+            ClassModelRegistry::class
+        );
+        $this->taxClassRepository = Bootstrap::getObjectManager()->create(
+            Repository::class,
+            ['classModelRegistry' => $this->taxClassRegistry]
+        );
+        $this->sortOrderBuilder = Bootstrap::getObjectManager()->create(
+            SortOrderBuilder::class
         );
     }
 }

@@ -21,16 +21,6 @@ class AddFixtureTest extends AbstractOverridesTest
     private $config;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->config = $this->objectManager->get(ScopeConfigInterface::class);
-    }
-
-    /**
      * Checks that fixture added in test class node successfully applied
      *
      * @return void
@@ -64,5 +54,15 @@ class AddFixtureTest extends AbstractOverridesTest
             'first_data_set' => ['expected_config_value' => 'overridden config fixture value for method'],
             'second_data_set' => ['expected_config_value' => 'overridden config fixture value for data set']
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->config = $this->objectManager->get(ScopeConfigInterface::class);
     }
 }

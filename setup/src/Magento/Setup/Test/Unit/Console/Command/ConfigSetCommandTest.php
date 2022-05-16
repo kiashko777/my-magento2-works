@@ -35,23 +35,6 @@ class ConfigSetCommandTest extends TestCase
      */
     private $command;
 
-    protected function setUp(): void
-    {
-        $option = $this->createMock(TextConfigOption::class);
-        $option
-            ->expects($this->any())
-            ->method('getName')
-            ->willReturn('db-host');
-        $this->configModel = $this->createMock(ConfigModel::class);
-        $this->configModel
-            ->expects($this->exactly(2))
-            ->method('getAvailableOptions')
-            ->willReturn([$option]);
-        $moduleList = $this->createMock(ModuleList::class);
-        $this->deploymentConfig = $this->createMock(DeploymentConfig::class);
-        $this->command = new ConfigSetCommand($this->configModel, $moduleList, $this->deploymentConfig);
-    }
-
     public function testExecuteNoInteractive()
     {
         $this->deploymentConfig
@@ -81,19 +64,6 @@ class ConfigSetCommandTest extends TestCase
             ->method('process')
             ->with(['db-host' => 'host']);
         $this->checkInteraction('Y');
-    }
-
-    public function testExecuteInteractiveWithNo()
-    {
-        $this->deploymentConfig
-            ->expects($this->once())
-            ->method('get')
-            ->willReturn('localhost');
-        $this->configModel
-            ->expects($this->once())
-            ->method('process')
-            ->with([]);
-        $this->checkInteraction('n');
     }
 
     /**
@@ -130,5 +100,35 @@ class ConfigSetCommandTest extends TestCase
             $message,
             $commandTester->getDisplay()
         );
+    }
+
+    public function testExecuteInteractiveWithNo()
+    {
+        $this->deploymentConfig
+            ->expects($this->once())
+            ->method('get')
+            ->willReturn('localhost');
+        $this->configModel
+            ->expects($this->once())
+            ->method('process')
+            ->with([]);
+        $this->checkInteraction('n');
+    }
+
+    protected function setUp(): void
+    {
+        $option = $this->createMock(TextConfigOption::class);
+        $option
+            ->expects($this->any())
+            ->method('getName')
+            ->willReturn('db-host');
+        $this->configModel = $this->createMock(ConfigModel::class);
+        $this->configModel
+            ->expects($this->exactly(2))
+            ->method('getAvailableOptions')
+            ->willReturn([$option]);
+        $moduleList = $this->createMock(ModuleList::class);
+        $this->deploymentConfig = $this->createMock(DeploymentConfig::class);
+        $this->command = new ConfigSetCommand($this->configModel, $moduleList, $this->deploymentConfig);
     }
 }

@@ -4,8 +4,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\SalesRule\Api;
 
+use Magento\Framework\Registry;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\SalesRule\Model\Rule;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
@@ -29,10 +33,10 @@ class CouponManagementTest extends WebapiAbstract
      */
     public function testManagement($count, $length, $format, $regex)
     {
-        /** @var $registry \Magento\Framework\Registry */
-        $registry = Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
+        /** @var $registry Registry */
+        $registry = Bootstrap::getObjectManager()->get(Registry::class);
 
-        /** @var $salesRule \Magento\SalesRule\Model\Rule */
+        /** @var $salesRule Rule */
         $salesRule = $registry->registry('_fixture/Magento_SalesRule_Api_RuleRepository');
         $ruleId = $salesRule->getRuleId();
 
@@ -54,7 +58,7 @@ class CouponManagementTest extends WebapiAbstract
                 }
                 $cnt++;
             }
-            $cnt=0;
+            $cnt = 0;
             foreach ($couponList as $coupon) {
                 if ($cnt >= $count / 2) {
                     $couponCodes[] = $coupon['code'];
@@ -77,33 +81,6 @@ class CouponManagementTest extends WebapiAbstract
     }
 
     /**
-     * @return array
-     */
-    public function dataProviderForTestGenerate()
-    {
-        return [
-            [
-                10,
-                12,
-                'alphanum',
-                '/[a-zA-Z0-9]{12}/',
-            ],
-            [
-                10,
-                10,
-                'num',
-                '/[0-9]{10}/',
-            ],
-            [
-                10,
-                8,
-                'alpha',
-                '/[a-zA-Z]{8}/',
-            ],
-        ];
-    }
-
-    /**
      * @param int $ruleId
      * @param int $count
      * @param int $length
@@ -115,7 +92,7 @@ class CouponManagementTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/generate",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST
+                'httpMethod' => Request::HTTP_METHOD_POST
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -123,12 +100,12 @@ class CouponManagementTest extends WebapiAbstract
                 'operation' => self::SERVICE_NAME . 'generate',
             ],
         ];
-        $requestData = [  "couponSpec"=>
+        $requestData = ["couponSpec" =>
             [
                 "rule_id" => $ruleId,
-                "quantity"  => $count,
+                "quantity" => $count,
                 "length" => $length,
-                "format"  => $format
+                "format" => $format
             ]
         ];
         $result = $this->_webApiCall($serviceInfo, $requestData);
@@ -163,7 +140,7 @@ class CouponManagementTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH_COUPON . '/search' . '?' . http_build_query($searchCriteria),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME_COUPON,
@@ -181,12 +158,33 @@ class CouponManagementTest extends WebapiAbstract
      * @param array $couponArray
      * @return array
      */
+    protected function deleteCouponsByCodes($couponArray)
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH . '/deleteByCodes',
+                'httpMethod' => Request::HTTP_METHOD_POST,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'deleteByCodes',
+            ],
+        ];
+
+        return $this->_webApiCall($serviceInfo, ['codes' => $couponArray]);
+    }
+
+    /**
+     * @param array $couponArray
+     * @return array
+     */
     protected function deleteCouponsById($couponArray)
     {
         $serviceInfo = [
             'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . '/deleteByIds' ,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'resourcePath' => self::RESOURCE_PATH . '/deleteByIds',
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -199,23 +197,29 @@ class CouponManagementTest extends WebapiAbstract
     }
 
     /**
-     * @param array $couponArray
      * @return array
      */
-    protected function deleteCouponsByCodes($couponArray)
+    public function dataProviderForTestGenerate()
     {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . '/deleteByCodes' ,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+        return [
+            [
+                10,
+                12,
+                'alphanum',
+                '/[a-zA-Z0-9]{12}/',
             ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'deleteByCodes',
+            [
+                10,
+                10,
+                'num',
+                '/[0-9]{10}/',
+            ],
+            [
+                10,
+                8,
+                'alpha',
+                '/[a-zA-Z]{8}/',
             ],
         ];
-
-        return $this->_webApiCall($serviceInfo, ['codes' => $couponArray]);
     }
 }

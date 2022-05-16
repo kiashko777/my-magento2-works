@@ -6,16 +6,17 @@
 
 namespace Magento\Test\Less;
 
-use Magento\Framework\App\Utility;
-use Magento\TestFramework\CodingStandard\Tool\CodeSniffer;
-use Magento\TestFramework\CodingStandard\Tool\CodeSniffer\LessWrapper;
+use Exception;
 use Magento\Framework\App\Utility\Files;
 use Magento\Test\Php\LiveCodeTest as PHPCodeTest;
+use Magento\TestFramework\CodingStandard\Tool\CodeSniffer;
+use Magento\TestFramework\CodingStandard\Tool\CodeSniffer\LessWrapper;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Set of tests for static code style
  */
-class LiveCodeTest extends \PHPUnit\Framework\TestCase
+class LiveCodeTest extends TestCase
 {
     /**
      * @var string
@@ -69,7 +70,7 @@ class LiveCodeTest extends \PHPUnit\Framework\TestCase
      *
      * @param array $fileList
      * @return array
-     * @throws \Exception
+     * @throws Exception
      */
     private function filterFiles(array $fileList)
     {

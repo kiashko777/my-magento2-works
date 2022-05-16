@@ -3,20 +3,23 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Mvc\Bootstrap;
 
 use Interop\Container\ContainerInterface;
-use Magento\Framework\App\Bootstrap as AppBootstrap;
-use Magento\Framework\App\Filesystem\DirectoryList;
-use Magento\Framework\App\State;
-use Magento\Framework\Filesystem;
-use Magento\Framework\Shell\ComplexParameter;
+use Interop\Container\Exception\ContainerException;
 use Laminas\EventManager\EventManagerInterface;
 use Laminas\EventManager\ListenerAggregateInterface;
 use Laminas\Mvc\Application;
 use Laminas\Mvc\MvcEvent;
 use Laminas\ServiceManager\Factory\FactoryInterface;
 use Laminas\ServiceManager\ServiceLocatorInterface;
+use LogicException;
+use Magento\Framework\App\Bootstrap as AppBootstrap;
+use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\App\State;
+use Magento\Framework\Filesystem;
+use Magento\Framework\Shell\ComplexParameter;
 
 /**
  * A listener that injects relevant Magento initialization parameters and initializes filesystem
@@ -44,7 +47,7 @@ class InitParamListener implements ListenerAggregateInterface, FactoryInterface
      * supports the `priority` argument.
      *
      * @param EventManagerInterface $events
-     * @param int                   $priority
+     * @param int $priority
      * @return void
      */
     public function attach(EventManagerInterface $events, $priority = 1)
@@ -87,8 +90,41 @@ class InitParamListener implements ListenerAggregateInterface, FactoryInterface
         $initParams = $application->getServiceManager()->get(self::BOOTSTRAP_PARAM);
         $directoryList = $this->createDirectoryList($initParams);
         $serviceManager = $application->getServiceManager();
-        $serviceManager->setService(\Magento\Framework\App\Filesystem\DirectoryList::class, $directoryList);
-        $serviceManager->setService(\Magento\Framework\Filesystem::class, $this->createFilesystem($directoryList));
+        $serviceManager->setService(DirectoryList::class, $directoryList);
+        $serviceManager->setService(Filesystem::class, $this->createFilesystem($directoryList));
+    }
+
+    /**
+     * Initializes DirectoryList service
+     *
+     * @param array $initParams
+     * @return DirectoryList
+     * @throws LogicException
+     */
+    public function createDirectoryList($initParams)
+    {
+        if (!isset($initParams[AppBootstrap::INIT_PARAM_FILESYSTEM_DIR_PATHS][DirectoryList::ROOT])) {
+            throw new LogicException('Magento root directory is not specified.');
+        }
+        $config = $initParams[AppBootstrap::INIT_PARAM_FILESYSTEM_DIR_PATHS];
+        $rootDir = $config[DirectoryList::ROOT][DirectoryList::PATH];
+        return new DirectoryList($rootDir, $config);
+    }
+
+    /**
+     * Initializes Filesystem service
+     *
+     * @param DirectoryList $directoryList
+     * @return Filesystem
+     */
+    public function createFilesystem(DirectoryList $directoryList)
+    {
+        $driverPool = new Filesystem\DriverPool();
+        return new Filesystem(
+            $directoryList,
+            new Filesystem\Directory\ReadFactory($driverPool),
+            new Filesystem\Directory\WriteFactory($driverPool)
+        );
     }
 
     /**
@@ -98,7 +134,7 @@ class InitParamListener implements ListenerAggregateInterface, FactoryInterface
      *
      * @param ServiceLocatorInterface $serviceLocator
      * @return array
-     * @throws \Interop\Container\Exception\ContainerException
+     * @throws ContainerException
      */
     public function createService(ServiceLocatorInterface $serviceLocator)
     {
@@ -162,38 +198,5 @@ class InitParamListener implements ListenerAggregateInterface, FactoryInterface
             }
         }
         return [];
-    }
-
-    /**
-     * Initializes DirectoryList service
-     *
-     * @param array $initParams
-     * @return DirectoryList
-     * @throws \LogicException
-     */
-    public function createDirectoryList($initParams)
-    {
-        if (!isset($initParams[AppBootstrap::INIT_PARAM_FILESYSTEM_DIR_PATHS][DirectoryList::ROOT])) {
-            throw new \LogicException('Magento root directory is not specified.');
-        }
-        $config = $initParams[AppBootstrap::INIT_PARAM_FILESYSTEM_DIR_PATHS];
-        $rootDir = $config[DirectoryList::ROOT][DirectoryList::PATH];
-        return new DirectoryList($rootDir, $config);
-    }
-
-    /**
-     * Initializes Filesystem service
-     *
-     * @param DirectoryList $directoryList
-     * @return Filesystem
-     */
-    public function createFilesystem(DirectoryList $directoryList)
-    {
-        $driverPool = new Filesystem\DriverPool();
-        return new Filesystem(
-            $directoryList,
-            new Filesystem\Directory\ReadFactory($driverPool),
-            new Filesystem\Directory\WriteFactory($driverPool)
-        );
     }
 }

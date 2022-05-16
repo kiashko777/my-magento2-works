@@ -3,21 +3,25 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\SalesRule\Model\ResourceModel;
+
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoDbIsolation enabled
  * @magentoAppIsolation enabled
  */
-class RuleTest extends \PHPUnit\Framework\TestCase
+class RuleTest extends TestCase
 {
     /**
      * @magentoDataFixture Magento/SalesRule/_files/rule_custom_product_attribute.php
      */
     public function testAfterSave()
     {
-        $resource = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\SalesRule\Model\ResourceModel\Rule::class
+        $resource = Bootstrap::getObjectManager()->create(
+            Rule::class
         );
         $items = $resource->getActiveAttributes();
 

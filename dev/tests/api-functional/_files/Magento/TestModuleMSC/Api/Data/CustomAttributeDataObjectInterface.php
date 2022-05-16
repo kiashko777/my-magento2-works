@@ -3,9 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestModuleMSC\Api\Data;
 
-interface CustomAttributeDataObjectInterface extends \Magento\Framework\Api\ExtensibleDataInterface
+use Magento\Framework\Api\ExtensibleDataInterface;
+
+interface CustomAttributeDataObjectInterface extends ExtensibleDataInterface
 {
     const NAME = 'name';
 

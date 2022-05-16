@@ -3,29 +3,27 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Review\Model\ResourceModel\Rating;
 
-class CollectionTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class CollectionTest extends TestCase
 {
     /**
-     * @var \Magento\Review\Model\ResourceModel\Rating\Collection
+     * @var Collection
      */
     protected $collection;
-
-    protected function setUp(): void
-    {
-        $this->collection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Review\Model\ResourceModel\Rating\Collection::class
-        );
-    }
 
     /**
      * @magentoDataFixture Magento/Review/_files/customer_review_with_rating.php
      */
     public function testAddEntitySummaryToItem()
     {
-        $ratingData = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\Registry::class)
+        $ratingData = Bootstrap::getObjectManager()
+            ->get(Registry::class)
             ->registry('rating_data');
 
         $result = $this->collection->addEntitySummaryToItem($ratingData->getEntityId(), $ratingData->getStoreId());
@@ -53,5 +51,12 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
     public function testSetStoreFilter()
     {
         $this->collection->setStoreFilter(1);
+    }
+
+    protected function setUp(): void
+    {
+        $this->collection = Bootstrap::getObjectManager()->create(
+            Collection::class
+        );
     }
 }

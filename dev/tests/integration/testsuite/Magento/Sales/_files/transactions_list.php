@@ -6,6 +6,7 @@
 
 use Magento\Sales\Api\Data\OrderInterfaceFactory;
 use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Payment\Transaction;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
@@ -54,7 +55,7 @@ $transactions = [
 /** @var array $transactionData */
 foreach ($transactions as $transactionData) {
     $payment->addData($transactionData);
-    $payment->addTransaction(\Magento\Sales\Model\Order\Payment\Transaction::TYPE_CAPTURE);
+    $payment->addTransaction(Transaction::TYPE_CAPTURE);
 }
 
 $order->save();

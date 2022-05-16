@@ -3,24 +3,30 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Backend\Block\Widget\Grid\Massaction;
 
-class AdditionalTest extends \PHPUnit\Framework\TestCase
+use Magento\Backend\Block\Widget\Grid\Massaction;
+use Magento\Framework\View\Layout\Argument\Interpreter\Options;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class AdditionalTest extends TestCase
 {
     /**
      * @magentoAppArea Adminhtml
      */
     public function testToHtml()
     {
-        $interpreter = $this->createMock(\Magento\Framework\View\Layout\Argument\Interpreter\Options::class);
+        $interpreter = $this->createMock(Options::class);
         /**
          * @var Additional $block
          */
-        $block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Backend\Block\Widget\Grid\Massaction\Additional::class,
+        $block = Bootstrap::getObjectManager()->create(
+            Additional::class,
             ['optionsInterpreter' => $interpreter]
         );
-        $modelClass = \Magento\Backend\Block\Widget\Grid\Massaction::class;
+        $modelClass = Massaction::class;
         $data = [
             'fields' => [
                 'field1' => ['type' => 'select', 'values' => $modelClass, 'class' => 'custom_class'],

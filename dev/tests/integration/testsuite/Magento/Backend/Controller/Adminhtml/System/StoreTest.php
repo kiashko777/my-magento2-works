@@ -7,18 +7,20 @@ declare(strict_types=1);
 
 namespace Magento\Backend\Controller\Adminhtml\System;
 
-use Magento\Store\Model\ResourceModel\Store as StoreResource;
+use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\Data\Form\FormKey;
+use Magento\Framework\Message\ManagerInterface;
+use Magento\Framework\Message\MessageInterface;
 use Magento\Store\Api\Data\StoreInterfaceFactory;
 use Magento\Store\Api\WebsiteRepositoryInterface;
-use Magento\Framework\Data\Form\FormKey;
-use Magento\Framework\Message\MessageInterface;
-use Magento\Framework\Message\ManagerInterface;
-use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Store\Model\ResourceModel\Store as StoreResource;
+use Magento\TestFramework\Helper\Xpath;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class StoreTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class StoreTest extends AbstractBackendController
 {
     /**
      * @var FormKey
@@ -40,19 +42,6 @@ class StoreTest extends \Magento\TestFramework\TestCase\AbstractBackendControlle
      */
     private $websiteRepository;
 
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->formKey = $this->_objectManager->get(FormKey::class);
-        $this->storeResource = $this->_objectManager->get(StoreResource::class);
-        $this->storeFactory = $this->_objectManager->get(StoreInterfaceFactory::class);
-        $this->websiteRepository = $this->_objectManager->get(WebsiteRepositoryInterface::class);
-    }
-
     public function testIndexAction()
     {
         $this->dispatch('backend/admin/system_store/index');
@@ -61,42 +50,42 @@ class StoreTest extends \Magento\TestFramework\TestCase\AbstractBackendControlle
 
         $this->assertEquals(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//*[@id="add" and @title = "Create Website"]/span[text() = "Create Website"]',
                 $response
             )
         );
         $this->assertEquals(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//*[@id="add_group"]',
                 $response
             )
         );
         $this->assertEquals(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//*[@id="add_store"]',
                 $response
             )
         );
         $this->assertEquals(
             0,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//*[@id = "add" and @class = "disabled"]',
                 $response
             )
         );
         $this->assertEquals(
             0,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//*[@id="add_group" and contains(@class,"disabled")]',
                 $response
             )
         );
         $this->assertEquals(
             0,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//*[@id="add_store" and contains(@class,"disabled")]',
                 $response
             )
@@ -211,5 +200,18 @@ class StoreTest extends \Magento\TestFramework\TestCase\AbstractBackendControlle
                 'message' => 'Store with the same code already exists.',
             ],
         ];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->formKey = $this->_objectManager->get(FormKey::class);
+        $this->storeResource = $this->_objectManager->get(StoreResource::class);
+        $this->storeFactory = $this->_objectManager->get(StoreInterfaceFactory::class);
+        $this->websiteRepository = $this->_objectManager->get(WebsiteRepositoryInterface::class);
     }
 }

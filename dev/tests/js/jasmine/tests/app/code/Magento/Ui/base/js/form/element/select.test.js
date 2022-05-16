@@ -140,8 +140,8 @@ define([
             });
             it('check on empty value', function () {
                 model.options = [{
-                        value: 'valFirst'
-                    },
+                    value: 'valFirst'
+                },
                     {
                         value: 'valLast'
                     }];
@@ -214,11 +214,11 @@ define([
             });
             it('Check call "parseOptions" method without predefined "captionValue" property', function () {
                 var data = [{
-                        value: null,
-                        label: 'label'
-                    }, {
-                        value: 'value'
-                    }];
+                    value: null,
+                    label: 'label'
+                }, {
+                    value: 'value'
+                }];
 
                 model.options = jasmine.createSpy();
                 model.caption = jasmine.createSpy().and.returnValue(false);
@@ -232,9 +232,9 @@ define([
             });
             it('Check call "parseOptions" method with predefined "captionValue" property', function () {
                 var data = [{
-                        value: 'value',
-                        label: 'label'
-                    }];
+                    value: 'value',
+                    label: 'label'
+                }];
 
                 model.options = jasmine.createSpy();
                 model.caption = jasmine.createSpy().and.returnValue(false);

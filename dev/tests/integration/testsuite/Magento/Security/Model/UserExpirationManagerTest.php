@@ -7,48 +7,48 @@ declare(strict_types=1);
 
 namespace Magento\Security\Model;
 
+use DateTime;
+use Exception;
+use Magento\Backend\Model\Auth;
+use Magento\Backend\Model\Auth\Session;
+use Magento\Framework\Exception\AuthenticationException;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Security\Api\Data\UserExpirationInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\User\Model\User;
+use PHPUnit\Framework\TestCase;
+
 /**
  * Tests for \Magento\Security\Model\UserExpirationManager
  * @magentoAppArea Adminhtml
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class UserExpirationManagerTest extends \PHPUnit\Framework\TestCase
+class UserExpirationManagerTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
     /**
-     * @var \Magento\Backend\Model\Auth
+     * @var Auth
      */
     private $auth;
 
     /**
-     * @var \Magento\Backend\Model\Auth\Session
+     * @var Session
      */
     private $authSession;
 
     /**
-     * @var \Magento\Security\Model\AdminSessionInfo
+     * @var AdminSessionInfo
      */
     private $adminSessionInfo;
 
     /**
-     * @var \Magento\Security\Model\UserExpirationManager
+     * @var UserExpirationManager
      */
     private $userExpirationManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->auth = $this->objectManager->create(\Magento\Backend\Model\Auth::class);
-        $this->authSession = $this->objectManager->create(\Magento\Backend\Model\Auth\Session::class);
-        $this->adminSessionInfo = $this->objectManager->create(\Magento\Security\Model\AdminSessionInfo::class);
-        $this->auth->setAuthStorage($this->authSession);
-        $this->userExpirationManager =
-            $this->objectManager->create(\Magento\Security\Model\UserExpirationManager::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Security/_files/expired_users.php
@@ -58,6 +58,18 @@ class UserExpirationManagerTest extends \PHPUnit\Framework\TestCase
         $adminUserNameFromFixture = 'adminUserExpired';
         $user = $this->loadUserByUsername($adminUserNameFromFixture);
         static::assertTrue($this->userExpirationManager->isUserExpired($user->getId()));
+    }
+
+    /**
+     * @param $username
+     * @return User
+     */
+    private function loadUserByUsername(string $username): User
+    {
+        /** @var User $user */
+        $user = $this->objectManager->create(User::class);
+        $user->loadByUsername($username);
+        return $user;
     }
 
     /**
@@ -78,6 +90,49 @@ class UserExpirationManagerTest extends \PHPUnit\Framework\TestCase
         static::assertEquals(0, $user->getIsActive());
         static::assertNull($userExpirationModel->getId());
         static::assertEquals(AdminSessionInfo::LOGGED_OUT, (int)$this->adminSessionInfo->getStatus());
+    }
+
+    /**
+     * Login the given user and return a user model.
+     *
+     * @param string $username
+     * @throws AuthenticationException
+     */
+    private function loginUser(string $username)
+    {
+        $this->auth->login(
+            $username,
+            \Magento\TestFramework\Bootstrap::ADMIN_PASSWORD
+        );
+    }
+
+    /**
+     * Expire the given user and return the UserExpiration model.
+     *
+     * @param User $user
+     * @throws Exception
+     */
+    private function expireUser(User $user)
+    {
+        $expireDate = new DateTime();
+        $expireDate->modify('-10 days');
+        /** @var UserExpirationInterface $userExpiration */
+        $userExpiration = $this->objectManager->create(UserExpirationInterface::class);
+        $userExpiration->setId($user->getId())
+            ->setExpiresAt($expireDate->format('Y-m-d H:i:s'))
+            ->save();
+    }
+
+    /**
+     * @param User $user
+     * @return UserExpiration
+     */
+    private function loadExpiredUserModelByUser(User $user): UserExpiration
+    {
+        /** @var UserExpiration $expiredUserModel */
+        $expiredUserModel = $this->objectManager->create(UserExpiration::class);
+        $expiredUserModel->load($user->getId());
+        return $expiredUserModel;
     }
 
     /**
@@ -120,58 +175,14 @@ class UserExpirationManagerTest extends \PHPUnit\Framework\TestCase
         static::assertEquals($expiredUser->getIsActive(), 0);
     }
 
-    /**
-     * Login the given user and return a user model.
-     *
-     * @param string $username
-     * @throws \Magento\Framework\Exception\AuthenticationException
-     */
-    private function loginUser(string $username)
+    protected function setUp(): void
     {
-        $this->auth->login(
-            $username,
-            \Magento\TestFramework\Bootstrap::ADMIN_PASSWORD
-        );
-    }
-
-    /**
-     * @param $username
-     * @return \Magento\User\Model\User
-     */
-    private function loadUserByUsername(string $username): \Magento\User\Model\User
-    {
-        /** @var \Magento\User\Model\User $user */
-        $user = $this->objectManager->create(\Magento\User\Model\User::class);
-        $user->loadByUsername($username);
-        return $user;
-    }
-
-    /**
-     * Expire the given user and return the UserExpiration model.
-     *
-     * @param \Magento\User\Model\User $user
-     * @throws \Exception
-     */
-    private function expireUser(\Magento\User\Model\User $user)
-    {
-        $expireDate = new \DateTime();
-        $expireDate->modify('-10 days');
-        /** @var \Magento\Security\Api\Data\UserExpirationInterface $userExpiration */
-        $userExpiration = $this->objectManager->create(\Magento\Security\Api\Data\UserExpirationInterface::class);
-        $userExpiration->setId($user->getId())
-            ->setExpiresAt($expireDate->format('Y-m-d H:i:s'))
-            ->save();
-    }
-
-    /**
-     * @param \Magento\User\Model\User $user
-     * @return \Magento\Security\Model\UserExpiration
-     */
-    private function loadExpiredUserModelByUser(\Magento\User\Model\User $user): \Magento\Security\Model\UserExpiration
-    {
-        /** @var \Magento\Security\Model\UserExpiration $expiredUserModel */
-        $expiredUserModel = $this->objectManager->create(\Magento\Security\Model\UserExpiration::class);
-        $expiredUserModel->load($user->getId());
-        return $expiredUserModel;
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->auth = $this->objectManager->create(Auth::class);
+        $this->authSession = $this->objectManager->create(Session::class);
+        $this->adminSessionInfo = $this->objectManager->create(AdminSessionInfo::class);
+        $this->auth->setAuthStorage($this->authSession);
+        $this->userExpirationManager =
+            $this->objectManager->create(UserExpirationManager::class);
     }
 }

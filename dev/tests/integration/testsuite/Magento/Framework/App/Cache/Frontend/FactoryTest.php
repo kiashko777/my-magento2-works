@@ -34,15 +34,6 @@ class FactoryTest extends TestCase
     private $model;
 
     /**
-     * @ingeritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->factory = $this->objectManager->create(Factory::class);
-    }
-
-    /**
      * Check RemoteSynchronizedCache
      * Removing any cache item in the RemoteSynchronizedCache must invalidate all cache items
      *
@@ -99,5 +90,14 @@ class FactoryTest extends TestCase
         ];
 
         self::assertInstanceOf(FrontendInterface::class, $this->factory->create($options));
+    }
+
+    /**
+     * @ingeritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->factory = $this->objectManager->create(Factory::class);
     }
 }

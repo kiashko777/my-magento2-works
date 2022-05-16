@@ -25,12 +25,6 @@ class MixinManagerTest extends TestCase
      */
     private $mixinFactoryMock;
 
-    protected function setUp(): void
-    {
-        $this->mixinFactoryMock = $this->createMock(MixinFactory::class);
-        $this->mixinManager = new MixinManager($this->mixinFactoryMock);
-    }
-
     public function testApply()
     {
         $description = '>o<';
@@ -80,5 +74,11 @@ class MixinManagerTest extends TestCase
             $description . 'xyz',
             $this->mixinManager->apply($description, $mixinList)
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->mixinFactoryMock = $this->createMock(MixinFactory::class);
+        $this->mixinManager = new MixinManager($this->mixinFactoryMock);
     }
 }

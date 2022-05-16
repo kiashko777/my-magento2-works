@@ -23,14 +23,6 @@ class FilesCollectorTest extends TestCase
      */
     protected $_filesCollector;
 
-    protected function setUp(): void
-    {
-        $this->_testDir = str_replace('\\', '/', realpath(dirname(__FILE__))) . '/_files/files_collector/';
-
-        $objectManagerHelper = new ObjectManager($this);
-        $this->_filesCollector = $objectManagerHelper->getObject(FilesCollector::class);
-    }
-
     public function testGetFilesWithoutMask()
     {
         $expectedResult = [$this->_testDir . 'default.xml', $this->_testDir . 'file.js'];
@@ -42,5 +34,13 @@ class FilesCollectorTest extends TestCase
     {
         $expectedResult = [$this->_testDir . 'file.js'];
         $this->assertEquals($expectedResult, $this->_filesCollector->getFiles([$this->_testDir], '/\.js$/'));
+    }
+
+    protected function setUp(): void
+    {
+        $this->_testDir = str_replace('\\', '/', realpath(dirname(__FILE__))) . '/_files/files_collector/';
+
+        $objectManagerHelper = new ObjectManager($this);
+        $this->_filesCollector = $objectManagerHelper->getObject(FilesCollector::class);
     }
 }

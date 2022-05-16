@@ -6,14 +6,16 @@
 
 namespace Magento\TestModuleMSC\Model\Data;
 
+use Magento\Framework\Model\AbstractExtensibleModel;
+use Magento\TestModuleMSC\Api\Data\ItemExtensionInterface;
 use Magento\TestModuleMSC\Api\Data\ItemInterface;
 
 /**
  * Class Item
  *
- * @method \Magento\TestModuleMSC\Api\Data\ItemExtensionInterface getExtensionAttributes()
+ * @method ItemExtensionInterface getExtensionAttributes()
  */
-class Item extends \Magento\Framework\Model\AbstractExtensibleModel implements ItemInterface
+class Item extends AbstractExtensibleModel implements ItemInterface
 {
     /**
      * @return int

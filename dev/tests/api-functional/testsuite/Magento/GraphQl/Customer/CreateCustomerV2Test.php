@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Customer;
 
+use Exception;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Framework\Registry;
 use Magento\TestFramework\Helper\Bootstrap;
@@ -27,16 +28,8 @@ class CreateCustomerV2Test extends GraphQlAbstract
      */
     private $customerRepository;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->registry = Bootstrap::getObjectManager()->get(Registry::class);
-        $this->customerRepository = Bootstrap::getObjectManager()->get(CustomerRepositoryInterface::class);
-    }
-
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testCreateCustomerAccountWithPassword()
     {
@@ -76,7 +69,7 @@ QUERY;
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testCreateCustomerAccountWithoutPassword()
     {
@@ -116,7 +109,7 @@ QUERY;
      */
     public function testCreateCustomerIfInputDataIsEmpty()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('CustomerCreateInput.email of required type String! was not provided.');
         $this->expectExceptionMessage('CustomerCreateInput.firstname of required type String! was not provided.');
         $this->expectExceptionMessage('CustomerCreateInput.lastname of required type String! was not provided.');
@@ -145,7 +138,7 @@ QUERY;
      */
     public function testCreateCustomerIfEmailMissed()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Field CustomerCreateInput.email of required type String! was not provided');
 
         $newFirstname = 'Richard';
@@ -179,7 +172,7 @@ QUERY;
      * @dataProvider invalidEmailAddressDataProvider
      *
      * @param string $email
-     * @throws \Exception
+     * @throws Exception
      */
     public function testCreateCustomerIfEmailIsNotValid(string $email)
     {
@@ -235,7 +228,7 @@ QUERY;
      */
     public function testCreateCustomerIfPassedAttributeDosNotExistsInCustomerInput()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Field "test123" is not defined by type CustomerCreateInput.');
 
         $newFirstname = 'Richard';
@@ -272,7 +265,7 @@ QUERY;
      */
     public function testCreateCustomerIfNameEmpty()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Required parameters are missing: First Name');
 
         $newEmail = 'customer_created' . rand(1, 2000000) . '@example.com';
@@ -340,7 +333,7 @@ QUERY;
      */
     public function testCreateCustomerIfCustomerWithProvidedEmailAlreadyExists()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage(
             'A customer with the same email address already exists in an associated website.'
         );
@@ -371,12 +364,20 @@ QUERY;
         $this->graphQlMutation($query);
     }
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->registry = Bootstrap::getObjectManager()->get(Registry::class);
+        $this->customerRepository = Bootstrap::getObjectManager()->get(CustomerRepositoryInterface::class);
+    }
+
     protected function tearDown(): void
     {
         $newEmail = 'new_customer@example.com';
         try {
             $customer = $this->customerRepository->get($newEmail);
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             return;
         }
 

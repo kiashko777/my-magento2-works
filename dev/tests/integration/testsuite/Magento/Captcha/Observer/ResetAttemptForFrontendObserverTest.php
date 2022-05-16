@@ -13,23 +13,20 @@ use Magento\Customer\Model\Customer;
 use Magento\Customer\Model\CustomerFactory;
 use Magento\Framework\Event\ManagerInterface;
 use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class ResetAttemptForFrontendObserverTest
  *
  * Test for checking that the customer login attempts are removed after a successful login
  */
-class ResetAttemptForFrontendObserverTest extends \PHPUnit\Framework\TestCase
+class ResetAttemptForFrontendObserverTest extends TestCase
 {
     /**
      * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoDataFixture Magento/Captcha/_files/failed_logins_frontend.php
@@ -56,5 +53,10 @@ class ResetAttemptForFrontendObserverTest extends \PHPUnit\Framework\TestCase
         $captchaLog = $captchaLogFactory->create();
 
         self::assertEquals(0, $captchaLog->countAttemptsByUserLogin($customerEmail));
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

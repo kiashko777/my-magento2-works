@@ -3,15 +3,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Backend\Controller\Adminhtml;
 
+use Magento\Backend\Model\UrlInterface;
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * @magentoAppArea Adminhtml
  * @magentoDbIsolation enabled
  */
-class IndexTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class IndexTest extends AbstractBackendController
 {
     /**
      * Check not logged state
@@ -21,9 +25,9 @@ class IndexTest extends \Magento\TestFramework\TestCase\AbstractBackendControlle
     {
         $this->_auth->logout();
         $this->dispatch('backend/admin/index/index');
-        /** @var $backendUrlModel \Magento\Backend\Model\UrlInterface */
-        $backendUrlModel = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Backend\Model\UrlInterface::class
+        /** @var $backendUrlModel UrlInterface */
+        $backendUrlModel = Bootstrap::getObjectManager()->get(
+            UrlInterface::class
         );
         $backendUrlModel->turnOffSecretKey();
         $url = $backendUrlModel->getUrl('admin');

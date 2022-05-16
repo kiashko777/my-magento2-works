@@ -5,9 +5,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Cookie\Model\Config\Backend;
 
-class PathTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\Exception\LocalizedException;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class PathTest extends TestCase
 {
     /**
      * Method is not publicly accessible, so it must be called through parent
@@ -15,13 +20,13 @@ class PathTest extends \PHPUnit\Framework\TestCase
      */
     public function testBeforeSaveException()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage('Invalid cookie path');
 
         $invalidPath = 'invalid path';
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var \Magento\Cookie\Model\Config\Backend\Lifetime $model */
-        $model = $objectManager->create(\Magento\Cookie\Model\Config\Backend\Path::class);
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var Lifetime $model */
+        $model = $objectManager->create(Path::class);
         $model->setValue($invalidPath);
         $model->save();
     }

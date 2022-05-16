@@ -3,10 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Backend\Model;
 
+use Magento\Backend\App\Area\FrontNameResolver;
+use Magento\Backend\Model\Auth\Credential\StorageInterface;
 use Magento\Framework\Data\Form\FormKey;
 use Magento\Framework\Exception\AuthenticationException;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+use StdClass;
 
 /**
  * Test class for \Magento\Backend\Model\Auth.
@@ -15,22 +21,12 @@ use Magento\Framework\Exception\AuthenticationException;
  * @magentoAppIsolation enabled
  * @magentoDbIsolation enabled
  */
-class AuthTest extends \PHPUnit\Framework\TestCase
+class AuthTest extends TestCase
 {
     /**
-     * @var \Magento\Backend\Model\Auth
+     * @var Auth
      */
     protected $_model;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        \Magento\TestFramework\Helper\Bootstrap::getInstance()
-            ->loadArea(\Magento\Backend\App\Area\FrontNameResolver::AREA_CODE);
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Backend\Model\Auth::class);
-    }
 
     /**
      * @dataProvider getLoginDataProvider
@@ -39,7 +35,7 @@ class AuthTest extends \PHPUnit\Framework\TestCase
      */
     public function testLoginFailed($userName, $password)
     {
-        $this->expectException(\Magento\Framework\Exception\AuthenticationException::class);
+        $this->expectException(AuthenticationException::class);
 
         $this->_model->login($userName, $password);
     }
@@ -61,7 +57,7 @@ class AuthTest extends \PHPUnit\Framework\TestCase
         $this->_model->setAuthStorage($mockStorage);
         $this->assertInstanceOf(\Magento\Backend\Model\Auth\StorageInterface::class, $this->_model->getAuthStorage());
 
-        $incorrectStorage = new \StdClass();
+        $incorrectStorage = new StdClass();
         try {
             $this->_model->setAuthStorage($incorrectStorage);
             $this->fail('Incorrect authentication storage setted.');
@@ -74,7 +70,7 @@ class AuthTest extends \PHPUnit\Framework\TestCase
     public function testGetCredentialStorageList()
     {
         $storage = $this->_model->getCredentialStorage();
-        $this->assertInstanceOf(\Magento\Backend\Model\Auth\Credential\StorageInterface::class, $storage);
+        $this->assertInstanceOf(StorageInterface::class, $storage);
     }
 
     public function testLoginSuccessful()
@@ -84,7 +80,7 @@ class AuthTest extends \PHPUnit\Framework\TestCase
             \Magento\TestFramework\Bootstrap::ADMIN_PASSWORD
         );
         $this->assertInstanceOf(
-            \Magento\Backend\Model\Auth\Credential\StorageInterface::class,
+            StorageInterface::class,
             $this->_model->getUser()
         );
         $this->assertGreaterThan(time() - 10, $this->_model->getAuthStorage()->getUpdatedAt());
@@ -93,7 +89,7 @@ class AuthTest extends \PHPUnit\Framework\TestCase
     public function testLoginFlushesFormKey()
     {
         /** @var FormKey $dataFormKey */
-        $dataFormKey = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(FormKey::class);
+        $dataFormKey = Bootstrap::getObjectManager()->get(FormKey::class);
         $beforeKey = $dataFormKey->getFormKey();
         $this->_model->login(
             \Magento\TestFramework\Bootstrap::ADMIN_NAME,
@@ -140,8 +136,18 @@ class AuthTest extends \PHPUnit\Framework\TestCase
         $this->assertNotNull($this->_model->getUser());
         $this->assertGreaterThan(0, $this->_model->getUser()->getId());
         $this->assertInstanceOf(
-            \Magento\Backend\Model\Auth\Credential\StorageInterface::class,
+            StorageInterface::class,
             $this->_model->getUser()
         );
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Bootstrap::getInstance()
+            ->loadArea(FrontNameResolver::AREA_CODE);
+        $this->_model = Bootstrap::getObjectManager()
+            ->create(Auth::class);
     }
 }

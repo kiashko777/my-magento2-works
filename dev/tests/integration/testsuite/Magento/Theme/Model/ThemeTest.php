@@ -3,9 +3,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Theme\Model;
 
-class ThemeTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\View\Design\Theme\FlyweightFactory;
+use Magento\Framework\View\Design\ThemeInterface;
+use Magento\TestFramework\Entity;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Theme\Model\Theme\Registration;
+use PHPUnit\Framework\TestCase;
+
+class ThemeTest extends TestCase
 {
     /**
      * Test crud operations for theme model using valid data
@@ -14,13 +22,13 @@ class ThemeTest extends \PHPUnit\Framework\TestCase
      */
     public function testCrud()
     {
-        /** @var $themeModel \Magento\Framework\View\Design\ThemeInterface */
-        $themeModel = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\View\Design\ThemeInterface::class
+        /** @var $themeModel ThemeInterface */
+        $themeModel = Bootstrap::getObjectManager()->create(
+            ThemeInterface::class
         );
         $themeModel->setData($this->_getThemeValidData());
 
-        $crud = new \Magento\TestFramework\Entity($themeModel, []);
+        $crud = new Entity($themeModel, []);
         $crud->testCrud();
     }
 
@@ -38,7 +46,7 @@ class ThemeTest extends \PHPUnit\Framework\TestCase
             'is_featured' => false,
             'theme_path' => 'default/space',
             'preview_image' => 'images/preview.png',
-            'type' => \Magento\Framework\View\Design\ThemeInterface::TYPE_VIRTUAL
+            'type' => ThemeInterface::TYPE_VIRTUAL
         ];
     }
 
@@ -47,13 +55,13 @@ class ThemeTest extends \PHPUnit\Framework\TestCase
      */
     public function testChildRelation()
     {
-        /** @var $theme \Magento\Framework\View\Design\ThemeInterface */
-        $theme = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\Design\ThemeInterface::class
+        /** @var $theme ThemeInterface */
+        $theme = Bootstrap::getObjectManager()->get(
+            ThemeInterface::class
         );
         $collection = $theme->getCollection()
-            ->addTypeFilter(\Magento\Framework\View\Design\ThemeInterface::TYPE_VIRTUAL);
-        /** @var $currentTheme \Magento\Framework\View\Design\ThemeInterface */
+            ->addTypeFilter(ThemeInterface::TYPE_VIRTUAL);
+        /** @var $currentTheme ThemeInterface */
         foreach ($collection as $currentTheme) {
             $parentTheme = $currentTheme->getParentTheme();
             if (!empty($parentTheme)) {
@@ -70,15 +78,15 @@ class ThemeTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetInheritedThemes()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var \Magento\Theme\Model\Theme\Registration $registration */
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var Registration $registration */
         $registration = $objectManager->get(
-            \Magento\Theme\Model\Theme\Registration::class
+            Registration::class
         );
         $registration->register();
-        /** @var \Magento\Framework\View\Design\Theme\FlyweightFactory $themeFactory */
+        /** @var FlyweightFactory $themeFactory */
         $themeFactory = $objectManager->get(
-            \Magento\Framework\View\Design\Theme\FlyweightFactory::class
+            FlyweightFactory::class
         );
         $theme = $themeFactory->create('Vendor_FrameworkThemeTest/custom_theme');
         $this->assertCount(2, $theme->getInheritedThemes());

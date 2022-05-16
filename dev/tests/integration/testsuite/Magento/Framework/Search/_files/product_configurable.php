@@ -10,12 +10,13 @@ use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use Magento\Catalog\Model\Product\Type;
 use Magento\Catalog\Model\Product\Visibility;
 use Magento\Catalog\Setup\CategorySetup;
+use Magento\CatalogInventory\Model\Stock\Item;
 use Magento\ConfigurableProduct\Helper\Product\Options\Factory;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 use Magento\Eav\Api\Data\AttributeOptionInterface;
+use Magento\Eav\Model\Config;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
-use Magento\Eav\Model\Config;
 
 Resolver::getInstance()->requireDataFixture('Magento/Framework/Search/_files/configurable_attribute.php');
 
@@ -64,8 +65,8 @@ foreach ($options as $option) {
 
     $product = $productRepository->save($product);
 
-    /** @var \Magento\CatalogInventory\Model\Stock\Item $stockItem */
-    $stockItem = Bootstrap::getObjectManager()->create(\Magento\CatalogInventory\Model\Stock\Item::class);
+    /** @var Item $stockItem */
+    $stockItem = Bootstrap::getObjectManager()->create(Item::class);
     $stockItem->load($productId, 'product_id');
 
     if (!$stockItem->getProductId()) {

@@ -8,12 +8,13 @@ declare(strict_types=1);
 namespace Magento\GraphQl\Catalog;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Eav\Model\Config as EavConfig;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
 use Magento\UrlRewrite\Model\UrlFinderInterface;
 use Magento\UrlRewrite\Service\V1\Data\UrlRewrite as UrlRewriteDTO;
-use Magento\Eav\Model\Config as EavConfig;
-use Magento\Store\Model\StoreManagerInterface;
 
 /**
  * Test of getting URL rewrites data from products
@@ -23,7 +24,7 @@ class UrlRewritesTest extends GraphQlAbstract
     /**
      *
      * @magentoApiDataFixture Magento/Catalog/_files/product_virtual.php
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @throws NoSuchEntityException
      */
     public function testProductWithNoCategoriesAssigned()
     {
@@ -90,9 +91,31 @@ QUERY;
     }
 
     /**
+     * Parses target path and extracts parameters
+     *
+     * @param string $targetPath
+     * @return array
+     */
+    private function getUrlParameters(string $targetPath): array
+    {
+        $urlParameters = [];
+        $targetPathParts = explode('/', trim($targetPath, '/'));
+        $count = count($targetPathParts) - 1;
+        //phpcs:ignore Generic.CodeAnalysis.ForLoopWithTestFunctionCall
+        for ($index = 3; $index < $count; $index += 2) {
+            $urlParameters[] = [
+                'name' => $targetPathParts[$index],
+                'value' => $targetPathParts[$index + 1]
+            ];
+        }
+
+        return $urlParameters;
+    }
+
+    /**
      *
      * @magentoApiDataFixture Magento/Catalog/_files/product_simple.php
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @throws NoSuchEntityException
      */
     public function testProductWithOneCategoryAssigned()
     {
@@ -157,27 +180,5 @@ QUERY;
                 ]
             );
         }
-    }
-
-    /**
-     * Parses target path and extracts parameters
-     *
-     * @param string $targetPath
-     * @return array
-     */
-    private function getUrlParameters(string $targetPath): array
-    {
-        $urlParameters = [];
-        $targetPathParts = explode('/', trim($targetPath, '/'));
-        $count = count($targetPathParts) - 1;
-        //phpcs:ignore Generic.CodeAnalysis.ForLoopWithTestFunctionCall
-        for ($index = 3; $index < $count; $index += 2) {
-            $urlParameters[] = [
-                'name' => $targetPathParts[$index],
-                'value' => $targetPathParts[$index + 1]
-            ];
-        }
-
-        return $urlParameters;
     }
 }

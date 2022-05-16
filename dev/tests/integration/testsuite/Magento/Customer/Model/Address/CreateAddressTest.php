@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Customer\Model\Address;
 
+use Exception;
 use Magento\Customer\Api\AddressRepositoryInterface;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Api\Data\AddressInterface;
@@ -99,35 +100,6 @@ class CreateAddressTest extends TestCase
     private $dataObjectFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->addressFactory = $this->objectManager->get(AddressInterfaceFactory::class);
-        $this->customerRegistry = $this->objectManager->get(CustomerRegistry::class);
-        $this->addressRepository = $this->objectManager->get(AddressRepositoryInterface::class);
-        $this->getRegionIdByName = $this->objectManager->get(GetRegionIdByName::class);
-        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
-        $this->addressRegistry = $this->objectManager->get(AddressRegistry::class);
-        $this->addressResource = $this->objectManager->get(Address::class);
-        $this->dataObjectFactory = $this->objectManager->get(DataObjectFactory::class);
-        parent::setUp();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        foreach ($this->createdAddressesIds as $createdAddressesId) {
-            $this->addressRegistry->remove($createdAddressesId);
-        }
-        $this->objectManager->removeSharedInstance(AfterAddressSaveObserver::class);
-        parent::tearDown();
-    }
-
-    /**
      * Assert that default addresses properly created for customer.
      *
      * @magentoDataFixture Magento/Customer/_files/customer_no_address.php
@@ -141,9 +113,10 @@ class CreateAddressTest extends TestCase
      */
     public function testCreateDefaultAddress(
         array $addressData,
-        bool $isShippingDefault,
-        bool $isBillingDefault
-    ): void {
+        bool  $isShippingDefault,
+        bool  $isBillingDefault
+    ): void
+    {
         $customer = $this->customerRepository->get('customer5@example.com');
         $this->assertNull($customer->getDefaultShipping(), 'Customer already has default shipping address');
         $this->assertNull($customer->getDefaultBilling(), 'Customer already has default billing address');
@@ -158,6 +131,43 @@ class CreateAddressTest extends TestCase
         $customer = $this->customerRepository->get('customer5@example.com');
         $this->assertEquals($expectedShipping, $customer->getDefaultShipping());
         $this->assertEquals($expectedBilling, $customer->getDefaultBilling());
+    }
+
+    /**
+     * Create customer address with provided address data.
+     *
+     * @param int $customerId
+     * @param array $addressData
+     * @param bool $isDefaultShipping
+     * @param bool $isDefaultBilling
+     * @return AddressInterface
+     */
+    protected function createAddress(
+        int   $customerId,
+        array $addressData,
+        bool  $isDefaultShipping = false,
+        bool  $isDefaultBilling = false
+    ): AddressInterface
+    {
+        if (isset($addressData['custom_region_name'])) {
+            $addressData[AddressInterface::REGION_ID] = $this->getRegionIdByName->execute(
+                $addressData['custom_region_name'],
+                $addressData[AddressInterface::COUNTRY_ID]
+            );
+            unset($addressData['custom_region_name']);
+        }
+
+        $addressData['attribute_set_id'] = $this->addressResource->getEntityType()->getDefaultAttributeSetId();
+        $address = $this->addressFactory->create(['data' => $addressData]);
+        $address->setCustomerId($customerId);
+        $address->setIsDefaultShipping($isDefaultShipping);
+        $address->setIsDefaultBilling($isDefaultBilling);
+        $address = $this->addressRepository->save($address);
+        $this->customerRegistry->remove($customerId);
+        $this->addressRegistry->remove($address->getId());
+        $this->createdAddressesIds[] = (int)$address->getId();
+
+        return $address;
     }
 
     /**
@@ -283,10 +293,10 @@ class CreateAddressTest extends TestCase
      * @dataProvider createWrongAddressesDataProvider
      *
      * @param array $addressData
-     * @param \Exception $expectException
+     * @param Exception $expectException
      * @return void
      */
-    public function testExceptionThrownDuringCreateAddress(array $addressData, \Exception $expectException): void
+    public function testExceptionThrownDuringCreateAddress(array $addressData, Exception $expectException): void
     {
         $customer = $this->customerRepository->get('customer5@example.com');
         $this->expectExceptionObject($expectException);
@@ -358,6 +368,51 @@ class CreateAddressTest extends TestCase
         $customer = $this->customerRepository->get('customer5@example.com');
         $this->createAddress((int)$customer->getId(), $addressData, false, true);
         $this->assertEquals(2, $this->getCustomerGroupId('customer5@example.com'));
+    }
+
+    /**
+     * Creates mock for vat id validation.
+     *
+     * @param bool $isValid
+     * @param bool $isRequestSuccess
+     * @return void
+     */
+    private function createVatMock(bool $isValid = false, bool $isRequestSuccess = false): void
+    {
+        $gatewayResponse = $this->dataObjectFactory->create(
+            [
+                'data' => [
+                    'is_valid' => $isValid,
+                    'request_date' => '',
+                    'request_identifier' => '123123123',
+                    'request_success' => $isRequestSuccess,
+                    'request_message' => __(''),
+                ],
+            ]
+        );
+        $customerVat = $this->getMockBuilder(Vat::class)
+            ->setConstructorArgs(
+                [
+                    $this->objectManager->get(ScopeConfigInterface::class),
+                    $this->objectManager->get(PsrLogger::class)
+                ]
+            )
+            ->setMethods(['checkVatNumber'])
+            ->getMock();
+        $customerVat->method('checkVatNumber')->willReturn($gatewayResponse);
+        $this->objectManager->removeSharedInstance(Vat::class);
+        $this->objectManager->addSharedInstance($customerVat, Vat::class);
+    }
+
+    /**
+     * Returns customer group id by email.
+     *
+     * @param string $email
+     * @return int
+     */
+    private function getCustomerGroupId(string $email): int
+    {
+        return (int)$this->customerRepository->get($email)->getGroupId();
     }
 
     /**
@@ -442,83 +497,31 @@ class CreateAddressTest extends TestCase
     }
 
     /**
-     * Create customer address with provided address data.
-     *
-     * @param int $customerId
-     * @param array $addressData
-     * @param bool $isDefaultShipping
-     * @param bool $isDefaultBilling
-     * @return AddressInterface
+     * @inheritdoc
      */
-    protected function createAddress(
-        int $customerId,
-        array $addressData,
-        bool $isDefaultShipping = false,
-        bool $isDefaultBilling = false
-    ): AddressInterface {
-        if (isset($addressData['custom_region_name'])) {
-            $addressData[AddressInterface::REGION_ID] = $this->getRegionIdByName->execute(
-                $addressData['custom_region_name'],
-                $addressData[AddressInterface::COUNTRY_ID]
-            );
-            unset($addressData['custom_region_name']);
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->addressFactory = $this->objectManager->get(AddressInterfaceFactory::class);
+        $this->customerRegistry = $this->objectManager->get(CustomerRegistry::class);
+        $this->addressRepository = $this->objectManager->get(AddressRepositoryInterface::class);
+        $this->getRegionIdByName = $this->objectManager->get(GetRegionIdByName::class);
+        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
+        $this->addressRegistry = $this->objectManager->get(AddressRegistry::class);
+        $this->addressResource = $this->objectManager->get(Address::class);
+        $this->dataObjectFactory = $this->objectManager->get(DataObjectFactory::class);
+        parent::setUp();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        foreach ($this->createdAddressesIds as $createdAddressesId) {
+            $this->addressRegistry->remove($createdAddressesId);
         }
-
-        $addressData['attribute_set_id'] = $this->addressResource->getEntityType()->getDefaultAttributeSetId();
-        $address = $this->addressFactory->create(['data' => $addressData]);
-        $address->setCustomerId($customerId);
-        $address->setIsDefaultShipping($isDefaultShipping);
-        $address->setIsDefaultBilling($isDefaultBilling);
-        $address = $this->addressRepository->save($address);
-        $this->customerRegistry->remove($customerId);
-        $this->addressRegistry->remove($address->getId());
-        $this->createdAddressesIds[] = (int)$address->getId();
-
-        return $address;
-    }
-
-    /**
-     * Creates mock for vat id validation.
-     *
-     * @param bool $isValid
-     * @param bool $isRequestSuccess
-     * @return void
-     */
-    private function createVatMock(bool $isValid = false, bool $isRequestSuccess = false): void
-    {
-        $gatewayResponse = $this->dataObjectFactory->create(
-            [
-                'data' => [
-                    'is_valid' => $isValid,
-                    'request_date' => '',
-                    'request_identifier' => '123123123',
-                    'request_success' => $isRequestSuccess,
-                    'request_message' => __(''),
-                ],
-            ]
-        );
-        $customerVat = $this->getMockBuilder(Vat::class)
-            ->setConstructorArgs(
-                [
-                    $this->objectManager->get(ScopeConfigInterface::class),
-                    $this->objectManager->get(PsrLogger::class)
-                ]
-            )
-            ->setMethods(['checkVatNumber'])
-            ->getMock();
-        $customerVat->method('checkVatNumber')->willReturn($gatewayResponse);
-        $this->objectManager->removeSharedInstance(Vat::class);
-        $this->objectManager->addSharedInstance($customerVat, Vat::class);
-    }
-
-    /**
-     * Returns customer group id by email.
-     *
-     * @param string $email
-     * @return int
-     */
-    private function getCustomerGroupId(string $email): int
-    {
-        return (int)$this->customerRepository->get($email)->getGroupId();
+        $this->objectManager->removeSharedInstance(AfterAddressSaveObserver::class);
+        parent::tearDown();
     }
 }

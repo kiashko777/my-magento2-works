@@ -3,7 +3,9 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 use Magento\SalesRule\Model\Coupon;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 $couponCodes = [
@@ -12,7 +14,7 @@ $couponCodes = [
 ];
 
 /** @var Coupon $coupon */
-$coupon = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(Coupon::class);
+$coupon = Bootstrap::getObjectManager()->create(Coupon::class);
 
 foreach ($couponCodes as $couponCode) {
     $coupon->loadByCode($couponCode);

@@ -3,34 +3,52 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Modular;
 
+use Exception;
+use Magento\Backend\Block\Template;
 use Magento\Customer\Model\Context;
+use Magento\Customer\Model\GroupManagement;
+use Magento\Framework\App\Area;
+use Magento\Framework\App\AreaList;
+use Magento\Framework\App\State;
+use Magento\Framework\App\Utility\AggregateInvoker;
+use Magento\Framework\App\Utility\Classes;
+use Magento\Framework\Config\ScopeInterface;
+use Magento\Framework\View\Design\ThemeInterface;
+use Magento\Framework\View\DesignInterface;
+use Magento\Framework\View\FileSystem;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\Store\Model\Website;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractIntegrity;
+use ReflectionClass;
 
 /**
  * @magentoAppIsolation enabled
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class TemplateFilesTest extends \Magento\TestFramework\TestCase\AbstractIntegrity
+class TemplateFilesTest extends AbstractIntegrity
 {
     public function testAllTemplates()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
             function ($module, $template, $class, $area) {
-                \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-                    \Magento\Framework\View\DesignInterface::class
+                Bootstrap::getObjectManager()->get(
+                    DesignInterface::class
                 )->setDefaultDesignTheme();
                 // intentionally to make sure the module files will be requested
                 $params = [
                     'area' => $area,
-                    'themeModel' => \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-                        \Magento\Framework\View\Design\ThemeInterface::class
+                    'themeModel' => Bootstrap::getObjectManager()->create(
+                        ThemeInterface::class
                     ),
                     'module' => $module,
                 ];
-                $file = \Magento\TestFramework\Helper\Bootstrap::getObjectmanager()->get(
-                    \Magento\Framework\View\FileSystem::class
+                $file = Bootstrap::getObjectmanager()->get(
+                    FileSystem::class
                 )->getTemplateFileName(
                     $template,
                     $params
@@ -50,65 +68,65 @@ class TemplateFilesTest extends \Magento\TestFramework\TestCase\AbstractIntegrit
     {
         $blockClass = '';
         try {
-            /** @var $website \Magento\Store\Model\Website */
-            \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-                \Magento\Store\Model\StoreManagerInterface::class
+            /** @var $website Website */
+            Bootstrap::getObjectManager()->get(
+                StoreManagerInterface::class
             )->getStore()->setWebsiteId(
                 0
             );
 
             $templates = [];
             $skippedBlocks = $this->_getBlocksToSkip();
-            foreach (\Magento\Framework\App\Utility\Classes::collectModuleClasses('Block') as $blockClass => $module) {
+            foreach (Classes::collectModuleClasses('Block') as $blockClass => $module) {
                 if (!in_array($module, $this->_getEnabledModules()) || in_array($blockClass, $skippedBlocks)) {
                     continue;
                 }
-                $class = new \ReflectionClass($blockClass);
+                $class = new ReflectionClass($blockClass);
                 if ($class->isAbstract() || !$class->isSubclassOf(\Magento\Framework\View\Element\Template::class)) {
                     continue;
                 }
 
                 $area = 'frontend';
                 if ($module == 'Magento_Backend' || strpos(
-                    $blockClass,
-                    '\\Adminhtml\\'
-                ) !== false || strpos(
-                    $blockClass,
-                    '\\Backend\\'
-                ) !== false || $class->isSubclassOf(
-                    \Magento\Backend\Block\Template::class
-                )
+                        $blockClass,
+                        '\\Adminhtml\\'
+                    ) !== false || strpos(
+                        $blockClass,
+                        '\\Backend\\'
+                    ) !== false || $class->isSubclassOf(
+                        Template::class
+                    )
                 ) {
                     $area = 'Adminhtml';
                 }
 
-                \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-                    \Magento\Framework\App\AreaList::class
+                Bootstrap::getObjectManager()->get(
+                    AreaList::class
                 )->getArea(
                     $area
                 )->load(
-                    \Magento\Framework\App\Area::PART_CONFIG
+                    Area::PART_CONFIG
                 );
-                \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-                    \Magento\Framework\Config\ScopeInterface::class
+                Bootstrap::getObjectManager()->get(
+                    ScopeInterface::class
                 )->setCurrentScope(
                     $area
                 );
-                \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-                    \Magento\Framework\App\State::class
+                Bootstrap::getObjectManager()->get(
+                    State::class
                 )->setAreaCode(
                     $area
                 );
-                $context = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
+                $context = Bootstrap::getObjectManager()->get(
                     \Magento\Framework\App\Http\Context::class
                 );
                 $context->setValue(Context::CONTEXT_AUTH, false, false);
                 $context->setValue(
                     Context::CONTEXT_GROUP,
-                    \Magento\Customer\Model\GroupManagement::NOT_LOGGED_IN_ID,
-                    \Magento\Customer\Model\GroupManagement::NOT_LOGGED_IN_ID
+                    GroupManagement::NOT_LOGGED_IN_ID,
+                    GroupManagement::NOT_LOGGED_IN_ID
                 );
-                $block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create($blockClass);
+                $block = Bootstrap::getObjectManager()->create($blockClass);
                 $template = $block->getTemplate();
                 if ($template) {
                     $templates[$module . ', ' . $template . ', ' . $blockClass . ', ' . $area] = [
@@ -120,7 +138,7 @@ class TemplateFilesTest extends \Magento\TestFramework\TestCase\AbstractIntegrit
                 }
             }
             return $templates;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             trigger_error(
                 "Corrupted data provider. Last known block instantiation attempt: '{$blockClass}'." .
                 " Exception: {$e}",

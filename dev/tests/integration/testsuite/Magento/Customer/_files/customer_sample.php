@@ -3,13 +3,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-use Magento\Customer\Model\CustomerRegistry;
 
-/** @var \Magento\Customer\Model\Customer $customer */
-$customer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->create(\Magento\Customer\Model\Customer::class);
+use Magento\Customer\Model\Address;
+use Magento\Customer\Model\Customer;
+use Magento\Customer\Model\CustomerRegistry;
+use Magento\TestFramework\Helper\Bootstrap;
+
+/** @var Customer $customer */
+$customer = Bootstrap::getObjectManager()
+    ->create(Customer::class);
 /** @var CustomerRegistry $customerRegistry */
-$customerRegistry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(CustomerRegistry::class);
+$customerRegistry = Bootstrap::getObjectManager()->get(CustomerRegistry::class);
 
 $customerData = [
     'group_id' => 1,
@@ -26,9 +30,9 @@ $customerData = [
 $customer->setData($customerData);
 $customer->setId(1);
 
-/** @var \Magento\Customer\Model\Address $addressOne  */
-$addressOne = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Address::class
+/** @var Address $addressOne */
+$addressOne = Bootstrap::getObjectManager()->create(
+    Address::class
 );
 $addressOneData = [
     'firstname' => 'test firstname',
@@ -44,9 +48,9 @@ $addressOneData = [
 $addressOne->setData($addressOneData);
 $customer->addAddress($addressOne);
 
-/** @var \Magento\Customer\Model\Address $addressTwo  */
-$addressTwo = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Address::class
+/** @var Address $addressTwo */
+$addressTwo = Bootstrap::getObjectManager()->create(
+    Address::class
 );
 $addressTwoData = [
     'firstname' => 'test firstname',
@@ -62,9 +66,9 @@ $addressTwoData = [
 $addressTwo->setData($addressTwoData);
 $customer->addAddress($addressTwo);
 
-/** @var \Magento\Customer\Model\Address $addressThree  */
-$addressThree = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Address::class
+/** @var Address $addressThree */
+$addressThree = Bootstrap::getObjectManager()->create(
+    Address::class
 );
 $addressThreeData = [
     'firstname' => 'removed firstname',

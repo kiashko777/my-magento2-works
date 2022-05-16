@@ -31,18 +31,6 @@ class ViewTest extends AbstractController
     private $orderRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->cookieManager = $this->_objectManager->get(CookieManagerInterface::class);
-        $this->orderFactory = $this->_objectManager->get(OrderInterfaceFactory::class);
-        $this->orderRepository = $this->_objectManager->get(OrderRepositoryInterface::class);
-    }
-
-    /**
      * Check that controller applied GET requests.
      *
      * @return void
@@ -73,5 +61,17 @@ class ViewTest extends AbstractController
         $this->assertSessionMessages(
             $this->containsEqual((string)__('You entered incorrect data. Please try again.'))
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->cookieManager = $this->_objectManager->get(CookieManagerInterface::class);
+        $this->orderFactory = $this->_objectManager->get(OrderInterfaceFactory::class);
+        $this->orderRepository = $this->_objectManager->get(OrderRepositoryInterface::class);
     }
 }

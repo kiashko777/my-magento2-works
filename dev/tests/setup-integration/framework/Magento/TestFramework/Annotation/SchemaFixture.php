@@ -7,7 +7,13 @@
 /**
  * Implementation of the @magentoSchemaFixture DocBlock annotation.
  */
+
 namespace Magento\TestFramework\Annotation;
+
+use Exception;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Phrase;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Represents following construction handling:
@@ -33,14 +39,14 @@ class SchemaFixture
     /**
      * Constructor.
      *
-     * @param  string $fixtureBaseDir
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @param string $fixtureBaseDir
+     * @throws LocalizedException
      */
     public function __construct($fixtureBaseDir)
     {
         if (!is_dir($fixtureBaseDir)) {
-            throw new \Magento\Framework\Exception\LocalizedException(
-                new \Magento\Framework\Phrase("Fixture base directory '%1' does not exist.", [$fixtureBaseDir])
+            throw new LocalizedException(
+                new Phrase("Fixture base directory '%1' does not exist.", [$fixtureBaseDir])
             );
         }
         $this->fixtureBaseDir = realpath($fixtureBaseDir);
@@ -49,10 +55,10 @@ class SchemaFixture
     /**
      * Apply magento data fixture on.
      *
-     * @param  \PHPUnit\Framework\TestCase $test
+     * @param TestCase $test
      * @return void
      */
-    public function startTest(\PHPUnit\Framework\TestCase $test)
+    public function startTest(TestCase $test)
     {
         if ($this->_getFixtures($test)) {
             $this->_applyFixtures($this->_getFixtures($test));
@@ -60,26 +66,14 @@ class SchemaFixture
     }
 
     /**
-     * Finish test execution.
-     *
-     * @param \PHPUnit\Framework\TestCase $test
-     */
-    public function endTest(\PHPUnit\Framework\TestCase $test)
-    {
-        if ($this->_getFixtures($test)) {
-            $this->_revertFixtures();
-        }
-    }
-    
-    /**
      * Retrieve fixtures from annotation.
      *
-     * @param  \PHPUnit\Framework\TestCase $test
-     * @param  string                      $scope
+     * @param TestCase $test
+     * @param string $scope
      * @return array
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @throws LocalizedException
      */
-    protected function _getFixtures(\PHPUnit\Framework\TestCase $test, $scope = null)
+    protected function _getFixtures(TestCase $test, $scope = null)
     {
         if ($scope === null) {
             $annotations = $this->getAnnotations($test);
@@ -91,8 +85,8 @@ class SchemaFixture
             foreach ($annotations['magentoSchemaFixture'] as $fixture) {
                 if (strpos($fixture, '\\') !== false) {
                     // usage of a single directory separator symbol streamlines search across the source code
-                    throw new \Magento\Framework\Exception\LocalizedException(
-                        new \Magento\Framework\Phrase('Directory separator "\\" is prohibited in fixture declaration.')
+                    throw new LocalizedException(
+                        new Phrase('Directory separator "\\" is prohibited in fixture declaration.')
                     );
                 }
                 $fixtureMethod = [get_class($test), $fixture];
@@ -109,43 +103,20 @@ class SchemaFixture
     /**
      * Get annotations for test.
      *
-     * @param \PHPUnit\Framework\TestCase $test
+     * @param TestCase $test
      * @return array
      */
-    private function getAnnotations(\PHPUnit\Framework\TestCase $test)
+    private function getAnnotations(TestCase $test)
     {
         $annotations = $test->getAnnotations();
         return array_replace($annotations['class'], $annotations['method']);
     }
 
     /**
-     * Execute single fixture script.
-     *
-     * @param  string|array $fixture
-     * @throws \Exception
-     */
-    protected function _applyOneFixture($fixture)
-    {
-        try {
-            if (is_callable($fixture)) {
-                call_user_func($fixture);
-            } else {
-                include $fixture;
-            }
-        } catch (\Exception $e) {
-            throw new \Exception(
-                sprintf("Error in fixture: %s.\n %s", json_encode($fixture), $e->getMessage()),
-                500,
-                $e
-            );
-        }
-    }
-
-    /**
      * Execute fixture scripts if any.
      *
-     * @param  array $fixtures
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @param array $fixtures
+     * @throws LocalizedException
      */
     protected function _applyFixtures(array $fixtures)
     {
@@ -157,6 +128,41 @@ class SchemaFixture
             }
             $this->_applyOneFixture($oneFixture);
             $this->appliedFixtures[] = $oneFixture;
+        }
+    }
+
+    /**
+     * Execute single fixture script.
+     *
+     * @param string|array $fixture
+     * @throws Exception
+     */
+    protected function _applyOneFixture($fixture)
+    {
+        try {
+            if (is_callable($fixture)) {
+                call_user_func($fixture);
+            } else {
+                include $fixture;
+            }
+        } catch (Exception $e) {
+            throw new Exception(
+                sprintf("Error in fixture: %s.\n %s", json_encode($fixture), $e->getMessage()),
+                500,
+                $e
+            );
+        }
+    }
+
+    /**
+     * Finish test execution.
+     *
+     * @param TestCase $test
+     */
+    public function endTest(TestCase $test)
+    {
+        if ($this->_getFixtures($test)) {
+            $this->_revertFixtures();
         }
     }
 

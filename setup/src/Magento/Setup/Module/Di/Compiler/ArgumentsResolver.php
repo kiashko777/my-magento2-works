@@ -7,10 +7,12 @@
 
 namespace Magento\Setup\Module\Di\Compiler;
 
+use Magento\Framework\ObjectManager\ConfigInterface;
+
 class ArgumentsResolver
 {
     /**
-     * @var \Magento\Framework\ObjectManager\ConfigInterface
+     * @var ConfigInterface
      */
     private $diContainerConfig;
 
@@ -70,9 +72,9 @@ class ArgumentsResolver
     ];
 
     /**
-     * @param \Magento\Framework\ObjectManager\ConfigInterface $diContainerConfig
+     * @param ConfigInterface $diContainerConfig
      */
-    public function __construct(\Magento\Framework\ObjectManager\ConfigInterface $diContainerConfig)
+    public function __construct(ConfigInterface $diContainerConfig)
     {
         $this->diContainerConfig = $diContainerConfig;
     }
@@ -113,76 +115,6 @@ class ArgumentsResolver
     }
 
     /**
-     * Returns formatted configured argument
-     *
-     * @param array $configuredArgument
-     * @param ConstructorArgument $constructorArgument
-     * @return mixed
-     */
-    private function getConfiguredArgument($configuredArgument, ConstructorArgument $constructorArgument)
-    {
-        if ($constructorArgument->getType()) {
-            $argument = $this->getConfiguredInstanceArgument($configuredArgument);
-            return $argument;
-        } elseif (isset($configuredArgument['argument'])) {
-            return $this->getGlobalArgument($configuredArgument['argument'], $constructorArgument->getDefaultValue());
-        }
-
-        return $this->getNonObjectArgument($configuredArgument);
-    }
-
-    /**
-     * Returns configured array attribute
-     *
-     * @param array $array
-     * @return mixed
-     */
-    private function getConfiguredArrayAttribute($array)
-    {
-        foreach ($array as $key => $value) {
-            if (!is_array($value)) {
-                continue;
-            }
-
-            if (isset($value['instance'])) {
-                $array[$key] = $this->getConfiguredInstanceArgument($value);
-                continue;
-            }
-
-            if (isset($value['argument'])) {
-                $array[$key] = $this->getGlobalArgument($value['argument'], null);
-                continue;
-            }
-
-            $array[$key] = $this->getConfiguredArrayAttribute($value);
-        }
-
-        return $array;
-    }
-
-    /**
-     * Returns configured instance argument
-     *
-     * @param array $config
-     * @return array|mixed
-     */
-    private function getConfiguredInstanceArgument(array $config)
-    {
-        $argument = $this->getInstanceArgument($config['instance']);
-        if (isset($config['shared'])) {
-            if ($config['shared']) {
-                $pattern = $this->sharedInstancePattern;
-                $pattern['_i_'] = current($argument);
-            } else {
-                $pattern = $this->notSharedInstancePattern;
-                $pattern['_ins_'] = current($argument);
-            }
-            $argument = $pattern;
-        }
-        return $argument;
-    }
-
-    /**
      * Return configured arguments
      *
      * @param string $instanceType
@@ -201,24 +133,6 @@ class ArgumentsResolver
             },
             $configuredArguments
         );
-    }
-
-    /**
-     * Returns instance argument
-     *
-     * @param string $instanceType
-     * @return array|mixed
-     */
-    private function getInstanceArgument($instanceType)
-    {
-        if ($this->diContainerConfig->isShared($instanceType)) {
-            $argument = $this->sharedInstancePattern;
-            $argument['_i_'] = $instanceType;
-        } else {
-            $argument = $this->notSharedInstancePattern;
-            $argument['_ins_'] = $instanceType;
-        }
-        return $argument;
     }
 
     /**
@@ -273,6 +187,75 @@ class ArgumentsResolver
     }
 
     /**
+     * Returns configured array attribute
+     *
+     * @param array $array
+     * @return mixed
+     */
+    private function getConfiguredArrayAttribute($array)
+    {
+        foreach ($array as $key => $value) {
+            if (!is_array($value)) {
+                continue;
+            }
+
+            if (isset($value['instance'])) {
+                $array[$key] = $this->getConfiguredInstanceArgument($value);
+                continue;
+            }
+
+            if (isset($value['argument'])) {
+                $array[$key] = $this->getGlobalArgument($value['argument'], null);
+                continue;
+            }
+
+            $array[$key] = $this->getConfiguredArrayAttribute($value);
+        }
+
+        return $array;
+    }
+
+    /**
+     * Returns configured instance argument
+     *
+     * @param array $config
+     * @return array|mixed
+     */
+    private function getConfiguredInstanceArgument(array $config)
+    {
+        $argument = $this->getInstanceArgument($config['instance']);
+        if (isset($config['shared'])) {
+            if ($config['shared']) {
+                $pattern = $this->sharedInstancePattern;
+                $pattern['_i_'] = current($argument);
+            } else {
+                $pattern = $this->notSharedInstancePattern;
+                $pattern['_ins_'] = current($argument);
+            }
+            $argument = $pattern;
+        }
+        return $argument;
+    }
+
+    /**
+     * Returns instance argument
+     *
+     * @param string $instanceType
+     * @return array|mixed
+     */
+    private function getInstanceArgument($instanceType)
+    {
+        if ($this->diContainerConfig->isShared($instanceType)) {
+            $argument = $this->sharedInstancePattern;
+            $argument['_i_'] = $instanceType;
+        } else {
+            $argument = $this->notSharedInstancePattern;
+            $argument['_ins_'] = $instanceType;
+        }
+        return $argument;
+    }
+
+    /**
      * Returns global argument
      *
      * @param string $value
@@ -285,5 +268,24 @@ class ArgumentsResolver
         $argument['_a_'] = $value;
         $argument['_d_'] = $default;
         return $argument;
+    }
+
+    /**
+     * Returns formatted configured argument
+     *
+     * @param array $configuredArgument
+     * @param ConstructorArgument $constructorArgument
+     * @return mixed
+     */
+    private function getConfiguredArgument($configuredArgument, ConstructorArgument $constructorArgument)
+    {
+        if ($constructorArgument->getType()) {
+            $argument = $this->getConfiguredInstanceArgument($configuredArgument);
+            return $argument;
+        } elseif (isset($configuredArgument['argument'])) {
+            return $this->getGlobalArgument($configuredArgument['argument'], $constructorArgument->getDefaultValue());
+        }
+
+        return $this->getNonObjectArgument($configuredArgument);
     }
 }

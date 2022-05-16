@@ -8,16 +8,16 @@ declare(strict_types=1);
 
 namespace Magento\Customer\Console\Command;
 
+use Magento\Customer\Model\AuthenticationInterface;
+use Magento\Customer\Model\Customer;
+use Magento\Customer\Model\CustomerFactory;
+use Magento\Customer\Model\CustomerRegistry;
 use Magento\Framework\Encryption\Encryptor;
 use Magento\Framework\Encryption\EncryptorInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
-use Magento\Customer\Model\CustomerFactory;
-use Magento\Customer\Model\Customer;
-use Magento\Customer\Model\CustomerRegistry;
 use Symfony\Component\Console\Tester\CommandTester;
-use Magento\Customer\Model\AuthenticationInterface;
 
 /**
  * Test password hash upgrade command.
@@ -57,21 +57,6 @@ class UpgradeHashAlgorithmCommandTest extends TestCase
     private $storeManager;
 
     /**
-     * @inheirtDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->command = Bootstrap::getObjectManager()->get(UpgradeHashAlgorithmCommand::class);
-        $this->customerFactory = Bootstrap::getObjectManager()->get(CustomerFactory::class);
-        $this->encryptor = Bootstrap::getObjectManager()->get(EncryptorInterface::class);
-        $this->registry = Bootstrap::getObjectManager()->get(CustomerRegistry::class);
-        $this->authentication = Bootstrap::getObjectManager()->get(AuthenticationInterface::class);
-        $this->storeManager = Bootstrap::getObjectManager()->get(StoreManagerInterface::class);
-    }
-
-    /**
      * Test upgrading a customer's password hash.
      *
      * @return void
@@ -105,11 +90,26 @@ class UpgradeHashAlgorithmCommandTest extends TestCase
 
         //Using the latest algorithm
         $this->assertMatchesRegularExpression(
-            '/\:' .$this->encryptor->getLatestHashVersion() .'[^\:]*?$/',
+            '/\:' . $this->encryptor->getLatestHashVersion() . '[^\:]*?$/',
             $updated->getPasswordHash()
         );
 
         //Able to log in
         $this->assertTrue($this->authentication->authenticate($updated->getId(), $original));
+    }
+
+    /**
+     * @inheirtDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->command = Bootstrap::getObjectManager()->get(UpgradeHashAlgorithmCommand::class);
+        $this->customerFactory = Bootstrap::getObjectManager()->get(CustomerFactory::class);
+        $this->encryptor = Bootstrap::getObjectManager()->get(EncryptorInterface::class);
+        $this->registry = Bootstrap::getObjectManager()->get(CustomerRegistry::class);
+        $this->authentication = Bootstrap::getObjectManager()->get(AuthenticationInterface::class);
+        $this->storeManager = Bootstrap::getObjectManager()->get(StoreManagerInterface::class);
     }
 }

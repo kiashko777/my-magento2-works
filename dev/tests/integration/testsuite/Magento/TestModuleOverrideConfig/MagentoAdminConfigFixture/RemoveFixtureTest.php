@@ -21,16 +21,6 @@ class RemoveFixtureTest extends AbstractOverridesTest
     private $config;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->config = $this->objectManager->get(ScopeConfigInterface::class);
-    }
-
-    /**
      * Checks that fixture can be removed in test class node
      *
      * @magentoAdminConfigFixture test_section/test_group/field_1 new_value
@@ -84,5 +74,15 @@ class RemoveFixtureTest extends AbstractOverridesTest
                 'expected_second_config_value' => '3rd field default value',
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->config = $this->objectManager->get(ScopeConfigInterface::class);
     }
 }

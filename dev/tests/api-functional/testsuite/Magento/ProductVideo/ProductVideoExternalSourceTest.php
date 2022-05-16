@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Magento\ProductVideo;
 
 use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
@@ -160,7 +161,7 @@ class ProductVideoExternalSourceTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,

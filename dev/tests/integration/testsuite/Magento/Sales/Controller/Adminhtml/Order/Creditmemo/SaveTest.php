@@ -8,6 +8,8 @@ declare(strict_types=1);
 namespace Magento\Sales\Controller\Adminhtml\Order\Creditmemo;
 
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\Message\MessageInterface;
+use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Api\Data\OrderItemInterface;
 use Magento\Sales\Model\Order;
 use PHPUnit\Framework\Constraint\StringContains;
@@ -38,7 +40,7 @@ class SaveTest extends AbstractCreditmemoControllerTest
 
         $this->assertSessionMessages(
             $this->equalTo([(string)__('You created the credit memo.')]),
-            \Magento\Framework\Message\MessageInterface::TYPE_SUCCESS
+            MessageInterface::TYPE_SUCCESS
         );
         $this->assertRedirect($this->stringContains('sales/order/view/order_id/' . $order->getEntityId()));
 
@@ -57,6 +59,29 @@ class SaveTest extends AbstractCreditmemoControllerTest
 
         $this->assertEquals($message->getSubject(), $subject);
         $this->assertThat($message->getBody()->getParts()[0]->getRawContent(), $messageConstraint);
+    }
+
+    /**
+     * @param array $params
+     * @return OrderInterface|null
+     */
+    private function prepareRequest(array $params = [])
+    {
+        $order = $this->getOrder('100000001');
+        $this->getRequest()->setMethod('POST');
+        $this->getRequest()->setParams(
+            [
+                'order_id' => $order->getEntityId(),
+                'form_key' => $this->formKey->getFormKey(),
+            ]
+        );
+
+        $data = ['creditmemo' => ['do_offline' => true]];
+        $data = array_replace_recursive($data, $params);
+
+        $this->getRequest()->setPostValue($data);
+
+        return $order;
     }
 
     /**
@@ -93,6 +118,26 @@ class SaveTest extends AbstractCreditmemoControllerTest
     }
 
     /**
+     * Gets all items of given Order in proper format.
+     *
+     * @param Order $order
+     * @param int $subQty
+     * @return array
+     */
+    private function getOrderItems(Order $order, int $subQty = 0)
+    {
+        $items = [];
+        /** @var OrderItemInterface $item */
+        foreach ($order->getAllItems() as $item) {
+            $items[$item->getItemId()] = [
+                'qty' => $item->getQtyOrdered() - $subQty,
+            ];
+        }
+
+        return $items;
+    }
+
+    /**
      * Test order will change custom status after total refund, when state has been changed.
      *
      * @magentoDataFixture Magento/Sales/_files/order_with_invoice_and_custom_status.php
@@ -125,26 +170,6 @@ class SaveTest extends AbstractCreditmemoControllerTest
     }
 
     /**
-     * Gets all items of given Order in proper format.
-     *
-     * @param Order $order
-     * @param int $subQty
-     * @return array
-     */
-    private function getOrderItems(Order $order, int $subQty = 0)
-    {
-        $items = [];
-        /** @var OrderItemInterface $item */
-        foreach ($order->getAllItems() as $item) {
-            $items[$item->getItemId()] = [
-                'qty' => $item->getQtyOrdered() - $subQty,
-            ];
-        }
-
-        return $items;
-    }
-
-    /**
      * @inheritdoc
      */
     public function testAclHasAccess()
@@ -162,28 +187,5 @@ class SaveTest extends AbstractCreditmemoControllerTest
         $this->prepareRequest();
 
         parent::testAclNoAccess();
-    }
-
-    /**
-     * @param array $params
-     * @return \Magento\Sales\Api\Data\OrderInterface|null
-     */
-    private function prepareRequest(array $params = [])
-    {
-        $order = $this->getOrder('100000001');
-        $this->getRequest()->setMethod('POST');
-        $this->getRequest()->setParams(
-            [
-                'order_id' => $order->getEntityId(),
-                'form_key' => $this->formKey->getFormKey(),
-            ]
-        );
-
-        $data = ['creditmemo' => ['do_offline' => true]];
-        $data = array_replace_recursive($data, $params);
-
-        $this->getRequest()->setPostValue($data);
-
-        return $order;
     }
 }

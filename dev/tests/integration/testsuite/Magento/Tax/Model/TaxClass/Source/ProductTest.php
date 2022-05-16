@@ -6,26 +6,30 @@
 
 namespace Magento\Tax\Model\TaxClass\Source;
 
+use Magento\Tax\Api\TaxClassManagementInterface;
+use Magento\Tax\Model\ClassModel;
+use Magento\Tax\Model\ResourceModel\TaxClass\Collection;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class ProductTest extends \PHPUnit\Framework\TestCase
+class ProductTest extends TestCase
 {
     public function testGetAllOptions()
     {
-        /** @var \Magento\Tax\Model\ResourceModel\TaxClass\Collection $collection */
-        $collection = Bootstrap::getObjectManager()->get(\Magento\Tax\Model\ResourceModel\TaxClass\Collection::class);
+        /** @var Collection $collection */
+        $collection = Bootstrap::getObjectManager()->get(Collection::class);
         $expectedResult = [];
-        /** @var \Magento\Tax\Model\ClassModel $taxClass */
+        /** @var ClassModel $taxClass */
         foreach ($collection as $taxClass) {
-            if ($taxClass->getClassType() == \Magento\Tax\Api\TaxClassManagementInterface::TYPE_PRODUCT) {
+            if ($taxClass->getClassType() == TaxClassManagementInterface::TYPE_PRODUCT) {
                 $expectedResult[] = ['value' => $taxClass->getId(), 'label' => $taxClass->getClassName()];
             }
         }
         if (empty($expectedResult)) {
             $this->fail('Preconditions failed: At least one tax class should be available.');
         }
-        /** @var \Magento\Tax\Model\TaxClass\Source\Product $source */
-        $source = Bootstrap::getObjectManager()->get(\Magento\Tax\Model\TaxClass\Source\Product::class);
+        /** @var Product $source */
+        $source = Bootstrap::getObjectManager()->get(Product::class);
         $this->assertEquals(
             $expectedResult,
             $source->getAllOptions(false),
@@ -35,12 +39,12 @@ class ProductTest extends \PHPUnit\Framework\TestCase
 
     public function testGetAllOptionsWithDefaultValues()
     {
-        /** @var \Magento\Tax\Model\ResourceModel\TaxClass\Collection $collection */
-        $collection = Bootstrap::getObjectManager()->get(\Magento\Tax\Model\ResourceModel\TaxClass\Collection::class);
+        /** @var Collection $collection */
+        $collection = Bootstrap::getObjectManager()->get(Collection::class);
         $expectedResult = [];
-        /** @var \Magento\Tax\Model\ClassModel $taxClass */
+        /** @var ClassModel $taxClass */
         foreach ($collection as $taxClass) {
-            if ($taxClass->getClassType() == \Magento\Tax\Api\TaxClassManagementInterface::TYPE_PRODUCT) {
+            if ($taxClass->getClassType() == TaxClassManagementInterface::TYPE_PRODUCT) {
                 $expectedResult[] = ['value' => $taxClass->getId(), 'label' => $taxClass->getClassName()];
             }
         }
@@ -48,8 +52,8 @@ class ProductTest extends \PHPUnit\Framework\TestCase
             $this->fail('Preconditions failed: At least one tax class should be available.');
         }
         $expectedResult = array_merge([['value' => '0', 'label' => __('None')]], $expectedResult);
-        /** @var \Magento\Tax\Model\TaxClass\Source\Product $source */
-        $source = Bootstrap::getObjectManager()->get(\Magento\Tax\Model\TaxClass\Source\Product::class);
+        /** @var Product $source */
+        $source = Bootstrap::getObjectManager()->get(Product::class);
         $this->assertEquals(
             $expectedResult,
             $source->getAllOptions(true),

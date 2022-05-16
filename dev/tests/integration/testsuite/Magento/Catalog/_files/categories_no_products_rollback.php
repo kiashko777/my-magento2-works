@@ -4,16 +4,20 @@
  * See COPYING.txt for license details.
  */
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-/** @var \Magento\Framework\Registry $registry */
-$registry = $objectManager->get(\Magento\Framework\Registry::class);
+use Magento\Catalog\Model\ResourceModel\Category\Collection;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
+/** @var Registry $registry */
+$registry = $objectManager->get(Registry::class);
 
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
 //Remove categories
 /** @var Magento\Catalog\Model\ResourceModel\Category\Collection $collection */
-$collection = $objectManager->create(\Magento\Catalog\Model\ResourceModel\Category\Collection::class);
+$collection = $objectManager->create(Collection::class);
 $collection
     ->addAttributeToFilter('level', 2)
     ->load()

@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogSearch\Block;
 
 use Magento\Framework\App\RequestInterface;
@@ -11,10 +12,11 @@ use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Text;
 use Magento\Framework\View\LayoutInterface;
 use Magento\Search\Model\QueryFactory;
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Search\ViewModel\ConfigProvider;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class ResultTest extends \PHPUnit\Framework\TestCase
+class ResultTest extends TestCase
 {
     /**
      * @var ObjectManagerInterface
@@ -30,16 +32,6 @@ class ResultTest extends \PHPUnit\Framework\TestCase
      * @var ConfigProvider
      */
     private $configProvider;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->configProvider = $this->objectManager->get(ConfigProvider::class);
-    }
 
     /**
      * Set list orders test
@@ -107,5 +99,15 @@ class ResultTest extends \PHPUnit\Framework\TestCase
             'characters_not_escaped' => ['abc', 'abc', '&amp;abc&#x3B;'],
             'numbers_not_escaped' => ['123', '123', '&amp;123&#x3B;'],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->configProvider = $this->objectManager->get(ConfigProvider::class);
     }
 }

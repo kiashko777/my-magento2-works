@@ -63,24 +63,6 @@ class SaveTest extends TestCase
     private $productRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productEntityType = $this->objectManager->get(Type::class)
-            ->loadByCode(ProductAttributeInterface::ENTITY_TYPE_CODE);
-        $this->getEntityIdByAttributeId = $this->objectManager->get(GetEntityIdByAttributeId::class);
-        $this->setRepository = $this->objectManager->get(SetRepository::class);
-        $this->eavConfig = $this->objectManager->get(Config::class);
-        $this->taxResource = $this->objectManager->get(WeeTaxResource::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-    }
-
-    /**
      * @return void
      */
     public function testSaveAttributeSet(): void
@@ -118,5 +100,23 @@ class SaveTest extends TestCase
             ->where('attribute_id = ?', $attributeId);
 
         return $this->taxResource->getConnection()->fetchAll($select);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productEntityType = $this->objectManager->get(Type::class)
+            ->loadByCode(ProductAttributeInterface::ENTITY_TYPE_CODE);
+        $this->getEntityIdByAttributeId = $this->objectManager->get(GetEntityIdByAttributeId::class);
+        $this->setRepository = $this->objectManager->get(SetRepository::class);
+        $this->eavConfig = $this->objectManager->get(Config::class);
+        $this->taxResource = $this->objectManager->get(WeeTaxResource::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
     }
 }

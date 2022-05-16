@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Setup\Model;
 
+use Exception;
 use Magento\Framework\Setup\Option\AbstractConfigOption;
 use Magento\Framework\Validation\ValidationException;
 use Magento\Search\Model\SearchEngine\Validator;
@@ -40,9 +41,10 @@ class SearchConfig
      */
     public function __construct(
         SearchConfigOptionsList $searchConfigOptionsList,
-        Validator $searchValidator,
-        CompositeInstallConfig $installConfig
-    ) {
+        Validator               $searchValidator,
+        CompositeInstallConfig  $installConfig
+    )
+    {
         $this->searchConfigOptionsList = $searchConfigOptionsList;
         $this->searchValidator = $searchValidator;
         $this->installConfig = $installConfig;
@@ -63,40 +65,10 @@ class SearchConfig
         }
         try {
             $this->installConfig->configure($searchConfigOptions);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw new SetupException($e->getMessage());
         }
         $this->validateSearchEngine();
-    }
-
-    /**
-     * Validate search engine
-     *
-     * @throws ValidationException
-     */
-    public function validateSearchEngine()
-    {
-        $validationErrors = $this->searchValidator->validate();
-        if (!empty($validationErrors)) {
-            throw new ValidationException(__(implode(PHP_EOL, $validationErrors)));
-        }
-    }
-
-    /**
-     * Validate the selected search engine
-     *
-     * @param array $searchOptions
-     * @throws SetupException
-     */
-    private function validateSearchEngineSelection(array $searchOptions)
-    {
-        if (isset($searchOptions[SearchConfigOptionsList::INPUT_KEY_SEARCH_ENGINE])) {
-            $selectedEngine = $searchOptions[SearchConfigOptionsList::INPUT_KEY_SEARCH_ENGINE];
-            $availableEngines = $this->searchConfigOptionsList->getAvailableSearchEngineList();
-            if (!isset($availableEngines[$selectedEngine])) {
-                throw new SetupException("Search engine '{$selectedEngine}' is not an available search engine.");
-            }
-        }
     }
 
     /**
@@ -117,5 +89,35 @@ class SearchConfig
             }
         }
         return $searchOptions;
+    }
+
+    /**
+     * Validate the selected search engine
+     *
+     * @param array $searchOptions
+     * @throws SetupException
+     */
+    private function validateSearchEngineSelection(array $searchOptions)
+    {
+        if (isset($searchOptions[SearchConfigOptionsList::INPUT_KEY_SEARCH_ENGINE])) {
+            $selectedEngine = $searchOptions[SearchConfigOptionsList::INPUT_KEY_SEARCH_ENGINE];
+            $availableEngines = $this->searchConfigOptionsList->getAvailableSearchEngineList();
+            if (!isset($availableEngines[$selectedEngine])) {
+                throw new SetupException("Search engine '{$selectedEngine}' is not an available search engine.");
+            }
+        }
+    }
+
+    /**
+     * Validate search engine
+     *
+     * @throws ValidationException
+     */
+    public function validateSearchEngine()
+    {
+        $validationErrors = $this->searchValidator->validate();
+        if (!empty($validationErrors)) {
+            throw new ValidationException(__(implode(PHP_EOL, $validationErrors)));
+        }
     }
 }

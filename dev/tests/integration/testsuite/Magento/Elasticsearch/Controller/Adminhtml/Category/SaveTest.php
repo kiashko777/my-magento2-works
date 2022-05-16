@@ -28,28 +28,6 @@ class SaveTest extends AbstractBackendController
     private $indexerSchedule = [];
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->changeIndexerSchedule(FulltextIndexer::INDEXER_ID, true);
-        $this->changeIndexerSchedule(CategoryIndexer::INDEXER_ID, true);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->changeIndexerSchedule(FulltextIndexer::INDEXER_ID, $this->indexerSchedule[FulltextIndexer::INDEXER_ID]);
-        $this->changeIndexerSchedule(CategoryIndexer::INDEXER_ID, $this->indexerSchedule[CategoryIndexer::INDEXER_ID]);
-
-        parent::tearDown();
-    }
-
-    /**
      * Checks a case when indexers are invalidated if products for category were changed.
      *
      * @magentoConfigFixture current_store catalog/frontend/flat_catalog_category true
@@ -83,36 +61,6 @@ class SaveTest extends AbstractBackendController
         self::assertTrue($fulltextIndexer->isInvalid(), 'Fulltext indexer should be invalidated.');
         $categoryIndexer = $this->getIndexer(CategoryIndexer::INDEXER_ID);
         self::assertTrue($categoryIndexer->isInvalid(), 'Category indexer should be invalidated.');
-    }
-
-    /**
-     * Gets indexer from registry by ID.
-     *
-     * @param string $indexerId
-     * @return IndexerInterface
-     */
-    private function getIndexer(string $indexerId): IndexerInterface
-    {
-        /** @var IndexerRegistry $indexerRegistry */
-        $indexerRegistry = $this->_objectManager->get(IndexerRegistry::class);
-        return $indexerRegistry->get($indexerId);
-    }
-
-    /**
-     * Changes the scheduled state of indexer.
-     *
-     * @param string $indexerId
-     * @param bool $isScheduled
-     * @return void
-     */
-    private function changeIndexerSchedule(string $indexerId, bool $isScheduled): void
-    {
-        $indexer = $this->getIndexer($indexerId);
-        if (!isset($this->indexerSchedule[$indexerId])) {
-            $this->indexerSchedule[$indexerId] = $indexer->isScheduled();
-            $indexer->reindexAll();
-        }
-        $indexer->setScheduled($isScheduled);
     }
 
     /**
@@ -161,5 +109,57 @@ class SaveTest extends AbstractBackendController
         );
 
         return $idList;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->changeIndexerSchedule(FulltextIndexer::INDEXER_ID, true);
+        $this->changeIndexerSchedule(CategoryIndexer::INDEXER_ID, true);
+    }
+
+    /**
+     * Changes the scheduled state of indexer.
+     *
+     * @param string $indexerId
+     * @param bool $isScheduled
+     * @return void
+     */
+    private function changeIndexerSchedule(string $indexerId, bool $isScheduled): void
+    {
+        $indexer = $this->getIndexer($indexerId);
+        if (!isset($this->indexerSchedule[$indexerId])) {
+            $this->indexerSchedule[$indexerId] = $indexer->isScheduled();
+            $indexer->reindexAll();
+        }
+        $indexer->setScheduled($isScheduled);
+    }
+
+    /**
+     * Gets indexer from registry by ID.
+     *
+     * @param string $indexerId
+     * @return IndexerInterface
+     */
+    private function getIndexer(string $indexerId): IndexerInterface
+    {
+        /** @var IndexerRegistry $indexerRegistry */
+        $indexerRegistry = $this->_objectManager->get(IndexerRegistry::class);
+        return $indexerRegistry->get($indexerId);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->changeIndexerSchedule(FulltextIndexer::INDEXER_ID, $this->indexerSchedule[FulltextIndexer::INDEXER_ID]);
+        $this->changeIndexerSchedule(CategoryIndexer::INDEXER_ID, $this->indexerSchedule[CategoryIndexer::INDEXER_ID]);
+
+        parent::tearDown();
     }
 }

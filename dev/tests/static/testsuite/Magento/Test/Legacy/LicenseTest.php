@@ -7,13 +7,18 @@
 /**
  * Tests to ensure that all license blocks are represented by placeholders
  */
+
 namespace Magento\Test\Legacy;
 
-class LicenseTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\App\Utility\AggregateInvoker;
+use Magento\Framework\App\Utility\Files;
+use PHPUnit\Framework\TestCase;
+
+class LicenseTest extends TestCase
 {
     public function testLegacyComment()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
             function ($filename) {
                 $fileText = file_get_contents($filename);
@@ -37,7 +42,7 @@ class LicenseTest extends \PHPUnit\Framework\TestCase
 
     public function legacyCommentDataProvider()
     {
-        $allFiles = \Magento\Framework\App\Utility\Files::init()->getAllFiles();
+        $allFiles = Files::init()->getAllFiles();
         $result = [];
         foreach ($allFiles as $file) {
             if (!file_exists($file[0]) || !is_readable($file[0])) {

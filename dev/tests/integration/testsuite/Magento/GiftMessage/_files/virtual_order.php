@@ -3,12 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Sales\Model\Order;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Sales/_files/order.php');
-/** @var \Magento\Sales\Model\Order $order */
+/** @var Order $order */
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 
-$order = $objectManager->create(\Magento\Sales\Model\Order::class)->loadByIncrementId('100000001');
+$order = $objectManager->create(Order::class)->loadByIncrementId('100000001');
 $order->setIsVirtual(1)->save();

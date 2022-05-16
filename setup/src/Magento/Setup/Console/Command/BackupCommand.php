@@ -3,12 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Console\Command;
 
+use Exception;
+use InvalidArgumentException;
 use Magento\Framework\App\Console\MaintenanceModeEnabler;
 use Magento\Framework\App\DeploymentConfig;
 use Magento\Framework\App\MaintenanceMode;
+use Magento\Framework\App\State;
 use Magento\Framework\Backup\Factory;
+use Magento\Framework\Console\Cli;
+use Magento\Framework\ObjectManager\ConfigLoaderInterface;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Setup\BackupRollbackFactory;
 use Magento\Setup\Model\ObjectManagerProvider;
@@ -67,13 +73,14 @@ class BackupCommand extends AbstractSetupCommand
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function __construct(
-        ObjectManagerProvider $objectManagerProvider,
-        MaintenanceMode $maintenanceMode,
-        DeploymentConfig $deploymentConfig,
+        ObjectManagerProvider  $objectManagerProvider,
+        MaintenanceMode        $maintenanceMode,
+        DeploymentConfig       $deploymentConfig,
         MaintenanceModeEnabler $maintenanceModeEnabler = null
-    ) {
+    )
+    {
         $this->objectManager = $objectManagerProvider->get();
-        $this->backupRollbackFactory = $this->objectManager->get(\Magento\Framework\Setup\BackupRollbackFactory::class);
+        $this->backupRollbackFactory = $this->objectManager->get(BackupRollbackFactory::class);
         $this->deploymentConfig = $deploymentConfig;
         $this->maintenanceModeEnabler =
             $maintenanceModeEnabler ?: $this->objectManager->get(MaintenanceModeEnabler::class);
@@ -120,7 +127,7 @@ class BackupCommand extends AbstractSetupCommand
             && ($input->getOption(self::INPUT_KEY_MEDIA) || $input->getOption(self::INPUT_KEY_DB))) {
             $output->writeln("<info>No information is available: the Magento application is not installed.</info>");
             // We need exit code higher than 0 here as an indication
-            return \Magento\Framework\Console\Cli::RETURN_FAILURE;
+            return Cli::RETURN_FAILURE;
         }
         $returnValue = $this->maintenanceModeEnabler->executeInMaintenanceMode(
             function () use ($input, $output) {
@@ -142,14 +149,14 @@ class BackupCommand extends AbstractSetupCommand
                         $inputOptionProvided = true;
                     }
                     if (!$inputOptionProvided) {
-                        throw new \InvalidArgumentException(
+                        throw new InvalidArgumentException(
                             'Not enough information provided to take backup.'
                         );
                     }
-                    return \Magento\Framework\Console\Cli::RETURN_SUCCESS;
-                } catch (\Exception $e) {
+                    return Cli::RETURN_SUCCESS;
+                } catch (Exception $e) {
                     $output->writeln('<error>' . $e->getMessage() . '</error>');
-                    return \Magento\Framework\Console\Cli::RETURN_FAILURE;
+                    return Cli::RETURN_FAILURE;
                 }
             },
             $output,
@@ -167,11 +174,11 @@ class BackupCommand extends AbstractSetupCommand
     private function setAreaCode()
     {
         $areaCode = 'Adminhtml';
-        /** @var \Magento\Framework\App\State $appState */
-        $appState = $this->objectManager->get(\Magento\Framework\App\State::class);
+        /** @var State $appState */
+        $appState = $this->objectManager->get(State::class);
         $appState->setAreaCode($areaCode);
-        /** @var \Magento\Framework\ObjectManager\ConfigLoaderInterface $configLoader */
-        $configLoader = $this->objectManager->get(\Magento\Framework\ObjectManager\ConfigLoaderInterface::class);
+        /** @var ConfigLoaderInterface $configLoader */
+        $configLoader = $this->objectManager->get(ConfigLoaderInterface::class);
         $this->objectManager->configure($configLoader->load($areaCode));
     }
 }

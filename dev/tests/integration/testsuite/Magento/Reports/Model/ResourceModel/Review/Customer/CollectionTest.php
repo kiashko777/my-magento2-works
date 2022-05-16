@@ -3,24 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Reports\Model\ResourceModel\Review\Customer;
+
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class CollectionTest extends \PHPUnit\Framework\TestCase
+class CollectionTest extends TestCase
 {
     /**
-     * @var \Magento\Reports\Model\ResourceModel\Review\Customer\Collection
+     * @var Collection
      */
     private $collection;
-
-    protected function setUp(): void
-    {
-        $this->collection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Reports\Model\ResourceModel\Review\Customer\Collection::class
-        );
-    }
 
     /**
      * This tests covers issue described in:
@@ -32,5 +29,12 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
     {
         $this->collection->addFieldToFilter('customer_name', ['like' => '%John%'])->getItems();
         $this->assertEquals(1, $this->collection->getSize());
+    }
+
+    protected function setUp(): void
+    {
+        $this->collection = Bootstrap::getObjectManager()->create(
+            Collection::class
+        );
     }
 }

@@ -5,16 +5,46 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Magento\Framework\Search;
 
-class SearchEngineConfigTest extends \Magento\TestFramework\Integrity\AbstractConfig
+use Magento\Framework\Config\Dom\UrnResolver;
+use Magento\TestFramework\Integrity\AbstractConfig;
+
+class SearchEngineConfigTest extends AbstractConfig
 {
-    /** @var \Magento\Framework\Config\Dom\UrnResolver */
+    /** @var UrnResolver */
     protected $urnResolver;
+
+    /**
+     * @param null $expectedErrors
+     */
+    public function testSchemaUsingInvalidXml($expectedErrors = null)
+    {
+        $expectedErrors = array_filter(
+            explode(
+                "\n",
+                "
+Element 'feature': The attribute 'support' is required but missing.
+Element 'wrong': This element is not expected. Expected is ( feature ).
+Element 'feature': The attribute 'name' is required but missing.
+Element 'engine', attribute 'wrong': The attribute 'wrong' is not allowed.
+Element 'engine': The attribute 'name' is required but missing.
+Element 'feature', attribute 'support': 'wrong' is not a valid value of the atomic type 'xs:boolean'.
+"
+            )
+        );
+        parent::testSchemaUsingInvalidXml($expectedErrors);
+    }
+
+    public function testSchemaUsingValidXml()
+    {
+        parent::testSchemaUsingValidXml();
+    }
 
     protected function setUp(): void
     {
-        $this->urnResolver = new \Magento\Framework\Config\Dom\UrnResolver();
+        $this->urnResolver = new UrnResolver();
     }
 
     /**
@@ -68,27 +98,6 @@ class SearchEngineConfigTest extends \Magento\TestFramework\Integrity\AbstractCo
     }
 
     /**
-     * @param null $expectedErrors
-     */
-    public function testSchemaUsingInvalidXml($expectedErrors = null)
-    {
-        $expectedErrors = array_filter(
-            explode(
-                "\n",
-                "
-Element 'feature': The attribute 'support' is required but missing.
-Element 'wrong': This element is not expected. Expected is ( feature ).
-Element 'feature': The attribute 'name' is required but missing.
-Element 'engine', attribute 'wrong': The attribute 'wrong' is not allowed.
-Element 'engine': The attribute 'name' is required but missing.
-Element 'feature', attribute 'support': 'wrong' is not a valid value of the atomic type 'xs:boolean'.
-"
-            )
-        );
-        parent::testSchemaUsingInvalidXml($expectedErrors);
-    }
-
-    /**
      * Returns the name of the xml files to validate
      *
      * @return string
@@ -106,10 +115,5 @@ Element 'feature', attribute 'support': 'wrong' is not a valid value of the atom
     protected function _getKnownInvalidPartialXml()
     {
         return null;
-    }
-
-    public function testSchemaUsingValidXml()
-    {
-        parent::testSchemaUsingValidXml();
     }
 }

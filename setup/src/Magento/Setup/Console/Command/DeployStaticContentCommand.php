@@ -3,23 +3,25 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Console\Command;
 
-use Magento\Deploy\Console\InputValidator;
+use InvalidArgumentException;
 use Magento\Deploy\Console\ConsoleLoggerFactory;
 use Magento\Deploy\Console\DeployStaticOptions as Options;
+use Magento\Deploy\Console\InputValidator;
+use Magento\Deploy\Service\DeployStaticContent;
+use Magento\Framework\App\Cache;
+use Magento\Framework\App\Cache\Type\Dummy as DummyCache;
 use Magento\Framework\App\State;
 use Magento\Framework\Console\Cli;
-use Psr\Log\LogLevel;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Setup\Model\ObjectManagerProvider;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Magento\Setup\Model\ObjectManagerProvider;
-use Magento\Framework\ObjectManagerInterface;
-use Magento\Framework\App\Cache;
-use Magento\Framework\App\Cache\Type\Dummy as DummyCache;
-use Magento\Framework\Exception\LocalizedException;
-use Magento\Deploy\Service\DeployStaticContent;
+use Throwable;
 
 /**
  * Command to Deploy Static Content
@@ -70,11 +72,12 @@ class DeployStaticContentCommand extends Command
      * @param ObjectManagerProvider $objectManagerProvider
      */
     public function __construct(
-        InputValidator $inputValidator,
-        ConsoleLoggerFactory $consoleLoggerFactory,
-        Options $options,
+        InputValidator        $inputValidator,
+        ConsoleLoggerFactory  $consoleLoggerFactory,
+        Options               $options,
         ObjectManagerProvider $objectManagerProvider
-    ) {
+    )
+    {
         $this->inputValidator = $inputValidator;
         $this->consoleLoggerFactory = $consoleLoggerFactory;
         $this->options = $options;
@@ -85,7 +88,7 @@ class DeployStaticContentCommand extends Command
 
     /**
      * @inheritdoc
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
      */
     protected function configure()
@@ -102,7 +105,7 @@ class DeployStaticContentCommand extends Command
      * @param InputInterface $input
      * @param OutputInterface $output
      *
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      * @throws LocalizedException
      */
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -134,7 +137,7 @@ class DeployStaticContentCommand extends Command
                 'logger' => $logger
             ]);
             $deployService->deploy($options);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $logger->error('Error happened during deploy process: ' . $e->getMessage());
             $exitCode = Cli::RETURN_FAILURE;
         }
@@ -168,6 +171,19 @@ class DeployStaticContentCommand extends Command
     }
 
     /**
+     * Retrieve application state
+     *
+     * @return State
+     */
+    private function getAppState()
+    {
+        if (null === $this->appState) {
+            $this->appState = $this->objectManager->get(State::class);
+        }
+        return $this->appState;
+    }
+
+    /**
      * Mock Cache class with dummy implementation
      *
      * @return void
@@ -179,18 +195,5 @@ class DeployStaticContentCommand extends Command
                 Cache::class => DummyCache::class
             ]
         ]);
-    }
-
-    /**
-     * Retrieve application state
-     *
-     * @return State
-     */
-    private function getAppState()
-    {
-        if (null === $this->appState) {
-            $this->appState = $this->objectManager->get(State::class);
-        }
-        return $this->appState;
     }
 }

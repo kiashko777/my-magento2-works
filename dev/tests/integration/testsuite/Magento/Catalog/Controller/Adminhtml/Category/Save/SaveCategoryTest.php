@@ -10,12 +10,12 @@ namespace Magento\Catalog\Controller\Adminhtml\Category\Save;
 use Magento\Catalog\Api\CategoryRepositoryInterface;
 use Magento\Catalog\Api\Data\CategoryInterface;
 use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\ResourceModel\Category\CollectionFactory;
 use Magento\Cms\Api\GetBlockByIdentifierInterface;
 use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Message\MessageInterface;
 use Magento\Store\Model\StoreManagerInterface;
-use Magento\Catalog\Model\ResourceModel\Category\CollectionFactory;
 
 /**
  * Test cases for save category controller.
@@ -39,36 +39,6 @@ class SaveCategoryTest extends AbstractSaveCategoryTest
 
     /** @var CollectionFactory */
     private $categoryCollectionFactory;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->categoryRepository = $this->_objectManager->get(CategoryRepositoryInterface::class);
-        $this->getBlockByIdentifier = $this->_objectManager->get(GetBlockByIdentifierInterface::class);
-        $this->storeManager = $this->_objectManager->get(StoreManagerInterface::class);
-        $this->categoryCollectionFactory = $this->_objectManager->get(CollectionFactory::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        if (!empty($this->createdCategoryId)) {
-            try {
-                $this->categoryRepository->deleteByIdentifier($this->createdCategoryId);
-            } catch (NoSuchEntityException $e) {
-                //Category already deleted.
-            }
-            $this->createdCategoryId = null;
-        }
-
-        parent::tearDown();
-    }
 
     /**
      * @magentoDataFixture Magento/Cms/_files/block.php
@@ -146,5 +116,35 @@ class SaveCategoryTest extends AbstractSaveCategoryTest
             ->getFirstItem();
 
         return $category->getId();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->categoryRepository = $this->_objectManager->get(CategoryRepositoryInterface::class);
+        $this->getBlockByIdentifier = $this->_objectManager->get(GetBlockByIdentifierInterface::class);
+        $this->storeManager = $this->_objectManager->get(StoreManagerInterface::class);
+        $this->categoryCollectionFactory = $this->_objectManager->get(CollectionFactory::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        if (!empty($this->createdCategoryId)) {
+            try {
+                $this->categoryRepository->deleteByIdentifier($this->createdCategoryId);
+            } catch (NoSuchEntityException $e) {
+                //Category already deleted.
+            }
+            $this->createdCategoryId = null;
+        }
+
+        parent::tearDown();
     }
 }

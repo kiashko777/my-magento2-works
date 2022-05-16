@@ -41,11 +41,12 @@ class CustomerGroupsFixture extends Fixture
      * @inheritDoc
      */
     public function __construct(
-        FixtureModel $fixtureModel,
-        CollectionFactory $groupCollectionFactory,
+        FixtureModel             $fixtureModel,
+        CollectionFactory        $groupCollectionFactory,
         GroupRepositoryInterface $groupRepository,
-        GroupInterfaceFactory $groupFactory
-    ) {
+        GroupInterfaceFactory    $groupFactory
+    )
+    {
         parent::__construct($fixtureModel);
         $this->groupCollectionFactory = $groupCollectionFactory;
         $this->groupRepository = $groupRepository;
@@ -63,7 +64,7 @@ class CustomerGroupsFixture extends Fixture
             return;
         }
 
-        for ($i = $existingCustomerGroupsCount; $i <  $customerGroupsCount; ++$i) {
+        for ($i = $existingCustomerGroupsCount; $i < $customerGroupsCount; ++$i) {
             $groupDataObject = $this->groupFactory->create();
             $groupDataObject
                 ->setCode('customer_group_' . $i)

@@ -8,8 +8,12 @@ namespace Magento\Customer\Api;
 
 use Magento\Config\Model\ResourceModel\Config;
 use Magento\Customer\Api\Data\AddressInterface as Address;
+use Magento\Customer\Model\Attribute;
+use Magento\Customer\Model\Attribute\Data\Postcode;
 use Magento\Customer\Model\Data\AttributeMetadata;
 use Magento\Framework\App\Config\ReinitableConfigInterface;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
@@ -33,15 +37,19 @@ class AddressMetadataTest extends WebapiAbstract
     private $reinitConfig;
 
     /**
-     * @inheritdoc
+     * Remove test attribute
      */
-    protected function setUp(): void
+    public static function tearDownAfterClass(): void
     {
-        parent::setUp();
-
-        $objectManager = ObjectManager::getInstance();
-        $this->resourceConfig = $objectManager->get(Config::class);
-        $this->reinitConfig = $objectManager->get(ReinitableConfigInterface::class);
+        parent::tearDownAfterClass();
+        /** @var Attribute $attribute */
+        $attribute = Bootstrap::getObjectManager()->create(
+            Attribute::class
+        );
+        foreach (['custom_attribute1', 'custom_attribute2'] as $attributeCode) {
+            $attribute->loadByCode('customer_address', $attributeCode);
+            $attribute->delete();
+        }
     }
 
     /**
@@ -59,7 +67,7 @@ class AddressMetadataTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/attribute/$attributeCode",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -76,6 +84,91 @@ class AddressMetadataTest extends WebapiAbstract
         $validationResult = $this->checkValidationRules($expectedMetadata, $attributeMetadata);
         list($expectedMetadata, $attributeMetadata) = $validationResult;
         $this->assertEquals($expectedMetadata, $attributeMetadata);
+    }
+
+    /**
+     * Set core config data.
+     *
+     * @param $configOptions
+     */
+    private function initConfig(array $configOptions): void
+    {
+        if ($configOptions) {
+            foreach ($configOptions as $option) {
+                $this->resourceConfig->saveConfig($option['path'], $option['value']);
+            }
+        }
+        $this->reinitConfig->reinit();
+    }
+
+    /**
+     * Checks that expected and actual attribute metadata validation rules are equal
+     * and removes the validation rules entry from expected and actual attribute metadata
+     *
+     * @param array $expectedResult
+     * @param array $actualResult
+     * @return array
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * phpcs:disable Generic.Metrics.NestingLevel
+     */
+    public function checkValidationRules($expectedResult, $actualResult)
+    {
+        $expectedRules = [];
+        $actualRules = [];
+
+        if (isset($expectedResult[AttributeMetadata::VALIDATION_RULES])) {
+            $expectedRules = $expectedResult[AttributeMetadata::VALIDATION_RULES];
+            unset($expectedResult[AttributeMetadata::VALIDATION_RULES]);
+        }
+        if (isset($actualResult[AttributeMetadata::VALIDATION_RULES])) {
+            $actualRules = $actualResult[AttributeMetadata::VALIDATION_RULES];
+            unset($actualResult[AttributeMetadata::VALIDATION_RULES]);
+        }
+
+        if (is_array($expectedRules) && is_array($actualRules)) {
+            foreach ($expectedRules as $expectedRule) {
+                if (isset($expectedRule['name']) && isset($expectedRule['value'])) {
+                    $found = false;
+                    foreach ($actualRules as $actualRule) {
+                        if (isset($actualRule['name']) && isset($actualRule['value'])) {
+                            if ($expectedRule['name'] == $actualRule['name']
+                                && $expectedRule['value'] == $actualRule['value']
+                            ) {
+                                $found = true;
+                                break;
+                            }
+                        }
+                    }
+                    $this->assertTrue($found);
+                }
+            }
+        }
+        return [$expectedResult, $actualResult];
+    }
+
+    /**
+     * Test retrieval of all address attribute metadata.
+     */
+    public function testGetAllAttributesMetadata()
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH,
+                'httpMethod' => Request::HTTP_METHOD_GET,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'GetAllAttributesMetadata',
+            ],
+        ];
+
+        $attributeMetadata = $this->_webApiCall($serviceInfo);
+        $this->assertCount(19, $attributeMetadata);
+        $postcode = $this->getAttributeMetadataDataProvider()[Address::POSTCODE][2];
+        $validationResult = $this->checkMultipleAttributesValidationRules($postcode, $attributeMetadata);
+        list($postcode, $attributeMetadata) = $validationResult;
+        $this->assertContainsEquals($postcode, $attributeMetadata);
     }
 
     /**
@@ -98,7 +191,7 @@ class AddressMetadataTest extends WebapiAbstract
                     AttributeMetadata::VALIDATION_RULES => [],
                     AttributeMetadata::VISIBLE => true,
                     AttributeMetadata::REQUIRED => false,
-                    AttributeMetadata::DATA_MODEL => \Magento\Customer\Model\Attribute\Data\Postcode::class,
+                    AttributeMetadata::DATA_MODEL => Postcode::class,
                     AttributeMetadata::OPTIONS => [],
                     AttributeMetadata::FRONTEND_CLASS => '',
                     AttributeMetadata::USER_DEFINED => false,
@@ -196,28 +289,29 @@ class AddressMetadataTest extends WebapiAbstract
     }
 
     /**
-     * Test retrieval of all address attribute metadata.
+     * Check specific attribute validation rules in set of multiple attributes
+     *
+     * @param array $expectedResult Set of expected attribute metadata
+     * @param array $actualResultSet Set of actual attribute metadata
+     * @return array
      */
-    public function testGetAllAttributesMetadata()
+    public function checkMultipleAttributesValidationRules($expectedResult, $actualResultSet)
     {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'GetAllAttributesMetadata',
-            ],
-        ];
-
-        $attributeMetadata = $this->_webApiCall($serviceInfo);
-        $this->assertCount(19, $attributeMetadata);
-        $postcode = $this->getAttributeMetadataDataProvider()[Address::POSTCODE][2];
-        $validationResult = $this->checkMultipleAttributesValidationRules($postcode, $attributeMetadata);
-        list($postcode, $attributeMetadata) = $validationResult;
-        $this->assertContainsEquals($postcode, $attributeMetadata);
+        if (is_array($expectedResult) && is_array($actualResultSet)) {
+            if (isset($expectedResult[AttributeMetadata::ATTRIBUTE_CODE])) {
+                foreach ($actualResultSet as $actualAttributeKey => $actualAttribute) {
+                    if (isset($actualAttribute[AttributeMetadata::ATTRIBUTE_CODE])
+                        && $expectedResult[AttributeMetadata::ATTRIBUTE_CODE]
+                        == $actualAttribute[AttributeMetadata::ATTRIBUTE_CODE]
+                    ) {
+                        $this->checkValidationRules($expectedResult, $actualAttribute);
+                        unset($actualResultSet[$actualAttributeKey][AttributeMetadata::VALIDATION_RULES]);
+                    }
+                }
+                unset($expectedResult[AttributeMetadata::VALIDATION_RULES]);
+            }
+        }
+        return [$expectedResult, $actualResultSet];
     }
 
     /**
@@ -231,7 +325,7 @@ class AddressMetadataTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/custom',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -245,6 +339,7 @@ class AddressMetadataTest extends WebapiAbstract
         $this->assertCount(2, $attributeMetadata);
         $this->assertEquals($customAttributeCode, $attributeMetadata[0]['attribute_code']);
     }
+    //phpcs:enable
 
     /**
      * Test retrieval of attributes
@@ -258,7 +353,7 @@ class AddressMetadataTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/form/$formCode",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -301,105 +396,14 @@ class AddressMetadataTest extends WebapiAbstract
     }
 
     /**
-     * Checks that expected and actual attribute metadata validation rules are equal
-     * and removes the validation rules entry from expected and actual attribute metadata
-     *
-     * @param array $expectedResult
-     * @param array $actualResult
-     * @return array
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-     * phpcs:disable Generic.Metrics.NestingLevel
+     * @inheritdoc
      */
-    public function checkValidationRules($expectedResult, $actualResult)
+    protected function setUp(): void
     {
-        $expectedRules = [];
-        $actualRules = [];
+        parent::setUp();
 
-        if (isset($expectedResult[AttributeMetadata::VALIDATION_RULES])) {
-            $expectedRules = $expectedResult[AttributeMetadata::VALIDATION_RULES];
-            unset($expectedResult[AttributeMetadata::VALIDATION_RULES]);
-        }
-        if (isset($actualResult[AttributeMetadata::VALIDATION_RULES])) {
-            $actualRules = $actualResult[AttributeMetadata::VALIDATION_RULES];
-            unset($actualResult[AttributeMetadata::VALIDATION_RULES]);
-        }
-
-        if (is_array($expectedRules) && is_array($actualRules)) {
-            foreach ($expectedRules as $expectedRule) {
-                if (isset($expectedRule['name']) && isset($expectedRule['value'])) {
-                    $found = false;
-                    foreach ($actualRules as $actualRule) {
-                        if (isset($actualRule['name']) && isset($actualRule['value'])) {
-                            if ($expectedRule['name'] == $actualRule['name']
-                                && $expectedRule['value'] == $actualRule['value']
-                            ) {
-                                $found = true;
-                                break;
-                            }
-                        }
-                    }
-                    $this->assertTrue($found);
-                }
-            }
-        }
-        return [$expectedResult, $actualResult];
-    }
-    //phpcs:enable
-
-    /**
-     * Check specific attribute validation rules in set of multiple attributes
-     *
-     * @param array $expectedResult Set of expected attribute metadata
-     * @param array $actualResultSet Set of actual attribute metadata
-     * @return array
-     */
-    public function checkMultipleAttributesValidationRules($expectedResult, $actualResultSet)
-    {
-        if (is_array($expectedResult) && is_array($actualResultSet)) {
-            if (isset($expectedResult[AttributeMetadata::ATTRIBUTE_CODE])) {
-                foreach ($actualResultSet as $actualAttributeKey => $actualAttribute) {
-                    if (isset($actualAttribute[AttributeMetadata::ATTRIBUTE_CODE])
-                        && $expectedResult[AttributeMetadata::ATTRIBUTE_CODE]
-                        == $actualAttribute[AttributeMetadata::ATTRIBUTE_CODE]
-                    ) {
-                        $this->checkValidationRules($expectedResult, $actualAttribute);
-                        unset($actualResultSet[$actualAttributeKey][AttributeMetadata::VALIDATION_RULES]);
-                    }
-                }
-                unset($expectedResult[AttributeMetadata::VALIDATION_RULES]);
-            }
-        }
-        return [$expectedResult, $actualResultSet];
-    }
-
-    /**
-     * Remove test attribute
-     */
-    public static function tearDownAfterClass(): void
-    {
-        parent::tearDownAfterClass();
-        /** @var \Magento\Customer\Model\Attribute $attribute */
-        $attribute = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Model\Attribute::class
-        );
-        foreach (['custom_attribute1', 'custom_attribute2'] as $attributeCode) {
-            $attribute->loadByCode('customer_address', $attributeCode);
-            $attribute->delete();
-        }
-    }
-
-    /**
-     * Set core config data.
-     *
-     * @param $configOptions
-     */
-    private function initConfig(array $configOptions): void
-    {
-        if ($configOptions) {
-            foreach ($configOptions as $option) {
-                $this->resourceConfig->saveConfig($option['path'], $option['value']);
-            }
-        }
-        $this->reinitConfig->reinit();
+        $objectManager = ObjectManager::getInstance();
+        $this->resourceConfig = $objectManager->get(Config::class);
+        $this->reinitConfig = $objectManager->get(ReinitableConfigInterface::class);
     }
 }

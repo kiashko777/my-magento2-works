@@ -5,10 +5,10 @@
  */
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\Sales\Model\Order;
-use Magento\Sales\Model\Order\Item as OrderItem;
 use Magento\Sales\Api\OrderRepositoryInterface;
+use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Address as OrderAddress;
+use Magento\Sales\Model\Order\Item as OrderItem;
 use Magento\Sales\Model\Order\Payment;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
@@ -23,7 +23,7 @@ $addressData = include __DIR__ . '/address_data.php';
 $orders = [
     [
         'increment_id' => '100000002',
-        'state' => \Magento\Sales\Model\Order::STATE_NEW,
+        'state' => Order::STATE_NEW,
         'status' => 'processing',
         'grand_total' => 120.00,
         'subtotal' => 120.00,
@@ -33,7 +33,7 @@ $orders = [
     ],
     [
         'increment_id' => '100000003',
-        'state' => \Magento\Sales\Model\Order::STATE_PROCESSING,
+        'state' => Order::STATE_PROCESSING,
         'status' => 'processing',
         'grand_total' => 140.00,
         'base_grand_total' => 140.00,
@@ -43,7 +43,7 @@ $orders = [
     ],
     [
         'increment_id' => '100000004',
-        'state' => \Magento\Sales\Model\Order::STATE_PROCESSING,
+        'state' => Order::STATE_PROCESSING,
         'status' => 'closed',
         'grand_total' => 140.00,
         'base_grand_total' => 140.00,
@@ -58,8 +58,8 @@ $orderList = [];
 $orderRepository = $objectManager->create(OrderRepositoryInterface::class);
 /** @var array $orderData */
 foreach ($orders as $orderData) {
-    /** @var $order \Magento\Sales\Model\Order */
-    $order = $objectManager->create(\Magento\Sales\Model\Order::class);
+    /** @var $order Order */
+    $order = $objectManager->create(Order::class);
 
     // Reset addresses
     /** @var Order\Address $billingAddress */

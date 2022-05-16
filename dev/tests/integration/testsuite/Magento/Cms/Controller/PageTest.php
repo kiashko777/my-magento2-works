@@ -7,10 +7,13 @@
 namespace Magento\Cms\Controller;
 
 use Magento\Cms\Api\GetPageByIdentifierInterface;
+use Magento\Cms\Model\Page;
 use Magento\Cms\Model\Page\CustomLayoutManagerInterface;
 use Magento\Framework\View\LayoutInterface;
 use Magento\TestFramework\Cms\Model\CustomLayoutManager;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\AbstractController;
+use Throwable;
 
 /**
  * Test for \Magento\Cms\Controller\Page\View class.
@@ -22,18 +25,17 @@ class PageTest extends AbstractController
      */
     private $pageRetriever;
 
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
+    public static function cmsPageWithSystemRouteFixture()
     {
-        parent::setUp();
-        $this->_objectManager->configure([
-            'preferences' => [
-                CustomLayoutManagerInterface::class => CustomLayoutManager::class,
-            ]
-        ]);
-        $this->pageRetriever = $this->_objectManager->get(GetPageByIdentifierInterface::class);
+        /** @var $page Page */
+        $page = Bootstrap::getObjectManager()->create(Page::class);
+        $page->setTitle('Test title')
+            ->setIdentifier('shipping')
+            ->setStores([0])
+            ->setIsActive(1)
+            ->setContent('<h1>Shipping Test Page</h1>')
+            ->setPageLayout('1column')
+            ->save();
     }
 
     public function testViewAction()
@@ -73,24 +75,11 @@ class PageTest extends AbstractController
         $this->assertStringContainsString('Shipping Test Page', $content);
     }
 
-    public static function cmsPageWithSystemRouteFixture()
-    {
-        /** @var $page \Magento\Cms\Model\Page */
-        $page = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Cms\Model\Page::class);
-        $page->setTitle('Test title')
-            ->setIdentifier('shipping')
-            ->setStores([0])
-            ->setIsActive(1)
-            ->setContent('<h1>Shipping Test Page</h1>')
-            ->setPageLayout('1column')
-            ->save();
-    }
-
     /**
      * Check that custom handles are applied when rendering a page.
      *
      * @return void
-     * @throws \Throwable
+     * @throws Throwable
      * @magentoDataFixture Magento/Cms/_files/pages_with_layout_xml.php
      */
     public function testCustomHandles(): void
@@ -107,7 +96,7 @@ class PageTest extends AbstractController
      * Check home page custom handle is applied when rendering a page.
      *
      * @return void
-     * @throws \Throwable
+     * @throws Throwable
      * @magentoDataFixture Magento/Cms/_files/home_with_custom_handle.php
      */
     public function testHomePageCustomHandles(): void
@@ -146,5 +135,19 @@ class PageTest extends AbstractController
             'Page with 1column layout' => ['page-with-1column-layout'],
             'Page with unavailable layout' => ['page-with-unavailable-layout']
         ];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->_objectManager->configure([
+            'preferences' => [
+                CustomLayoutManagerInterface::class => CustomLayoutManager::class,
+            ]
+        ]);
+        $this->pageRetriever = $this->_objectManager->get(GetPageByIdentifierInterface::class);
     }
 }

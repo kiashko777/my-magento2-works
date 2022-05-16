@@ -3,12 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Model\ResourceModel;
 
-class IteratorTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Store\Model\ResourceModel\Store\Collection;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class IteratorTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Model\ResourceModel\Iterator
+     * @var Iterator
      */
     protected $_model;
 
@@ -19,17 +25,10 @@ class IteratorTest extends \PHPUnit\Framework\TestCase
      */
     protected $_callbackCounter = 0;
 
-    protected function setUp(): void
-    {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\Model\ResourceModel\Iterator::class
-        );
-    }
-
     public function testWalk()
     {
-        $collection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Store\Model\ResourceModel\Store\Collection::class
+        $collection = Bootstrap::getObjectManager()->create(
+            Collection::class
         );
         $this->_model->walk($collection->getSelect(), [[$this, 'walkCallback']]);
         $this->assertGreaterThan(0, $this->_callbackCounter);
@@ -51,8 +50,15 @@ class IteratorTest extends \PHPUnit\Framework\TestCase
      */
     public function testWalkException()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
 
         $this->_model->walk('test', [[$this, 'walkCallback']]);
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Iterator::class
+        );
     }
 }

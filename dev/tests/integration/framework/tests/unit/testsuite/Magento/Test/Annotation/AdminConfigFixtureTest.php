@@ -9,7 +9,9 @@ namespace Magento\Test\Annotation;
 
 use Magento\TestFramework\Annotation\AdminConfigFixture;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 /**
  * Test class for \Magento\TestFramework\Annotation\AdminConfigFixture.
@@ -17,20 +19,9 @@ use PHPUnit\Framework\TestCase;
 class AdminConfigFixtureTest extends TestCase
 {
     /**
-     * @var AdminConfigFixture|\PHPUnit\Framework\MockObject\MockObject
+     * @var AdminConfigFixture|MockObject
      */
     protected $object;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->object = $this->createPartialMock(
-            AdminConfigFixture::class,
-            ['_getConfigValue', '_setConfigValue']
-        );
-    }
 
     /**
      * @magentoAdminConfigFixture any_config some_value
@@ -54,6 +45,25 @@ class AdminConfigFixtureTest extends TestCase
 
         $this->object->expects($this->once())->method('_setConfigValue')->with('any_config', 'some_value');
         $this->object->endTest($this);
+    }
+
+    /**
+     * Create mock for Resolver object
+     *
+     * @return void
+     */
+    private function createResolverMock(): void
+    {
+        $mock = $this->getMockBuilder(Resolver::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['applyConfigFixtures'])
+            ->getMock();
+        $mock->method('applyConfigFixtures')
+            ->willReturn($this->getAnnotations()['method'][$this->object::ANNOTATION]);
+        $reflection = new ReflectionClass(Resolver::class);
+        $reflectionProperty = $reflection->getProperty('instance');
+        $reflectionProperty->setAccessible(true);
+        $reflectionProperty->setValue(Resolver::class, $mock);
     }
 
     /**
@@ -89,21 +99,13 @@ class AdminConfigFixtureTest extends TestCase
     }
 
     /**
-     * Create mock for Resolver object
-     *
-     * @return void
+     * @inheritdoc
      */
-    private function createResolverMock(): void
+    protected function setUp(): void
     {
-        $mock = $this->getMockBuilder(Resolver::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['applyConfigFixtures'])
-            ->getMock();
-        $mock->method('applyConfigFixtures')
-            ->willReturn($this->getAnnotations()['method'][$this->object::ANNOTATION]);
-        $reflection = new \ReflectionClass(Resolver::class);
-        $reflectionProperty = $reflection->getProperty('instance');
-        $reflectionProperty->setAccessible(true);
-        $reflectionProperty->setValue(Resolver::class, $mock);
+        $this->object = $this->createPartialMock(
+            AdminConfigFixture::class,
+            ['_getConfigValue', '_setConfigValue']
+        );
     }
 }

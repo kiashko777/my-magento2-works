@@ -3,12 +3,23 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Widget\Block\Adminhtml\Widget\Instance;
+
+use Magento\Catalog\Block\Product\Widget\NewWidget;
+use Magento\Framework\App\RequestInterface;
+use Magento\Framework\Registry;
+use Magento\Framework\View\DesignInterface;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use Magento\Widget\Model\Widget\Instance;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class EditTest extends \PHPUnit\Framework\TestCase
+class EditTest extends TestCase
 {
     /**
      * @magentoAppIsolation enabled
@@ -16,31 +27,31 @@ class EditTest extends \PHPUnit\Framework\TestCase
      */
     public function testConstruct()
     {
-        $type = \Magento\Catalog\Block\Product\Widget\NewWidget::class;
+        $type = NewWidget::class;
         $code = 'catalog_product_newwidget';
-        $theme = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\DesignInterface::class
+        $theme = Bootstrap::getObjectManager()->get(
+            DesignInterface::class
         )->setDefaultDesignTheme()->getDesignTheme();
 
-        /** @var $widgetInstance \Magento\Widget\Model\Widget\Instance */
-        $widgetInstance = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Widget\Model\Widget\Instance::class
+        /** @var $widgetInstance Instance */
+        $widgetInstance = Bootstrap::getObjectManager()->create(
+            Instance::class
         );
         $widgetInstance->setType($type)->setCode($code)->setThemeId($theme->getId())->save();
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $objectManager->get(\Magento\Framework\Registry::class)->register('current_widget_instance', $widgetInstance);
+        /** @var $objectManager ObjectManager */
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->get(Registry::class)->register('current_widget_instance', $widgetInstance);
 
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\App\RequestInterface::class
+        Bootstrap::getObjectManager()->get(
+            RequestInterface::class
         )->setParam(
             'instance_id',
             $widgetInstance->getId()
         );
-        $block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
+        $block = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
         )->createBlock(
-            \Magento\Widget\Block\Adminhtml\Widget\Instance\Edit::class,
+            Edit::class,
             'widget'
         );
         $this->assertArrayHasKey('widget-delete_button', $block->getLayout()->getAllBlocks());

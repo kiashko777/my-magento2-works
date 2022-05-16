@@ -13,6 +13,8 @@ use Magento\Framework\Data\Form\FormKey;
 use Magento\Sales\Api\Data\CreditmemoInterface;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Model\OrderRepository;
+use Magento\Sales\Model\ResourceModel\Order\Creditmemo\Collection;
+use Magento\Sales\Model\ResourceModel\Order\Creditmemo\CollectionFactory;
 use Magento\TestFramework\Mail\Template\TransportBuilderMock;
 use Magento\TestFramework\TestCase\AbstractBackendController;
 
@@ -76,9 +78,9 @@ class AbstractCreditmemoControllerTest extends AbstractBackendController
      */
     protected function getCreditMemo(OrderInterface $order): CreditmemoInterface
     {
-        /** @var \Magento\Sales\Model\ResourceModel\Order\Creditmemo\Collection $creditMemoCollection */
+        /** @var Collection $creditMemoCollection */
         $creditMemoCollection = $this->_objectManager->create(
-            \Magento\Sales\Model\ResourceModel\Order\Creditmemo\CollectionFactory::class
+            CollectionFactory::class
         )->create();
 
         /** @var CreditmemoInterface $creditMemo */

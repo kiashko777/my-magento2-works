@@ -3,26 +3,24 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Widget\Model\Layout;
 
-class UpdateTest extends \PHPUnit\Framework\TestCase
+use Magento\TestFramework\Entity;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class UpdateTest extends TestCase
 {
     /**
-     * @var \Magento\Widget\Model\Layout\Update
+     * @var Update
      */
     protected $_model;
 
-    protected function setUp(): void
-    {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Widget\Model\Layout\Update::class
-        );
-    }
-
     public function testConstructor()
     {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Widget\Model\Layout\Update::class
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Update::class
         );
         $this->assertInstanceOf(
             \Magento\Widget\Model\ResourceModel\Layout\Update::class,
@@ -36,10 +34,17 @@ class UpdateTest extends \PHPUnit\Framework\TestCase
     public function testCrud()
     {
         $this->_model->setData(['handle' => 'default', 'xml' => '<layout/>', 'sort_order' => 123]);
-        $entityHelper = new \Magento\TestFramework\Entity(
+        $entityHelper = new Entity(
             $this->_model,
             ['handle' => 'custom', 'xml' => '<layout version="0.1.0"/>', 'sort_order' => 456]
         );
         $entityHelper->testCrud();
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Update::class
+        );
     }
 }

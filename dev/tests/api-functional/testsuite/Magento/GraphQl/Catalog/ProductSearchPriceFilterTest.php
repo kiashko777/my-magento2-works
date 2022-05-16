@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Catalog;
 
+use Exception;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
@@ -54,14 +55,6 @@ class ProductSearchPriceFilterTest extends GraphQlAbstract
     private $objectManager;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
-
-    /**
      * Verify that search returns correct values for given price filter
      *
      * @magentoApiDataFixture Magento/Catalog/_files/products_with_different_price.php
@@ -70,7 +63,7 @@ class ProductSearchPriceFilterTest extends GraphQlAbstract
      * @param array $items
      * @return void
      * @dataProvider productSearchPriceDataProvider
-     * @throws \Exception
+     * @throws Exception
      */
     public function testProductSearchPriceFilter($priceFilter, string $sort, array $items): void
     {
@@ -266,5 +259,13 @@ QUERY;
                 ],
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

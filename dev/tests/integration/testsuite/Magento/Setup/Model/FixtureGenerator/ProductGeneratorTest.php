@@ -8,16 +8,18 @@ namespace Magento\Setup\Model\FixtureGenerator;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\Indexer\IndexerRegistry;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Indexer\Model\Config;
 use Magento\Store\Model\WebsiteRepository;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  * @magentoDataFixture Magento/Catalog/_files/category.php
  * @magentoDataFixture Magento/Store/_files/second_website_with_two_stores.php
  */
-class ProductGeneratorTest extends \PHPUnit\Framework\TestCase
+class ProductGeneratorTest extends TestCase
 {
     /**
      * @var ProductGenerator
@@ -25,12 +27,12 @@ class ProductGeneratorTest extends \PHPUnit\Framework\TestCase
     private $productGenerator;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
     /**
-     * @var \Magento\Catalog\Api\ProductRepositoryInterface
+     * @var ProductRepositoryInterface
      */
     private $productRepository;
 
@@ -43,38 +45,6 @@ class ProductGeneratorTest extends \PHPUnit\Framework\TestCase
      * @var WebsiteRepository
      */
     private $websiteRepository;
-
-    /**
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productGenerator = $this->objectManager->get(ProductGenerator::class);
-        $this->websiteRepository = $this->objectManager->get(WebsiteRepository::class);
-        $indexerRegistry = $this->objectManager->get(IndexerRegistry::class);
-        $indexerListIds = $this->objectManager->get(Config::class)->getIndexers();
-
-        foreach ($indexerListIds as $indexerId) {
-            $indexer = $indexerRegistry->get($indexerId['indexer_id']);
-            $this->indexersState[$indexerId['indexer_id']] = $indexer->isScheduled();
-            $indexer->setScheduled(true);
-        }
-    }
-
-    /**
-     * Return indexer to previous state
-     */
-    protected function tearDown(): void
-    {
-        $indexerRegistry = $this->objectManager->get(IndexerRegistry::class);
-
-        foreach ($this->indexersState as $indexerId => $state) {
-            $indexer = $indexerRegistry->get($indexerId);
-            $indexer->setScheduled($state);
-        }
-    }
 
     /**
      * @magentoDbIsolation disabled
@@ -118,5 +88,37 @@ class ProductGeneratorTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue(in_array($categoryId, $product->getCategoryIds()));
 
         $this->productRepository->delete($product);
+    }
+
+    /**
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productGenerator = $this->objectManager->get(ProductGenerator::class);
+        $this->websiteRepository = $this->objectManager->get(WebsiteRepository::class);
+        $indexerRegistry = $this->objectManager->get(IndexerRegistry::class);
+        $indexerListIds = $this->objectManager->get(Config::class)->getIndexers();
+
+        foreach ($indexerListIds as $indexerId) {
+            $indexer = $indexerRegistry->get($indexerId['indexer_id']);
+            $this->indexersState[$indexerId['indexer_id']] = $indexer->isScheduled();
+            $indexer->setScheduled(true);
+        }
+    }
+
+    /**
+     * Return indexer to previous state
+     */
+    protected function tearDown(): void
+    {
+        $indexerRegistry = $this->objectManager->get(IndexerRegistry::class);
+
+        foreach ($this->indexersState as $indexerId => $state) {
+            $indexer = $indexerRegistry->get($indexerId);
+            $indexer->setScheduled($state);
+        }
     }
 }

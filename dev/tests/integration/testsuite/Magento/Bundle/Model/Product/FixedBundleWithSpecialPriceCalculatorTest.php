@@ -6,7 +6,9 @@
 
 namespace Magento\Bundle\Model\Product;
 
-use \Magento\Bundle\Api\Data\LinkInterface;
+use Magento\Bundle\Api\Data\LinkInterface;
+use Magento\Catalog\Pricing\Price\FinalPrice;
+use Magento\Framework\Pricing\PriceInfo\Base;
 
 /**
  * @magentoAppArea frontend
@@ -29,9 +31,9 @@ class FixedBundleWithSpecialPriceCalculatorTest extends BundlePriceAbstract
         $this->prepareFixture($strategyModifiers, 'bundle_product');
         $bundleProduct = $this->productRepository->get('bundle_product', false, null, true);
 
-        /** @var \Magento\Framework\Pricing\PriceInfo\Base $priceInfo */
+        /** @var Base $priceInfo */
         $priceInfo = $bundleProduct->getPriceInfo();
-        $priceCode = \Magento\Catalog\Pricing\Price\FinalPrice::PRICE_CODE;
+        $priceCode = FinalPrice::PRICE_CODE;
 
         $this->assertEquals(
             $expectedResults['minimalPrice'],
@@ -451,7 +453,7 @@ class FixedBundleWithSpecialPriceCalculatorTest extends BundlePriceAbstract
             ],
 
             '
-                #24 Testing price for fixed bundle product 
+                #24 Testing price for fixed bundle product
                 with special price, fixed sub items and percent options
             ' => [
                 'strategy' => $this->getBundleConfiguration7(
@@ -468,7 +470,7 @@ class FixedBundleWithSpecialPriceCalculatorTest extends BundlePriceAbstract
             ],
 
             '
-                #25 Testing price for fixed bundle product 
+                #25 Testing price for fixed bundle product
                 with special price, percent sub items and fixed options
             ' => [
                 'strategy' => $this->getBundleConfiguration7(
@@ -504,7 +506,8 @@ class FixedBundleWithSpecialPriceCalculatorTest extends BundlePriceAbstract
     private function getBundleConfiguration2(
         $selectionsPriceType,
         $customOptionsPriceType
-    ) {
+    )
+    {
         $optionsData = [
             [
                 'title' => 'Op1',
@@ -553,7 +556,8 @@ class FixedBundleWithSpecialPriceCalculatorTest extends BundlePriceAbstract
     private function getBundleConfiguration3(
         $selectionsPriceType,
         $customOptionsPriceType
-    ) {
+    )
+    {
         $optionsData = [
             [
                 'title' => 'Op1',
@@ -602,7 +606,8 @@ class FixedBundleWithSpecialPriceCalculatorTest extends BundlePriceAbstract
     private function getBundleConfiguration4(
         $selectionsPriceType,
         $customOptionsPriceType
-    ) {
+    )
+    {
         $optionsData = [
             [
                 'title' => 'Op1',
@@ -657,7 +662,8 @@ class FixedBundleWithSpecialPriceCalculatorTest extends BundlePriceAbstract
     private function getBundleConfiguration5(
         $selectionsPriceType,
         $customOptionsPriceType
-    ) {
+    )
+    {
         $optionsData = [
             [
                 'title' => 'Op1',
@@ -712,7 +718,8 @@ class FixedBundleWithSpecialPriceCalculatorTest extends BundlePriceAbstract
     private function getBundleConfiguration6(
         $selectionsPriceType,
         $customOptionsPriceType
-    ) {
+    )
+    {
         $optionsData = [
             [
                 'title' => 'Op1',
@@ -767,7 +774,8 @@ class FixedBundleWithSpecialPriceCalculatorTest extends BundlePriceAbstract
     private function getBundleConfiguration7(
         $selectionsPriceType,
         $customOptionsPriceType
-    ) {
+    )
+    {
         $optionsData = [
             [
                 'title' => 'Op1',

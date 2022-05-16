@@ -54,7 +54,8 @@ define([
         try {
             injector.clean();
             injector.remove();
-        } catch (e) {}
+        } catch (e) {
+        }
     });
 
     describe('Magento_Catalog/js/product/breadcrumbs', function () {
@@ -241,12 +242,12 @@ define([
                 var result,
                     menuItems = $(
                         '<li class="level0 nav-1">' +
-                            '<a href="http://localhost.com/cat1.html">cat1</a>' +
-                            '<ul>' +
-                                '<li class="level1 nav-1-1">' +
-                                    '<a href="http://localhost.com/cat1/cat21.html">cat21</a>' +
-                                '</li>' +
-                            '</ul>' +
+                        '<a href="http://localhost.com/cat1.html">cat1</a>' +
+                        '<ul>' +
+                        '<li class="level1 nav-1-1">' +
+                        '<a href="http://localhost.com/cat1/cat21.html">cat21</a>' +
+                        '</li>' +
+                        '</ul>' +
                         '</li>'
                     ),
                     context,

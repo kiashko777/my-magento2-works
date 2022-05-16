@@ -7,10 +7,10 @@ declare(strict_types=1);
 
 namespace Magento\Elasticsearch\Model\CatalogSearch;
 
-use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\CatalogSearch\Model\Advanced;
-use Magento\Catalog\Model\Product\Visibility;
 use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\CatalogSearch\Model\Advanced;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Registry;
 use Magento\TestFramework\Helper\Bootstrap;
@@ -40,19 +40,6 @@ class AdvancedTest extends TestCase
      * @var ProductRepositoryInterface
      */
     private $productRepository;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->productVisibility = $this->objectManager->get(Visibility::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-    }
 
     /**
      * Check that Advanced Search does NOT return products that do NOT have search visibility.
@@ -97,5 +84,18 @@ class AdvancedTest extends TestCase
             $this->assertStringContainsString('Configurable', $product->getName());
             $this->assertContains((int)$product->getVisibility(), $this->productVisibility->getVisibleInSearchIds());
         }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->productVisibility = $this->objectManager->get(Visibility::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
     }
 }

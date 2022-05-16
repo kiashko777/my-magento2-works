@@ -6,11 +6,12 @@
 
 declare(strict_types=1);
 
-use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Api\SearchCriteria;
-use Magento\Sales\Api\OrderRepositoryInterface;
-use Magento\Sales\Model\ResourceModel\Order\Payment\EncryptionUpdateTest;
+use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\DeploymentConfig;
+use Magento\Sales\Api\OrderRepositoryInterface;
+use Magento\Sales\Model\ResourceModel\Order\Payment;
+use Magento\Sales\Model\ResourceModel\Order\Payment\EncryptionUpdateTest;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
@@ -46,8 +47,8 @@ $searchCriteria = $objectManager->get(SearchCriteriaBuilder::class)
 $orders = $orderRepository->getList($searchCriteria)->getItems();
 $order = array_pop($orders);
 
-/** @var \Magento\Sales\Model\ResourceModel\Order\Payment $resource */
-$resource = $objectManager->create(\Magento\Sales\Model\ResourceModel\Order\Payment::class);
+/** @var Payment $resource */
+$resource = $objectManager->create(Payment::class);
 $resource->getConnection()->insert(
     $resource->getMainTable(),
     [

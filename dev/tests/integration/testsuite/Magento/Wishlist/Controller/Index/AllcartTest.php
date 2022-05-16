@@ -7,8 +7,8 @@ declare(strict_types=1);
 
 namespace Magento\Wishlist\Controller\Index;
 
-use Magento\Checkout\Model\CartFactory;
 use Magento\Checkout\Model\Cart as CartModel;
+use Magento\Checkout\Model\CartFactory;
 use Magento\Customer\Model\Session;
 use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Framework\Escaper;
@@ -37,29 +37,6 @@ class AllcartTest extends AbstractController
     private $getWishlistByCustomerId;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->customerSession = $this->_objectManager->get(Session::class);
-        $this->cart = $this->_objectManager->get(CartFactory::class)->create();
-        $this->escaper = $this->_objectManager->get(Escaper::class);
-        $this->getWishlistByCustomerId = $this->_objectManager->get(GetWishlistByCustomerId::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->customerSession->setCustomerId(null);
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Wishlist/_files/wishlist_with_product_qty_increments.php
      *
      * @return void
@@ -77,6 +54,17 @@ class AllcartTest extends AbstractController
             sprintf('You can buy this product only in quantities of 5 at a time for "%s".', $item->getName())
         );
         $this->assertSessionMessages($this->equalTo([(string)__($expectedMessage)]), MessageInterface::TYPE_ERROR);
+    }
+
+    /**
+     * Perform add all products to cart from wish list request.
+     *
+     * @return void
+     */
+    private function performAddAllToCartRequest(): void
+    {
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
+        $this->dispatch('wishlist/index/allcart');
     }
 
     /**
@@ -98,13 +86,25 @@ class AllcartTest extends AbstractController
     }
 
     /**
-     * Perform add all products to cart from wish list request.
-     *
-     * @return void
+     * @inheritdoc
      */
-    private function performAddAllToCartRequest(): void
+    protected function setUp(): void
     {
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
-        $this->dispatch('wishlist/index/allcart');
+        parent::setUp();
+
+        $this->customerSession = $this->_objectManager->get(Session::class);
+        $this->cart = $this->_objectManager->get(CartFactory::class)->create();
+        $this->escaper = $this->_objectManager->get(Escaper::class);
+        $this->getWishlistByCustomerId = $this->_objectManager->get(GetWishlistByCustomerId::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->customerSession->setCustomerId(null);
+
+        parent::tearDown();
     }
 }

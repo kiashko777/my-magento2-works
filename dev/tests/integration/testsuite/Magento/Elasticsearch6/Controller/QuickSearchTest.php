@@ -22,21 +22,6 @@ class QuickSearchTest extends AbstractController
     private $storeManager;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        // phpstan:ignore "Class Magento\TestModuleCatalogSearch\Model\ElasticsearchVersionChecker not found."
-        $checker = $this->_objectManager->get(ElasticsearchVersionChecker::class);
-
-        if ($checker->getVersion() !== 6) {
-            $this->markTestSkipped('The installed elasticsearch version isn\'t supported by test');
-        }
-        $this->storeManager = $this->_objectManager->get(StoreManagerInterface::class);
-    }
-
-    /**
      * Tests quick search with "Price Navigation Step Calculation" sets to "Automatic (equalize product counts)".
      *
      * @magentoAppArea frontend
@@ -65,5 +50,20 @@ class QuickSearchTest extends AbstractController
         }
 
         $this->assertStringContainsString('search product 1', $responseBody);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // phpstan:ignore "Class Magento\TestModuleCatalogSearch\Model\ElasticsearchVersionChecker not found."
+        $checker = $this->_objectManager->get(ElasticsearchVersionChecker::class);
+
+        if ($checker->getVersion() !== 6) {
+            $this->markTestSkipped('The installed elasticsearch version isn\'t supported by test');
+        }
+        $this->storeManager = $this->_objectManager->get(StoreManagerInterface::class);
     }
 }

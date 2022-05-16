@@ -35,39 +35,6 @@ class AdminAccountTest extends TestCase
      */
     private $prefix;
 
-    protected function setUp(): void
-    {
-        $this->dbAdapter = $this->getMockBuilder(Mysql::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $this->dbAdapter
-            ->method('getTableName')
-            ->willReturnCallback(function ($table) {
-                return $table;
-            });
-
-        $this->encryptor = $this->getMockBuilder(EncryptorInterface::class)
-            ->getMockForAbstractClass();
-
-        $data = [
-            AdminAccount::KEY_FIRST_NAME => 'John',
-            AdminAccount::KEY_LAST_NAME => 'Doe',
-            AdminAccount::KEY_EMAIL => 'john.doe@test.com',
-            AdminAccount::KEY_PASSWORD => '123123q',
-            AdminAccount::KEY_USER => 'admin',
-            AdminAccount::KEY_PREFIX => 'pre_',
-        ];
-
-        $this->prefix = $data[AdminAccount::KEY_PREFIX];
-
-        $this->adminAccount = new AdminAccount(
-            $this->dbAdapter,
-            $this->encryptor,
-            $data
-        );
-    }
-
     public function testSaveUserExistsAdminRoleExists()
     {
         // existing user data
@@ -79,13 +46,13 @@ class AdminAccountTest extends TestCase
 
         // existing admin role data
         $existingAdminRoleData = [
-            'parent_id'  => 0,
+            'parent_id' => 0,
             'tree_level' => 2,
-            'role_type'  => 'U',
-            'user_id'    => 1,
-            'user_type'  => 2,
-            'role_name'  => 'admin',
-            'role_id'    => 1,
+            'role_type' => 'U',
+            'user_id' => 1,
+            'user_type' => 2,
+            'role_name' => 'admin',
+            'role_id' => 1,
         ];
 
         $returnValueMap = [
@@ -136,7 +103,7 @@ class AdminAccountTest extends TestCase
 
         // speical admin role data
         $administratorRoleData = [
-            'parent_id'  => 0,
+            'parent_id' => 0,
             'tree_level' => 1,
             'role_type' => 'G',
             'user_id' => 0,
@@ -173,7 +140,7 @@ class AdminAccountTest extends TestCase
                 'AND role_type = :role_type AND user_id = :user_id ' .
                 'AND user_type = :user_type AND role_name = :role_name',
                 [
-                    'parent_id'  => 0,
+                    'parent_id' => 0,
                     'tree_level' => 1,
                     'role_type' => 'G',
                     'user_id' => 0,
@@ -210,13 +177,13 @@ class AdminAccountTest extends TestCase
     {
         // existing admin role data
         $existingAdminRoleData = [
-            'parent_id'  => 0,
+            'parent_id' => 0,
             'tree_level' => 2,
-            'role_type'  => 'U',
-            'user_id'    => 1,
-            'user_type'  => 2,
-            'role_name'  => 'admin',
-            'role_id'    => 1,
+            'role_type' => 'U',
+            'user_id' => 1,
+            'user_type' => 2,
+            'role_name' => 'admin',
+            'role_id' => 1,
         ];
 
         $returnValueMap = [
@@ -258,7 +225,7 @@ class AdminAccountTest extends TestCase
     {
         // special admin role data
         $administratorRoleData = [
-            'parent_id'  => 0,
+            'parent_id' => 0,
             'tree_level' => 1,
             'role_type' => 'G',
             'user_id' => 0,
@@ -288,7 +255,7 @@ class AdminAccountTest extends TestCase
                 'AND role_type = :role_type AND user_id = :user_id ' .
                 'AND user_type = :user_type AND role_name = :role_name',
                 [
-                    'parent_id'  => 0,
+                    'parent_id' => 0,
                     'tree_level' => 1,
                     'role_type' => 'G',
                     'user_id' => 0,
@@ -450,5 +417,38 @@ class AdminAccountTest extends TestCase
         $this->dbAdapter->expects($this->never())->method('update');
 
         $adminAccount->save();
+    }
+
+    protected function setUp(): void
+    {
+        $this->dbAdapter = $this->getMockBuilder(Mysql::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->dbAdapter
+            ->method('getTableName')
+            ->willReturnCallback(function ($table) {
+                return $table;
+            });
+
+        $this->encryptor = $this->getMockBuilder(EncryptorInterface::class)
+            ->getMockForAbstractClass();
+
+        $data = [
+            AdminAccount::KEY_FIRST_NAME => 'John',
+            AdminAccount::KEY_LAST_NAME => 'Doe',
+            AdminAccount::KEY_EMAIL => 'john.doe@test.com',
+            AdminAccount::KEY_PASSWORD => '123123q',
+            AdminAccount::KEY_USER => 'admin',
+            AdminAccount::KEY_PREFIX => 'pre_',
+        ];
+
+        $this->prefix = $data[AdminAccount::KEY_PREFIX];
+
+        $this->adminAccount = new AdminAccount(
+            $this->dbAdapter,
+            $this->encryptor,
+            $data
+        );
     }
 }

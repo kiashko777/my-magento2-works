@@ -42,21 +42,6 @@ class AddTest extends AbstractController
     private $escaper;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->json = $this->_objectManager->get(SerializerInterface::class);
-        $this->checkoutSessionFactory = $this->_objectManager->get(CheckoutSessionFactory::class);
-        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->executeInStoreContext = $this->_objectManager->get(ExecuteInStoreContext::class);
-        $this->escaper = $this->_objectManager->get(Escaper::class);
-    }
-
-    /**
      * Test with simple product and activated redirect to cart
      *
      * @magentoDataFixture Magento/Catalog/_files/products.php
@@ -84,6 +69,31 @@ class AddTest extends AbstractController
             MessageInterface::TYPE_SUCCESS
         );
         $this->assertCount(1, $checkoutSession->getQuote()->getItemsCollection());
+    }
+
+    /**
+     * Prepare referer to test.
+     *
+     * @return void
+     */
+    private function prepareReferer(): void
+    {
+        $parameters = $this->_objectManager->create(Parameters::class);
+        $parameters->set('HTTP_REFERER', 'http://localhost/test');
+        $this->getRequest()->setServer($parameters);
+    }
+
+    /**
+     * Dispatch add product to cart request.
+     *
+     * @param array $postData
+     * @return void
+     */
+    public function dispatchAddToCartRequest(array $postData = []): void
+    {
+        $this->getRequest()->setPostValue($postData);
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
+        $this->dispatch('checkout/cart/add');
     }
 
     /**
@@ -205,27 +215,17 @@ class AddTest extends AbstractController
     }
 
     /**
-     * Dispatch add product to cart request.
-     *
-     * @param array $postData
-     * @return void
+     * @inheritdoc
      */
-    public function dispatchAddToCartRequest(array $postData = []): void
+    protected function setUp(): void
     {
-        $this->getRequest()->setPostValue($postData);
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
-        $this->dispatch('checkout/cart/add');
-    }
+        parent::setUp();
 
-    /**
-     * Prepare referer to test.
-     *
-     * @return void
-     */
-    private function prepareReferer(): void
-    {
-        $parameters = $this->_objectManager->create(Parameters::class);
-        $parameters->set('HTTP_REFERER', 'http://localhost/test');
-        $this->getRequest()->setServer($parameters);
+        $this->json = $this->_objectManager->get(SerializerInterface::class);
+        $this->checkoutSessionFactory = $this->_objectManager->get(CheckoutSessionFactory::class);
+        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->executeInStoreContext = $this->_objectManager->get(ExecuteInStoreContext::class);
+        $this->escaper = $this->_objectManager->get(Escaper::class);
     }
 }

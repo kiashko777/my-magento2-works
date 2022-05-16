@@ -18,6 +18,7 @@ use Magento\Setup\Module\I18n\Parser\Contextual;
 use Magento\Setup\Module\I18n\Parser\Parser;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
 
 class GeneratorTest extends TestCase
 {
@@ -51,31 +52,6 @@ class GeneratorTest extends TestCase
      */
     protected $optionsResolverFactory;
 
-    protected function setUp(): void
-    {
-        $this->parserMock = $this->createMock(Parser::class);
-        $this->contextualParserMock = $this->createMock(Contextual::class);
-        $this->writerMock = $this->getMockForAbstractClass(WriterInterface::class);
-        $this->factoryMock = $this->createMock(Factory::class);
-        $this->factoryMock->expects($this->any())
-            ->method('createDictionaryWriter')
-            ->willReturn($this->writerMock);
-
-        $this->optionsResolverFactory =
-            $this->createMock(ResolverFactory::class);
-
-        $objectManagerHelper = new ObjectManager($this);
-        $this->generator = $objectManagerHelper->getObject(
-            Generator::class,
-            [
-                'parser' => $this->parserMock,
-                'contextualParser' => $this->contextualParserMock,
-                'factory' => $this->factoryMock,
-                'optionsResolver' => $this->optionsResolverFactory
-            ]
-        );
-    }
-
     public function testCreatingDictionaryWriter()
     {
         $outputFilename = 'test';
@@ -95,7 +71,7 @@ class GeneratorTest extends TestCase
             ->with('', false)
             ->willReturn($optionResolver);
         $this->generator->generate('', $outputFilename);
-        $property = new \ReflectionProperty($this->generator, 'writer');
+        $property = new ReflectionProperty($this->generator, 'writer');
         $property->setAccessible(true);
         $this->assertNull($property->getValue($this->generator));
     }
@@ -197,5 +173,30 @@ class GeneratorTest extends TestCase
         $this->contextualParserMock->expects($this->once())->method('parse')->with($filesOptions);
         $this->contextualParserMock->expects($this->once())->method('getPhrases')->willReturn([]);
         $this->generator->generate($baseDir, $outputFilename, true);
+    }
+
+    protected function setUp(): void
+    {
+        $this->parserMock = $this->createMock(Parser::class);
+        $this->contextualParserMock = $this->createMock(Contextual::class);
+        $this->writerMock = $this->getMockForAbstractClass(WriterInterface::class);
+        $this->factoryMock = $this->createMock(Factory::class);
+        $this->factoryMock->expects($this->any())
+            ->method('createDictionaryWriter')
+            ->willReturn($this->writerMock);
+
+        $this->optionsResolverFactory =
+            $this->createMock(ResolverFactory::class);
+
+        $objectManagerHelper = new ObjectManager($this);
+        $this->generator = $objectManagerHelper->getObject(
+            Generator::class,
+            [
+                'parser' => $this->parserMock,
+                'contextualParser' => $this->contextualParserMock,
+                'factory' => $this->factoryMock,
+                'optionsResolver' => $this->optionsResolverFactory
+            ]
+        );
     }
 }

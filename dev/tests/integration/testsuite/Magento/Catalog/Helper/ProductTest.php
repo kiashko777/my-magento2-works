@@ -3,18 +3,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Helper;
 
 use Exception;
 use Magento\Catalog\Api\Data\CategoryInterfaceFactory;
 use Magento\Catalog\Api\Data\ProductInterfaceFactory;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Helper\Product as ProductHelper;
 use Magento\Catalog\Model\Category;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use Magento\Catalog\Model\Product\Visibility;
 use Magento\Catalog\Model\Session;
-use Magento\Catalog\Helper\Product as ProductHelper;
 use Magento\Framework\DataObject;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Registry;
@@ -52,19 +53,6 @@ class ProductTest extends TestCase
      * @var Registry
      */
     private $registry;
-
-    /**
-     * @inheridoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->helper = $this->objectManager->get(ProductHelper::class);
-        /** @var ProductInterfaceFactory $productInterfaceFactory */
-        $this->productFactory = $this->objectManager->get(ProductInterfaceFactory::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->registry = $this->objectManager->get(Registry::class);
-    }
 
     /**
      * @magentoDataFixture Magento/CatalogUrlRewrite/_files/product_simple.php
@@ -233,5 +221,18 @@ class ProductTest extends TestCase
         $this->assertInstanceOf(DataObject::class, $result);
         $this->assertEquals(100, $result->getQty());
         $this->assertEquals(['option' => 'value'], $result->getOptions());
+    }
+
+    /**
+     * @inheridoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->helper = $this->objectManager->get(ProductHelper::class);
+        /** @var ProductInterfaceFactory $productInterfaceFactory */
+        $this->productFactory = $this->objectManager->get(ProductInterfaceFactory::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->registry = $this->objectManager->get(Registry::class);
     }
 }

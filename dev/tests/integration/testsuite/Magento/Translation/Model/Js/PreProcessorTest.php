@@ -7,18 +7,18 @@ declare(strict_types=1);
 
 namespace Magento\Translation\Model\Js;
 
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Framework\View\FileSystem;
-use Magento\TestFramework\Helper\CacheCleaner;
-use Magento\Framework\Translate;
 use Magento\Framework\App\AreaList;
 use Magento\Framework\Phrase;
 use Magento\Framework\Phrase\RendererInterface;
+use Magento\Framework\Translate;
+use Magento\Framework\View\FileSystem;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class for testing translation.
  */
-class PreProcessorTest extends \PHPUnit\Framework\TestCase
+class PreProcessorTest extends TestCase
 {
     /**
      * @var PreProcessor
@@ -29,48 +29,6 @@ class PreProcessorTest extends \PHPUnit\Framework\TestCase
      * @var RendererInterface
      */
     private $origRenderer;
-
-    /**
-     * Set up.
-     */
-    protected function setUp(): void
-    {
-        $viewFileSystem = $this->createPartialMock(FileSystem::class, ['getLocaleFileName']);
-        $viewFileSystem->expects($this->any())->method('getLocaleFileName')
-            ->willReturn(
-                // phpcs:ignore Magento2.Functions.DiscouragedFunction
-                dirname(__DIR__) . '/_files/Magento/Store/i18n/en_AU.csv'
-            );
-
-        $objectManager = Bootstrap::getObjectManager();
-        $objectManager->addSharedInstance($viewFileSystem, FileSystem::class);
-        $translator = $objectManager->create(Translate::class);
-        $objectManager->addSharedInstance($translator, Translate::class);
-        $areaList = $this->getMockBuilder(AreaList::class)->disableOriginalConstructor()->getMock();
-        $this->origRenderer = Phrase::getRenderer();
-        Phrase::setRenderer(
-            $objectManager->get(RendererInterface::class)
-        );
-
-        $this->model = $objectManager->create(
-            PreProcessor::class,
-            [
-                'translate' => $translator,
-                'areaList' => $areaList
-            ]
-        );
-
-        $translator->setLocale('en_AU');
-        $translator->loadData();
-    }
-
-    /**
-     * Tear down.
-     */
-    protected function tearDown(): void
-    {
-        Phrase::setRenderer($this->origRenderer);
-    }
 
     /**
      * Test for backend translation strategy.
@@ -184,5 +142,47 @@ i18n
 i18n
             ]
         ];
+    }
+
+    /**
+     * Set up.
+     */
+    protected function setUp(): void
+    {
+        $viewFileSystem = $this->createPartialMock(FileSystem::class, ['getLocaleFileName']);
+        $viewFileSystem->expects($this->any())->method('getLocaleFileName')
+            ->willReturn(
+            // phpcs:ignore Magento2.Functions.DiscouragedFunction
+                dirname(__DIR__) . '/_files/Magento/Store/i18n/en_AU.csv'
+            );
+
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->addSharedInstance($viewFileSystem, FileSystem::class);
+        $translator = $objectManager->create(Translate::class);
+        $objectManager->addSharedInstance($translator, Translate::class);
+        $areaList = $this->getMockBuilder(AreaList::class)->disableOriginalConstructor()->getMock();
+        $this->origRenderer = Phrase::getRenderer();
+        Phrase::setRenderer(
+            $objectManager->get(RendererInterface::class)
+        );
+
+        $this->model = $objectManager->create(
+            PreProcessor::class,
+            [
+                'translate' => $translator,
+                'areaList' => $areaList
+            ]
+        );
+
+        $translator->setLocale('en_AU');
+        $translator->loadData();
+    }
+
+    /**
+     * Tear down.
+     */
+    protected function tearDown(): void
+    {
+        Phrase::setRenderer($this->origRenderer);
     }
 }

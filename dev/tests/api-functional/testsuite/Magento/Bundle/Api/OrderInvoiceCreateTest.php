@@ -3,38 +3,35 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Bundle\Api;
+
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Sales\Api\Data\OrderInterface;
+use Magento\Sales\Api\Data\OrderItemInterface;
+use Magento\Sales\Api\InvoiceRepositoryInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
  * API test for creation of Invoice for order with bundle product.
  */
-class OrderInvoiceCreateTest extends \Magento\TestFramework\TestCase\WebapiAbstract
+class OrderInvoiceCreateTest extends WebapiAbstract
 {
     const SERVICE_READ_NAME = 'salesInvoiceOrderV1';
     const SERVICE_VERSION = 'V1';
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
     /**
-     * @var \Magento\Sales\Api\InvoiceRepositoryInterface
+     * @var InvoiceRepositoryInterface
      */
     private $invoiceRepository;
-
-    /**
-     * Set up.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->invoiceRepository = $this->objectManager->get(
-            \Magento\Sales\Api\InvoiceRepositoryInterface::class
-        );
-    }
 
     /**
      * Test create a partial invoice for order with bundle and Simple products.
@@ -44,14 +41,14 @@ class OrderInvoiceCreateTest extends \Magento\TestFramework\TestCase\WebapiAbstr
      */
     public function testInvoiceWithSimpleAndBundleCreate()
     {
-        /** @var \Magento\Sales\Api\Data\OrderInterface $existingOrder*/
-        $existingOrder = $this->objectManager->create(\Magento\Sales\Api\Data\OrderInterface::class)
+        /** @var OrderInterface $existingOrder */
+        $existingOrder = $this->objectManager->create(OrderInterface::class)
             ->loadByIncrementId('100000001');
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/order/' . $existingOrder->getId() . '/invoice',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_READ_NAME,
@@ -80,7 +77,7 @@ class OrderInvoiceCreateTest extends \Magento\TestFramework\TestCase\WebapiAbstr
             try {
                 $invoice = $this->invoiceRepository->get($result);
                 $grantTotal += $invoice->getGrandTotal();
-            } catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+            } catch (NoSuchEntityException $e) {
                 $this->fail('Failed asserting that Invoice was created');
             }
         }
@@ -99,14 +96,14 @@ class OrderInvoiceCreateTest extends \Magento\TestFramework\TestCase\WebapiAbstr
      */
     public function testInvoiceWithBundleCreate()
     {
-        /** @var \Magento\Sales\Api\Data\OrderInterface $existingOrder*/
-        $existingOrder = $this->objectManager->create(\Magento\Sales\Api\Data\OrderInterface::class)
+        /** @var OrderInterface $existingOrder */
+        $existingOrder = $this->objectManager->create(OrderInterface::class)
             ->loadByIncrementId('100000001');
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/order/' . $existingOrder->getId() . '/invoice',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_READ_NAME,
@@ -124,7 +121,7 @@ class OrderInvoiceCreateTest extends \Magento\TestFramework\TestCase\WebapiAbstr
             ],
         ];
 
-        /** @var \Magento\Sales\Api\Data\OrderItemInterface $item */
+        /** @var OrderItemInterface $item */
         foreach ($existingOrder->getAllItems() as $item) {
             $requestData['items'][] = [
                 'order_item_id' => $item->getItemId(),
@@ -138,6 +135,19 @@ class OrderInvoiceCreateTest extends \Magento\TestFramework\TestCase\WebapiAbstr
             $existingOrder->getGrandTotal(),
             $invoice->getGrandTotal(),
             'Failed asserting that invoice is correct.'
+        );
+    }
+
+    /**
+     * Set up.
+     *
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->invoiceRepository = $this->objectManager->get(
+            InvoiceRepositoryInterface::class
         );
     }
 }

@@ -9,8 +9,8 @@ declare(strict_types=1);
 
 namespace Magento\PageCache\Observer\SwitchPageCacheOnMaintenance;
 
-use PHPUnit\Framework\TestCase;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Page Cache state test.
@@ -21,15 +21,6 @@ class PageCacheStateTest extends TestCase
      * @var PageCacheState
      */
     private $pageCacheStateStorage;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->pageCacheStateStorage = $objectManager->get(PageCacheState::class);
-    }
 
     /**
      * Tests save state.
@@ -65,5 +56,14 @@ class PageCacheStateTest extends TestCase
     public function saveStateProvider(): array
     {
         return [[true], [false]];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->pageCacheStateStorage = $objectManager->get(PageCacheState::class);
     }
 }

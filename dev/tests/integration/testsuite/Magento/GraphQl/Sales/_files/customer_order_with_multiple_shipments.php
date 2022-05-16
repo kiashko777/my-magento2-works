@@ -4,12 +4,12 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Framework\DB\Transaction;
 use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Shipment;
+use Magento\Sales\Model\Order\ShipmentFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
-use Magento\Sales\Model\Order\ShipmentFactory;
-use Magento\Framework\DB\Transaction;
 
 Resolver::getInstance()->requireDataFixture('Magento/Sales/_files/customer_order_with_two_items.php');
 

@@ -4,12 +4,17 @@
  * See COPYING.txt for license details.
  */
 
-$payment = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Sales\Model\Order\Payment::class
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Payment;
+use Magento\Sales\Model\Order\Payment\Transaction;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$payment = Bootstrap::getObjectManager()->create(
+    Payment::class
 );
 $payment->setMethod('checkmo');
 
-$order = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Sales\Model\Order::class);
+$order = Bootstrap::getObjectManager()->create(Order::class);
 $order->setIncrementId(
     '100000001'
 )->setSubtotal(
@@ -23,6 +28,6 @@ $order->setIncrementId(
 );
 
 $payment->setTransactionId('trx1');
-$payment->addTransaction(\Magento\Sales\Model\Order\Payment\Transaction::TYPE_AUTH);
+$payment->addTransaction(Transaction::TYPE_AUTH);
 
 $order->save();

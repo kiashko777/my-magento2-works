@@ -7,41 +7,40 @@
 namespace Magento\Customer\Model\ResourceModel;
 
 use Magento\Customer\Api\Data\GroupInterface;
+use Magento\Customer\Api\Data\GroupInterfaceFactory;
+use Magento\Customer\Api\GroupRepositoryInterface;
+use Magento\Framework\Api\FilterBuilder;
+use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Api\SortOrder;
+use Magento\Framework\Api\SortOrderBuilder;
+use Magento\Framework\Exception\InputException;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Integration test for \Magento\Customer\Model\ResourceModel\GroupRepository
  */
-class GroupRepositoryTest extends \PHPUnit\Framework\TestCase
+class GroupRepositoryTest extends TestCase
 {
     /** The group id of the "NOT LOGGED IN" group */
     const NOT_LOGGED_IN_GROUP_ID = 0;
 
-    /** @var \Magento\Customer\Api\GroupRepositoryInterface */
+    /** @var GroupRepositoryInterface */
     private $groupRepository;
 
-    /** @var \Magento\Framework\ObjectManagerInterface */
+    /** @var ObjectManagerInterface */
     private $objectManager;
 
-    /** @var \Magento\Customer\Api\Data\GroupInterfaceFactory */
+    /** @var GroupInterfaceFactory */
     private $groupFactory;
 
-    /** @var  \Magento\Framework\Api\SearchCriteriaBuilder */
+    /** @var  SearchCriteriaBuilder */
     private $searchCriteriaBuilder;
 
-    /** @var  \Magento\Framework\Api\SortOrderBuilder */
+    /** @var  SortOrderBuilder */
     private $sortOrderBuilder;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->groupRepository = $this->objectManager->create(\Magento\Customer\Api\GroupRepositoryInterface::class);
-        $this->groupFactory = $this->objectManager->create(\Magento\Customer\Api\Data\GroupInterfaceFactory::class);
-        $this->searchCriteriaBuilder = $this->objectManager->create(
-            \Magento\Framework\Api\SearchCriteriaBuilder::class
-        );
-        $this->sortOrderBuilder = $this->objectManager->create(\Magento\Framework\Api\SortOrderBuilder::class);
-    }
 
     /**
      * @param array $testGroup
@@ -72,7 +71,7 @@ class GroupRepositoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetGroupException()
     {
-        $this->expectException(\Magento\Framework\Exception\NoSuchEntityException::class);
+        $this->expectException(NoSuchEntityException::class);
         $this->expectExceptionMessage('No such entity with id = 9999');
 
         $this->groupRepository->getById(9999);
@@ -134,7 +133,7 @@ class GroupRepositoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testUpdateGroupException()
     {
-        $this->expectException(\Magento\Framework\Exception\InputException::class);
+        $this->expectException(InputException::class);
         $this->expectExceptionMessage('Invalid value of "9999" provided for the taxClassId field.');
 
         $group = $this->groupFactory->create()->setId(null)->setCode('New Group')->setTaxClassId(3);
@@ -178,7 +177,7 @@ class GroupRepositoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testDeleteDoesNotExist()
     {
-        $this->expectException(\Magento\Framework\Exception\NoSuchEntityException::class);
+        $this->expectException(NoSuchEntityException::class);
         $this->expectExceptionMessage('No such entity with id = 9999');
 
         $this->assertFalse($this->groupRepository->deleteById(9999));
@@ -220,8 +219,8 @@ class GroupRepositoryTest extends \PHPUnit\Framework\TestCase
 
     public function searchGroupsDataProvider()
     {
-        $builder = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Framework\Api\FilterBuilder::class);
+        $builder = Bootstrap::getObjectManager()
+            ->create(FilterBuilder::class);
         return [
             'eq' => [
                 [$builder->setField(GroupInterface::CODE)->setValue('General')->create()],
@@ -294,7 +293,7 @@ class GroupRepositoryTest extends \PHPUnit\Framework\TestCase
 
         $searchResults = $this->groupRepository->getList($this->searchCriteriaBuilder->create());
 
-        /** @var \Magento\Customer\Api\Data\GroupInterface[] $resultItems */
+        /** @var GroupInterface[] $resultItems */
         $resultItems = $searchResults->getItems();
         $this->assertTrue(count($resultItems) > 0);
 
@@ -349,5 +348,16 @@ class GroupRepositoryTest extends \PHPUnit\Framework\TestCase
                 ['Retail Customer', 'Retail Customer', 'Retail Customer', 'Retail Customer']
             ],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->groupRepository = $this->objectManager->create(GroupRepositoryInterface::class);
+        $this->groupFactory = $this->objectManager->create(GroupInterfaceFactory::class);
+        $this->searchCriteriaBuilder = $this->objectManager->create(
+            SearchCriteriaBuilder::class
+        );
+        $this->sortOrderBuilder = $this->objectManager->create(SortOrderBuilder::class);
     }
 }

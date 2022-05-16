@@ -3,36 +3,45 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Tax\Model;
 
+use InvalidArgumentException;
+use Magento\Framework\Api\DataObjectHelper;
+use Magento\Framework\DataObject;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Tax\Api\Data\QuoteDetailsInterface;
+use Magento\Tax\Api\Data\QuoteDetailsInterfaceFactory;
 use Magento\Tax\Api\Data\TaxClassKeyInterface;
+use Magento\Tax\Api\TaxCalculationInterface;
 use Magento\Tax\Model\TaxClass\Key;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoDbIsolation enabled
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class TaxCalculationTest extends \PHPUnit\Framework\TestCase
+class TaxCalculationTest extends TestCase
 {
     /**
      * Object Manager
      *
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
     /**
      * Tax calculation service
      *
-     * @var \Magento\Tax\Api\TaxCalculationInterface
+     * @var TaxCalculationInterface
      */
     private $taxCalculationService;
 
     /**
      * Tax Details Factory
      *
-     * @var \Magento\Tax\Api\Data\QuoteDetailsInterfaceFactory
+     * @var QuoteDetailsInterfaceFactory
      */
     private $quoteDetailsFactory;
 
@@ -71,27 +80,9 @@ class TaxCalculationTest extends \PHPUnit\Framework\TestCase
     private $taxRuleFixtureFactory;
 
     /**
-     * @var \Magento\Framework\Api\DataObjectHelper
+     * @var DataObjectHelper
      */
     private $dataObjectHelper;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->quoteDetailsFactory = $this->objectManager->create(
-            \Magento\Tax\Api\Data\QuoteDetailsInterfaceFactory::class
-        );
-        $this->dataObjectHelper = $this->objectManager->create(\Magento\Framework\Api\DataObjectHelper::class);
-        $this->taxCalculationService = $this->objectManager->get(\Magento\Tax\Api\TaxCalculationInterface::class);
-        $this->taxRuleFixtureFactory = new TaxRuleFixtureFactory();
-
-        $this->setUpDefaultRules();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->tearDownDefaultRules();
-    }
 
     /**
      * @magentoConfigFixture current_store tax/calculation/algorithm UNIT_BASE_CALCULATION
@@ -104,11 +95,68 @@ class TaxCalculationTest extends \PHPUnit\Framework\TestCase
         $this->dataObjectHelper->populateWithArray(
             $quoteDetails,
             $quoteDetailsData,
-            \Magento\Tax\Api\Data\QuoteDetailsInterface::class
+            QuoteDetailsInterface::class
         );
 
         $taxDetails = $this->taxCalculationService->calculateTax($quoteDetails, 1);
         $this->assertEquals($expected, $this->convertObjectToArray($taxDetails));
+    }
+
+    /**
+     * Substitutes an ID for the name of a tax class in a tax class ID field.
+     *
+     * @param array $data
+     * @return array
+     */
+    private function performTaxClassSubstitution($data)
+    {
+        array_walk_recursive(
+            $data,
+            function (&$value, $key) {
+                if (($key === 'tax_class_key' || $key === 'customer_tax_class_key')
+                    && is_string($value)
+                ) {
+                    $value = [
+                        Key::KEY_TYPE => TaxClassKeyInterface::TYPE_ID,
+                        Key::KEY_VALUE => $this->taxClassIds[$value],
+                    ];
+                }
+            }
+        );
+
+        return $data;
+    }
+
+    /**
+     * Convert given object to array.
+     *
+     * This utility function is used to simplify expected result verification.
+     *
+     * @param DataObject $object
+     * @return array
+     */
+    private function convertObjectToArray($object)
+    {
+        if ($object instanceof DataObject) {
+            $data = $object->getData();
+        } elseif (is_object($object)) {
+            $data = (array)$object;
+        } else {
+            throw new InvalidArgumentException("Provided argument is not an object.");
+        }
+        foreach ($data as $key => $value) {
+            if (is_object($value)) {
+                $data[$key] = $this->convertObjectToArray($value);
+            } elseif (is_array($value)) {
+                foreach ($value as $nestedKey => $nestedValue) {
+                    if (is_object($nestedValue)) {
+                        $value[$nestedKey] = $this->convertObjectToArray($nestedValue);
+                    }
+                }
+                $data[$key] = $value;
+            }
+        }
+        return $data;
     }
 
     /**
@@ -643,7 +691,7 @@ class TaxCalculationTest extends \PHPUnit\Framework\TestCase
                         ],
                     ],
                 ],
-                'sku_2' =>                 [
+                'sku_2' => [
                     'code' => 'sku_2',
                     'row_tax' => 16.6,
                     'price' => 11,
@@ -809,6 +857,30 @@ class TaxCalculationTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
+     *
+     * @return array
+     */
+    private function getBaseQuoteData()
+    {
+        $baseQuote = [
+            'billing_address' => [
+                'postcode' => '55555',
+                'country_id' => 'US',
+                'region' => ['region_id' => 42],
+            ],
+            'shipping_address' => [
+                'postcode' => '55555',
+                'country_id' => 'US',
+                'region' => ['region_id' => 42],
+            ],
+            'items' => [],
+            'customer_tax_class_key' => 'DefaultCustomerClass',
+        ];
+        return $baseQuote;
+    }
+
+    /**
      * @dataProvider calculateTaxTotalBasedDataProvider
      * @magentoConfigFixture current_store tax/calculation/algorithm TOTAL_BASE_CALCULATION
      */
@@ -819,7 +891,7 @@ class TaxCalculationTest extends \PHPUnit\Framework\TestCase
         $this->dataObjectHelper->populateWithArray(
             $quoteDetails,
             $quoteDetailsData,
-            \Magento\Tax\Api\Data\QuoteDetailsInterface::class
+            QuoteDetailsInterface::class
         );
 
         $taxDetails = $this->taxCalculationService->calculateTax($quoteDetails, $storeId);
@@ -1281,7 +1353,7 @@ class TaxCalculationTest extends \PHPUnit\Framework\TestCase
         $this->dataObjectHelper->populateWithArray(
             $quoteDetails,
             $quoteDetailsData,
-            \Magento\Tax\Api\Data\QuoteDetailsInterface::class
+            QuoteDetailsInterface::class
         );
 
         $taxDetails = $this->taxCalculationService->calculateTax($quoteDetails);
@@ -2152,6 +2224,43 @@ class TaxCalculationTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * @magentoDbIsolation enabled
+     * @dataProvider multiRulesRowBasedDataProvider
+     * @magentoConfigFixture default_store tax/calculation/algorithm ROW_BASE_CALCULATION
+     */
+    public function testMultiRulesRowBased($quoteDetailsData, $expectedTaxDetails)
+    {
+        $quoteDetailsData = $this->performTaxClassSubstitution($quoteDetailsData);
+        $quoteDetails = $this->quoteDetailsFactory->create();
+        $this->dataObjectHelper->populateWithArray(
+            $quoteDetails,
+            $quoteDetailsData,
+            QuoteDetailsInterface::class
+        );
+
+        $taxDetails = $this->taxCalculationService->calculateTax($quoteDetails);
+
+        $this->assertEquals($expectedTaxDetails, $this->convertObjectToArray($taxDetails));
+    }
+
+    /**
+     * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
+     */
+    public function multiRulesRowBasedDataProvider()
+    {
+        $quoteDetails = $this->setupMultiRuleQuote();
+
+        $results = $this->getBaseQuoteResult();
+
+        return [
+            'multi rules, multi rows' => [
+                'quote_details' => $quoteDetails,
+                'expected_tax_details' => $results,
+            ],
+        ];
+    }
+
+    /**
      * Create quote details for use with multi rules tests
      *
      * @return array
@@ -2372,43 +2481,6 @@ class TaxCalculationTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @magentoDbIsolation enabled
-     * @dataProvider multiRulesRowBasedDataProvider
-     * @magentoConfigFixture default_store tax/calculation/algorithm ROW_BASE_CALCULATION
-     */
-    public function testMultiRulesRowBased($quoteDetailsData, $expectedTaxDetails)
-    {
-        $quoteDetailsData = $this->performTaxClassSubstitution($quoteDetailsData);
-        $quoteDetails = $this->quoteDetailsFactory->create();
-        $this->dataObjectHelper->populateWithArray(
-            $quoteDetails,
-            $quoteDetailsData,
-            \Magento\Tax\Api\Data\QuoteDetailsInterface::class
-        );
-
-        $taxDetails = $this->taxCalculationService->calculateTax($quoteDetails);
-
-        $this->assertEquals($expectedTaxDetails, $this->convertObjectToArray($taxDetails));
-    }
-
-    /**
-     * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
-     */
-    public function multiRulesRowBasedDataProvider()
-    {
-        $quoteDetails = $this->setupMultiRuleQuote();
-
-        $results = $this->getBaseQuoteResult();
-
-        return [
-            'multi rules, multi rows' => [
-                'quote_details' => $quoteDetails,
-                'expected_tax_details' => $results,
-            ],
-        ];
-    }
-
-    /**
-     * @magentoDbIsolation enabled
      * @dataProvider multiRulesTotalBasedDataProvider
      * @magentoConfigFixture default_store tax/calculation/algorithm TOTAL_BASE_CALCULATION
      */
@@ -2419,7 +2491,7 @@ class TaxCalculationTest extends \PHPUnit\Framework\TestCase
         $this->dataObjectHelper->populateWithArray(
             $quoteDetails,
             $quoteDetailsData,
-            \Magento\Tax\Api\Data\QuoteDetailsInterface::class
+            QuoteDetailsInterface::class
         );
 
         $taxDetails = $this->taxCalculationService->calculateTax($quoteDetails);
@@ -2466,7 +2538,7 @@ class TaxCalculationTest extends \PHPUnit\Framework\TestCase
         $this->dataObjectHelper->populateWithArray(
             $quoteDetails,
             $quoteDetailsData,
-            \Magento\Tax\Api\Data\QuoteDetailsInterface::class
+            QuoteDetailsInterface::class
         );
 
         $taxDetails = $this->taxCalculationService->calculateTax($quoteDetails);
@@ -2503,29 +2575,17 @@ class TaxCalculationTest extends \PHPUnit\Framework\TestCase
         ];
     }
 
-    /**
-     * Substitutes an ID for the name of a tax class in a tax class ID field.
-     *
-     * @param array $data
-     * @return array
-     */
-    private function performTaxClassSubstitution($data)
+    protected function setUp(): void
     {
-        array_walk_recursive(
-            $data,
-            function (&$value, $key) {
-                if (($key === 'tax_class_key' || $key === 'customer_tax_class_key')
-                    && is_string($value)
-                ) {
-                    $value = [
-                        Key::KEY_TYPE => TaxClassKeyInterface::TYPE_ID,
-                        Key::KEY_VALUE => $this->taxClassIds[$value],
-                    ];
-                }
-            }
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->quoteDetailsFactory = $this->objectManager->create(
+            QuoteDetailsInterfaceFactory::class
         );
+        $this->dataObjectHelper = $this->objectManager->create(DataObjectHelper::class);
+        $this->taxCalculationService = $this->objectManager->get(TaxCalculationInterface::class);
+        $this->taxRuleFixtureFactory = new TaxRuleFixtureFactory();
 
-        return $data;
+        $this->setUpDefaultRules();
     }
 
     /**
@@ -2630,6 +2690,11 @@ class TaxCalculationTest extends \PHPUnit\Framework\TestCase
         $this->taxRates = array_merge($this->taxRates, $multiTaxRatesDifferentPriority);
     }
 
+    protected function tearDown(): void
+    {
+        $this->tearDownDefaultRules();
+    }
+
     /**
      * Helper function that tears down some default rules
      */
@@ -2638,61 +2703,5 @@ class TaxCalculationTest extends \PHPUnit\Framework\TestCase
         $this->taxRuleFixtureFactory->deleteTaxRules(array_values($this->taxRules));
         $this->taxRuleFixtureFactory->deleteTaxRates(array_values($this->taxRates));
         $this->taxRuleFixtureFactory->deleteTaxClasses(array_values($this->taxClassIds));
-    }
-
-    /**
-     * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
-     *
-     * @return array
-     */
-    private function getBaseQuoteData()
-    {
-        $baseQuote = [
-            'billing_address' => [
-                'postcode' => '55555',
-                'country_id' => 'US',
-                'region' => ['region_id' => 42],
-            ],
-            'shipping_address' => [
-                'postcode' => '55555',
-                'country_id' => 'US',
-                'region' => ['region_id' => 42],
-            ],
-            'items' => [],
-            'customer_tax_class_key' => 'DefaultCustomerClass',
-        ];
-        return $baseQuote;
-    }
-
-    /**
-     * Convert given object to array.
-     *
-     * This utility function is used to simplify expected result verification.
-     *
-     * @param \Magento\Framework\DataObject $object
-     * @return array
-     */
-    private function convertObjectToArray($object)
-    {
-        if ($object instanceof \Magento\Framework\DataObject) {
-            $data = $object->getData();
-        } elseif (is_object($object)) {
-            $data = (array)$object;
-        } else {
-            throw new \InvalidArgumentException("Provided argument is not an object.");
-        }
-        foreach ($data as $key => $value) {
-            if (is_object($value)) {
-                $data[$key] = $this->convertObjectToArray($value);
-            } elseif (is_array($value)) {
-                foreach ($value as $nestedKey => $nestedValue) {
-                    if (is_object($nestedValue)) {
-                        $value[$nestedKey] = $this->convertObjectToArray($nestedValue);
-                    }
-                }
-                $data[$key] = $value;
-            }
-        }
-        return $data;
     }
 }

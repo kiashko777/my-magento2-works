@@ -97,7 +97,7 @@ class AsyncClientInterfaceMock implements AsyncClientInterface
     /**
      * Next responses will be as given.
      *
-     * @param  HttpResponseDeferredInterface|null $mockDeferredResponse
+     * @param HttpResponseDeferredInterface|null $mockDeferredResponse
      * @return self
      */
     public function setDeferredResponseMock(?HttpResponseDeferredInterface $mockDeferredResponse): self

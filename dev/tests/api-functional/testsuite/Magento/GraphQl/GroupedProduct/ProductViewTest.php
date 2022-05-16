@@ -51,53 +51,6 @@ class ProductViewTest extends GraphQlAbstract
     }
 
     /**
-     * @magentoApiDataFixture Magento/Store/_files/second_website_with_two_stores.php
-     * @magentoApiDataFixture Magento/GroupedProduct/_files/product_grouped_items_in_multiple_websites.php
-     */
-    public function testGroupedProductItemsAssignedToDifferentWebsites()
-    {
-        $headerMapFirstStore['Store'] = 'default';
-        $headerMapSecondStore['Store'] = 'fixture_second_store';
-        $productSku = 'grouped-product';
-        $query = $this->getQuery($productSku);
-        $responseForFirstWebsite = $this->graphQlQuery($query, [], '', $headerMapFirstStore);
-        $responseForSecondWebsite = $this->graphQlQuery($query, [], '', $headerMapSecondStore);
-        $firstWebsiteGroupedProductLinks = [
-            [
-                'qty' => 1,
-                'position' => 1,
-                'product' => [
-                    'sku' => 'simple',
-                    'name' => 'Simple Products',
-                    'type_id' => 'simple',
-                    'url_key' => 'simple-product'
-                ]
-            ]
-        ];
-        $secondWebsiteGroupedProductLinks = [
-            [
-                'qty' => 2,
-                'position' => 2,
-                'product' => [
-                    'sku' => 'virtual-product',
-                    'name' => 'Virtual Products',
-                    'type_id' => 'virtual',
-                    'url_key' => 'virtual-product'
-                ]
-            ]
-        ];
-
-        $this->assertGroupedProductItems(
-            $firstWebsiteGroupedProductLinks,
-            $responseForFirstWebsite['products']['items'][0]
-        );
-        $this->assertGroupedProductItems(
-            $secondWebsiteGroupedProductLinks,
-            $responseForSecondWebsite['products']['items'][0]
-        );
-    }
-
-    /**
      * @param string $sku
      * @return string
      */
@@ -143,5 +96,52 @@ QUERY;
         foreach ($actualResponse['items'] as $itemIndex => $bundleItems) {
             self::assertEquals($groupedProductLinks[$itemIndex], $bundleItems);
         }
+    }
+
+    /**
+     * @magentoApiDataFixture Magento/Store/_files/second_website_with_two_stores.php
+     * @magentoApiDataFixture Magento/GroupedProduct/_files/product_grouped_items_in_multiple_websites.php
+     */
+    public function testGroupedProductItemsAssignedToDifferentWebsites()
+    {
+        $headerMapFirstStore['Store'] = 'default';
+        $headerMapSecondStore['Store'] = 'fixture_second_store';
+        $productSku = 'grouped-product';
+        $query = $this->getQuery($productSku);
+        $responseForFirstWebsite = $this->graphQlQuery($query, [], '', $headerMapFirstStore);
+        $responseForSecondWebsite = $this->graphQlQuery($query, [], '', $headerMapSecondStore);
+        $firstWebsiteGroupedProductLinks = [
+            [
+                'qty' => 1,
+                'position' => 1,
+                'product' => [
+                    'sku' => 'simple',
+                    'name' => 'Simple Products',
+                    'type_id' => 'simple',
+                    'url_key' => 'simple-product'
+                ]
+            ]
+        ];
+        $secondWebsiteGroupedProductLinks = [
+            [
+                'qty' => 2,
+                'position' => 2,
+                'product' => [
+                    'sku' => 'virtual-product',
+                    'name' => 'Virtual Products',
+                    'type_id' => 'virtual',
+                    'url_key' => 'virtual-product'
+                ]
+            ]
+        ];
+
+        $this->assertGroupedProductItems(
+            $firstWebsiteGroupedProductLinks,
+            $responseForFirstWebsite['products']['items'][0]
+        );
+        $this->assertGroupedProductItems(
+            $secondWebsiteGroupedProductLinks,
+            $responseForSecondWebsite['products']['items'][0]
+        );
     }
 }

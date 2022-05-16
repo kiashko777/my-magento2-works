@@ -6,11 +6,12 @@
 
 namespace Magento\Setup\Model;
 
+use Exception;
 use Magento\Authorization\Model\Acl\Role\Group;
 use Magento\Authorization\Model\Acl\Role\User;
 use Magento\Authorization\Model\UserContextInterface;
-use Magento\Framework\Encryption\EncryptorInterface;
 use Magento\Framework\DB\Adapter\AdapterInterface;
+use Magento\Framework\Encryption\EncryptorInterface;
 
 class AdminAccount
 {
@@ -52,23 +53,14 @@ class AdminAccount
      * @param array $data
      */
     public function __construct(
-        AdapterInterface $connection,
+        AdapterInterface   $connection,
         EncryptorInterface $encryptor,
-        array $data
-    ) {
+        array              $data
+    )
+    {
         $this->connection = $connection;
         $this->encryptor = $encryptor;
         $this->data = $data;
-    }
-
-    /**
-     * Generate password string
-     *
-     * @return string
-     */
-    protected function generatePassword()
-    {
-        return $this->encryptor->getHash($this->data[self::KEY_PASSWORD], true);
     }
 
     /**
@@ -97,8 +89,8 @@ class AdminAccount
         $passwordHash = $this->generatePassword();
         $adminData = [
             'firstname' => $this->data[self::KEY_FIRST_NAME],
-            'lastname'  => $this->data[self::KEY_LAST_NAME],
-            'password'  => $passwordHash,
+            'lastname' => $this->data[self::KEY_LAST_NAME],
+            'password' => $passwordHash,
             'is_active' => 1,
         ];
         $result = $this->connection->fetchRow(
@@ -135,6 +127,84 @@ class AdminAccount
     }
 
     /**
+     * Generate password string
+     *
+     * @return string
+     */
+    protected function generatePassword()
+    {
+        return $this->encryptor->getHash($this->data[self::KEY_PASSWORD], true);
+    }
+
+    /**
+     * Take table with prefix without loading modules
+     *
+     * @param string $table
+     * @return string
+     */
+    private function getTableName($table)
+    {
+        if (!empty($this->data[self::KEY_PREFIX])) {
+            return $this->connection->getTableName($this->data[self::KEY_PREFIX] . $table);
+        }
+
+        return $this->connection->getTableName($table);
+    }
+
+    /**
+     * Validates that the username and email both match the user,
+     * and that password exists and is different from user name.
+     *
+     * @return void
+     * @throws Exception If the username and email do not both match data provided to install
+     * @throws Exception If password is empty and if password is the same as the user name
+     */
+    public function validateUserMatches()
+    {
+        if (empty($this->data[self::KEY_PASSWORD])) {
+            throw new Exception(
+                '"Password" is required. Enter and try again.'
+            );
+        }
+
+        if (strcasecmp($this->data[self::KEY_PASSWORD], $this->data[self::KEY_USER]) == 0) {
+            throw new Exception(
+                'Password cannot be the same as the user name.'
+            );
+        }
+
+        try {
+            $result = $this->connection->fetchRow(
+                "SELECT user_id, username, email FROM {$this->getTableName('admin_user')} "
+                . "WHERE username = :username OR email = :email",
+                ['username' => $this->data[self::KEY_USER], 'email' => $this->data[self::KEY_EMAIL]]
+            );
+        } catch (Exception $e) {
+            return; // New installation, no need to validate existing users.
+        }
+
+        $email = $result['email'];
+        $username = $result['username'];
+
+        if ((strcasecmp($email, $this->data[self::KEY_EMAIL]) == 0) &&
+            (strcasecmp($username, $this->data[self::KEY_USER]) != 0)) {
+            // email matched but username did not
+            throw new Exception(
+                'An existing user has the given email but different username. '
+                . 'Username and email both need to match an existing user or both be new.'
+            );
+        }
+        if ((strcasecmp($username, $this->data[self::KEY_USER]) == 0) &&
+            (strcasecmp($email, $this->data[self::KEY_EMAIL]) != 0)) {
+            // username matched but email did not
+            throw new Exception(
+                'An existing user has the given username but different email. '
+                . 'Username and email both need to match an existing user or both be new.'
+            );
+        }
+    }
+
+    /**
      * Remember a password hash for further usage.
      *
      * @param int $adminId
@@ -151,59 +221,6 @@ class AdminAccount
                 'last_updated' => time()
             ]
         );
-    }
-
-    /**
-     * Validates that the username and email both match the user,
-     * and that password exists and is different from user name.
-     *
-     * @return void
-     * @throws \Exception If the username and email do not both match data provided to install
-     * @throws \Exception If password is empty and if password is the same as the user name
-     */
-    public function validateUserMatches()
-    {
-        if (empty($this->data[self::KEY_PASSWORD])) {
-            throw new \Exception(
-                '"Password" is required. Enter and try again.'
-            );
-        }
-
-        if (strcasecmp($this->data[self::KEY_PASSWORD], $this->data[self::KEY_USER]) == 0) {
-            throw new \Exception(
-                'Password cannot be the same as the user name.'
-            );
-        }
-
-        try {
-            $result = $this->connection->fetchRow(
-                "SELECT user_id, username, email FROM {$this->getTableName('admin_user')} "
-                . "WHERE username = :username OR email = :email",
-                ['username' => $this->data[self::KEY_USER], 'email' => $this->data[self::KEY_EMAIL]]
-            );
-        } catch (\Exception $e) {
-            return; // New installation, no need to validate existing users.
-        }
-
-        $email = $result['email'];
-        $username = $result['username'];
-
-        if ((strcasecmp($email, $this->data[self::KEY_EMAIL]) == 0) &&
-            (strcasecmp($username, $this->data[self::KEY_USER]) != 0)) {
-            // email matched but username did not
-            throw new \Exception(
-                'An existing user has the given email but different username. '
-                . 'Username and email both need to match an existing user or both be new.'
-            );
-        }
-        if ((strcasecmp($username, $this->data[self::KEY_USER]) == 0) &&
-            (strcasecmp($email, $this->data[self::KEY_EMAIL]) != 0)) {
-            // username matched but email did not
-            throw new \Exception(
-                'An existing user has the given username but different email. '
-                . 'Username and email both need to match an existing user or both be new.'
-            );
-        }
     }
 
     /**
@@ -224,12 +241,12 @@ class AdminAccount
         if (empty($result)) {
             // No user role exists for this user id, create it
             $adminRoleData = [
-                'parent_id'  => $this->retrieveAdministratorsRoleId(),
+                'parent_id' => $this->retrieveAdministratorsRoleId(),
                 'tree_level' => 2,
-                'role_type'  => User::ROLE_TYPE,
-                'user_id'    => $adminId,
-                'user_type'  => UserContextInterface::USER_TYPE_ADMIN,
-                'role_name'  => $this->data[self::KEY_USER],
+                'role_type' => User::ROLE_TYPE,
+                'user_id' => $adminId,
+                'user_type' => UserContextInterface::USER_TYPE_ADMIN,
+                'role_name' => $this->data[self::KEY_USER],
             ];
             $this->connection->insert($this->getTableName('authorization_role'), $adminRoleData);
         }
@@ -239,13 +256,13 @@ class AdminAccount
      * Gets the "Administrators" role id, the special role created by data fixture in Authorization module.
      *
      * @return int The id of the Administrators role
-     * @throws \Exception If Administrators role not found or problem connecting with database.
+     * @throws Exception If Administrators role not found or problem connecting with database.
      */
     private function retrieveAdministratorsRoleId()
     {
         // Get Administrators role id to use as parent_id
         $administratorsRoleData = [
-            'parent_id'  => 0,
+            'parent_id' => 0,
             'tree_level' => 1,
             'role_type' => Group::ROLE_TYPE,
             'user_id' => 0,
@@ -259,25 +276,10 @@ class AdminAccount
             $administratorsRoleData
         );
         if (empty($result)) {
-            throw new \Exception('No Administrators role was found, data fixture needs to be run');
+            throw new Exception('No Administrators role was found, data fixture needs to be run');
         } else {
             // Found at least one, use first
             return $result['role_id'];
         }
-    }
-
-    /**
-     * Take table with prefix without loading modules
-     *
-     * @param string $table
-     * @return string
-     */
-    private function getTableName($table)
-    {
-        if (!empty($this->data[self::KEY_PREFIX])) {
-            return $this->connection->getTableName($this->data[self::KEY_PREFIX] . $table);
-        }
-
-        return $this->connection->getTableName($table);
     }
 }

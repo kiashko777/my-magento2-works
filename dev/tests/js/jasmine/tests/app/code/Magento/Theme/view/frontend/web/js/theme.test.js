@@ -31,7 +31,8 @@ define([
                 injector.clean();
                 injector.remove();
                 header = null;
-            } catch (e) {}
+            } catch (e) {
+            }
         });
 
         it('should add suffix "_mobile" to the html ID attribute (if exists) ' +

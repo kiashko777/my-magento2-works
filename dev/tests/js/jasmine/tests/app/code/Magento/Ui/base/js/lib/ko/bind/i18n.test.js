@@ -71,7 +71,7 @@ define([
         });
 
         it('if inline translation is on, ' +
-        'and there is no translation for this text, set original text for element', function () {
+            'and there is no translation for this text, set original text for element', function () {
             turnOnInlineTranslation();
 
             ko.applyBindingsToNode(elWithStaticText[0], {

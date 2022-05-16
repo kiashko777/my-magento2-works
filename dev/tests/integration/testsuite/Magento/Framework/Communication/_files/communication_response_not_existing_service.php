@@ -4,15 +4,18 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Customer\Api\Data\CustomerInterface;
+use Magento\Customer\Api\Data\InvalidInterface;
+
 return [
     'communication' => [
         'topics' => [
             'customerCreated' => [
                 'name' => 'customerCreated',
                 'is_synchronous' => false,
-                'request' => \Magento\Customer\Api\Data\CustomerInterface::class,
+                'request' => CustomerInterface::class,
                 'request_type' => 'object_interface',
-                'response' => \Magento\Customer\Api\Data\InvalidInterface::class,
+                'response' => InvalidInterface::class,
                 'handlers' => [],
             ],
         ]

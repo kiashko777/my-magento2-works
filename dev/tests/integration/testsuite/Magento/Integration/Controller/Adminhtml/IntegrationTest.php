@@ -8,7 +8,10 @@
 namespace Magento\Integration\Controller\Adminhtml;
 
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\Message\MessageInterface;
 use Magento\TestFramework\Bootstrap;
+use Magento\TestFramework\Helper\Xpath;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * \Magento\Integration\Controller\Adminhtml\Integration
@@ -17,22 +20,10 @@ use Magento\TestFramework\Bootstrap;
  * @magentoAppArea Adminhtml
  * @magentoDbIsolation enabled
  */
-class IntegrationTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class IntegrationTest extends AbstractBackendController
 {
     /** @var \Magento\Integration\Model\Integration */
     private $_integration;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        /** @var $integration \Magento\Integration\Model\Integration */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $integration = $objectManager->create(\Magento\Integration\Model\Integration::class);
-        $this->_integration = $integration->load('Fixture Integration', 'name');
-    }
 
     /**
      * Test view page.
@@ -45,7 +36,7 @@ class IntegrationTest extends \Magento\TestFramework\TestCase\AbstractBackendCon
         $this->assertStringContainsString('Integrations', $response);
         $this->assertEquals(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//*[@id="integrationGrid"]',
                 $response
             )
@@ -65,7 +56,7 @@ class IntegrationTest extends \Magento\TestFramework\TestCase\AbstractBackendCon
         $this->assertStringContainsString('New Integration', $response);
         $this->assertEquals(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//*[@id="integration_properties_base_fieldset"]',
                 $response
             )
@@ -91,14 +82,14 @@ class IntegrationTest extends \Magento\TestFramework\TestCase\AbstractBackendCon
         $this->assertStringContainsString($saveLink, $response);
         $this->assertEquals(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//*[@id="integration_properties_base_fieldset"]',
                 $response
             )
         );
         $this->assertEquals(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//*[@id="integration_edit_tabs_info_section_content"]',
                 $response
             )
@@ -127,7 +118,7 @@ class IntegrationTest extends \Magento\TestFramework\TestCase\AbstractBackendCon
         $this->dispatch('backend/admin/integration/save');
         $this->assertSessionMessages(
             $this->equalTo(["The integration '{$integrationName}' has been saved."]),
-            \Magento\Framework\Message\MessageInterface::TYPE_SUCCESS
+            MessageInterface::TYPE_SUCCESS
         );
         $this->assertRedirect($this->stringContains('backend/admin/integration/index/'));
     }
@@ -154,8 +145,20 @@ class IntegrationTest extends \Magento\TestFramework\TestCase\AbstractBackendCon
 
         $this->assertSessionMessages(
             $this->equalTo(["The integration '{$integrationName}' has been saved."]),
-            \Magento\Framework\Message\MessageInterface::TYPE_SUCCESS
+            MessageInterface::TYPE_SUCCESS
         );
         $this->assertRedirect($this->stringContains('backend/admin/integration/index/'));
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        /** @var $integration \Magento\Integration\Model\Integration */
+        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $integration = $objectManager->create(\Magento\Integration\Model\Integration::class);
+        $this->_integration = $integration->load('Fixture Integration', 'name');
     }
 }

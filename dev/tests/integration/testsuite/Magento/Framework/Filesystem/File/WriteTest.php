@@ -5,11 +5,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Filesystem\File;
 
+use Magento\Framework\Exception\FileSystemException;
+use Magento\Framework\Filesystem\Driver\File;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class WriteTest extends \PHPUnit\Framework\TestCase
+class WriteTest extends TestCase
 {
     /**
      * Current file path
@@ -30,6 +34,27 @@ class WriteTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Get readable file instance
+     * Get full path for files located in _files directory
+     *
+     * @param string $path
+     * @param string $mode
+     * @return Write
+     */
+    private function getFileInstance($path, $mode)
+    {
+        $this->currentFilePath = __DIR__ . '/../_files/' . $path;
+        return Bootstrap::getObjectManager()->create(
+            Write::class,
+            [
+                'path' => $this->currentFilePath,
+                'driver' => new File(),
+                'mode' => $mode,
+            ]
+        );
+    }
+
+    /**
      * Test exceptions on attempt to open existing file with x mode
      *
      * @dataProvider fileExistProvider
@@ -38,7 +63,7 @@ class WriteTest extends \PHPUnit\Framework\TestCase
      */
     public function testFileExistException($path, $mode)
     {
-        $this->expectException(\Magento\Framework\Exception\FileSystemException::class);
+        $this->expectException(FileSystemException::class);
 
         $this->getFileInstance($path, $mode);
     }
@@ -69,6 +94,14 @@ class WriteTest extends \PHPUnit\Framework\TestCase
         $file->close();
         $this->removeCurrentFile();
         $this->assertEquals($expectedResult, $result);
+    }
+
+    /**
+     * Remove current file
+     */
+    private function removeCurrentFile()
+    {
+        unlink($this->currentFilePath);
     }
 
     /**
@@ -178,34 +211,5 @@ class WriteTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue($file->flush());
         $file->close();
         $this->removeCurrentFile();
-    }
-
-    /**
-     * Remove current file
-     */
-    private function removeCurrentFile()
-    {
-        unlink($this->currentFilePath);
-    }
-
-    /**
-     * Get readable file instance
-     * Get full path for files located in _files directory
-     *
-     * @param string $path
-     * @param string $mode
-     * @return Write
-     */
-    private function getFileInstance($path, $mode)
-    {
-        $this->currentFilePath = __DIR__ . '/../_files/' . $path;
-        return Bootstrap::getObjectManager()->create(
-            \Magento\Framework\Filesystem\File\Write::class,
-            [
-                'path' => $this->currentFilePath,
-                'driver' => new \Magento\Framework\Filesystem\Driver\File(),
-                'mode' => $mode,
-            ]
-        );
     }
 }

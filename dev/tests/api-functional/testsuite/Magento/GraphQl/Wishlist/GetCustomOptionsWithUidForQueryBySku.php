@@ -71,6 +71,18 @@ class GetCustomOptionsWithUidForQueryBySku
     }
 
     /**
+     * Returns uid of the entered custom option
+     *
+     * @param int $optionId
+     *
+     * @return string
+     */
+    private function encodeEnteredOption(int $optionId): string
+    {
+        return base64_encode("custom-option/$optionId");
+    }
+
+    /**
      * Returns uid of the selected custom option
      *
      * @param int $optionId
@@ -81,17 +93,5 @@ class GetCustomOptionsWithUidForQueryBySku
     private function encodeSelectedOption(int $optionId, int $optionValueId): string
     {
         return base64_encode("custom-option/$optionId/$optionValueId");
-    }
-
-    /**
-     * Returns uid of the entered custom option
-     *
-     * @param int $optionId
-     *
-     * @return string
-     */
-    private function encodeEnteredOption(int $optionId): string
-    {
-        return base64_encode("custom-option/$optionId");
     }
 }

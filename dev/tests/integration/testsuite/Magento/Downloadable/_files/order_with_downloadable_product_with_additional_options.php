@@ -4,8 +4,14 @@
  * See COPYING.txt for license details.
  */
 
-$billingAddress = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Sales\Model\Order\Address::class,
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Address;
+use Magento\Sales\Model\Order\Item;
+use Magento\Sales\Model\Order\Payment;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$billingAddress = Bootstrap::getObjectManager()->create(
+    Address::class,
     [
         'data' => [
             'firstname' => 'guest',
@@ -22,13 +28,13 @@ $billingAddress = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->c
 );
 $billingAddress->setAddressType('billing');
 
-$payment = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Sales\Model\Order\Payment::class
+$payment = Bootstrap::getObjectManager()->create(
+    Payment::class
 );
 $payment->setMethod('checkmo');
 
-$orderItem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Sales\Model\Order\Item::class
+$orderItem = Bootstrap::getObjectManager()->create(
+    Item::class
 );
 $orderItem->setProductId(
     1
@@ -41,7 +47,7 @@ $orderItem->setProductId(
 );
 $orderItem->setProductOptions(['additional_options' => ['additional_option_key' => 'additional_option_value']]);
 
-$order = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Sales\Model\Order::class);
+$order = Bootstrap::getObjectManager()->create(Order::class);
 $order->setCustomerEmail(
     'mail@to.co'
 )->addItem(

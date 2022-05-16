@@ -39,18 +39,6 @@ class EavTest extends AbstractEavTest
     private $config;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->attributeGroupByName = $this->objectManager->get(GetAttributeGroupByName::class);
-        $this->getEntityIdByAttributeId = $this->objectManager->get(GetEntityIdByAttributeId::class);
-        $this->setRepository = $this->objectManager->get(AttributeSetRepositoryInterface::class);
-        $this->config = $this->objectManager->get(ScopeConfigInterface::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/product_text_attribute.php
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
      * @dataProvider modifyMetaWithAttributeProvider
@@ -64,8 +52,9 @@ class EavTest extends AbstractEavTest
         string $groupName,
         string $groupCode,
         string $attributeCode,
-        array $attributeMeta
-    ): void {
+        array  $attributeMeta
+    ): void
+    {
         $attributeGroup = $this->attributeGroupByName->execute($this->defaultSetId, $groupName);
         $groupId = $attributeGroup ? $attributeGroup->getAttributeGroupId() : 'ynode-1';
         $data = [
@@ -82,6 +71,26 @@ class EavTest extends AbstractEavTest
         $expectedMeta = $this->addMetaNesting($attributeMeta, $groupCode, $attributeCode);
         $this->prepareDataForComparison($actualMeta, $expectedMeta);
         $this->assertEquals($expectedMeta, $actualMeta);
+    }
+
+    /**
+     * Updates default attribute set.
+     *
+     * @param array $additional
+     * @return void
+     */
+    private function prepareAttributeSet(array $additional): void
+    {
+        $set = $this->setRepository->get($this->defaultSetId);
+        $data = [
+            'attributes' => [],
+            'groups' => [],
+            'not_attributes' => [],
+            'removeGroups' => [],
+            'attribute_set_name' => 'Default',
+        ];
+        $set->organizeData(array_merge($data, $additional));
+        $this->setRepository->save($set);
     }
 
     /**
@@ -112,7 +121,7 @@ class EavTest extends AbstractEavTest
             'source' => 'image-management',
             'scopeLabel' => '[STORE VIEW]',
             'globalScope' => false,
-            'sortOrder' =>  '__placeholder__',
+            'sortOrder' => '__placeholder__',
             'componentType' => 'field',
         ];
 
@@ -175,7 +184,7 @@ class EavTest extends AbstractEavTest
     public function testModifyMetaWithRemovedGroup(): void
     {
         $designAttributes = ['page_layout', 'options_container', 'custom_layout_update'];
-        $designGroupId =$this->attributeGroupByName->execute($this->defaultSetId, 'Design')
+        $designGroupId = $this->attributeGroupByName->execute($this->defaultSetId, 'Design')
             ->getAttributeGroupId();
         $additional = ['removeGroups' => [$designGroupId]];
         $this->prepareAttributeSet($additional);
@@ -201,26 +210,6 @@ class EavTest extends AbstractEavTest
         $this->locatorMock->expects($this->any())->method('getProduct')->willReturn($this->getProduct());
         $actualMeta = $this->eavModifier->modifyMeta([]);
         $this->assertArrayNotHasKey('meta_description', $this->getUsedAttributes($actualMeta));
-    }
-
-    /**
-     * Updates default attribute set.
-     *
-     * @param array $additional
-     * @return void
-     */
-    private function prepareAttributeSet(array $additional): void
-    {
-        $set = $this->setRepository->get($this->defaultSetId);
-        $data = [
-            'attributes' => [],
-            'groups' => [],
-            'not_attributes' => [],
-            'removeGroups' => [],
-            'attribute_set_name' => 'Default',
-        ];
-        $set->organizeData(array_merge($data, $additional));
-        $this->setRepository->save($set);
     }
 
     /**
@@ -309,5 +298,17 @@ class EavTest extends AbstractEavTest
                 ]
             ]
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->attributeGroupByName = $this->objectManager->get(GetAttributeGroupByName::class);
+        $this->getEntityIdByAttributeId = $this->objectManager->get(GetEntityIdByAttributeId::class);
+        $this->setRepository = $this->objectManager->get(AttributeSetRepositoryInterface::class);
+        $this->config = $this->objectManager->get(ScopeConfigInterface::class);
     }
 }

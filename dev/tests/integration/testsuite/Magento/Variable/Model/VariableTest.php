@@ -3,21 +3,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Variable\Model;
 
-class VariableTest extends \PHPUnit\Framework\TestCase
+use Exception;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class VariableTest extends TestCase
 {
     /**
-     * @var \Magento\Variable\Model\Variable
+     * @var Variable
      */
     protected $_model;
-
-    protected function setUp(): void
-    {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Variable\Model\Variable::class
-        );
-    }
 
     public function testGetSetStoreId()
     {
@@ -30,8 +28,8 @@ class VariableTest extends \PHPUnit\Framework\TestCase
         $this->_model->setData(['code' => 'test_code', 'name' => 'test_name']);
         $this->_model->save();
 
-        $variable = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Variable\Model\Variable::class
+        $variable = Bootstrap::getObjectManager()->create(
+            Variable::class
         );
         $variable->loadByCode('test_code');
         $this->assertEquals($this->_model->getName(), $variable->getName());
@@ -44,8 +42,8 @@ class VariableTest extends \PHPUnit\Framework\TestCase
         $text = 'test';
         $this->_model->setData(['code' => 'test_code', 'html_value' => $html, 'plain_value' => $text]);
         $this->assertEquals($html, $this->_model->getValue());
-        $this->assertEquals($html, $this->_model->getValue(\Magento\Variable\Model\Variable::TYPE_HTML));
-        $this->assertEquals($text, $this->_model->getValue(\Magento\Variable\Model\Variable::TYPE_TEXT));
+        $this->assertEquals($html, $this->_model->getValue(Variable::TYPE_HTML));
+        $this->assertEquals($text, $this->_model->getValue(Variable::TYPE_TEXT));
     }
 
     public function testValidate()
@@ -57,7 +55,7 @@ class VariableTest extends \PHPUnit\Framework\TestCase
         try {
             $this->assertTrue($this->_model->validate());
             $this->_model->delete();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->_model->delete();
             throw $e;
         }
@@ -92,5 +90,12 @@ class VariableTest extends \PHPUnit\Framework\TestCase
         $this->_model->setData($data)->save();
         $actualLabel = current(current($this->_model->getVariablesOptionArray())['label']->getArguments());
         $this->assertEquals($expectedLabel, $actualLabel);
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Variable::class
+        );
     }
 }

@@ -46,7 +46,7 @@ define([
          *
          * @returns {Boolean}
          */
-        hasReviews:  function () {
+        hasReviews: function () {
             return false;
         }
     });

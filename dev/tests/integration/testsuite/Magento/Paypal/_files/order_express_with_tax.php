@@ -5,9 +5,7 @@
  */
 
 use Magento\Framework\ObjectManagerInterface;
-use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Api\Data\OrderInterfaceFactory;
-use Magento\Sales\Model\Order;
 use Magento\Sales\Model\OrderRepository;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
@@ -21,7 +19,7 @@ $subTotal = 121;
 $taxRate = .0825;
 $taxAmount = $subTotal * $taxRate;
 $shippingAmount = 15;
-$totalAmount =  $subTotal + $taxAmount + $shippingAmount;
+$totalAmount = $subTotal + $taxAmount + $shippingAmount;
 
 $order->setSubtotal($subTotal);
 $order->setBaseSubtotal($subTotal);

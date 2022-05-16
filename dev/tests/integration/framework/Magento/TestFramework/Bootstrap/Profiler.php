@@ -7,14 +7,19 @@
 /**
  * Bootstrap of the application profiler
  */
+
 namespace Magento\TestFramework\Bootstrap;
+
+use Magento\Framework\Profiler\Driver\Standard;
+use Magento\Framework\Profiler\Driver\Standard\Output\Csvfile;
+use Magento\TestFramework\Profiler\OutputBamboo;
 
 class Profiler
 {
     /**
      * Profiler driver instance
      *
-     * @var \Magento\Framework\Profiler\Driver\Standard
+     * @var Standard
      */
     protected $_driver;
 
@@ -28,11 +33,24 @@ class Profiler
     /**
      * Constructor
      *
-     * @param \Magento\Framework\Profiler\Driver\Standard $driver
+     * @param Standard $driver
      */
-    public function __construct(\Magento\Framework\Profiler\Driver\Standard $driver)
+    public function __construct(Standard $driver)
     {
         $this->_driver = $driver;
+    }
+
+    /**
+     * Register file-based profiling
+     *
+     * @param string $profilerOutputFile
+     */
+    public function registerFileProfiler($profilerOutputFile)
+    {
+        $this->_registerDriver();
+        $this->_driver->registerOutput(
+            new Csvfile(['filePath' => $profilerOutputFile])
+        );
     }
 
     /**
@@ -47,19 +65,6 @@ class Profiler
     }
 
     /**
-     * Register file-based profiling
-     *
-     * @param string $profilerOutputFile
-     */
-    public function registerFileProfiler($profilerOutputFile)
-    {
-        $this->_registerDriver();
-        $this->_driver->registerOutput(
-            new \Magento\Framework\Profiler\Driver\Standard\Output\Csvfile(['filePath' => $profilerOutputFile])
-        );
-    }
-
-    /**
      * Register profiler with Bamboo-friendly output format
      *
      * @param string $profilerOutputFile
@@ -69,7 +74,7 @@ class Profiler
     {
         $this->_registerDriver();
         $this->_driver->registerOutput(
-            new \Magento\TestFramework\Profiler\OutputBamboo(
+            new OutputBamboo(
                 ['filePath' => $profilerOutputFile, 'metrics' => require $profilerMetricsFile]
             )
         );

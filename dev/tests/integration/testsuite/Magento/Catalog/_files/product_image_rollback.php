@@ -5,20 +5,25 @@
  */
 declare(strict_types=1);
 
+use Magento\Catalog\Model\Product\Media\Config;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Filesystem;
+use Magento\Framework\Filesystem\Directory\WriteInterface;
+use Magento\MediaStorage\Helper\File\Storage\Database;
+use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var $config \Magento\Catalog\Model\Product\Media\Config */
-$config = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-    \Magento\Catalog\Model\Product\Media\Config::class
+/** @var $config Config */
+$config = Bootstrap::getObjectManager()->get(
+    Config::class
 );
-/** @var $database \Magento\MediaStorage\Helper\File\Storage\Database */
-$database = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-    \Magento\MediaStorage\Helper\File\Storage\Database::class
+/** @var $database Database */
+$database = Bootstrap::getObjectManager()->get(
+    Database::class
 );
 
-/** @var \Magento\Framework\Filesystem\Directory\WriteInterface $mediaDirectory */
-$mediaDirectory = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-    \Magento\Framework\Filesystem::class
+/** @var WriteInterface $mediaDirectory */
+$mediaDirectory = Bootstrap::getObjectManager()->get(
+    Filesystem::class
 )->getDirectoryWrite(
     DirectoryList::MEDIA
 );

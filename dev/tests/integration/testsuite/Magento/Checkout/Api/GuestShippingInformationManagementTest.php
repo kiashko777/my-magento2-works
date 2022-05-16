@@ -16,10 +16,10 @@ use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Api\Data\ShippingAssignmentInterface;
-use Magento\TestFramework\Helper\Bootstrap;
-use PHPUnit\Framework\TestCase;
 use Magento\Quote\Model\QuoteIdMask;
 use Magento\Quote\Model\QuoteIdMaskFactory;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test GuestShippingInformationManagement API.
@@ -55,20 +55,6 @@ class GuestShippingInformationManagementTest extends TestCase
      * @var QuoteIdMaskFactory
      */
     private $maskFactory;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->management = $objectManager->get(GuestShippingInformationManagementInterface::class);
-        $this->cartRepo = $objectManager->get(CartRepositoryInterface::class);
-        $this->customerRepo = $objectManager->get(CustomerRepositoryInterface::class);
-        $this->shippingFactory = $objectManager->get(ShippingInformationInterfaceFactory::class);
-        $this->searchCriteria = $objectManager->get(SearchCriteriaBuilder::class);
-        $this->maskFactory = $objectManager->get(QuoteIdMaskFactory::class);
-    }
 
     /**
      * Test using another address for quote.
@@ -178,5 +164,19 @@ class GuestShippingInformationManagementTest extends TestCase
             'Shipping address swap' => [true],
             'Billing address swap' => [false]
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->management = $objectManager->get(GuestShippingInformationManagementInterface::class);
+        $this->cartRepo = $objectManager->get(CartRepositoryInterface::class);
+        $this->customerRepo = $objectManager->get(CustomerRepositoryInterface::class);
+        $this->shippingFactory = $objectManager->get(ShippingInformationInterfaceFactory::class);
+        $this->searchCriteria = $objectManager->get(SearchCriteriaBuilder::class);
+        $this->maskFactory = $objectManager->get(QuoteIdMaskFactory::class);
     }
 }

@@ -25,15 +25,6 @@ class AddSimpleProductToCartTest extends GraphQlAbstract
     private $getMaskedQuoteIdByReservedOrderId;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
      * @magentoApiDataFixture Magento/GraphQl/Quote/_files/guest/create_empty_cart.php
      */
@@ -79,6 +70,71 @@ class AddSimpleProductToCartTest extends GraphQlAbstract
         self::assertEquals(20, $rowTotalIncludingTax['value']);
         self::assertArrayHasKey('currency', $rowTotalIncludingTax);
         self::assertEquals('USD', $rowTotalIncludingTax['currency']);
+    }
+
+    /**
+     * @param string $maskedQuoteId
+     * @param string $sku
+     * @param float $quantity
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId, string $sku, float $quantity): string
+    {
+        return <<<QUERY
+mutation {
+  addSimpleProductsToCart(
+    input: {
+      cart_id: "{$maskedQuoteId}"
+      cart_items: [
+        {
+          data: {
+            quantity: $quantity
+            sku: "$sku"
+          }
+        }
+      ]
+    }
+  ) {
+    cart {
+    id
+      items {
+        quantity
+        product {
+          sku
+        }
+        prices {
+          price {
+           value
+           currency
+          }
+          row_total {
+           value
+           currency
+          }
+          row_total_including_tax {
+           value
+           currency
+          }
+        }
+      }
+      shipping_addresses {
+        firstname
+        lastname
+        company
+        street
+        city
+        postcode
+        telephone
+        country {
+          code
+          label
+        }
+        __typename
+      }
+    }
+  }
+}
+QUERY;
     }
 
     /**
@@ -234,7 +290,7 @@ QUERY;
      */
     public function testAddSimpleProductToCartIfCartIdIsEmpty()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Required parameter "cart_id" is missing');
 
         $query = <<<QUERY
@@ -261,7 +317,7 @@ QUERY;
      */
     public function testAddSimpleProductToCartIfCartItemsAreEmpty()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Required parameter "cart_items" is missing');
 
         $query = <<<QUERY
@@ -290,7 +346,7 @@ QUERY;
      */
     public function testAddProductToNonExistentCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Could not find a cart with ID "non_existent_masked_id"');
 
         $sku = 'simple_product';
@@ -307,7 +363,7 @@ QUERY;
      */
     public function testNonExistentProductToCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Could not find a product with SKU "simple_product"');
 
         $sku = 'simple_product';
@@ -338,67 +394,11 @@ QUERY;
     }
 
     /**
-     * @param string $maskedQuoteId
-     * @param string $sku
-     * @param float $quantity
-     * @return string
+     * @inheritdoc
      */
-    private function getQuery(string $maskedQuoteId, string $sku, float $quantity): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-mutation {
-  addSimpleProductsToCart(
-    input: {
-      cart_id: "{$maskedQuoteId}"
-      cart_items: [
-        {
-          data: {
-            quantity: $quantity
-            sku: "$sku"
-          }
-        }
-      ]
-    }
-  ) {
-    cart {
-    id
-      items {
-        quantity
-        product {
-          sku
-        }
-        prices {
-          price {
-           value
-           currency
-          }
-          row_total {
-           value
-           currency
-          }
-          row_total_including_tax {
-           value
-           currency
-          }
-        }
-      }
-      shipping_addresses {
-        firstname
-        lastname
-        company
-        street
-        city
-        postcode
-        telephone
-        country {
-          code
-          label
-        }
-        __typename
-      }
-    }
-  }
-}
-QUERY;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
     }
 }

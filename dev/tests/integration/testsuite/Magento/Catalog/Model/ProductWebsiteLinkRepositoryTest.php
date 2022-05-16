@@ -41,21 +41,6 @@ class ProductWebsiteLinkRepositoryTest extends TestCase
     private $websiteRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productWebsiteLinkRepository = $this->objectManager->get(ProductWebsiteLinkRepositoryInterface::class);
-        $this->productWebsiteLinkFactory = $this->objectManager->get(ProductWebsiteLinkInterfaceFactory::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->websiteRepository = $this->objectManager->get(WebsiteRepositoryInterface::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/second_product_simple.php
      *
      * @return void
@@ -83,5 +68,20 @@ class ProductWebsiteLinkRepositoryTest extends TestCase
         $this->productWebsiteLinkRepository->delete($productWebsiteLink);
         $product = $this->productRepository->get('unique-simple-azaza', false, null, true);
         $this->assertEquals([$this->websiteRepository->get('second_website')->getId()], $product->getWebsiteIds());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productWebsiteLinkRepository = $this->objectManager->get(ProductWebsiteLinkRepositoryInterface::class);
+        $this->productWebsiteLinkFactory = $this->objectManager->get(ProductWebsiteLinkInterfaceFactory::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->websiteRepository = $this->objectManager->get(WebsiteRepositoryInterface::class);
     }
 }

@@ -3,8 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Quote\Api;
 
+use Exception;
+use InvalidArgumentException;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\QuoteIdMask;
+use Magento\Quote\Model\QuoteIdMaskFactory;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
@@ -15,45 +23,6 @@ class GuestCartRepositoryTest extends WebapiAbstract
      */
     private $objectManager;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
-
-    protected function tearDown(): void
-    {
-        try {
-            $cart = $this->getCart('test01');
-            $cartId = $cart->getId();
-            $cart->delete();
-            /** @var \Magento\Quote\Model\QuoteIdMask $quoteIdMask */
-            $quoteIdMask = $this->objectManager->create(\Magento\Quote\Model\QuoteIdMask::class);
-            $quoteIdMask->load($cartId, 'quote_id');
-            $quoteIdMask->delete();
-        } catch (\InvalidArgumentException $e) {
-            // Do nothing if cart fixture was not used
-        }
-        parent::tearDown();
-    }
-
-    /**
-     * Retrieve quote by given reserved order ID
-     *
-     * @param string $reservedOrderId
-     * @return \Magento\Quote\Model\Quote
-     * @throws \InvalidArgumentException
-     */
-    protected function getCart($reservedOrderId)
-    {
-        /** @var $cart \Magento\Quote\Model\Quote */
-        $cart = $this->objectManager->get(\Magento\Quote\Model\Quote::class);
-        $cart->load($reservedOrderId, 'reserved_order_id');
-        if (!$cart->getId()) {
-            throw new \InvalidArgumentException('There is no quote with provided reserved order ID.');
-        }
-        return $cart;
-    }
-
     /**
      * @magentoApiDataFixture Magento/Sales/_files/quote.php
      */
@@ -62,16 +31,16 @@ class GuestCartRepositoryTest extends WebapiAbstract
         $cart = $this->getCart('test01');
         $cartId = $cart->getId();
 
-        /** @var \Magento\Quote\Model\QuoteIdMask $quoteIdMask */
-        $quoteIdMask = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Quote\Model\QuoteIdMaskFactory::class)
+        /** @var QuoteIdMask $quoteIdMask */
+        $quoteIdMask = Bootstrap::getObjectManager()
+            ->create(QuoteIdMaskFactory::class)
             ->create();
         $quoteIdMask->load($cartId, 'quote_id');
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/guest-carts/' . $quoteIdMask->getMaskedId(),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => 'quoteGuestCartRepositoryV1',
@@ -108,7 +77,7 @@ class GuestCartRepositoryTest extends WebapiAbstract
      */
     public function testGetCartThrowsExceptionIfThereIsNoCartWithProvidedId()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('No such entity with');
 
         $cartId = 9999;
@@ -121,11 +90,50 @@ class GuestCartRepositoryTest extends WebapiAbstract
             ],
             'rest' => [
                 'resourcePath' => '/V1/guest-carts/' . $cartId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
         ];
 
         $requestData = ['cartId' => $cartId];
         $this->_webApiCall($serviceInfo, $requestData);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+    }
+
+    protected function tearDown(): void
+    {
+        try {
+            $cart = $this->getCart('test01');
+            $cartId = $cart->getId();
+            $cart->delete();
+            /** @var QuoteIdMask $quoteIdMask */
+            $quoteIdMask = $this->objectManager->create(QuoteIdMask::class);
+            $quoteIdMask->load($cartId, 'quote_id');
+            $quoteIdMask->delete();
+        } catch (InvalidArgumentException $e) {
+            // Do nothing if cart fixture was not used
+        }
+        parent::tearDown();
+    }
+
+    /**
+     * Retrieve quote by given reserved order ID
+     *
+     * @param string $reservedOrderId
+     * @return Quote
+     * @throws InvalidArgumentException
+     */
+    protected function getCart($reservedOrderId)
+    {
+        /** @var $cart Quote */
+        $cart = $this->objectManager->get(Quote::class);
+        $cart->load($reservedOrderId, 'reserved_order_id');
+        if (!$cart->getId()) {
+            throw new InvalidArgumentException('There is no quote with provided reserved order ID.');
+        }
+        return $cart;
     }
 }

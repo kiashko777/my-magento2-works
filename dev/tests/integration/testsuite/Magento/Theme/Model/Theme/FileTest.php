@@ -3,12 +3,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Theme\Model\Theme;
 
-class FileTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\View\Design\ThemeInterface;
+use Magento\TestFramework\Entity;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Theme\Model\Theme;
+use PHPUnit\Framework\TestCase;
+
+class FileTest extends TestCase
 {
     /**
-     * @var \Magento\Theme\Model\Theme\File
+     * @var File
      */
     protected $_model;
 
@@ -18,16 +25,27 @@ class FileTest extends \PHPUnit\Framework\TestCase
     protected $_data = [];
 
     /**
-     * @var \Magento\Theme\Model\Theme
+     * @var Theme
      */
     protected $_theme;
 
+    /**
+     * Test crud operations for theme files model using valid data
+     */
+    public function testCrud()
+    {
+        $this->_model->setData($this->_data);
+
+        $crud = new Entity($this->_model, ['file_path' => 'rename.css']);
+        $crud->testCrud();
+    }
+
     protected function setUp(): void
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->_model = $objectManager->create(\Magento\Theme\Model\Theme\File::class);
-        /** @var $themeModel \Magento\Framework\View\Design\ThemeInterface */
-        $themeModel = $objectManager->create(\Magento\Framework\View\Design\ThemeInterface::class);
+        $objectManager = Bootstrap::getObjectManager();
+        $this->_model = $objectManager->create(File::class);
+        /** @var $themeModel ThemeInterface */
+        $themeModel = $objectManager->create(ThemeInterface::class);
         $this->_theme = $themeModel->getCollection()->getFirstItem();
         $this->_data = [
             'file_path' => 'main.css',
@@ -44,16 +62,5 @@ class FileTest extends \PHPUnit\Framework\TestCase
         $this->_model = null;
         $this->_data = [];
         $this->_theme = null;
-    }
-
-    /**
-     * Test crud operations for theme files model using valid data
-     */
-    public function testCrud()
-    {
-        $this->_model->setData($this->_data);
-
-        $crud = new \Magento\TestFramework\Entity($this->_model, ['file_path' => 'rename.css']);
-        $crud->testCrud();
     }
 }

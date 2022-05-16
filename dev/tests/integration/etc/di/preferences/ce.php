@@ -5,9 +5,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-use \Magento\Framework\App;
-use \Magento\Framework as MF;
-use \Magento\TestFramework as TF;
+
+use Magento\Framework as MF;
+use Magento\Framework\App;
+use Magento\TestFramework as TF;
 
 return [
     MF\Stdlib\CookieManagerInterface::class => TF\CookieManager::class,

@@ -3,33 +3,32 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Model\ResourceModel\Report\Refunded\Collection;
+
+use IntlDateFormatter;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Stdlib\DateTime\DateTime;
+use Magento\Framework\Stdlib\DateTime\DateTimeFactory;
+use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
+use Magento\Reports\Model\Item;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Integration tests for refunds reports collection which is used to obtain refund reports by order date.
  */
-class OrderTest extends \PHPUnit\Framework\TestCase
+class OrderTest extends TestCase
 {
     /**
-     * @var \Magento\Sales\Model\ResourceModel\Report\Refunded\Collection\Order
+     * @var Order
      */
     private $collection;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->collection = $this->objectManager->create(
-            \Magento\Sales\Model\ResourceModel\Report\Refunded\Collection\Order::class
-        );
-        $this->collection->setPeriod('day')
-            ->setDateRange(null, null)
-            ->addStoreFilter([1]);
-    }
 
     /**
      * @magentoDataFixture Magento/Sales/_files/order_info.php
@@ -42,15 +41,15 @@ class OrderTest extends \PHPUnit\Framework\TestCase
         /** @var \Magento\Sales\Model\Order $order */
         $order = $this->objectManager->create(\Magento\Sales\Model\Order::class);
         $order->loadByIncrementId('100000001');
-        /** @var \Magento\Framework\Stdlib\DateTime\DateTime $dateTime */
-        $dateTime = $this->objectManager->create(\Magento\Framework\Stdlib\DateTime\DateTimeFactory::class)
+        /** @var DateTime $dateTime */
+        $dateTime = $this->objectManager->create(DateTimeFactory::class)
             ->create();
-        /** @var \Magento\Framework\Stdlib\DateTime\TimezoneInterface $timezone */
-        $timezone = $this->objectManager->create(\Magento\Framework\Stdlib\DateTime\TimezoneInterface::class);
+        /** @var TimezoneInterface $timezone */
+        $timezone = $this->objectManager->create(TimezoneInterface::class);
         $orderCreatedAt = $timezone->formatDateTime(
             $order->getCreatedAt(),
-            \IntlDateFormatter::SHORT,
-            \IntlDateFormatter::NONE,
+            IntlDateFormatter::SHORT,
+            IntlDateFormatter::NONE,
             null,
             null,
             'yyyy-MM-dd'
@@ -67,10 +66,21 @@ class OrderTest extends \PHPUnit\Framework\TestCase
             ],
         ];
         $actualResult = [];
-        /** @var \Magento\Reports\Model\Item $reportItem */
+        /** @var Item $reportItem */
         foreach ($this->collection->getItems() as $reportItem) {
             $actualResult[] = array_intersect_key($reportItem->getData(), $expectedResult[0]);
         }
         $this->assertEquals($expectedResult, $actualResult);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->collection = $this->objectManager->create(
+            Order::class
+        );
+        $this->collection->setPeriod('day')
+            ->setDateRange(null, null)
+            ->addStoreFilter([1]);
     }
 }

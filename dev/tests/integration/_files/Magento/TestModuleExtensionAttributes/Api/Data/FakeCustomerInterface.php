@@ -7,10 +7,12 @@ declare(strict_types=1);
 
 namespace Magento\TestModuleExtensionAttributes\Api\Data;
 
+use Magento\Framework\Api\CustomAttributesDataInterface;
+
 /**
  * Customer interface.
  */
-interface FakeCustomerInterface extends \Magento\Framework\Api\CustomAttributesDataInterface
+interface FakeCustomerInterface extends CustomAttributesDataInterface
 {
     /**#@+
      * Constants defined for keys of the data array. Identical to the name of the getter in snake case
@@ -100,17 +102,17 @@ interface FakeCustomerInterface extends \Magento\Framework\Api\CustomAttributesD
     /**
      * Retrieve existing extension attributes object or create a new one.
      *
-     * @return \Magento\TestModuleExtensionAttributes\Api\Data\FakeCustomerExtensionInterface|null
+     * @return FakeCustomerExtensionInterface|null
      */
     public function getExtensionAttributes();
 
     /**
      * Set an extension attributes object.
      *
-     * @param \Magento\TestModuleExtensionAttributes\Api\Data\FakeCustomerExtensionInterface $extensionAttributes
+     * @param FakeCustomerExtensionInterface $extensionAttributes
      * @return $this
      */
     public function setExtensionAttributes(
-        \Magento\TestModuleExtensionAttributes\Api\Data\FakeCustomerExtensionInterface $extensionAttributes
+        FakeCustomerExtensionInterface $extensionAttributes
     );
 }

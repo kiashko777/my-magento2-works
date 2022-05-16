@@ -6,8 +6,8 @@
 declare(strict_types=1);
 
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Widget\Model\Widget\InstanceFactory;
 use Magento\Widget\Model\Widget\Instance;
+use Magento\Widget\Model\Widget\InstanceFactory;
 
 $objectManager = Bootstrap::getObjectManager();
 

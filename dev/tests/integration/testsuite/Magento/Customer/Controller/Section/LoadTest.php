@@ -9,9 +9,9 @@ namespace Magento\Customer\Controller\Section;
 
 use Magento\Customer\Model\Session;
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\Escaper;
 use Magento\Framework\Serialize\SerializerInterface;
 use Magento\TestFramework\TestCase\AbstractController;
-use Magento\Framework\Escaper;
 
 /**
  * Load customer data test class.
@@ -29,28 +29,6 @@ class LoadTest extends AbstractController
 
     /** @var Escaper */
     private $escaper;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->customerSession = $this->_objectManager->get(Session::class);
-        $this->json = $this->_objectManager->get(SerializerInterface::class);
-        $this->escaper = $this->_objectManager->get(Escaper::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->customerSession->setCustomerId(null);
-
-        parent::tearDown();
-    }
 
     /**
      * @return void
@@ -79,6 +57,19 @@ class LoadTest extends AbstractController
     }
 
     /**
+     * Perform wish list section request.
+     *
+     * @return array
+     */
+    private function performWishListSectionRequest(): array
+    {
+        $this->getRequest()->setParam('sections', 'wishlist')->setMethod(HttpRequest::METHOD_GET);
+        $this->dispatch('customer/section/load');
+
+        return $this->json->unserialize($this->getResponse()->getBody());
+    }
+
+    /**
      * @magentoConfigFixture current_store wishlist/wishlist_link/use_qty 0
      * @magentoDataFixture Magento/Wishlist/_files/wishlist_with_product_qty_three.php
      *
@@ -92,15 +83,24 @@ class LoadTest extends AbstractController
     }
 
     /**
-     * Perform wish list section request.
-     *
-     * @return array
+     * @inheritdoc
      */
-    private function performWishListSectionRequest(): array
+    protected function setUp(): void
     {
-        $this->getRequest()->setParam('sections', 'wishlist')->setMethod(HttpRequest::METHOD_GET);
-        $this->dispatch('customer/section/load');
+        parent::setUp();
 
-        return $this->json->unserialize($this->getResponse()->getBody());
+        $this->customerSession = $this->_objectManager->get(Session::class);
+        $this->json = $this->_objectManager->get(SerializerInterface::class);
+        $this->escaper = $this->_objectManager->get(Escaper::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->customerSession->setCustomerId(null);
+
+        parent::tearDown();
     }
 }

@@ -5,14 +5,14 @@
  */
 
 use Magento\Framework\ObjectManagerInterface;
-use Magento\Quote\Model\QuoteFactory;
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Sales\Model\Order\Payment;
 use Magento\Paypal\Model\Config;
-use Magento\Sales\Model\Order;
-use Magento\Store\Model\StoreManagerInterface;
-use Magento\Sales\Api\OrderRepositoryInterface;
+use Magento\Quote\Model\QuoteFactory;
 use Magento\Quote\Model\ResourceModel\Quote as QuoteResource;
+use Magento\Sales\Api\OrderRepositoryInterface;
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Payment;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/GraphQl/Quote/_files/guest/create_empty_cart.php');
@@ -32,13 +32,13 @@ $quoteResource = Bootstrap::getObjectManager()->get(QuoteResource::class);
 $quote = $quoteFactory->create();
 $quoteResource->load($quote, 'test_quote', 'reserved_order_id');
 
-/** @var \Magento\Sales\Model\Order\Payment $payment */
+/** @var Payment $payment */
 $payment = $objectManager->create(Payment::class);
 $payment->setMethod(Config::METHOD_HOSTEDPRO)
     ->setBaseAmountAuthorized(30)
     ->setAdditionalInformation('secure_form_url', 'https://hostedpro.paypal.com');
 
-/** @var \Magento\Sales\Model\Order $order */
+/** @var Order $order */
 $order = $objectManager->create(Order::class);
 $order->setCustomerEmail('wpphs.co@co.com')
     ->setIncrementId('100000017')

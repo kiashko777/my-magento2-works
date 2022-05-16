@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogInventory\Model\StockItemSave\OnProductCreate\ByProductModel;
 
 use Magento\Catalog\Api\Data\ProductInterface;
@@ -14,11 +15,12 @@ use Magento\CatalogInventory\Api\Data\StockItemInterface;
 use Magento\CatalogInventory\Model\StockItemSave\StockItemDataChecker;
 use Magento\Framework\Api\DataObjectHelper;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoDbIsolation enabled
  */
-class ByQuantityAndStockStatusTest extends \PHPUnit\Framework\TestCase
+class ByQuantityAndStockStatusTest extends TestCase
 {
     /**
      * @var ProductInterfaceFactory
@@ -56,19 +58,6 @@ class ByQuantityAndStockStatusTest extends \PHPUnit\Framework\TestCase
         StockItemInterface::IS_IN_STOCK => false,
     ];
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->productFactory = $objectManager->get(ProductInterfaceFactory::class);
-        $this->dataObjectHelper = $objectManager->get(DataObjectHelper::class);
-        $this->stockItemDataChecker = $objectManager->get(StockItemDataChecker::class);
-
-        /** @var CategorySetup $installer */
-        $installer = $objectManager->get(CategorySetup::class);
-        $attributeSetId = $installer->getAttributeSetId('catalog_product', 'Default');
-        $this->productData[ProductInterface::ATTRIBUTE_SET_ID] = $attributeSetId;
-    }
-
     /**
      * Test saving of stock item on product save by 'setQuantityAndStockStatus' method (deprecated) via product
      * model (deprecated)
@@ -97,5 +86,18 @@ class ByQuantityAndStockStatusTest extends \PHPUnit\Framework\TestCase
         $product->save();
 
         $this->stockItemDataChecker->checkStockItemData('simpleForByQuantityAndStockStatusTest', $this->stockItemData);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->productFactory = $objectManager->get(ProductInterfaceFactory::class);
+        $this->dataObjectHelper = $objectManager->get(DataObjectHelper::class);
+        $this->stockItemDataChecker = $objectManager->get(StockItemDataChecker::class);
+
+        /** @var CategorySetup $installer */
+        $installer = $objectManager->get(CategorySetup::class);
+        $attributeSetId = $installer->getAttributeSetId('catalog_product', 'Default');
+        $this->productData[ProductInterface::ATTRIBUTE_SET_ID] = $attributeSetId;
     }
 }

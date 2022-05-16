@@ -3,36 +3,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Reports\Block\Adminhtml\Sales\Shipping;
+
+use Magento\Framework\DataObject;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class GridTest extends \PHPUnit\Framework\TestCase
+class GridTest extends TestCase
 {
-    /**
-     * Creates and inits block
-     *
-     * @param string|null $reportType
-     * @return \Magento\Reports\Block\Adminhtml\Sales\Shipping\Grid
-     */
-    protected function _createBlock($reportType = null)
-    {
-        $block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
-        )->createBlock(
-            \Magento\Reports\Block\Adminhtml\Sales\Shipping\Grid::class
-        );
-
-        $filterData = new \Magento\Framework\DataObject();
-        if ($reportType) {
-            $filterData->setReportType($reportType);
-        }
-        $block->setFilterData($filterData);
-
-        return $block;
-    }
-
     /**
      * @return string
      */
@@ -46,8 +29,31 @@ class GridTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Creates and inits block
+     *
+     * @param string|null $reportType
+     * @return Grid
+     */
+    protected function _createBlock($reportType = null)
+    {
+        $block = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
+        )->createBlock(
+            Grid::class
+        );
+
+        $filterData = new DataObject();
+        if ($reportType) {
+            $filterData->setReportType($reportType);
+        }
+        $block->setFilterData($filterData);
+
+        return $block;
+    }
+
+    /**
      * @depends testGetResourceCollectionNameNormal
-     * @param  string $normalCollection
+     * @param string $normalCollection
      */
     public function testGetResourceCollectionNameWithFilter($normalCollection)
     {

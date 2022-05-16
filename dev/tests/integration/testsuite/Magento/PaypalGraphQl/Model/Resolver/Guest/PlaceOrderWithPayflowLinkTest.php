@@ -21,6 +21,7 @@ use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Zend_Http_Client_Exception;
 
 /**
  * End to end place order test using payflow_link via graphql endpoint for guest
@@ -47,48 +48,6 @@ class PlaceOrderWithPayflowLinkTest extends TestCase
 
     /** @var Request|MockObject */
     private $payflowRequest;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->graphQlRequest = $this->objectManager->create(GraphQlRequest::class);
-        $this->json = $this->objectManager->get(SerializerInterface::class);
-        $this->getMaskedQuoteIdByReservedOrderId = $this->objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->gateway = $this->getMockBuilder(Gateway::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['postRequest'])
-            ->getMock();
-
-        $requestFactory = $this->getMockBuilder(RequestFactory::class)
-            ->setMethods(['create'])
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $this->payflowRequest = $this->getMockBuilder(Request::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['__call','setData'])
-            ->getMock();
-        $this->payflowRequest->method('__call')
-            ->willReturnCallback(
-                function ($method) {
-                    if (strpos($method, 'set') === 0) {
-                        return $this->payflowRequest;
-                    }
-                    return null;
-                }
-            );
-
-        $requestFactory->expects($this->any())->method('create')->willReturn($this->payflowRequest);
-        $this->objectManager->addSharedInstance($this->gateway, Gateway::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->objectManager->removeSharedInstance(Gateway::class);
-    }
 
     /**
      * Test successful place Order with Payflow link
@@ -144,10 +103,10 @@ QUERY;
 
         $payflowLinkResponse = new DataObject(
             [
-            'result' => '0',
-            'respmsg' => 'Approved',
-            'pnref' => 'V19A3D27B61E',
-            'result_code' => '0'
+                'result' => '0',
+                'respmsg' => 'Approved',
+                'pnref' => 'V19A3D27B61E',
+                'result_code' => '0'
             ]
         );
         $this->gateway->expects($this->once())
@@ -242,7 +201,7 @@ QUERY;
 QUERY;
 
         $resultCode = Payflowlink::RESPONSE_CODE_DECLINED_BY_FILTER;
-        $exception = new \Zend_Http_Client_Exception(__('Declined response message from PayPal gateway'));
+        $exception = new Zend_Http_Client_Exception(__('Declined response message from PayPal gateway'));
         //Exception message is transformed into more controlled message
         $expectedExceptionMessage =
             "Unable to place order: Payment Gateway is unreachable at the moment. Please use another payment option.";
@@ -274,5 +233,47 @@ QUERY;
             $actualError['message']
         );
         $this->assertEquals(GraphQlInputException::EXCEPTION_CATEGORY, $actualError['extensions']['category']);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->graphQlRequest = $this->objectManager->create(GraphQlRequest::class);
+        $this->json = $this->objectManager->get(SerializerInterface::class);
+        $this->getMaskedQuoteIdByReservedOrderId = $this->objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->gateway = $this->getMockBuilder(Gateway::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['postRequest'])
+            ->getMock();
+
+        $requestFactory = $this->getMockBuilder(RequestFactory::class)
+            ->setMethods(['create'])
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->payflowRequest = $this->getMockBuilder(Request::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['__call', 'setData'])
+            ->getMock();
+        $this->payflowRequest->method('__call')
+            ->willReturnCallback(
+                function ($method) {
+                    if (strpos($method, 'set') === 0) {
+                        return $this->payflowRequest;
+                    }
+                    return null;
+                }
+            );
+
+        $requestFactory->expects($this->any())->method('create')->willReturn($this->payflowRequest);
+        $this->objectManager->addSharedInstance($this->gateway, Gateway::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->objectManager->removeSharedInstance(Gateway::class);
     }
 }

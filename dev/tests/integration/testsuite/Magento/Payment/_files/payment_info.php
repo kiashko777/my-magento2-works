@@ -4,16 +4,16 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Paypal\Model\Config;
 use Magento\Quote\Api\CartRepositoryInterface;
-use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Quote\Model\Quote;
+use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Address;
 use Magento\Sales\Model\Order\Payment;
-use Magento\Paypal\Model\Config;
-use Magento\Sales\Model\Order;
-use Magento\Quote\Model\Quote;
-use Magento\Quote\Model\Quote\Payment as PaymentQuote;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 
-/** @var $objectManager \Magento\TestFramework\ObjectManager */
+/** @var $objectManager ObjectManager */
 $objectManager = Bootstrap::getObjectManager();
 
 $addressData = [
@@ -61,7 +61,6 @@ $order->setCustomerEmail('co@co.co')
     ->setShippingAddress($shippingAddress)
     ->setPayment($paymentOrder);
 $order->save();
-
 
 
 /** @var Quote $quote */

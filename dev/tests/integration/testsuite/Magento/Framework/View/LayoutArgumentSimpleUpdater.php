@@ -3,12 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\View;
+
+use Magento\Framework\View\Layout\Argument\UpdaterInterface;
 
 /**
  * Dummy layout argument updater model
  */
-class LayoutArgumentSimpleUpdater implements \Magento\Framework\View\Layout\Argument\UpdaterInterface
+class LayoutArgumentSimpleUpdater implements UpdaterInterface
 {
     /**
      * Update specified argument

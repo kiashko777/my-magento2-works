@@ -25,6 +25,21 @@ abstract class Base implements ApplierInterface
     private $dataSetConfig;
 
     /**
+     * Need set config exact in such order according to priority level
+     *
+     * @return array
+     */
+    protected function getPrioritizedConfig(): array
+    {
+        return [
+            $this->getGlobalConfig(),
+            $this->getClassConfig(),
+            $this->getMethodConfig(),
+            $this->getDataSetConfig(),
+        ];
+    }
+
+    /**
      * Get global node config
      *
      * @return array
@@ -106,20 +121,5 @@ abstract class Base implements ApplierInterface
     public function setDataSetConfig(array $dataSetConfig): void
     {
         $this->dataSetConfig = $dataSetConfig;
-    }
-
-    /**
-     * Need set config exact in such order according to priority level
-     *
-     * @return array
-     */
-    protected function getPrioritizedConfig(): array
-    {
-        return [
-            $this->getGlobalConfig(),
-            $this->getClassConfig(),
-            $this->getMethodConfig(),
-            $this->getDataSetConfig(),
-        ];
     }
 }

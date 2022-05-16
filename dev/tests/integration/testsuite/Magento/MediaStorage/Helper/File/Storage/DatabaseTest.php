@@ -7,16 +7,17 @@ declare(strict_types=1);
 
 namespace Magento\MediaStorage\Helper\File\Storage;
 
+use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Filesystem;
+use Magento\Framework\Filesystem\Directory\WriteInterface;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Framework\Filesystem\Directory\WriteInterface;
-use Magento\Framework\Filesystem;
-use Magento\Framework\App\Filesystem\DirectoryList;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Integration tests for Magento\MediaStorage\Helper\File\Storage\Database
  */
-class DatabaseTest extends \PHPUnit\Framework\TestCase
+class DatabaseTest extends TestCase
 {
     /**
      * @var ObjectManagerInterface
@@ -37,17 +38,6 @@ class DatabaseTest extends \PHPUnit\Framework\TestCase
      * @var Filesystem
      */
     private $filesystem;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->filesystem = $this->objectManager->get(Filesystem::class);
-        $this->mediaDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::MEDIA);
-    }
 
     /**
      * test for \Magento\MediaStorage\Model\File\Storage\Database::deleteFolder()
@@ -85,5 +75,16 @@ class DatabaseTest extends \PHPUnit\Framework\TestCase
             $this->assertFalse($this->databaseHelper->fileExists($filename));
             $this->mediaDirectory->delete($filename);
         }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->filesystem = $this->objectManager->get(Filesystem::class);
+        $this->mediaDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::MEDIA);
     }
 }

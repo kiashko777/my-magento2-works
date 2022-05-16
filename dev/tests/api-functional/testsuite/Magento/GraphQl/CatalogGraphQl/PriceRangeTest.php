@@ -28,12 +28,6 @@ class PriceRangeTest extends GraphQlAbstract
      */
     private $getCustomerAuthenticationHeader;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->getCustomerAuthenticationHeader = $this->objectManager->get(GetCustomerAuthenticationHeader::class);
-    }
-
     /**
      * Test for checking if catalog rule price has been applied for all customer group
      *
@@ -57,6 +51,66 @@ class PriceRangeTest extends GraphQlAbstract
         $this->assertEquals(7.5, $priceRange['maximum_price']['final_price']['value']);
         $this->assertEquals(2.5, $priceRange['maximum_price']['discount']['amount_off']);
         $this->assertEquals(25, $priceRange['maximum_price']['discount']['percent_off']);
+    }
+
+    /**
+     * Get a query which user filter for product sku and returns price_tiers
+     *
+     * @param string $productSku
+     * @return string
+     */
+    private function getProductSearchQuery(string $productSku): string
+    {
+        return <<<QUERY
+{
+  products(filter: {sku: {eq: "{$productSku}"}}) {
+    items {
+      name
+      sku
+      price_range {
+        minimum_price {
+          regular_price {
+            value
+            currency
+          }
+          final_price {
+            value
+            currency
+          }
+          discount {
+            amount_off
+            percent_off
+          }
+        }
+        maximum_price {
+          regular_price {
+            value
+           currency
+          }
+          final_price {
+            value
+            currency
+          }
+          discount {
+            amount_off
+            percent_off
+          }
+        }
+      }
+      price_tiers{
+        discount{
+          amount_off
+          percent_off
+        }
+        final_price{
+          value
+        }
+        quantity
+      }
+    }
+  }
+}
+QUERY;
     }
 
     /**
@@ -221,63 +275,9 @@ class PriceRangeTest extends GraphQlAbstract
         $this->assertEquals(10, $priceRange['maximum_price']['final_price']['value']);
     }
 
-    /**
-     * Get a query which user filter for product sku and returns price_tiers
-     *
-     * @param string $productSku
-     * @return string
-     */
-    private function getProductSearchQuery(string $productSku): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-{
-  products(filter: {sku: {eq: "{$productSku}"}}) {
-    items {
-      name
-      sku
-      price_range {
-        minimum_price {
-          regular_price {
-            value
-            currency
-          }
-          final_price {
-            value
-            currency
-          }
-          discount {
-            amount_off
-            percent_off
-          }
-        }
-        maximum_price {
-          regular_price {
-            value
-           currency
-          }
-          final_price {
-            value
-            currency
-          }
-          discount {
-            amount_off
-            percent_off
-          }
-        }
-      }
-      price_tiers{
-        discount{
-          amount_off
-          percent_off
-        }
-        final_price{
-          value
-        }
-        quantity
-      }
-    }
-  }
-}
-QUERY;
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->getCustomerAuthenticationHeader = $this->objectManager->get(GetCustomerAuthenticationHeader::class);
     }
 }

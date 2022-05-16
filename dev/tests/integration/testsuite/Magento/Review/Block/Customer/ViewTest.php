@@ -37,29 +37,6 @@ class ViewTest extends TestCase
     private $block;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->customerSession = $this->objectManager->get(Session::class);
-        $this->collectionFactory = $this->objectManager->get(CollectionFactory::class);
-        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(View::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->customerSession->setCustomerId(null);
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Review/_files/customer_review_with_rating.php
      *
      * @return void
@@ -86,7 +63,7 @@ class ViewTest extends TestCase
                 1,
                 Xpath::getElementsCountForXpath(
                     sprintf(
-                        "//div[contains(@id, 'rating-div-".$rating->getRatingId()."')]//span[contains(text(), '%s')]",
+                        "//div[contains(@id, 'rating-div-" . $rating->getRatingId() . "')]//span[contains(text(), '%s')]",
                         $rating->getPercent()
                     ),
                     $blockHtml
@@ -133,5 +110,28 @@ class ViewTest extends TestCase
             ),
             sprintf('%s button wasn\'t found.', __('Back to My Reviews'))
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->customerSession = $this->objectManager->get(Session::class);
+        $this->collectionFactory = $this->objectManager->get(CollectionFactory::class);
+        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(View::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->customerSession->setCustomerId(null);
+
+        parent::tearDown();
     }
 }

@@ -6,6 +6,9 @@
 
 namespace Magento\Setup\Validator;
 
+use Credis_Client;
+use CredisException;
+
 /**
  * Connection validator for Redis configurations
  */
@@ -31,7 +34,7 @@ class RedisConnectionValidator
         $config = array_merge($default, $redisOptions);
 
         try {
-            $redisClient = new \Credis_Client(
+            $redisClient = new Credis_Client(
                 $config['host'],
                 $config['port'],
                 $config['timeout'],
@@ -41,7 +44,7 @@ class RedisConnectionValidator
             );
             $redisClient->setMaxConnectRetries(1);
             $redisClient->connect();
-        } catch (\CredisException $e) {
+        } catch (CredisException $e) {
             return false;
         }
 

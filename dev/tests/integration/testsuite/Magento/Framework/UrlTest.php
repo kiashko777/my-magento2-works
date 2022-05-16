@@ -3,25 +3,25 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework;
 
 use Laminas\Stdlib\Parameters;
+use Magento\Framework\App\Request\Http;
+use Magento\Framework\App\RequestInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Request;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\Framework\Url
  */
-class UrlTest extends \PHPUnit\Framework\TestCase
+class UrlTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\UrlInterface
+     * @var UrlInterface
      */
     protected $model;
-
-    protected function setUp(): void
-    {
-        $this->model = Bootstrap::getObjectManager()->create(\Magento\Framework\Url::class);
-    }
 
     public function testSetRouteFrontName()
     {
@@ -87,13 +87,13 @@ class UrlTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetUnsecureUrlInSecureArea()
     {
-        /** @var \Magento\Framework\App\Request\Http $request */
-        $request = Bootstrap::getObjectManager()->create(\Magento\Framework\App\Request\Http::class);
+        /** @var Http $request */
+        $request = Bootstrap::getObjectManager()->create(Http::class);
         //Emulate HTTPS request
         $request->getServer()->set('HTTPS', 'on');
         $request->getServer()->set('SERVER_PORT', 443);
 
-        $model = Bootstrap::getObjectManager()->create(\Magento\Framework\Url::class, ['request' => $request]);
+        $model = Bootstrap::getObjectManager()->create(Url::class, ['request' => $request]);
 
         $secureUrl = $model->getUrl('some/index/controller', ['_nosid' => 1]);
         $this->assertEquals(
@@ -130,13 +130,13 @@ class UrlTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetSecureUrlInUnsecureArea()
     {
-        /** @var \Magento\Framework\App\Request\Http $request */
-        $request = Bootstrap::getObjectManager()->create(\Magento\Framework\App\Request\Http::class);
+        /** @var Http $request */
+        $request = Bootstrap::getObjectManager()->create(Http::class);
         //Emulate HTTPS request
         $request->getServer()->set('HTTPS', 'off');
         $request->getServer()->set('SERVER_PORT', 80);
 
-        $model = Bootstrap::getObjectManager()->create(\Magento\Framework\Url::class, ['request' => $request]);
+        $model = Bootstrap::getObjectManager()->create(Url::class, ['request' => $request]);
 
         $secureUrl = $model->getUrl('some/index/controller', ['_nosid' => 1]);
         $this->assertEquals(
@@ -173,14 +173,14 @@ class UrlTest extends \PHPUnit\Framework\TestCase
         /**
          * Set specified type
          */
-        $webUrl = $this->model->getBaseUrl(['_type' => \Magento\Framework\UrlInterface::URL_TYPE_WEB]);
+        $webUrl = $this->model->getBaseUrl(['_type' => UrlInterface::URL_TYPE_WEB]);
         $this->assertEquals('http://localhost/', $webUrl, 'Incorrect web url');
         $this->assertEquals('http://localhost/index.php/', $this->model->getBaseUrl(), 'Incorrect link url');
 
         /**
          * Get url with type specified in params
          */
-        $mediaUrl = $this->model->getBaseUrl(['_type' => \Magento\Framework\UrlInterface::URL_TYPE_MEDIA]);
+        $mediaUrl = $this->model->getBaseUrl(['_type' => UrlInterface::URL_TYPE_MEDIA]);
         $this->assertEquals('http://localhost/media/', $mediaUrl, 'Incorrect media url');
         $this->assertEquals('http://localhost/index.php/', $this->model->getBaseUrl(), 'Incorrect link url');
     }
@@ -188,13 +188,13 @@ class UrlTest extends \PHPUnit\Framework\TestCase
     public function getBaseUrlConfiguredDataProvider()
     {
         return [
-            [['_type' => \Magento\Framework\UrlInterface::URL_TYPE_WEB], 'http://sample.com/base_path/'],
+            [['_type' => UrlInterface::URL_TYPE_WEB], 'http://sample.com/base_path/'],
             [
-                ['_type' => \Magento\Framework\UrlInterface::URL_TYPE_LINK],
+                ['_type' => UrlInterface::URL_TYPE_LINK],
                 'http://sample.com/base_link_path/index.php/'
             ],
             [
-                ['_type' => \Magento\Framework\UrlInterface::URL_TYPE_LINK, '_secure' => 1],
+                ['_type' => UrlInterface::URL_TYPE_LINK, '_secure' => 1],
                 'https://sample.com/base_link_path/index.php/'
             ]
         ];
@@ -297,7 +297,7 @@ class UrlTest extends \PHPUnit\Framework\TestCase
      * @param array $secondRouteParams
      * @param string $firstExpectedUrl
      * @param string $secondExpectedUrl
-     * @covers \Magento\Framework\Url::getUrl
+     * @covers       \Magento\Framework\Url::getUrl
      */
     public function testGetUrlOnConsequentCalls(
         $firstCallUrl,
@@ -306,7 +306,8 @@ class UrlTest extends \PHPUnit\Framework\TestCase
         $secondRouteParams,
         $firstExpectedUrl,
         $secondExpectedUrl
-    ) {
+    )
+    {
         $result = $this->model->getUrl($firstCallUrl, $firstRouteParams);
         $this->assertEquals($firstExpectedUrl, $result);
 
@@ -498,13 +499,18 @@ class UrlTest extends \PHPUnit\Framework\TestCase
      */
     public function testIsOwnOriginUrl()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var $request \Magento\TestFramework\Request */
-        $request = $objectManager->get(\Magento\Framework\App\RequestInterface::class);
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var $request Request */
+        $request = $objectManager->get(RequestInterface::class);
         $request->setServer(new Parameters(['HTTP_REFERER' => 'http://localhost/']));
         $this->assertTrue($this->model->isOwnOriginUrl());
 
         $request->setServer(new Parameters(['HTTP_REFERER' => 'http://example.com/']));
         $this->assertFalse($this->model->isOwnOriginUrl());
+    }
+
+    protected function setUp(): void
+    {
+        $this->model = Bootstrap::getObjectManager()->create(Url::class);
     }
 }

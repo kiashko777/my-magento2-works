@@ -3,41 +3,29 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Config\Model\Config\Backend\Admin;
 
-use Magento\Config\Model\Config\Reader\Source\Deployed\DocumentRoot;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Filesystem;
+use Magento\Framework\Filesystem\Directory\Read;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class RobotsTest extends \PHPUnit\Framework\TestCase
+class RobotsTest extends TestCase
 {
     /**
-     * @var \Magento\Config\Model\Config\Backend\Admin\Robots
+     * @var Robots
      */
     protected $model = null;
 
     /**
-     * @var \Magento\Framework\Filesystem\Directory\Read
+     * @var Read
      */
     protected $rootDirectory;
-
-    /**
-     * Initialize model
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->model = $objectManager->create(\Magento\Config\Model\Config\Backend\Admin\Robots::class);
-        $this->model->setPath('design/search_engine_robots/custom_instructions');
-        $this->model->afterLoad();
-
-        $this->rootDirectory = $objectManager->get(Filesystem::class)->getDirectoryRead(DirectoryList::PUB);
-    }
 
     /**
      * Check that default value is empty when robots.txt not exists
@@ -73,6 +61,17 @@ class RobotsTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Modify config value and check all changes were written into robots.txt
+     */
+    protected function _modifyConfig()
+    {
+        $robotsTxt = "User-Agent: *\nDisallow: /checkout";
+        $this->model->setValue($robotsTxt)->save();
+        $file = $this->rootDirectory->getAbsolutePath('robots.txt');
+        $this->assertStringEqualsFile($file, $robotsTxt);
+    }
+
+    /**
      * Check robots.txt file changed when robots.txt exists
      *
      * @magentoDataFixture Magento/Config/Model/_files/robots_txt.php
@@ -86,14 +85,18 @@ class RobotsTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Modify config value and check all changes were written into robots.txt
+     * Initialize model
      */
-    protected function _modifyConfig()
+    protected function setUp(): void
     {
-        $robotsTxt = "User-Agent: *\nDisallow: /checkout";
-        $this->model->setValue($robotsTxt)->save();
-        $file = $this->rootDirectory->getAbsolutePath('robots.txt');
-        $this->assertStringEqualsFile($file, $robotsTxt);
+        parent::setUp();
+
+        $objectManager = Bootstrap::getObjectManager();
+        $this->model = $objectManager->create(Robots::class);
+        $this->model->setPath('design/search_engine_robots/custom_instructions');
+        $this->model->afterLoad();
+
+        $this->rootDirectory = $objectManager->get(Filesystem::class)->getDirectoryRead(DirectoryList::PUB);
     }
 
     /**

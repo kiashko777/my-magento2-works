@@ -6,6 +6,8 @@
 
 namespace Magento\TestFramework\Api\Config\Reader;
 
+use Magento\Framework\Config\FileIterator;
+
 /**
  * Config file resolver for extension_attributes.xml files, which reads configs defined in tests.
  *
@@ -42,6 +44,23 @@ class FileResolver extends \Magento\Framework\App\Config\FileResolver
     }
 
     /**
+     * Convert an argument to an array
+     *
+     * If it's not FileIterator instance, then empty array will be returned
+     *
+     * @param mixed $argument
+     * @return array
+     */
+    protected function convertToArray($argument)
+    {
+        $resultArray = [];
+        if ($argument instanceof FileIterator) {
+            $resultArray = $argument->toArray();
+        }
+        return $resultArray;
+    }
+
+    /**
      * Return a list of test config files
      *
      * Looks for config files located at
@@ -67,22 +86,5 @@ class FileResolver extends \Magento\Framework\App\Config\FileResolver
             }
         }
         return $filesArray;
-    }
-
-    /**
-     * Convert an argument to an array
-     *
-     * If it's not FileIterator instance, then empty array will be returned
-     *
-     * @param mixed $argument
-     * @return array
-     */
-    protected function convertToArray($argument)
-    {
-        $resultArray = [];
-        if ($argument instanceof \Magento\Framework\Config\FileIterator) {
-            $resultArray = $argument->toArray();
-        }
-        return $resultArray;
     }
 }

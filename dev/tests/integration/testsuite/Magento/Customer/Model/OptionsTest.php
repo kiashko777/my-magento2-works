@@ -38,15 +38,6 @@ class OptionsTest extends TestCase
     private $objectManager;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->model = $this->objectManager->create(Options::class);
-    }
-
-    /**
      * Test suffix and prefix options
      *
      * @dataProvider optionsDataProvider
@@ -59,10 +50,11 @@ class OptionsTest extends TestCase
      */
     public function testOptions(
         string $optionType,
-        array $showOptionConfig,
-        array $optionValuesConfig,
-        array $expectedOptions
-    ): void {
+        array  $showOptionConfig,
+        array  $optionValuesConfig,
+        array  $expectedOptions
+    ): void
+    {
         $this->setConfig($showOptionConfig);
         $this->setConfig($optionValuesConfig);
 
@@ -83,10 +75,11 @@ class OptionsTest extends TestCase
      * @return void
      */
     private function setConfig(
-        array $data,
+        array   $data,
         ?string $scopeType = ScopeInterface::SCOPE_STORE,
         ?string $scopeCode = 'default'
-    ): void {
+    ): void
+    {
         $path = array_key_first($data);
         $this->objectManager->get(MutableScopeConfigInterface::class)
             ->setValue($path, $data[$path], $scopeType, $scopeCode);
@@ -152,6 +145,15 @@ class OptionsTest extends TestCase
                 $expectedValuesWithBlank,
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->model = $this->objectManager->create(Options::class);
     }
 
     /**

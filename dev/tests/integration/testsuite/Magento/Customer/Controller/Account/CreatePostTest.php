@@ -63,21 +63,6 @@ class CreatePostTest extends AbstractController
     private $urlBuilder;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->transportBuilderMock = $this->_objectManager->get(TransportBuilderMock::class);
-        $this->storeManager = $this->_objectManager->get(StoreManagerInterface::class);
-        $this->customerRepository = $this->_objectManager->get(CustomerRepositoryInterface::class);
-        $this->customerRegistry = $this->_objectManager->get(CustomerRegistry::class);
-        $this->cookieManager = $this->_objectManager->get(CookieManagerInterface::class);
-        $this->urlBuilder = $this->_objectManager->get(UrlInterface::class);
-    }
-
-    /**
      * Tests that without form key user account won't be created
      * and user will be redirected on account creation page again.
      *
@@ -97,6 +82,55 @@ class CreatePostTest extends AbstractController
             $this->stringContains((string)__('Invalid Form Key. Please refresh the page.')),
             MessageInterface::TYPE_ERROR
         );
+    }
+
+    /**
+     * Fills request with customer data.
+     *
+     * @param string $email
+     * @return void
+     */
+    private function fillRequestWithAccountData(string $email): void
+    {
+        $this->getRequest()
+            ->setMethod(HttpRequest::METHOD_POST)
+            ->setParam(CustomerInterface::FIRSTNAME, 'firstname1')
+            ->setParam(CustomerInterface::LASTNAME, 'lastname1')
+            ->setParam(CustomerInterface::EMAIL, $email)
+            ->setParam('password', '_Password1')
+            ->setParam('password_confirmation', '_Password1')
+            ->setParam('telephone', '5123334444')
+            ->setParam('street', ['1234 fake street', ''])
+            ->setParam('city', 'Austin')
+            ->setParam('postcode', '78701')
+            ->setParam('country_id', 'US')
+            ->setParam('default_billing', '1')
+            ->setParam('default_shipping', '1')
+            ->setParam('is_subscribed', '0')
+            ->setPostValue('create_address', true);
+    }
+
+    /**
+     * Asserts that customer does not exists.
+     *
+     * @param string $email
+     * @return void
+     */
+    private function assertCustomerNotExists(string $email): void
+    {
+        $this->expectException(NoSuchEntityException::class);
+        $this->expectExceptionMessage(
+            (string)__(
+                'No such entity with %fieldName = %fieldValue, %field2Name = %field2Value',
+                [
+                    'fieldName' => 'email',
+                    'fieldValue' => $email,
+                    'field2Name' => 'websiteId',
+                    'field2Value' => 1
+                ]
+            )
+        );
+        $this->assertNull($this->customerRepository->get($email));
     }
 
     /**
@@ -289,55 +323,6 @@ class CreatePostTest extends AbstractController
     }
 
     /**
-     * Fills request with customer data.
-     *
-     * @param string $email
-     * @return void
-     */
-    private function fillRequestWithAccountData(string $email): void
-    {
-        $this->getRequest()
-            ->setMethod(HttpRequest::METHOD_POST)
-            ->setParam(CustomerInterface::FIRSTNAME, 'firstname1')
-            ->setParam(CustomerInterface::LASTNAME, 'lastname1')
-            ->setParam(CustomerInterface::EMAIL, $email)
-            ->setParam('password', '_Password1')
-            ->setParam('password_confirmation', '_Password1')
-            ->setParam('telephone', '5123334444')
-            ->setParam('street', ['1234 fake street', ''])
-            ->setParam('city', 'Austin')
-            ->setParam('postcode', '78701')
-            ->setParam('country_id', 'US')
-            ->setParam('default_billing', '1')
-            ->setParam('default_shipping', '1')
-            ->setParam('is_subscribed', '0')
-            ->setPostValue('create_address', true);
-    }
-
-    /**
-     * Asserts that customer does not exists.
-     *
-     * @param string $email
-     * @return void
-     */
-    private function assertCustomerNotExists(string $email): void
-    {
-        $this->expectException(NoSuchEntityException::class);
-        $this->expectExceptionMessage(
-            (string)__(
-                'No such entity with %fieldName = %fieldValue, %field2Name = %field2Value',
-                [
-                    'fieldName' => 'email',
-                    'fieldValue' => $email,
-                    'field2Name' => 'websiteId',
-                    'field2Value' => 1
-                ]
-            )
-        );
-        $this->assertNull($this->customerRepository->get($email));
-    }
-
-    /**
      * Clears request.
      *
      * @return void
@@ -348,5 +333,20 @@ class CreatePostTest extends AbstractController
         $this->cookieManager->deleteCookie(MessagePlugin::MESSAGES_COOKIES_NAME);
         $this->_objectManager->removeSharedInstance(Http::class);
         $this->_objectManager->removeSharedInstance(Request::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->transportBuilderMock = $this->_objectManager->get(TransportBuilderMock::class);
+        $this->storeManager = $this->_objectManager->get(StoreManagerInterface::class);
+        $this->customerRepository = $this->_objectManager->get(CustomerRepositoryInterface::class);
+        $this->customerRegistry = $this->_objectManager->get(CustomerRegistry::class);
+        $this->cookieManager = $this->_objectManager->get(CookieManagerInterface::class);
+        $this->urlBuilder = $this->_objectManager->get(UrlInterface::class);
     }
 }

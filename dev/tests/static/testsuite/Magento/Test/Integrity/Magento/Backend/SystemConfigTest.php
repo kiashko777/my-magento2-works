@@ -5,28 +5,36 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Magento\Backend;
 
-class SystemConfigTest extends \PHPUnit\Framework\TestCase
+use DOMDocument;
+use Magento\Framework\App\Utility\AggregateInvoker;
+use Magento\Framework\App\Utility\Files;
+use Magento\Framework\Config\Dom;
+use Magento\Framework\Config\Dom\UrnResolver;
+use PHPUnit\Framework\TestCase;
+
+class SystemConfigTest extends TestCase
 {
     public function testSchema()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
-            /**
-             * @param string $configFile
-             */
+        /**
+         * @param string $configFile
+         */
             function ($configFile) {
-                $dom = new \DOMDocument();
+                $dom = new DOMDocument();
                 $dom->loadXML(file_get_contents($configFile));
-                $urnResolver = new \Magento\Framework\Config\Dom\UrnResolver();
-                $schema =  $urnResolver->getRealPath('urn:magento:module:Magento_Config:etc/system_file.xsd');
-                $errors = \Magento\Framework\Config\Dom::validateDomDocument($dom, $schema);
+                $urnResolver = new UrnResolver();
+                $schema = $urnResolver->getRealPath('urn:magento:module:Magento_Config:etc/system_file.xsd');
+                $errors = Dom::validateDomDocument($dom, $schema);
                 if ($errors) {
                     $this->fail('XML-file has validation errors:' . PHP_EOL . implode(PHP_EOL . PHP_EOL, $errors));
                 }
             },
-            \Magento\Framework\App\Utility\Files::init()->getConfigFiles('Adminhtml/system.xml', [])
+            Files::init()->getConfigFiles('Adminhtml/system.xml', [])
         );
     }
 }

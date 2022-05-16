@@ -14,10 +14,11 @@ use Magento\Catalog\Helper\DefaultCategory;
 use Magento\Catalog\Model\Indexer\Category\Product\Action\Rows;
 use Magento\CatalogSearch\Model\ResourceModel\Fulltext\SearchCollectionFactory;
 use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\Search\EngineResolverInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestModuleCatalogSearch\Model\ElasticsearchVersionChecker;
-use Magento\Framework\Search\EngineResolverInterface;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for Magento\Catalog\Model\Indexer\Category\Products\Action\Rows class.
@@ -27,7 +28,7 @@ use Magento\Framework\Search\EngineResolverInterface;
  * @magentoDbIsolation enabled
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class RowsTest extends \PHPUnit\Framework\TestCase
+class RowsTest extends TestCase
 {
     /**
      * @var string
@@ -53,6 +54,77 @@ class RowsTest extends \PHPUnit\Framework\TestCase
      * @var SearchCollectionFactory
      */
     private $fulltextSearchCollectionFactory;
+
+    /**
+     * @magentoDataFixture Magento/Catalog/_files/category_tree_with_products.php
+     * @magentoDataFixture Magento/CatalogSearch/_files/full_reindex.php
+     * @magentoConfigFixture current_store catalog/search/elasticsearch_index_prefix indexerhandlertest
+     * @magentoDataFixtureBeforeTransaction Magento/Catalog/_files/enable_reindex_schedule.php
+     * @return void
+     */
+    public function testLoadWithFilterCatalogView()
+    {
+        $categoryA = $this->getCategory('Category A');
+        $categoryB = $this->getCategory('Category B');
+        $categoryC = $this->getCategory('Category C');
+
+        /** Move $categoryB to $categoryA */
+        $categoryB->move($categoryA->getId(), null);
+        $this->rowsIndexer->execute(
+            [
+                $this->defaultCategoryHelper->getId(),
+                $categoryA->getId(),
+                $categoryB->getId(),
+                $categoryC->getId(),
+            ],
+            true
+        );
+
+        $fulltextCollection = $this->fulltextSearchCollectionFactory->create()
+            ->addCategoryFilter($categoryA);
+
+        $this->assertProductsArePresentInCollection($fulltextCollection->getAllIds());
+    }
+
+    /**
+     * Gets category by name.
+     *
+     * @param string $name
+     * @return CategoryInterface
+     */
+    private function getCategory(string $name): CategoryInterface
+    {
+        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
+        $searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
+        $searchCriteria = $searchCriteriaBuilder->addFilter('name', $name)
+            ->create();
+        /** @var CategoryListInterface $repository */
+        $repository = $this->objectManager->get(CategoryListInterface::class);
+        $items = $repository->getList($searchCriteria)
+            ->getItems();
+
+        return array_pop($items);
+    }
+
+    /**
+     * Assert that expected products are present in collection.
+     *
+     * @param array $productIds
+     *
+     * @return void
+     */
+    private function assertProductsArePresentInCollection(array $productIds): void
+    {
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+
+        $firstProductId = $productRepository->get('simpleB')->getId();
+        $secondProductId = $productRepository->get('simpleC')->getId();
+
+        $this->assertCount(2, $productIds);
+        $this->assertContains($secondProductId, $productIds);
+        $this->assertContains($firstProductId, $productIds);
+    }
 
     /**
      * @inheritdoc
@@ -88,76 +160,5 @@ class RowsTest extends \PHPUnit\Framework\TestCase
         }
 
         return $this->searchEngine;
-    }
-
-    /**
-     * @magentoDataFixture Magento/Catalog/_files/category_tree_with_products.php
-     * @magentoDataFixture Magento/CatalogSearch/_files/full_reindex.php
-     * @magentoConfigFixture current_store catalog/search/elasticsearch_index_prefix indexerhandlertest
-     * @magentoDataFixtureBeforeTransaction Magento/Catalog/_files/enable_reindex_schedule.php
-     * @return void
-     */
-    public function testLoadWithFilterCatalogView()
-    {
-        $categoryA = $this->getCategory('Category A');
-        $categoryB = $this->getCategory('Category B');
-        $categoryC = $this->getCategory('Category C');
-
-        /** Move $categoryB to $categoryA */
-        $categoryB->move($categoryA->getId(), null);
-        $this->rowsIndexer->execute(
-            [
-                $this->defaultCategoryHelper->getId(),
-                $categoryA->getId(),
-                $categoryB->getId(),
-                $categoryC->getId(),
-            ],
-            true
-        );
-
-        $fulltextCollection = $this->fulltextSearchCollectionFactory->create()
-            ->addCategoryFilter($categoryA);
-
-        $this->assertProductsArePresentInCollection($fulltextCollection->getAllIds());
-    }
-
-    /**
-     * Assert that expected products are present in collection.
-     *
-     * @param array $productIds
-     *
-     * @return void
-     */
-    private function assertProductsArePresentInCollection(array $productIds): void
-    {
-        /** @var ProductRepositoryInterface $productRepository */
-        $productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-
-        $firstProductId = $productRepository->get('simpleB')->getId();
-        $secondProductId = $productRepository->get('simpleC')->getId();
-
-        $this->assertCount(2, $productIds);
-        $this->assertContains($secondProductId, $productIds);
-        $this->assertContains($firstProductId, $productIds);
-    }
-
-    /**
-     * Gets category by name.
-     *
-     * @param string $name
-     * @return CategoryInterface
-     */
-    private function getCategory(string $name): CategoryInterface
-    {
-        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
-        $searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
-        $searchCriteria = $searchCriteriaBuilder->addFilter('name', $name)
-            ->create();
-        /** @var CategoryListInterface $repository */
-        $repository = $this->objectManager->get(CategoryListInterface::class);
-        $items = $repository->getList($searchCriteria)
-            ->getItems();
-
-        return array_pop($items);
     }
 }

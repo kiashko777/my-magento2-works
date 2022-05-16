@@ -3,33 +3,30 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogRule\Model\Indexer;
 
+use DateTime;
+use Magento\Catalog\Model\ProductRepository;
+use Magento\CatalogRule\Model\ResourceModel\Rule;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoDbIsolation enabled
  * @magentoAppIsolation enabled
  */
-class RuleProductTest extends \PHPUnit\Framework\TestCase
+class RuleProductTest extends TestCase
 {
     /**
-     * @var \Magento\CatalogRule\Model\Indexer\IndexBuilder
+     * @var IndexBuilder
      */
     protected $indexBuilder;
 
     /**
-     * @var \Magento\CatalogRule\Model\ResourceModel\Rule
+     * @var Rule
      */
     protected $resourceRule;
-
-    protected function setUp(): void
-    {
-        $this->indexBuilder = Bootstrap::getObjectManager()->get(
-            \Magento\CatalogRule\Model\Indexer\IndexBuilder::class
-        );
-        $this->resourceRule = Bootstrap::getObjectManager()->get(\Magento\CatalogRule\Model\ResourceModel\Rule::class);
-    }
 
     /**
      * @magentoDbIsolation disabled
@@ -39,17 +36,25 @@ class RuleProductTest extends \PHPUnit\Framework\TestCase
      */
     public function testReindexAfterRuleCreation()
     {
-        /** @var \Magento\Catalog\Model\ProductRepository $productRepository */
-        $productRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Catalog\Model\ProductRepository::class
+        /** @var ProductRepository $productRepository */
+        $productRepository = Bootstrap::getObjectManager()->get(
+            ProductRepository::class
         );
         $product = $productRepository->get('simple');
         $product->setData('test_attribute', 'test_attribute_value')->save();
-        $this->assertFalse($this->resourceRule->getRulePrice(new \DateTime(), 1, 1, $product->getId()));
+        $this->assertFalse($this->resourceRule->getRulePrice(new DateTime(), 1, 1, $product->getId()));
 
         // apply all rules
         $this->indexBuilder->reindexFull();
 
-        $this->assertEquals(9.8, $this->resourceRule->getRulePrice(new \DateTime(), 1, 1, $product->getId()));
+        $this->assertEquals(9.8, $this->resourceRule->getRulePrice(new DateTime(), 1, 1, $product->getId()));
+    }
+
+    protected function setUp(): void
+    {
+        $this->indexBuilder = Bootstrap::getObjectManager()->get(
+            IndexBuilder::class
+        );
+        $this->resourceRule = Bootstrap::getObjectManager()->get(Rule::class);
     }
 }

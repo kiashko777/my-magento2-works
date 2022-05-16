@@ -3,26 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogSearch\Helper;
 
-class DataTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\App\Request\Http;
+use Magento\Framework\App\RequestInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
+
+class DataTest extends TestCase
 {
     /**
-     * @var \Magento\CatalogSearch\Helper\Data
+     * @var Data
      */
     protected $_helper;
-
-    protected function setUp(): void
-    {
-        /** @var \Magento\TestFramework\ObjectManager  $objectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var \Magento\Framework\App\Request\Http $request */
-        $request = $objectManager->get(\Magento\Framework\App\RequestInterface::class);
-        $request->setParam('q', 'five <words> here <being> tested');
-        $this->_helper = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\CatalogSearch\Helper\Data::class
-        );
-    }
 
     public function testGetResultUrl()
     {
@@ -39,6 +34,18 @@ class DataTest extends \PHPUnit\Framework\TestCase
 
     public function testCheckNotesResult()
     {
-        $this->assertInstanceOf(\Magento\CatalogSearch\Helper\Data::class, $this->_helper->checkNotes());
+        $this->assertInstanceOf(Data::class, $this->_helper->checkNotes());
+    }
+
+    protected function setUp(): void
+    {
+        /** @var ObjectManager $objectManager */
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var Http $request */
+        $request = $objectManager->get(RequestInterface::class);
+        $request->setParam('q', 'five <words> here <being> tested');
+        $this->_helper = Bootstrap::getObjectManager()->get(
+            Data::class
+        );
     }
 }

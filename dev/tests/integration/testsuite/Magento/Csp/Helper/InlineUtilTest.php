@@ -53,17 +53,6 @@ class InlineUtilTest extends TestCase
     }
 
     /**
-     * @inheritDoc
-     */
-    protected function tearDown(): void
-    {
-        $this->util = null;
-        $this->secureHtmlRenderer = null;
-        $this->dynamicCollector->consumeAdded();
-        $this->dynamicCollector = null;
-    }
-
-    /**
      * Test tag rendering.
      *
      * @param string $tagName
@@ -86,12 +75,13 @@ class InlineUtilTest extends TestCase
      * @magentoConfigFixture default_store csp/policies/storefront/styles/inline 0
      */
     public function testRenderTag(
-        string $tagName,
-        array $attributes,
+        string  $tagName,
+        array   $attributes,
         ?string $content,
-        string $result,
-        array $policiesExpected
-    ): void {
+        string  $result,
+        array   $policiesExpected
+    ): void
+    {
         $this->assertEquals($result, $this->util->renderTag($tagName, $attributes, $content));
         $this->assertEquals($policiesExpected, $this->dynamicCollector->consumeAdded());
     }
@@ -117,7 +107,7 @@ class InlineUtilTest extends TestCase
                 ['type' => 'text/javascript'],
                 "\n    let someVar = 25;\n    document.getElementById('test').innerText = someVar;\n",
                 "<script type=\"text&#x2F;javascript\">\n    let someVar = 25;"
-                    ."\n    document.getElementById('test').innerText = someVar;\n</script>",
+                . "\n    document.getElementById('test').innerText = someVar;\n</script>",
                 [
                     new FetchPolicy(
                         'script-src',
@@ -137,7 +127,7 @@ class InlineUtilTest extends TestCase
                 ['rel' => 'stylesheet', 'type' => 'text/css', 'href' => 'http://magento.com/static/style.css'],
                 null,
                 '<link rel="stylesheet" type="text&#x2F;css"'
-                    . ' href="http&#x3A;&#x2F;&#x2F;magento.com&#x2F;static&#x2F;style.css"/>',
+                . ' href="http&#x3A;&#x2F;&#x2F;magento.com&#x2F;static&#x2F;style.css"/>',
                 [new FetchPolicy('style-src', false, ['http://magento.com'])]
             ],
             'inline-style' => [
@@ -170,21 +160,21 @@ class InlineUtilTest extends TestCase
                 'style',
                 ['type' => 'text/css'],
                 "\n    @font-face {\n        font-family: \"MyCustomFont\";"
-                    ."\n        src: url(\"http://magento.com/static/font.ttf\");\n    }\n"
-                    ."    @font-face {\n        font-family: \"MyCustomFont2\";"
-                    ."\n        src: url('https://magento.com/static/font-2.ttf'),"
-                    ."\n             url(static/font.ttf),"
-                    ."\n             url(https://devdocs.magento.com/static/another-font.woff),"
-                    ."\n             url(http://devdocs.magento.com/static/font.woff);\n    }\n",
+                . "\n        src: url(\"http://magento.com/static/font.ttf\");\n    }\n"
+                . "    @font-face {\n        font-family: \"MyCustomFont2\";"
+                . "\n        src: url('https://magento.com/static/font-2.ttf'),"
+                . "\n             url(static/font.ttf),"
+                . "\n             url(https://devdocs.magento.com/static/another-font.woff),"
+                . "\n             url(http://devdocs.magento.com/static/font.woff);\n    }\n",
                 "<style type=\"text&#x2F;css\">"
-                    ."\n    @font-face {\n        font-family: \"MyCustomFont\";"
-                    ."\n        src: url(\"http://magento.com/static/font.ttf\");\n    }\n"
-                    ."    @font-face {\n        font-family: \"MyCustomFont2\";"
-                    ."\n        src: url('https://magento.com/static/font-2.ttf'),"
-                    ."\n             url(static/font.ttf),"
-                    ."\n             url(https://devdocs.magento.com/static/another-font.woff),"
-                    ."\n             url(http://devdocs.magento.com/static/font.woff);\n    }\n"
-                    ."</style>",
+                . "\n    @font-face {\n        font-family: \"MyCustomFont\";"
+                . "\n        src: url(\"http://magento.com/static/font.ttf\");\n    }\n"
+                . "    @font-face {\n        font-family: \"MyCustomFont2\";"
+                . "\n        src: url('https://magento.com/static/font-2.ttf'),"
+                . "\n             url(static/font.ttf),"
+                . "\n             url(https://devdocs.magento.com/static/another-font.woff),"
+                . "\n             url(http://devdocs.magento.com/static/font.woff);\n    }\n"
+                . "</style>",
                 [
                     new FetchPolicy(
                         'style-src',
@@ -214,8 +204,8 @@ class InlineUtilTest extends TestCase
                 ['action' => 'https://magento.com/submit', 'method' => 'post'],
                 "\n    <input type=\"text\" name=\"test\" /><input type=\"submit\" value=\"Submit\" />\n",
                 "<form action=\"https&#x3A;&#x2F;&#x2F;magento.com&#x2F;submit\" method=\"post\">"
-                    ."\n    <input type=\"text\" name=\"test\" /><input type=\"submit\" value=\"Submit\" />\n"
-                    ."</form>",
+                . "\n    <input type=\"text\" name=\"test\" /><input type=\"submit\" value=\"Submit\" />\n"
+                . "</form>",
                 [new FetchPolicy('form-action', false, ['https://magento.com'])]
             ],
             'cross-origin-iframe' => [
@@ -272,7 +262,7 @@ class InlineUtilTest extends TestCase
                 ['code' => 'SomeApplet.class', 'archive' => 'https://magento.com/applet/my-applet.jar'],
                 null,
                 '<applet code="SomeApplet.class" '
-                    . 'archive="https&#x3A;&#x2F;&#x2F;magento.com&#x2F;applet&#x2F;my-applet.jar"/>',
+                . 'archive="https&#x3A;&#x2F;&#x2F;magento.com&#x2F;applet&#x2F;my-applet.jar"/>',
                 [new FetchPolicy('object-src', false, ['https://magento.com'])]
             ]
         ];
@@ -342,5 +332,16 @@ class InlineUtilTest extends TestCase
             $this->util->renderTag('script', [], 'alert(1);')
         );
         $this->assertEmpty($this->dynamicCollector->consumeAdded());
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function tearDown(): void
+    {
+        $this->util = null;
+        $this->secureHtmlRenderer = null;
+        $this->dynamicCollector->consumeAdded();
+        $this->dynamicCollector = null;
     }
 }

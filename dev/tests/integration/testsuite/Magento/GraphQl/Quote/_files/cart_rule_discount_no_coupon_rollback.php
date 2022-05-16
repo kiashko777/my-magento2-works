@@ -12,7 +12,7 @@ use Magento\TestFramework\Helper\Bootstrap;
 $objectManager = Bootstrap::getObjectManager();
 /** @var RuleRepositoryInterface $ruleRepository */
 $ruleRepository = $objectManager->get(RuleRepositoryInterface::class);
-/** @var RuleCollectionFactory  $ruleCollectionFactory */
+/** @var RuleCollectionFactory $ruleCollectionFactory */
 $ruleCollectionFactory = $objectManager->get(RuleCollectionFactory::class);
 $ruleCollection = $ruleCollectionFactory->create();
 

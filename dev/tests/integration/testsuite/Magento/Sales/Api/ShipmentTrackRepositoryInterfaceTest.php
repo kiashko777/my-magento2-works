@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Api;
 
 use Magento\Framework\Api\FilterBuilder;
@@ -11,18 +12,14 @@ use Magento\Framework\Api\SortOrder;
 use Magento\Framework\Api\SortOrderBuilder;
 use Magento\Sales\Api\Data\ShipmentTrackInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class ShipmentTrackRepositoryInterfaceTest extends \PHPUnit\Framework\TestCase
+class ShipmentTrackRepositoryInterfaceTest extends TestCase
 {
     /**
      * @var ShipmentTrackRepositoryInterface
      */
     private $repository;
-
-    protected function setUp(): void
-    {
-        $this->repository = Bootstrap::getObjectManager()->create(ShipmentTrackRepositoryInterface::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Sales/_files/shipment_tracks_for_search.php
@@ -61,7 +58,7 @@ class ShipmentTrackRepositoryInterfaceTest extends \PHPUnit\Framework\TestCase
             ->create();
 
         /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
-        $searchCriteriaBuilder =  Bootstrap::getObjectManager()->create(SearchCriteriaBuilder::class);
+        $searchCriteriaBuilder = Bootstrap::getObjectManager()->create(SearchCriteriaBuilder::class);
 
         $searchCriteriaBuilder->addFilters([$filter1, $filter2, $filter3, $filter4]);
         $searchCriteriaBuilder->addFilters([$filter5]);
@@ -78,5 +75,10 @@ class ShipmentTrackRepositoryInterfaceTest extends \PHPUnit\Framework\TestCase
         $items = array_values($searchResult->getItems());
         $this->assertCount(1, $items);
         $this->assertEquals('title 2', $items[0][ShipmentTrackInterface::TITLE]);
+    }
+
+    protected function setUp(): void
+    {
+        $this->repository = Bootstrap::getObjectManager()->create(ShipmentTrackRepositoryInterface::class);
     }
 }

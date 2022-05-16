@@ -65,6 +65,18 @@ class ApiConfigFixture extends ConfigFixture
 
     /**
      * @inheritdoc
+     */
+    protected function getScopeConfigValue(string $configPath, string $scopeType, string $scopeCode = null): ?string
+    {
+        /** @var ConfigStorage $configStorage */
+        $configStorage = Bootstrap::getObjectManager()->get(ConfigStorage::class);
+        $result = $configStorage->getValueFromDb($configPath, $scopeType, $scopeCode);
+
+        return $result ?: null;
+    }
+
+    /**
+     * @inheritdoc
      * @SuppressWarnings(PHPMD.UnusedLocalVariable)
      */
     protected function setWebsiteConfigValue(array $matches, $configPathAndValue): void
@@ -137,27 +149,6 @@ class ApiConfigFixture extends ConfigFixture
     }
 
     /**
-     * @inheritdoc
-     */
-    protected function getMutableScopeConfig(): MutableScopeConfigInterface
-    {
-        return Bootstrap::getObjectManager()
-            ->get(ApiMutableScopeConfig::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function getScopeConfigValue(string $configPath, string $scopeType, string $scopeCode = null): ?string
-    {
-        /** @var ConfigStorage $configStorage */
-        $configStorage = Bootstrap::getObjectManager()->get(ConfigStorage::class);
-        $result = $configStorage->getValueFromDb($configPath, $scopeType, $scopeCode);
-
-        return $result ?: null;
-    }
-
-    /**
      * Get id by code
      *
      * @param string $scopeType
@@ -181,5 +172,14 @@ class ApiConfigFixture extends ConfigFixture
         }
 
         return $id;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function getMutableScopeConfig(): MutableScopeConfigInterface
+    {
+        return Bootstrap::getObjectManager()
+            ->get(ApiMutableScopeConfig::class);
     }
 }

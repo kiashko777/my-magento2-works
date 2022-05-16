@@ -3,10 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\SalesRule\Model\ResourceModel\Rule;
 
 use Magento\Config\Model\Config\Backend\Admin\Custom as AdminBackendConfig;
+use Magento\Config\Model\Config\Factory;
 use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\Registry;
+use Magento\Quote\Model\Quote;
+use Magento\SalesRule\Model\Rule;
 use Magento\Store\Api\WebsiteRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
@@ -28,17 +33,6 @@ class CollectionTest extends TestCase
     private $defaultTimezone;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $scopeConfig = Bootstrap::getObjectManager()->get(ScopeConfigInterface::class);
-        $this->defaultTimezone = $scopeConfig->getValue(AdminBackendConfig::XML_PATH_GENERAL_LOCALE_TIMEZONE);
-
-        $this->collection = Bootstrap::getObjectManager()->create(Collection::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/SalesRule/_files/rules.php
      * @magentoDataFixture Magento/SalesRule/_files/coupons.php
      * @dataProvider setValidationFilterDataProvider()
@@ -48,7 +42,7 @@ class CollectionTest extends TestCase
      */
     public function testSetValidationFilter($couponCode, $expectedItems)
     {
-        /** @var \Magento\SalesRule\Model\Rule[] $items */
+        /** @var Rule[] $items */
         $items = array_values($this->collection->setValidationFilter(1, 0, $couponCode)->getItems());
 
         $this->assertEquals(
@@ -97,12 +91,12 @@ class CollectionTest extends TestCase
     {
         $objectManager = Bootstrap::getObjectManager();
 
-        /** @var \Magento\SalesRule\Model\Rule $rule */
-        $rule = $objectManager->get(\Magento\Framework\Registry::class)
+        /** @var Rule $rule */
+        $rule = $objectManager->get(Registry::class)
             ->registry('_fixture/Magento_SalesRule_Group_Multiple_Categories');
 
-        /** @var \Magento\Quote\Model\Quote  $quote */
-        $quote = $objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $objectManager->create(Quote::class);
         $quote->load('test_order_item_with_items', 'reserved_order_id');
 
         //gather only the existing rules that obey the validation filter
@@ -129,12 +123,12 @@ class CollectionTest extends TestCase
     {
         $objectManager = Bootstrap::getObjectManager();
 
-        /** @var \Magento\SalesRule\Model\Rule $rule */
-        $rule = $objectManager->get(\Magento\Framework\Registry::class)
+        /** @var Rule $rule */
+        $rule = $objectManager->get(Registry::class)
             ->registry('_fixture/Magento_SalesRule_Group_Multiple_Categories');
 
-        /** @var \Magento\Quote\Model\Quote  $quote */
-        $quote = $objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $objectManager->create(Quote::class);
         $quote->load('test_order_item_with_items', 'reserved_order_id');
 
         //gather only the existing rules that obey the validation filter
@@ -162,8 +156,8 @@ class CollectionTest extends TestCase
     {
         $objectManager = Bootstrap::getObjectManager();
 
-        /** @var \Magento\Quote\Model\Quote  $quote */
-        $quote = $objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $objectManager->create(Quote::class);
         $quote->load('test_order_item_with_items', 'reserved_order_id');
 
         //gather only the existing rules that obey the validation filter
@@ -195,22 +189,6 @@ class CollectionTest extends TestCase
         $this->assertNotEmpty($items);
     }
 
-    /**
-     * @magentoDbIsolation enabled
-     * @magentoAppIsolation enabled
-     * @magentoDataFixture Magento/SalesRule/_files/rules.php
-     * @magentoDataFixture Magento/SalesRule/_files/coupons.php
-     * @magentoDataFixture Magento/SalesRule/_files/rule_specific_date.php
-     * @magentoConfigFixture general/locale/timezone Australia/Sydney
-     */
-    public function testMultiRulesWithDifferentTimezone()
-    {
-        $this->setSpecificTimezone('Australia/Sydney');
-        $this->collection->addWebsiteGroupDateFilter(1, 0);
-        $items = array_values($this->collection->getItems());
-        $this->assertNotEmpty($items);
-    }
-
     protected function setSpecificTimezone($timezone)
     {
         $localeData = [
@@ -227,10 +205,26 @@ class CollectionTest extends TestCase
                 ]
             ]
         ];
-        Bootstrap::getObjectManager()->get(\Magento\Config\Model\Config\Factory::class)
+        Bootstrap::getObjectManager()->get(Factory::class)
             ->create()
             ->addData($localeData)
             ->save();
+    }
+
+    /**
+     * @magentoDbIsolation enabled
+     * @magentoAppIsolation enabled
+     * @magentoDataFixture Magento/SalesRule/_files/rules.php
+     * @magentoDataFixture Magento/SalesRule/_files/coupons.php
+     * @magentoDataFixture Magento/SalesRule/_files/rule_specific_date.php
+     * @magentoConfigFixture general/locale/timezone Australia/Sydney
+     */
+    public function testMultiRulesWithDifferentTimezone()
+    {
+        $this->setSpecificTimezone('Australia/Sydney');
+        $this->collection->addWebsiteGroupDateFilter(1, 0);
+        $items = array_values($this->collection->getItems());
+        $this->assertNotEmpty($items);
     }
 
     /**
@@ -243,7 +237,7 @@ class CollectionTest extends TestCase
     public function testAddAttributeInConditionFilterPositive()
     {
         $this->collection->addAttributeInConditionFilter('attribute_for_sales_rule_1');
-        /** @var \Magento\SalesRule\Model\Rule $item */
+        /** @var Rule $item */
         $item = $this->collection->getFirstItem();
         $this->assertEquals('50% Off on some attribute', $item->getName());
     }
@@ -273,7 +267,7 @@ class CollectionTest extends TestCase
         $websiteRepository = Bootstrap::getObjectManager()->get(WebsiteRepositoryInterface::class);
         $websiteIds = [];
         foreach ($websiteCodes as $websiteCode) {
-            $websiteIds[] = (int) $websiteRepository->get($websiteCode)->getId();
+            $websiteIds[] = (int)$websiteRepository->get($websiteCode)->getId();
         }
 
         $this->collection->addWebsiteFilter($websiteIds);
@@ -300,6 +294,17 @@ class CollectionTest extends TestCase
                 5,
             ],
         ];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $scopeConfig = Bootstrap::getObjectManager()->get(ScopeConfigInterface::class);
+        $this->defaultTimezone = $scopeConfig->getValue(AdminBackendConfig::XML_PATH_GENERAL_LOCALE_TIMEZONE);
+
+        $this->collection = Bootstrap::getObjectManager()->create(Collection::class);
     }
 
     /**

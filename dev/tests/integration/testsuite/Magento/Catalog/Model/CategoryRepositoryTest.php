@@ -9,6 +9,7 @@ namespace Magento\Catalog\Model;
 
 use Magento\Catalog\Api\CategoryRepositoryInterface;
 use Magento\Catalog\Api\Data\CategoryInterface;
+use Magento\Catalog\Model\Category\Attribute\LayoutUpdateManager;
 use Magento\Catalog\Model\ResourceModel\Category\CollectionFactory as CategoryCollectionFactory;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\Cms\Api\GetBlockByIdentifierInterface;
@@ -48,26 +49,6 @@ class CategoryRepositoryTest extends TestCase
 
     /** @var GetBlockByIdentifierInterface */
     private $getBlockByIdentifier;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->objectManager->configure([
-            'preferences' => [
-                \Magento\Catalog\Model\Category\Attribute\LayoutUpdateManager::class
-                => \Magento\TestFramework\Catalog\Model\CategoryLayoutUpdateManager::class
-            ]
-        ]);
-        $this->layoutManager = $this->objectManager->get(CategoryLayoutUpdateManager::class);
-        $this->productCollectionFactory = $this->objectManager->get(CollectionFactory::class);
-        $this->categoryCollectionFactory = $this->objectManager->get(CategoryCollectionFactory::class);
-        $this->categoryRepository = $this->objectManager->get(CategoryRepositoryInterface::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-        $this->getBlockByIdentifier = $this->objectManager->get(GetBlockByIdentifierInterface::class);
-    }
 
     /**
      * Test that custom layout file attribute is saved.
@@ -203,5 +184,25 @@ class CategoryRepositoryTest extends TestCase
         foreach ($expectedData as $key => $value) {
             $this->assertEquals($value, $category->getData($key));
         }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->objectManager->configure([
+            'preferences' => [
+                LayoutUpdateManager::class
+                => CategoryLayoutUpdateManager::class
+            ]
+        ]);
+        $this->layoutManager = $this->objectManager->get(CategoryLayoutUpdateManager::class);
+        $this->productCollectionFactory = $this->objectManager->get(CollectionFactory::class);
+        $this->categoryCollectionFactory = $this->objectManager->get(CategoryCollectionFactory::class);
+        $this->categoryRepository = $this->objectManager->get(CategoryRepositoryInterface::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
+        $this->getBlockByIdentifier = $this->objectManager->get(GetBlockByIdentifierInterface::class);
     }
 }

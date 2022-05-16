@@ -7,16 +7,19 @@ declare(strict_types=1);
 
 namespace Magento\Multishipping\Controller\Checkout;
 
-use Magento\Catalog\Model\Product;
+use Exception;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
 use Magento\Checkout\Model\Session;
 use Magento\Customer\Api\AccountManagementInterface;
 use Magento\Customer\Model\Session as CustomerSession;
-use Magento\Framework\Exception\LocalizedException;
-use Magento\Quote\Model\Quote;
 use Magento\Framework\Api\SearchCriteriaBuilder;
-use Magento\Quote\Api\CartRepositoryInterface as QuoteRepository;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Serialize\Serializer\Json;
+use Magento\Quote\Api\CartRepositoryInterface as QuoteRepository;
+use Magento\Quote\Model\Quote;
+use Magento\TestFramework\TestCase\AbstractController;
+use Psr\Log\LoggerInterface;
 
 /**
  * Test class for \Magento\Multishipping\Controller\Checkout
@@ -25,7 +28,7 @@ use Magento\Framework\Serialize\Serializer\Json;
  * @magentoDataFixture Magento/Sales/_files/quote.php
  * @magentoDataFixture Magento/Customer/_files/customer.php
  */
-class CheckItemsTest extends \Magento\TestFramework\TestCase\AbstractController
+class CheckItemsTest extends AbstractController
 {
     /**
      * @var Quote
@@ -48,21 +51,6 @@ class CheckItemsTest extends \Magento\TestFramework\TestCase\AbstractController
     private $json;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->checkoutSession = $this->_objectManager->get(Session::class);
-        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
-        $this->json = $this->_objectManager->get(Json::class);
-        $this->quote = $this->getQuote('test01');
-        $this->checkoutSession->setQuoteId($this->quote->getId());
-        $this->checkoutSession->setCartWasUpdated(false);
-    }
-
-    /**
      * Validator of quote items.
      *
      * @param array $requestQuantity
@@ -79,7 +67,7 @@ class CheckItemsTest extends \Magento\TestFramework\TestCase\AbstractController
         try {
             /** @var $product Product */
             $product = $this->productRepository->get('simple');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->fail('No such product entity');
         }
 
@@ -88,7 +76,7 @@ class CheckItemsTest extends \Magento\TestFramework\TestCase\AbstractController
 
         $request = [];
         if (!empty($requestQuantity) && is_array($requestQuantity)) {
-            $request= [
+            $request = [
                 'ship' => [
                     [$quoteItem->getId() => $requestQuantity],
                 ]
@@ -107,7 +95,7 @@ class CheckItemsTest extends \Magento\TestFramework\TestCase\AbstractController
      */
     private function loginCustomer()
     {
-        $logger = $this->createMock(\Psr\Log\LoggerInterface::class);
+        $logger = $this->createMock(LoggerInterface::class);
         /** @var AccountManagementInterface $service */
         $service = $this->_objectManager->create(AccountManagementInterface::class);
         try {
@@ -118,25 +106,6 @@ class CheckItemsTest extends \Magento\TestFramework\TestCase\AbstractController
         /** @var CustomerSession $customerSession */
         $customerSession = $this->_objectManager->create(CustomerSession::class, [$logger]);
         $customerSession->setCustomerDataAsLoggedIn($customer);
-    }
-
-    /**
-     * Gets quote by reserved order id.
-     *
-     * @param string $reservedOrderId
-     * @return Quote
-     */
-    private function getQuote($reservedOrderId)
-    {
-        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
-        $searchCriteriaBuilder = $this->_objectManager->create(SearchCriteriaBuilder::class);
-        $searchCriteria = $searchCriteriaBuilder->addFilter('reserved_order_id', $reservedOrderId)
-            ->create();
-        /** @var QuoteRepository $quoteRepository */
-        $quoteRepository = $this->_objectManager->get(QuoteRepository::class);
-        $items = $quoteRepository->getList($searchCriteria)
-            ->getItems();
-        return array_pop($items);
     }
 
     /**
@@ -172,5 +141,39 @@ class CheckItemsTest extends \Magento\TestFramework\TestCase\AbstractController
                     'error_message' => 'Maximum qty allowed for Shipping to multiple addresses is 200']
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->checkoutSession = $this->_objectManager->get(Session::class);
+        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
+        $this->json = $this->_objectManager->get(Json::class);
+        $this->quote = $this->getQuote('test01');
+        $this->checkoutSession->setQuoteId($this->quote->getId());
+        $this->checkoutSession->setCartWasUpdated(false);
+    }
+
+    /**
+     * Gets quote by reserved order id.
+     *
+     * @param string $reservedOrderId
+     * @return Quote
+     */
+    private function getQuote($reservedOrderId)
+    {
+        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
+        $searchCriteriaBuilder = $this->_objectManager->create(SearchCriteriaBuilder::class);
+        $searchCriteria = $searchCriteriaBuilder->addFilter('reserved_order_id', $reservedOrderId)
+            ->create();
+        /** @var QuoteRepository $quoteRepository */
+        $quoteRepository = $this->_objectManager->get(QuoteRepository::class);
+        $items = $quoteRepository->getList($searchCriteria)
+            ->getItems();
+        return array_pop($items);
     }
 }

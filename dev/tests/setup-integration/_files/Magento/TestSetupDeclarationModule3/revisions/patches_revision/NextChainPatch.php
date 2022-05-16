@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestSetupDeclarationModule3\Setup\Patch\Data;
 
 use Magento\Framework\App\ResourceConnection;
@@ -43,6 +44,17 @@ class NextChainPatch implements
     /**
      * @return array
      */
+    public static function getDependencies()
+    {
+        return [
+            LlNextChainPatch::class,
+            ZFirstPatch::class
+        ];
+    }
+
+    /**
+     * @return array
+     */
     public function getAliases()
     {
         return [];
@@ -75,16 +87,5 @@ class NextChainPatch implements
             ['for_patch_testing' => str_replace('changed__', '', $varchar2)],
             ['`tinyint_ref` = ?' => 7]
         );
-    }
-
-    /**
-     * @return array
-     */
-    public static function getDependencies()
-    {
-        return [
-            LlNextChainPatch::class,
-            ZFirstPatch::class
-        ];
     }
 }

@@ -3,13 +3,33 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\TestCase;
 
+use Exception;
+use LogicException;
+use Magento\Framework\App\Cache;
+use Magento\Framework\App\Config;
+use Magento\Framework\App\Config\ReinitableConfigInterface;
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\App\State;
 use Magento\Framework\Filesystem;
+use Magento\Framework\Model\AbstractModel;
+use Magento\Framework\Registry;
 use Magento\Framework\Webapi\Exception as WebapiException;
-use Magento\Webapi\Model\Soap\Fault;
+use Magento\Integration\Model\Integration;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use Magento\TestFramework\TestCase\Webapi\Adapter\Rest;
+use Magento\TestFramework\TestCase\Webapi\Adapter\Soap;
+use Magento\TestFramework\TestCase\Webapi\AdapterInterface;
+use Magento\Webapi\Model\Soap\Fault;
+use PHPUnit\Framework\TestCase;
+use RuntimeException;
+use SoapFault;
+use stdClass;
 
 /**
  * Test case for Web API functional tests for REST and SOAP.
@@ -17,7 +37,7 @@ use Magento\TestFramework\Helper\Bootstrap;
  * @SuppressWarnings(PHPMD.NumberOfChildren)
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-abstract class WebapiAbstract extends \PHPUnit\Framework\TestCase
+abstract class WebapiAbstract extends TestCase
 {
     /** TODO: Reconsider implementation of fixture-management methods after implementing several tests */
     /**#@+
@@ -34,49 +54,42 @@ abstract class WebapiAbstract extends \PHPUnit\Framework\TestCase
     const ADAPTER_SOAP = 'soap';
     const ADAPTER_REST = 'rest';
     /**#@-*/
-
-    /**
-     * Application cache model.
-     *
-     * @var \Magento\Framework\App\Cache
-     */
-    protected $_appCache;
-
-    /**
-     * The list of models to be deleted automatically in tearDown().
-     *
-     * @var array
-     */
-    protected $_modelsToDelete = [];
-
     /**
      * Namespace for fixtures is different for each test case.
      *
      * @var string
      */
     protected static $_fixturesNamespace;
-
     /**
      * The list of registered fixtures.
      *
      * @var array
      */
     protected static $_fixtures = [];
-
     /**
      * Fixtures to be deleted in tearDown().
      *
      * @var array
      */
     protected static $_methodLevelFixtures = [];
-
     /**
      * Fixtures to be deleted in tearDownAfterClass().
      *
      * @var array
      */
     protected static $_classLevelFixtures = [];
-
+    /**
+     * Application cache model.
+     *
+     * @var Cache
+     */
+    protected $_appCache;
+    /**
+     * The list of models to be deleted automatically in tearDown().
+     *
+     * @var array
+     */
+    protected $_modelsToDelete = [];
     /**
      * Original Magento config values.
      *
@@ -87,7 +100,7 @@ abstract class WebapiAbstract extends \PHPUnit\Framework\TestCase
     /**
      * The list of instantiated Web API adapters.
      *
-     * @var \Magento\TestFramework\TestCase\Webapi\AdapterInterface[]
+     * @var AdapterInterface[]
      */
     protected $_webApiAdapters;
 
@@ -97,8 +110,8 @@ abstract class WebapiAbstract extends \PHPUnit\Framework\TestCase
      * @var array
      */
     protected $_webApiAdaptersMap = [
-        self::ADAPTER_SOAP => \Magento\TestFramework\TestCase\Webapi\Adapter\Soap::class,
-        self::ADAPTER_REST => \Magento\TestFramework\TestCase\Webapi\Adapter\Rest::class,
+        self::ADAPTER_SOAP => Soap::class,
+        self::ADAPTER_REST => Rest::class,
     ];
 
     /**
@@ -110,6 +123,21 @@ abstract class WebapiAbstract extends \PHPUnit\Framework\TestCase
         //phpcs:enable
         parent::setUpBeforeClass();
         self::_setFixtureNamespace();
+    }
+
+    /**
+     * Set fixtures namespace
+     *
+     * @throws RuntimeException
+     * //phpcs:disable
+     */
+    protected static function _setFixtureNamespace()
+    {
+        //phpcs:enable
+        if (self::$_fixturesNamespace !== null) {
+            throw new RuntimeException('Fixture namespace is already set.');
+        }
+        self::$_fixturesNamespace = uniqid();
     }
 
     /**
@@ -138,70 +166,107 @@ abstract class WebapiAbstract extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Call safe delete for models which added to delete list, Restore config values changed during the test
+     * Get fixtures namespace
      *
+     * @return string
+     * //phpcs:disable
+     * @throws RuntimeException
+     */
+    protected static function _getFixtureNamespace()
+    {
+        //phpcs:enable
+
+        $fixtureNamespace = self::$_fixturesNamespace;
+        if ($fixtureNamespace === null) {
+            throw new RuntimeException('Fixture namespace must be set.');
+        }
+        return $fixtureNamespace;
+    }
+
+    /**
+     * Delete array of fixtures
+     *
+     * @param array $fixtures
+     * //phpcs:disable
+     */
+    protected static function _deleteFixtures($fixtures)
+    {
+        //phpcs:enable
+        foreach ($fixtures as $fixture) {
+            self::deleteFixture($fixture, true);
+        }
+    }
+
+    /**
+     * Delete fixture by key
+     *
+     * @param string $key
+     * @param bool $secure
      * @return void
+     * //phpcs:disable
      */
-    protected function tearDown(): void
+    public static function deleteFixture($key, $secure = false)
     {
-        $fixtureNamespace = self::_getFixtureNamespace();
-        if (isset(self::$_methodLevelFixtures[$fixtureNamespace])
-            && count(self::$_methodLevelFixtures[$fixtureNamespace])
-        ) {
-            self::_deleteFixtures(self::$_methodLevelFixtures[$fixtureNamespace]);
-        }
-        $this->_callModelsDelete();
-        $this->_restoreAppConfig();
-        parent::tearDown();
-    }
-
-    /**
-     * Perform Web API call to the system under test.
-     *
-     * @see \Magento\TestFramework\TestCase\Webapi\AdapterInterface::call()
-     * @param array $serviceInfo
-     * @param array $arguments
-     * @param string|null $webApiAdapterCode
-     * @param string|null $storeCode
-     * @param \Magento\Integration\Model\Integration|null $integration
-     * @return array|int|string|float|bool Web API call results
-     */
-    protected function _webApiCall(
-        $serviceInfo,
-        $arguments = [],
-        $webApiAdapterCode = null,
-        $storeCode = null,
-        $integration = null
-    ) {
-        if ($webApiAdapterCode === null) {
-            /** Default adapter code is defined in PHPUnit configuration */
-            $webApiAdapterCode = strtolower(TESTS_WEB_API_ADAPTER);
-        }
-        return $this->_getWebApiAdapter($webApiAdapterCode)->call($serviceInfo, $arguments, $storeCode, $integration);
-    }
-
-    /**
-     * Mark test to be executed for SOAP adapter only.
-     *
-     * @param ?string $message
-     */
-    protected function _markTestAsSoapOnly($message = null)
-    {
-        if (TESTS_WEB_API_ADAPTER != self::ADAPTER_SOAP) {
-            $this->markTestSkipped($message ? $message : "The test is intended to be executed for SOAP adapter only.");
+        //phpcs:enable
+        $fixturesNamespace = self::_getFixtureNamespace();
+        if (array_key_exists($key, self::$_fixtures[$fixturesNamespace])) {
+            self::callModelDelete(self::$_fixtures[$fixturesNamespace][$key], $secure);
+            unset(self::$_fixtures[$fixturesNamespace][$key]);
         }
     }
 
     /**
-     * Mark test to be executed for REST adapter only.
+     * Call safe delete for model
      *
-     * @param ?string $message
+     * @param AbstractModel $model
+     * @param bool $secure
+     * @return void
+     * //phpcs:disable
      */
-    protected function _markTestAsRestOnly($message = null)
+    public static function callModelDelete($model, $secure = false): void
     {
-        if (TESTS_WEB_API_ADAPTER != self::ADAPTER_REST) {
-            $this->markTestSkipped($message ? $message : "The test is intended to be executed for REST adapter only.");
+        //phpcs:enable
+        if ($model instanceof AbstractModel && $model->getId()) {
+            if ($secure) {
+                self::_enableSecureArea();
+            }
+            $model->delete();
+            if ($secure) {
+                self::_enableSecureArea(false);
+            }
         }
+    }
+
+    /**
+     * Enable secure/admin area
+     *
+     * @param bool $flag
+     * @return void
+     * //phpcs:disable
+     */
+    protected static function _enableSecureArea($flag = true)
+    {
+        //phpcs:enable
+
+        /** @var $objectManager ObjectManager */
+        $objectManager = Bootstrap::getObjectManager();
+
+        $objectManager->get(Registry::class)->unregister('isSecureArea');
+        if ($flag) {
+            $objectManager->get(Registry::class)->register('isSecureArea', $flag);
+        }
+    }
+
+    /**
+     * Unset fixtures namespace
+     * //phpcs:disable
+     */
+    protected static function _unsetFixtureNamespace()
+    {
+        //phpcs:enable
+        $fixturesNamespace = self::_getFixtureNamespace();
+        unset(self::$_fixtures[$fixturesNamespace]);
+        self::$_fixturesNamespace = null;
     }
 
     /**
@@ -256,31 +321,9 @@ abstract class WebapiAbstract extends \PHPUnit\Framework\TestCase
     /**
      * Call safe delete for model
      *
-     * @param \Magento\Framework\Model\AbstractModel $model
+     * @param AbstractModel $model
      * @param bool $secure
-     * @return void
-     * //phpcs:disable
-     */
-    public static function callModelDelete($model, $secure = false) : void
-    {
-        //phpcs:enable
-        if ($model instanceof \Magento\Framework\Model\AbstractModel && $model->getId()) {
-            if ($secure) {
-                self::_enableSecureArea();
-            }
-            $model->delete();
-            if ($secure) {
-                self::_enableSecureArea(false);
-            }
-        }
-    }
-
-    /**
-     * Call safe delete for model
-     *
-     * @param \Magento\Framework\Model\AbstractModel $model
-     * @param bool $secure
-     * @return \Magento\TestFramework\TestCase\WebapiAbstract
+     * @return WebapiAbstract
      */
     public function addModelToDelete($model, $secure = false)
     {
@@ -289,108 +332,171 @@ abstract class WebapiAbstract extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Get Web API adapter (create if requested one does not exist).
+     * Call safe delete for models which added to delete list, Restore config values changed during the test
      *
-     * @param string $webApiAdapterCode
-     * @return \Magento\TestFramework\TestCase\Webapi\AdapterInterface
-     * @throws \LogicException When requested Web API adapter is not declared
-     */
-    protected function _getWebApiAdapter($webApiAdapterCode)
-    {
-        if (!isset($this->_webApiAdapters[$webApiAdapterCode])) {
-            if (!isset($this->_webApiAdaptersMap[$webApiAdapterCode])) {
-                throw new \LogicException(
-                    sprintf('Declaration of the requested Web API adapter "%s" was not found.', $webApiAdapterCode)
-                );
-            }
-            $this->_webApiAdapters[$webApiAdapterCode] = Bootstrap::getObjectManager()->get(
-                $this->_webApiAdaptersMap[$webApiAdapterCode]
-            );
-        }
-        return $this->_webApiAdapters[$webApiAdapterCode];
-    }
-
-    /**
-     * Set fixtures namespace
-     *
-     * @throws \RuntimeException
-     * //phpcs:disable
-     */
-    protected static function _setFixtureNamespace()
-    {
-        //phpcs:enable
-        if (self::$_fixturesNamespace !== null) {
-            throw new \RuntimeException('Fixture namespace is already set.');
-        }
-        self::$_fixturesNamespace = uniqid();
-    }
-
-    /**
-     * Unset fixtures namespace
-     * //phpcs:disable
-     */
-    protected static function _unsetFixtureNamespace()
-    {
-        //phpcs:enable
-        $fixturesNamespace = self::_getFixtureNamespace();
-        unset(self::$_fixtures[$fixturesNamespace]);
-        self::$_fixturesNamespace = null;
-    }
-
-    /**
-     * Get fixtures namespace
-     *
-     * @throws \RuntimeException
-     * @return string
-     * //phpcs:disable
-     */
-    protected static function _getFixtureNamespace()
-    {
-        //phpcs:enable
-
-        $fixtureNamespace = self::$_fixturesNamespace;
-        if ($fixtureNamespace === null) {
-            throw new \RuntimeException('Fixture namespace must be set.');
-        }
-        return $fixtureNamespace;
-    }
-
-    /**
-     * Enable secure/admin area
-     *
-     * @param bool $flag
      * @return void
-     * //phpcs:disable
      */
-    protected static function _enableSecureArea($flag = true)
+    protected function tearDown(): void
     {
-        //phpcs:enable
-
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-
-        $objectManager->get(\Magento\Framework\Registry::class)->unregister('isSecureArea');
-        if ($flag) {
-            $objectManager->get(\Magento\Framework\Registry::class)->register('isSecureArea', $flag);
+        $fixtureNamespace = self::_getFixtureNamespace();
+        if (isset(self::$_methodLevelFixtures[$fixtureNamespace])
+            && count(self::$_methodLevelFixtures[$fixtureNamespace])
+        ) {
+            self::_deleteFixtures(self::$_methodLevelFixtures[$fixtureNamespace]);
         }
+        $this->_callModelsDelete();
+        $this->_restoreAppConfig();
+        parent::tearDown();
     }
 
     /**
      * Call delete models from list
      *
-     * @return \Magento\TestFramework\TestCase\WebapiAbstract
+     * @return WebapiAbstract
      */
     protected function _callModelsDelete()
     {
         if ($this->_modelsToDelete) {
             foreach ($this->_modelsToDelete as $key => $modelData) {
-                /** @var $model \Magento\Framework\Model\AbstractModel */
+                /** @var $model AbstractModel */
                 $model = $modelData['model'];
                 $this->callModelDelete($model, $modelData['secure']);
                 unset($this->_modelsToDelete[$key]);
             }
         }
         return $this;
+    }
+
+    /**
+     * Restore config values changed during tests
+     */
+    protected function _restoreAppConfig()
+    {
+        foreach ($this->_origConfigValues as $configPath => $origValue) {
+            $this->_updateAppConfig($configPath, $origValue, true, true);
+        }
+    }
+
+    /**
+     * Update application config data
+     *
+     * @param string $path Config path with the form "section/group/node"
+     * @param string|int|null $value Value of config item
+     * @param bool $cleanAppCache If TRUE application cache will be refreshed
+     * @param bool $updateLocalConfig If TRUE local config object will be updated too
+     * @param bool $restore If TRUE config value will be restored after test run
+     * @return WebapiAbstract
+     * @throws RuntimeException
+     */
+    protected function _updateAppConfig(
+        $path,
+        $value,
+        $cleanAppCache = true,
+        $updateLocalConfig = false,
+        $restore = false
+    )
+    {
+        list($section, $group, $node) = explode('/', $path);
+
+        if (!$section || !$group || !$node) {
+            throw new RuntimeException(
+                sprintf('Config path must have view as "section/group/node" but now it "%s"', $path)
+            );
+        }
+
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var $config \Magento\Config\Model\Config */
+        $config = $objectManager->create(\Magento\Config\Model\Config::class);
+        $data[$group]['fields'][$node]['value'] = $value;
+        $config->setSection($section)->setGroups($data)->save();
+
+        if ($restore && !isset($this->_origConfigValues[$path])) {
+            $this->_origConfigValues[$path] = (string)$objectManager->get(
+                ScopeConfigInterface::class
+            )->getNode(
+                $path,
+                'default'
+            );
+        }
+
+        //refresh local cache
+        if ($cleanAppCache) {
+            if ($updateLocalConfig) {
+                $objectManager->get(ReinitableConfigInterface::class)->reinit();
+                $objectManager->get(StoreManagerInterface::class)->reinitStores();
+            }
+
+            if (!$this->_cleanAppConfigCache()) {
+                throw new RuntimeException('Application configuration cache cannot be cleaned.');
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * Clean config cache of application
+     *
+     * @return bool
+     */
+    protected function _cleanAppConfigCache()
+    {
+        return $this->_getAppCache()->clean(Config::CACHE_TAG);
+    }
+
+    /**
+     * Get application cache model
+     *
+     * @return Cache
+     */
+    protected function _getAppCache()
+    {
+        if (null === $this->_appCache) {
+            //set application path
+            $objectManager = Bootstrap::getObjectManager();
+            /** @var ScopeConfigInterface $config */
+            $config = $objectManager->get(ScopeConfigInterface::class);
+            $options = $config->getOptions();
+            $currentCacheDir = $options->getCacheDir();
+            $currentEtcDir = $options->getEtcDir();
+            /** @var Filesystem $filesystem */
+            $filesystem = $objectManager->get(Filesystem::class);
+            $options->setCacheDir($filesystem->getDirectoryRead(DirectoryList::CACHE)->getAbsolutePath());
+            $options->setEtcDir($filesystem->getDirectoryRead(DirectoryList::CONFIG)->getAbsolutePath());
+
+            $this->_appCache = $objectManager->get(Cache::class);
+
+            //revert paths options
+            $options->setCacheDir($currentCacheDir);
+            $options->setEtcDir($currentEtcDir);
+        }
+        return $this->_appCache;
+    }
+
+    /**
+     * Mark test to be executed for SOAP adapter only.
+     *
+     * @param ?string $message
+     */
+    protected function _markTestAsSoapOnly($message = null)
+    {
+        if (TESTS_WEB_API_ADAPTER != self::ADAPTER_SOAP) {
+            $this->markTestSkipped($message ? $message : "The test is intended to be executed for SOAP adapter only.");
+        }
+    }
+
+    /** TODO: Remove methods below if not used, otherwise fix them (after having some tests implemented)*/
+
+    /**
+     * Mark test to be executed for REST adapter only.
+     *
+     * @param ?string $message
+     */
+    protected function _markTestAsRestOnly($message = null)
+    {
+        if (TESTS_WEB_API_ADAPTER != self::ADAPTER_REST) {
+            $this->markTestSkipped($message ? $message : "The test is intended to be executed for REST adapter only.");
+        }
     }
 
     /**
@@ -409,148 +515,95 @@ abstract class WebapiAbstract extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Delete array of fixtures
+     * Assert webapi errors.
      *
-     * @param array $fixtures
-     * //phpcs:disable
-     */
-    protected static function _deleteFixtures($fixtures)
-    {
-        //phpcs:enable
-        foreach ($fixtures as $fixture) {
-            self::deleteFixture($fixture, true);
-        }
-    }
-
-    /**
-     * Delete fixture by key
-     *
-     * @param string $key
-     * @param bool $secure
+     * @param array $serviceInfo
+     * @param array $data
+     * @param array $expectedErrorData
      * @return void
-     * //phpcs:disable
+     * @throws Exception
      */
-    public static function deleteFixture($key, $secure = false)
+    protected function assertWebApiCallErrors(array $serviceInfo, array $data, array $expectedErrorData)
     {
-        //phpcs:enable
-        $fixturesNamespace = self::_getFixtureNamespace();
-        if (array_key_exists($key, self::$_fixtures[$fixturesNamespace])) {
-            self::callModelDelete(self::$_fixtures[$fixturesNamespace][$key], $secure);
-            unset(self::$_fixtures[$fixturesNamespace][$key]);
-        }
-    }
-
-    /** TODO: Remove methods below if not used, otherwise fix them (after having some tests implemented)*/
-
-    /**
-     * Get application cache model
-     *
-     * @return \Magento\Framework\App\Cache
-     */
-    protected function _getAppCache()
-    {
-        if (null === $this->_appCache) {
-            //set application path
-            $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-            /** @var \Magento\Framework\App\Config\ScopeConfigInterface $config */
-            $config = $objectManager->get(\Magento\Framework\App\Config\ScopeConfigInterface::class);
-            $options = $config->getOptions();
-            $currentCacheDir = $options->getCacheDir();
-            $currentEtcDir = $options->getEtcDir();
-            /** @var Filesystem $filesystem */
-            $filesystem = $objectManager->get(\Magento\Framework\Filesystem::class);
-            $options->setCacheDir($filesystem->getDirectoryRead(DirectoryList::CACHE)->getAbsolutePath());
-            $options->setEtcDir($filesystem->getDirectoryRead(DirectoryList::CONFIG)->getAbsolutePath());
-
-            $this->_appCache = $objectManager->get(\Magento\Framework\App\Cache::class);
-
-            //revert paths options
-            $options->setCacheDir($currentCacheDir);
-            $options->setEtcDir($currentEtcDir);
-        }
-        return $this->_appCache;
-    }
-
-    /**
-     * Clean config cache of application
-     *
-     * @return bool
-     */
-    protected function _cleanAppConfigCache()
-    {
-        return $this->_getAppCache()->clean(\Magento\Framework\App\Config::CACHE_TAG);
-    }
-
-    /**
-     * Update application config data
-     *
-     * @param string $path Config path with the form "section/group/node"
-     * @param string|int|null $value Value of config item
-     * @param bool $cleanAppCache If TRUE application cache will be refreshed
-     * @param bool $updateLocalConfig If TRUE local config object will be updated too
-     * @param bool $restore If TRUE config value will be restored after test run
-     * @return \Magento\TestFramework\TestCase\WebapiAbstract
-     * @throws \RuntimeException
-     */
-    protected function _updateAppConfig(
-        $path,
-        $value,
-        $cleanAppCache = true,
-        $updateLocalConfig = false,
-        $restore = false
-    ) {
-        list($section, $group, $node) = explode('/', $path);
-
-        if (!$section || !$group || !$node) {
-            throw new \RuntimeException(
-                sprintf('Config path must have view as "section/group/node" but now it "%s"', $path)
-            );
-        }
-
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var $config \Magento\Config\Model\Config */
-        $config = $objectManager->create(\Magento\Config\Model\Config::class);
-        $data[$group]['fields'][$node]['value'] = $value;
-        $config->setSection($section)->setGroups($data)->save();
-
-        if ($restore && !isset($this->_origConfigValues[$path])) {
-            $this->_origConfigValues[$path] = (string)$objectManager->get(
-                \Magento\Framework\App\Config\ScopeConfigInterface::class
-            )->getNode(
-                $path,
-                'default'
-            );
-        }
-
-        //refresh local cache
-        if ($cleanAppCache) {
-            if ($updateLocalConfig) {
-                $objectManager->get(\Magento\Framework\App\Config\ReinitableConfigInterface::class)->reinit();
-                $objectManager->get(\Magento\Store\Model\StoreManagerInterface::class)->reinitStores();
-            }
-
-            if (!$this->_cleanAppConfigCache()) {
-                throw new \RuntimeException('Application configuration cache cannot be cleaned.');
+        try {
+            $this->_webApiCall($serviceInfo, $data);
+            $this->fail('Expected throwing exception');
+        } catch (Exception $e) {
+            if (TESTS_WEB_API_ADAPTER === self::ADAPTER_REST) {
+                self::assertEquals($expectedErrorData, $this->processRestExceptionResult($e));
+                self::assertEquals(WebapiException::HTTP_BAD_REQUEST, $e->getCode());
+            } elseif (TESTS_WEB_API_ADAPTER === self::ADAPTER_SOAP) {
+                $this->assertInstanceOf('SoapFault', $e);
+                $expectedWrappedErrors = [];
+                foreach ($expectedErrorData['errors'] as $error) {
+                    // @see \Magento\TestFramework\TestCase\WebapiAbstract::getActualWrappedErrors()
+                    $expectedWrappedError = [
+                        'message' => $error['message'],
+                    ];
+                    if (isset($error['parameters'])) {
+                        $expectedWrappedError['params'] = $error['parameters'];
+                    }
+                    $expectedWrappedErrors[] = $expectedWrappedError;
+                }
+                $this->checkSoapFault($e, $expectedErrorData['message'], 'env:Sender', [], $expectedWrappedErrors);
+            } else {
+                throw $e;
             }
         }
-
-        return $this;
     }
 
     /**
-     * Restore config values changed during tests
+     * Perform Web API call to the system under test.
+     *
+     * @param array $serviceInfo
+     * @param array $arguments
+     * @param string|null $webApiAdapterCode
+     * @param string|null $storeCode
+     * @param Integration|null $integration
+     * @return array|int|string|float|bool Web API call results
+     * @see \Magento\TestFramework\TestCase\Webapi\AdapterInterface::call()
      */
-    protected function _restoreAppConfig()
+    protected function _webApiCall(
+        $serviceInfo,
+        $arguments = [],
+        $webApiAdapterCode = null,
+        $storeCode = null,
+        $integration = null
+    )
     {
-        foreach ($this->_origConfigValues as $configPath => $origValue) {
-            $this->_updateAppConfig($configPath, $origValue, true, true);
+        if ($webApiAdapterCode === null) {
+            /** Default adapter code is defined in PHPUnit configuration */
+            $webApiAdapterCode = strtolower(TESTS_WEB_API_ADAPTER);
         }
+        return $this->_getWebApiAdapter($webApiAdapterCode)->call($serviceInfo, $arguments, $storeCode, $integration);
+    }
+
+    /**
+     * Get Web API adapter (create if requested one does not exist).
+     *
+     * @param string $webApiAdapterCode
+     * @return AdapterInterface
+     * @throws LogicException When requested Web API adapter is not declared
+     */
+    protected function _getWebApiAdapter($webApiAdapterCode)
+    {
+        if (!isset($this->_webApiAdapters[$webApiAdapterCode])) {
+            if (!isset($this->_webApiAdaptersMap[$webApiAdapterCode])) {
+                throw new LogicException(
+                    sprintf('Declaration of the requested Web API adapter "%s" was not found.', $webApiAdapterCode)
+                );
+            }
+            $this->_webApiAdapters[$webApiAdapterCode] = Bootstrap::getObjectManager()->get(
+                $this->_webApiAdaptersMap[$webApiAdapterCode]
+            );
+        }
+        return $this->_webApiAdapters[$webApiAdapterCode];
     }
 
     /**
      * Process rest exception result.
      *
-     * @param \Exception $e
+     * @param Exception $e
      * @return array
      * <pre> ex.
      * 'message' => "No such entity with %fieldName1 = %value1, %fieldName2 = %value2"
@@ -563,7 +616,7 @@ abstract class WebapiAbstract extends \PHPUnit\Framework\TestCase
      *
      * </pre>
      */
-    public function processRestExceptionResult(\Exception $e)
+    public function processRestExceptionResult(Exception $e)
     {
         $error = json_decode($e->getMessage(), true);
         //Remove line breaks and replace with space
@@ -577,7 +630,7 @@ abstract class WebapiAbstract extends \PHPUnit\Framework\TestCase
     /**
      * Verify that SOAP fault contains necessary information.
      *
-     * @param \SoapFault $soapFault
+     * @param SoapFault $soapFault
      * @param string $expectedMessage
      * @param string $expectedFaultCode
      * @param array $expectedErrorParams
@@ -591,7 +644,8 @@ abstract class WebapiAbstract extends \PHPUnit\Framework\TestCase
         $expectedErrorParams = [],
         $expectedWrappedErrors = [],
         $traceString = null
-    ) {
+    )
+    {
         $this->assertStringContainsString(
             $expectedMessage,
             $soapFault->getMessage(),
@@ -610,10 +664,10 @@ abstract class WebapiAbstract extends \PHPUnit\Framework\TestCase
         if ($traceString) {
             /** Check error trace */
             $traceNode = Fault::NODE_DETAIL_TRACE;
-            $mode = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-                ->get(\Magento\Framework\App\State::class)
+            $mode = Bootstrap::getObjectManager()
+                ->get(State::class)
                 ->getMode();
-            if ($mode == \Magento\Framework\App\State::MODE_DEVELOPER) {
+            if ($mode == State::MODE_DEVELOPER) {
                 /** Developer mode changes tested behavior and it cannot properly be tested for now */
                 $this->assertStringContainsString(
                     $traceString,
@@ -634,7 +688,7 @@ abstract class WebapiAbstract extends \PHPUnit\Framework\TestCase
      * Check additional error parameters.
      *
      * @param array $expectedErrorParams
-     * @param \stdClass $errorDetails
+     * @param stdClass $errorDetails
      */
     protected function _checkFaultParams($expectedErrorParams, $errorDetails)
     {
@@ -668,7 +722,7 @@ abstract class WebapiAbstract extends \PHPUnit\Framework\TestCase
      * Check additional wrapped errors.
      *
      * @param array $expectedWrappedErrors
-     * @param \stdClass $errorDetails
+     * @param stdClass $errorDetails
      */
     protected function _checkWrappedErrors($expectedWrappedErrors, $errorDetails)
     {
@@ -702,10 +756,10 @@ abstract class WebapiAbstract extends \PHPUnit\Framework\TestCase
     /**
      * Get actual wrapped errors.
      *
-     * @param \stdClass $errorNode
+     * @param stdClass $errorNode
      * @return array
      */
-    private function getActualWrappedErrors(\stdClass $errorNode)
+    private function getActualWrappedErrors(stdClass $errorNode)
     {
         if (!isset($errorNode->parameters)) {
             return [
@@ -727,43 +781,5 @@ abstract class WebapiAbstract extends \PHPUnit\Framework\TestCase
             // Can not rename on parameters due to Backward Compatibility
             'params' => $actualParameters,
         ];
-    }
-
-    /**
-     * Assert webapi errors.
-     *
-     * @param array $serviceInfo
-     * @param array $data
-     * @param array $expectedErrorData
-     * @return void
-     * @throws \Exception
-     */
-    protected function assertWebApiCallErrors(array $serviceInfo, array $data, array $expectedErrorData)
-    {
-        try {
-            $this->_webApiCall($serviceInfo, $data);
-            $this->fail('Expected throwing exception');
-        } catch (\Exception $e) {
-            if (TESTS_WEB_API_ADAPTER === self::ADAPTER_REST) {
-                self::assertEquals($expectedErrorData, $this->processRestExceptionResult($e));
-                self::assertEquals(WebapiException::HTTP_BAD_REQUEST, $e->getCode());
-            } elseif (TESTS_WEB_API_ADAPTER === self::ADAPTER_SOAP) {
-                $this->assertInstanceOf('SoapFault', $e);
-                $expectedWrappedErrors = [];
-                foreach ($expectedErrorData['errors'] as $error) {
-                    // @see \Magento\TestFramework\TestCase\WebapiAbstract::getActualWrappedErrors()
-                    $expectedWrappedError = [
-                        'message' => $error['message'],
-                    ];
-                    if (isset($error['parameters'])) {
-                        $expectedWrappedError['params'] = $error['parameters'];
-                    }
-                    $expectedWrappedErrors[] = $expectedWrappedError;
-                }
-                $this->checkSoapFault($e, $expectedErrorData['message'], 'env:Sender', [], $expectedWrappedErrors);
-            } else {
-                throw $e;
-            }
-        }
     }
 }

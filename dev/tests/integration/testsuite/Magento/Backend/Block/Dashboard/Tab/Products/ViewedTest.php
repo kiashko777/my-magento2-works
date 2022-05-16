@@ -3,19 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Backend\Block\Dashboard\Tab\Products;
 
-use Magento\TestFramework\Helper\Bootstrap as BootstrapHelper;
-use Magento\Framework\ObjectManagerInterface;
-use Magento\Framework\View\LayoutInterface;
 use Magento\Backend\Block\Dashboard\Tab\Products\Viewed as ViewedProductsTabBlock;
 use Magento\Catalog\Model\ProductRepository;
 use Magento\Framework\Event\ManagerInterface as EventManager;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap as BootstrapHelper;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea frontend
  */
-class ViewedTest extends \PHPUnit\Framework\TestCase
+class ViewedTest extends TestCase
 {
     /**
      * @var ObjectManagerInterface
@@ -37,14 +39,6 @@ class ViewedTest extends \PHPUnit\Framework\TestCase
      */
     private $eventManager;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = BootstrapHelper::getObjectManager();
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->productRepository = $this->objectManager->get(ProductRepository::class);
-        $this->eventManager = $this->objectManager->get(EventManager::class);
-    }
-
     /**
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
      * @magentoDbIsolation enabled
@@ -64,5 +58,13 @@ class ViewedTest extends \PHPUnit\Framework\TestCase
             10,
             $collection->getFirstItem()->getDataByKey('price')
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = BootstrapHelper::getObjectManager();
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->productRepository = $this->objectManager->get(ProductRepository::class);
+        $this->eventManager = $this->objectManager->get(EventManager::class);
     }
 }

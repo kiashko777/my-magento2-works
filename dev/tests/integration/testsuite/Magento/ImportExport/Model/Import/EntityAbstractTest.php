@@ -7,42 +7,56 @@
 /**
  * Test class for \Magento\ImportExport\Model\Import\AbstractEntity
  */
+
 namespace Magento\ImportExport\Model\Import;
 
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\Filesystem;
+use Magento\Framework\Stdlib\StringUtils;
+use Magento\ImportExport\Model\Import\ErrorProcessing\ProcessingErrorAggregatorInterface;
+use Magento\ImportExport\Model\Import\Source\Csv;
+use Magento\ImportExport\Model\ImportFactory;
+use Magento\ImportExport\Model\ResourceModel\Helper;
+use Magento\ImportExport\Model\ResourceModel\Import\Data;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class EntityAbstractTest extends \PHPUnit\Framework\TestCase
+class EntityAbstractTest extends TestCase
 {
     /**
      * Test for method _saveValidatedBunches()
      */
     public function testSaveValidatedBunches()
     {
-        $filesystem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Framework\Filesystem::class);
+        $filesystem = Bootstrap::getObjectManager()
+            ->create(Filesystem::class);
         $directory = $filesystem->getDirectoryWrite(DirectoryList::ROOT);
-        $source = new \Magento\ImportExport\Model\Import\Source\Csv(
+        $source = new Csv(
             __DIR__ . '/Entity/_files/customers_for_validation_test.csv',
             $directory
         );
         $source->rewind();
         $expected = $source->current();
 
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var $model \Magento\ImportExport\Model\Import\AbstractEntity|\PHPUnit\Framework\MockObject\MockObject */
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var $model AbstractEntity|MockObject */
         $model = $this->getMockForAbstractClass(
-            \Magento\ImportExport\Model\Import\AbstractEntity::class,
+            AbstractEntity::class,
             [
-                $objectManager->get(\Magento\Framework\Stdlib\StringUtils::class),
-                $objectManager->get(\Magento\Framework\App\Config\ScopeConfigInterface::class),
-                $objectManager->get(\Magento\ImportExport\Model\ImportFactory::class),
-                $objectManager->get(\Magento\ImportExport\Model\ResourceModel\Helper::class),
-                $objectManager->get(\Magento\Framework\App\ResourceConnection::class),
+                $objectManager->get(StringUtils::class),
+                $objectManager->get(ScopeConfigInterface::class),
+                $objectManager->get(ImportFactory::class),
+                $objectManager->get(Helper::class),
+                $objectManager->get(ResourceConnection::class),
                 $objectManager->get(
-                    \Magento\ImportExport\Model\Import\ErrorProcessing\ProcessingErrorAggregatorInterface::class
+                    ProcessingErrorAggregatorInterface::class
                 )
             ],
             '',
@@ -57,12 +71,12 @@ class EntityAbstractTest extends \PHPUnit\Framework\TestCase
 
         $model->setSource($source);
 
-        $method = new \ReflectionMethod($model, '_saveValidatedBunches');
+        $method = new ReflectionMethod($model, '_saveValidatedBunches');
         $method->setAccessible(true);
         $method->invoke($model);
 
-        /** @var $dataSourceModel \Magento\ImportExport\Model\ResourceModel\Import\Data */
-        $dataSourceModel = $objectManager->get(\Magento\ImportExport\Model\ResourceModel\Import\Data::class);
+        /** @var $dataSourceModel Data */
+        $dataSourceModel = $objectManager->get(Data::class);
         $this->assertCount(1, $dataSourceModel->getIterator());
 
         $bunch = $dataSourceModel->getNextBunch();

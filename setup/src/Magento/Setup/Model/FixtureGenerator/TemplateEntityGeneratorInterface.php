@@ -6,13 +6,15 @@
 
 namespace Magento\Setup\Model\FixtureGenerator;
 
+use Magento\Framework\Model\AbstractModel;
+
 /**
  * Generate entity template which is used for entity generation
  */
 interface TemplateEntityGeneratorInterface
 {
     /**
-     * @return \Magento\Framework\Model\AbstractModel
+     * @return AbstractModel
      */
     public function generateEntity();
 }

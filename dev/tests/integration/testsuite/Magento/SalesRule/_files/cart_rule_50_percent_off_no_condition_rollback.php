@@ -5,11 +5,16 @@
  */
 declare(strict_types=1);
 
-/** @var \Magento\Framework\Registry $registry */
-/** @var \Magento\SalesRule\Model\Rule $salesRule */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-$registry = $objectManager->get(\Magento\Framework\Registry::class);
-$salesRule = $objectManager->create(\Magento\SalesRule\Model\Rule::class);
+/** @var Registry $registry */
+/** @var Rule $salesRule */
+
+use Magento\Framework\Registry;
+use Magento\SalesRule\Model\Rule;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
+$registry = $objectManager->get(Registry::class);
+$salesRule = $objectManager->create(Rule::class);
 $salesRuleId = $registry->registry('Magento/SalesRule/_files/cart_rule_50_percent_off_no_condition/salesRuleId');
 if ($salesRuleId) {
     $salesRule->load($salesRuleId);

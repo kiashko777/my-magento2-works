@@ -6,12 +6,13 @@
 declare(strict_types=1);
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Helper\Product;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 use Magento\Wishlist\Model\ResourceModel\Wishlist as WishlistResource;
 use Magento\Wishlist\Model\Wishlist;
 use Magento\Wishlist\Model\WishlistFactory;
-use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Customer/_files/customer.php');
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/simple_product_disabled.php');
@@ -29,8 +30,8 @@ $productRepository = $objectManager->get(ProductRepositoryInterface::class);
 $productRepository->cleanCache();
 $product = $productRepository->get('product_disabled');
 $wishlist->loadByCustomerId($customer->getId(), true);
-/** @var \Magento\Catalog\Helper\Product $productHelper */
-$productHelper = $objectManager->get(\Magento\Catalog\Helper\Product::class);
+/** @var Product $productHelper */
+$productHelper = $objectManager->get(Product::class);
 $isSkipSaleableCheck = $productHelper->getSkipSaleableCheck();
 $productHelper->setSkipSaleableCheck(true);
 $item = $wishlist->addNewItem($product);

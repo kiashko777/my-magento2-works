@@ -3,8 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\I18n\Dictionary\Writer;
 
+use InvalidArgumentException;
 use Magento\Setup\Module\I18n\Dictionary\Phrase;
 use Magento\Setup\Module\I18n\Dictionary\WriterInterface;
 
@@ -24,12 +26,12 @@ class Csv implements WriterInterface
      * Writer construct
      *
      * @param string $outputFilename
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     public function __construct($outputFilename)
     {
         if (false === ($fileHandler = @fopen($outputFilename, 'w'))) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 sprintf('Cannot open file for write dictionary: "%s"', $outputFilename)
             );
         }

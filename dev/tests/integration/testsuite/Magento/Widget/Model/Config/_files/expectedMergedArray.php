@@ -3,9 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Sales\Block\Widget\Guest\Form;
+
 return [
     'new_products' => [
-        '@' => ['type' => \Magento\Sales\Block\Widget\Guest\Form::class],
+        '@' => ['type' => Form::class],
         'is_email_compatible' => '1',
         'placeholder_image' => 'Magento_Catalog::images/product_widget_new.png',
         'name' => 'Orders and Returns',

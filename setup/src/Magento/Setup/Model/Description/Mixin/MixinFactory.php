@@ -3,7 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Model\Description\Mixin;
+
+use InvalidArgumentException;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Setup\Exception;
 
 /**
  * Create mixin instance based on type
@@ -34,15 +39,15 @@ class MixinFactory
     ];
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
     /**
-     * @param \Magento\Framework\ObjectManagerInterface $objectManager
-     * @throws \Magento\Setup\Exception
+     * @param ObjectManagerInterface $objectManager
+     * @throws Exception
      */
-    public function __construct(\Magento\Framework\ObjectManagerInterface $objectManager)
+    public function __construct(ObjectManagerInterface $objectManager)
     {
         $this->objectManager = $objectManager;
     }
@@ -51,19 +56,19 @@ class MixinFactory
      * Create mixin by type
      *
      * @param string $mixinType
-     * @return \Magento\Setup\Model\Description\Mixin\DescriptionMixinInterface
-     * @throws \InvalidArgumentException
+     * @return DescriptionMixinInterface
+     * @throws InvalidArgumentException
      */
     public function create($mixinType)
     {
         if (!isset($this->typeClassMap[$mixinType])) {
-            throw new \InvalidArgumentException(sprintf('Undefined mixin type: %s.', $mixinType));
+            throw new InvalidArgumentException(sprintf('Undefined mixin type: %s.', $mixinType));
         }
 
         $mixin = $this->objectManager->get($this->typeClassMap[$mixinType]);
 
-        if (!$mixin instanceof \Magento\Setup\Model\Description\Mixin\DescriptionMixinInterface) {
-            throw new \InvalidArgumentException(
+        if (!$mixin instanceof DescriptionMixinInterface) {
+            throw new InvalidArgumentException(
                 sprintf(
                     'Class "%s" must implement \Magento\Setup\Model\Description\Mixin\DescriptionMixinInterface.',
                     get_class($mixin)

@@ -281,8 +281,8 @@ define([
             });
             it('Check returned value type if method called without arguments', function () {
                 var data = {
-                    value: 'label'
-                },
+                        value: 'label'
+                    },
                     type = typeof obj.toggleOptionSelected(data);
 
                 expect(type).toEqual('object');
@@ -699,16 +699,16 @@ define([
             it('Should store options and update cache successfully after fetched from ajax request', function () {
                 var ajaxRequest,
                     successfulAjaxResponse = {
-                    options: {
-                        '2053': {
-                            value: '2053',
-                            label: 'testProductName5a8ddfd933b5c',
-                            'is_active': 1,
-                            path: 'testSku5a8ddfd933b5c',
-                            optgroup: false
+                        options: {
+                            '2053': {
+                                value: '2053',
+                                label: 'testProductName5a8ddfd933b5c',
+                                'is_active': 1,
+                                path: 'testSku5a8ddfd933b5c',
+                                optgroup: false
+                            }
                         }
-                    }
-                };
+                    };
 
                 // place a number of options to cache prior fetch
                 obj.cacheOptions.plain = [{

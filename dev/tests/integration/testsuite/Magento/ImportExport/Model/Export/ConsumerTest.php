@@ -50,6 +50,28 @@ class ConsumerTest extends TestCase
     private $filePath;
 
     /**
+     * @magentoConfigFixture default_store admin/security/use_form_key 1
+     *
+     * @magentoDataFixture Magento/ImportExport/_files/export_queue_data.php
+     * @magentoDataFixture Magento/Catalog/_files/product_virtual.php
+     *
+     * @return void
+     */
+    public function testProcess(): void
+    {
+        $envelope = $this->queue->dequeue();
+        $decodedMessage = $this->messageEncoder->decode('import_export.export', $envelope->getBody());
+        $this->consumer->process($decodedMessage);
+        $this->filePath = 'export/' . $decodedMessage->getFileName();
+        $this->assertTrue($this->directory->isExist($this->filePath));
+        $data = $this->csvReader->getData($this->directory->getAbsolutePath($this->filePath));
+        $this->assertCount(2, $data);
+        $skuPosition = array_search(ProductInterface::SKU, array_keys($data));
+        $this->assertNotFalse($skuPosition);
+        $this->assertEquals('simple2', $data[1][$skuPosition]);
+    }
+
+    /**
      * @inheritdoc
      */
     protected function setUp(): void
@@ -74,27 +96,5 @@ class ConsumerTest extends TestCase
         }
 
         parent::tearDown();
-    }
-
-    /**
-     * @magentoConfigFixture default_store admin/security/use_form_key 1
-     *
-     * @magentoDataFixture Magento/ImportExport/_files/export_queue_data.php
-     * @magentoDataFixture Magento/Catalog/_files/product_virtual.php
-     *
-     * @return void
-     */
-    public function testProcess(): void
-    {
-        $envelope = $this->queue->dequeue();
-        $decodedMessage = $this->messageEncoder->decode('import_export.export', $envelope->getBody());
-        $this->consumer->process($decodedMessage);
-        $this->filePath = 'export/' . $decodedMessage->getFileName();
-        $this->assertTrue($this->directory->isExist($this->filePath));
-        $data = $this->csvReader->getData($this->directory->getAbsolutePath($this->filePath));
-        $this->assertCount(2, $data);
-        $skuPosition = array_search(ProductInterface::SKU, array_keys($data));
-        $this->assertNotFalse($skuPosition);
-        $this->assertEquals('simple2', $data[1][$skuPosition]);
     }
 }

@@ -4,25 +4,31 @@
  * See COPYING.txt for license details.
  */
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\ResourceModel\Category\Collection;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
 
-$registry = $objectManager->get(\Magento\Framework\Registry::class);
+$objectManager = Bootstrap::getObjectManager();
+
+$registry = $objectManager->get(Registry::class);
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
-$productRepository = $objectManager->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+$productRepository = $objectManager->get(ProductRepositoryInterface::class);
 $productSkuList = ['simple', '12345'];
 foreach ($productSkuList as $sku) {
     try {
         $product = $productRepository->get($sku, true, null, true);
         $productRepository->delete($product);
-    } catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+    } catch (NoSuchEntityException $e) {
         //Products already removed
         continue;
     }
 }
 
-$collection = $objectManager->create(\Magento\Catalog\Model\ResourceModel\Category\Collection::class);
+$collection = $objectManager->create(Collection::class);
 $collection->addAttributeToFilter('level', 2)
     ->load()
     ->delete();

@@ -32,18 +32,6 @@ class UpdateQuoteItemsTest extends TestCase
     private $productRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getQuoteByReservedOrderId = $objectManager->get(GetQuoteByReservedOrderId::class);
-        $this->productRepository = $objectManager->get(ProductRepository::class);
-    }
-
-    /**
      * Test to mark the quote as need to recollect and doesn't update the field "updated_at" after change product price
      *
      * @magentoDataFixture Magento/Checkout/_files/quote_with_simple_product_saved.php
@@ -77,5 +65,17 @@ class UpdateQuoteItemsTest extends TestCase
         $this->assertNotEmpty($quoteRow);
         $this->assertTrue((bool)$quoteRow['trigger_recollect']);
         $this->assertEquals($quote->getUpdatedAt(), $quoteRow['updated_at']);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getQuoteByReservedOrderId = $objectManager->get(GetQuoteByReservedOrderId::class);
+        $this->productRepository = $objectManager->get(ProductRepository::class);
     }
 }

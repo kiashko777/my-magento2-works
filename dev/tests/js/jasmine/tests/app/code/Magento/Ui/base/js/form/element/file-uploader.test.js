@@ -90,7 +90,7 @@ define([
                 component.allowedExtensions = ['jpg'];
                 component.maxFileSize = false;
 
-                valid   = component.isFileAllowed(validFile);
+                valid = component.isFileAllowed(validFile);
                 invalid = component.isFileAllowed(invalidFile);
 
                 expect(valid.passed).toBe(true);
@@ -114,9 +114,9 @@ define([
 
         describe('formatSize method', function () {
             it('converts bytes value to a more readable string representation', function () {
-                var bytes       = 28912,
-                    expected    = '28 KB',
-                    result      = component.formatSize(bytes);
+                var bytes = 28912,
+                    expected = '28 KB',
+                    result = component.formatSize(bytes);
 
                 expect(result).toEqual(expected);
             });

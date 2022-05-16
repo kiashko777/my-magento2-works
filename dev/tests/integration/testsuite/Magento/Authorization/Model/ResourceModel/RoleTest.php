@@ -3,14 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Authorization\Model\ResourceModel;
+
+use Magento\TestFramework\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Role resource test
  *
  * @magentoAppArea Adminhtml
  */
-class RoleTest extends \PHPUnit\Framework\TestCase
+class RoleTest extends TestCase
 {
     public function testGetRoleUsers()
     {
@@ -18,12 +22,12 @@ class RoleTest extends \PHPUnit\Framework\TestCase
             \Magento\Authorization\Model\Role::class
         );
         $roleResource = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Authorization\Model\ResourceModel\Role::class
+            Role::class
         );
 
         $this->assertEmpty($roleResource->getRoleUsers($role));
 
-        $role->load(\Magento\TestFramework\Bootstrap::ADMIN_ROLE_NAME, 'role_name');
+        $role->load(Bootstrap::ADMIN_ROLE_NAME, 'role_name');
         $this->assertNotEmpty($roleResource->getRoleUsers($role));
     }
 }

@@ -4,34 +4,25 @@
  * See COPYING.txt for license details.
  *
  */
+
 namespace Magento\Integration\Model\Config\Consolidated;
 
+use Magento\Framework\Config\FileResolverInterface;
 use Magento\Integration\Model\Config\Consolidated\Reader as ConfigReader;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Integration config reader test.
  */
-class ReaderTest extends \PHPUnit\Framework\TestCase
+class ReaderTest extends TestCase
 {
-    /** @var \PHPUnit\Framework\MockObject\MockObject */
+    /** @var MockObject */
     protected $fileResolverMock;
 
     /** @var ConfigReader */
     protected $configReader;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->fileResolverMock = $this->getMockBuilder(\Magento\Framework\Config\FileResolverInterface::class)
-            ->disableOriginalConstructor()
-            ->setMethods([])
-            ->getMock();
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->configReader = $objectManager->create(
-            \Magento\Integration\Model\Config\Consolidated\Reader::class,
-            ['fileResolver' => $this->fileResolverMock]
-        );
-    }
 
     public function testRead()
     {
@@ -43,5 +34,19 @@ class ReaderTest extends \PHPUnit\Framework\TestCase
 
         $expectedResult = require __DIR__ . '/_files/integration.php';
         $this->assertEquals($expectedResult, $this->configReader->read(), 'Error happened during config reading.');
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->fileResolverMock = $this->getMockBuilder(FileResolverInterface::class)
+            ->disableOriginalConstructor()
+            ->setMethods([])
+            ->getMock();
+        $objectManager = Bootstrap::getObjectManager();
+        $this->configReader = $objectManager->create(
+            Reader::class,
+            ['fileResolver' => $this->fileResolverMock]
+        );
     }
 }

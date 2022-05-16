@@ -5,6 +5,7 @@
  */
 declare(strict_types=1);
 
+use Magento\Catalog\Model\Product;
 use Magento\Eav\Setup\EavSetup;
 use Magento\Eav\Setup\EavSetupFactory;
 use Magento\Framework\Setup\ModuleDataSetupInterface;
@@ -15,9 +16,9 @@ $objectManager = Bootstrap::getObjectManager();
 $setup = $objectManager->get(ModuleDataSetupInterface::class);
 /** @var EavSetup $eavSetup */
 $eavSetup = $objectManager->get(EavSetupFactory::class)
-                          ->create(['setup' => $setup]);
+    ->create(['setup' => $setup]);
 $eavSetup->addAttribute(
-    \Magento\Catalog\Model\Product::ENTITY,
+    Product::ENTITY,
     'zzz',
     [
         'type' => 'int',

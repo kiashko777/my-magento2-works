@@ -7,12 +7,16 @@ declare(strict_types=1);
 
 namespace Magento\Test\Legacy;
 
+use Exception;
+use Magento\Framework\App\Utility\AggregateInvoker;
+use Magento\Framework\App\Utility\Files;
 use Magento\Framework\Component\ComponentRegistrar;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Coverage of obsolete nodes in layout
  */
-class LayoutTest extends \PHPUnit\Framework\TestCase
+class LayoutTest extends TestCase
 {
     /**
      * List of obsolete nodes
@@ -87,15 +91,15 @@ class LayoutTest extends \PHPUnit\Framework\TestCase
     ];
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testLayoutFile()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
-            /**
-             * @param string $layoutFile
-             */
+        /**
+         * @param string $layoutFile
+         */
             function ($layoutFile) {
                 $layoutXml = simplexml_load_file($layoutFile);
 
@@ -137,14 +141,14 @@ class LayoutTest extends \PHPUnit\Framework\TestCase
 
                 $componentRegistrar = new ComponentRegistrar();
                 if (false !== strpos(
-                    $layoutFile,
-                    $componentRegistrar->getPath(ComponentRegistrar::MODULE, 'Magento_Sales')
-                    . '/view/Adminhtml/layout/sales_order'
-                ) || false !== strpos(
-                    $layoutFile,
-                    $componentRegistrar->getPath(ComponentRegistrar::MODULE, 'Magento_Shipping')
-                    . '/view/Adminhtml/layout/adminhtml_order'
-                )
+                        $layoutFile,
+                        $componentRegistrar->getPath(ComponentRegistrar::MODULE, 'Magento_Sales')
+                        . '/view/Adminhtml/layout/sales_order'
+                    ) || false !== strpos(
+                        $layoutFile,
+                        $componentRegistrar->getPath(ComponentRegistrar::MODULE, 'Magento_Shipping')
+                        . '/view/Adminhtml/layout/adminhtml_order'
+                    )
                     || false !== strpos(
                         $layoutFile,
                         $componentRegistrar->getPath(ComponentRegistrar::MODULE, 'Magento_Catalog')
@@ -163,7 +167,7 @@ class LayoutTest extends \PHPUnit\Framework\TestCase
                     ' is not supposed to be used in layout anymore.'
                 );
             },
-            \Magento\Framework\App\Utility\Files::init()->getLayoutFiles()
+            Files::init()->getLayoutFiles()
         );
     }
 
@@ -214,15 +218,15 @@ class LayoutTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function testActionNodeMethods()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
-            /**
-             * @param string $layoutFile
-             */
+        /**
+         * @param string $layoutFile
+         */
             function ($layoutFile) {
                 $layoutXml = simplexml_load_file($layoutFile);
                 $methodFilter = '@method!="' . implode('" and @method!="', $this->getAllowedActionNodeMethods()) . '"';
@@ -236,7 +240,7 @@ class LayoutTest extends \PHPUnit\Framework\TestCase
                     );
                 }
             },
-            \Magento\Framework\App\Utility\Files::init()->getLayoutFiles()
+            Files::init()->getLayoutFiles()
         );
     }
 

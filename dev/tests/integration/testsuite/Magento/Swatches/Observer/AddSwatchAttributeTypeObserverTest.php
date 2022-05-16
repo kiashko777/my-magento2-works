@@ -8,14 +8,15 @@ declare(strict_types=1);
 namespace Magento\Swatches\Observer;
 
 use Magento\Framework\DataObject;
+use Magento\Framework\Event\ManagerInterface;
 use Magento\Swatches\Model\Swatch;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Framework\Event\ManagerInterface;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test checks that swatch types are added to the other attribute types
  */
-class AddSwatchAttributeTypeObserverTest extends \PHPUnit\Framework\TestCase
+class AddSwatchAttributeTypeObserverTest extends TestCase
 {
     /**
      * @magentoAppArea Adminhtml

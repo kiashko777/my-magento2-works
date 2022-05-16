@@ -39,30 +39,6 @@ class RepositoryTest extends TestCase
     private $createdAttribute;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->repository = $this->objectManager->get(ProductAttributeRepositoryInterface::class);
-        $this->attributeFactory = $this->objectManager->get(ProductAttributeInterfaceFactory::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        if ($this->createdAttribute instanceof ProductAttributeInterface) {
-            $this->repository->delete($this->createdAttribute);
-        }
-
-        parent::tearDown();
-    }
-
-    /**
      * @return void
      */
     public function testSaveWithoutAttributeCode(): void
@@ -71,6 +47,38 @@ class RepositoryTest extends TestCase
             $this->hydrateData(['frontend_label' => 'Boolean Attribute'])
         );
         $this->assertEquals('boolean_attribute', $this->createdAttribute->getAttributeCode());
+    }
+
+    /**
+     * Save product attribute with data
+     *
+     * @param array $data
+     * @return ProductAttributeInterface
+     */
+    private function saveAttributeWithData(array $data): ProductAttributeInterface
+    {
+        $attribute = $this->attributeFactory->create();
+        $attribute->addData($data);
+
+        return $this->repository->save($attribute);
+    }
+
+    /**
+     * Hydrate data
+     *
+     * @param array $data
+     * @return array
+     */
+    private function hydrateData(array $data): array
+    {
+        $defaultData = [
+            'entity_type_id' => CategorySetup::CATALOG_PRODUCT_ENTITY_TYPE_ID,
+            'is_global' => ScopedAttributeInterface::SCOPE_GLOBAL,
+            'frontend_input' => 'boolean',
+            'frontend_label' => 'default label',
+        ];
+
+        return array_merge($defaultData, $data);
     }
 
     /**
@@ -113,34 +121,26 @@ class RepositoryTest extends TestCase
     }
 
     /**
-     * Save product attribute with data
-     *
-     * @param array $data
-     * @return ProductAttributeInterface
+     * @inheritdoc
      */
-    private function saveAttributeWithData(array $data): ProductAttributeInterface
+    protected function setUp(): void
     {
-        $attribute = $this->attributeFactory->create();
-        $attribute->addData($data);
+        parent::setUp();
 
-        return $this->repository->save($attribute);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->repository = $this->objectManager->get(ProductAttributeRepositoryInterface::class);
+        $this->attributeFactory = $this->objectManager->get(ProductAttributeInterfaceFactory::class);
     }
 
     /**
-     * Hydrate data
-     *
-     * @param array $data
-     * @return array
+     * @inheritdoc
      */
-    private function hydrateData(array $data): array
+    protected function tearDown(): void
     {
-        $defaultData = [
-            'entity_type_id' => CategorySetup::CATALOG_PRODUCT_ENTITY_TYPE_ID,
-            'is_global' => ScopedAttributeInterface::SCOPE_GLOBAL,
-            'frontend_input' => 'boolean',
-            'frontend_label' => 'default label',
-        ];
+        if ($this->createdAttribute instanceof ProductAttributeInterface) {
+            $this->repository->delete($this->createdAttribute);
+        }
 
-        return array_merge($defaultData, $data);
+        parent::tearDown();
     }
 }

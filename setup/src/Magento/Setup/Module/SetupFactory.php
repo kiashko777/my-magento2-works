@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module;
 
 use Magento\Framework\App\ResourceConnection;
@@ -40,7 +41,7 @@ class SetupFactory
     {
         $objectManager = $this->objectManagerProvider->get();
         if ($appResource === null) {
-            $appResource = $objectManager->get(\Magento\Framework\App\ResourceConnection::class);
+            $appResource = $objectManager->get(ResourceConnection::class);
         }
         return new Setup($appResource);
     }

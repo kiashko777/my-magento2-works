@@ -3,34 +3,43 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Backend\Block\System\Account\Edit;
+
+use Magento\Backend\Model\Auth\Session;
+use Magento\Framework\Data\Form\Element\AbstractElement;
+use Magento\Framework\View\Layout;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\User\Model\User;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class FormTest extends \PHPUnit\Framework\TestCase
+class FormTest extends TestCase
 {
     public function testPrepareForm()
     {
-        $user = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\User\Model\User::class
+        $user = Bootstrap::getObjectManager()->create(
+            User::class
         )->loadByUsername(
             \Magento\TestFramework\Bootstrap::ADMIN_NAME
         );
 
-        /** @var $session \Magento\Backend\Model\Auth\Session */
-        $session = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Backend\Model\Auth\Session::class
+        /** @var $session Session */
+        $session = Bootstrap::getObjectManager()->get(
+            Session::class
         );
         $session->setUser($user);
 
-        /** @var $layout \Magento\Framework\View\Layout */
-        $layout = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
+        /** @var $layout Layout */
+        $layout = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
         );
 
-        /** @var \Magento\Backend\Block\System\Account\Edit\Form */
-        $block = $layout->createBlock(\Magento\Backend\Block\System\Account\Edit\Form::class);
+        /** @var Form */
+        $block = $layout->createBlock(Form::class);
         $block->toHtml();
 
         $form = $block->getForm();
@@ -73,7 +82,7 @@ class FormTest extends \PHPUnit\Framework\TestCase
 
         foreach ($expectedFieldset as $fieldId => $field) {
             $element = $form->getElement($fieldId);
-            $this->assertInstanceOf(\Magento\Framework\Data\Form\Element\AbstractElement::class, $element);
+            $this->assertInstanceOf(AbstractElement::class, $element);
             $this->assertEquals($field['name'], $element->getName(), 'Wrong \'' . $fieldId . '\' field name');
             $this->assertEquals($field['type'], $element->getType(), 'Wrong \'' . $fieldId . ' field type');
             $this->assertEquals(

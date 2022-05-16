@@ -4,32 +4,41 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Catalog\Helper\Data;
+use Magento\Catalog\Observer\SwitchPriceAttributeScopeOnConfigChange;
+use Magento\Config\App\Config\Type\System;
+use Magento\Config\Model\ResourceModel\Config;
+use Magento\Directory\Model\ResourceModel\Currency;
+use Magento\Framework\Event\Observer;
 use Magento\Store\Api\WebsiteRepositoryInterface;
+use Magento\Store\Model\ScopeInterface;
+use Magento\Store\Model\Store;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Store/_files/second_website_with_two_stores.php');
 
-$objectManager =  \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 /** @var WebsiteRepositoryInterface $websiteRepository */
 $websiteRepository = $objectManager->get(WebsiteRepositoryInterface::class);
 $websiteId = $websiteRepository->get('test')->getId();
-/** @var \Magento\Config\Model\ResourceModel\Config $configResource */
-$configResource = $objectManager->get(\Magento\Config\Model\ResourceModel\Config::class);
+/** @var Config $configResource */
+$configResource = $objectManager->get(Config::class);
 $configResource->saveConfig(
     \Magento\Directory\Model\Currency::XML_PATH_CURRENCY_DEFAULT,
     'EUR',
-    \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITE,
+    ScopeInterface::SCOPE_WEBSITE,
     $websiteId
 );
 $configResource->saveConfig(
     \Magento\Directory\Model\Currency::XML_PATH_CURRENCY_ALLOW,
     'EUR',
-    \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITE,
+    ScopeInterface::SCOPE_WEBSITE,
     $websiteId
 );
 $configResource->saveConfig(
-    \Magento\Catalog\Helper\Data::XML_PATH_PRICE_SCOPE,
-    \Magento\Store\Model\Store::PRICE_SCOPE_WEBSITE,
+    Data::XML_PATH_PRICE_SCOPE,
+    Store::PRICE_SCOPE_WEBSITE,
     'default',
     0
 );
@@ -38,15 +47,15 @@ $configResource->saveConfig(
  * Configuration cache clean is required to reload currency setting
  */
 /** @var Magento\Config\App\Config\Type\System $config */
-$config = $objectManager->get(\Magento\Config\App\Config\Type\System::class);
+$config = $objectManager->get(System::class);
 $config->clean();
 
-$observer = $objectManager->get(\Magento\Framework\Event\Observer::class);
-$objectManager->get(\Magento\Catalog\Observer\SwitchPriceAttributeScopeOnConfigChange::class)
+$observer = $objectManager->get(Observer::class);
+$objectManager->get(SwitchPriceAttributeScopeOnConfigChange::class)
     ->execute($observer);
 
-/** @var \Magento\Directory\Model\ResourceModel\Currency $rate */
-$rate = $objectManager->create(\Magento\Directory\Model\ResourceModel\Currency::class);
+/** @var Currency $rate */
+$rate = $objectManager->create(Currency::class);
 $rate->saveRates([
     'USD' => ['EUR' => 2],
     'EUR' => ['USD' => 0.5]

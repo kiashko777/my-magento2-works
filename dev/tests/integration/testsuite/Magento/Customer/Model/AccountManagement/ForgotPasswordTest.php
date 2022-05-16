@@ -36,18 +36,6 @@ class ForgotPasswordTest extends TestCase
     . "and contains(text(), 'Set a New Password')]";
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->accountManagement = $this->objectManager->get(AccountManagementInterface::class);
-        $this->transportBuilder = $this->objectManager->get(TransportBuilderMock::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
      *
      * @return void
@@ -60,5 +48,17 @@ class ForgotPasswordTest extends TestCase
         $messageContent = $message->getBody()->getParts()[0]->getRawContent();
         $this->assertTrue($result);
         $this->assertEquals(1, Xpath::getElementsCountForXpath($this->newPasswordLinkPath, $messageContent));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->accountManagement = $this->objectManager->get(AccountManagementInterface::class);
+        $this->transportBuilder = $this->objectManager->get(TransportBuilderMock::class);
     }
 }

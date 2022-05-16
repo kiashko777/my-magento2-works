@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Customer;
 
+use Exception;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
 
 /**
@@ -58,7 +59,7 @@ QUERY;
      */
     public function testEmailAvailableEmptyValue()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('GraphQL response contains errors: Email must be specified');
 
         $query =
@@ -76,7 +77,7 @@ QUERY;
      */
     public function testEmailAvailableMissingValue()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Field "isEmailAvailable" argument "email" of type "String!" is required');
 
         $query =
@@ -94,7 +95,7 @@ QUERY;
      */
     public function testEmailAvailableInvalidValue()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('GraphQL response contains errors: Email is invalid');
 
         $query =

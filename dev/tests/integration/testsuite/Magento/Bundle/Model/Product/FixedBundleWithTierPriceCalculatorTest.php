@@ -6,8 +6,13 @@
 
 namespace Magento\Bundle\Model\Product;
 
-use \Magento\Bundle\Api\Data\LinkInterface;
-use \Magento\Catalog\Api\Data\ProductTierPriceInterfaceFactory;
+use Magento\Bundle\Api\Data\LinkInterface;
+use Magento\Catalog\Api\Data\ProductTierPriceInterfaceFactory;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Pricing\Price\FinalPrice;
+use Magento\Customer\Model\Group;
+use Magento\Framework\DataObject;
+use Magento\Framework\Pricing\PriceInfo\Base;
 
 /**
  * Class FixedBundleWithTierPRiceCalculatorTest
@@ -18,12 +23,6 @@ class FixedBundleWithTierPriceCalculatorTest extends BundlePriceAbstract
 {
     /** @var ProductTierPriceInterfaceFactory */
     private $tierPriceFactory;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->tierPriceFactory = $this->objectManager->create(ProductTierPriceInterfaceFactory::class);
-    }
 
     /**
      * @param array $strategyModifiers
@@ -42,9 +41,9 @@ class FixedBundleWithTierPriceCalculatorTest extends BundlePriceAbstract
             $this->markTestSkipped('Unskip after fixing https://github.com/magento-engcom/msi/issues/1398');
         }
 
-        /** @var \Magento\Framework\Pricing\PriceInfo\Base $priceInfo */
+        /** @var Base $priceInfo */
         $priceInfo = $bundleProduct->getPriceInfo();
-        $priceCode = \Magento\Catalog\Pricing\Price\FinalPrice::PRICE_CODE;
+        $priceCode = FinalPrice::PRICE_CODE;
 
         $this->assertEquals(
             $expectedResults['minimalPrice'],
@@ -507,10 +506,10 @@ class FixedBundleWithTierPriceCalculatorTest extends BundlePriceAbstract
     private function getBundleConfiguration1()
     {
         $tierPriceData = [
-            'customer_group_id' => \Magento\Customer\Model\Group::NOT_LOGGED_IN_ID,
+            'customer_group_id' => Group::NOT_LOGGED_IN_ID,
             'qty' => 1,
             'value' => 50,
-            'extension_attributes' => new \Magento\Framework\DataObject(['percentage_value' => 50])
+            'extension_attributes' => new DataObject(['percentage_value' => 50])
         ];
 
         return [
@@ -557,10 +556,10 @@ class FixedBundleWithTierPriceCalculatorTest extends BundlePriceAbstract
         ];
 
         $tierPriceData = [
-            'customer_group_id' => \Magento\Customer\Model\Group::NOT_LOGGED_IN_ID,
+            'customer_group_id' => Group::NOT_LOGGED_IN_ID,
             'qty' => 1,
             'value' => 50,
-            'extension_attributes' => new \Magento\Framework\DataObject(['percentage_value' => 50])
+            'extension_attributes' => new DataObject(['percentage_value' => 50])
         ];
 
         return [
@@ -615,10 +614,10 @@ class FixedBundleWithTierPriceCalculatorTest extends BundlePriceAbstract
         ];
 
         $tierPriceData = [
-            'customer_group_id' => \Magento\Customer\Model\Group::NOT_LOGGED_IN_ID,
+            'customer_group_id' => Group::NOT_LOGGED_IN_ID,
             'qty' => 1,
             'value' => 50,
-            'extension_attributes' => new \Magento\Framework\DataObject(['percentage_value' => 50])
+            'extension_attributes' => new DataObject(['percentage_value' => 50])
         ];
 
         return [
@@ -679,10 +678,10 @@ class FixedBundleWithTierPriceCalculatorTest extends BundlePriceAbstract
         ];
 
         $tierPriceData = [
-            'customer_group_id' => \Magento\Customer\Model\Group::NOT_LOGGED_IN_ID,
+            'customer_group_id' => Group::NOT_LOGGED_IN_ID,
             'qty' => 1,
             'value' => 50,
-            'extension_attributes' => new \Magento\Framework\DataObject(['percentage_value' => 50])
+            'extension_attributes' => new DataObject(['percentage_value' => 50])
         ];
 
         return [
@@ -743,10 +742,10 @@ class FixedBundleWithTierPriceCalculatorTest extends BundlePriceAbstract
         ];
 
         $tierPriceData = [
-            'customer_group_id' => \Magento\Customer\Model\Group::NOT_LOGGED_IN_ID,
+            'customer_group_id' => Group::NOT_LOGGED_IN_ID,
             'qty' => 1,
             'value' => 50,
-            'extension_attributes' => new \Magento\Framework\DataObject(['percentage_value' => 50])
+            'extension_attributes' => new DataObject(['percentage_value' => 50])
         ];
 
         return [
@@ -807,10 +806,10 @@ class FixedBundleWithTierPriceCalculatorTest extends BundlePriceAbstract
         ];
 
         $tierPriceData = [
-            'customer_group_id' => \Magento\Customer\Model\Group::NOT_LOGGED_IN_ID,
+            'customer_group_id' => Group::NOT_LOGGED_IN_ID,
             'qty' => 1,
             'value' => 50,
-            'extension_attributes' => new \Magento\Framework\DataObject(['percentage_value' => 50])
+            'extension_attributes' => new DataObject(['percentage_value' => 50])
         ];
 
         return [
@@ -890,10 +889,10 @@ class FixedBundleWithTierPriceCalculatorTest extends BundlePriceAbstract
         ];
 
         $tierPriceData = [
-            'customer_group_id' => \Magento\Customer\Model\Group::NOT_LOGGED_IN_ID,
+            'customer_group_id' => Group::NOT_LOGGED_IN_ID,
             'qty' => 1,
             'value' => 50,
-            'extension_attributes' => new \Magento\Framework\DataObject(['percentage_value' => 50])
+            'extension_attributes' => new DataObject(['percentage_value' => 50])
         ];
 
         return [
@@ -912,12 +911,18 @@ class FixedBundleWithTierPriceCalculatorTest extends BundlePriceAbstract
         ];
     }
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->tierPriceFactory = $this->objectManager->create(ProductTierPriceInterfaceFactory::class);
+    }
+
     /**
-     * @param \Magento\Catalog\Model\Product $product
+     * @param Product $product
      * @param array $tirePriceData
-     * @return \Magento\Catalog\Model\Product
+     * @return Product
      */
-    protected function addTierPrice(\Magento\Catalog\Model\Product $product, $tirePriceData)
+    protected function addTierPrice(Product $product, $tirePriceData)
     {
         $tierPrice = $this->tierPriceFactory->create([
             'data' => $tirePriceData

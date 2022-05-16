@@ -7,13 +7,14 @@ declare(strict_types=1);
 
 namespace Magento\Sales\Model\Order;
 
-use Magento\Framework\ObjectManagerInterface;
-use Magento\Sales\Api\Data\OrderAddressInterface;
-use Magento\Sales\Api\OrderAddressRepositoryInterface;
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Framework\Api\FilterBuilder;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Api\SortOrderBuilder;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Sales\Api\Data\OrderAddressInterface;
+use Magento\Sales\Api\Data\OrderAddressSearchResultInterface;
+use Magento\Sales\Api\OrderAddressRepositoryInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -35,18 +36,6 @@ class AddressRepositoryTest extends TestCase
 
     /** @var ObjectManagerInterface */
     private $objectManager;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->repository = $this->objectManager->get(AddressRepository::class);
-        $this->searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
-        $this->filterBuilder = $this->objectManager->get(FilterBuilder::class);
-        $this->sortOrderBuilder = $this->objectManager->get(SortOrderBuilder::class);
-    }
 
     /**
      * Test for get list with multiple filters and sorting
@@ -78,7 +67,7 @@ class AddressRepositoryTest extends TestCase
         $this->searchCriteriaBuilder->addFilters([$filter2, $filter3]);
         $this->searchCriteriaBuilder->addSortOrder($sortOrder);
         $searchCriteria = $this->searchCriteriaBuilder->create();
-        /** @var \Magento\Sales\Api\Data\OrderAddressSearchResultInterface $result */
+        /** @var OrderAddressSearchResultInterface $result */
         $result = $this->repository->getList($searchCriteria);
         $items = $result->getItems();
         $this->assertCount(2, $items);
@@ -102,6 +91,18 @@ class AddressRepositoryTest extends TestCase
         $this->objectManager->get(OrderAddressRepositoryInterface::class)
             ->save($address);
         $this->assertEquals('dog,cat', $address->getData('fixture_address_multiselect_attribute'));
-        $this->assertEquals('dog'.PHP_EOL.'cat', $address->getData('fixture_address_multiline_attribute'));
+        $this->assertEquals('dog' . PHP_EOL . 'cat', $address->getData('fixture_address_multiline_attribute'));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->repository = $this->objectManager->get(AddressRepository::class);
+        $this->searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
+        $this->filterBuilder = $this->objectManager->get(FilterBuilder::class);
+        $this->sortOrderBuilder = $this->objectManager->get(SortOrderBuilder::class);
     }
 }

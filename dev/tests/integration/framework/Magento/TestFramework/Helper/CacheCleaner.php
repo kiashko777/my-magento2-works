@@ -27,17 +27,6 @@ class CacheCleaner
     }
 
     /**
-     * Clean all cache
-     */
-    public static function cleanAll()
-    {
-        $cachePool = self::getCachePool();
-        foreach ($cachePool as $cacheType) {
-            $cacheType->getBackend()->clean();
-        }
-    }
-
-    /**
      * Get cache pool
      *
      * @return Pool
@@ -46,5 +35,16 @@ class CacheCleaner
     {
         return Bootstrap::getObjectManager()
             ->get(Pool::class);
+    }
+
+    /**
+     * Clean all cache
+     */
+    public static function cleanAll()
+    {
+        $cachePool = self::getCachePool();
+        foreach ($cachePool as $cacheType) {
+            $cacheType->getBackend()->clean();
+        }
     }
 }

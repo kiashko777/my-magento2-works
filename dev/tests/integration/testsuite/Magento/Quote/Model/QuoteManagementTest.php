@@ -74,23 +74,6 @@ class QuoteManagementTest extends TestCase
     private $storeManager;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->cartManagement = $this->objectManager->get(CartManagementInterface::class);
-        $this->orderRepository = $this->objectManager->get(OrderRepositoryInterface::class);
-        $this->getQuoteByReservedOrderId = $this->objectManager->get(GetQuoteByReservedOrderId::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-    }
-
-    /**
      * Creates order with product that has child items.
      *
      * @magentoAppIsolation enabled
@@ -133,6 +116,35 @@ class QuoteManagementTest extends TestCase
         $quoteAfterOrderPlaced = $this->getQuoteByReservedOrderId->execute('guest_quote');
         self::assertEquals(2, $quoteAfterOrderPlaced->getCustomerGroupId());
         self::assertEquals(3, $quoteAfterOrderPlaced->getCustomerTaxClassId());
+    }
+
+    /**
+     * Makes customer vat validator 'check vat number' response successful.
+     *
+     * @return void
+     */
+    private function mockVatValidation(): void
+    {
+        $vatMock = $this->getMockBuilder(Vat::class)
+            ->setConstructorArgs(
+                [
+                    'scopeConfig' => $this->objectManager->get(ScopeConfigInterface::class),
+                    'logger' => $this->objectManager->get(LoggerInterface::class),
+                ]
+            )
+            ->onlyMethods(['checkVatNumber'])
+            ->getMock();
+        $gatewayResponse = new DataObject([
+            'is_valid' => true,
+            'request_date' => 'testData',
+            'request_identifier' => 'testRequestIdentifier',
+            'request_success' => true,
+        ]);
+        $vatMock->method('checkVatNumber')->willReturn($gatewayResponse);
+        $this->objectManager->removeSharedInstance(CollectTotalsObserver::class);
+        $this->objectManager->removeSharedInstance(VatValidator::class);
+        $this->objectManager->removeSharedInstance(Vat::class);
+        $this->objectManager->addSharedInstance($vatMock, Vat::class);
     }
 
     /**
@@ -207,6 +219,21 @@ class QuoteManagementTest extends TestCase
         $quote = $this->getQuoteByReservedOrderId->execute('test01');
         $this->expectExceptionObject(new LocalizedException(__('Some of the products are out of stock.')));
         $this->cartManagement->placeOrder($quote->getId());
+    }
+
+    /**
+     * Makes provided product as out of stock.
+     *
+     * @param string $sku
+     * @return void
+     */
+    private function makeProductOutOfStock(string $sku): void
+    {
+        $product = $this->productRepository->get($sku);
+        $extensionAttributes = $product->getExtensionAttributes();
+        $stockItem = $extensionAttributes->getStockItem();
+        $stockItem->setIsInStock(false);
+        $this->productRepository->save($product);
     }
 
     /**
@@ -290,46 +317,19 @@ class QuoteManagementTest extends TestCase
     }
 
     /**
-     * Makes provided product as out of stock.
-     *
-     * @param string $sku
-     * @return void
+     * @inheritdoc
      */
-    private function makeProductOutOfStock(string $sku): void
+    protected function setUp(): void
     {
-        $product = $this->productRepository->get($sku);
-        $extensionAttributes = $product->getExtensionAttributes();
-        $stockItem = $extensionAttributes->getStockItem();
-        $stockItem->setIsInStock(false);
-        $this->productRepository->save($product);
-    }
+        parent::setUp();
 
-    /**
-     * Makes customer vat validator 'check vat number' response successful.
-     *
-     * @return void
-     */
-    private function mockVatValidation(): void
-    {
-        $vatMock = $this->getMockBuilder(Vat::class)
-            ->setConstructorArgs(
-                [
-                    'scopeConfig' => $this->objectManager->get(ScopeConfigInterface::class),
-                    'logger' => $this->objectManager->get(LoggerInterface::class),
-                ]
-            )
-            ->onlyMethods(['checkVatNumber'])
-            ->getMock();
-        $gatewayResponse = new DataObject([
-            'is_valid' => true,
-            'request_date' => 'testData',
-            'request_identifier' => 'testRequestIdentifier',
-            'request_success' => true,
-        ]);
-        $vatMock->method('checkVatNumber')->willReturn($gatewayResponse);
-        $this->objectManager->removeSharedInstance(CollectTotalsObserver::class);
-        $this->objectManager->removeSharedInstance(VatValidator::class);
-        $this->objectManager->removeSharedInstance(Vat::class);
-        $this->objectManager->addSharedInstance($vatMock, Vat::class);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->cartManagement = $this->objectManager->get(CartManagementInterface::class);
+        $this->orderRepository = $this->objectManager->get(OrderRepositoryInterface::class);
+        $this->getQuoteByReservedOrderId = $this->objectManager->get(GetQuoteByReservedOrderId::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
     }
 }

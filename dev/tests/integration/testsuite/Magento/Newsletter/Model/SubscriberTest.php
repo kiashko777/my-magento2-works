@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace Magento\Newsletter\Model;
 
+use DOMDocument;
+use DOMXPath;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
@@ -50,19 +52,6 @@ class SubscriberTest extends TestCase
      * @var CollectionFactory
      */
     private $subscriberCollectionFactory;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->subscriberFactory = $objectManager->get(SubscriberFactory::class);
-        $this->transportBuilder = $objectManager->get(TransportBuilderMock::class);
-        $this->customerRepository = $objectManager->get(CustomerRepositoryInterface::class);
-        $this->queueFactory = $objectManager->get(QueueFactory::class);
-        $this->subscriberCollectionFactory = $objectManager->get(CollectionFactory::class);
-    }
 
     /**
      * @magentoConfigFixture current_store newsletter/subscription/confirm 1
@@ -122,6 +111,37 @@ class SubscriberTest extends TestCase
             self::CONFIRMATION_SUBSCRIBE,
             $this->transportBuilder->getSentMessage()
         );
+    }
+
+    /**
+     * Verifies if Paragraph with specified message is in e-mail
+     *
+     * @param string $expectedMessage
+     * @param EmailMessage $message
+     */
+    private function assertConfirmationParagraphExists(string $expectedMessage, EmailMessage $message): void
+    {
+        $messageContent = $this->getMessageRawContent($message);
+
+        $emailDom = new DOMDocument();
+        $emailDom->loadHTML($messageContent);
+
+        $emailXpath = new DOMXPath($emailDom);
+        $greeting = $emailXpath->query("//p[contains(text(), '$expectedMessage')]");
+
+        $this->assertSame(1, $greeting->length, "Cannot find the confirmation paragraph in e-mail contents");
+    }
+
+    /**
+     * Returns raw content of provided message
+     *
+     * @param EmailMessage $message
+     * @return string
+     */
+    private function getMessageRawContent(EmailMessage $message): string
+    {
+        $emailParts = $message->getBody()->getParts();
+        return current($emailParts)->getRawContent();
     }
 
     /**
@@ -256,33 +276,15 @@ class SubscriberTest extends TestCase
     }
 
     /**
-     * Verifies if Paragraph with specified message is in e-mail
-     *
-     * @param string $expectedMessage
-     * @param EmailMessage $message
+     * @inheritdoc
      */
-    private function assertConfirmationParagraphExists(string $expectedMessage, EmailMessage $message): void
+    protected function setUp(): void
     {
-        $messageContent = $this->getMessageRawContent($message);
-
-        $emailDom = new \DOMDocument();
-        $emailDom->loadHTML($messageContent);
-
-        $emailXpath = new \DOMXPath($emailDom);
-        $greeting = $emailXpath->query("//p[contains(text(), '$expectedMessage')]");
-
-        $this->assertSame(1, $greeting->length, "Cannot find the confirmation paragraph in e-mail contents");
-    }
-
-    /**
-     * Returns raw content of provided message
-     *
-     * @param EmailMessage $message
-     * @return string
-     */
-    private function getMessageRawContent(EmailMessage $message): string
-    {
-        $emailParts = $message->getBody()->getParts();
-        return current($emailParts)->getRawContent();
+        $objectManager = Bootstrap::getObjectManager();
+        $this->subscriberFactory = $objectManager->get(SubscriberFactory::class);
+        $this->transportBuilder = $objectManager->get(TransportBuilderMock::class);
+        $this->customerRepository = $objectManager->get(CustomerRepositoryInterface::class);
+        $this->queueFactory = $objectManager->get(QueueFactory::class);
+        $this->subscriberCollectionFactory = $objectManager->get(CollectionFactory::class);
     }
 }

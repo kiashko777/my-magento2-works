@@ -3,16 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\App;
 
+use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Framework\App\Request\InvalidRequestException;
 use Magento\Framework\App\Request\ValidatorInterface;
-use Magento\Framework\Exception\NotFoundException;
-use Magento\Framework\Phrase;
-use PHPUnit\Framework\TestCase;
-use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Framework\Controller\ResultInterface;
+use Magento\Framework\Exception\NotFoundException;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Phrase;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @SuppressWarnings(PHPMD.UnusedFormalParameter)
@@ -22,7 +24,7 @@ use Magento\TestFramework\Helper\Bootstrap;
 class FrontControllerTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $_objectManager;
 
@@ -35,49 +37,6 @@ class FrontControllerTest extends TestCase
      * @var ValidatorInterface
      */
     private $fakeRequestValidator;
-
-    /**
-     * @return ValidatorInterface
-     *
-     * @SuppressWarnings(PHPMD.UnusedLocalVariable)
-     */
-    private function createRequestValidator(): ValidatorInterface
-    {
-        if (!$this->fakeRequestValidator) {
-            $this->fakeRequestValidator = new class implements ValidatorInterface {
-                /**
-                 * @var bool
-                 */
-                public $valid;
-
-                /**
-                 * @inheritDoc
-                 */
-                public function validate(
-                    RequestInterface $request,
-                    ActionInterface $action
-                ): void {
-                    if (!$this->valid) {
-                        throw new InvalidRequestException(new NotFoundException(new Phrase('Not found')));
-                    }
-                }
-            };
-        }
-
-        return $this->fakeRequestValidator;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->_objectManager = Bootstrap::getObjectManager();
-        $this->_model = $this->_objectManager->create(
-            FrontController::class,
-            ['requestValidator' => $this->createRequestValidator()]
-        );
-    }
 
     /**
      * Test dispatching an empty action.
@@ -117,5 +76,49 @@ class FrontControllerTest extends TestCase
             ResultInterface::class,
             $this->_model->dispatch($request)
         );
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->_objectManager = Bootstrap::getObjectManager();
+        $this->_model = $this->_objectManager->create(
+            FrontController::class,
+            ['requestValidator' => $this->createRequestValidator()]
+        );
+    }
+
+    /**
+     * @return ValidatorInterface
+     *
+     * @SuppressWarnings(PHPMD.UnusedLocalVariable)
+     */
+    private function createRequestValidator(): ValidatorInterface
+    {
+        if (!$this->fakeRequestValidator) {
+            $this->fakeRequestValidator = new class implements ValidatorInterface {
+                /**
+                 * @var bool
+                 */
+                public $valid;
+
+                /**
+                 * @inheritDoc
+                 */
+                public function validate(
+                    RequestInterface $request,
+                    ActionInterface  $action
+                ): void
+                {
+                    if (!$this->valid) {
+                        throw new InvalidRequestException(new NotFoundException(new Phrase('Not found')));
+                    }
+                }
+            };
+        }
+
+        return $this->fakeRequestValidator;
     }
 }

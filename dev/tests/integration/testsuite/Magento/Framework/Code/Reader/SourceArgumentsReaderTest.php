@@ -3,21 +3,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Code\Reader;
+
+use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 require_once __DIR__ . '/_files/SourceArgumentsReaderTest.php.sample';
 
-class SourceArgumentsReaderTest extends \PHPUnit\Framework\TestCase
+class SourceArgumentsReaderTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Code\Reader\SourceArgumentsReader
+     * @var SourceArgumentsReader
      */
     protected $sourceArgumentsReader;
-
-    protected function setUp(): void
-    {
-        $this->sourceArgumentsReader = new \Magento\Framework\Code\Reader\SourceArgumentsReader();
-    }
 
     /**
      * @param string $class
@@ -26,7 +25,7 @@ class SourceArgumentsReaderTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetConstructorArgumentTypes($class, $expectedResult)
     {
-        $class = new \ReflectionClass($class);
+        $class = new ReflectionClass($class);
         $actualResult = $this->sourceArgumentsReader->getConstructorArgumentTypes($class);
         $this->assertEquals($expectedResult, $actualResult);
     }
@@ -56,5 +55,10 @@ class SourceArgumentsReaderTest extends \PHPUnit\Framework\TestCase
                 [null]
             ]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->sourceArgumentsReader = new SourceArgumentsReader();
     }
 }

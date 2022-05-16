@@ -7,10 +7,10 @@ declare(strict_types=1);
 
 use Magento\Catalog\Api\ProductAttributeRepositoryInterface;
 use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Frontend\Inputtype\Presentation;
 use Magento\Catalog\Model\ResourceModel\Eav\AttributeFactory;
 use Magento\Eav\Setup\EavSetup;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Catalog\Model\Product\Attribute\Frontend\Inputtype\Presentation;
 
 $objectManager = Bootstrap::getObjectManager();
 /** @var AttributeFactory $attributeFactory */

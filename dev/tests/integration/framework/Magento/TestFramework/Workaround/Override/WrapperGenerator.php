@@ -10,6 +10,7 @@ namespace Magento\TestFramework\Workaround\Override;
 use Magento\Framework\Code\Generator\ClassGenerator;
 use Magento\TestFramework\SkippableInterface;
 use Magento\TestFramework\SkippableTrait;
+use ReflectionClass;
 
 /**
  * Integration tests wrap generator
@@ -34,10 +35,10 @@ class WrapperGenerator
     /**
      * Generates test wrapper class and returns wrapper name.
      *
-     * @param \ReflectionClass $class
+     * @param ReflectionClass $class
      * @return string
      */
-    public function generateTestWrapper(\ReflectionClass $class): string
+    public function generateTestWrapper(ReflectionClass $class): string
     {
         $wrapperCode = $this->classGenerator->setNamespaceName($class->getName())
             ->setClassDocBlock(['longDescription' => str_replace(['/**', '*/', '*'], '', $class->getDocComment())])

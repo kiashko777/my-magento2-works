@@ -24,54 +24,54 @@ return [
                                     'name' => null,
                                 ]
                         ],
-                        'defaultValue' => null,
+                    'defaultValue' => null,
                 ]
             ]
     ],
-     [
-         'name' => 'testItem',
-         'args' =>
-         [
-             [
-                 'name' => 'id',
-                 'description' => '',
-                 'type' =>
-                     [
-                         'kind' => 'NON_NULL',
-                         'name' => null,
-                         'ofType' =>
-                             [
-                                 'kind' => 'SCALAR',
-                                 'name' => 'Int',
-                             ]
+    [
+        'name' => 'testItem',
+        'args' =>
+            [
+                [
+                    'name' => 'id',
+                    'description' => '',
+                    'type' =>
+                        [
+                            'kind' => 'NON_NULL',
+                            'name' => null,
+                            'ofType' =>
+                                [
+                                    'kind' => 'SCALAR',
+                                    'name' => 'Int',
+                                ]
 
-                     ],
-                     'defaultValue' => null,
+                        ],
+                    'defaultValue' => null,
 
-             ]
-         ]
+                ]
+            ]
 
-     ],
-     [
-         'name' => 'urlResolver',
-         'args' =>
-         [
-             [
-                 'name' => 'url',
-                 'description' => '',
-                 'type' =>
-                     [
-                         'kind' => 'NON_NULL',
-                         'name' => null,
-                         'ofType' =>
-                             [
-                                 'kind' => 'SCALAR',
-                                 'name' => 'String',
-                             ]
-                     ],
-                     'defaultValue' => null,
-             ]
-         ]
+    ],
+    [
+        'name' => 'urlResolver',
+        'args' =>
+            [
+                [
+                    'name' => 'url',
+                    'description' => '',
+                    'type' =>
+                        [
+                            'kind' => 'NON_NULL',
+                            'name' => null,
+                            'ofType' =>
+                                [
+                                    'kind' => 'SCALAR',
+                                    'name' => 'String',
+                                ]
+                        ],
+                    'defaultValue' => null,
+                ]
+            ]
 
-     ]
+    ]
 ];

@@ -7,31 +7,23 @@
 namespace Magento\CatalogWidget\Model\Rule\Condition;
 
 use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Model\ResourceModel\Product\Collection;
+use Magento\CatalogWidget\Model\Rule;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class ProductTest extends \PHPUnit\Framework\TestCase
+class ProductTest extends TestCase
 {
     /**
-     * @var \Magento\CatalogWidget\Model\Rule\Condition\Product
+     * @var Product
      */
     protected $conditionProduct;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $rule = $this->objectManager->create(\Magento\CatalogWidget\Model\Rule::class);
-        $this->conditionProduct = $this->objectManager->create(
-            \Magento\CatalogWidget\Model\Rule\Condition\Product::class
-        );
-        $this->conditionProduct->setRule($rule);
-    }
 
     /**
      * @return void
@@ -55,7 +47,7 @@ class ProductTest extends \PHPUnit\Framework\TestCase
      */
     public function testAddGlobalAttributeToCollection()
     {
-        $collection = $this->objectManager->create(\Magento\Catalog\Model\ResourceModel\Product\Collection::class);
+        $collection = $this->objectManager->create(Collection::class);
         $this->conditionProduct->setAttribute('special_price');
         $this->conditionProduct->addToCollection($collection);
         $collectedAttributes = $this->conditionProduct->getRule()->getCollectedAttributes();
@@ -70,7 +62,7 @@ class ProductTest extends \PHPUnit\Framework\TestCase
      */
     public function testAddNonGlobalAttributeToCollectionNoProducts()
     {
-        $collection = $this->objectManager->create(\Magento\Catalog\Model\ResourceModel\Product\Collection::class);
+        $collection = $this->objectManager->create(Collection::class);
         $this->conditionProduct->setAttribute('visibility');
         $this->conditionProduct->setOperator('()');
         $this->conditionProduct->setValue('4');
@@ -89,7 +81,7 @@ class ProductTest extends \PHPUnit\Framework\TestCase
      */
     public function testAddNonGlobalAttributeToCollection()
     {
-        $collection = $this->objectManager->create(\Magento\Catalog\Model\ResourceModel\Product\Collection::class);
+        $collection = $this->objectManager->create(Collection::class);
         $this->conditionProduct->setAttribute('visibility');
         $this->conditionProduct->setOperator('()');
         $this->conditionProduct->setValue('4');
@@ -117,5 +109,18 @@ class ProductTest extends \PHPUnit\Framework\TestCase
     {
         $this->conditionProduct->setAttribute('sku');
         $this->assertEquals('e.sku', $this->conditionProduct->getMappedSqlField());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $rule = $this->objectManager->create(Rule::class);
+        $this->conditionProduct = $this->objectManager->create(
+            Product::class
+        );
+        $this->conditionProduct->setRule($rule);
     }
 }

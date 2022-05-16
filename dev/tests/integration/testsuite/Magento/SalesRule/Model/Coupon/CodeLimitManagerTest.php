@@ -8,14 +8,15 @@ declare(strict_types=1);
 
 namespace Magento\SalesRule\Model\Coupon;
 
+use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\App\Request\Http;
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\HTTP\PhpEnvironment\RemoteAddress;
 use Magento\SalesRule\Api\Exception\CodeRequestLimitException;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 use PHPUnit\Framework\TestCase;
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Customer\Model\Session as CustomerSession;
+use RuntimeException;
 
 /**
  * Test for captcha based implementation.
@@ -35,43 +36,6 @@ class CodeLimitManagerTest extends TestCase
     private $customerSession;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        /** @var ObjectManager $objectManager */
-        $objectManager = Bootstrap::getObjectManager();
-        $this->manager = $objectManager->get(CodeLimitManager::class);
-        $this->customerSession = $objectManager->get(CustomerSession::class);
-        /** @var Http $request */
-        $request = $objectManager->get(RequestInterface::class);
-        $request->getServer()->set('REMOTE_ADDR', '127.0.0.1');
-        $objectManager->removeSharedInstance(RemoteAddress::class);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    protected function tearDown(): void
-    {
-        $this->customerSession->logout();
-        $this->customerSession->clearStorage();
-    }
-
-    /**
-     * Log in customer by ID.
-     *
-     * @param int $id
-     * @return void
-     */
-    private function loginCustomer(int $id): void
-    {
-        if (!$this->customerSession->loginById($id)) {
-            throw new \RuntimeException('Failed to log in customer');
-        }
-    }
-
-    /**
      * @magentoDbIsolation enabled
      * @magentoAppIsolation enabled
      *
@@ -84,6 +48,19 @@ class CodeLimitManagerTest extends TestCase
         $this->manager->checkRequest('fakeCode1');
         $this->loginCustomer(1);
         $this->manager->checkRequest('fakeCode2');
+    }
+
+    /**
+     * Log in customer by ID.
+     *
+     * @param int $id
+     * @return void
+     */
+    private function loginCustomer(int $id): void
+    {
+        if (!$this->customerSession->loginById($id)) {
+            throw new RuntimeException('Failed to log in customer');
+        }
     }
 
     /**
@@ -119,7 +96,7 @@ class CodeLimitManagerTest extends TestCase
      */
     public function testAboveLimitNotLoggedIn()
     {
-        $this->expectException(\Magento\SalesRule\Api\Exception\CodeRequestLimitException::class);
+        $this->expectException(CodeRequestLimitException::class);
 
         try {
             $this->manager->checkRequest('fakeCode7');
@@ -144,7 +121,7 @@ class CodeLimitManagerTest extends TestCase
      */
     public function testAboveLimitLoggedIn()
     {
-        $this->expectException(\Magento\SalesRule\Api\Exception\CodeRequestLimitException::class);
+        $this->expectException(CodeRequestLimitException::class);
 
         try {
             $this->loginCustomer(1);
@@ -171,7 +148,7 @@ class CodeLimitManagerTest extends TestCase
      */
     public function testCustomerNotAllowedWithoutCode()
     {
-        $this->expectException(\Magento\SalesRule\Api\Exception\CodeRequestLimitException::class);
+        $this->expectException(CodeRequestLimitException::class);
 
         $this->loginCustomer(1);
         $this->manager->checkRequest('fakeCode13');
@@ -190,7 +167,7 @@ class CodeLimitManagerTest extends TestCase
      */
     public function testGuestNotAllowedWithoutCode()
     {
-        $this->expectException(\Magento\SalesRule\Api\Exception\CodeRequestLimitException::class);
+        $this->expectException(CodeRequestLimitException::class);
 
         $this->manager->checkRequest('fakeCode14');
     }
@@ -211,7 +188,7 @@ class CodeLimitManagerTest extends TestCase
      */
     public function testLoggingOnlyInvalidCodes()
     {
-        $this->expectException(\Magento\SalesRule\Api\Exception\CodeRequestLimitException::class);
+        $this->expectException(CodeRequestLimitException::class);
 
         try {
             $this->loginCustomer(1);
@@ -223,5 +200,29 @@ class CodeLimitManagerTest extends TestCase
             $this->fail('Attempts are logged for existing codes');
         }
         $this->manager->checkRequest('fakeCode17');
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        /** @var ObjectManager $objectManager */
+        $objectManager = Bootstrap::getObjectManager();
+        $this->manager = $objectManager->get(CodeLimitManager::class);
+        $this->customerSession = $objectManager->get(CustomerSession::class);
+        /** @var Http $request */
+        $request = $objectManager->get(RequestInterface::class);
+        $request->getServer()->set('REMOTE_ADDR', '127.0.0.1');
+        $objectManager->removeSharedInstance(RemoteAddress::class);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function tearDown(): void
+    {
+        $this->customerSession->logout();
+        $this->customerSession->clearStorage();
     }
 }

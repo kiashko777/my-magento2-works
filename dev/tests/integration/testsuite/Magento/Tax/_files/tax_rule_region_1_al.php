@@ -4,8 +4,15 @@
  * See COPYING.txt for license details.
  */
 
-/** @var $objectManager \Magento\TestFramework\ObjectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+/** @var $objectManager ObjectManager */
+
+use Magento\Framework\Registry;
+use Magento\Tax\Model\Calculation\Rate;
+use Magento\Tax\Model\Calculation\Rule;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+
+$objectManager = Bootstrap::getObjectManager();
 
 $taxRate = [
     'tax_country_id' => 'US',
@@ -14,10 +21,10 @@ $taxRate = [
     'code' => 'US-AL-*-Rate-1',
     'rate' => '7.5',
 ];
-$rate = $objectManager->create(\Magento\Tax\Model\Calculation\Rate::class)->setData($taxRate)->save();
+$rate = $objectManager->create(Rate::class)->setData($taxRate)->save();
 
 /** @var Magento\Framework\Registry $registry */
-$registry = $objectManager->get(\Magento\Framework\Registry::class);
+$registry = $objectManager->get(Registry::class);
 $registry->unregister('_fixture/Magento_Tax_Model_Calculation_Rate');
 $registry->register('_fixture/Magento_Tax_Model_Calculation_Rate', $rate);
 //$registry->unregister('_fixture/Magento_Tax_Model_Calculation_Rate_AL');
@@ -33,6 +40,6 @@ $ruleData = [
     'tax_rates_codes' => [$rate->getId() => $rate->getCode()],
 ];
 
-$taxRule = $objectManager->create(\Magento\Tax\Model\Calculation\Rule::class)->setData($ruleData)->save();
+$taxRule = $objectManager->create(Rule::class)->setData($ruleData)->save();
 $registry->unregister('_fixture/Magento_Tax_Model_Calculation_Rule');
 $registry->register('_fixture/Magento_Tax_Model_Calculation_Rule', $taxRule);

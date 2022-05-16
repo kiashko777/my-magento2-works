@@ -3,17 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Model\Indexer\Product\Price;
 
-use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Catalog\Api\Data\ProductTierPriceInterfaceFactory;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Api\ScopedProductTierPriceManagementInterface;
-use Magento\Catalog\Api\Data\ProductTierPriceInterfaceFactory;
+use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\Catalog\Pricing\Price\TierPrice;
 use Magento\Customer\Model\Group;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class SimpleWithOptionsTierPriceTest extends \PHPUnit\Framework\TestCase
+class SimpleWithOptionsTierPriceTest extends TestCase
 {
     /**
      * @var ProductRepositoryInterface
@@ -21,7 +25,7 @@ class SimpleWithOptionsTierPriceTest extends \PHPUnit\Framework\TestCase
     private $productRepository;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
@@ -29,13 +33,6 @@ class SimpleWithOptionsTierPriceTest extends \PHPUnit\Framework\TestCase
      * @var CollectionFactory
      */
     private $productCollectionFactory;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
-        $this->productCollectionFactory = $this->objectManager->create(CollectionFactory::class);
-    }
 
     /**
      * @magentoDbIsolation disabled
@@ -57,7 +54,7 @@ class SimpleWithOptionsTierPriceTest extends \PHPUnit\Framework\TestCase
         $productCollection->addIdFilter(333);
         $productCollection->addPriceData();
         $productCollection->load();
-        /** @var \Magento\Catalog\Model\Product $product */
+        /** @var Product $product */
         $product = $productCollection->getFirstItem();
         $tierPrice = $product->getPriceInfo()
             ->getPrice(TierPrice::PRICE_CODE)
@@ -73,5 +70,12 @@ class SimpleWithOptionsTierPriceTest extends \PHPUnit\Framework\TestCase
 
         $minPrice = $product->getData('min_price');
         $this->assertEquals($tierPriceValue, $minPrice);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+        $this->productCollectionFactory = $this->objectManager->create(CollectionFactory::class);
     }
 }

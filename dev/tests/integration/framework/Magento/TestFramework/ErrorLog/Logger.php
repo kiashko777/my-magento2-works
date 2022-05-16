@@ -3,11 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\ErrorLog;
 
+use Magento\Framework\Logger\Monolog;
 use Monolog\Handler\HandlerInterface;
 
-class Logger extends \Magento\Framework\Logger\Monolog
+class Logger extends Monolog
 {
     /**
      * @var array
@@ -23,9 +25,9 @@ class Logger extends \Magento\Framework\Logger\Monolog
     protected $minimumErrorLevel;
 
     /**
-     * @param string             $name       The logging channel
-     * @param HandlerInterface[] $handlers   Optional stack of handlers, the first one in the array is called first, etc
-     * @param callable[]         $processors Optional array of processors
+     * @param string $name The logging channel
+     * @param HandlerInterface[] $handlers Optional stack of handlers, the first one in the array is called first, etc
+     * @param callable[] $processors Optional array of processors
      */
     public function __construct($name, array $handlers = [], array $processors = [])
     {
@@ -52,9 +54,9 @@ class Logger extends \Magento\Framework\Logger\Monolog
     /**
      * @{inheritDoc}
      *
-     * @param  integer $level   The logging level
-     * @param  string  $message The log message
-     * @param  array   $context The log context
+     * @param integer $level The logging level
+     * @param string $message The log message
+     * @param array $context The log context
      * @return Boolean Whether the record has been processed
      */
     public function addRecord($level, $message, array $context = [])

@@ -7,9 +7,11 @@ declare(strict_types=1);
 
 namespace Magento\Multishipping\Api;
 
+use InvalidArgumentException;
 use Magento\Framework\Api\FilterBuilder;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Api\SortOrderBuilder;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Model\Quote;
 use Magento\TestFramework\Helper\Bootstrap;
@@ -42,33 +44,6 @@ class CartRepositoryTest extends WebapiAbstract
     private $filterBuilder;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->filterBuilder = $this->objectManager->create(FilterBuilder::class);
-        $this->sortOrderBuilder = $this->objectManager->create(SortOrderBuilder::class);
-        $this->searchCriteriaBuilder = $this->objectManager->create(SearchCriteriaBuilder::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        try {
-            /** @var CartRepositoryInterface $quoteRepository */
-            $quoteRepository = $this->objectManager->get(CartRepositoryInterface::class);
-            $cart = $this->getCart('multishipping_quote_id');
-            $quoteRepository->delete($cart);
-        } catch (\InvalidArgumentException $e) {
-            // Do nothing if cart fixture was not used
-        }
-        parent::tearDown();
-    }
-
-    /**
      * Tests that multishipping quote contains all addresses in shipping assignments.
      *
      * @magentoApiDataFixture Magento/Multishipping/Fixtures/quote_with_split_items.php
@@ -81,7 +56,7 @@ class CartRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/carts/' . $cartId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => 'quoteCartRepositoryV1',
@@ -113,11 +88,38 @@ class CartRepositoryTest extends WebapiAbstract
     }
 
     /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->filterBuilder = $this->objectManager->create(FilterBuilder::class);
+        $this->sortOrderBuilder = $this->objectManager->create(SortOrderBuilder::class);
+        $this->searchCriteriaBuilder = $this->objectManager->create(SearchCriteriaBuilder::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        try {
+            /** @var CartRepositoryInterface $quoteRepository */
+            $quoteRepository = $this->objectManager->get(CartRepositoryInterface::class);
+            $cart = $this->getCart('multishipping_quote_id');
+            $quoteRepository->delete($cart);
+        } catch (InvalidArgumentException $e) {
+            // Do nothing if cart fixture was not used
+        }
+        parent::tearDown();
+    }
+
+    /**
      * Retrieve quote by given reserved order ID
      *
      * @param string $reservedOrderId
      * @return Quote
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     private function getCart(string $reservedOrderId): Quote
     {
@@ -131,7 +133,7 @@ class CartRepositoryTest extends WebapiAbstract
         $items = $quoteRepository->getList($searchCriteria)->getItems();
 
         if (empty($items)) {
-            throw new \InvalidArgumentException('There is no quote with provided reserved order ID.');
+            throw new InvalidArgumentException('There is no quote with provided reserved order ID.');
         }
 
         return array_pop($items);

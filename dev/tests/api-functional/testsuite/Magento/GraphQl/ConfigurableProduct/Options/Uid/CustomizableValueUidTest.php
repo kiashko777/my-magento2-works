@@ -23,15 +23,6 @@ class CustomizableValueUidTest extends GraphQlAbstract
     private $eavAttribute;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->eavAttribute = $objectManager->get(Attribute::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/ConfigurableProduct/_files/configurable_product_with_one_simple.php
      */
     public function testQueryUidForConfigurableSuperAttributes()
@@ -46,24 +37,11 @@ class CustomizableValueUidTest extends GraphQlAbstract
             self::assertNotEmpty($variant['attributes']);
 
             foreach ($variant['attributes'] as $attribute) {
-                $attributeId = (int) $this->eavAttribute->getIdByCode(Product::ENTITY, $attribute['code']);
+                $attributeId = (int)$this->eavAttribute->getIdByCode(Product::ENTITY, $attribute['code']);
                 $uid = $this->getUidByOptionIds($attributeId, $attribute['value_index']);
                 self::assertEquals($uid, $attribute['uid']);
             }
         }
-    }
-
-    /**
-     * Get Uid
-     *
-     * @param int $optionId
-     * @param int $optionValueId
-     *
-     * @return string
-     */
-    private function getUidByOptionIds(int $optionId, int $optionValueId): string
-    {
-        return base64_encode('configurable/' . $optionId . '/' . $optionValueId);
     }
 
     /**
@@ -92,5 +70,27 @@ query {
   }
 }
 QUERY;
+    }
+
+    /**
+     * Get Uid
+     *
+     * @param int $optionId
+     * @param int $optionValueId
+     *
+     * @return string
+     */
+    private function getUidByOptionIds(int $optionId, int $optionValueId): string
+    {
+        return base64_encode('configurable/' . $optionId . '/' . $optionValueId);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->eavAttribute = $objectManager->get(Attribute::class);
     }
 }

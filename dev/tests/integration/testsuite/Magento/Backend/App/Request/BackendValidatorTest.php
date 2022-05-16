@@ -8,28 +8,28 @@ declare(strict_types=1);
 
 namespace Magento\Backend\App\Request;
 
+use Laminas\Stdlib\Parameters;
 use Magento\Backend\App\AbstractAction;
 use Magento\Backend\App\Action\Context;
 use Magento\Backend\Model\Auth;
+use Magento\Backend\Model\UrlInterface as BackendUrl;
 use Magento\Framework\App\ActionInterface;
 use Magento\Framework\App\CsrfAwareActionInterface;
+use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Framework\App\Request\InvalidRequestException;
 use Magento\Framework\App\RequestInterface;
+use Magento\Framework\App\Response\Http as HttpResponse;
+use Magento\Framework\App\Response\HttpFactory as HttpResponseFactory;
 use Magento\Framework\App\ResponseInterface;
 use Magento\Framework\Controller\ResultInterface;
 use Magento\Framework\Data\Form\FormKey;
 use Magento\Framework\Exception\NotFoundException;
 use Magento\Framework\Phrase;
+use Magento\TestFramework\Bootstrap as TestBootstrap;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Request;
 use Magento\TestFramework\Response;
 use PHPUnit\Framework\TestCase;
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\TestFramework\Bootstrap as TestBootstrap;
-use Magento\Framework\App\Request\Http as HttpRequest;
-use Magento\Framework\App\Response\Http as HttpResponse;
-use Laminas\Stdlib\Parameters;
-use Magento\Backend\Model\UrlInterface as BackendUrl;
-use Magento\Framework\App\Response\HttpFactory as HttpResponseFactory;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
@@ -88,166 +88,6 @@ class BackendValidatorTest extends TestCase
     private $httpResponseFactory;
 
     /**
-     * @return ActionInterface
-     */
-    private function createUnawareAction(): ActionInterface
-    {
-        return new class implements ActionInterface {
-            /**
-             * @inheritDoc
-             */
-            public function execute()
-            {
-                throw new NotFoundException(new Phrase('Not implemented'));
-            }
-        };
-    }
-
-    /**
-     * @return AbstractAction
-     */
-    private function createAwareAction(): AbstractAction
-    {
-        $l = self::AWARE_LOCATION_VALUE;
-        $p = self::AWARE_VALIDATION_PARAM;
-
-        return new class($l, $p) extends AbstractAction{
-
-            /**
-             * @var string
-             */
-            private $locationValue;
-
-            /**
-             * @var string
-             */
-            private $param;
-
-            /**
-             * @param string $locationValue
-             * @param string $param
-             */
-            public function __construct(
-                string $locationValue,
-                string $param
-            ) {
-                parent::__construct(
-                    Bootstrap::getObjectManager()->get(Context::class)
-                );
-                $this->locationValue= $locationValue;
-                $this->param = $param;
-            }
-
-            /**
-             * @inheritDoc
-             */
-            public function execute()
-            {
-                throw new NotFoundException(new Phrase('Not implemented'));
-            }
-
-            /**
-             * @inheritDoc
-             */
-            public function _processUrlKeys()
-            {
-                if ($this->_request->getParam($this->param)) {
-                    return true;
-                } else {
-                    /** @var Response $response */
-                    $response = $this->_response;
-                    $response->setHeader('Location', $this->locationValue);
-
-                    return false;
-                }
-            }
-        };
-    }
-
-    /**
-     * @return CsrfAwareActionInterface
-     */
-    private function createCsrfAwareAction(): CsrfAwareActionInterface
-    {
-        $r = Bootstrap::getObjectManager()
-            ->get(ResponseInterface::class);
-        $m = self::CSRF_AWARE_MESSAGE;
-
-        return new class ($r, $m) implements CsrfAwareActionInterface {
-
-            /**
-             * @var ResponseInterface
-             */
-            private $response;
-
-            /**
-             * @var string
-             */
-            private $message;
-
-            /**
-             * @param ResponseInterface $response
-             * @param string $message
-             */
-            public function __construct(
-                ResponseInterface $response,
-                string $message
-            ) {
-                $this->response = $response;
-                $this->message = $message;
-            }
-
-            /**
-             * @inheritDoc
-             */
-            public function execute()
-            {
-                return $this->response;
-            }
-
-            /**
-             * @inheritDoc
-             */
-            public function createCsrfValidationException(
-                RequestInterface $request
-            ): ?InvalidRequestException {
-                return new InvalidRequestException(
-                    $this->response,
-                    [new Phrase($this->message)]
-                );
-            }
-
-            /**
-             * @inheritDoc
-             */
-            public function validateForCsrf(RequestInterface $request): ?bool
-            {
-                return false;
-            }
-
-        };
-    }
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->request = $objectManager->get(RequestInterface::class);
-        $this->validator = $objectManager->get(BackendValidator::class);
-        $this->mockUnawareAction = $this->createUnawareAction();
-        $this->mockAwareAction = $this->createAwareAction();
-        $this->formKey = $objectManager->get(FormKey::class);
-        $this->url = $objectManager->get(BackendUrl::class);
-        $this->auth = $objectManager->get(Auth::class);
-        $this->mockCsrfAwareAction = $this->createCsrfAwareAction();
-        $this->httpResponseFactory = $objectManager->get(
-            HttpResponseFactory::class
-        );
-    }
-
-    /**
      * @magentoConfigFixture admin/security/use_form_key 1
      * @magentoAppArea Adminhtml
      */
@@ -275,9 +115,9 @@ class BackendValidatorTest extends TestCase
      */
     public function testValidateWithInvalidKey()
     {
-        $this->expectException(\Magento\Framework\App\Request\InvalidRequestException::class);
+        $this->expectException(InvalidRequestException::class);
 
-        $invalidKey = $this->url->getSecretKey() .'Invalid';
+        $invalidKey = $this->url->getSecretKey() . 'Invalid';
         $this->request->setParams([
             BackendUrl::SECRET_KEY_PARAM_NAME => $invalidKey,
         ]);
@@ -300,10 +140,10 @@ class BackendValidatorTest extends TestCase
      */
     public function testValidateWithInvalidFormKey()
     {
-        $this->expectException(\Magento\Framework\App\Request\InvalidRequestException::class);
+        $this->expectException(InvalidRequestException::class);
 
         $this->request->setPost(
-            new Parameters(['form_key' => $this->formKey->getFormKey() .'1'])
+            new Parameters(['form_key' => $this->formKey->getFormKey() . '1'])
         );
         $this->request->setMethod(HttpRequest::METHOD_POST);
 
@@ -431,5 +271,168 @@ class BackendValidatorTest extends TestCase
         $result->renderResult($response);
         $this->assertEmpty($response->getBody());
         $this->assertEquals(401, $response->getHttpResponseCode());
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->request = $objectManager->get(RequestInterface::class);
+        $this->validator = $objectManager->get(BackendValidator::class);
+        $this->mockUnawareAction = $this->createUnawareAction();
+        $this->mockAwareAction = $this->createAwareAction();
+        $this->formKey = $objectManager->get(FormKey::class);
+        $this->url = $objectManager->get(BackendUrl::class);
+        $this->auth = $objectManager->get(Auth::class);
+        $this->mockCsrfAwareAction = $this->createCsrfAwareAction();
+        $this->httpResponseFactory = $objectManager->get(
+            HttpResponseFactory::class
+        );
+    }
+
+    /**
+     * @return ActionInterface
+     */
+    private function createUnawareAction(): ActionInterface
+    {
+        return new class implements ActionInterface {
+            /**
+             * @inheritDoc
+             */
+            public function execute()
+            {
+                throw new NotFoundException(new Phrase('Not implemented'));
+            }
+        };
+    }
+
+    /**
+     * @return AbstractAction
+     */
+    private function createAwareAction(): AbstractAction
+    {
+        $l = self::AWARE_LOCATION_VALUE;
+        $p = self::AWARE_VALIDATION_PARAM;
+
+        return new class($l, $p) extends AbstractAction {
+
+            /**
+             * @var string
+             */
+            private $locationValue;
+
+            /**
+             * @var string
+             */
+            private $param;
+
+            /**
+             * @param string $locationValue
+             * @param string $param
+             */
+            public function __construct(
+                string $locationValue,
+                string $param
+            )
+            {
+                parent::__construct(
+                    Bootstrap::getObjectManager()->get(Context::class)
+                );
+                $this->locationValue = $locationValue;
+                $this->param = $param;
+            }
+
+            /**
+             * @inheritDoc
+             */
+            public function execute()
+            {
+                throw new NotFoundException(new Phrase('Not implemented'));
+            }
+
+            /**
+             * @inheritDoc
+             */
+            public function _processUrlKeys()
+            {
+                if ($this->_request->getParam($this->param)) {
+                    return true;
+                } else {
+                    /** @var Response $response */
+                    $response = $this->_response;
+                    $response->setHeader('Location', $this->locationValue);
+
+                    return false;
+                }
+            }
+        };
+    }
+
+    /**
+     * @return CsrfAwareActionInterface
+     */
+    private function createCsrfAwareAction(): CsrfAwareActionInterface
+    {
+        $r = Bootstrap::getObjectManager()
+            ->get(ResponseInterface::class);
+        $m = self::CSRF_AWARE_MESSAGE;
+
+        return new class ($r, $m) implements CsrfAwareActionInterface {
+
+            /**
+             * @var ResponseInterface
+             */
+            private $response;
+
+            /**
+             * @var string
+             */
+            private $message;
+
+            /**
+             * @param ResponseInterface $response
+             * @param string $message
+             */
+            public function __construct(
+                ResponseInterface $response,
+                string            $message
+            )
+            {
+                $this->response = $response;
+                $this->message = $message;
+            }
+
+            /**
+             * @inheritDoc
+             */
+            public function execute()
+            {
+                return $this->response;
+            }
+
+            /**
+             * @inheritDoc
+             */
+            public function createCsrfValidationException(
+                RequestInterface $request
+            ): ?InvalidRequestException
+            {
+                return new InvalidRequestException(
+                    $this->response,
+                    [new Phrase($this->message)]
+                );
+            }
+
+            /**
+             * @inheritDoc
+             */
+            public function validateForCsrf(RequestInterface $request): ?bool
+            {
+                return false;
+            }
+
+        };
     }
 }

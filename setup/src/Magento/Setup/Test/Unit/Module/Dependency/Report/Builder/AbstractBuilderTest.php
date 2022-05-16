@@ -31,17 +31,6 @@ class AbstractBuilderTest extends TestCase
      */
     protected $builder;
 
-    protected function setUp(): void
-    {
-        $this->dependenciesParserMock = $this->getMockForAbstractClass(ParserInterface::class);
-        $this->reportWriterMock = $this->getMockForAbstractClass(WriterInterface::class);
-
-        $this->builder = $this->getMockForAbstractClass(
-            AbstractBuilder::class,
-            ['dependenciesParser' => $this->dependenciesParserMock, 'reportWriter' => $this->reportWriterMock]
-        );
-    }
-
     /**
      * @param array $options
      * @dataProvider dataProviderWrongParseOptions
@@ -111,5 +100,16 @@ class AbstractBuilderTest extends TestCase
         $this->reportWriterMock->expects($this->once())->method('write')->with($options['write'], $configMock);
 
         $this->builder->build($options);
+    }
+
+    protected function setUp(): void
+    {
+        $this->dependenciesParserMock = $this->getMockForAbstractClass(ParserInterface::class);
+        $this->reportWriterMock = $this->getMockForAbstractClass(WriterInterface::class);
+
+        $this->builder = $this->getMockForAbstractClass(
+            AbstractBuilder::class,
+            ['dependenciesParser' => $this->dependenciesParserMock, 'reportWriter' => $this->reportWriterMock]
+        );
     }
 }

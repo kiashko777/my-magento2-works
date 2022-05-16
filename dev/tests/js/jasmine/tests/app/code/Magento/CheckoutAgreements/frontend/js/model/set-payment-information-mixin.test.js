@@ -38,7 +38,8 @@ define([
         try {
             injector.clean();
             injector.remove();
-        } catch (e) {}
+        } catch (e) {
+        }
     });
 
     describe('Magento_CheckoutAgreements/js/model/set-payment-information-mixin', function () {

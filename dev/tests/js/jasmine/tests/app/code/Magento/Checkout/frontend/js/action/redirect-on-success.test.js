@@ -31,7 +31,8 @@ define([
             try {
                 injector.clean();
                 injector.remove();
-            } catch (e) {}
+            } catch (e) {
+            }
         });
 
         it('Checks if loader is called before redirect to success page.', function () {

@@ -7,9 +7,12 @@ declare(strict_types=1);
 
 namespace Magento\Sales\Service\V1;
 
-use Magento\Sales\Model\Order;
-use Magento\TestFramework\TestCase\WebapiAbstract;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\Sales\Api\Data\OrderInterface;
+use Magento\Sales\Model\Order;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
  * Test order updating via webapi
@@ -25,17 +28,9 @@ class OrderUpdateTest extends WebapiAbstract
     private const ORDER_INCREMENT_ID = '100000001';
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * Check order increment id after updating via webapi
@@ -49,7 +44,7 @@ class OrderUpdateTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -70,7 +65,7 @@ class OrderUpdateTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/order/' . $order->getId() . '/ship',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => 'salesShipOrderV1',
@@ -90,7 +85,7 @@ class OrderUpdateTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/invoices',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => 'salesInvoiceRepositoryV1',
@@ -111,7 +106,7 @@ class OrderUpdateTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/creditmemo',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => 'salesCreditmemoRepositoryV1',
@@ -121,45 +116,6 @@ class OrderUpdateTest extends WebapiAbstract
         ];
         $result = $this->_webApiCall($serviceInfo, ['entity' => $this->getDataForCreditmemo($order)]);
         $this->assertNotEmpty($result);
-        $actualOrder = $this->objectManager->get(Order::class)->load($order->getId());
-        $this->assertEquals(
-            $order->getData(OrderInterface::INCREMENT_ID),
-            $actualOrder->getData(OrderInterface::INCREMENT_ID)
-        );
-    }
-
-    /**
-     * Check order increment id after updating via webapi
-     *
-     * @magentoApiDataFixture Magento/Sales/_files/order.php
-     */
-    public function testOrderStatusUpdate()
-    {
-        /** @var Order $order */
-        $order = $this->objectManager->get(Order::class)
-            ->loadByIncrementId(self::ORDER_INCREMENT_ID);
-
-        $entityData = $this->getOrderData($order);
-        $entityData[OrderInterface::STATE] = 'complete';
-        $entityData[OrderInterface::STATUS] = 'complete';
-
-        $requestData = ['entity' => $entityData];
-
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => '/V1/orders',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'save',
-            ],
-        ];
-        $result = $this->_webApiCall($serviceInfo, $requestData);
-        $this->assertGreaterThan(1, count($result));
-
-        /** @var Order $actualOrder */
         $actualOrder = $this->objectManager->get(Order::class)->load($order->getId());
         $this->assertEquals(
             $order->getData(OrderInterface::INCREMENT_ID),
@@ -211,6 +167,43 @@ class OrderUpdateTest extends WebapiAbstract
             ];
         }
         return $orderData;
+    }
+
+    /**
+     * Get data for shipment.
+     *
+     * @param Order $order
+     * @return array
+     */
+    private function getDataForShipment(Order $order): array
+    {
+        $requestShipData = [
+            'orderId' => $order->getId(),
+            'items' => [],
+            'comment' => [
+                'comment' => 'Test Comment',
+                'is_visible_on_front' => 1,
+            ],
+            'tracks' => [
+                [
+                    'track_number' => 'TEST_TRACK_0001',
+                    'title' => 'Simple shipment track',
+                    'carrier_code' => 'UPS'
+                ]
+            ]
+        ];
+
+        foreach ($order->getAllItems() as $item) {
+            if ($item->getProductType() == 'simple') {
+                $requestShipData['items'][] = [
+                    'order_item_id' => $item->getItemId(),
+                    'qty' => $item->getQtyOrdered(),
+                ];
+                break;
+            }
+        }
+
+        return $requestShipData;
     }
 
     /**
@@ -364,39 +357,49 @@ class OrderUpdateTest extends WebapiAbstract
     }
 
     /**
-     * Get data for shipment.
+     * Check order increment id after updating via webapi
      *
-     * @param Order $order
-     * @return array
+     * @magentoApiDataFixture Magento/Sales/_files/order.php
      */
-    private function getDataForShipment(Order $order): array
+    public function testOrderStatusUpdate()
     {
-        $requestShipData = [
-            'orderId' => $order->getId(),
-            'items' => [],
-            'comment' => [
-                'comment' => 'Test Comment',
-                'is_visible_on_front' => 1,
+        /** @var Order $order */
+        $order = $this->objectManager->get(Order::class)
+            ->loadByIncrementId(self::ORDER_INCREMENT_ID);
+
+        $entityData = $this->getOrderData($order);
+        $entityData[OrderInterface::STATE] = 'complete';
+        $entityData[OrderInterface::STATUS] = 'complete';
+
+        $requestData = ['entity' => $entityData];
+
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => '/V1/orders',
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
-            'tracks' => [
-                [
-                    'track_number' => 'TEST_TRACK_0001',
-                    'title' => 'Simple shipment track',
-                    'carrier_code' => 'UPS'
-                ]
-            ]
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'save',
+            ],
         ];
+        $result = $this->_webApiCall($serviceInfo, $requestData);
+        $this->assertGreaterThan(1, count($result));
 
-        foreach ($order->getAllItems() as $item) {
-            if ($item->getProductType() == 'simple') {
-                $requestShipData['items'][] = [
-                    'order_item_id' => $item->getItemId(),
-                    'qty' => $item->getQtyOrdered(),
-                ];
-                break;
-            }
-        }
+        /** @var Order $actualOrder */
+        $actualOrder = $this->objectManager->get(Order::class)->load($order->getId());
+        $this->assertEquals(
+            $order->getData(OrderInterface::INCREMENT_ID),
+            $actualOrder->getData(OrderInterface::INCREMENT_ID)
+        );
+    }
 
-        return $requestShipData;
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

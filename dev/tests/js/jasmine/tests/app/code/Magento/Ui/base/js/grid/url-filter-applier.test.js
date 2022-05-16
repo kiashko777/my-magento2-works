@@ -34,9 +34,9 @@ define([
                 var urlSearch = '?filters[name]=test&filters[qty]=1';
 
                 expect(urlFilterApplierObj.getFilterParam(urlSearch)).toEqual({
-                        'name': 'test',
-                        'qty': '1'
-                    });
+                    'name': 'test',
+                    'qty': '1'
+                });
             });
             it('return object from url with multiple filters parameter and another parameter', function () {
                 var urlSearch = '?filters[name]=test&filters[qty]=1&anotherparam=1';

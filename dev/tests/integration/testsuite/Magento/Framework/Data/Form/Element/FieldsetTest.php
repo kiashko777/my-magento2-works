@@ -7,32 +7,19 @@
 /**
  * Tests for \Magento\Framework\Data\Form\Element\Fieldset
  */
+
 namespace Magento\Framework\Data\Form\Element;
 
-class FieldsetTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\Data\Form\ElementFactory;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class FieldsetTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Data\Form\Element\Fieldset
+     * @var Fieldset
      */
     protected $_fieldset;
-
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var $elementFactory \Magento\Framework\Data\Form\ElementFactory */
-        $elementFactory = $objectManager->create(\Magento\Framework\Data\Form\ElementFactory::class);
-        $this->_fieldset = $elementFactory->create(\Magento\Framework\Data\Form\Element\Fieldset::class, []);
-    }
-
-    /**
-     * @param array $fields
-     */
-    protected function _fillFieldset(array $fields)
-    {
-        foreach ($fields as $field) {
-            $this->_fieldset->addField($field[0], $field[1], $field[2], $field[3], $field[4]);
-        }
-    }
 
     /**
      * Test whether fieldset contains advanced section or not
@@ -46,6 +33,16 @@ class FieldsetTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * @param array $fields
+     */
+    protected function _fillFieldset(array $fields)
+    {
+        foreach ($fields as $field) {
+            $this->_fieldset->addField($field[0], $field[1], $field[2], $field[3], $field[4]);
+        }
+    }
+
+    /**
      * Test getting advanced section label
      */
     public function testAdvancedLabel()
@@ -54,6 +51,61 @@ class FieldsetTest extends \PHPUnit\Framework\TestCase
         $label = 'Test Label';
         $this->_fieldset->setAdvancedLabel($label);
         $this->assertEquals($label, $this->_fieldset->getAdvancedLabel());
+    }
+
+    /**
+     * @dataProvider getChildrenDataProvider
+     */
+    public function testGetChildren($fields, $expect)
+    {
+        $this->_fillFieldset($fields);
+        $this->assertCount($expect, $this->_fieldset->getChildren());
+    }
+
+    /**
+     * @dataProvider getBasicChildrenDataProvider
+     * @param array $fields
+     * @param int $expect
+     */
+    public function testGetBasicChildren($fields, $expect)
+    {
+        $this->_fillFieldset($fields);
+        $this->assertCount($expect, $this->_fieldset->getBasicChildren());
+    }
+
+    /**
+     * @dataProvider getBasicChildrenDataProvider
+     * @param array $fields
+     * @param int $expect
+     */
+    public function testGetCountBasicChildren($fields, $expect)
+    {
+        $this->_fillFieldset($fields);
+        $this->assertEquals($expect, $this->_fieldset->getCountBasicChildren());
+    }
+
+    /**
+     * @return array
+     */
+    public function getBasicChildrenDataProvider()
+    {
+        $data = $this->getChildrenDataProvider();
+        // set isAdvanced flag
+        $data[0][0][0][4] = true;
+        return $data;
+    }
+
+    /**
+     * @return array
+     */
+    public function getChildrenDataProvider()
+    {
+        $data = $this->fieldsDataProvider();
+        $textField = $data[1][0][0];
+        $fieldsetField = $textField;
+        $fieldsetField[1] = 'fieldset';
+        $result = [[[$fieldsetField], 0], [[$textField], 1]];
+        return $result;
     }
 
     /**
@@ -146,61 +198,6 @@ class FieldsetTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @dataProvider getChildrenDataProvider
-     */
-    public function testGetChildren($fields, $expect)
-    {
-        $this->_fillFieldset($fields);
-        $this->assertCount($expect, $this->_fieldset->getChildren());
-    }
-
-    /**
-     * @return array
-     */
-    public function getChildrenDataProvider()
-    {
-        $data = $this->fieldsDataProvider();
-        $textField = $data[1][0][0];
-        $fieldsetField = $textField;
-        $fieldsetField[1] = 'fieldset';
-        $result = [[[$fieldsetField], 0], [[$textField], 1]];
-        return $result;
-    }
-
-    /**
-     * @dataProvider getBasicChildrenDataProvider
-     * @param array $fields
-     * @param int $expect
-     */
-    public function testGetBasicChildren($fields, $expect)
-    {
-        $this->_fillFieldset($fields);
-        $this->assertCount($expect, $this->_fieldset->getBasicChildren());
-    }
-
-    /**
-     * @dataProvider getBasicChildrenDataProvider
-     * @param array $fields
-     * @param int $expect
-     */
-    public function testGetCountBasicChildren($fields, $expect)
-    {
-        $this->_fillFieldset($fields);
-        $this->assertEquals($expect, $this->_fieldset->getCountBasicChildren());
-    }
-
-    /**
-     * @return array
-     */
-    public function getBasicChildrenDataProvider()
-    {
-        $data = $this->getChildrenDataProvider();
-        // set isAdvanced flag
-        $data[0][0][0][4] = true;
-        return $data;
-    }
-
-    /**
      * @dataProvider getAdvancedChildrenDataProvider
      * @param array $fields
      * @param int $expect
@@ -250,5 +247,13 @@ class FieldsetTest extends \PHPUnit\Framework\TestCase
         $advancedFieldsetFld[4] = true;
         $result = [[[$fieldsetField, $textField, $advancedFieldsetFld], 1]];
         return $result;
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var $elementFactory ElementFactory */
+        $elementFactory = $objectManager->create(ElementFactory::class);
+        $this->_fieldset = $elementFactory->create(Fieldset::class, []);
     }
 }

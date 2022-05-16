@@ -5,11 +5,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Modular;
 
 use Magento\Framework\Component\ComponentRegistrar;
+use Magento\Payment\Model\Config\Reader;
+use Magento\TestFramework\TestCase\AbstractConfigFiles;
 
-class PaymentConfigFilesTest extends \Magento\TestFramework\TestCase\AbstractConfigFiles
+class PaymentConfigFilesTest extends AbstractConfigFiles
 {
     /**
      * Returns the reader class name that will be instantiated via ObjectManager
@@ -18,7 +21,7 @@ class PaymentConfigFilesTest extends \Magento\TestFramework\TestCase\AbstractCon
      */
     protected function _getReaderClassName()
     {
-        return \Magento\Payment\Model\Config\Reader::class;
+        return Reader::class;
     }
 
     /**

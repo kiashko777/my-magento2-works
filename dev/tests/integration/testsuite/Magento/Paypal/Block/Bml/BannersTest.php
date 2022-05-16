@@ -3,11 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Paypal\Block\Bml;
 
+use Magento\Framework\View\LayoutInterface;
+use Magento\Paypal\Model\Config;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
-class BannersTest extends \PHPUnit\Framework\TestCase
+class BannersTest extends TestCase
 {
     /**
      * @param int $publisherId
@@ -29,9 +34,10 @@ class BannersTest extends \PHPUnit\Framework\TestCase
         $isEmptyHtml,
         $methodWppBml,
         $methodWppPeBml
-    ) {
-        /** @var \Magento\Paypal\Model\Config|\PHPUnit\Framework\MockObject\MockObject $paypalConfig */
-        $paypalConfig = $this->createMock(\Magento\Paypal\Model\Config::class);
+    )
+    {
+        /** @var Config|MockObject $paypalConfig */
+        $paypalConfig = $this->createMock(Config::class);
         $paypalConfig->expects($this->any())->method('getBmlPublisherId')->willReturn($publisherId);
         $paypalConfig->expects($this->any())->method('getBmlDisplay')->willReturn($display);
         $paypalConfig->expects($this->any())->method('getBmlPosition')->willReturn($configPosition);
@@ -51,10 +57,10 @@ class BannersTest extends \PHPUnit\Framework\TestCase
                 ]
             );
 
-        /** @var \Magento\Framework\View\LayoutInterface $layout */
-        $layout = Bootstrap::getObjectManager()->get(\Magento\Framework\View\LayoutInterface::class);
+        /** @var LayoutInterface $layout */
+        $layout = Bootstrap::getObjectManager()->get(LayoutInterface::class);
         $block = $layout->createBlock(
-            \Magento\Paypal\Block\Bml\Banners::class,
+            Banners::class,
             '',
             [
                 'paypalConfig' => $paypalConfig,

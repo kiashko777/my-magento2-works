@@ -3,15 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Catalog\Block\Product\Image;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Helper\SecureHtmlRenderer;
+
 ?>
 <?php
-/** @var $block \Magento\Catalog\Block\Product\Image */
-/** @var $escaper \Magento\Framework\Escaper */
-/** @var \Magento\Framework\View\Helper\SecureHtmlRenderer $secureRenderer */
+/** @var $block Image */
+/** @var $escaper Escaper */
+/** @var SecureHtmlRenderer $secureRenderer */
 $width = (int)$block->getWidth();
 $paddingBottom = $block->getRatio() * 100;
 ?>
-<span class="product-image-container product-image-container-<?= /* @noEscape */ $block->getProductId() ?>">
+<span class="product-image-container product-image-container-<?= /* @noEscape */
+$block->getProductId() ?>">
     <span class="product-image-wrapper">
         <img class="<?= $escaper->escapeHtmlAttr($block->getClass()) ?>"
             <?php foreach ($block->getCustomAttributes() as $name => $value): ?>
@@ -47,5 +53,7 @@ for (var i = 0; i < prodImageContainersWrappers.length; i++) {
 SCRIPT;
 
 ?>
-<?= /* @noEscape */ $secureRenderer->renderTag('style', [], $styles, false) ?>
-<?= /* @noEscape */ $secureRenderer->renderTag('script', ['type' => 'text/javascript'], $script, false) ?>
+<?= /* @noEscape */
+$secureRenderer->renderTag('style', [], $styles, false) ?>
+<?= /* @noEscape */
+$secureRenderer->renderTag('script', ['type' => 'text/javascript'], $script, false) ?>

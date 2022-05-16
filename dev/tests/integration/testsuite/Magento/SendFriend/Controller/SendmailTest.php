@@ -58,28 +58,6 @@ class SendmailTest extends AbstractController
     ];
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->session = $this->_objectManager->get(Session::class);
-        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
-        $this->transportBuilder = $this->_objectManager->get(TransportBuilderMock::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        parent::tearDown();
-
-        $this->session->logout();
-    }
-
-    /**
      * Share the product to friend as logged in customer
      *
      * @magentoConfigFixture default_store sendfriend/email/allow_guest 0
@@ -96,6 +74,42 @@ class SendmailTest extends AbstractController
         $this->prepareRequestData();
         $this->dispatch('sendfriend/product/sendmail/id/' . $product->getId());
         $this->checkSuccess($product);
+    }
+
+    /**
+     * Prepare request before dispatch
+     *
+     * @return void
+     */
+    private function prepareRequestData(): void
+    {
+        $this->getRequest()->setMethod(Request::METHOD_POST);
+        $this->getRequest()->setPostValue($this->staticData);
+    }
+
+    /**
+     * Check success session message and email content
+     *
+     * @param ProductInterface $product
+     * @return void
+     */
+    private function checkSuccess(ProductInterface $product): void
+    {
+        $this->assertSessionMessages(
+            $this->equalTo([(string)__('The link to a friend was sent.')]),
+            MessageInterface::TYPE_SUCCESS
+        );
+        $message = $this->transportBuilder->getSentMessage();
+        $this->assertNotNull($message, 'The message was not sent');
+        $content = $message->getBody()->getParts()[0]->getRawContent();
+        $this->assertEquals(
+            1,
+            Xpath::getElementsCountForXpath(
+                sprintf(self::MESSAGE_PRODUCT_LINK_XPATH, $product->getUrlKey(), $product->getName()),
+                $content
+            ),
+            'Sent message does not contain product link'
+        );
     }
 
     /**
@@ -154,38 +168,24 @@ class SendmailTest extends AbstractController
     }
 
     /**
-     * Check success session message and email content
-     *
-     * @param ProductInterface $product
-     * @return void
+     * @inheritdoc
      */
-    private function checkSuccess(ProductInterface $product): void
+    protected function setUp(): void
     {
-        $this->assertSessionMessages(
-            $this->equalTo([(string)__('The link to a friend was sent.')]),
-            MessageInterface::TYPE_SUCCESS
-        );
-        $message = $this->transportBuilder->getSentMessage();
-        $this->assertNotNull($message, 'The message was not sent');
-        $content = $message->getBody()->getParts()[0]->getRawContent();
-        $this->assertEquals(
-            1,
-            Xpath::getElementsCountForXpath(
-                sprintf(self::MESSAGE_PRODUCT_LINK_XPATH, $product->getUrlKey(), $product->getName()),
-                $content
-            ),
-            'Sent message does not contain product link'
-        );
+        parent::setUp();
+
+        $this->session = $this->_objectManager->get(Session::class);
+        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
+        $this->transportBuilder = $this->_objectManager->get(TransportBuilderMock::class);
     }
 
     /**
-     * Prepare request before dispatch
-     *
-     * @return void
+     * @inheritdoc
      */
-    private function prepareRequestData(): void
+    protected function tearDown(): void
     {
-        $this->getRequest()->setMethod(Request::METHOD_POST);
-        $this->getRequest()->setPostValue($this->staticData);
+        parent::tearDown();
+
+        $this->session->logout();
     }
 }

@@ -42,17 +42,6 @@ class SearchAssetsTest extends TestCase
     private $filterBuilder;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->filterBuilder = Bootstrap::getObjectManager()->get(FilterBuilder::class);
-        $this->filterGroupBuilder = Bootstrap::getObjectManager()->get(FilterGroupBuilder::class);
-        $this->searchCriteriaBuilder = Bootstrap::getObjectManager()->get(SearchCriteriaBuilder::class);
-        $this->searchAssets = Bootstrap::getObjectManager()->get(SearchAssetsInterface::class);
-    }
-
-    /**
      * Verify search asstes by searching with search criteria
      *
      * @dataProvider searchCriteriaProvider
@@ -61,12 +50,12 @@ class SearchAssetsTest extends TestCase
     public function testExecute(array $searchCriteriaData): void
     {
         $titleFilter = $this->filterBuilder->setField($searchCriteriaData['field'])
-                ->setConditionType($searchCriteriaData['conditionType'])
-                ->setValue($searchCriteriaData['value'])
-                ->create();
+            ->setConditionType($searchCriteriaData['conditionType'])
+            ->setValue($searchCriteriaData['value'])
+            ->create();
         $searchCriteria = $this->searchCriteriaBuilder
-                ->setFilterGroups([$this->filterGroupBuilder->setFilters([$titleFilter])->create()])
-                ->create();
+            ->setFilterGroups([$this->filterGroupBuilder->setFilters([$titleFilter])->create()])
+            ->create();
 
         $assets = $this->searchAssets->execute($searchCriteria);
 
@@ -83,17 +72,28 @@ class SearchAssetsTest extends TestCase
     {
         return [
             [
-                ['field' =>  'id', 'conditionType' => 'eq', 'value' => 2020],
+                ['field' => 'id', 'conditionType' => 'eq', 'value' => 2020],
             ],
             [
-                ['field' =>  'title', 'conditionType' => 'fulltext', 'value' => 'Img'],
+                ['field' => 'title', 'conditionType' => 'fulltext', 'value' => 'Img'],
             ],
             [
-                ['field' =>  'content_type', 'conditionType' => 'eq', 'value' => 'image']
+                ['field' => 'content_type', 'conditionType' => 'eq', 'value' => 'image']
             ],
             [
-                ['field' =>  'description', 'conditionType' => 'fulltext', 'value' => 'description']
+                ['field' => 'description', 'conditionType' => 'fulltext', 'value' => 'description']
             ]
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->filterBuilder = Bootstrap::getObjectManager()->get(FilterBuilder::class);
+        $this->filterGroupBuilder = Bootstrap::getObjectManager()->get(FilterGroupBuilder::class);
+        $this->searchCriteriaBuilder = Bootstrap::getObjectManager()->get(SearchCriteriaBuilder::class);
+        $this->searchAssets = Bootstrap::getObjectManager()->get(SearchAssetsInterface::class);
     }
 }

@@ -3,19 +3,26 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Shipping\Block;
 
-class ItemsTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\View\Element\Text;
+use Magento\Framework\View\LayoutInterface;
+use Magento\Sales\Model\Order\Shipment;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class ItemsTest extends TestCase
 {
     public function testGetCommentsHtml()
     {
-        $layout = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
+        $layout = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
         );
-        $block = $layout->createBlock(\Magento\Shipping\Block\Items::class, 'block');
-        $childBlock = $layout->addBlock(\Magento\Framework\View\Element\Text::class, 'shipment_comments', 'block');
-        $shipment = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Sales\Model\Order\Shipment::class
+        $block = $layout->createBlock(Items::class, 'block');
+        $childBlock = $layout->addBlock(Text::class, 'shipment_comments', 'block');
+        $shipment = Bootstrap::getObjectManager()->create(
+            Shipment::class
         );
 
         $expectedHtml = '<b>Any html</b>';

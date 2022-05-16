@@ -3,14 +3,30 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Elasticsearch\SearchAdapter;
 
+use DOMDocument;
+use Magento\Catalog\Api\ProductAttributeRepositoryInterface;
 use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Visibility;
 use Magento\Catalog\Model\ResourceModel\Eav\Attribute;
 use Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection;
+use Magento\Framework\Api\Search\Document;
+use Magento\Framework\Api\Search\DocumentInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Search\AdapterInterface;
 use Magento\Framework\Search\EngineResolverInterface;
+use Magento\Framework\Search\Request\Builder;
+use Magento\Framework\Search\Request\Config;
+use Magento\Framework\Search\Request\Config\Converter;
+use Magento\Framework\Search\RequestInterface;
+use Magento\Framework\Search\Response\QueryResponse;
+use Magento\Indexer\Model\Indexer;
+use Magento\Search\Model\AdapterFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestModuleCatalogSearch\Model\ElasticsearchVersionChecker;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class AdapterTest
@@ -28,20 +44,20 @@ use Magento\TestModuleCatalogSearch\Model\ElasticsearchVersionChecker;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class AdapterTest extends \PHPUnit\Framework\TestCase
+class AdapterTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Search\AdapterInterface
+     * @var AdapterInterface
      */
     private $adapter;
 
     /**
-     * @var \Magento\Framework\Search\Request\Builder
+     * @var Builder
      */
     private $requestBuilder;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
@@ -49,76 +65,6 @@ class AdapterTest extends \PHPUnit\Framework\TestCase
      * @var string
      */
     private $searchEngine;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-
-        /** @var \Magento\Framework\Search\Request\Config\Converter $converter */
-        $converter = $this->objectManager->create(\Magento\Framework\Search\Request\Config\Converter::class);
-
-        $document = new \DOMDocument();
-        $document->load($this->getRequestConfigPath());
-        $requestConfig = $converter->convert($document);
-
-        /** @var \Magento\Framework\Search\Request\Config $config */
-        $config = $this->objectManager->create(\Magento\Framework\Search\Request\Config::class);
-        $config->merge($requestConfig);
-
-        $this->requestBuilder = $this->objectManager->create(
-            \Magento\Framework\Search\Request\Builder::class,
-            ['config' => $config]
-        );
-
-        $this->adapter = $this->createAdapter();
-
-        $indexer = $this->objectManager->create(\Magento\Indexer\Model\Indexer::class);
-        $indexer->load('catalogsearch_fulltext');
-        $indexer->reindexAll();
-    }
-
-    /**
-     * Get request config path
-     *
-     * @return string
-     */
-    protected function getRequestConfigPath()
-    {
-        return __DIR__ . '/../_files/requests.xml';
-    }
-
-    /**
-     * @return \Magento\Framework\Search\AdapterInterface
-     */
-    protected function createAdapter()
-    {
-        return $this->objectManager->create(\Magento\Search\Model\AdapterFactory::class)->create();
-    }
-
-    /**
-     * Make sure that correct engine is set
-     */
-    protected function assertPreConditions(): void
-    {
-        $currentEngine = $this->objectManager->get(EngineResolverInterface::class)->getCurrentSearchEngine();
-        $this->assertEquals($this->getInstalledSearchEngine(), $currentEngine);
-    }
-
-    /**
-     * @return \Magento\Framework\Search\Response\QueryResponse
-     */
-    private function executeQuery()
-    {
-        /** @var \Magento\Framework\Search\RequestInterface $queryRequest */
-        $queryRequest = $this->requestBuilder->create();
-
-        $queryResponse = $this->adapter->query($queryRequest);
-
-        return $queryResponse;
-    }
 
     /**
      * @magentoAppIsolation enabled
@@ -133,6 +79,19 @@ class AdapterTest extends \PHPUnit\Framework\TestCase
         $queryResponse = $this->executeQuery();
 
         $this->assertEquals(1, $queryResponse->count());
+    }
+
+    /**
+     * @return QueryResponse
+     */
+    private function executeQuery()
+    {
+        /** @var RequestInterface $queryRequest */
+        $queryRequest = $this->requestBuilder->create();
+
+        $queryResponse = $this->adapter->query($queryRequest);
+
+        return $queryResponse;
     }
 
     /**
@@ -157,14 +116,14 @@ class AdapterTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @param \Magento\Framework\Search\Response\QueryResponse $queryResponse
+     * @param QueryResponse $queryResponse
      * @param array $expectedIds
      */
     private function assertOrderedProductIds($queryResponse, $expectedIds)
     {
         $actualIds = [];
         foreach ($queryResponse as $document) {
-            /** @var \Magento\Framework\Api\Search\Document $document */
+            /** @var Document $document */
             $actualIds[] = $document->getId();
         }
         $this->assertEquals($expectedIds, $actualIds);
@@ -270,22 +229,6 @@ class AdapterTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @param \Magento\Framework\Search\Response\QueryResponse $queryResponse
-     * @param array $expectedIds
-     */
-    private function assertProductIds($queryResponse, $expectedIds)
-    {
-        $actualIds = [];
-        foreach ($queryResponse as $document) {
-            /** @var \Magento\Framework\Api\Search\Document $document */
-            $actualIds[] = $document->getId();
-        }
-        sort($actualIds);
-        sort($expectedIds);
-        $this->assertEquals($expectedIds, $actualIds);
-    }
-
-    /**
      * Term filter test
      *
      * @magentoAppIsolation enabled
@@ -301,6 +244,22 @@ class AdapterTest extends \PHPUnit\Framework\TestCase
         $queryResponse = $this->executeQuery();
         $this->assertEquals(3, $queryResponse->count());
         $this->assertProductIds($queryResponse, $expectedIds);
+    }
+
+    /**
+     * @param QueryResponse $queryResponse
+     * @param array $expectedIds
+     */
+    private function assertProductIds($queryResponse, $expectedIds)
+    {
+        $actualIds = [];
+        foreach ($queryResponse as $document) {
+            /** @var Document $document */
+            $actualIds[] = $document->getId();
+        }
+        sort($actualIds);
+        sort($expectedIds);
+        $this->assertEquals($expectedIds, $actualIds);
     }
 
     /**
@@ -402,7 +361,8 @@ class AdapterTest extends \PHPUnit\Framework\TestCase
         $descriptionQuery,
         $rangeFilter,
         $expectedRecordsCount
-    ) {
+    )
+    {
         $this->requestBuilder->bind('name_query', $nameQuery);
         $this->requestBuilder->bind('description_query', $descriptionQuery);
         $this->requestBuilder->bind('request.from_price', $rangeFilter['from']);
@@ -426,7 +386,7 @@ class AdapterTest extends \PHPUnit\Framework\TestCase
     {
         return [
             ['white', 'shorts', ['from' => '16', 'to' => '18'], 0],
-            ['white', 'shorts',['from' => '12', 'to' => '18'], 1],
+            ['white', 'shorts', ['from' => '12', 'to' => '18'], 1],
             ['black', 'tshirts', ['from' => '12', 'to' => '20'], 0],
             ['shorts', 'green', ['from' => '12', 'to' => '22'], 3],
             //Search with empty fields/values
@@ -466,6 +426,20 @@ class AdapterTest extends \PHPUnit\Framework\TestCase
         $this->requestBuilder->setRequestName('filterable_custom_attributes');
         $queryResponse = $this->executeQuery();
         $this->assertEquals(1, $queryResponse->count());
+    }
+
+    /**
+     * Perform full reindex
+     *
+     * @return void
+     */
+    private function reindexAll()
+    {
+        $indexer = Bootstrap::getObjectManager()->create(
+            Indexer::class
+        );
+        $indexer->load('catalogsearch_fulltext');
+        $indexer->reindexAll();
     }
 
     /**
@@ -545,8 +519,8 @@ class AdapterTest extends \PHPUnit\Framework\TestCase
             ->setAttributeFilter($attribute->getId());
 
         $visibility = [
-            \Magento\Catalog\Model\Product\Visibility::VISIBILITY_IN_SEARCH,
-            \Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH,
+            Visibility::VISIBILITY_IN_SEARCH,
+            Visibility::VISIBILITY_BOTH,
         ];
 
         $firstOption = $selectOptions->getFirstItem();
@@ -616,7 +590,7 @@ class AdapterTest extends \PHPUnit\Framework\TestCase
         $queryResponse = $this->executeQuery();
         $this->assertEquals(2, $queryResponse->count());
 
-        /** @var \Magento\Framework\Api\Search\DocumentInterface $products */
+        /** @var DocumentInterface $products */
         $products = iterator_to_array($queryResponse);
         /*
          * Products now contain search query in two attributes which are boosted with the same value: 1
@@ -630,9 +604,9 @@ class AdapterTest extends \PHPUnit\Framework\TestCase
         $secondProduct = end($products);
         $this->assertEquals(1221, $secondProduct->getId());
 
-        /** @var \Magento\Catalog\Api\ProductAttributeRepositoryInterface $productAttributeRepository */
+        /** @var ProductAttributeRepositoryInterface $productAttributeRepository */
         $productAttributeRepository = $this->objectManager->get(
-            \Magento\Catalog\Api\ProductAttributeRepositoryInterface::class
+            ProductAttributeRepositoryInterface::class
         );
 
         /**
@@ -649,7 +623,7 @@ class AdapterTest extends \PHPUnit\Framework\TestCase
         $queryResponse = $this->executeQuery();
         $this->assertEquals(2, $queryResponse->count());
 
-        /** @var \Magento\Framework\Api\Search\DocumentInterface $products */
+        /** @var DocumentInterface $products */
         $products = iterator_to_array($queryResponse);
         /*
          * As for the first case, we have two the same products.
@@ -666,20 +640,6 @@ class AdapterTest extends \PHPUnit\Framework\TestCase
         //$firstProduct
         $secondProduct = end($products);
         $this->assertEquals(1222, $secondProduct->getId());
-    }
-
-    /**
-     * Perform full reindex
-     *
-     * @return void
-     */
-    private function reindexAll()
-    {
-        $indexer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Indexer\Model\Indexer::class
-        );
-        $indexer->load('catalogsearch_fulltext');
-        $indexer->reindexAll();
     }
 
     /**
@@ -725,6 +685,63 @@ class AdapterTest extends \PHPUnit\Framework\TestCase
                 ],
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        /** @var Converter $converter */
+        $converter = $this->objectManager->create(Converter::class);
+
+        $document = new DOMDocument();
+        $document->load($this->getRequestConfigPath());
+        $requestConfig = $converter->convert($document);
+
+        /** @var Config $config */
+        $config = $this->objectManager->create(Config::class);
+        $config->merge($requestConfig);
+
+        $this->requestBuilder = $this->objectManager->create(
+            Builder::class,
+            ['config' => $config]
+        );
+
+        $this->adapter = $this->createAdapter();
+
+        $indexer = $this->objectManager->create(Indexer::class);
+        $indexer->load('catalogsearch_fulltext');
+        $indexer->reindexAll();
+    }
+
+    /**
+     * Get request config path
+     *
+     * @return string
+     */
+    protected function getRequestConfigPath()
+    {
+        return __DIR__ . '/../_files/requests.xml';
+    }
+
+    /**
+     * @return AdapterInterface
+     */
+    protected function createAdapter()
+    {
+        return $this->objectManager->create(AdapterFactory::class)->create();
+    }
+
+    /**
+     * Make sure that correct engine is set
+     */
+    protected function assertPreConditions(): void
+    {
+        $currentEngine = $this->objectManager->get(EngineResolverInterface::class)->getCurrentSearchEngine();
+        $this->assertEquals($this->getInstalledSearchEngine(), $currentEngine);
     }
 
     /**

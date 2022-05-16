@@ -25,7 +25,7 @@ class CategoryCacheTest extends AbstractGraphqlCacheTest
      */
     public function testRequestCacheTagsForCategory(): void
     {
-        $categoryId ='333';
+        $categoryId = '333';
         $query
             = <<<QUERY
         {
@@ -41,7 +41,7 @@ QUERY;
         $response = $this->dispatchGraphQlGETRequest(['query' => $query]);
         $this->assertEquals('MISS', $response->getHeader('X-Magento-Cache-Debug')->getFieldValue());
         $actualCacheTags = explode(',', $response->getHeader('X-Magento-Tags')->getFieldValue());
-        $expectedCacheTags = ['cat_c','cat_c_' . $categoryId, 'FPC'];
+        $expectedCacheTags = ['cat_c', 'cat_c_' . $categoryId, 'FPC'];
         $this->assertEquals($expectedCacheTags, $actualCacheTags);
     }
 }

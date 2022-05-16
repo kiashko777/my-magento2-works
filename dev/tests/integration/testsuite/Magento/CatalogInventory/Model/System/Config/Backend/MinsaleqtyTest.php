@@ -6,20 +6,14 @@
 
 namespace Magento\CatalogInventory\Model\System\Config\Backend;
 
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Customer\Api\GroupManagementInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class MinsaleqtyTest extends \PHPUnit\Framework\TestCase
+class MinsaleqtyTest extends TestCase
 {
     /** @var Minsaleqty */
     private $minSaleQtyConfig;
-
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->minSaleQtyConfig = $objectManager->create(Minsaleqty::class);
-        $this->minSaleQtyConfig->setPath('cataloginventory/item_options/min_sale_qty');
-    }
 
     /**
      * Test save and load cycle for minimum sale quantity configuration values. If the passed value is
@@ -118,5 +112,12 @@ class MinsaleqtyTest extends \PHPUnit\Framework\TestCase
                 ]
             ]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->minSaleQtyConfig = $objectManager->create(Minsaleqty::class);
+        $this->minSaleQtyConfig->setPath('cataloginventory/item_options/min_sale_qty');
     }
 }

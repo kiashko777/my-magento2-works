@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace Magento\TestFramework\Workaround\Override\Config;
 
+use DOMElement;
+use DOMXPath;
 use Magento\Framework\Config\ConverterInterface;
 use Magento\TestFramework\Annotation\AdminConfigFixture;
 use Magento\TestFramework\Annotation\ConfigFixture;
@@ -22,6 +24,8 @@ class Converter implements ConverterInterface
      * @var array
      */
     private $supportedFixtureTypes;
+    /** @var DOMXPath */
+    private $xpath;
 
     /**
      * @param array $types
@@ -31,15 +35,12 @@ class Converter implements ConverterInterface
         $this->supportedFixtureTypes = $types;
     }
 
-    /** @var \DOMXPath */
-    private $xpath;
-
     /**
      * @inheritdoc
      */
     public function convert($source)
     {
-        $this->xpath = new \DOMXPath($source);
+        $this->xpath = new DOMXPath($source);
         $config = $this->getGlobalConfig($this->xpath);
         foreach ($this->xpath->query('//test') as $testOverride) {
             $className = ltrim($testOverride->getAttribute('class'), '\\');
@@ -65,28 +66,123 @@ class Converter implements ConverterInterface
     }
 
     /**
-     * Fill skip config section
+     * Get global configurations
      *
-     * @param \DOMElement $node
-     * @param array $config
+     * @param DOMXPath $xpath
      * @return array
      */
-    private function fillSkipSection(\DOMElement $node, array $config): array
+    private function getGlobalConfig(DOMXPath $xpath): array
     {
-        $config['skip_from_config'] = !empty($node->getAttribute('skip'));
-        $config['skip'] = $node->getAttribute('skip') === 'true';
-        $config['skipMessage'] = $node->getAttribute('skipMessage') ?: null;
+        foreach ($xpath->query('//global') as $globalOverride) {
+            $config = $this->fillGlobalConfigByFixtureType($globalOverride);
+        }
+
+        return $config ?? [];
+    }
+
+    /**
+     * Fill global configurations node
+     *
+     * @param DOMElement $node
+     * @return array
+     */
+    private function fillGlobalConfigByFixtureType(DOMElement $node): array
+    {
+        $config = [];
+        foreach ($this->supportedFixtureTypes as $fixtureType) {
+            foreach ($node->getElementsByTagName($fixtureType) as $fixture) {
+                $config['global'][$fixtureType][] = $this->fillAttributes($fixture);
+            }
+        }
 
         return $config;
     }
 
     /**
-     * Fill test config for all fixture types
+     * Fill node attributes values
      *
-     * @param \DOMElement $node
+     * @param DOMElement $fixture
      * @return array
      */
-    private function getTestConfigByFixtureType(\DOMElement $node): array
+    protected function fillAttributes(DOMElement $fixture): array
+    {
+        $result = [];
+        switch ($fixture->nodeName) {
+            case DataFixtureBeforeTransaction::ANNOTATION:
+            case DataFixture::ANNOTATION:
+                $result = $this->fillDataFixtureAttributes($fixture);
+                break;
+            case ConfigFixture::ANNOTATION:
+                $result = $this->fillConfigFixtureAttributes($fixture);
+                break;
+            case AdminConfigFixture::ANNOTATION:
+                $result = $this->fillAdminConfigFixtureAttributes($fixture);
+                break;
+            default:
+                break;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Fill attributes values for dataFixture node types
+     *
+     * @param DOMElement $fixture
+     * @return array
+     */
+    protected function fillDataFixtureAttributes(DOMElement $fixture): array
+    {
+        return [
+            'path' => $fixture->getAttribute('path'),
+            'newPath' => $fixture->getAttribute('newPath') ?? null,
+            'before' => $fixture->getAttribute('before') ?? null,
+            'after' => $fixture->getAttribute('after') ?? null,
+            'remove' => $fixture->getAttribute('remove') ?: false,
+        ];
+    }
+
+    /**
+     * Fill attributes values for configFixture node types
+     *
+     * @param DOMElement $fixture
+     * @return array
+     */
+    protected function fillConfigFixtureAttributes(DOMElement $fixture): array
+    {
+        return [
+            'path' => $fixture->getAttribute('path'),
+            'value' => $fixture->getAttribute('value'),
+            'newValue' => $fixture->getAttribute('newValue'),
+            'scopeType' => $fixture->getAttribute('scopeType'),
+            'scopeCode' => $fixture->getAttribute('scopeCode'),
+            'remove' => $fixture->getAttribute('remove'),
+        ];
+    }
+
+    /**
+     * Fill attributes values for adminConfigFixture node types
+     *
+     * @param DOMElement $fixture
+     * @return array
+     */
+    protected function fillAdminConfigFixtureAttributes(DOMElement $fixture): array
+    {
+        return [
+            'path' => $fixture->getAttribute('path'),
+            'value' => $fixture->getAttribute('value'),
+            'newValue' => $fixture->getAttribute('newValue'),
+            'remove' => $fixture->getAttribute('remove'),
+        ];
+    }
+
+    /**
+     * Fill test config for all fixture types
+     *
+     * @param DOMElement $node
+     * @return array
+     */
+    private function getTestConfigByFixtureType(DOMElement $node): array
     {
         foreach ($this->supportedFixtureTypes as $fixtureType) {
             $currentTestNodePath = sprintf("//test[@class ='%s']/%s", $node->getAttribute('class'), $fixtureType);
@@ -113,111 +209,17 @@ class Converter implements ConverterInterface
     }
 
     /**
-     * Fill node attributes values
+     * Fill skip config section
      *
-     * @param \DOMElement $fixture
+     * @param DOMElement $node
+     * @param array $config
      * @return array
      */
-    protected function fillAttributes(\DOMElement $fixture): array
+    private function fillSkipSection(DOMElement $node, array $config): array
     {
-        $result = [];
-        switch ($fixture->nodeName) {
-            case DataFixtureBeforeTransaction::ANNOTATION:
-            case DataFixture::ANNOTATION:
-                $result = $this->fillDataFixtureAttributes($fixture);
-                break;
-            case ConfigFixture::ANNOTATION:
-                $result = $this->fillConfigFixtureAttributes($fixture);
-                break;
-            case AdminConfigFixture::ANNOTATION:
-                $result = $this->fillAdminConfigFixtureAttributes($fixture);
-                break;
-            default:
-                break;
-        }
-
-        return $result;
-    }
-
-    /**
-     * Fill attributes values for dataFixture node types
-     *
-     * @param \DOMElement $fixture
-     * @return array
-     */
-    protected function fillDataFixtureAttributes(\DOMElement $fixture): array
-    {
-        return [
-            'path' => $fixture->getAttribute('path'),
-            'newPath' => $fixture->getAttribute('newPath') ?? null,
-            'before' => $fixture->getAttribute('before') ?? null,
-            'after' => $fixture->getAttribute('after') ?? null,
-            'remove' => $fixture->getAttribute('remove') ?: false,
-        ];
-    }
-
-    /**
-     * Fill attributes values for configFixture node types
-     *
-     * @param \DOMElement $fixture
-     * @return array
-     */
-    protected function fillConfigFixtureAttributes(\DOMElement $fixture): array
-    {
-        return [
-            'path' => $fixture->getAttribute('path'),
-            'value' => $fixture->getAttribute('value'),
-            'newValue' => $fixture->getAttribute('newValue'),
-            'scopeType' => $fixture->getAttribute('scopeType'),
-            'scopeCode' => $fixture->getAttribute('scopeCode'),
-            'remove' => $fixture->getAttribute('remove'),
-        ];
-    }
-
-    /**
-     * Fill attributes values for adminConfigFixture node types
-     *
-     * @param \DOMElement $fixture
-     * @return array
-     */
-    protected function fillAdminConfigFixtureAttributes(\DOMElement $fixture): array
-    {
-        return [
-            'path' => $fixture->getAttribute('path'),
-            'value' => $fixture->getAttribute('value'),
-            'newValue' => $fixture->getAttribute('newValue'),
-            'remove' => $fixture->getAttribute('remove'),
-        ];
-    }
-    /**
-     * Get global configurations
-     *
-     * @param \DOMXPath $xpath
-     * @return array
-     */
-    private function getGlobalConfig(\DOMXPath $xpath): array
-    {
-        foreach ($xpath->query('//global') as $globalOverride) {
-            $config = $this->fillGlobalConfigByFixtureType($globalOverride);
-        }
-
-        return $config ?? [];
-    }
-
-    /**
-     * Fill global configurations node
-     *
-     * @param \DOMElement $node
-     * @return array
-     */
-    private function fillGlobalConfigByFixtureType(\DOMElement $node): array
-    {
-        $config = [];
-        foreach ($this->supportedFixtureTypes as $fixtureType) {
-            foreach ($node->getElementsByTagName($fixtureType) as $fixture) {
-                $config['global'][$fixtureType][] = $this->fillAttributes($fixture);
-            }
-        }
+        $config['skip_from_config'] = !empty($node->getAttribute('skip'));
+        $config['skip'] = $node->getAttribute('skip') === 'true';
+        $config['skipMessage'] = $node->getAttribute('skipMessage') ?: null;
 
         return $config;
     }

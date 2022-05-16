@@ -8,16 +8,24 @@ declare(strict_types=1);
 
 namespace Magento\Customer\Api;
 
+use Exception;
 use Magento\Customer\Api\Data\CustomerInterface;
 use Magento\Framework\Api\AttributeValue;
 use Magento\Framework\Api\CustomAttributesDataInterface;
+use Magento\Framework\Api\Data\ImageContentInterface;
+use Magento\Framework\Api\Data\ImageFactory;
+use Magento\Framework\Api\ImageContentFactory;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Filesystem;
 use Magento\Framework\Filesystem\Directory\DenyListPathValidator;
 use Magento\Framework\Filesystem\Directory\WriteFactory;
+use Magento\Framework\Reflection\DataObjectProcessor;
 use Magento\Framework\Webapi\Exception as HTTPExceptionCodes;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Helper\Customer as CustomerHelper;
 use Magento\TestFramework\TestCase\WebapiAbstract;
+use SoapFault;
 
 /**
  * Test class for Customer's custom attributes
@@ -52,72 +60,28 @@ class AccountManagementCustomAttributesTest extends WebapiAbstract
     private $currentCustomerId;
 
     /**
-     * @var \Magento\Framework\Reflection\DataObjectProcessor
+     * @var DataObjectProcessor
      */
     private $dataObjectProcessor;
 
     /**
-     * @var \Magento\Framework\Api\Data\ImageFactory
+     * @var ImageFactory
      */
     private $imageFactory;
 
     /**
-     * @var \Magento\Framework\Filesystem
+     * @var Filesystem
      */
     private $fileSystem;
 
     /**
-     * Execute per test initialization.
+     * @magentoApiDataFixture Magento/Customer/_files/attribute_user_defined_custom_attribute.php
      */
-    protected function setUp(): void
+    public function testCreateCustomerWithImageAttribute()
     {
-        $this->accountManagement = Bootstrap::getObjectManager()->get(
-            \Magento\Customer\Api\AccountManagementInterface::class
-        );
-
-        $this->customerHelper = new CustomerHelper();
-
-        $this->dataObjectProcessor = Bootstrap::getObjectManager()->create(
-            \Magento\Framework\Reflection\DataObjectProcessor::class
-        );
-
-        $this->imageFactory = Bootstrap::getObjectManager()->get(\Magento\Framework\Api\ImageContentFactory::class);
-
-        $this->fileSystem = Bootstrap::getObjectManager()->get(\Magento\Framework\Filesystem::class);
-    }
-
-    protected function tearDown(): void
-    {
-        if (!empty($this->currentCustomerId)) {
-            foreach ($this->currentCustomerId as $customerId) {
-                $serviceInfo = [
-                    'rest' => [
-                        'resourcePath' => self::RESOURCE_PATH . '/' . $customerId,
-                        'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
-                    ],
-                    'soap' => [
-                        'service' => CustomerRepositoryTest::SERVICE_NAME,
-                        'serviceVersion' => self::SERVICE_VERSION,
-                        'operation' => CustomerRepositoryTest::SERVICE_NAME . 'DeleteById',
-                    ],
-                ];
-
-                $response = $this->_webApiCall($serviceInfo, ['customerId' => $customerId]);
-
-                $this->assertTrue($response);
-            }
-        }
-        $this->accountManagement = null;
-        $writeFactory = Bootstrap::getObjectManager()
-            ->get(WriteFactory::class);
-        $mediaDirectory = $writeFactory->create(DirectoryList::MEDIA);
-        $denyListPathValidator = Bootstrap::getObjectManager()
-            ->create(DenyListPathValidator::class, ['driver' => $mediaDirectory->getDriver()]);
-        $denyListPathValidator->addException($mediaDirectory->getAbsolutePath() . ".htaccess");
-        $writeFactoryBypassDenyList = Bootstrap::getObjectManager()
-            ->create(WriteFactory::class, ['denyListPathValidator' => $denyListPathValidator]);
-        $mediaDirectoryBypassDenyList = $writeFactoryBypassDenyList->create(DirectoryList::MEDIA);
-        $mediaDirectoryBypassDenyList->delete(CustomerMetadataInterface::ENTITY_TYPE_CUSTOMER);
+        $customerData = $this->createCustomerWithDefaultImageAttribute();
+        $this->currentCustomerId[] = $customerData['id'];
+        $this->verifyImageAttribute($customerData[CustomAttributesDataInterface::CUSTOM_ATTRIBUTES], 'sample.jpeg');
     }
 
     /**
@@ -134,7 +98,7 @@ class AccountManagementCustomAttributesTest extends WebapiAbstract
 
         $imageData = $this->dataObjectProcessor->buildOutputDataArray(
             $image,
-            \Magento\Framework\Api\Data\ImageContentInterface::class
+            ImageContentInterface::class
         );
         return $this->createCustomerWithImageAttribute($imageData);
     }
@@ -150,7 +114,7 @@ class AccountManagementCustomAttributesTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -163,7 +127,7 @@ class AccountManagementCustomAttributesTest extends WebapiAbstract
 
         $customerDataArray = $this->dataObjectProcessor->buildOutputDataArray(
             $customerData,
-            \Magento\Customer\Api\Data\CustomerInterface::class
+            CustomerInterface::class
         );
         $customerDataArray['custom_attributes'][] = [
             'attribute_code' => 'customer_image',
@@ -171,7 +135,7 @@ class AccountManagementCustomAttributesTest extends WebapiAbstract
         ];
         $requestData = [
             'customer' => $customerDataArray,
-            'password' => \Magento\TestFramework\Helper\Customer::PASSWORD
+            'password' => CustomerHelper::PASSWORD
         ];
         $customerData = $this->_webApiCall($serviceInfo, $requestData);
 
@@ -198,16 +162,6 @@ class AccountManagementCustomAttributesTest extends WebapiAbstract
     /**
      * @magentoApiDataFixture Magento/Customer/_files/attribute_user_defined_custom_attribute.php
      */
-    public function testCreateCustomerWithImageAttribute()
-    {
-        $customerData = $this->createCustomerWithDefaultImageAttribute();
-        $this->currentCustomerId[] = $customerData['id'];
-        $this->verifyImageAttribute($customerData[CustomAttributesDataInterface::CUSTOM_ATTRIBUTES], 'sample.jpeg');
-    }
-
-    /**
-     * @magentoApiDataFixture Magento/Customer/_files/attribute_user_defined_custom_attribute.php
-     */
     public function testCreateCustomerWithInvalidImageAttribute()
     {
         $image = $this->imageFactory->create()
@@ -217,18 +171,18 @@ class AccountManagementCustomAttributesTest extends WebapiAbstract
 
         $imageData = $this->dataObjectProcessor->buildOutputDataArray(
             $image,
-            \Magento\Framework\Api\Data\ImageContentInterface::class
+            ImageContentInterface::class
         );
         $expectedMessage = 'The image content must be valid base64 encoded data.';
         try {
             $this->createCustomerWithImageAttribute($imageData);
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString(
                 $expectedMessage,
                 $e->getMessage(),
                 "Exception message does not match"
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $errorObj = $this->processRestExceptionResult($e);
             $this->assertEquals($expectedMessage, $errorObj['message']);
             $this->assertEquals(HTTPExceptionCodes::HTTP_BAD_REQUEST, $e->getCode());
@@ -251,7 +205,7 @@ class AccountManagementCustomAttributesTest extends WebapiAbstract
             ->setBase64EncodedData($imageData);
         $imageData = $this->dataObjectProcessor->buildOutputDataArray(
             $image,
-            \Magento\Framework\Api\Data\ImageContentInterface::class
+            ImageContentInterface::class
         );
 
         //Replace image attribute
@@ -261,13 +215,13 @@ class AccountManagementCustomAttributesTest extends WebapiAbstract
         ];
         $requestData = [
             'customer' => $customerDataArray,
-            'password' => \Magento\TestFramework\Helper\Customer::PASSWORD
+            'password' => CustomerHelper::PASSWORD
         ];
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/{$customerDataArray[CustomerInterface::ID]}",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => 'customerCustomerRepositoryV1',
@@ -284,5 +238,59 @@ class AccountManagementCustomAttributesTest extends WebapiAbstract
         $previousImagePath =
             $previousCustomerData[CustomAttributesDataInterface::CUSTOM_ATTRIBUTES][0][AttributeValue::VALUE];
         $this->assertFileDoesNotExist($customerMediaPath . $previousImagePath);
+    }
+
+    /**
+     * Execute per test initialization.
+     */
+    protected function setUp(): void
+    {
+        $this->accountManagement = Bootstrap::getObjectManager()->get(
+            AccountManagementInterface::class
+        );
+
+        $this->customerHelper = new CustomerHelper();
+
+        $this->dataObjectProcessor = Bootstrap::getObjectManager()->create(
+            DataObjectProcessor::class
+        );
+
+        $this->imageFactory = Bootstrap::getObjectManager()->get(ImageContentFactory::class);
+
+        $this->fileSystem = Bootstrap::getObjectManager()->get(Filesystem::class);
+    }
+
+    protected function tearDown(): void
+    {
+        if (!empty($this->currentCustomerId)) {
+            foreach ($this->currentCustomerId as $customerId) {
+                $serviceInfo = [
+                    'rest' => [
+                        'resourcePath' => self::RESOURCE_PATH . '/' . $customerId,
+                        'httpMethod' => Request::HTTP_METHOD_DELETE,
+                    ],
+                    'soap' => [
+                        'service' => CustomerRepositoryTest::SERVICE_NAME,
+                        'serviceVersion' => self::SERVICE_VERSION,
+                        'operation' => CustomerRepositoryTest::SERVICE_NAME . 'DeleteById',
+                    ],
+                ];
+
+                $response = $this->_webApiCall($serviceInfo, ['customerId' => $customerId]);
+
+                $this->assertTrue($response);
+            }
+        }
+        $this->accountManagement = null;
+        $writeFactory = Bootstrap::getObjectManager()
+            ->get(WriteFactory::class);
+        $mediaDirectory = $writeFactory->create(DirectoryList::MEDIA);
+        $denyListPathValidator = Bootstrap::getObjectManager()
+            ->create(DenyListPathValidator::class, ['driver' => $mediaDirectory->getDriver()]);
+        $denyListPathValidator->addException($mediaDirectory->getAbsolutePath() . ".htaccess");
+        $writeFactoryBypassDenyList = Bootstrap::getObjectManager()
+            ->create(WriteFactory::class, ['denyListPathValidator' => $denyListPathValidator]);
+        $mediaDirectoryBypassDenyList = $writeFactoryBypassDenyList->create(DirectoryList::MEDIA);
+        $mediaDirectoryBypassDenyList->delete(CustomerMetadataInterface::ENTITY_TYPE_CUSTOMER);
     }
 }

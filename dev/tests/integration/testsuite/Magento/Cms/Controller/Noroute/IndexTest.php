@@ -10,7 +10,9 @@
 
 namespace Magento\Cms\Controller\Noroute;
 
-class IndexTest extends \Magento\TestFramework\TestCase\AbstractController
+use Magento\TestFramework\TestCase\AbstractController;
+
+class IndexTest extends AbstractController
 {
     /**
      * @magentoDbIsolation enabled

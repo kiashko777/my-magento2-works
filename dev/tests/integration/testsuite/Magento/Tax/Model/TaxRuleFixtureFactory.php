@@ -3,8 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Tax\Model;
 
+use Magento\Framework\Api\DataObjectHelper;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Tax\Api\Data\TaxRateInterfaceFactory;
+use Magento\Tax\Api\Data\TaxRuleInterface;
+use Magento\Tax\Api\Data\TaxRuleInterfaceFactory;
+use Magento\Tax\Api\TaxRateRepositoryInterface;
+use Magento\Tax\Api\TaxRuleRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 
 /**
@@ -15,19 +23,19 @@ class TaxRuleFixtureFactory
     /**
      * Object Manager
      *
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
     /**
-     * @var \Magento\Framework\Api\DataObjectHelper
+     * @var DataObjectHelper
      */
     private $dataObjectHelper;
 
     public function __construct()
     {
         $this->objectManager = Bootstrap::getObjectManager();
-        $this->dataObjectHelper = $this->objectManager->create(\Magento\Framework\Api\DataObjectHelper::class);
+        $this->dataObjectHelper = $this->objectManager->create(DataObjectHelper::class);
     }
 
     /**
@@ -38,10 +46,10 @@ class TaxRuleFixtureFactory
      */
     public function createTaxRules($rulesData)
     {
-        /** @var \Magento\Tax\Api\Data\TaxRuleInterfaceFactory $taxRuleFactory */
-        $taxRuleFactory = $this->objectManager->create(\Magento\Tax\Api\Data\TaxRuleInterfaceFactory::class);
-        /** @var \Magento\Tax\Api\TaxRuleRepositoryInterface $taxRuleService */
-        $taxRuleService = $this->objectManager->create(\Magento\Tax\Api\TaxRuleRepositoryInterface::class);
+        /** @var TaxRuleInterfaceFactory $taxRuleFactory */
+        $taxRuleFactory = $this->objectManager->create(TaxRuleInterfaceFactory::class);
+        /** @var TaxRuleRepositoryInterface $taxRuleService */
+        $taxRuleService = $this->objectManager->create(TaxRuleRepositoryInterface::class);
 
         $rules = [];
         foreach ($rulesData as $ruleData) {
@@ -49,7 +57,7 @@ class TaxRuleFixtureFactory
             $this->dataObjectHelper->populateWithArray(
                 $taxRule,
                 $ruleData,
-                \Magento\Tax\Api\Data\TaxRuleInterface::class
+                TaxRuleInterface::class
             );
 
             $rules[$ruleData['code']] = $taxRuleService->save($taxRule)->getId();
@@ -65,8 +73,8 @@ class TaxRuleFixtureFactory
      */
     public function deleteTaxRules($ruleIds)
     {
-        /** @var \Magento\Tax\Api\TaxRuleRepositoryInterface $taxRuleService */
-        $taxRuleService = $this->objectManager->create(\Magento\Tax\Api\TaxRuleRepositoryInterface::class);
+        /** @var TaxRuleRepositoryInterface $taxRuleService */
+        $taxRuleService = $this->objectManager->create(TaxRuleRepositoryInterface::class);
 
         foreach ($ruleIds as $ruleId) {
             $taxRuleService->deleteById($ruleId);
@@ -83,10 +91,10 @@ class TaxRuleFixtureFactory
      */
     public function createTaxRates($ratesData)
     {
-        /** @var \Magento\Tax\Api\Data\TaxRateInterfaceFactory $taxRateFactory */
-        $taxRateFactory = $this->objectManager->create(\Magento\Tax\Api\Data\TaxRateInterfaceFactory::class);
-        /** @var \Magento\Tax\Api\TaxRateRepositoryInterface $taxRateService */
-        $taxRateService = $this->objectManager->create(\Magento\Tax\Api\TaxRateRepositoryInterface::class);
+        /** @var TaxRateInterfaceFactory $taxRateFactory */
+        $taxRateFactory = $this->objectManager->create(TaxRateInterfaceFactory::class);
+        /** @var TaxRateRepositoryInterface $taxRateService */
+        $taxRateService = $this->objectManager->create(TaxRateRepositoryInterface::class);
 
         $rates = [];
         foreach ($ratesData as $rateData) {
@@ -116,8 +124,8 @@ class TaxRuleFixtureFactory
      */
     public function deleteTaxRates($rateIds)
     {
-        /** @var \Magento\Tax\Api\TaxRateRepositoryInterface $taxRateService */
-        $taxRateService = $this->objectManager->create(\Magento\Tax\Api\TaxRateRepositoryInterface::class);
+        /** @var TaxRateRepositoryInterface $taxRateService */
+        $taxRateService = $this->objectManager->create(TaxRateRepositoryInterface::class);
         foreach ($rateIds as $rateId) {
             $taxRateService->deleteById($rateId);
         }
@@ -133,8 +141,8 @@ class TaxRuleFixtureFactory
     {
         $classes = [];
         foreach ($classesData as $classData) {
-            /** @var \Magento\Tax\Model\ClassModel $class */
-            $class = $this->objectManager->create(\Magento\Tax\Model\ClassModel::class)
+            /** @var ClassModel $class */
+            $class = $this->objectManager->create(ClassModel::class)
                 ->setClassName($classData['name'])
                 ->setClassType($classData['type'])
                 ->save();
@@ -150,8 +158,8 @@ class TaxRuleFixtureFactory
      */
     public function deleteTaxClasses($classIds)
     {
-        /** @var \Magento\Tax\Model\ClassModel $class */
-        $class = $this->objectManager->create(\Magento\Tax\Model\ClassModel::class);
+        /** @var ClassModel $class */
+        $class = $this->objectManager->create(ClassModel::class);
         foreach ($classIds as $classId) {
             $class->load($classId);
             $class->delete();

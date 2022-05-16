@@ -7,13 +7,65 @@ declare(strict_types=1);
 
 namespace Magento\TestFramework\Catalog\Model\Product\Option\DataProvider\Type;
 
-use Magento\TestFramework\Catalog\Model\Product\Option\DataProvider\Type\AbstractBase;
-
 /**
  * Abstract data provider for options from select group.
  */
 abstract class AbstractSelect extends AbstractBase
 {
+    /**
+     * @inheritdoc
+     */
+    public function getDataForUpdateOptions(): array
+    {
+        return array_merge_recursive(
+            $this->getDataForCreateOptions(),
+            [
+                "type_{$this->getType()}_title" => [
+                    [
+                        'title' => 'Updated test option title 1',
+                    ],
+                    [],
+                ],
+                "type_{$this->getType()}_required_options" => [
+                    [
+                        'is_require' => 0,
+                    ],
+                    [],
+                ],
+                "type_{$this->getType()}_not_required_options" => [
+                    [
+                        'is_require' => 1,
+                    ],
+                    [],
+                ],
+                "type_{$this->getType()}_options_with_fixed_price" => [
+                    [],
+                    [
+                        'price_type' => 'percent',
+                    ],
+                ],
+                "type_{$this->getType()}_options_with_percent_price" => [
+                    [],
+                    [
+                        'price_type' => 'fixed',
+                    ],
+                ],
+                "type_{$this->getType()}_price" => [
+                    [],
+                    [
+                        'price' => 666,
+                    ],
+                ],
+                "type_{$this->getType()}_sku" => [
+                    [],
+                    [
+                        'sku' => 'updated-test-option-1-value-1',
+                    ],
+                ],
+            ]
+        );
+    }
+
     /**
      * @inheritdoc
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
@@ -141,59 +193,5 @@ abstract class AbstractSelect extends AbstractBase
                 ],
             ],
         ];
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getDataForUpdateOptions(): array
-    {
-        return array_merge_recursive(
-            $this->getDataForCreateOptions(),
-            [
-                "type_{$this->getType()}_title" => [
-                    [
-                        'title' => 'Updated test option title 1',
-                    ],
-                    [],
-                ],
-                "type_{$this->getType()}_required_options" => [
-                    [
-                        'is_require' => 0,
-                    ],
-                    [],
-                ],
-                "type_{$this->getType()}_not_required_options" => [
-                    [
-                        'is_require' => 1,
-                    ],
-                    [],
-                ],
-                "type_{$this->getType()}_options_with_fixed_price" => [
-                    [],
-                    [
-                        'price_type' => 'percent',
-                    ],
-                ],
-                "type_{$this->getType()}_options_with_percent_price" => [
-                    [],
-                    [
-                        'price_type' => 'fixed',
-                    ],
-                ],
-                "type_{$this->getType()}_price" => [
-                    [],
-                    [
-                        'price' => 666,
-                    ],
-                ],
-                "type_{$this->getType()}_sku" => [
-                    [],
-                    [
-                        'sku' => 'updated-test-option-1-value-1',
-                    ],
-                ],
-            ]
-        );
     }
 }

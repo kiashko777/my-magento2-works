@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace Magento\Sales\Block\Adminhtml\Order;
 
+use DOMDocument;
+use DOMXPath;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Phrase;
 use Magento\Framework\View\LayoutInterface;
@@ -37,16 +39,6 @@ class TotalsTest extends TestCase
     private $orderFactory;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->om = Bootstrap::getObjectManager();
-        $this->layout = $this->om->get(LayoutInterface::class);
-        $this->orderFactory = $this->om->get(OrderInterfaceFactory::class);
-    }
-
-    /**
      * Test block totals including tax.
      *
      * @magentoConfigFixture default_store tax/sales_display/subtotal 2
@@ -61,75 +53,15 @@ class TotalsTest extends TestCase
         $order = $this->prepareOrderInclTax('100000001');
 
         $blockTotals = $this->getBlockTotals()->setOrder($order);
-        $this->assertSubtotal($blockTotals->toHtml(), (float) $order->getSubtotal());
-        $this->assertShipping($blockTotals->toHtml(), (float) $order->getShippingAmount());
+        $this->assertSubtotal($blockTotals->toHtml(), (float)$order->getSubtotal());
+        $this->assertShipping($blockTotals->toHtml(), (float)$order->getShippingAmount());
 
         $blockTax = $this->getBlockTax();
         $blockTotals->setChild('child_tax_block', $blockTax);
         $blockTax->initTotals();
 
-        $this->assertSubtotal($blockTotals->toHtml(), (float) $order->getSubtotalInclTax());
-        $this->assertShipping($blockTotals->toHtml(), (float) $order->getShippingInclTax());
-    }
-
-    /**
-     * Test block totals including canceled amount.
-     *
-     * @magentoDataFixture Magento/Sales/_files/order.php
-     *
-     * @return void
-     */
-    public function testTotalCanceled(): void
-    {
-        $order = $this->orderFactory->create()->loadByIncrementId('100000001');
-        $order->cancel();
-        $blockTotals = $this->getBlockTotals()->setOrder($order);
-        $this->assertCanceled($blockTotals->toHtml(), $order->getTotalCanceled());
-    }
-
-    /**
-     * Check if canceled amount present in block.
-     *
-     * @param string $blockTotalsHtml
-     * @param float $amount
-     * @return void
-     */
-    private function assertCanceled(string $blockTotalsHtml, float $amount): void
-    {
-        $this->assertTrue(
-            $this->isBlockContainsTotalAmount($blockTotalsHtml, __('Total Canceled'), $amount),
-            'Canceled amount is missing or incorrect.'
-        );
-    }
-
-    /**
-     * Check if subtotal amount present in block.
-     *
-     * @param string $blockTotalsHtml
-     * @param float $amount
-     * @return void
-     */
-    private function assertSubtotal(string $blockTotalsHtml, float $amount): void
-    {
-        $this->assertTrue(
-            $this->isBlockContainsTotalAmount($blockTotalsHtml, __('Subtotal'), $amount),
-            'Subtotal amount is missing or incorrect.'
-        );
-    }
-
-    /**
-     * Check if shipping amount present in block.
-     *
-     * @param string $blockTotalsHtml
-     * @param float $amount
-     * @return void
-     */
-    private function assertShipping(string $blockTotalsHtml, float $amount): void
-    {
-        $this->assertTrue(
-            $this->isBlockContainsTotalAmount($blockTotalsHtml, __('Shipping & Handling'), $amount),
-            'Shipping & Handling amount is missing or incorrect.'
-        );
+        $this->assertSubtotal($blockTotals->toHtml(), (float)$order->getSubtotalInclTax());
+        $this->assertShipping($blockTotals->toHtml(), (float)$order->getShippingInclTax());
     }
 
     /**
@@ -169,6 +101,61 @@ class TotalsTest extends TestCase
     }
 
     /**
+     * Check if subtotal amount present in block.
+     *
+     * @param string $blockTotalsHtml
+     * @param float $amount
+     * @return void
+     */
+    private function assertSubtotal(string $blockTotalsHtml, float $amount): void
+    {
+        $this->assertTrue(
+            $this->isBlockContainsTotalAmount($blockTotalsHtml, __('Subtotal'), $amount),
+            'Subtotal amount is missing or incorrect.'
+        );
+    }
+
+    /**
+     * Check if amount present in appropriate block node.
+     *
+     * @param string $blockTotalsHtml
+     * @param Phrase $totalLabel
+     * @param float $totalAmount
+     * @return bool
+     */
+    private function isBlockContainsTotalAmount(
+        string $blockTotalsHtml,
+        Phrase $totalLabel,
+        float  $totalAmount
+    ): bool
+    {
+        $dom = new DOMDocument();
+        $dom->loadHTML($blockTotalsHtml);
+        $query = sprintf(
+            "//tr[contains(., '%s')]//span[contains(text(), '%01.2f')]",
+            $totalLabel,
+            $totalAmount
+        );
+
+        return (bool)(new DOMXPath($dom))->query($query)->count();
+    }
+
+    /**
+     * Check if shipping amount present in block.
+     *
+     * @param string $blockTotalsHtml
+     * @param float $amount
+     * @return void
+     */
+    private function assertShipping(string $blockTotalsHtml, float $amount): void
+    {
+        $this->assertTrue(
+            $this->isBlockContainsTotalAmount($blockTotalsHtml, __('Shipping & Handling'), $amount),
+            'Shipping & Handling amount is missing or incorrect.'
+        );
+    }
+
+    /**
      * Create block tax.
      *
      * @return Tax
@@ -183,26 +170,42 @@ class TotalsTest extends TestCase
     }
 
     /**
-     * Check if amount present in appropriate block node.
+     * Test block totals including canceled amount.
+     *
+     * @magentoDataFixture Magento/Sales/_files/order.php
+     *
+     * @return void
+     */
+    public function testTotalCanceled(): void
+    {
+        $order = $this->orderFactory->create()->loadByIncrementId('100000001');
+        $order->cancel();
+        $blockTotals = $this->getBlockTotals()->setOrder($order);
+        $this->assertCanceled($blockTotals->toHtml(), $order->getTotalCanceled());
+    }
+
+    /**
+     * Check if canceled amount present in block.
      *
      * @param string $blockTotalsHtml
-     * @param Phrase $totalLabel
-     * @param float $totalAmount
-     * @return bool
+     * @param float $amount
+     * @return void
      */
-    private function isBlockContainsTotalAmount(
-        string $blockTotalsHtml,
-        Phrase $totalLabel,
-        float $totalAmount
-    ): bool {
-        $dom = new \DOMDocument();
-        $dom->loadHTML($blockTotalsHtml);
-        $query = sprintf(
-            "//tr[contains(., '%s')]//span[contains(text(), '%01.2f')]",
-            $totalLabel,
-            $totalAmount
+    private function assertCanceled(string $blockTotalsHtml, float $amount): void
+    {
+        $this->assertTrue(
+            $this->isBlockContainsTotalAmount($blockTotalsHtml, __('Total Canceled'), $amount),
+            'Canceled amount is missing or incorrect.'
         );
+    }
 
-        return (bool) (new \DOMXPath($dom))->query($query)->count();
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->om = Bootstrap::getObjectManager();
+        $this->layout = $this->om->get(LayoutInterface::class);
+        $this->orderFactory = $this->om->get(OrderInterfaceFactory::class);
     }
 }

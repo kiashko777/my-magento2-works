@@ -8,10 +8,13 @@ declare(strict_types=1);
 namespace Magento\Framework\Error;
 
 use Magento\Config\Model\Config\Reader\Source\Deployed\DocumentRoot;
-use Magento\Framework\Serialize\Serializer\Json;
-use Magento\Framework\Escaper;
 use Magento\Framework\App\ObjectManager;
 use Magento\Framework\App\Response\Http;
+use Magento\Framework\Escaper;
+use Magento\Framework\Serialize\Serializer\Json;
+use RuntimeException;
+use SimpleXMLElement;
+use stdClass;
 
 /**
  * Error processor
@@ -76,40 +79,34 @@ class Processor
      * @var string
      */
     public $reportId;
-
-    /**
-     * Report file
-     *
-     * @var string
-     */
-    protected $_reportFile;
-
     /**
      * Show error message
      *
      * @var bool
      */
     public $showErrorMsg;
-
     /**
      * Show message after sending email
      *
      * @var bool
      */
     public $showSentMsg;
-
     /**
      * Show form for sending
      *
      * @var bool
      */
     public $showSendForm;
-
     /**
      * @var string
      */
     public $reportUrl;
-
+    /**
+     * Report file
+     *
+     * @var string
+     */
+    protected $_reportFile;
     /**
      * Server script name
      *
@@ -127,7 +124,7 @@ class Processor
     /**
      * Internal config object
      *
-     * @var \stdClass
+     * @var stdClass
      */
     protected $_config;
 
@@ -162,13 +159,14 @@ class Processor
      * @param DocumentRoot|null $documentRoot
      */
     public function __construct(
-        Http $response,
-        Json $serializer = null,
-        Escaper $escaper = null,
+        Http         $response,
+        Json         $serializer = null,
+        Escaper      $escaper = null,
         DocumentRoot $documentRoot = null
-    ) {
+    )
+    {
         $this->_response = $response;
-        $this->_errorDir  = __DIR__ . '/';
+        $this->_errorDir = __DIR__ . '/';
         $this->_reportDir = dirname(dirname($this->_errorDir)) . '/var/report/';
         $this->serializer = $serializer ?: ObjectManager::getInstance()->get(Json::class);
         $this->escaper = $escaper ?: ObjectManager::getInstance()->get(Escaper::class);
@@ -183,7 +181,7 @@ class Processor
         }
 
         $this->_indexDir = $this->_getIndexDir();
-        $this->_root  = is_dir($this->_indexDir . 'app');
+        $this->_root = is_dir($this->_indexDir . 'app');
 
         $this->_prepareConfig();
         if (isset($_GET['skin'])) {
@@ -192,155 +190,6 @@ class Processor
         if (isset($_GET['id'])) {
             $this->loadReport($_GET['id']);
         }
-    }
-
-    /**
-     * Process no cache error
-     *
-     * @return \Magento\Framework\App\Response\Http
-     */
-    public function processNoCache()
-    {
-        $this->pageTitle = 'Error : cached config data is unavailable';
-        $this->_response->setBody($this->_renderPage('nocache.phtml'));
-        return $this->_response;
-    }
-
-    /**
-     * Process 404 error
-     *
-     * @return \Magento\Framework\App\Response\Http
-     */
-    public function process404()
-    {
-        $this->pageTitle = 'Error 404: Not Found';
-        $this->_response->setHttpResponseCode(404);
-        $this->_response->setBody($this->_renderPage('404.phtml'));
-        return $this->_response;
-    }
-
-    /**
-     * Process 503 error
-     *
-     * @return \Magento\Framework\App\Response\Http
-     */
-    public function process503()
-    {
-        $this->pageTitle = 'Error 503: Service Unavailable';
-        $this->_response->setHttpResponseCode(503);
-        $this->_response->setBody($this->_renderPage('503.phtml'));
-        return $this->_response;
-    }
-
-    /**
-     * Process report
-     *
-     * @return \Magento\Framework\App\Response\Http
-     */
-    public function processReport()
-    {
-        $this->pageTitle = 'There has been an error processing your request';
-        $this->_response->setHttpResponseCode(500);
-
-        $this->showErrorMsg = false;
-        $this->showSentMsg  = false;
-        $this->showSendForm = false;
-        $this->reportAction = $this->_config->action;
-        $this->_setReportUrl();
-
-        if ($this->reportAction == 'email') {
-            $this->showSendForm = true;
-            $this->sendReport();
-        }
-        $this->_response->setBody($this->_renderPage('report.phtml'));
-        return $this->_response;
-    }
-
-    /**
-     * Retrieve skin URL
-     *
-     * @return string
-     */
-    public function getViewFileUrl()
-    {
-        //The url needs to be updated base on Document root path.
-        $indexDir = str_replace('\\', '/', $this->_indexDir);
-        $errorDir = str_replace('\\', '/', $this->_errorDir);
-        $errorPathSuffix = $this->documentRoot->isPub() ? 'errors/' : 'pub/errors/';
-        $errorPath = strpos($errorDir, $indexDir) === 0 ?
-            str_replace($indexDir, '', $errorDir) : $errorPathSuffix;
-
-        return $this->getBaseUrl() . $errorPath . $this->_config->skin . '/';
-    }
-
-    /**
-     * Retrieve base host URL without path
-     *
-     * @return string
-     */
-    public function getHostUrl()
-    {
-        /**
-         * Define server http host
-         */
-        $host = $this->resolveHostName();
-
-        $isSecure = (!empty($_SERVER['HTTPS'])) && ($_SERVER['HTTPS'] !== 'off')
-            || isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && ($_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
-        $url = ($isSecure ? 'https://' : 'http://') . $host;
-
-        $port = explode(':', $host);
-        if (isset($port[1]) && !in_array($port[1], [80, 443])
-            && !preg_match('/.*?\:[0-9]+$/', $url)
-        ) {
-            $url .= ':' . $port[1];
-        }
-        return  $url;
-    }
-
-    /**
-     * Resolve hostname
-     *
-     * @return string
-     */
-    private function resolveHostName() : string
-    {
-        if (!empty($_SERVER['HTTP_HOST'])) {
-            $host = $_SERVER['HTTP_HOST'];
-        } elseif (!empty($_SERVER['SERVER_NAME'])) {
-            $host = $_SERVER['SERVER_NAME'];
-        } else {
-            $host = 'localhost';
-        }
-        return $host;
-    }
-
-    /**
-     * Retrieve base URL
-     *
-     * @param bool $param
-     * @return string
-     */
-    public function getBaseUrl($param = false)
-    {
-        $path = $this->_scriptName;
-
-        if ($param && !$this->_root) {
-            $path = dirname($path);
-        }
-
-        $basePath = str_replace('\\', '/', dirname($path));
-        return $this->getHostUrl() . ('/' == $basePath ? '' : $basePath) . '/';
-    }
-
-    /**
-     * Retrieve client IP address
-     *
-     * @return string
-     */
-    protected function _getClientIp()
-    {
-        return (isset($_SERVER['REMOTE_ADDR'])) ? $_SERVER['REMOTE_ADDR'] : 'undefined';
     }
 
     /**
@@ -366,16 +215,16 @@ class Processor
      */
     protected function _prepareConfig()
     {
-        $local  = $this->_loadXml(self::MAGE_ERRORS_LOCAL_XML);
+        $local = $this->_loadXml(self::MAGE_ERRORS_LOCAL_XML);
         $design = $this->_loadXml(self::MAGE_ERRORS_DESIGN_XML);
 
         //initial settings
-        $config = new \stdClass();
-        $config->action         = '';
-        $config->subject        = 'Store Debug Information';
-        $config->email_address  = '';
-        $config->trash          = 'leave';
-        $config->skin           = self::DEFAULT_SKIN;
+        $config = new stdClass();
+        $config->action = '';
+        $config->subject = 'Store Debug Information';
+        $config->email_address = '';
+        $config->trash = 'leave';
+        $config->skin = self::DEFAULT_SKIN;
 
         //combine xml data to one object
         if ($design !== null && (string)$design->skin) {
@@ -412,32 +261,12 @@ class Processor
      * Load xml file
      *
      * @param string $xmlFile
-     * @return \SimpleXMLElement
+     * @return SimpleXMLElement
      */
     protected function _loadXml($xmlFile)
     {
         $configPath = $this->_getFilePath($xmlFile);
         return ($configPath) ? simplexml_load_file($configPath) : null;
-    }
-
-    /**
-     * Render page
-     *
-     * @param string $template
-     * @return string
-     */
-    protected function _renderPage($template)
-    {
-        $baseTemplate = $this->_getTemplatePath('page.phtml');
-        $contentTemplate = $this->_getTemplatePath($template);
-
-        $html = '';
-        if ($baseTemplate && $contentTemplate) {
-            ob_start();
-            require_once $baseTemplate;
-            $html = ob_get_clean();
-        }
-        return $html;
     }
 
     /**
@@ -461,20 +290,130 @@ class Processor
     }
 
     /**
-     * Find template path
+     * Skin setter
      *
-     * @param string $template
+     * @param string $value
+     * @param stdClass $config
+     * @return void
+     */
+    protected function _setSkin($value, stdClass $config = null)
+    {
+        if (preg_match('/^[a-z0-9_]+$/i', $value) && is_dir($this->_errorDir . $value)) {
+            if (!$config) {
+                if ($this->_config) {
+                    $config = $this->_config;
+                }
+            }
+            if ($config) {
+                $config->skin = $value;
+            }
+        }
+    }
+
+    /**
+     * Get report
+     *
+     * @param string $reportId
+     * @return void
+     */
+    public function loadReport($reportId)
+    {
+        try {
+            if (!$this->isReportIdValid($reportId)) {
+                throw new RuntimeException("Report Id is invalid");
+            }
+            $reportFile = $this->findReportFile($reportId);
+            if (!is_readable($reportFile)) {
+                throw new RuntimeException("Report file cannot be read");
+            }
+            $this->reportId = $reportId;
+            $this->_reportFile = $reportFile;
+            $this->_setReportData($this->serializer->unserialize(file_get_contents($this->_reportFile)));
+        } catch (RuntimeException $e) {
+            $this->redirectToBaseUrl();
+        }
+    }
+
+    /**
+     * Checks report id
+     *
+     * @param string $reportId
+     * @return bool
+     */
+    private function isReportIdValid(string $reportId): bool
+    {
+        return (bool)preg_match('/[a-fA-F0-9]{64}/', $reportId);
+    }
+
+    /**
+     * Searches for the report file and returns the path to it
+     *
+     * @param string $reportId
+     * @return string
+     * @throws RuntimeException
+     */
+    private function findReportFile(string $reportId): string
+    {
+        $reportFile = $this->getReportPath(
+            $this->getReportDirNestingLevel($reportId),
+            $reportId
+        );
+        if (file_exists($reportFile)) {
+            return $reportFile;
+        }
+        $maxReportDirNestingLevel = $this->getMaxReportDirNestingLevel($reportId);
+        for ($i = 0; $i <= $maxReportDirNestingLevel; $i++) {
+            $reportFile = $this->getReportPath($i, $reportId);
+            if (file_exists($reportFile)) {
+                return $reportFile;
+            }
+        }
+        throw new RuntimeException("Report file not found");
+    }
+
+    /**
+     * Get path to reports
+     *
+     * @param integer $reportDirNestingLevel
+     * @param string $reportId
      * @return string
      */
-    protected function _getTemplatePath($template)
+    private function getReportPath(int $reportDirNestingLevel, string $reportId): string
     {
-        $directories[] = $this->_errorDir . $this->_config->skin . '/';
-
-        if ($this->_config->skin != self::DEFAULT_SKIN) {
-            $directories[] = $this->_errorDir . self::DEFAULT_SKIN . '/';
+        $reportDirPath = $this->_reportDir;
+        for ($i = 0, $j = 0; $j < $reportDirNestingLevel; $i += 2, $j++) {
+            $reportDirPath .= $reportId[$i] . $reportId[$i + 1] . '/';
         }
+        return $reportDirPath . $reportId;
+    }
 
-        return $this->_getFilePath($template, $directories);
+    /**
+     * Returns nesting Level for the report files
+     *
+     * @return int
+     * @var $reportId
+     */
+    private function getReportDirNestingLevel(string $reportId): int
+    {
+        $envName = 'MAGE_ERROR_REPORT_DIR_NESTING_LEVEL';
+        $value = $_ENV[$envName] ?? getenv($envName);
+        if (false === $value && property_exists($this->_config, 'dir_nesting_level')) {
+            $value = $this->_config->dir_nesting_level;
+        }
+        $value = (int)$value;
+        $maxValue = $this->getMaxReportDirNestingLevel($reportId);
+        return 0 < $value && $maxValue >= $value ? $value : 0;
+    }
+
+    /**
+     * Returns maximum nesting level directories of report files
+     *
+     * @param string $reportId
+     * @return integer
+     */
+    private function getMaxReportDirNestingLevel(string $reportId): int
+    {
+        return (int)floor(strlen($reportId) / self::NUMBER_SYMBOLS_IN_SUBDIR_NAME);
     }
 
     /**
@@ -499,82 +438,45 @@ class Processor
     }
 
     /**
-     * Create report
+     * Retrieve base host URL without path
      *
-     * @param array $reportData
      * @return string
      */
-    public function saveReport(array $reportData): string
+    public function getHostUrl()
     {
-        $this->reportId = $reportData['report_id'];
-        $this->_reportFile = $this->getReportPath(
-            $this->getReportDirNestingLevel($this->reportId),
-            $this->reportId
-        );
-        $reportDirName = dirname($this->_reportFile);
-        if (!file_exists($reportDirName)) {
-            @mkdir($reportDirName, 0777, true);
+        /**
+         * Define server http host
+         */
+        $host = $this->resolveHostName();
+
+        $isSecure = (!empty($_SERVER['HTTPS'])) && ($_SERVER['HTTPS'] !== 'off')
+            || isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && ($_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+        $url = ($isSecure ? 'https://' : 'http://') . $host;
+
+        $port = explode(':', $host);
+        if (isset($port[1]) && !in_array($port[1], [80, 443])
+            && !preg_match('/.*?\:[0-9]+$/', $url)
+        ) {
+            $url .= ':' . $port[1];
         }
-        $this->_setReportData($reportData);
-
-        @file_put_contents($this->_reportFile, $this->serializer->serialize($reportData). PHP_EOL);
-
-        if (isset($reportData['skin']) && self::DEFAULT_SKIN != $reportData['skin']) {
-            $this->_setSkin($reportData['skin']);
-        }
-        $this->_setReportUrl();
-
-        return $this->reportUrl;
+        return $url;
     }
 
     /**
-     * Get report
+     * Resolve hostname
      *
-     * @param string $reportId
-     * @return void
-     */
-    public function loadReport($reportId)
-    {
-        try {
-            if (!$this->isReportIdValid($reportId)) {
-                throw new \RuntimeException("Report Id is invalid");
-            }
-            $reportFile = $this->findReportFile($reportId);
-            if (!is_readable($reportFile)) {
-                throw new \RuntimeException("Report file cannot be read");
-            }
-            $this->reportId = $reportId;
-            $this->_reportFile = $reportFile;
-            $this->_setReportData($this->serializer->unserialize(file_get_contents($this->_reportFile)));
-        } catch (\RuntimeException $e) {
-            $this->redirectToBaseUrl();
-        }
-    }
-
-    /**
-     * Searches for the report file and returns the path to it
-     *
-     * @param string $reportId
      * @return string
-     * @throws \RuntimeException
      */
-    private function findReportFile(string $reportId): string
+    private function resolveHostName(): string
     {
-        $reportFile = $this->getReportPath(
-            $this->getReportDirNestingLevel($reportId),
-            $reportId
-        );
-        if (file_exists($reportFile)) {
-            return $reportFile;
+        if (!empty($_SERVER['HTTP_HOST'])) {
+            $host = $_SERVER['HTTP_HOST'];
+        } elseif (!empty($_SERVER['SERVER_NAME'])) {
+            $host = $_SERVER['SERVER_NAME'];
+        } else {
+            $host = 'localhost';
         }
-        $maxReportDirNestingLevel = $this->getMaxReportDirNestingLevel($reportId);
-        for ($i = 0; $i <= $maxReportDirNestingLevel; $i++) {
-            $reportFile = $this->getReportPath($i, $reportId);
-            if (file_exists($reportFile)) {
-                return $reportFile;
-            }
-        }
-        throw new \RuntimeException("Report file not found");
+        return $host;
     }
 
     /**
@@ -588,59 +490,133 @@ class Processor
     }
 
     /**
-     * Checks report id
+     * Retrieve base URL
      *
-     * @param string $reportId
-     * @return bool
-     */
-    private function isReportIdValid(string $reportId): bool
-    {
-        return (bool)preg_match('/[a-fA-F0-9]{64}/', $reportId);
-    }
-
-    /**
-     * Get path to reports
-     *
-     * @param integer $reportDirNestingLevel
-     * @param string $reportId
+     * @param bool $param
      * @return string
      */
-    private function getReportPath(int $reportDirNestingLevel, string $reportId): string
+    public function getBaseUrl($param = false)
     {
-        $reportDirPath = $this->_reportDir;
-        for ($i = 0, $j = 0; $j < $reportDirNestingLevel; $i += 2, $j++) {
-            $reportDirPath .= $reportId[$i] . $reportId[$i + 1] . '/';
+        $path = $this->_scriptName;
+
+        if ($param && !$this->_root) {
+            $path = dirname($path);
         }
-        return $reportDirPath . $reportId;
+
+        $basePath = str_replace('\\', '/', dirname($path));
+        return $this->getHostUrl() . ('/' == $basePath ? '' : $basePath) . '/';
     }
 
     /**
-     * Returns nesting Level for the report files
+     * Process no cache error
      *
-     * @var $reportId
-     * @return int
+     * @return Http
      */
-    private function getReportDirNestingLevel(string $reportId): int
+    public function processNoCache()
     {
-        $envName = 'MAGE_ERROR_REPORT_DIR_NESTING_LEVEL';
-        $value = $_ENV[$envName] ?? getenv($envName);
-        if(false === $value && property_exists($this->_config, 'dir_nesting_level')) {
-            $value = $this->_config->dir_nesting_level;
-        }
-        $value = (int)$value;
-        $maxValue= $this->getMaxReportDirNestingLevel($reportId);
-        return 0 < $value && $maxValue >= $value ? $value : 0;
+        $this->pageTitle = 'Error : cached config data is unavailable';
+        $this->_response->setBody($this->_renderPage('nocache.phtml'));
+        return $this->_response;
     }
 
     /**
-     * Returns maximum nesting level directories of report files
+     * Render page
      *
-     * @param string $reportId
-     * @return integer
+     * @param string $template
+     * @return string
      */
-    private function getMaxReportDirNestingLevel(string $reportId): int
+    protected function _renderPage($template)
     {
-        return (int)floor(strlen($reportId) / self::NUMBER_SYMBOLS_IN_SUBDIR_NAME);
+        $baseTemplate = $this->_getTemplatePath('page.phtml');
+        $contentTemplate = $this->_getTemplatePath($template);
+
+        $html = '';
+        if ($baseTemplate && $contentTemplate) {
+            ob_start();
+            require_once $baseTemplate;
+            $html = ob_get_clean();
+        }
+        return $html;
+    }
+
+    /**
+     * Find template path
+     *
+     * @param string $template
+     * @return string
+     */
+    protected function _getTemplatePath($template)
+    {
+        $directories[] = $this->_errorDir . $this->_config->skin . '/';
+
+        if ($this->_config->skin != self::DEFAULT_SKIN) {
+            $directories[] = $this->_errorDir . self::DEFAULT_SKIN . '/';
+        }
+
+        return $this->_getFilePath($template, $directories);
+    }
+
+    /**
+     * Process 404 error
+     *
+     * @return Http
+     */
+    public function process404()
+    {
+        $this->pageTitle = 'Error 404: Not Found';
+        $this->_response->setHttpResponseCode(404);
+        $this->_response->setBody($this->_renderPage('404.phtml'));
+        return $this->_response;
+    }
+
+    /**
+     * Process 503 error
+     *
+     * @return Http
+     */
+    public function process503()
+    {
+        $this->pageTitle = 'Error 503: Service Unavailable';
+        $this->_response->setHttpResponseCode(503);
+        $this->_response->setBody($this->_renderPage('503.phtml'));
+        return $this->_response;
+    }
+
+    /**
+     * Process report
+     *
+     * @return Http
+     */
+    public function processReport()
+    {
+        $this->pageTitle = 'There has been an error processing your request';
+        $this->_response->setHttpResponseCode(500);
+
+        $this->showErrorMsg = false;
+        $this->showSentMsg = false;
+        $this->showSendForm = false;
+        $this->reportAction = $this->_config->action;
+        $this->_setReportUrl();
+
+        if ($this->reportAction == 'email') {
+            $this->showSendForm = true;
+            $this->sendReport();
+        }
+        $this->_response->setBody($this->_renderPage('report.phtml'));
+        return $this->_response;
+    }
+
+    /**
+     * Set current report URL from current params
+     *
+     * @return void
+     */
+    protected function _setReportUrl()
+    {
+        if ($this->reportId && $this->_config && isset($this->_config->skin)) {
+            $this->reportUrl = "{$this->getBaseUrl(true)}pub/errors/report.php?"
+                . http_build_query(['id' => $this->reportId, 'skin' => $this->_config->skin]);
+        }
     }
 
     /**
@@ -667,7 +643,7 @@ class Processor
 
         if (isset($_POST['submit'])) {
             if ($this->_validate()) {
-                $msg  = "URL: {$this->reportData['url']}\n"
+                $msg = "URL: {$this->reportData['url']}\n"
                     . "IP Address: {$this->_getClientIp()}\n"
                     . "First Name: {$this->postData['firstName']}\n"
                     . "Last Name: {$this->postData['lastName']}\n"
@@ -683,7 +659,7 @@ class Processor
                 @mail((string)$this->_config->email_address, $subject, $msg);
 
                 $this->showSendForm = false;
-                $this->showSentMsg  = true;
+                $this->showSentMsg = true;
             } else {
                 $this->showErrorMsg = true;
             }
@@ -720,36 +696,58 @@ class Processor
     }
 
     /**
-     * Skin setter
+     * Retrieve client IP address
      *
-     * @param string $value
-     * @param \stdClass $config
-     * @return void
+     * @return string
      */
-    protected function _setSkin($value, \stdClass $config = null)
+    protected function _getClientIp()
     {
-        if (preg_match('/^[a-z0-9_]+$/i', $value) && is_dir($this->_errorDir . $value)) {
-            if (!$config) {
-                if ($this->_config) {
-                    $config = $this->_config;
-                }
-            }
-            if ($config) {
-                $config->skin = $value;
-            }
-        }
+        return (isset($_SERVER['REMOTE_ADDR'])) ? $_SERVER['REMOTE_ADDR'] : 'undefined';
     }
 
     /**
-     * Set current report URL from current params
+     * Retrieve skin URL
      *
-     * @return void
+     * @return string
      */
-    protected function _setReportUrl()
+    public function getViewFileUrl()
     {
-        if ($this->reportId && $this->_config && isset($this->_config->skin)) {
-            $this->reportUrl = "{$this->getBaseUrl(true)}pub/errors/report.php?"
-                . http_build_query(['id' => $this->reportId, 'skin' => $this->_config->skin]);
+        //The url needs to be updated base on Document root path.
+        $indexDir = str_replace('\\', '/', $this->_indexDir);
+        $errorDir = str_replace('\\', '/', $this->_errorDir);
+        $errorPathSuffix = $this->documentRoot->isPub() ? 'errors/' : 'pub/errors/';
+        $errorPath = strpos($errorDir, $indexDir) === 0 ?
+            str_replace($indexDir, '', $errorDir) : $errorPathSuffix;
+
+        return $this->getBaseUrl() . $errorPath . $this->_config->skin . '/';
+    }
+
+    /**
+     * Create report
+     *
+     * @param array $reportData
+     * @return string
+     */
+    public function saveReport(array $reportData): string
+    {
+        $this->reportId = $reportData['report_id'];
+        $this->_reportFile = $this->getReportPath(
+            $this->getReportDirNestingLevel($this->reportId),
+            $this->reportId
+        );
+        $reportDirName = dirname($this->_reportFile);
+        if (!file_exists($reportDirName)) {
+            @mkdir($reportDirName, 0777, true);
         }
+        $this->_setReportData($reportData);
+
+        @file_put_contents($this->_reportFile, $this->serializer->serialize($reportData) . PHP_EOL);
+
+        if (isset($reportData['skin']) && self::DEFAULT_SKIN != $reportData['skin']) {
+            $this->_setSkin($reportData['skin']);
+        }
+        $this->_setReportUrl();
+
+        return $this->reportUrl;
     }
 }

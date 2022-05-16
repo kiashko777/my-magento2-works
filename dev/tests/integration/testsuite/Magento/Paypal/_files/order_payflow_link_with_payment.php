@@ -4,8 +4,10 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Framework\UrlInterface;
 use Magento\Paypal\Model\Config;
 use Magento\Quote\Api\CartRepositoryInterface;
+use Magento\Quote\Model\QuoteFactory;
 use Magento\Quote\Model\ResourceModel\Quote as QuoteResource;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
@@ -25,17 +27,17 @@ Resolver::getInstance()->requireDataFixture('Magento/GraphQl/Quote/_files/set_fl
 
 $objManager = Bootstrap::getObjectManager();
 
-/** @var \Magento\Framework\UrlInterface $url */
-$url = $objManager->get(\Magento\Framework\UrlInterface::class);
+/** @var UrlInterface $url */
+$url = $objManager->get(UrlInterface::class);
 $baseUrl = $url->getBaseUrl();
 
 /** @var StoreInterface $store */
 $store = $objManager->get(StoreManagerInterface::class)
     ->getStore();
 
-/** @var \Magento\Quote\Model\QuoteFactory $quoteFactory */
-$quoteFactory = Bootstrap::getObjectManager()->get(\Magento\Quote\Model\QuoteFactory::class);
-/** @var CartRepositoryInterface  $cartRepository */
+/** @var QuoteFactory $quoteFactory */
+$quoteFactory = Bootstrap::getObjectManager()->get(QuoteFactory::class);
+/** @var CartRepositoryInterface $cartRepository */
 $cartRepository = Bootstrap::getObjectManager()->get(CartRepositoryInterface::class);
 /** @var QuoteResource $quoteResource */
 $quoteResource = Bootstrap::getObjectManager()->get(QuoteResource::class);
@@ -51,10 +53,10 @@ $payment->setMethod(Config::METHOD_PAYFLOWLINK)
     ->setBaseAmountAuthorized(30)
     ->setAdditionalInformation(
         [
-        'cancel_url'=> $baseUrl . 'paypal/payflow/cancelPayment',
-        'return_url'=> $baseUrl . 'paypal/payflow/returnUrl',
-        'secure_token_id' => 'mysecuretokenId',
-        'secure_token' => 'mysecuretoken'
+            'cancel_url' => $baseUrl . 'paypal/payflow/cancelPayment',
+            'return_url' => $baseUrl . 'paypal/payflow/returnUrl',
+            'secure_token_id' => 'mysecuretokenId',
+            'secure_token' => 'mysecuretoken'
         ]
     );
 

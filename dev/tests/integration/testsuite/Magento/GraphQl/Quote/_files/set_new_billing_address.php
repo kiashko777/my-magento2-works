@@ -6,12 +6,11 @@
 declare(strict_types=1);
 
 use Magento\Framework\Api\DataObjectHelper;
+use Magento\Quote\Api\BillingAddressManagementInterface;
 use Magento\Quote\Api\Data\AddressInterface;
 use Magento\Quote\Api\Data\AddressInterfaceFactory;
-use Magento\Quote\Api\BillingAddressManagementInterface;
 use Magento\Quote\Model\QuoteFactory;
 use Magento\Quote\Model\ResourceModel\Quote as QuoteResource;
-
 use Magento\TestFramework\Helper\Bootstrap;
 
 /** @var QuoteFactory $quoteFactory */

@@ -8,6 +8,9 @@ declare(strict_types=1);
 namespace Magento\GraphQl\Catalog;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\Registry;
+use Magento\Integration\Api\CustomerTokenServiceInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
 
@@ -17,14 +20,9 @@ use Magento\TestFramework\TestCase\GraphQlAbstract;
 class ProductDeleteTest extends GraphQlAbstract
 {
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
@@ -45,9 +43,9 @@ class ProductDeleteTest extends GraphQlAbstract
 }
 QUERY;
         // get customer ID token
-        /** @var \Magento\Integration\Api\CustomerTokenServiceInterface $customerTokenService */
+        /** @var CustomerTokenServiceInterface $customerTokenService */
         $customerTokenService = $this->objectManager->create(
-            \Magento\Integration\Api\CustomerTokenServiceInterface::class
+            CustomerTokenServiceInterface::class
         );
         $customerToken = $customerTokenService->createCustomerAccessToken('customer@example.com', 'password');
 
@@ -61,7 +59,7 @@ QUERY;
         /** @var ProductRepositoryInterface $productRepository */
         $productRepository = ObjectManager::getInstance()->get(ProductRepositoryInterface::class);
 
-        $registry = ObjectManager::getInstance()->get(\Magento\Framework\Registry::class);
+        $registry = ObjectManager::getInstance()->get(Registry::class);
         $registry->unregister('isSecureArea');
         $registry->register('isSecureArea', true);
         $productRepository->deleteById($productSku);
@@ -72,5 +70,10 @@ QUERY;
         $this->assertArrayHasKey('products', $response);
         $this->assertArrayHasKey('items', $response['products']);
         $this->assertCount(0, $response['products']['items']);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

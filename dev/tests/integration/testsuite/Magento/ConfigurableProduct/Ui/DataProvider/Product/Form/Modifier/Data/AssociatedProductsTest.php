@@ -3,13 +3,22 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\ConfigurableProduct\Ui\DataProvider\Product\Form\Modifier\Data;
 
-use Magento\Framework\View\Element\UiComponentFactory;
-use Magento\Ui\Component\Filters\FilterModifier;
-use Magento\Framework\View\Element\UiComponent\ContextInterface;
+use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\ConfigurableProduct\Ui\DataProvider\Product\Form\Modifier\ConfigurablePanel;
 use Magento\Framework\App\RequestInterface;
+use Magento\Framework\Locale\CurrencyInterface;
+use Magento\Framework\Locale\ResolverInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Registry;
+use Magento\Framework\View\Element\UiComponent\ContextInterface;
+use Magento\Framework\View\Element\UiComponentFactory;
+use Magento\Store\Model\Store;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Ui\Component\Filters\FilterModifier;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -20,23 +29,14 @@ use PHPUnit\Framework\TestCase;
 class AssociatedProductsTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface $objectManager
+     * @var ObjectManagerInterface $objectManager
      */
     private $objectManager;
 
     /**
-     * @var \Magento\Framework\Registry $registry
+     * @var Registry $registry
      */
     private $registry;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->registry = $this->objectManager->get(\Magento\Framework\Registry::class);
-    }
 
     /**
      * @dataProvider getProductMatrixDataProvider
@@ -51,20 +51,20 @@ class AssociatedProductsTest extends TestCase
             [10 => '10.000000'],
             [20 => '20.000000']
         ];
-        /** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-        $productRepository = $this->objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
         $this->registry->register('current_product', $productRepository->get($productSku));
-        /** @var $store \Magento\Store\Model\Store */
-        $store = $this->objectManager->create(\Magento\Store\Model\Store::class);
+        /** @var $store Store */
+        $store = $this->objectManager->create(Store::class);
         $store->load('admin');
         $this->registry->register('current_store', $store);
-        /** @var \Magento\Framework\Locale\ResolverInterface|\PHPUnit\Framework\MockObject\MockObject $localeResolver */
-        $localeResolver = $this->getMockBuilder(\Magento\Framework\Locale\ResolverInterface::class)
+        /** @var ResolverInterface|MockObject $localeResolver */
+        $localeResolver = $this->getMockBuilder(ResolverInterface::class)
             ->setMethods(['getLocale'])
             ->getMockForAbstractClass();
         $localeResolver->expects($this->any())->method('getLocale')->willReturn($interfaceLocale);
         $localeCurrency = $this->objectManager->create(
-            \Magento\Framework\Locale\CurrencyInterface::class,
+            CurrencyInterface::class,
             ['localeResolver' => $localeResolver]
         );
         $associatedProducts = $this->objectManager->create(
@@ -135,5 +135,14 @@ class AssociatedProductsTest extends TestCase
             ['en_US'],
             ['zh_Hans_CN']
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->registry = $this->objectManager->get(Registry::class);
     }
 }

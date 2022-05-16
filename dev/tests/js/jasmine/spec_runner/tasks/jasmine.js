@@ -9,16 +9,16 @@ var tasks = {},
     _ = require('underscore');
 
 function init(config) {
-    var grunt  = require('grunt'),
+    var grunt = require('grunt'),
         expand = grunt.file.expand.bind(grunt.file),
         staticMode = 'quick',
         themes, root, staticDir, baseUrl, mapFile, host, port, files, requireJs;
 
-    root         = config.root;
-    staticDir       = config.static;
-    port         = config.port;
-    files        = config.files;
-    themes       = config.themes;
+    root = config.root;
+    staticDir = config.static;
+    port = config.port;
+    files = config.files;
+    themes = config.themes;
 
     _.each(themes, function (themeData, themeName) {
         var specs,
@@ -30,10 +30,10 @@ function init(config) {
             static: staticDir
         });
 
-        host    = _.template(config.host)({
+        host = _.template(config.host)({
             port: port++
         });
-        render  = renderTemplate.bind(null, themeData);
+        render = renderTemplate.bind(null, themeData);
         mapFile = renderTemplate(themeData, files.compactMap);
         baseUrl = renderTemplate(themeData, files.requireBaseUrl);
 
@@ -45,8 +45,8 @@ function init(config) {
             files.specs = [config.singleTest];
         }
 
-        specs   = files.specs.map(render);
-        specs   = expand(specs).map(cutJsExtension);
+        specs = files.specs.map(render);
+        specs = expand(specs).map(cutJsExtension);
         configs = files.requirejsConfigs[staticMode].map(render);
         requireJs = renderTemplate(themeData, files.requireJs[staticMode]);
 

@@ -17,11 +17,6 @@ class WordWrapperTest extends TestCase
      */
     private $wrapper;
 
-    protected function setUp(): void
-    {
-        $this->wrapper = new WordWrapper();
-    }
-
     /**
      * @param array $inputData
      * @param string $expectedResult
@@ -68,5 +63,10 @@ class WordWrapperTest extends TestCase
                 '<test>Lorem</test> ipsum dolor sit amet, <test>consectetur</test> adipiscing <test>elit</test>.'
             ],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->wrapper = new WordWrapper();
     }
 }

@@ -6,8 +6,20 @@
 
 namespace Magento\Weee\Model;
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Customer\Api\CustomerMetadataInterface;
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Api\Data\CustomerInterface;
 use Magento\Customer\Api\Data\CustomerInterfaceFactory;
+use Magento\Customer\Model\Group;
+use Magento\Eav\Model\Entity\Attribute;
+use Magento\Eav\Model\Entity\AttributeFactory;
+use Magento\Framework\Api\DataObjectHelper;
+use Magento\Framework\Api\ExtensibleDataObjectConverter;
+use Magento\Framework\DataObject;
+use Magento\Quote\Model\Quote;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoDataFixture Magento/Customer/_files/customer_sample.php
@@ -15,79 +27,58 @@ use Magento\TestFramework\Helper\Bootstrap;
  * @magentoDataFixture Magento/Weee/_files/product_with_fpt.php
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class TaxTest extends \PHPUnit\Framework\TestCase
+class TaxTest extends TestCase
 {
     /**
-     * @var \Magento\Weee\Model\Tax
+     * @var Tax
      */
     protected $_model;
 
     /**
-     * @var \Magento\Framework\Api\ExtensibleDataObjectConverter
+     * @var ExtensibleDataObjectConverter
      */
     private $_extensibleDataObjectConverter;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $weeeConfig = $this->createMock(\Magento\Weee\Model\Config::class);
-        $weeeConfig->expects($this->any())->method('isEnabled')->willReturn(true);
-        $weeeConfig->expects($this->any())->method('isTaxable')->willReturn(true);
-        $attribute = $this->createMock(\Magento\Eav\Model\Entity\Attribute::class);
-        $attribute->expects($this->any())->method('getAttributeCodesByFrontendType')->willReturn(
-            ['weee']
-        );
-        $attributeFactory = $this->createPartialMock(\Magento\Eav\Model\Entity\AttributeFactory::class, ['create']);
-        $attributeFactory->expects($this->any())->method('create')->willReturn($attribute);
-        $this->_model = $objectManager->create(
-            \Magento\Weee\Model\Tax::class,
-            ['weeeConfig' => $weeeConfig, 'attributeFactory' => $attributeFactory]
-        );
-        $this->_extensibleDataObjectConverter = $objectManager->get(
-            \Magento\Framework\Api\ExtensibleDataObjectConverter::class
-        );
-    }
-
     public function testGetProductWeeeAttributes()
     {
-        /** @var \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository */
+        /** @var CustomerRepositoryInterface $customerRepository */
         $customerRepository = Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Api\CustomerRepositoryInterface::class
+            CustomerRepositoryInterface::class
         );
         $customerMetadataService = Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Api\CustomerMetadataInterface::class
+            CustomerMetadataInterface::class
         );
         $customerFactory = Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Api\Data\CustomerInterfaceFactory::class,
+            CustomerInterfaceFactory::class,
             ['metadataService' => $customerMetadataService]
         );
-        $dataObjectHelper = Bootstrap::getObjectManager()->create(\Magento\Framework\Api\DataObjectHelper::class);
+        $dataObjectHelper = Bootstrap::getObjectManager()->create(DataObjectHelper::class);
         $expected = $this->_extensibleDataObjectConverter->toFlatArray(
             $customerRepository->getById(1),
             [],
-            \Magento\Customer\Api\Data\CustomerInterface::class
+            CustomerInterface::class
         );
         $customerDataSet = $customerFactory->create();
         $dataObjectHelper->populateWithArray(
             $customerDataSet,
             $expected,
-            \Magento\Customer\Api\Data\CustomerInterface::class
+            CustomerInterface::class
         );
         $fixtureGroupCode = 'custom_group';
         $fixtureTaxClassId = 3;
-        /** @var \Magento\Customer\Model\Group $group */
-        $group = Bootstrap::getObjectManager()->create(\Magento\Customer\Model\Group::class);
+        /** @var Group $group */
+        $group = Bootstrap::getObjectManager()->create(Group::class);
         $fixtureGroupId = $group->load($fixtureGroupCode, 'customer_group_code')->getId();
-        /** @var \Magento\Quote\Model\Quote $quote */
-        $quote = Bootstrap::getObjectManager()->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = Bootstrap::getObjectManager()->create(Quote::class);
         $quote->setCustomerGroupId($fixtureGroupId);
         $quote->setCustomerTaxClassId($fixtureTaxClassId);
         $quote->setCustomer($customerDataSet);
-        $shipping = new \Magento\Framework\DataObject([
-            'quote' =>  $quote,
+        $shipping = new DataObject([
+            'quote' => $quote,
         ]);
         $productRepository = Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Api\ProductRepositoryInterface::class
+            ProductRepositoryInterface::class
         );
         $product = $productRepository->get('simple-with-ftp');
 
@@ -95,5 +86,26 @@ class TaxTest extends \PHPUnit\Framework\TestCase
         $this->assertIsArray($amount);
         $this->assertArrayHasKey(0, $amount);
         $this->assertEquals(12.70, $amount[0]->getAmount());
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $weeeConfig = $this->createMock(Config::class);
+        $weeeConfig->expects($this->any())->method('isEnabled')->willReturn(true);
+        $weeeConfig->expects($this->any())->method('isTaxable')->willReturn(true);
+        $attribute = $this->createMock(Attribute::class);
+        $attribute->expects($this->any())->method('getAttributeCodesByFrontendType')->willReturn(
+            ['weee']
+        );
+        $attributeFactory = $this->createPartialMock(AttributeFactory::class, ['create']);
+        $attributeFactory->expects($this->any())->method('create')->willReturn($attribute);
+        $this->_model = $objectManager->create(
+            Tax::class,
+            ['weeeConfig' => $weeeConfig, 'attributeFactory' => $attributeFactory]
+        );
+        $this->_extensibleDataObjectConverter = $objectManager->get(
+            ExtensibleDataObjectConverter::class
+        );
     }
 }

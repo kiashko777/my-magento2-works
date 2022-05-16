@@ -3,18 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\ConfigurableProduct\Pricing\Price;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Store\Api\WebsiteRepositoryInterface;
 use Magento\Store\Model\Store;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoDbIsolation disabled
  */
-class LowestPriceOptionProviderTest extends \PHPUnit\Framework\TestCase
+class LowestPriceOptionProviderTest extends TestCase
 {
     /**
      * @var StoreManagerInterface
@@ -25,12 +28,6 @@ class LowestPriceOptionProviderTest extends \PHPUnit\Framework\TestCase
      * @var ProductRepositoryInterface
      */
     private $productRepository;
-
-    protected function setUp(): void
-    {
-        $this->storeManager = Bootstrap::getObjectManager()->get(StoreManagerInterface::class);
-        $this->productRepository = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class);
-    }
 
     /**
      * @magentoDataFixture Magento/ConfigurableProduct/_files/product_configurable.php
@@ -61,6 +58,18 @@ class LowestPriceOptionProviderTest extends \PHPUnit\Framework\TestCase
         self::assertCount(1, $lowestPriceChildrenProducts);
         $lowestPriceChildrenProduct = reset($lowestPriceChildrenProducts);
         self::assertEquals(20, $lowestPriceChildrenProduct->getPrice());
+    }
+
+    /**
+     * As LowestPriceOptionsProviderInterface used multiple times in scope
+     * of one test we need to always recreate it and prevent internal caching in property
+     * @return LowestPriceOptionsProviderInterface
+     */
+    private function createLowestPriceOptionsProvider()
+    {
+        return Bootstrap::getObjectManager()->create(
+            LowestPriceOptionsProviderInterface::class
+        );
     }
 
     /**
@@ -134,8 +143,8 @@ class LowestPriceOptionProviderTest extends \PHPUnit\Framework\TestCase
         $lowestPriceChildrenProduct = reset($lowestPriceChildrenProducts);
         self::assertEquals(10, $lowestPriceChildrenProduct->getPrice());
 
-        /** @var \Magento\Store\Api\WebsiteRepositoryInterface $webSiteRepository */
-        $webSiteRepository = Bootstrap::getObjectManager()->get(\Magento\Store\Api\WebsiteRepositoryInterface::class);
+        /** @var WebsiteRepositoryInterface $webSiteRepository */
+        $webSiteRepository = Bootstrap::getObjectManager()->get(WebsiteRepositoryInterface::class);
         $website = $webSiteRepository->get('test');
 
         $attributes = $lowestPriceChildrenProduct->getExtensionAttributes();
@@ -150,15 +159,9 @@ class LowestPriceOptionProviderTest extends \PHPUnit\Framework\TestCase
         self::assertEquals(20, $lowestPriceChildrenProduct->getPrice());
     }
 
-    /**
-     * As LowestPriceOptionsProviderInterface used multiple times in scope
-     * of one test we need to always recreate it and prevent internal caching in property
-     * @return LowestPriceOptionsProviderInterface
-     */
-    private function createLowestPriceOptionsProvider()
+    protected function setUp(): void
     {
-        return Bootstrap::getObjectManager()->create(
-            LowestPriceOptionsProviderInterface::class
-        );
+        $this->storeManager = Bootstrap::getObjectManager()->get(StoreManagerInterface::class);
+        $this->productRepository = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class);
     }
 }

@@ -8,9 +8,9 @@ declare(strict_types=1);
 
 namespace Magento\AsynchronousOperations\Api;
 
+use Magento\Framework\Bulk\OperationInterface;
 use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\TestCase\WebapiAbstract;
-use Magento\Framework\Bulk\OperationInterface;
 
 class OperationRepositoryInterfaceTest extends WebapiAbstract
 {

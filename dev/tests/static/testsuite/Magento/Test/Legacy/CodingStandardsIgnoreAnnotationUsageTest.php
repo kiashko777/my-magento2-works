@@ -6,14 +6,15 @@
 
 namespace Magento\Test\Legacy;
 
-use PHPUnit\Framework\TestCase;
+use Magento\Framework\App\Utility\AggregateInvoker;
 use Magento\Framework\App\Utility\Files;
+use PHPUnit\Framework\TestCase;
 
 class CodingStandardsIgnoreAnnotationUsageTest extends TestCase
 {
     public function testAnnotationUsage()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
             function ($filename) {
                 $fileText = file_get_contents($filename);

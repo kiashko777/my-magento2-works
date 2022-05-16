@@ -43,42 +43,6 @@ class ConfigGeneratorTest extends TestCase
      */
     private $driverOptionsMock;
 
-    protected function setUp(): void
-    {
-        $objectManager = new ObjectManager($this);
-
-        $this->deploymentConfigMock = $this->getMockBuilder(DeploymentConfig::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $this->configDataMock = $this->getMockBuilder(ConfigData::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['set'])
-            ->getMock();
-
-        $configDataFactoryMock = $this->getMockBuilder(ConfigDataFactory::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['create'])
-            ->getMock();
-
-        $configDataFactoryMock->method('create')
-            ->willReturn($this->configDataMock);
-
-        $this->driverOptionsMock = $this->getMockBuilder(DriverOptions::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['getDriverOptions'])
-            ->getMock();
-
-        $this->model = $objectManager->getObject(
-            ConfigGenerator::class,
-            [
-                'deploymentConfig'  => $this->deploymentConfigMock,
-                'configDataFactory' => $configDataFactoryMock,
-                'driverOptions'     => $this->driverOptionsMock,
-            ]
-        );
-    }
-
     public function testCreateXFrameConfig()
     {
         $this->deploymentConfigMock->expects($this->atLeastOnce())
@@ -160,5 +124,41 @@ class ConfigGeneratorTest extends TestCase
             ->with(ConfigOptionsListConstants::CONFIG_PATH_CRYPT_KEY, $key);
 
         $this->model->createCryptConfig($data);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = new ObjectManager($this);
+
+        $this->deploymentConfigMock = $this->getMockBuilder(DeploymentConfig::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->configDataMock = $this->getMockBuilder(ConfigData::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['set'])
+            ->getMock();
+
+        $configDataFactoryMock = $this->getMockBuilder(ConfigDataFactory::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['create'])
+            ->getMock();
+
+        $configDataFactoryMock->method('create')
+            ->willReturn($this->configDataMock);
+
+        $this->driverOptionsMock = $this->getMockBuilder(DriverOptions::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['getDriverOptions'])
+            ->getMock();
+
+        $this->model = $objectManager->getObject(
+            ConfigGenerator::class,
+            [
+                'deploymentConfig' => $this->deploymentConfigMock,
+                'configDataFactory' => $configDataFactoryMock,
+                'driverOptions' => $this->driverOptionsMock,
+            ]
+        );
     }
 }

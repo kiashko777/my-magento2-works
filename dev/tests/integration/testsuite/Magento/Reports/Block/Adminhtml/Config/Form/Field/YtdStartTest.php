@@ -47,7 +47,7 @@ class YtdStartTest extends AbstractBackendController
     {
         foreach ($this->monthNumbers as $monthNumber) {
             $regEx = "\<option[^\>]+value\=\\\"$monthNumber\\\"[^\>]*?";
-            if ($monthNumber ===  $option) {
+            if ($monthNumber === $option) {
                 $regEx .= 'selected\=\"selected\"[^\>]*?';
             }
             $regEx .= "\>$monthNumber\<\/option\>";

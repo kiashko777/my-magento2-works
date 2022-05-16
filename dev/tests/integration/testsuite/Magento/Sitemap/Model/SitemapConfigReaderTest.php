@@ -8,18 +8,14 @@ namespace Magento\Sitemap\Model;
 
 use Magento\Store\Model\Store;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class SitemapConfigReaderTest extends \PHPUnit\Framework\TestCase
+class SitemapConfigReaderTest extends TestCase
 {
     /**
      * @var SitemapConfigReader
      */
     private $model = null;
-
-    protected function setUp(): void
-    {
-        $this->model = Bootstrap::getObjectManager()->get(SitemapConfigReader::class);
-    }
 
     /**
      * @magentoConfigFixture default_store sitemap/search_engines/submission_robots 1
@@ -55,5 +51,10 @@ class SitemapConfigReaderTest extends \PHPUnit\Framework\TestCase
     {
         $this->assertEquals('all', $this->model->getProductImageIncludePolicy(Store::DEFAULT_STORE_ID));
         $this->assertEquals('base', $this->model->getProductImageIncludePolicy(Store::DISTRO_STORE_ID));
+    }
+
+    protected function setUp(): void
+    {
+        $this->model = Bootstrap::getObjectManager()->get(SitemapConfigReader::class);
     }
 }

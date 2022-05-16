@@ -6,16 +6,17 @@
 
 namespace Magento\Framework\Stdlib\Cookie;
 
+use Laminas\Stdlib\Parameters;
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
-use Laminas\Stdlib\Parameters;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test CookieScope
  *
  */
-class CookieScopeTest extends \PHPUnit\Framework\TestCase
+class CookieScopeTest extends TestCase
 {
     /**
      * @var ObjectManagerInterface
@@ -26,12 +27,6 @@ class CookieScopeTest extends \PHPUnit\Framework\TestCase
      * @var RequestInterface
      */
     protected $request;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->request = $this->objectManager->get(\Magento\Framework\App\RequestInterface::class);
-    }
 
     public function testGetSensitiveCookieMetadataEmpty()
     {
@@ -49,6 +44,17 @@ class CookieScopeTest extends \PHPUnit\Framework\TestCase
         );
 
         $this->request->setServer(new Parameters($serverVal));
+    }
+
+    /**
+     * Creates a CookieScope object with the given parameters.
+     *
+     * @param array $params
+     * @return CookieScope
+     */
+    protected function createCookieScope($params = [])
+    {
+        return $this->objectManager->create(CookieScope::class, $params);
     }
 
     public function testGetPublicCookieDefaultMetadata()
@@ -86,6 +92,20 @@ class CookieScopeTest extends \PHPUnit\Framework\TestCase
         );
     }
 
+    /**
+     * Creates a SensitiveCookieMetadata object with provided metadata values.
+     *
+     * @param array $metadata
+     * @return SensitiveCookieMetadata
+     */
+    protected function createSensitiveMetadata($metadata = [])
+    {
+        return $this->objectManager->create(
+            SensitiveCookieMetadata::class,
+            ['metadata' => $metadata]
+        );
+    }
+
     public function testGetPublicCookieMetadataDefaults()
     {
         $defaultValues = [
@@ -106,6 +126,20 @@ class CookieScopeTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($defaultValues, $cookieScope->getPublicCookieMetadata()->__toArray());
     }
 
+    /**
+     * Creates a PublicCookieMetadata object with provided metadata values.
+     *
+     * @param array $metadata
+     * @return PublicCookieMetadata
+     */
+    protected function createPublicMetadata($metadata = [])
+    {
+        return $this->objectManager->create(
+            PublicCookieMetadata::class,
+            ['metadata' => $metadata]
+        );
+    }
+
     public function testGetCookieMetadataDefaults()
     {
         $defaultValues = [
@@ -119,6 +153,20 @@ class CookieScopeTest extends \PHPUnit\Framework\TestCase
             ]
         );
         $this->assertEquals($defaultValues, $cookieScope->getCookieMetadata()->__toArray());
+    }
+
+    /**
+     * Creates a CookieMetadata object with provided metadata values.
+     *
+     * @param array $metadata
+     * @return CookieMetadata
+     */
+    protected function createCookieMetadata($metadata = [])
+    {
+        return $this->objectManager->create(
+            CookieMetadata::class,
+            ['metadata' => $metadata]
+        );
     }
 
     public function testGetSensitiveCookieMetadataOverrides()
@@ -198,56 +246,9 @@ class CookieScopeTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($overrideValues, $cookieScope->getCookieMetadata($override)->__toArray());
     }
 
-    /**
-     * Creates a CookieScope object with the given parameters.
-     *
-     * @param array $params
-     * @return CookieScope
-     */
-    protected function createCookieScope($params = [])
+    protected function setUp(): void
     {
-        return $this->objectManager->create(\Magento\Framework\Stdlib\Cookie\CookieScope::class, $params);
-    }
-
-    /**
-     * Creates a SensitiveCookieMetadata object with provided metadata values.
-     *
-     * @param array $metadata
-     * @return SensitiveCookieMetadata
-     */
-    protected function createSensitiveMetadata($metadata = [])
-    {
-        return $this->objectManager->create(
-            \Magento\Framework\Stdlib\Cookie\SensitiveCookieMetadata::class,
-            ['metadata' => $metadata]
-        );
-    }
-
-    /**
-     * Creates a PublicCookieMetadata object with provided metadata values.
-     *
-     * @param array $metadata
-     * @return PublicCookieMetadata
-     */
-    protected function createPublicMetadata($metadata = [])
-    {
-        return $this->objectManager->create(
-            \Magento\Framework\Stdlib\Cookie\PublicCookieMetadata::class,
-            ['metadata' => $metadata]
-        );
-    }
-
-    /**
-     * Creates a CookieMetadata object with provided metadata values.
-     *
-     * @param array $metadata
-     * @return CookieMetadata
-     */
-    protected function createCookieMetadata($metadata = [])
-    {
-        return $this->objectManager->create(
-            \Magento\Framework\Stdlib\Cookie\CookieMetadata::class,
-            ['metadata' => $metadata]
-        );
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->request = $this->objectManager->get(RequestInterface::class);
     }
 }

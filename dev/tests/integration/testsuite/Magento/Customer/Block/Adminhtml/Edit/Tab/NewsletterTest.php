@@ -7,14 +7,18 @@
 namespace Magento\Customer\Block\Adminhtml\Edit\Tab;
 
 use Magento\Customer\Controller\RegistryConstants;
+use Magento\Framework\App\State;
+use Magento\Framework\Registry;
+use Magento\Framework\View\LayoutInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * Test Customer account form block functionality
  *
  * @magentoAppArea Adminhtml
  */
-class NewsletterTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class NewsletterTest extends AbstractBackendController
 {
     /**
      * @var Newsletter
@@ -24,38 +28,9 @@ class NewsletterTest extends \Magento\TestFramework\TestCase\AbstractBackendCont
     /**
      * Core registry
      *
-     * @var \Magento\Framework\Registry
+     * @var Registry
      */
     private $coreRegistry;
-
-    /**
-     * Execute per test initialization.
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $objectManager = Bootstrap::getObjectManager();
-        $objectManager->get(\Magento\Framework\App\State::class)->setAreaCode('Adminhtml');
-
-        $this->coreRegistry = $objectManager->get(\Magento\Framework\Registry::class);
-        $this->block = $objectManager->get(
-            \Magento\Framework\View\LayoutInterface::class
-        )->createBlock(
-            \Magento\Customer\Block\Adminhtml\Edit\Tab\Newsletter::class,
-            '',
-            ['registry' => $this->coreRegistry]
-        )->setTemplate(
-            'tab/newsletter.phtml'
-        );
-    }
-
-    /**
-     * Execute post test cleanup
-     */
-    protected function tearDown(): void
-    {
-        $this->coreRegistry->unregister(RegistryConstants::CURRENT_CUSTOMER_ID);
-    }
 
     /**
      * @magentoDataFixture Magento/Customer/_files/customer_sample.php
@@ -92,5 +67,34 @@ class NewsletterTest extends \Magento\TestFramework\TestCase\AbstractBackendCont
             '~.+\/newsletter\\\/template\\\/preview\\\/id\\\/\d+\\\/subscriber\\\/\d+\\\/.+~',
             $body
         );
+    }
+
+    /**
+     * Execute per test initialization.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->get(State::class)->setAreaCode('Adminhtml');
+
+        $this->coreRegistry = $objectManager->get(Registry::class);
+        $this->block = $objectManager->get(
+            LayoutInterface::class
+        )->createBlock(
+            Newsletter::class,
+            '',
+            ['registry' => $this->coreRegistry]
+        )->setTemplate(
+            'tab/newsletter.phtml'
+        );
+    }
+
+    /**
+     * Execute post test cleanup
+     */
+    protected function tearDown(): void
+    {
+        $this->coreRegistry->unregister(RegistryConstants::CURRENT_CUSTOMER_ID);
     }
 }

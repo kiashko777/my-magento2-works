@@ -5,37 +5,26 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Persistent\Model\Persistent;
 
+use Magento\Catalog\Block\Product\Compare\ListCompare;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Filesystem;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Sales\Block\Reorder\Sidebar;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class ConfigTest extends \PHPUnit\Framework\TestCase
+class ConfigTest extends TestCase
 {
     /**
-     * @var \Magento\Persistent\Model\Persistent\Config
+     * @var Config
      */
     protected $_model;
 
-    /** @var  \Magento\Framework\ObjectManagerInterface */
+    /** @var  ObjectManagerInterface */
     protected $_objectManager;
-
-    protected function setUp(): void
-    {
-        $directoryList = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\App\Filesystem\DirectoryList::class,
-            ['root' => DirectoryList::ROOT]
-        );
-        $filesystem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\Filesystem::class,
-            ['directoryList' => $directoryList]
-        );
-
-        $this->_objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->_model = $this->_objectManager->create(
-            \Magento\Persistent\Model\Persistent\Config::class,
-            ['filesystem' => $filesystem]
-        );
-    }
 
     public function testCollectInstancesToEmulate()
     {
@@ -48,7 +37,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
     public function testGetBlockConfigInfo()
     {
         $this->_model->setConfigFilePath(__DIR__ . '/_files/persistent.xml');
-        $blocks = $this->_model->getBlockConfigInfo(\Magento\Sales\Block\Reorder\Sidebar::class);
+        $blocks = $this->_model->getBlockConfigInfo(Sidebar::class);
         $expected = include '_files/expectedBlocksArray.php';
         $this->assertEquals($expected, $blocks);
     }
@@ -56,7 +45,25 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
     public function testGetBlockConfigInfoNotConfigured()
     {
         $this->_model->setConfigFilePath(__DIR__ . '/_files/persistent.xml');
-        $blocks = $this->_model->getBlockConfigInfo(\Magento\Catalog\Block\Product\Compare\ListCompare::class);
+        $blocks = $this->_model->getBlockConfigInfo(ListCompare::class);
         $this->assertEquals([], $blocks);
+    }
+
+    protected function setUp(): void
+    {
+        $directoryList = Bootstrap::getObjectManager()->create(
+            DirectoryList::class,
+            ['root' => DirectoryList::ROOT]
+        );
+        $filesystem = Bootstrap::getObjectManager()->create(
+            Filesystem::class,
+            ['directoryList' => $directoryList]
+        );
+
+        $this->_objectManager = Bootstrap::getObjectManager();
+        $this->_model = $this->_objectManager->create(
+            Config::class,
+            ['filesystem' => $filesystem]
+        );
     }
 }

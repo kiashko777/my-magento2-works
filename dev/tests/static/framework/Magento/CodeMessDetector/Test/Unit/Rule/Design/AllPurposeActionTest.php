@@ -11,11 +11,11 @@ namespace Magento\CodeMessDetector\Test\Unit\Rule\Design;
 use Magento\CodeMessDetector\Rule\Design\AllPurposeAction;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\App\ActionInterface;
-use PHPUnit\Framework\TestCase;
-use PHPUnit\Framework\MockObject\MockObject as MockObject;
-use PHPUnit\Framework\MockObject\Builder\InvocationMocker;
-use PHPMD\Report;
 use PHPMD\Node\ClassNode;
+use PHPMD\Report;
+use PHPUnit\Framework\MockObject\Builder\InvocationMocker;
+use PHPUnit\Framework\MockObject\MockObject as MockObject;
+use PHPUnit\Framework\TestCase;
 
 class AllPurposeActionTest extends TestCase
 {
@@ -31,61 +31,6 @@ class AllPurposeActionTest extends TestCase
         $rule = new AllPurposeAction();
         $this->expectsRuleViolation($rule, $violates);
         $rule->apply($node);
-    }
-
-    /**
-     * @return array
-     */
-    public function getCases(): array
-    {
-        return [
-            [
-                new class implements ActionInterface, HttpGetActionInterface
-                {
-                    /**
-                     * @inheritDoc
-                     */
-                    public function execute()
-                    {
-                        return null;
-                    }
-                },
-                false
-            ],
-            [
-                new class implements ActionInterface
-                {
-                    /**
-                     * @inheritDoc
-                     */
-                    public function execute()
-                    {
-                        return null;
-                    }
-                },
-                true
-            ],
-            [
-                new class implements HttpGetActionInterface
-                {
-                    /**
-                     * @inheritDoc
-                     */
-                    public function execute()
-                    {
-                        return null;
-                    }
-                },
-                false
-            ],
-            [
-                new class
-                {
-
-                },
-                false
-            ]
-        ];
     }
 
     /**
@@ -134,5 +79,56 @@ class AllPurposeActionTest extends TestCase
         $rule->setReport($report);
 
         return $invokation;
+    }
+
+    /**
+     * @return array
+     */
+    public function getCases(): array
+    {
+        return [
+            [
+                new class implements ActionInterface, HttpGetActionInterface {
+                    /**
+                     * @inheritDoc
+                     */
+                    public function execute()
+                    {
+                        return null;
+                    }
+                },
+                false
+            ],
+            [
+                new class implements ActionInterface {
+                    /**
+                     * @inheritDoc
+                     */
+                    public function execute()
+                    {
+                        return null;
+                    }
+                },
+                true
+            ],
+            [
+                new class implements HttpGetActionInterface {
+                    /**
+                     * @inheritDoc
+                     */
+                    public function execute()
+                    {
+                        return null;
+                    }
+                },
+                false
+            ],
+            [
+                new class {
+
+                },
+                false
+            ]
+        ];
     }
 }

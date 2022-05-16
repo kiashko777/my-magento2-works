@@ -8,7 +8,9 @@ declare(strict_types=1);
 use Magento\Sales\Api\Data\OrderInterfaceFactory;
 use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Tax\ItemFactory;
+use Magento\Sales\Model\ResourceModel\Order\Tax\Item;
 use Magento\Store\Model\StoreManagerInterface;
+use Magento\Tax\Model\Sales\Order\Tax;
 use Magento\Tax\Model\Sales\Order\TaxFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
@@ -22,7 +24,7 @@ $order = $objectManager->get(OrderInterfaceFactory::class)->create()->loadByIncr
 $amount = 45;
 $taxFactory = $objectManager->create(TaxFactory::class);
 
-/** @var \Magento\Tax\Model\Sales\Order\Tax  $tax */
+/** @var Tax $tax */
 $tax = $taxFactory->create();
 $tax->setOrderId($order->getId())
     ->setCode('US-NY-*-Rate 1')
@@ -55,5 +57,5 @@ $salesOrderTaxItem->setTaxId($tax->getId())
     ->setTaxableItemType('shipping')
     ->setItemId($salesOrderItem->getId());
 
-$taxItemCollection = $objectManager->create(\Magento\Sales\Model\ResourceModel\Order\Tax\Item::class);
+$taxItemCollection = $objectManager->create(Item::class);
 $taxItemCollection->save($salesOrderTaxItem);

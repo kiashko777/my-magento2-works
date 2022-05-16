@@ -65,21 +65,6 @@ class ListProductTest extends TestCase
     private $listingBlock;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productResource = $this->objectManager->get(ProductResource::class);
-        $this->attributeRepository = $this->objectManager->get(ProductAttributeRepositoryInterface::class);
-        $this->request = $this->objectManager->get(RequestInterface::class);
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->listingBlock = $this->layout->createBlock(ListProduct::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Swatches/_files/configurable_product_text_swatch_attribute.php
      * @magentoDataFixture Magento/Catalog/_files/product_image.php
      * @dataProvider getImageDataProvider
@@ -93,6 +78,89 @@ class ListProductTest extends TestCase
         $this->updateAttributePreviewImageFlag('text_swatch_attribute');
         $this->addFilterToRequest('text_swatch_attribute', 'option 1');
         $this->assertProductImage($images, $area, $expectation);
+    }
+
+    /**
+     * Updates attribute "Update Products Preview Image" flag.
+     *
+     * @param string $attributeCode
+     * @return void
+     */
+    private function updateAttributePreviewImageFlag(string $attributeCode): void
+    {
+        $attribute = $this->attributeRepository->get($attributeCode);
+        $attribute->setData('update_product_preview_image', 1);
+        $this->attributeRepository->save($attribute);
+    }
+
+    /**
+     * Adds attribute param to request.
+     *
+     * @param string $attributeCode
+     * @param string $optionLabel
+     * @return void
+     */
+    private function addFilterToRequest(string $attributeCode, string $optionLabel): void
+    {
+        $attribute = $this->attributeRepository->get($attributeCode);
+        $this->request->setParams(
+            [$attributeCode => $attribute->getSource()->getOptionId($optionLabel)]
+        );
+    }
+
+    /**
+     * Asserts image data.
+     *
+     * @param array $images
+     * @param string $area
+     * @param array $expectation
+     * @return void
+     */
+    private function assertProductImage(array $images, string $area, array $expectation): void
+    {
+        $this->updateProductImages($images);
+        $productImage = $this->listingBlock->getImage($this->productRepository->get('configurable'), $area);
+        $this->assertInstanceOf(Image::class, $productImage);
+        $this->assertEquals($productImage->getCustomAttributes(), []);
+        $this->assertEquals($productImage->getClass(), 'product-image-photo');
+        $this->assertEquals($productImage->getRatio(), 1.25);
+        $this->assertEquals($productImage->getLabel(), $expectation['label']);
+        $this->assertStringEndsWith($expectation['image_url'], $productImage->getImageUrl());
+        $this->assertEquals($productImage->getWidth(), 240);
+        $this->assertEquals($productImage->getHeight(), 300);
+    }
+
+    /**
+     * Updates products images.
+     *
+     * @param array $images
+     * @return void
+     */
+    private function updateProductImages(array $images): void
+    {
+        foreach ($images as $sku => $imageName) {
+            $product = $this->productRepository->get($sku);
+            $product->setStoreId(Store::DEFAULT_STORE_ID)
+                ->setImage($imageName)
+                ->setSmallImage($imageName)
+                ->setThumbnail($imageName)
+                ->setData(
+                    'media_gallery',
+                    [
+                        'images' => [
+                            [
+                                'file' => $imageName,
+                                'position' => 1,
+                                'label' => 'Image Alt Text',
+                                'disabled' => 0,
+                                'media_type' => 'image'
+                            ],
+                        ],
+                    ]
+                )
+                ->setCanSaveCustomOptions(true);
+            $this->productResource->save($product);
+        }
     }
 
     /**
@@ -154,85 +222,17 @@ class ListProductTest extends TestCase
     }
 
     /**
-     * Asserts image data.
-     *
-     * @param array $images
-     * @param string $area
-     * @param array $expectation
-     * @return void
+     * @inheritdoc
      */
-    private function assertProductImage(array $images, string $area, array $expectation): void
+    protected function setUp(): void
     {
-        $this->updateProductImages($images);
-        $productImage = $this->listingBlock->getImage($this->productRepository->get('configurable'), $area);
-        $this->assertInstanceOf(Image::class, $productImage);
-        $this->assertEquals($productImage->getCustomAttributes(), []);
-        $this->assertEquals($productImage->getClass(), 'product-image-photo');
-        $this->assertEquals($productImage->getRatio(), 1.25);
-        $this->assertEquals($productImage->getLabel(), $expectation['label']);
-        $this->assertStringEndsWith($expectation['image_url'], $productImage->getImageUrl());
-        $this->assertEquals($productImage->getWidth(), 240);
-        $this->assertEquals($productImage->getHeight(), 300);
-    }
-
-    /**
-     * Updates products images.
-     *
-     * @param array $images
-     * @return void
-     */
-    private function updateProductImages(array $images): void
-    {
-        foreach ($images as $sku => $imageName) {
-            $product = $this->productRepository->get($sku);
-            $product->setStoreId(Store::DEFAULT_STORE_ID)
-                ->setImage($imageName)
-                ->setSmallImage($imageName)
-                ->setThumbnail($imageName)
-                ->setData(
-                    'media_gallery',
-                    [
-                        'images' => [
-                            [
-                                'file' => $imageName,
-                                'position' => 1,
-                                'label' => 'Image Alt Text',
-                                'disabled' => 0,
-                                'media_type' => 'image'
-                            ],
-                        ],
-                    ]
-                )
-                ->setCanSaveCustomOptions(true);
-            $this->productResource->save($product);
-        }
-    }
-
-    /**
-     * Updates attribute "Update Products Preview Image" flag.
-     *
-     * @param string $attributeCode
-     * @return void
-     */
-    private function updateAttributePreviewImageFlag(string $attributeCode): void
-    {
-        $attribute = $this->attributeRepository->get($attributeCode);
-        $attribute->setData('update_product_preview_image', 1);
-        $this->attributeRepository->save($attribute);
-    }
-
-    /**
-     * Adds attribute param to request.
-     *
-     * @param string $attributeCode
-     * @param string $optionLabel
-     * @return void
-     */
-    private function addFilterToRequest(string $attributeCode, string $optionLabel): void
-    {
-        $attribute = $this->attributeRepository->get($attributeCode);
-        $this->request->setParams(
-            [$attributeCode => $attribute->getSource()->getOptionId($optionLabel)]
-        );
+        parent::setUp();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productResource = $this->objectManager->get(ProductResource::class);
+        $this->attributeRepository = $this->objectManager->get(ProductAttributeRepositoryInterface::class);
+        $this->request = $this->objectManager->get(RequestInterface::class);
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->listingBlock = $this->layout->createBlock(ListProduct::class);
     }
 }

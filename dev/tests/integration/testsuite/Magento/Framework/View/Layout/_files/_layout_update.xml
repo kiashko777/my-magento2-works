@@ -5,7 +5,8 @@
  * See COPYING.txt for license details.
  */
 -->
-<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
     <head>
         <title>Magento Admin</title>
         <script src="prototype/prototype.js"/>
@@ -38,6 +39,7 @@
         <action method="getSomething"/>
     </referenceBlock>
     <referenceBlock name="after.body.start">
-        <block class="Magento\Framework\View\Element\Html\Calendar" name="head.calendar" as="calendar" template="Magento_Framework::page/js/calendar.phtml"/>
+        <block class="Magento\Framework\View\Element\Html\Calendar" name="head.calendar" as="calendar"
+               template="Magento_Framework::page/js/calendar.phtml"/>
     </referenceBlock>
 </page>

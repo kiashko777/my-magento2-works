@@ -3,34 +3,40 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Backend\Block\Widget\Grid;
+
+use Magento\Backend\Block\Widget\Grid;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class ContainerTest extends \PHPUnit\Framework\TestCase
+class ContainerTest extends TestCase
 {
     public function testPseudoConstruct()
     {
-        /** @var $block \Magento\Backend\Block\Widget\Grid\Container */
-        $block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
+        /** @var $block Container */
+        $block = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
         )->createBlock(
-            \Magento\Backend\Block\Widget\Grid\Container::class,
+            Container::class,
             '',
             [
                 'data' => [
                     \Magento\Backend\Block\Widget\Container::PARAM_CONTROLLER => 'widget',
                     \Magento\Backend\Block\Widget\Container::PARAM_HEADER_TEXT => 'two',
-                    \Magento\Backend\Block\Widget\Grid\Container::PARAM_BLOCK_GROUP => 'Magento_Backend',
-                    \Magento\Backend\Block\Widget\Grid\Container::PARAM_BUTTON_NEW => 'four',
-                    \Magento\Backend\Block\Widget\Grid\Container::PARAM_BUTTON_BACK => 'five',
+                    Container::PARAM_BLOCK_GROUP => 'Magento_Backend',
+                    Container::PARAM_BUTTON_NEW => 'four',
+                    Container::PARAM_BUTTON_BACK => 'five',
                 ]
             ]
         );
         $this->assertStringEndsWith('widget', $block->getHeaderCssClass());
         $this->assertStringContainsString('two', $block->getHeaderText());
-        $this->assertInstanceOf(\Magento\Backend\Block\Widget\Grid::class, $block->getChildBlock('grid'));
+        $this->assertInstanceOf(Grid::class, $block->getChildBlock('grid'));
         $this->assertEquals('four', $block->getAddButtonLabel());
         $this->assertEquals('five', $block->getBackButtonLabel());
     }

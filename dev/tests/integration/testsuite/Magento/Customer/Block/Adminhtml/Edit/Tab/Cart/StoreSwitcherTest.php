@@ -39,18 +39,6 @@ class StoreSwitcherTest extends TestCase
     private $storeManager;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->pageFactory = $this->objectManager->get(PageFactory::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-    }
-
-    /**
      * @return void
      */
     public function testStoreSwitcherDisplayed(): void
@@ -62,6 +50,59 @@ class StoreSwitcherTest extends TestCase
             'Website Filter was not found on the page'
         );
         $this->checkFilterOptions($html, [$this->storeManager->getWebsite('base')->getName()]);
+    }
+
+    /**
+     * Get block html
+     *
+     * @param string $alias
+     * @return string
+     */
+    private function getBlockHtml(string $alias): string
+    {
+        $page = $this->preparePage();
+        $block = $page->getLayout()->getBlock($alias);
+        $this->assertNotFalse($block);
+
+        return $block->toHtml();
+    }
+
+    /**
+     * Prepare page layout
+     *
+     * @return Page
+     */
+    private function preparePage(): Page
+    {
+        $page = $this->pageFactory->create();
+        $page->addHandle(['default', 'customer_index_cart']);
+        $page->getLayout()->generateXml();
+
+        return $page;
+    }
+
+    /**
+     * Check store switcher appearance
+     *
+     * @param string $html
+     * @param array $expectedOptions
+     * @return void
+     */
+    private function checkFilterOptions(string $html, array $expectedOptions): void
+    {
+        $this->assertEquals(
+            count($expectedOptions),
+            Xpath::getElementsCountForXpath(self::WEBSITE_FILTER_OPTION_XPATH, $html),
+            'Website filter options count does not match expected value'
+        );
+        $optionPath = self::WEBSITE_FILTER_OPTION_XPATH . "[contains(text(), '%s')]";
+        foreach ($expectedOptions as $option) {
+            $this->assertEquals(
+                1,
+                Xpath::getElementsCountForXpath(sprintf($optionPath, $option), $html),
+                sprintf('Option for %s website was not found in filter options list', $option)
+            );
+        }
     }
 
     /**
@@ -92,55 +133,14 @@ class StoreSwitcherTest extends TestCase
     }
 
     /**
-     * Check store switcher appearance
-     *
-     * @param string $html
-     * @param array $expectedOptions
-     * @return void
+     * @inheritdoc
      */
-    private function checkFilterOptions(string $html, array $expectedOptions): void
+    protected function setUp(): void
     {
-        $this->assertEquals(
-            count($expectedOptions),
-            Xpath::getElementsCountForXpath(self::WEBSITE_FILTER_OPTION_XPATH, $html),
-            'Website filter options count does not match expected value'
-        );
-        $optionPath = self::WEBSITE_FILTER_OPTION_XPATH . "[contains(text(), '%s')]";
-        foreach ($expectedOptions as $option) {
-            $this->assertEquals(
-                1,
-                Xpath::getElementsCountForXpath(sprintf($optionPath, $option), $html),
-                sprintf('Option for %s website was not found in filter options list', $option)
-            );
-        }
-    }
+        parent::setUp();
 
-    /**
-     * Get block html
-     *
-     * @param string $alias
-     * @return string
-     */
-    private function getBlockHtml(string $alias): string
-    {
-        $page = $this->preparePage();
-        $block = $page->getLayout()->getBlock($alias);
-        $this->assertNotFalse($block);
-
-        return $block->toHtml();
-    }
-
-    /**
-     * Prepare page layout
-     *
-     * @return Page
-     */
-    private function preparePage(): Page
-    {
-        $page = $this->pageFactory->create();
-        $page->addHandle(['default', 'customer_index_cart']);
-        $page->getLayout()->generateXml();
-
-        return $page;
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->pageFactory = $this->objectManager->get(PageFactory::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
     }
 }

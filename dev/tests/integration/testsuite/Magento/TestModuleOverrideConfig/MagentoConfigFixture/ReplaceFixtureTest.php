@@ -22,16 +22,6 @@ class ReplaceFixtureTest extends AbstractOverridesTest
     private $config;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->config = $this->objectManager->get(ScopeConfigInterface::class);
-    }
-
-    /**
      * Checks that fixture can be replaced in global node
      *
      * @magentoConfigFixture current_store test_section/test_group/field_5 new_value
@@ -130,5 +120,15 @@ class ReplaceFixtureTest extends AbstractOverridesTest
                 'expected_config_value' => 'Overridden fixture for data set from third module',
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->config = $this->objectManager->get(ScopeConfigInterface::class);
     }
 }

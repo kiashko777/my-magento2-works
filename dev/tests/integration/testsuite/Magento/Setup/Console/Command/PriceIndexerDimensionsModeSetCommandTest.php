@@ -3,47 +3,35 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Console\Command;
 
+use InvalidArgumentException;
+use LogicException;
 use Magento\Catalog\Model\Indexer\Product\Price\DimensionModeConfiguration;
-use Symfony\Component\Console\Tester\CommandTester;
 use Magento\Framework\Console\Cli;
 use Magento\Framework\ObjectManagerInterface;
+use Magento\Indexer\Console\Command\IndexerSetDimensionsModeCommand;
+use Magento\TestFramework\App\Config;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Indexer\TestCase;
+use Symfony\Component\Console\Tester\CommandTester;
 
 /**
  * Test command that sets indexer mode for catalog_product_price indexer
  *
  * @magentoDbIsolation disabled
  */
-class PriceIndexerDimensionsModeSetCommandTest extends \Magento\TestFramework\Indexer\TestCase
+class PriceIndexerDimensionsModeSetCommandTest extends TestCase
 {
     /** @var  ObjectManagerInterface */
     private $objectManager;
 
-    /** @var  \Magento\Indexer\Console\Command\IndexerSetDimensionsModeCommand */
+    /** @var  IndexerSetDimensionsModeCommand */
     private $command;
 
     /** @var  CommandTester */
     private $commandTester;
-
-    /**
-     * setUp
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-
-        $this->objectManager->get(\Magento\TestFramework\App\Config::class)->clean();
-
-        $this->command = $this->objectManager->create(
-            \Magento\Indexer\Console\Command\IndexerSetDimensionsModeCommand::class
-        );
-
-        $this->commandTester = new CommandTester($this->command);
-
-        parent::setUp();
-    }
 
     /**
      * setUpBeforeClass
@@ -54,7 +42,7 @@ class PriceIndexerDimensionsModeSetCommandTest extends \Magento\TestFramework\In
             ->getApplication()
             ->getDbInstance();
         if (!$db->isDbDumpExists()) {
-            throw new \LogicException('DB dump does not exist.');
+            throw new LogicException('DB dump does not exist.');
         }
         $db->restoreFromDbDump();
 
@@ -74,7 +62,7 @@ class PriceIndexerDimensionsModeSetCommandTest extends \Magento\TestFramework\In
         $this->commandTester->execute(
             [
                 'indexer' => 'catalog_product_price',
-                'mode'    => $currentMode,
+                'mode' => $currentMode,
             ]
         );
         $expectedOutput = 'Dimensions mode for indexer "Products Price" was changed from \''
@@ -153,12 +141,30 @@ class PriceIndexerDimensionsModeSetCommandTest extends \Magento\TestFramework\In
      */
     public function testSwitchModeWithInvalidArgument()
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         $this->commandTester->execute(
             [
                 'indexer' => 'indexer_not_valid'
             ]
         );
+    }
+
+    /**
+     * setUp
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->objectManager->get(Config::class)->clean();
+
+        $this->command = $this->objectManager->create(
+            IndexerSetDimensionsModeCommand::class
+        );
+
+        $this->commandTester = new CommandTester($this->command);
+
+        parent::setUp();
     }
 }

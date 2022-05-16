@@ -10,6 +10,7 @@ namespace Magento\Setup\Test\Unit\Fixtures\Quote;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\ResourceModel\Product\Collection;
+use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\ConfigurableProduct\Api\Data\OptionValueInterface;
 use Magento\ConfigurableProduct\Api\LinkManagementInterface;
 use Magento\ConfigurableProduct\Api\OptionRepositoryInterface;
@@ -54,7 +55,7 @@ class QuoteGeneratorTest extends TestCase
     private $optionRepository;
 
     /**
-     * @var \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory|MockObject
+     * @var CollectionFactory|MockObject
      */
     private $productCollectionFactory;
 
@@ -82,67 +83,6 @@ class QuoteGeneratorTest extends TestCase
      * @var QuoteGenerator
      */
     private $fixture;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->fixtureModelMock = $this->getMockBuilder(FixtureModel::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $this->storeManager = $this->getMockBuilder(StoreManagerInterface::class)
-            ->disableOriginalConstructor()
-            ->getMockForAbstractClass();
-        $this->productRepository = $this->getMockBuilder(ProductRepositoryInterface::class)
-            ->disableOriginalConstructor()
-            ->getMockForAbstractClass();
-        $this->optionRepository = $this->getMockBuilder(
-            OptionRepositoryInterface::class
-        )
-            ->disableOriginalConstructor()
-            ->getMockForAbstractClass();
-        $this->productCollectionFactory = $this->getMockBuilder(
-            \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory::class
-        )
-            ->disableOriginalConstructor()
-            ->setMethods(['create'])
-            ->getMock();
-        $this->linkManagement = $this->getMockBuilder(LinkManagementInterface::class)
-            ->disableOriginalConstructor()
-            ->getMockForAbstractClass();
-        $this->serializer = $this->getMockBuilder(SerializerInterface::class)
-            ->disableOriginalConstructor()
-            ->getMockForAbstractClass();
-        $this->config = $this->getMockBuilder(QuoteConfiguration::class)
-            ->disableOriginalConstructor()
-            ->setMethods(
-                [
-                    'getSimpleCountTo',
-                    'getConfigurableCountTo',
-                    'getBigConfigurableCountTo',
-                    'getRequiredQuoteQuantity',
-                    'getFixtureDataFilename',
-                    'getExistsQuoteQuantity',
-                ]
-            )
-            ->getMock();
-        $objectManager = new ObjectManager($this);
-
-        $this->fixture = $objectManager->getObject(
-            QuoteGenerator::class,
-            [
-                'fixtureModel' => $this->fixtureModelMock,
-                'storeManager' => $this->storeManager,
-                'productRepository' => $this->productRepository,
-                'optionRepository' => $this->optionRepository,
-                'productCollectionFactory' => $this->productCollectionFactory,
-                'linkManagement' => $this->linkManagement,
-                'serializer' => $this->serializer,
-                'config' => $this->config,
-            ]
-        );
-    }
 
     /**
      * Test generateQuotes method.
@@ -311,5 +251,66 @@ class QuoteGeneratorTest extends TestCase
         $connection->expects($this->atLeastOnce())->method('getTransactionLevel')->willReturn(0);
         $connection->expects($this->atLeastOnce())->method('beginTransaction')->willReturnSelf();
         $statement->expects($this->atLeastOnce())->method('fetchColumn')->with(0)->willReturn(25);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->fixtureModelMock = $this->getMockBuilder(FixtureModel::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->storeManager = $this->getMockBuilder(StoreManagerInterface::class)
+            ->disableOriginalConstructor()
+            ->getMockForAbstractClass();
+        $this->productRepository = $this->getMockBuilder(ProductRepositoryInterface::class)
+            ->disableOriginalConstructor()
+            ->getMockForAbstractClass();
+        $this->optionRepository = $this->getMockBuilder(
+            OptionRepositoryInterface::class
+        )
+            ->disableOriginalConstructor()
+            ->getMockForAbstractClass();
+        $this->productCollectionFactory = $this->getMockBuilder(
+            CollectionFactory::class
+        )
+            ->disableOriginalConstructor()
+            ->setMethods(['create'])
+            ->getMock();
+        $this->linkManagement = $this->getMockBuilder(LinkManagementInterface::class)
+            ->disableOriginalConstructor()
+            ->getMockForAbstractClass();
+        $this->serializer = $this->getMockBuilder(SerializerInterface::class)
+            ->disableOriginalConstructor()
+            ->getMockForAbstractClass();
+        $this->config = $this->getMockBuilder(QuoteConfiguration::class)
+            ->disableOriginalConstructor()
+            ->setMethods(
+                [
+                    'getSimpleCountTo',
+                    'getConfigurableCountTo',
+                    'getBigConfigurableCountTo',
+                    'getRequiredQuoteQuantity',
+                    'getFixtureDataFilename',
+                    'getExistsQuoteQuantity',
+                ]
+            )
+            ->getMock();
+        $objectManager = new ObjectManager($this);
+
+        $this->fixture = $objectManager->getObject(
+            QuoteGenerator::class,
+            [
+                'fixtureModel' => $this->fixtureModelMock,
+                'storeManager' => $this->storeManager,
+                'productRepository' => $this->productRepository,
+                'optionRepository' => $this->optionRepository,
+                'productCollectionFactory' => $this->productCollectionFactory,
+                'linkManagement' => $this->linkManagement,
+                'serializer' => $this->serializer,
+                'config' => $this->config,
+            ]
+        );
     }
 }

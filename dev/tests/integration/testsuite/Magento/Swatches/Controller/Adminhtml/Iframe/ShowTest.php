@@ -6,22 +6,27 @@
 
 namespace Magento\Swatches\Controller\Adminhtml\Iframe;
 
+use Magento\Framework\Acl;
+use Magento\Framework\Acl\Builder;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractBackendController;
+
 /**
  * @magentoAppArea Adminhtml
  */
-class ShowTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class ShowTest extends AbstractBackendController
 {
     /**
      * Check Swatch Acl Access
      */
     public function testAclAccess()
     {
-        /** @var $acl \Magento\Framework\Acl */
-        $acl = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\Acl\Builder::class)
+        /** @var $acl Acl */
+        $acl = Bootstrap::getObjectManager()
+            ->get(Builder::class)
             ->getAcl();
 
-        $acl->allow(null, \Magento\Swatches\Controller\Adminhtml\Iframe\Show::ADMIN_RESOURCE);
+        $acl->allow(null, Show::ADMIN_RESOURCE);
 
         $this->dispatch('backend/swatches/iframe/show/');
 
@@ -37,12 +42,12 @@ class ShowTest extends \Magento\TestFramework\TestCase\AbstractBackendController
      */
     public function testAclAccessDenied()
     {
-        /** @var $acl \Magento\Framework\Acl */
-        $acl = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\Acl\Builder::class)
+        /** @var $acl Acl */
+        $acl = Bootstrap::getObjectManager()
+            ->get(Builder::class)
             ->getAcl();
 
-        $acl->deny(null, \Magento\Swatches\Controller\Adminhtml\Iframe\Show::ADMIN_RESOURCE);
+        $acl->deny(null, Show::ADMIN_RESOURCE);
 
         $this->dispatch('backend/swatches/iframe/show/');
 

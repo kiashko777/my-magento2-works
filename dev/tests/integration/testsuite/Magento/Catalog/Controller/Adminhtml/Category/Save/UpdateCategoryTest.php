@@ -27,17 +27,6 @@ class UpdateCategoryTest extends AbstractSaveCategoryTest
     private $storeManager;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->categoryRepository = $this->_objectManager->get(CategoryRepositoryInterface::class);
-        $this->storeManager = $this->_objectManager->get(StoreManagerInterface::class);
-    }
-
-    /**
      * @dataProvider categoryDataProvider
      * @magentoDataFixture Magento/Store/_files/second_store.php
      * @magentoDataFixture Magento/Catalog/_files/category.php
@@ -110,5 +99,16 @@ class UpdateCategoryTest extends AbstractSaveCategoryTest
                 ],
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->categoryRepository = $this->_objectManager->get(CategoryRepositoryInterface::class);
+        $this->storeManager = $this->_objectManager->get(StoreManagerInterface::class);
     }
 }

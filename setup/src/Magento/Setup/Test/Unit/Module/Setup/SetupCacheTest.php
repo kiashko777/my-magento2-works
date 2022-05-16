@@ -9,6 +9,7 @@ namespace Magento\Setup\Test\Unit\Module\Setup;
 
 use Magento\Setup\Module\Setup\SetupCache;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 
 class SetupCacheTest extends TestCase
 {
@@ -17,17 +18,12 @@ class SetupCacheTest extends TestCase
      */
     private $object;
 
-    protected function setUp(): void
-    {
-        $this->object = new SetupCache();
-    }
-
     public function testSetRow()
     {
         $table = 'table';
         $parentId = 'parent';
         $rowId = 'row';
-        $data = new \stdClass();
+        $data = new stdClass();
 
         $this->object->setRow($table, $parentId, $rowId, $data);
         $this->assertSame($data, $this->object->get($table, $parentId, $rowId));
@@ -39,7 +35,7 @@ class SetupCacheTest extends TestCase
         $parentId = 'parent';
         $rowId = 'row';
         $field = 'field';
-        $data = new \stdClass();
+        $data = new stdClass();
 
         $this->object->setField($table, $parentId, $rowId, $field, $data);
         $this->assertSame($data, $this->object->get($table, $parentId, $rowId, $field));
@@ -70,7 +66,7 @@ class SetupCacheTest extends TestCase
         $table = 'table';
         $parentId = 'parent';
         $rowId = 'row';
-        $data = new \stdClass();
+        $data = new stdClass();
 
         $this->object->setRow($table, $parentId, $rowId, $data);
         $this->object->remove($table, $parentId, $rowId, $data);
@@ -97,11 +93,16 @@ class SetupCacheTest extends TestCase
     public function hasDataProvider()
     {
         return [
-            'existing'           => ['table', 'parent', 'row', 'field', true],
-            'nonexistent field'  => ['table', 'parent', 'row', 'other_field', false],
-            'nonexistent row'    => ['table', 'parent', 'other_row', 'field', false],
+            'existing' => ['table', 'parent', 'row', 'field', true],
+            'nonexistent field' => ['table', 'parent', 'row', 'other_field', false],
+            'nonexistent row' => ['table', 'parent', 'other_row', 'field', false],
             'nonexistent parent' => ['table', 'other_parent', 'row', 'field', false],
-            'nonexistent table'  => ['other_table', 'parent', 'row', 'field', false],
+            'nonexistent table' => ['other_table', 'parent', 'row', 'field', false],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->object = new SetupCache();
     }
 }

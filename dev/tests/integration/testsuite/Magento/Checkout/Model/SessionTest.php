@@ -69,38 +69,6 @@ class SessionTest extends TestCase
     private $quote;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->customerRepository = $this->objectManager->create(CustomerRepositoryInterface::class);
-        $this->customerSession = $this->objectManager->get(CustomerSession::class);
-        $this->checkoutSession = $this->objectManager->get(Session::class);
-        $this->getQuoteByReservedOrderId = $this->objectManager->get(GetQuoteByReservedOrderId::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->quoteRepository = $this->objectManager->get(CartRepositoryInterface::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        if ($this->quote instanceof CartInterface) {
-            $this->quoteRepository->delete($this->quote);
-        }
-        $this->customerSession->setCustomerId(null);
-        $this->checkoutSession->clearQuote();
-        $this->checkoutSession->setCustomerData(null);
-
-        parent::tearDown();
-    }
-
-    /**
      * Tests that quote items and totals are correct when product becomes unavailable.
      *
      * @magentoDataFixture Magento/Sales/_files/quote.php
@@ -141,6 +109,39 @@ class SessionTest extends TestCase
         $this->checkoutSession->setCustomerData($customer);
         $quote = $this->checkoutSession->getQuote();
         $this->validateCustomerDataInQuote($quote);
+    }
+
+    /**
+     * Ensure that quote has customer data specified in customer fixture.
+     *
+     * @param CartInterface $quote
+     * @return void
+     */
+    private function validateCustomerDataInQuote(CartInterface $quote): void
+    {
+        $customerIdFromFixture = 1;
+        $customerEmailFromFixture = 'customer@example.com';
+        $customerFirstNameFromFixture = 'John';
+        $this->assertEquals(
+            $customerEmailFromFixture,
+            $quote->getCustomerEmail(),
+            'Customer email was not set to Quote correctly.'
+        );
+        $this->assertEquals(
+            $customerIdFromFixture,
+            $quote->getCustomerId(),
+            'Customer ID was not set to Quote correctly.'
+        );
+        $this->assertEquals(
+            $customerFirstNameFromFixture,
+            $quote->getCustomerFirstname(),
+            'Customer first name was not set to Quote correctly.'
+        );
+        self::assertEquals(
+            '0',
+            $quote->getCustomerIsGuest(),
+            'Customer should not be as guest in Quote.'
+        );
     }
 
     /**
@@ -279,35 +280,34 @@ class SessionTest extends TestCase
     }
 
     /**
-     * Ensure that quote has customer data specified in customer fixture.
-     *
-     * @param CartInterface $quote
-     * @return void
+     * @inheritdoc
      */
-    private function validateCustomerDataInQuote(CartInterface $quote): void
+    protected function setUp(): void
     {
-        $customerIdFromFixture = 1;
-        $customerEmailFromFixture = 'customer@example.com';
-        $customerFirstNameFromFixture = 'John';
-        $this->assertEquals(
-            $customerEmailFromFixture,
-            $quote->getCustomerEmail(),
-            'Customer email was not set to Quote correctly.'
-        );
-        $this->assertEquals(
-            $customerIdFromFixture,
-            $quote->getCustomerId(),
-            'Customer ID was not set to Quote correctly.'
-        );
-        $this->assertEquals(
-            $customerFirstNameFromFixture,
-            $quote->getCustomerFirstname(),
-            'Customer first name was not set to Quote correctly.'
-        );
-        self::assertEquals(
-            '0',
-            $quote->getCustomerIsGuest(),
-            'Customer should not be as guest in Quote.'
-        );
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->customerRepository = $this->objectManager->create(CustomerRepositoryInterface::class);
+        $this->customerSession = $this->objectManager->get(CustomerSession::class);
+        $this->checkoutSession = $this->objectManager->get(Session::class);
+        $this->getQuoteByReservedOrderId = $this->objectManager->get(GetQuoteByReservedOrderId::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->quoteRepository = $this->objectManager->get(CartRepositoryInterface::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        if ($this->quote instanceof CartInterface) {
+            $this->quoteRepository->delete($this->quote);
+        }
+        $this->customerSession->setCustomerId(null);
+        $this->checkoutSession->clearQuote();
+        $this->checkoutSession->setCustomerData(null);
+
+        parent::tearDown();
     }
 }

@@ -6,26 +6,22 @@
 
 namespace Magento\Rule\Model\Condition\Sql;
 
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory as ProductCollectionFactory;
-use Magento\CatalogWidget\Model\RuleFactory;
 use Magento\CatalogWidget\Model\Rule\Condition\Combine as CombineCondition;
 use Magento\CatalogWidget\Model\Rule\Condition\Product as ProductCondition;
+use Magento\CatalogWidget\Model\RuleFactory;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for Magento\Rule\Model\Condition\Sql\Builder
  */
-class BuilderTest extends \PHPUnit\Framework\TestCase
+class BuilderTest extends TestCase
 {
     /**
      * @var Builder
      */
     private $model;
-
-    protected function setUp(): void
-    {
-        $this->model = Bootstrap::getObjectManager()->create(Builder::class);
-    }
 
     /**
      * @return void
@@ -75,5 +71,10 @@ class BuilderTest extends \PHPUnit\Framework\TestCase
         $whereString = "/\(category_id IN \('3'\).+\(IFNULL\(`e`\.`entity_id`,.+\) = '2017-09-15 00:00:00'\)"
             . ".+ORDER BY \(FIELD\(`e`.`sku`, ':\(', ':\)'\)\)/";
         $this->assertEquals(1, preg_match($whereString, $collection->getSelectSql(true)));
+    }
+
+    protected function setUp(): void
+    {
+        $this->model = Bootstrap::getObjectManager()->create(Builder::class);
     }
 }

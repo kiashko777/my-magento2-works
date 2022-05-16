@@ -3,16 +3,27 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\DownloadableImportExport\Model\Import\Product\Type;
 
+use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\CatalogImportExport\Model\Import\Product;
 use Magento\Downloadable\Api\DomainManagerInterface;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\EntityManager\EntityMetadata;
+use Magento\Framework\EntityManager\MetadataPool;
+use Magento\Framework\Filesystem;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\ImportExport\Model\Import;
+use Magento\ImportExport\Model\Import\Source\Csv;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class DownloadableTest extends \PHPUnit\Framework\TestCase
+class DownloadableTest extends TestCase
 {
     /**
      * Downloadable product test Name
@@ -33,51 +44,22 @@ class DownloadableTest extends \PHPUnit\Framework\TestCase
      * Downloadable product Samples Group Name
      */
     const TEST_PRODUCT_SAMPLES_GROUP_NAME = 'TEST Import Samples';
-
+    /**
+     * @var Product
+     */
+    protected $model;
+    /**
+     * @var ObjectManagerInterface
+     */
+    protected $objectManager;
+    /**
+     * @var EntityMetadata
+     */
+    protected $productMetadata;
     /**
      * @var DomainManagerInterface
      */
     private $domainManager;
-
-    /**
-     * @var \Magento\CatalogImportExport\Model\Import\Product
-     */
-    protected $model;
-
-    /**
-     * @var \Magento\Framework\ObjectManagerInterface
-     */
-    protected $objectManager;
-
-    /**
-     * @var \Magento\Framework\EntityManager\EntityMetadata
-     */
-    protected $productMetadata;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->model = $this->objectManager->create(
-            \Magento\CatalogImportExport\Model\Import\Product::class
-        );
-        /** @var \Magento\Framework\EntityManager\MetadataPool $metadataPool */
-        $metadataPool = $this->objectManager->get(\Magento\Framework\EntityManager\MetadataPool::class);
-        $this->productMetadata = $metadataPool->getMetadata(\Magento\Catalog\Api\Data\ProductInterface::class);
-
-        $this->domainManager = $this->objectManager->get(DomainManagerInterface::class);
-        $this->domainManager->addDomains(['www.bing.com', 'www.google.com', 'www.yahoo.com']);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    protected function tearDown(): void
-    {
-        $this->domainManager->removeDomains(['www.bing.com', 'www.google.com', 'www.yahoo.com']);
-    }
 
     /**
      * @magentoAppArea Adminhtml
@@ -91,12 +73,12 @@ class DownloadableTest extends \PHPUnit\Framework\TestCase
         // import data from CSV file
         $pathToFile = __DIR__ . '/../../_files/import_downloadable.csv';
         $filesystem = $this->objectManager->create(
-            \Magento\Framework\Filesystem::class
+            Filesystem::class
         );
 
         $directory = $filesystem->getDirectoryWrite(DirectoryList::ROOT);
         $source = $this->objectManager->create(
-            \Magento\ImportExport\Model\Import\Source\Csv::class,
+            Csv::class,
             [
                 'file' => $pathToFile,
                 'directory' => $directory
@@ -106,7 +88,7 @@ class DownloadableTest extends \PHPUnit\Framework\TestCase
             $source
         )->setParameters(
             [
-                'behavior' => \Magento\ImportExport\Model\Import::BEHAVIOR_APPEND,
+                'behavior' => Import::BEHAVIOR_APPEND,
                 'entity' => 'catalog_product'
             ]
         )->validateData();
@@ -127,10 +109,10 @@ class DownloadableTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(self::TEST_PRODUCT_NAME, $product->getName());
         $this->assertEquals(self::TEST_PRODUCT_TYPE, $product->getTypeId());
 
-        $downloadableProductLinks   = $product->getExtensionAttributes()->getDownloadableProductLinks();
-        $downloadableLinks          = $product->getDownloadableLinks();
+        $downloadableProductLinks = $product->getExtensionAttributes()->getDownloadableProductLinks();
+        $downloadableLinks = $product->getDownloadableLinks();
         $downloadableProductSamples = $product->getExtensionAttributes()->getDownloadableProductSamples();
-        $downloadableSamples        = $product->getDownloadableSamples();
+        $downloadableSamples = $product->getDownloadableSamples();
 
         //TODO: Track Fields: id, link_id, link_file and sample_file)
         $expectedLinks = [
@@ -143,7 +125,7 @@ class DownloadableTest extends \PHPUnit\Framework\TestCase
                 'is_shareable' => '0',
                 'link_type' => 'file'
             ],
-            'url'  => [
+            'url' => [
                 'title' => 'TEST Import link Title URL',
                 'sort_order' => '42',
                 'sample_type' => 'url',
@@ -181,11 +163,11 @@ class DownloadableTest extends \PHPUnit\Framework\TestCase
                 'sort_order' => '178',
                 'sample_type' => 'file'
             ],
-            'url'  => [
+            'url' => [
                 'title' => 'TEST Import Sample URL',
-                 'sort_order' => '178',
-                 'sample_type' => 'url',
-                 'sample_url' => 'http://www.yahoo.com'
+                'sort_order' => '178',
+                'sample_type' => 'url',
+                'sample_url' => 'http://www.yahoo.com'
             ]
         ];
         foreach ($downloadableProductSamples as $sample) {
@@ -206,5 +188,30 @@ class DownloadableTest extends \PHPUnit\Framework\TestCase
                 $this->assertEquals($actualSample[$expectedKey], $expectedValue);
             }
         }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->model = $this->objectManager->create(
+            Product::class
+        );
+        /** @var MetadataPool $metadataPool */
+        $metadataPool = $this->objectManager->get(MetadataPool::class);
+        $this->productMetadata = $metadataPool->getMetadata(ProductInterface::class);
+
+        $this->domainManager = $this->objectManager->get(DomainManagerInterface::class);
+        $this->domainManager->addDomains(['www.bing.com', 'www.google.com', 'www.yahoo.com']);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function tearDown(): void
+    {
+        $this->domainManager->removeDomains(['www.bing.com', 'www.google.com', 'www.yahoo.com']);
     }
 }

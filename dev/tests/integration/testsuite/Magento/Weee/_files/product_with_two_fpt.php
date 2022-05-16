@@ -6,17 +6,19 @@
 declare(strict_types=1);
 
 use Magento\Catalog\Model\Product;
+use Magento\Catalog\Setup\CategorySetup;
+use Magento\Eav\Model\Entity;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Weee/_files/product_with_fpt.php');
 
-/** @var \Magento\Catalog\Setup\CategorySetup $installer */
+/** @var CategorySetup $installer */
 $installer = Bootstrap::getObjectManager()->create(
-    \Magento\Catalog\Setup\CategorySetup::class
+    CategorySetup::class
 );
 $attributeSetId = $installer->getAttributeSetId('catalog_product', 'Default');
-$entityModel = Bootstrap::getObjectManager()->create(\Magento\Eav\Model\Entity::class);
+$entityModel = Bootstrap::getObjectManager()->create(Entity::class);
 $entityTypeId = $entityModel->setType(Product::ENTITY)->getTypeId();
 $groupId = $installer->getDefaultAttributeGroupId($entityTypeId, $attributeSetId);
 
@@ -40,8 +42,8 @@ $attribute->setAttributeCode(
     1
 )->save();
 
-/** @var $product \Magento\Catalog\Model\Product */
-$product = Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Product::class);
+/** @var $product Product */
+$product = Bootstrap::getObjectManager()->create(Product::class);
 
 $product = $product->loadByAttribute('sku', 'simple-with-ftp');
 if ($product && $product->getId()) {

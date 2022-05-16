@@ -3,13 +3,65 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Modular;
+
+use Magento\Framework\Config\Dom;
+use Magento\Framework\Config\Dom\ValidationException;
+use Magento\Framework\Config\ValidationStateInterface;
+use PHPUnit\Framework\TestCase;
 
 /**
  * AbstractMergedConfigTest can be used to test merging of config files
  */
-abstract class AbstractMergedConfigTest extends \PHPUnit\Framework\TestCase
+abstract class AbstractMergedConfigTest extends TestCase
 {
+    public function testMergedConfigFiles()
+    {
+        $invalidFiles = [];
+
+        $files = $this->getConfigFiles();
+        $validationStateMock = $this->createMock(ValidationStateInterface::class);
+        $validationStateMock->method('isValidationRequired')
+            ->willReturn(false);
+        $mergedConfig = new Dom(
+            '<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"></config>',
+            $validationStateMock,
+            $this->getIdAttributes()
+        );
+
+        foreach ($files as $file) {
+            $content = file_get_contents($file[0]);
+            try {
+                $validationStateMock = $this->createMock(ValidationStateInterface::class);
+                $validationStateMock->method('isValidationRequired')
+                    ->willReturn(true);
+                new Dom($content, $validationStateMock, $this->getIdAttributes());
+                //merge won't be performed if file is invalid because of exception thrown
+                $mergedConfig->merge($content);
+            } catch (ValidationException $e) {
+                $invalidFiles[] = $file[0];
+            }
+        }
+
+        if (!empty($invalidFiles)) {
+            $this->fail('Found broken files: ' . implode("\n", $invalidFiles));
+        }
+
+        $errors = [];
+        $mergedConfig->validate($this->getMergedSchemaFile(), $errors);
+        if ($errors) {
+            $this->fail('Merged routes config is invalid: ' . "\n" . implode("\n", $errors));
+        }
+    }
+
+    /**
+     * Returns an array of config files to test
+     *
+     * @return array
+     */
+    abstract protected function getConfigFiles();
+
     /**
      * attributes represent merging rules
      * copied from original namespace Magento\Framework\App\Route\Config;
@@ -26,50 +78,4 @@ abstract class AbstractMergedConfigTest extends \PHPUnit\Framework\TestCase
      * @returns string
      */
     abstract protected function getMergedSchemaFile();
-
-    /**
-     * Returns an array of config files to test
-     *
-     * @return array
-     */
-    abstract protected function getConfigFiles();
-
-    public function testMergedConfigFiles()
-    {
-        $invalidFiles = [];
-
-        $files = $this->getConfigFiles();
-        $validationStateMock = $this->createMock(\Magento\Framework\Config\ValidationStateInterface::class);
-        $validationStateMock->method('isValidationRequired')
-            ->willReturn(false);
-        $mergedConfig = new \Magento\Framework\Config\Dom(
-            '<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"></config>',
-            $validationStateMock,
-            $this->getIdAttributes()
-        );
-
-        foreach ($files as $file) {
-            $content = file_get_contents($file[0]);
-            try {
-                $validationStateMock = $this->createMock(\Magento\Framework\Config\ValidationStateInterface::class);
-                $validationStateMock->method('isValidationRequired')
-                    ->willReturn(true);
-                new \Magento\Framework\Config\Dom($content, $validationStateMock, $this->getIdAttributes());
-                //merge won't be performed if file is invalid because of exception thrown
-                $mergedConfig->merge($content);
-            } catch (\Magento\Framework\Config\Dom\ValidationException $e) {
-                $invalidFiles[] = $file[0];
-            }
-        }
-
-        if (!empty($invalidFiles)) {
-            $this->fail('Found broken files: ' . implode("\n", $invalidFiles));
-        }
-
-        $errors = [];
-        $mergedConfig->validate($this->getMergedSchemaFile(), $errors);
-        if ($errors) {
-            $this->fail('Merged routes config is invalid: ' . "\n" . implode("\n", $errors));
-        }
-    }
 }

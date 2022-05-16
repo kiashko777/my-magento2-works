@@ -7,20 +7,16 @@
 namespace Magento\AsynchronousOperations\Model;
 
 use Magento\AsynchronousOperations\Api\Data\BulkSummaryInterface;
+use Magento\AsynchronousOperations\Api\Data\OperationInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class BulkStatusTest extends \PHPUnit\Framework\TestCase
+class BulkStatusTest extends TestCase
 {
     /**
-     * @var \Magento\AsynchronousOperations\Model\BulkStatus
+     * @var BulkStatus
      */
     private $model;
-
-    protected function setUp(): void
-    {
-        $this->model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\AsynchronousOperations\Model\BulkStatus::class
-        );
-    }
 
     /**
      * @magentoDataFixture Magento/AsynchronousOperations/_files/bulk.php
@@ -38,9 +34,9 @@ class BulkStatusTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetBulksByUser()
     {
-        /** @var \Magento\AsynchronousOperations\Model\BulkSummary[] $bulks */
+        /** @var BulkSummary[] $bulks */
         $bulksUuidArray = ['bulk-uuid-1', 'bulk-uuid-2', 'bulk-uuid-3', 'bulk-uuid-4', 'bulk-uuid-5'];
-        $bulks =  $this->model->getBulksByUser(1);
+        $bulks = $this->model->getBulksByUser(1);
         $this->assertCount(5, $bulks);
         foreach ($bulks as $bulk) {
             $this->assertTrue(in_array($bulk->getBulkId(), $bulksUuidArray));
@@ -52,16 +48,23 @@ class BulkStatusTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetFailedOperationsByBulkId()
     {
-        /** @var  \Magento\AsynchronousOperations\Api\Data\OperationInterface[] $operations */
-        $operations =  $this->model->getFailedOperationsByBulkId('bulk-uuid-1');
+        /** @var  OperationInterface[] $operations */
+        $operations = $this->model->getFailedOperationsByBulkId('bulk-uuid-1');
         $this->assertEquals([], $operations);
-        $operations =  $this->model->getFailedOperationsByBulkId('bulk-uuid-5', 3);
+        $operations = $this->model->getFailedOperationsByBulkId('bulk-uuid-5', 3);
         foreach ($operations as $operation) {
             $this->assertEquals(1111, $operation->getErrorCode());
         }
-        $operations =  $this->model->getFailedOperationsByBulkId('bulk-uuid-5', 2);
+        $operations = $this->model->getFailedOperationsByBulkId('bulk-uuid-5', 2);
         foreach ($operations as $operation) {
             $this->assertEquals(2222, $operation->getErrorCode());
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->model = Bootstrap::getObjectManager()->create(
+            BulkStatus::class
+        );
     }
 }

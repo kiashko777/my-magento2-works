@@ -39,25 +39,6 @@ class AttributeSetsFixtureTest extends TestCase
      */
     private $patternMock;
 
-    protected function setUp(): void
-    {
-        $this->fixtureModelMock = $this->getMockBuilder(FixtureModel::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $this->attributeSetsFixtureMock = $this->getMockBuilder(AttributeSetFixture::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $this->patternMock = $this->getMockBuilder(Pattern::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $this->model = new AttributeSetsFixture(
-            $this->fixtureModelMock,
-            $this->attributeSetsFixtureMock,
-            $this->patternMock
-        );
-    }
-
     public function testCreateAttributeSet()
     {
         $valueMap = [
@@ -113,5 +94,24 @@ class AttributeSetsFixtureTest extends TestCase
             'attribute_sets' => 'Attribute Sets (Default)',
             'product_attribute_sets' => 'Attribute Sets (Extra)'
         ], $this->model->introduceParamLabels());
+    }
+
+    protected function setUp(): void
+    {
+        $this->fixtureModelMock = $this->getMockBuilder(FixtureModel::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->attributeSetsFixtureMock = $this->getMockBuilder(AttributeSetFixture::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->patternMock = $this->getMockBuilder(Pattern::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->model = new AttributeSetsFixture(
+            $this->fixtureModelMock,
+            $this->attributeSetsFixtureMock,
+            $this->patternMock
+        );
     }
 }

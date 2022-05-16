@@ -3,11 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-\Magento\TestFramework\Helper\Bootstrap::getInstance()->loadArea('Adminhtml');
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
 
-/** @var $category \Magento\Catalog\Model\Category */
-$category1 = $objectManager->create(\Magento\Catalog\Model\Category::class);
+use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\TestFramework\Helper\Bootstrap;
+
+Bootstrap::getInstance()->loadArea('Adminhtml');
+$objectManager = Bootstrap::getObjectManager();
+
+/** @var $category Category */
+$category1 = $objectManager->create(Category::class);
 $category1->isObjectNew(true);
 $category1->setName('Category 1')
     ->setParentId(2)
@@ -19,7 +26,7 @@ $category1->setName('Category 1')
     ->save();
 $category1->setPath('1/2/' . $category1->getId())->save();
 
-$product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Product::class);
+$product = Bootstrap::getObjectManager()->create(Product::class);
 $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setAttributeSetId(4)
     ->setWebsiteIds([1])
@@ -27,11 +34,11 @@ $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setSku('simple')
     ->setPrice(10)
     ->setCategoryIds([$category1->getId()])
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->save();
 
-$category2 = $objectManager->create(\Magento\Catalog\Model\Category::class);
+$category2 = $objectManager->create(Category::class);
 $category2->isObjectNew(true);
 $category2->setName('Category 2')
     ->setParentId(2)
@@ -43,8 +50,8 @@ $category2->setName('Category 2')
     ->save();
 $category2->setPath('1/2/' . $category2->getId())->save();
 
-$category3 = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Catalog\Model\Category::class
+$category3 = Bootstrap::getObjectManager()->create(
+    Category::class
 );
 $category3->isObjectNew(true);
 $category3->setName('Old Root')

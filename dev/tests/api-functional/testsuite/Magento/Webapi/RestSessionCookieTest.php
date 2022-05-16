@@ -8,27 +8,17 @@ namespace Magento\Webapi;
 
 use Magento\Framework\Module\Manager;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\HttpClient\CurlClientWithCookies;
+use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
  * Class for RestSessionCookieTest
  */
-class RestSessionCookieTest extends \Magento\TestFramework\TestCase\WebapiAbstract
+class RestSessionCookieTest extends WebapiAbstract
 {
 
     private $moduleManager;
     private $objectManager;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->moduleManager = $this->objectManager->get(Manager::class);
-        if ($this->moduleManager->isEnabled('Magento_B2b')) {
-            $this->markTestSkipped('Skipped, because this logic is rewritten on B2B.');
-        }
-    }
 
     /**
      * Check for non exist cookie PHPSESSID
@@ -39,7 +29,7 @@ class RestSessionCookieTest extends \Magento\TestFramework\TestCase\WebapiAbstra
         /** @var $curlClient CurlClientWithCookies */
 
         $curlClient = $this->objectManager
-            ->get(\Magento\TestFramework\TestCase\HttpClient\CurlClientWithCookies::class);
+            ->get(CurlClientWithCookies::class);
         $phpSessionCookieName =
             [
                 'cookie_name' => 'PHPSESSID',
@@ -67,5 +57,17 @@ class RestSessionCookieTest extends \Magento\TestFramework\TestCase\WebapiAbstra
             }
         }
         return null;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->moduleManager = $this->objectManager->get(Manager::class);
+        if ($this->moduleManager->isEnabled('Magento_B2b')) {
+            $this->markTestSkipped('Skipped, because this logic is rewritten on B2B.');
+        }
     }
 }

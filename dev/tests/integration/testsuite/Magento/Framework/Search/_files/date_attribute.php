@@ -6,12 +6,21 @@
 
 /* Create attribute */
 
-/** @var \Magento\Framework\ObjectManagerInterface $objectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+/** @var ObjectManagerInterface $objectManager */
 
-/** @var $installer \Magento\Catalog\Setup\CategorySetup */
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Action;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Catalog\Setup\CategorySetup;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
+
+/** @var $installer CategorySetup */
 $installer = $objectManager->create(
-    \Magento\Catalog\Setup\CategorySetup::class,
+    CategorySetup::class,
     ['resourceName' => 'catalog_setup']
 );
 
@@ -35,8 +44,8 @@ $dateAttribute->save();
 /* Assign attribute to attribute set */
 $installer->addAttributeToGroup('catalog_product', 'Default', 'General', $dateAttribute->getId());
 
-/** @var $product \Magento\Catalog\Model\Product */
-$product = $objectManager->create(\Magento\Catalog\Model\Product::class);
+/** @var $product Product */
+$product = $objectManager->create(Product::class);
 $product
     ->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setAttributeSetId($installer->getAttributeSetId('catalog_product', 'Default'))
@@ -45,12 +54,12 @@ $product
     ->setSku('simple_product_with_date_attribute')
     ->setPrice(1)
     ->setCategoryIds([2])
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setStockData(['use_config_manage_stock' => 1, 'qty' => 5, 'is_in_stock' => 1])
     ->save();
 
-$objectManager->get(\Magento\Catalog\Model\Product\Action::class)
+$objectManager->get(Action::class)
     ->updateAttributes(
         [$product->getId()],
         [

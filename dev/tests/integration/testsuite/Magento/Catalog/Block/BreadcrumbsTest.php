@@ -35,19 +35,6 @@ class BreadcrumbsTest extends TestCase
     private $registry;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->categoryRepository = $this->objectManager->create(CategoryRepositoryInterface::class);
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-    }
-
-    /**
      * Checks the order of categories in breadcrumbs.
      *
      * @magentoDataFixture Magento/Catalog/_files/category_tree.php
@@ -68,5 +55,18 @@ class BreadcrumbsTest extends TestCase
             $actualCategories,
             'The order of categories in breadcrumbs is not correct!'
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->categoryRepository = $this->objectManager->create(CategoryRepositoryInterface::class);
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
     }
 }

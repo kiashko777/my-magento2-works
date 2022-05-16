@@ -30,24 +30,6 @@ class QuoteConfigurationTest extends TestCase
     private $fixture;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->fixtureModelMock = $this->getMockBuilder(FixtureModel::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $objectManager = new ObjectManager($this);
-
-        $this->fixture = $objectManager->getObject(
-            QuoteConfiguration::class,
-            [
-                'fixtureModel' => $this->fixtureModelMock
-            ]
-        );
-    }
-
-    /**
      * Test load method.
      *
      * @return void
@@ -78,5 +60,23 @@ class QuoteConfigurationTest extends TestCase
                 ['order_quotes_enable']
             )->willReturn(1);
         $this->assertSame($expectedResult, $this->fixture->load()->getData());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->fixtureModelMock = $this->getMockBuilder(FixtureModel::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $objectManager = new ObjectManager($this);
+
+        $this->fixture = $objectManager->getObject(
+            QuoteConfiguration::class,
+            [
+                'fixtureModel' => $this->fixtureModelMock
+            ]
+        );
     }
 }

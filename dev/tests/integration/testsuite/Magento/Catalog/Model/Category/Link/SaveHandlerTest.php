@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Model\Category\Link;
 
+use Magento\Catalog\Api\Data\CategoryLinkInterface;
 use Magento\Catalog\Api\Data\CategoryLinkInterfaceFactory;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
@@ -41,20 +42,6 @@ class SaveHandlerTest extends TestCase
      * @var SaveHandler
      */
     private $saveHandler;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $objectManager->create(ProductRepositoryInterface::class);
-        $metadataPool = $objectManager->create(MetadataPool::class);
-        $this->productLinkField = $metadataPool->getMetadata(ProductInterface::class)
-            ->getLinkField();
-        $this->categoryLinkFactory = $objectManager->create(CategoryLinkInterfaceFactory::class);
-        $this->saveHandler = $objectManager->create(SaveHandler::class);
-    }
 
     /**
      * Execute test
@@ -108,8 +95,8 @@ class SaveHandlerTest extends TestCase
      * Update category links
      *
      * @param ProductInterface $product
-     * @param \Magento\Catalog\Api\Data\CategoryLinkInterface[] $categoryLinks
-     * @return \Magento\Catalog\Api\Data\CategoryLinkInterface[]
+     * @param CategoryLinkInterface[] $categoryLinks
+     * @return CategoryLinkInterface[]
      */
     private function updateCategoryLinks(ProductInterface $product, array $categoryLinks): array
     {
@@ -137,5 +124,19 @@ class SaveHandlerTest extends TestCase
             $this->assertEquals($categoryPosition['category_id'], $categoryLink->getCategoryId());
             $this->assertEquals($categoryPosition['position'], $categoryLink->getPosition());
         }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $objectManager->create(ProductRepositoryInterface::class);
+        $metadataPool = $objectManager->create(MetadataPool::class);
+        $this->productLinkField = $metadataPool->getMetadata(ProductInterface::class)
+            ->getLinkField();
+        $this->categoryLinkFactory = $objectManager->create(CategoryLinkInterfaceFactory::class);
+        $this->saveHandler = $objectManager->create(SaveHandler::class);
     }
 }

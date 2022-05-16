@@ -6,6 +6,7 @@
 
 use Magento\Sales\Api\Data\OrderInterfaceFactory;
 use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Shipment;
 use Magento\Sales\Model\Order\ShipmentFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
@@ -20,21 +21,21 @@ $shipments = [
     [
         'increment_id' => '100000001',
         'shipping_address_id' => 1,
-        'shipment_status' => \Magento\Sales\Model\Order\Shipment::STATUS_NEW,
+        'shipment_status' => Shipment::STATUS_NEW,
         'store_id' => 1,
         'shipping_label' => 'shipping_label_100000001',
     ],
     [
         'increment_id' => '100000002',
         'shipping_address_id' => 3,
-        'shipment_status' => \Magento\Sales\Model\Order\Shipment::STATUS_NEW,
+        'shipment_status' => Shipment::STATUS_NEW,
         'store_id' => 1,
         'shipping_label' => 'shipping_label_100000002',
     ],
     [
         'increment_id' => '100000003',
         'shipping_address_id' => 3,
-        'shipment_status' => \Magento\Sales\Model\Order\Shipment::STATUS_NEW,
+        'shipment_status' => Shipment::STATUS_NEW,
         'store_id' => 1,
         'shipping_label' => 'shipping_label_100000003',
     ],
@@ -53,7 +54,7 @@ foreach ($shipments as $shipmentData) {
     foreach ($order->getItems() as $orderItem) {
         $items[$orderItem->getId()] = $orderItem->getQtyOrdered();
     }
-    /** @var \Magento\Sales\Model\Order\Shipment $shipment */
+    /** @var Shipment $shipment */
     $shipment = Bootstrap::getObjectManager()->get(ShipmentFactory::class)->create($order, $items);
     $shipment->setIncrementId($shipmentData['increment_id']);
     $shipment->setShippingAddressId($shipmentData['shipping_address_id']);

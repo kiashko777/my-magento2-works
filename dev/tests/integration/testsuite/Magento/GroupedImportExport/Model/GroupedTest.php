@@ -3,8 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\GroupedImportExport\Model;
 
+use Magento\Catalog\Model\Product;
 use Magento\CatalogImportExport\Model\AbstractProductExportImportTestCase;
 
 class GroupedTest extends AbstractProductExportImportTestCase
@@ -30,9 +32,10 @@ class GroupedTest extends AbstractProductExportImportTestCase
      * @inheritdoc
      */
     protected function assertEqualsSpecificAttributes(
-        \Magento\Catalog\Model\Product $expectedProduct,
-        \Magento\Catalog\Model\Product $actualProduct
-    ): void {
+        Product $expectedProduct,
+        Product $actualProduct
+    ): void
+    {
         $expectedAssociatedProducts = $expectedProduct->getTypeInstance()->getAssociatedProducts($expectedProduct);
         $actualAssociatedProducts = $actualProduct->getTypeInstance()->getAssociatedProducts($actualProduct);
 

@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Magento\Newsletter\Controller;
 
 use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Api\Data\CustomerInterface;
 use Magento\Customer\Model\AccountConfirmation;
 use Magento\Framework\App\Config\MutableScopeConfigInterface;
 use Magento\Framework\App\RequestInterface;
@@ -52,7 +53,7 @@ class SubscriberTest extends AbstractController
         $this->dispatch('customer/account/confirm');
 
         $customerRepository = Bootstrap::getObjectManager()->get(CustomerRepositoryInterface::class);
-        /** @var  \Magento\Customer\Api\Data\CustomerInterface $customer */
+        /** @var  CustomerInterface $customer */
         $customer = $customerRepository->get($customerEmail);
         $subscriberResource = Bootstrap::getObjectManager()
             ->create(SubscriberLoader::class);

@@ -3,24 +3,23 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Widget\Model\Widget;
+
+use Magento\Framework\DataObject;
+use Magento\Framework\View\DesignInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class ConfigTest extends \PHPUnit\Framework\TestCase
+class ConfigTest extends TestCase
 {
     /**
-     * @var \Magento\Widget\Model\Widget\Config
+     * @var Config
      */
     protected $_model;
-
-    protected function setUp(): void
-    {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Widget\Model\Widget\Config::class
-        );
-    }
 
     /**
      * App isolation is enabled, because we change current area and design
@@ -29,13 +28,13 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetPluginSettings()
     {
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\DesignInterface::class
+        Bootstrap::getObjectManager()->get(
+            DesignInterface::class
         )->setDesignTheme(
             'Magento/backend'
         );
 
-        $config = new \Magento\Framework\DataObject();
+        $config = new DataObject();
         $settings = $this->_model->getPluginSettings($config);
 
         $this->assertArrayHasKey('plugins', $settings);
@@ -60,10 +59,17 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
 
     public function testGetWidgetWindowUrl()
     {
-        $config = new \Magento\Framework\DataObject(['widget_filters' => ['is_email_compatible' => 1]]);
+        $config = new DataObject(['widget_filters' => ['is_email_compatible' => 1]]);
 
         $url = $this->_model->getWidgetWindowUrl($config);
 
         $this->assertStringStartsWith('http://localhost/index.php/backend/admin/widget/index/skip_widgets', $url);
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Config::class
+        );
     }
 }

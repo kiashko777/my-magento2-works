@@ -17,8 +17,8 @@ use Magento\Store\Api\Data\StoreInterface;
 use Magento\Store\Api\StoreRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject as MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppIsolation enabled
@@ -53,39 +53,6 @@ class SecureTokenTest extends TestCase
     private $mathRandom;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-
-        $this->gateway = $this->getMockBuilder(Gateway::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $this->quoteRepository = $this->objectManager->get(CartRepositoryInterface::class);
-        $this->objectManager->addSharedInstance($this->gateway, Gateway::class);
-
-        $this->mathRandom = $this->getMockBuilder(Random::class)
-            ->getMock();
-
-        $this->service = $this->objectManager->create(
-            SecureToken::class,
-            [
-                'mathRandom' => $this->mathRandom,
-            ]
-        );
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->objectManager->removeSharedInstance(Gateway::class);
-    }
-
-    /**
      * Checks a case when secure token can be obtained with credentials for the default scope.
      *
      * @magentoDataFixture Magento/Paypal/_files/quote_payflowpro.php
@@ -101,35 +68,22 @@ class SecureTokenTest extends TestCase
     }
 
     /**
-     * Checks a case when secure token can be obtained with credentials specified per store.
+     * Loads quote by order increment id.
      *
-     * @magentoDataFixture Magento/Paypal/_files/quote_payflowpro.php
-     * @magentoDataFixture Magento/Paypal/Fixtures/store_payment_configuration.php
-     * @magentoAppArea Adminhtml
-     * @return void
+     * @param string $orderIncrementId
+     * @return Quote
      */
-    public function testRequestTokenWithStoreConfiguration(): void
+    private function getQuote(string $orderIncrementId): Quote
     {
-        $quote = $this->getQuote('100000015');
-        $store = $this->getStore('test');
-        $quote->setStoreId($store->getId());
-        $this->execute($quote, 'store_partner', 'store_vendor', 'store_user', 'store_pwd');
-    }
+        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
+        $searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
+        $searchCriteria = $searchCriteriaBuilder->addFilter('reserved_order_id', $orderIncrementId)
+            ->create();
 
-    /**
-     * Checks a case when secure token can be obtained with credentials specified per website.
-     *
-     * @magentoDataFixture Magento/Paypal/_files/quote_payflowpro.php
-     * @magentoDataFixture Magento/Paypal/Fixtures/website_payment_configuration.php
-     * @magentoAppArea Adminhtml
-     * @return void
-     */
-    public function testRequestTokenWithWebsiteConfiguration(): void
-    {
-        $quote = $this->getQuote('100000015');
-        $store = $this->getStore('fixture_second_store');
-        $quote->setStoreId($store->getId());
-        $this->execute($quote, 'website_partner', 'website_vendor', 'website_user', 'website_pwd');
+        $items = $this->quoteRepository->getList($searchCriteria)
+            ->getItems();
+
+        return array_pop($items);
     }
 
     /**
@@ -143,12 +97,13 @@ class SecureTokenTest extends TestCase
      * @return void
      */
     private function execute(
-        Quote $quote,
+        Quote  $quote,
         string $expPartner,
         string $expVendor,
         string $expUser,
         string $expPwd
-    ): void {
+    ): void
+    {
         $secureTokenId = '31f2a7c8d257c70b1c9eb9051b90e0';
         $token = '80IgSbabyj0CtBDWHZZeQN3';
 
@@ -193,22 +148,19 @@ class SecureTokenTest extends TestCase
     }
 
     /**
-     * Loads quote by order increment id.
+     * Checks a case when secure token can be obtained with credentials specified per store.
      *
-     * @param string $orderIncrementId
-     * @return Quote
+     * @magentoDataFixture Magento/Paypal/_files/quote_payflowpro.php
+     * @magentoDataFixture Magento/Paypal/Fixtures/store_payment_configuration.php
+     * @magentoAppArea Adminhtml
+     * @return void
      */
-    private function getQuote(string $orderIncrementId): Quote
+    public function testRequestTokenWithStoreConfiguration(): void
     {
-        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
-        $searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
-        $searchCriteria = $searchCriteriaBuilder->addFilter('reserved_order_id', $orderIncrementId)
-            ->create();
-
-        $items = $this->quoteRepository->getList($searchCriteria)
-            ->getItems();
-
-        return array_pop($items);
+        $quote = $this->getQuote('100000015');
+        $store = $this->getStore('test');
+        $quote->setStoreId($store->getId());
+        $this->execute($quote, 'store_partner', 'store_vendor', 'store_user', 'store_pwd');
     }
 
     /**
@@ -222,5 +174,54 @@ class SecureTokenTest extends TestCase
         /** @var StoreRepositoryInterface $storeRepository */
         $storeRepository = $this->objectManager->get(StoreRepositoryInterface::class);
         return $storeRepository->get($code);
+    }
+
+    /**
+     * Checks a case when secure token can be obtained with credentials specified per website.
+     *
+     * @magentoDataFixture Magento/Paypal/_files/quote_payflowpro.php
+     * @magentoDataFixture Magento/Paypal/Fixtures/website_payment_configuration.php
+     * @magentoAppArea Adminhtml
+     * @return void
+     */
+    public function testRequestTokenWithWebsiteConfiguration(): void
+    {
+        $quote = $this->getQuote('100000015');
+        $store = $this->getStore('fixture_second_store');
+        $quote->setStoreId($store->getId());
+        $this->execute($quote, 'website_partner', 'website_vendor', 'website_user', 'website_pwd');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->gateway = $this->getMockBuilder(Gateway::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->quoteRepository = $this->objectManager->get(CartRepositoryInterface::class);
+        $this->objectManager->addSharedInstance($this->gateway, Gateway::class);
+
+        $this->mathRandom = $this->getMockBuilder(Random::class)
+            ->getMock();
+
+        $this->service = $this->objectManager->create(
+            SecureToken::class,
+            [
+                'mathRandom' => $this->mathRandom,
+            ]
+        );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->objectManager->removeSharedInstance(Gateway::class);
     }
 }

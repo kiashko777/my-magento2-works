@@ -6,6 +6,10 @@
 
 namespace Magento\Setup\Fixtures;
 
+use Magento\Framework\App\CacheInterface;
+use Magento\Framework\App\Config;
+use Magento\Framework\Indexer\IndexerRegistry;
+
 /**
  * Class IndexersStatesApplyFixture
  */
@@ -28,17 +32,17 @@ class IndexersStatesApplyFixture extends Fixture
 
         $this->fixtureModel->resetObjectManager();
 
-        /** @var $indexerRegistry \Magento\Framework\Indexer\IndexerRegistry */
+        /** @var $indexerRegistry IndexerRegistry */
         $indexerRegistry = $this->fixtureModel->getObjectManager()
-            ->create(\Magento\Framework\Indexer\IndexerRegistry::class);
+            ->create(IndexerRegistry::class);
 
         foreach ($indexers["indexer"] as $indexerConfig) {
             $indexer = $indexerRegistry->get($indexerConfig['id']);
             $indexer->setScheduled($indexerConfig['set_scheduled'] == "true");
         }
 
-        $this->fixtureModel->getObjectManager()->get(\Magento\Framework\App\CacheInterface::class)
-            ->clean([\Magento\Framework\App\Config::CACHE_TAG]);
+        $this->fixtureModel->getObjectManager()->get(CacheInterface::class)
+            ->clean([Config::CACHE_TAG]);
     }
 
     /**

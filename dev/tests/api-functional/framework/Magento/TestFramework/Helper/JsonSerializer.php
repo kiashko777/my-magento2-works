@@ -3,7 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Helper;
+
+use Exception;
 
 /**
  * Encodes and decodes JSON and checks for errors on these operations
@@ -25,7 +28,7 @@ class JsonSerializer
      *
      * @param mixed $data
      * @return string
-     * @throws \Exception
+     * @throws Exception
      */
     public function jsonEncode($data)
     {
@@ -37,26 +40,9 @@ class JsonSerializer
     }
 
     /**
-     * Decode a JSON string with error checking
-     *
-     * @param string $data
-     * @param bool $asArray
-     * @throws \Exception
-     * @return mixed
-     */
-    public function jsonDecode($data, $asArray = true)
-    {
-        $ret = json_decode($data, $asArray);
-        $this->checkJsonError($data);
-
-        // return the array
-        return $ret;
-    }
-
-    /**
      * Checks for JSON error in the latest encoding / decoding and throws an exception in case of error
      *
-     * @throws \Exception
+     * @throws Exception
      */
     private function checkJsonError()
     {
@@ -68,10 +54,27 @@ class JsonSerializer
                 $message = $this->jsonErrorMessages[$jsonError];
             }
 
-            throw new \Exception(
+            throw new Exception(
                 'JSON Encoding / Decoding error: ' . $message . var_export(func_get_arg(0), true),
                 $jsonError
             );
         }
+    }
+
+    /**
+     * Decode a JSON string with error checking
+     *
+     * @param string $data
+     * @param bool $asArray
+     * @return mixed
+     * @throws Exception
+     */
+    public function jsonDecode($data, $asArray = true)
+    {
+        $ret = json_decode($data, $asArray);
+        $this->checkJsonError($data);
+
+        // return the array
+        return $ret;
     }
 }

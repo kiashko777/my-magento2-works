@@ -5,18 +5,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Session\Config\Validator;
 
-class CookiePathValidatorTest extends \PHPUnit\Framework\TestCase
-{
-    /** @var  \Magento\Framework\Session\Config\Validator\CookiePathValidator   */
-    private $model;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->model = $objectManager->create(\Magento\Framework\Session\Config\Validator\CookiePathValidator::class);
-    }
+class CookiePathValidatorTest extends TestCase
+{
+    /** @var  CookiePathValidator */
+    private $model;
 
     public function testNoLeadingSlash()
     {
@@ -34,5 +32,11 @@ class CookiePathValidatorTest extends \PHPUnit\Framework\TestCase
     {
         $path = '/';
         $this->assertTrue($this->model->isValid($path));
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->model = $objectManager->create(CookiePathValidator::class);
     }
 }

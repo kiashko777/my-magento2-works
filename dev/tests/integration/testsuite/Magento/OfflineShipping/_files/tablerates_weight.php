@@ -5,10 +5,14 @@
  */
 declare(strict_types=1);
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-$resource = $objectManager->get(\Magento\Framework\App\ResourceConnection::class);
+use Magento\Framework\App\ResourceConnection;
+use Magento\OfflineShipping\Model\ResourceModel\Carrier\Tablerate;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
+$resource = $objectManager->get(ResourceConnection::class);
 $connection = $resource->getConnection();
-$resourceModel = $objectManager->create(\Magento\OfflineShipping\Model\ResourceModel\Carrier\Tablerate::class);
+$resourceModel = $objectManager->create(Tablerate::class);
 $entityTable = $resourceModel->getTable('shipping_tablerate');
 $data =
     [

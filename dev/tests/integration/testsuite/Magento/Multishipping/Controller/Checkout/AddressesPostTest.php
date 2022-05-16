@@ -9,12 +9,12 @@ namespace Magento\Multishipping\Controller\Checkout;
 
 use Magento\Customer\Api\AccountManagementInterface;
 use Magento\Customer\Model\Session as CustomerSession;
+use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Message\MessageInterface;
-use Magento\Quote\Api\Data\CartInterface;
-use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Quote\Api\CartRepositoryInterface as QuoteRepository;
+use Magento\Quote\Api\Data\CartInterface;
 use Magento\TestFramework\TestCase\AbstractController;
 use Psr\Log\LoggerInterface;
 
@@ -29,15 +29,6 @@ class AddressesPostTest extends AbstractController
      * @var QuoteRepository
      */
     private $quoteRepository;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->quoteRepository = $this->_objectManager->get(QuoteRepository::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Checkout/_files/quote_with_address.php
@@ -72,32 +63,21 @@ class AddressesPostTest extends AbstractController
     }
 
     /**
-     * @magentoDataFixture Magento/Checkout/_files/quote_with_address.php
+     * Gets quote by reserved order id.
+     *
+     * @param string $reservedOrderId
+     * @return CartInterface
      */
-    public function testExecuteFail()
+    private function getQuote(string $reservedOrderId): CartInterface
     {
-        $msg = 'Verify the shipping address information and continue.';
+        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
+        $searchCriteriaBuilder = $this->_objectManager->create(SearchCriteriaBuilder::class);
+        $searchCriteria = $searchCriteriaBuilder->addFilter('reserved_order_id', $reservedOrderId)->create();
+        /** @var QuoteRepository $quoteRepository */
+        $quoteRepository = $this->_objectManager->get(QuoteRepository::class);
+        $items = $quoteRepository->getList($searchCriteria)->getItems();
 
-        $quote = $this->getQuote('test_order_1');
-        $this->setMultiShippingToQuote($quote);
-        $quoteItems = $quote->getItems();
-        $quoteItemId = array_shift($quoteItems)->getItemId();
-        $this->loginCustomer();
-        $request = [
-            'ship' => [
-                1 => [
-                    $quoteItemId => [
-                        'qty' => 1,
-                        'address' => $quoteItemId,
-                    ],
-                ],
-            ],
-        ];
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
-        $this->getRequest()->setPostValue($request);
-        $this->dispatch('multishipping/checkout/addressesPost');
-
-        $this->assertSessionMessages($this->equalTo([$msg]), MessageInterface::TYPE_ERROR);
+        return array_pop($items);
     }
 
     /**
@@ -131,20 +111,40 @@ class AddressesPostTest extends AbstractController
     }
 
     /**
-     * Gets quote by reserved order id.
-     *
-     * @param string $reservedOrderId
-     * @return CartInterface
+     * @magentoDataFixture Magento/Checkout/_files/quote_with_address.php
      */
-    private function getQuote(string $reservedOrderId): CartInterface
+    public function testExecuteFail()
     {
-        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
-        $searchCriteriaBuilder = $this->_objectManager->create(SearchCriteriaBuilder::class);
-        $searchCriteria = $searchCriteriaBuilder->addFilter('reserved_order_id', $reservedOrderId)->create();
-        /** @var QuoteRepository $quoteRepository */
-        $quoteRepository = $this->_objectManager->get(QuoteRepository::class);
-        $items = $quoteRepository->getList($searchCriteria)->getItems();
+        $msg = 'Verify the shipping address information and continue.';
 
-        return array_pop($items);
+        $quote = $this->getQuote('test_order_1');
+        $this->setMultiShippingToQuote($quote);
+        $quoteItems = $quote->getItems();
+        $quoteItemId = array_shift($quoteItems)->getItemId();
+        $this->loginCustomer();
+        $request = [
+            'ship' => [
+                1 => [
+                    $quoteItemId => [
+                        'qty' => 1,
+                        'address' => $quoteItemId,
+                    ],
+                ],
+            ],
+        ];
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
+        $this->getRequest()->setPostValue($request);
+        $this->dispatch('multishipping/checkout/addressesPost');
+
+        $this->assertSessionMessages($this->equalTo([$msg]), MessageInterface::TYPE_ERROR);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->quoteRepository = $this->_objectManager->get(QuoteRepository::class);
     }
 }

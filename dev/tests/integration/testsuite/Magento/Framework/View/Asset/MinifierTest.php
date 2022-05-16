@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\View\Asset;
 
 use Exception;
@@ -39,52 +40,17 @@ use Symfony\Component\Console\Output\ConsoleOutput;
 class MinifierTest extends TestCase
 {
     /**
-     * @var WriteInterface
-     */
-    private $staticDir;
-
-    /**
      * @var ObjectManager
      */
     protected $objectManager;
-
+    /**
+     * @var WriteInterface
+     */
+    private $staticDir;
     /**
      * @var string
      */
     private $origMode;
-
-    /**
-     * {@inheritDoc}
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->objectManager = Bootstrap::getInstance()->getObjectManager();
-        /** @var Registration $registration */
-        $registration = $this->objectManager->get(Registration::class);
-        $registration->register();
-        /** @var State $appState */
-        $appState = $this->objectManager->get(State::class);
-        $this->origMode = $appState->getMode();
-        $appState->setMode(AppState::MODE_DEFAULT);
-        /** @var Filesystem $filesystem */
-        $filesystem = Bootstrap::getObjectManager()->get(Filesystem::class);
-        $this->staticDir = $filesystem->getDirectoryWrite(DirectoryList::STATIC_VIEW);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    protected function tearDown(): void
-    {
-        /** @var State $appState */
-        $appState = $this->objectManager->get(State::class);
-        $appState->setMode($this->origMode);
-        if ($this->staticDir->isExist('frontend/FrameworkViewMinifier')) {
-            $this->staticDir->delete('frontend/FrameworkViewMinifier');
-        }
-        parent::tearDown();
-    }
 
     /**
      * CSS Minifier library test
@@ -128,6 +94,30 @@ class MinifierTest extends TestCase
     }
 
     /**
+     * @magentoConfigFixture current_store dev/css/minify_files 0
+     * @magentoAppIsolation enabled
+     */
+    public function testCssMinificationOff()
+    {
+        $this->checkCssMinification(
+            '/frontend/FrameworkViewMinifier/default/en_US/css/styles.css',
+            function ($path) {
+                $content = file_get_contents($path);
+                $this->assertNotEmpty($content);
+                $this->assertStringContainsString('FrameworkViewMinifier/frontend', $content);
+                $this->assertNotEquals(
+                    file_get_contents(
+                        dirname(__DIR__)
+                        . '/_files/static/expected/styles.magento.min.css'
+                    ),
+                    $content,
+                    'CSS is minified when minification turned off'
+                );
+            }
+        );
+    }
+
+    /**
      * Test CSS minification
      *
      * @param string $requestedUri
@@ -155,30 +145,6 @@ class MinifierTest extends TestCase
             ['response' => $response]
         );
         $staticResourceApp->launch();
-    }
-
-    /**
-     * @magentoConfigFixture current_store dev/css/minify_files 0
-     * @magentoAppIsolation enabled
-     */
-    public function testCssMinificationOff()
-    {
-        $this->checkCssMinification(
-            '/frontend/FrameworkViewMinifier/default/en_US/css/styles.css',
-            function ($path) {
-                $content = file_get_contents($path);
-                $this->assertNotEmpty($content);
-                $this->assertStringContainsString('FrameworkViewMinifier/frontend', $content);
-                $this->assertNotEquals(
-                    file_get_contents(
-                        dirname(__DIR__)
-                        . '/_files/static/expected/styles.magento.min.css'
-                    ),
-                    $content,
-                    'CSS is minified when minification turned off'
-                );
-            }
-        );
     }
 
     /**
@@ -297,5 +263,38 @@ class MinifierTest extends TestCase
             file_get_contents($fileToBePublished),
             'Minified file is not equal or minification did not work for deployed CSS'
         );
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->objectManager = Bootstrap::getInstance()->getObjectManager();
+        /** @var Registration $registration */
+        $registration = $this->objectManager->get(Registration::class);
+        $registration->register();
+        /** @var State $appState */
+        $appState = $this->objectManager->get(State::class);
+        $this->origMode = $appState->getMode();
+        $appState->setMode(AppState::MODE_DEFAULT);
+        /** @var Filesystem $filesystem */
+        $filesystem = Bootstrap::getObjectManager()->get(Filesystem::class);
+        $this->staticDir = $filesystem->getDirectoryWrite(DirectoryList::STATIC_VIEW);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function tearDown(): void
+    {
+        /** @var State $appState */
+        $appState = $this->objectManager->get(State::class);
+        $appState->setMode($this->origMode);
+        if ($this->staticDir->isExist('frontend/FrameworkViewMinifier')) {
+            $this->staticDir->delete('frontend/FrameworkViewMinifier');
+        }
+        parent::tearDown();
     }
 }

@@ -7,14 +7,14 @@ declare(strict_types=1);
 
 namespace Magento\ImportExport\Controller\Adminhtml\Export\File;
 
+use Magento\Backend\Model\Auth;
+use Magento\Backend\Model\UrlInterface as BackendUrl;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\App\Request\Http;
 use Magento\Framework\Filesystem;
 use Magento\Framework\Filesystem\Directory\WriteInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\AbstractBackendController;
-use Magento\Backend\Model\UrlInterface as BackendUrl;
-use Magento\Backend\Model\Auth;
 
 /**
  * Test for \Magento\ImportExport\Controller\Adminhtml\Export\File\Download class.
@@ -52,20 +52,29 @@ class DownloadTest extends AbstractBackendController
     private $sourceFilePath;
 
     /**
+     * Csv file path for copying from sourceFilePath and for future deleting
+     *
+     * @return array
+     */
+    public static function testExecuteProvider(): array
+    {
+        return [
+            ['catalog_product.csv'],
+            ['test/catalog_product.csv']
+        ];
+    }
+
+    /**
      * @inheritdoc
      */
-    protected function setUp(): void
+    public static function tearDownAfterClass(): void
     {
-        parent::setUp();
-
-        $this->fileSystem = $this->_objectManager->get(Filesystem::class);
-        $auth = $this->_objectManager->get(Auth::class);
-        $auth->getAuthStorage()->setIsFirstPageAfterLogin(false);
-        $this->backendUrl = $this->_objectManager->get(BackendUrl::class);
-        $this->backendUrl->turnOnSecretKey();
-        $this->sourceFilePath = __DIR__ . '/../../Import/_files' . DIRECTORY_SEPARATOR . $this->fileName;
-        //Refers to tests 'var' directory
-        $this->varDirectory = $this->fileSystem->getDirectoryRead(DirectoryList::VAR_DIR);
+        $filesystem = Bootstrap::getObjectManager()->get(Filesystem::class);
+        /** @var WriteInterface $directory */
+        $directory = $filesystem->getDirectoryWrite(DirectoryList::VAR_DIR);
+        if ($directory->isExist('export')) {
+            $directory->delete('export');
+        }
     }
 
     /**
@@ -130,16 +139,20 @@ class DownloadTest extends AbstractBackendController
     }
 
     /**
-     * Csv file path for copying from sourceFilePath and for future deleting
-     *
-     * @return array
+     * @inheritdoc
      */
-    public static function testExecuteProvider(): array
+    protected function setUp(): void
     {
-        return [
-            ['catalog_product.csv'],
-            ['test/catalog_product.csv']
-        ];
+        parent::setUp();
+
+        $this->fileSystem = $this->_objectManager->get(Filesystem::class);
+        $auth = $this->_objectManager->get(Auth::class);
+        $auth->getAuthStorage()->setIsFirstPageAfterLogin(false);
+        $this->backendUrl = $this->_objectManager->get(BackendUrl::class);
+        $this->backendUrl->turnOnSecretKey();
+        $this->sourceFilePath = __DIR__ . '/../../Import/_files' . DIRECTORY_SEPARATOR . $this->fileName;
+        //Refers to tests 'var' directory
+        $this->varDirectory = $this->fileSystem->getDirectoryRead(DirectoryList::VAR_DIR);
     }
 
     /**
@@ -150,18 +163,5 @@ class DownloadTest extends AbstractBackendController
         $this->auth = null;
 
         parent::tearDown();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public static function tearDownAfterClass(): void
-    {
-        $filesystem = Bootstrap::getObjectManager()->get(Filesystem::class);
-        /** @var WriteInterface $directory */
-        $directory = $filesystem->getDirectoryWrite(DirectoryList::VAR_DIR);
-        if ($directory->isExist('export')) {
-            $directory->delete('export');
-        }
     }
 }

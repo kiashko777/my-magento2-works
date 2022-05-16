@@ -7,19 +7,23 @@ declare(strict_types=1);
 
 namespace Magento\Config\Model\Config\Structure\Reader;
 
+use DOMDocument;
 use Magento\Config\Model\Config\SchemaLocator;
 use Magento\Framework\App\Utility\Files;
 use Magento\Framework\Config\Dom;
 use Magento\Framework\Config\FileResolverInterface;
+use Magento\Framework\Config\SchemaLocatorInterface;
 use Magento\Framework\Config\ValidationStateInterface;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\View\TemplateEngine\Xhtml\CompilerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class ReaderTest check Magento\Config\Model\Config\Structure\Reader::_readFiles() method.
  */
-class ReaderTest extends \PHPUnit\Framework\TestCase
+class ReaderTest extends TestCase
 {
     /**
      * Test config location.
@@ -44,7 +48,7 @@ class ReaderTest extends \PHPUnit\Framework\TestCase
     private $validationStateMock;
 
     /**
-     * @var \Magento\Framework\Config\SchemaLocatorInterface
+     * @var SchemaLocatorInterface
      */
     private $schemaLocatorMock;
 
@@ -64,9 +68,38 @@ class ReaderTest extends \PHPUnit\Framework\TestCase
     private $converter;
 
     /**
-     * @var CompilerInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @var CompilerInterface|MockObject
      */
     private $compiler;
+
+    /**
+     * The test checks the file structure after processing the nodes responsible for inserting content.
+     *
+     * @return void
+     */
+    public function testXmlConvertedConfigurationAndCompereStructure()
+    {
+        $actual = $this->reader->readFiles(['actual' => $this->getContent()]);
+
+        $document = new DOMDocument();
+        $document->loadXML($this->getContent());
+
+        $expected = $this->converter->getArrayData($document);
+
+        $this->assertEquals($expected, $actual);
+    }
+
+    /**
+     * Get config sample data for test.
+     *
+     * @return string
+     */
+    protected function getContent()
+    {
+        $files = $this->fileUtility->getFiles([BP . static::CONFIG], 'config.xml');
+
+        return file_get_contents(reset($files));
+    }
 
     /**
      * @inheritdoc
@@ -113,34 +146,5 @@ class ReaderTest extends \PHPUnit\Framework\TestCase
                 'domDocumentClass' => Dom::class
             ]
         );
-    }
-
-    /**
-     * The test checks the file structure after processing the nodes responsible for inserting content.
-     *
-     * @return void
-     */
-    public function testXmlConvertedConfigurationAndCompereStructure()
-    {
-        $actual = $this->reader->readFiles(['actual' => $this->getContent()]);
-
-        $document = new \DOMDocument();
-        $document->loadXML($this->getContent());
-
-        $expected = $this->converter->getArrayData($document);
-
-        $this->assertEquals($expected, $actual);
-    }
-
-    /**
-     * Get config sample data for test.
-     *
-     * @return string
-     */
-    protected function getContent()
-    {
-        $files = $this->fileUtility->getFiles([BP . static::CONFIG], 'config.xml');
-
-        return file_get_contents(reset($files));
     }
 }

@@ -35,17 +35,6 @@ class IndexTest extends AbstractBackendController
     private $customerSession;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->customerRepository = $this->_objectManager->get(CustomerRepositoryInterface::class);
-        $this->wishlist = $this->_objectManager->get(Wishlist::class);
-        $this->customerSession = $this->_objectManager->get(Session::class);
-    }
-
-    /**
      * Check Rss response.
      *
      * @magentoAppIsolation enabled
@@ -63,6 +52,13 @@ class IndexTest extends AbstractBackendController
         $this->dispatch($this->getLink($firstCustomerId, $customerEmail, $wishlistId));
         $body = $this->getResponse()->getBody();
         $this->assertStringContainsString('<title>John Smith\'s Wishlist</title>', $body);
+    }
+
+    private function getLink($customerId, $customerEmail, $wishlistId)
+    {
+        return 'rss/feed/index/type/wishlist/data/'
+            . base64_encode($customerId . ',' . $customerEmail)
+            . '/wishlist_id/' . $wishlistId;
     }
 
     /**
@@ -101,10 +97,14 @@ class IndexTest extends AbstractBackendController
         $this->assertStringContainsString('<title>404 Not Found</title>', $body);
     }
 
-    private function getLink($customerId, $customerEmail, $wishlistId)
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
     {
-        return 'rss/feed/index/type/wishlist/data/'
-            . base64_encode($customerId . ',' . $customerEmail)
-            . '/wishlist_id/' . $wishlistId;
+        parent::setUp();
+        $this->customerRepository = $this->_objectManager->get(CustomerRepositoryInterface::class);
+        $this->wishlist = $this->_objectManager->get(Wishlist::class);
+        $this->customerSession = $this->_objectManager->get(Session::class);
     }
 }

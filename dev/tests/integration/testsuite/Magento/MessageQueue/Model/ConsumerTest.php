@@ -37,18 +37,6 @@ class ConsumerTest extends TestCase
     private $queueResource;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = ObjectManager::getInstance();
-        /** @var ConsumerFactory $factory */
-        $factory = $this->objectManager->get(ConsumerFactory::class);
-        $this->model = $factory->get('demoConsumerWithConnectionException');
-        $this->queueResource = $this->objectManager->get(Queue::class);
-    }
-
-    /**
      * Test if after connection exception and retry
      * message doesn't have success status but still has status in progress
      *
@@ -105,5 +93,17 @@ class ConsumerTest extends TestCase
             ->order(['queue_message_status.id DESC']);
 
         return $connection->fetchRow($select);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = ObjectManager::getInstance();
+        /** @var ConsumerFactory $factory */
+        $factory = $this->objectManager->get(ConsumerFactory::class);
+        $this->model = $factory->get('demoConsumerWithConnectionException');
+        $this->queueResource = $this->objectManager->get(Queue::class);
     }
 }

@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 namespace Magento\SalesRule\Model\Coupon;
 
+use Magento\Captcha\Helper\Data as CaptchaHelper;
 use Magento\Captcha\Model\DefaultModel;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\Request\Http;
@@ -16,10 +17,10 @@ use Magento\Framework\HTTP\PhpEnvironment\RemoteAddress;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Api\Data\CartInterface;
 use Magento\SalesRule\Api\Exception\CodeRequestLimitException;
-use PHPUnit\Framework\TestCase;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Captcha\Helper\Data as CaptchaHelper;
 use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 /**
  * Test cases related to coupons.
@@ -47,40 +48,6 @@ class QuoteRepositoryTest extends TestCase
     private $captchaHelper;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        /** @var ObjectManager $objectManager */
-        $objectManager = Bootstrap::getObjectManager();
-        /** @var Http $request */
-        $request = $objectManager->get(RequestInterface::class);
-        $request->getServer()->set('REMOTE_ADDR', '127.0.0.1');
-        $this->request = $request;
-        $objectManager->removeSharedInstance(RemoteAddress::class);
-        $this->repo = $objectManager->get(CartRepositoryInterface::class);
-        $this->criteriaBuilder = $objectManager->get(SearchCriteriaBuilder::class);
-        $this->captchaHelper = $objectManager->get(CaptchaHelper::class);
-    }
-
-    /**
-     * Load cart from fixture.
-     *
-     * @return CartInterface
-     */
-    private function getCart(): CartInterface
-    {
-        $carts = $this->repo->getList(
-            $this->criteriaBuilder->addFilter('reserved_order_id', 'test01')->create()
-        )->getItems();
-        if (!$carts) {
-            throw new \RuntimeException('Cart from fixture not found');
-        }
-
-        return array_shift($carts);
-    }
-
-    /**
      * Case when coupon requests limit is reached.
      *
      * @magentoDbIsolation enabled
@@ -97,7 +64,7 @@ class QuoteRepositoryTest extends TestCase
      */
     public function testAboveLimitFail()
     {
-        $this->expectException(\Magento\SalesRule\Api\Exception\CodeRequestLimitException::class);
+        $this->expectException(CodeRequestLimitException::class);
 
         //Making number of requests above limit.
         try {
@@ -107,6 +74,23 @@ class QuoteRepositoryTest extends TestCase
             $this->fail('Denied access before the limit is reached.');
         }
         $this->repo->save($this->getCart()->setCouponCode('fake22'));
+    }
+
+    /**
+     * Load cart from fixture.
+     *
+     * @return CartInterface
+     */
+    private function getCart(): CartInterface
+    {
+        $carts = $this->repo->getList(
+            $this->criteriaBuilder->addFilter('reserved_order_id', 'test01')->create()
+        )->getItems();
+        if (!$carts) {
+            throw new RuntimeException('Cart from fixture not found');
+        }
+
+        return array_shift($carts);
     }
 
     /**
@@ -134,5 +118,22 @@ class QuoteRepositoryTest extends TestCase
         $captcha->generate();
         $this->request->setPostValue('captcha', ['sales_rule_coupon_request' => $captcha->getWord()]);
         $this->repo->save($this->getCart()->setCouponCode('fake26'));
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        /** @var ObjectManager $objectManager */
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var Http $request */
+        $request = $objectManager->get(RequestInterface::class);
+        $request->getServer()->set('REMOTE_ADDR', '127.0.0.1');
+        $this->request = $request;
+        $objectManager->removeSharedInstance(RemoteAddress::class);
+        $this->repo = $objectManager->get(CartRepositoryInterface::class);
+        $this->criteriaBuilder = $objectManager->get(SearchCriteriaBuilder::class);
+        $this->captchaHelper = $objectManager->get(CaptchaHelper::class);
     }
 }

@@ -27,16 +27,6 @@ class AddGroupedProductToWishlistTest extends GraphQlAbstract
     private $wishlistFactory;
 
     /**
-     * Set Up
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-        $this->wishlistFactory = $objectManager->get(WishlistFactory::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/GroupedProduct/_files/product_grouped.php
      * @magentoConfigFixture default_store wishlist/general/active 1
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
@@ -59,16 +49,17 @@ class AddGroupedProductToWishlistTest extends GraphQlAbstract
         $this->assertEquals($wishlist->getItemsCount(), $response['items_count']);
         $this->assertEquals($wishlist->getSharingCode(), $response['sharing_code']);
         $this->assertEquals($wishlist->getUpdatedAt(), $response['updated_at']);
-        $this->assertEquals((int) $item->getQty(), $response['items_v2']['items'][0]['quantity']);
+        $this->assertEquals((int)$item->getQty(), $response['items_v2']['items'][0]['quantity']);
         $this->assertEquals($item->getAddedAt(), $response['items_v2']['items'][0]['added_at']);
         $this->assertEquals($productSku, $response['items_v2']['items'][0]['product']['sku']);
     }
 
     private function getMutation(
         string $sku,
-        int $qty,
-        int $wishlistId = 0
-    ): string {
+        int    $qty,
+        int    $wishlistId = 0
+    ): string
+    {
         return <<<MUTATION
 mutation {
   addProductsToWishlist(
@@ -122,5 +113,15 @@ MUTATION;
         $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
 
         return ['Authorization' => 'Bearer ' . $customerToken];
+    }
+
+    /**
+     * Set Up
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
+        $this->wishlistFactory = $objectManager->get(WishlistFactory::class);
     }
 }

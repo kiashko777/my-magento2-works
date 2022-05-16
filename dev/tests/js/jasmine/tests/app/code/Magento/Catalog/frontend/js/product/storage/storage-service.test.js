@@ -22,7 +22,8 @@ define([
         try {
             injector.clean();
             injector.remove();
-        } catch (e) {}
+        } catch (e) {
+        }
     });
 
     describe('Magento_Catalog/js/product/storage/storage-service', function () {

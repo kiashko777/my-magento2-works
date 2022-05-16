@@ -9,7 +9,9 @@ namespace Magento\Setup\Test\Unit\Fixtures;
 
 use Magento\Framework\ObjectManager\ObjectManager;
 use Magento\SalesRule\Model\Coupon;
+use Magento\SalesRule\Model\CouponFactory;
 use Magento\SalesRule\Model\Rule;
+use Magento\SalesRule\Model\RuleFactory;
 use Magento\Setup\Fixtures\CartPriceRulesFixture;
 use Magento\Setup\Fixtures\CouponCodesFixture;
 use Magento\Setup\Fixtures\FixtureModel;
@@ -34,32 +36,14 @@ class CouponCodesFixtureTest extends TestCase
     private $fixtureModelMock;
 
     /**
-     * @var \Magento\SalesRule\Model\RuleFactory|MockObject
+     * @var RuleFactory|MockObject
      */
     private $ruleFactoryMock;
 
     /**
-     * @var \Magento\SalesRule\Model\CouponFactory|MockObject
+     * @var CouponFactory|MockObject
      */
     private $couponCodeFactoryMock;
-
-    /**
-     * setUp
-     */
-    protected function setUp(): void
-    {
-        $this->fixtureModelMock = $this->createMock(FixtureModel::class);
-        $this->ruleFactoryMock = $this->createPartialMock(\Magento\SalesRule\Model\RuleFactory::class, ['create']);
-        $this->couponCodeFactoryMock = $this->createPartialMock(
-            \Magento\SalesRule\Model\CouponFactory::class,
-            ['create']
-        );
-        $this->model = new CouponCodesFixture(
-            $this->fixtureModelMock,
-            $this->ruleFactoryMock,
-            $this->couponCodeFactoryMock
-        );
-    }
 
     /**
      * testExecute
@@ -162,5 +146,23 @@ class CouponCodesFixtureTest extends TestCase
     public function testIntroduceParamLabels()
     {
         $this->assertSame(['coupon_codes' => 'Coupon Codes'], $this->model->introduceParamLabels());
+    }
+
+    /**
+     * setUp
+     */
+    protected function setUp(): void
+    {
+        $this->fixtureModelMock = $this->createMock(FixtureModel::class);
+        $this->ruleFactoryMock = $this->createPartialMock(RuleFactory::class, ['create']);
+        $this->couponCodeFactoryMock = $this->createPartialMock(
+            CouponFactory::class,
+            ['create']
+        );
+        $this->model = new CouponCodesFixture(
+            $this->fixtureModelMock,
+            $this->ruleFactoryMock,
+            $this->couponCodeFactoryMock
+        );
     }
 }

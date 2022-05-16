@@ -21,11 +21,6 @@ class InfoAdminUriCommandTest extends TestCase
      */
     protected $deploymentConfig;
 
-    protected function setup(): void
-    {
-        $this->deploymentConfig = $this->createMock(DeploymentConfig::class);
-    }
-
     public function testExecute()
     {
         $this->deploymentConfig->expects($this->once())->method('get')->willReturn('admin_qw12er');
@@ -41,5 +36,10 @@ class InfoAdminUriCommandTest extends TestCase
             $commandTester->getDisplay(),
             'Unexpected Backend Frontname pattern.'
         );
+    }
+
+    protected function setup(): void
+    {
+        $this->deploymentConfig = $this->createMock(DeploymentConfig::class);
     }
 }

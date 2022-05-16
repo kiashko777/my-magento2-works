@@ -38,18 +38,6 @@ class AddDownloadableProductToCartSingleMutationTest extends GraphQlAbstract
     private $getCartItemOptionsFromUID;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $this->objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->getCartItemOptionsFromUID = $this->objectManager->get(GetCartItemOptionsFromUID::class);
-        $this->getCustomOptionsWithIDV2ForQueryBySku =
-            $this->objectManager->get(GetCustomOptionsWithUIDForQueryBySku::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Downloadable/_files/product_downloadable_with_custom_options.php
      * @magentoApiDataFixture Magento/Checkout/_files/active_quote.php
      */
@@ -94,7 +82,7 @@ class AddDownloadableProductToCartSingleMutationTest extends GraphQlAbstract
         foreach ($customizableOptionsOutput as $customizableOptionOutput) {
             $customizableOptionOutputValues = [];
             foreach ($customizableOptionOutput['values'] as $customizableOptionOutputValue) {
-                $customizableOptionOutputValues[] =  $customizableOptionOutputValue['value'];
+                $customizableOptionOutputValues[] = $customizableOptionOutputValue['value'];
             }
             if (count($customizableOptionOutputValues) === 1) {
                 $customizableOptionOutputValues = $customizableOptionOutputValues[0];
@@ -113,7 +101,7 @@ class AddDownloadableProductToCartSingleMutationTest extends GraphQlAbstract
      * @param string $sku
      * @return array
      */
-    private function getProductsLinks(string $sku) : array
+    private function getProductsLinks(string $sku): array
     {
         $result = [];
         $productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
@@ -153,10 +141,11 @@ class AddDownloadableProductToCartSingleMutationTest extends GraphQlAbstract
      */
     private function getQuery(
         string $maskedQuoteId,
-        int $qty,
+        int    $qty,
         string $sku,
         string $customizableOptions
-    ): string {
+    ): string
+    {
         return <<<MUTATION
 mutation {
     addProductsToCart(
@@ -192,5 +181,17 @@ mutation {
     }
 }
 MUTATION;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $this->objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->getCartItemOptionsFromUID = $this->objectManager->get(GetCartItemOptionsFromUID::class);
+        $this->getCustomOptionsWithIDV2ForQueryBySku =
+            $this->objectManager->get(GetCustomOptionsWithUIDForQueryBySku::class);
     }
 }

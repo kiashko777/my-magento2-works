@@ -7,13 +7,15 @@ declare(strict_types=1);
 
 namespace Magento\Ui\Controller\Adminhtml\Index\Renderer;
 
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Framework\AuthorizationInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractBackendController;
+use Magento\Ui\Model\AuthorizationMock;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class HandleTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class HandleTest extends AbstractBackendController
 {
     /**
      * @magentoDataFixture  Magento/Customer/_files/customer.php
@@ -22,7 +24,7 @@ class HandleTest extends \Magento\TestFramework\TestCase\AbstractBackendControll
     {
         Bootstrap::getObjectManager()->configure([
             'preferences' => [
-                AuthorizationInterface::class => \Magento\Ui\Model\AuthorizationMock::class
+                AuthorizationInterface::class => AuthorizationMock::class
             ]
         ]);
         $this->getRequest()->setParam('handle', 'customer_index_index');

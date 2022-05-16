@@ -31,7 +31,7 @@ class ResetPasswordTest extends TestCase
     /** @var AccountManagementInterface */
     private $accountManagement;
 
-    /** @var TransportBuilderMock*/
+    /** @var TransportBuilderMock */
     private $transportBuilderMock;
 
     /** @var CustomerRegistry */
@@ -39,19 +39,6 @@ class ResetPasswordTest extends TestCase
 
     /** @var StoreManagerInterface */
     private $storeManager;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->accountManagement = $this->objectManager->get(AccountManagementInterface::class);
-        $this->transportBuilderMock = $this->objectManager->get(TransportBuilderMock::class);
-        $this->customerRegistry = $this->objectManager->get(CustomerRegistry::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-        parent::setUp();
-    }
 
     /**
      * Assert that when you reset customer password via admin, link with "Set a New Password" is send to customer email.
@@ -143,5 +130,18 @@ class ResetPasswordTest extends TestCase
                 'website_id' => 0,
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->accountManagement = $this->objectManager->get(AccountManagementInterface::class);
+        $this->transportBuilderMock = $this->objectManager->get(TransportBuilderMock::class);
+        $this->customerRegistry = $this->objectManager->get(CustomerRegistry::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
+        parent::setUp();
     }
 }

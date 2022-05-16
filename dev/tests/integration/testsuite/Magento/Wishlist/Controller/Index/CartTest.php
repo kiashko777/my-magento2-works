@@ -40,30 +40,6 @@ class CartTest extends AbstractController
     private $productRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->customerSession = $this->_objectManager->get(Session::class);
-        $this->getWishlistByCustomerId = $this->_objectManager->get(GetWishlistByCustomerId::class);
-        $this->cartFactory = $this->_objectManager->get(CartFactory::class);
-        $this->escaper = $this->_objectManager->get(Escaper::class);
-        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->customerSession->setCustomerId(null);
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Wishlist/_files/wishlist_with_simple_product.php
      *
      * @return void
@@ -81,6 +57,18 @@ class CartTest extends AbstractController
         $cart = $this->cartFactory->create();
         $this->assertEquals(1, $cart->getItemsCount());
         $this->assertEquals(3, $cart->getItemsQty());
+    }
+
+    /**
+     * Perform request add to cart from wish list.
+     *
+     * @param array $params
+     * @return void
+     */
+    private function performAddToCartRequest(array $params): void
+    {
+        $this->getRequest()->setParams($params)->setMethod(HttpRequest::METHOD_POST);
+        $this->dispatch('wishlist/index/cart');
     }
 
     /**
@@ -145,14 +133,26 @@ class CartTest extends AbstractController
     }
 
     /**
-     * Perform request add to cart from wish list.
-     *
-     * @param array $params
-     * @return void
+     * @inheritdoc
      */
-    private function performAddToCartRequest(array $params): void
+    protected function setUp(): void
     {
-        $this->getRequest()->setParams($params)->setMethod(HttpRequest::METHOD_POST);
-        $this->dispatch('wishlist/index/cart');
+        parent::setUp();
+
+        $this->customerSession = $this->_objectManager->get(Session::class);
+        $this->getWishlistByCustomerId = $this->_objectManager->get(GetWishlistByCustomerId::class);
+        $this->cartFactory = $this->_objectManager->get(CartFactory::class);
+        $this->escaper = $this->_objectManager->get(Escaper::class);
+        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->customerSession->setCustomerId(null);
+
+        parent::tearDown();
     }
 }

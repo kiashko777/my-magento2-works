@@ -3,12 +3,23 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Translate;
 
-class InlineTest extends \PHPUnit\Framework\TestCase
+use DOMDocument;
+use Magento\Framework\App\Config\MutableScopeConfigInterface;
+use Magento\Framework\App\State;
+use Magento\Framework\Translate\Inline\StateInterface;
+use Magento\Framework\View\DesignInterface;
+use Magento\Store\Model\ScopeInterface;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class InlineTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Translate\Inline
+     * @var Inline
      */
     protected $_model;
 
@@ -18,44 +29,18 @@ class InlineTest extends \PHPUnit\Framework\TestCase
     protected $_storeId = 'default';
 
     /**
-     * @var \Magento\Framework\Translate\Inline\StateInterface
+     * @var StateInterface
      */
     protected $state;
 
     public static function setUpBeforeClass(): void
     {
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\App\State::class)
+        Bootstrap::getObjectManager()->get(State::class)
             ->setAreaCode('frontend');
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\DesignInterface::class
+        Bootstrap::getObjectManager()->get(
+            DesignInterface::class
         )->setDesignTheme(
             'Magento/blank'
-        );
-    }
-
-    protected function setUp(): void
-    {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\Translate\Inline::class
-        );
-        $this->state = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\Translate\Inline\StateInterface::class
-        );
-        /* Called getConfig as workaround for setConfig bug */
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Store\Model\StoreManagerInterface::class
-        )->getStore(
-            $this->_storeId
-        )->getConfig(
-            'dev/translate_inline/active'
-        );
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\App\Config\MutableScopeConfigInterface::class
-        )->setValue(
-            'dev/translate_inline/active',
-            true,
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
-            $this->_storeId
         );
     }
 
@@ -65,8 +50,8 @@ class InlineTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue($this->_model->isAllowed($this->_storeId));
         $this->assertTrue(
             $this->_model->isAllowed(
-                \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-                    \Magento\Store\Model\StoreManagerInterface::class
+                Bootstrap::getObjectManager()->get(
+                    StoreManagerInterface::class
                 )->getStore(
                     $this->_storeId
                 )
@@ -77,8 +62,8 @@ class InlineTest extends \PHPUnit\Framework\TestCase
         $this->assertFalse($this->_model->isAllowed($this->_storeId));
         $this->assertFalse(
             $this->_model->isAllowed(
-                \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-                    \Magento\Store\Model\StoreManagerInterface::class
+                Bootstrap::getObjectManager()->get(
+                    StoreManagerInterface::class
                 )->getStore(
                     $this->_storeId
                 )
@@ -97,11 +82,11 @@ class InlineTest extends \PHPUnit\Framework\TestCase
         $this->_model->processResponseBody($actualText, false);
         $this->markTestIncomplete('Bug MAGE-2494');
 
-        $expected = new \DOMDocument();
+        $expected = new DOMDocument();
         $expected->preserveWhiteSpace = false;
         $expected->loadHTML($expectedText);
 
-        $actual = new \DOMDocument();
+        $actual = new DOMDocument();
         $actual->preserveWhiteSpace = false;
         $actual->loadHTML($actualText);
 
@@ -116,8 +101,8 @@ class InlineTest extends \PHPUnit\Framework\TestCase
         $originalText = file_get_contents(__DIR__ . '/_files/_inline_page_original.html');
         $expectedText = file_get_contents(__DIR__ . '/_files/_inline_page_expected.html');
 
-        $package = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\DesignInterface::class
+        $package = Bootstrap::getObjectManager()->get(
+            DesignInterface::class
         )->getDesignTheme()->getPackageCode();
         $expectedText = str_replace('{{design_package}}', $package, $expectedText);
         return [
@@ -125,5 +110,31 @@ class InlineTest extends \PHPUnit\Framework\TestCase
             'html string' => [$originalText, $expectedText],
             'html array' => [[$originalText], [$expectedText]]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Inline::class
+        );
+        $this->state = Bootstrap::getObjectManager()->get(
+            StateInterface::class
+        );
+        /* Called getConfig as workaround for setConfig bug */
+        Bootstrap::getObjectManager()->get(
+            StoreManagerInterface::class
+        )->getStore(
+            $this->_storeId
+        )->getConfig(
+            'dev/translate_inline/active'
+        );
+        Bootstrap::getObjectManager()->get(
+            MutableScopeConfigInterface::class
+        )->setValue(
+            'dev/translate_inline/active',
+            true,
+            ScopeInterface::SCOPE_STORE,
+            $this->_storeId
+        );
     }
 }

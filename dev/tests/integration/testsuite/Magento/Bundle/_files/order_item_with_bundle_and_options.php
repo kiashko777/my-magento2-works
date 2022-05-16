@@ -4,25 +4,33 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Bundle\Model\Option;
+use Magento\Catalog\Model\Product;
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Address;
+use Magento\Sales\Model\Order\Item;
+use Magento\Sales\Model\Order\Payment;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Bundle/_files/product_with_multiple_options.php');
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 
 $addressData = include __DIR__ . '/../../../Magento/Sales/_files/address_data.php';
 
-$billingAddress = $objectManager->create(\Magento\Sales\Model\Order\Address::class, ['data' => $addressData]);
+$billingAddress = $objectManager->create(Address::class, ['data' => $addressData]);
 $billingAddress->setAddressType('billing');
 
 $shippingAddress = clone $billingAddress;
 $shippingAddress->setId(null)->setAddressType('shipping');
 
-$payment = $objectManager->create(\Magento\Sales\Model\Order\Payment::class);
+$payment = $objectManager->create(Payment::class);
 $payment->setMethod('checkmo');
 
-/** @var $product \Magento\Catalog\Model\Product */
-$product = $objectManager->create(\Magento\Catalog\Model\Product::class);
+/** @var $product Product */
+$product = $objectManager->create(Product::class);
 $product->load(3);
 
 /** @var $typeInstance \Magento\Bundle\Model\Product\Type */
@@ -33,7 +41,7 @@ $optionCollection = $typeInstance->getOptionsCollection($product);
 $bundleOptions = [];
 $bundleOptionsQty = [];
 foreach ($optionCollection as $option) {
-    /** @var $option \Magento\Bundle\Model\Option */
+    /** @var $option Option */
     $selectionsCollection = $typeInstance->getSelectionsCollection([$option->getId()], $product);
     if ($option->isMultiSelection()) {
         $bundleOptions[$option->getId()] = array_column($selectionsCollection->toArray(), 'selection_id');
@@ -51,8 +59,8 @@ $requestInfo = [
     'custom_price' => 300,
 ];
 
-/** @var \Magento\Sales\Model\Order\Item $orderItem */
-$orderItem = $objectManager->create(\Magento\Sales\Model\Order\Item::class);
+/** @var Item $orderItem */
+$orderItem = $objectManager->create(Item::class);
 $orderItem->setProductId($product->getId());
 $orderItem->setQtyOrdered(1);
 $orderItem->setBasePrice($product->getPrice());
@@ -68,11 +76,11 @@ $orderItem->setProductOptions([
     ]
 ]);
 
-/** @var \Magento\Sales\Model\Order $order */
-$order = $objectManager->create(\Magento\Sales\Model\Order::class);
+/** @var Order $order */
+$order = $objectManager->create(Order::class);
 $order->setIncrementId('100000001');
-$order->setState(\Magento\Sales\Model\Order::STATE_NEW);
-$order->setStatus($order->getConfig()->getStateDefaultStatus(\Magento\Sales\Model\Order::STATE_NEW));
+$order->setState(Order::STATE_NEW);
+$order->setStatus($order->getConfig()->getStateDefaultStatus(Order::STATE_NEW));
 $order->setCustomerIsGuest(true);
 $order->setCustomerEmail('customer@null.com');
 $order->setCustomerFirstname('firstname');
@@ -82,7 +90,7 @@ $order->setShippingAddress($shippingAddress);
 $order->setAddresses([$billingAddress, $shippingAddress]);
 $order->setPayment($payment);
 $order->addItem($orderItem);
-$order->setStoreId($objectManager->get(\Magento\Store\Model\StoreManagerInterface::class)->getStore()->getId());
+$order->setStoreId($objectManager->get(StoreManagerInterface::class)->getStore()->getId());
 $order->setSubtotal(100);
 $order->setBaseSubtotal(100);
 $order->setBaseGrandTotal(100);

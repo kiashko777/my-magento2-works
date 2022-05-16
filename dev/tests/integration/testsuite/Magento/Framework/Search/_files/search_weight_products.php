@@ -6,7 +6,11 @@
  *
  */
 
+use Magento\Catalog\Api\ProductAttributeRepositoryInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
 use Magento\TestFramework\Helper\Bootstrap;
 
 $objectManager = Bootstrap::getObjectManager();
@@ -14,8 +18,8 @@ $objectManager = Bootstrap::getObjectManager();
 /** @var ProductRepositoryInterface $productRepository */
 $productRepository = $objectManager->create(ProductRepositoryInterface::class);
 
-/** @var $productWithMatchInTitle \Magento\Catalog\Model\Product */
-$productWithMatchInTitle = $objectManager->create(\Magento\Catalog\Model\Product::class);
+/** @var $productWithMatchInTitle Product */
+$productWithMatchInTitle = $objectManager->create(Product::class);
 $productWithMatchInTitle->isObjectNew(true);
 $productWithMatchInTitle->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setId(1221)
@@ -26,8 +30,8 @@ $productWithMatchInTitle->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SI
     ->setPrice(12)
     ->setWeight(1)
     ->setDescription('Lorem ipsum dolor sit amet, consectetur adipiscing elit')
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setCategoryIds([2])
     ->setStockData(
         [
@@ -40,7 +44,7 @@ $productWithMatchInTitle->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SI
 
 $productRepository->save($productWithMatchInTitle);
 
-$productWithMatchInDescription = $objectManager->create(\Magento\Catalog\Model\Product::class);
+$productWithMatchInDescription = $objectManager->create(Product::class);
 $productWithMatchInDescription->isObjectNew(true);
 $productWithMatchInDescription->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setId(1222)
@@ -51,8 +55,8 @@ $productWithMatchInDescription->setTypeId(\Magento\Catalog\Model\Product\Type::T
     ->setPrice(12)
     ->setWeight(1)
     ->setDescription('Lorem ipsum antarctica dolor sit amet, consectetur antarctica adipiscing elit')
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setCategoryIds([2])
     ->setStockData(
         [
@@ -65,9 +69,9 @@ $productWithMatchInDescription->setTypeId(\Magento\Catalog\Model\Product\Type::T
 
 $productRepository->save($productWithMatchInDescription);
 
-/** @var \Magento\Catalog\Api\ProductAttributeRepositoryInterface $productAttributeRepository */
+/** @var ProductAttributeRepositoryInterface $productAttributeRepository */
 $productAttributeRepository = $objectManager->get(
-    \Magento\Catalog\Api\ProductAttributeRepositoryInterface::class
+    ProductAttributeRepositoryInterface::class
 );
 
 /** @var \Magento\Catalog\Model\ResourceModel\Eav\Attribute $nameAttribute */

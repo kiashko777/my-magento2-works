@@ -3,25 +3,28 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\SalesInventory\Api\Service\V1;
+
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Sales\Model\Order;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
  * API test for return items to stock
  */
-class ReturnItemsAfterRefundOrderTest extends \Magento\TestFramework\TestCase\WebapiAbstract
+class ReturnItemsAfterRefundOrderTest extends WebapiAbstract
 {
     const SERVICE_REFUND_ORDER_NAME = 'salesRefundOrderV1';
     const SERVICE_STOCK_ITEMS_NAME = 'stockItems';
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * @dataProvider dataProvider
@@ -30,8 +33,8 @@ class ReturnItemsAfterRefundOrderTest extends \Magento\TestFramework\TestCase\We
     public function testRefundWithReturnItemsToStock($qtyRefund)
     {
         $productSku = 'simple';
-        /** @var \Magento\Sales\Model\Order $existingOrder */
-        $existingOrder = $this->objectManager->create(\Magento\Sales\Model\Order::class)
+        /** @var Order $existingOrder */
+        $existingOrder = $this->objectManager->create(Order::class)
             ->loadByIncrementId('100000001');
         $orderItems = $existingOrder->getItems();
         $orderItem = array_shift($orderItems);
@@ -41,7 +44,7 @@ class ReturnItemsAfterRefundOrderTest extends \Magento\TestFramework\TestCase\We
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/order/' . $existingOrder->getEntityId() . '/refund',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_REFUND_ORDER_NAME,
@@ -73,9 +76,31 @@ class ReturnItemsAfterRefundOrderTest extends \Magento\TestFramework\TestCase\We
                 $qtyAfterRefund,
                 'Failed asserting qty of returned items incorrect.'
             );
-        } catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+        } catch (NoSuchEntityException $e) {
             $this->fail('Failed asserting that Creditmemo was created');
         }
+    }
+
+    /**
+     * @param string $sku
+     * @return int
+     */
+    private function getQtyInStockBySku($sku)
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => '/V1/' . self::SERVICE_STOCK_ITEMS_NAME . "/$sku",
+                'httpMethod' => Request::HTTP_METHOD_GET,
+            ],
+            'soap' => [
+                'service' => 'catalogInventoryStockRegistryV1',
+                'serviceVersion' => 'V1',
+                'operation' => 'catalogInventoryStockRegistryV1GetStockItemBySku',
+            ],
+        ];
+        $arguments = ['productSku' => $sku];
+        $apiResult = $this->_webApiCall($serviceInfo, $arguments);
+        return $apiResult['qty'];
     }
 
     /**
@@ -89,25 +114,8 @@ class ReturnItemsAfterRefundOrderTest extends \Magento\TestFramework\TestCase\We
         ];
     }
 
-    /**
-     * @param string $sku
-     * @return int
-     */
-    private function getQtyInStockBySku($sku)
+    protected function setUp(): void
     {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => '/V1/' . self::SERVICE_STOCK_ITEMS_NAME . "/$sku",
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
-            ],
-            'soap' => [
-                'service' => 'catalogInventoryStockRegistryV1',
-                'serviceVersion' => 'V1',
-                'operation' => 'catalogInventoryStockRegistryV1GetStockItemBySku',
-            ],
-        ];
-        $arguments = ['productSku' => $sku];
-        $apiResult = $this->_webApiCall($serviceInfo, $arguments);
-        return $apiResult['qty'];
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

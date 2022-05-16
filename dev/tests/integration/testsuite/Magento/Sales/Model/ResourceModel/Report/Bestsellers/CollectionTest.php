@@ -3,22 +3,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Model\ResourceModel\Report\Bestsellers;
 
-class CollectionTest extends \PHPUnit\Framework\TestCase
+use Magento\Reports\Model\Item;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class CollectionTest extends TestCase
 {
     /**
-     * @var \Magento\Sales\Model\ResourceModel\Report\Bestsellers\Collection
+     * @var Collection
      */
     private $_collection;
-
-    protected function setUp(): void
-    {
-        $this->_collection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Sales\Model\ResourceModel\Report\Bestsellers\Collection::class
-        );
-        $this->_collection->setPeriod('day')->setDateRange(null, null)->addStoreFilter([1]);
-    }
 
     /**
      * @magentoDataFixture Magento/Sales/_files/order.php
@@ -28,7 +25,7 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
     {
         $expectedResult = [1 => 2];
         $actualResult = [];
-        /** @var \Magento\Reports\Model\Item $reportItem */
+        /** @var Item $reportItem */
         foreach ($this->_collection->getItems() as $reportItem) {
             $actualResult[$reportItem->getData('product_id')] = $reportItem->getData('qty_ordered');
         }
@@ -70,53 +67,61 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
         $dateYearAgo = date('Y-m-d', strtotime($dateNow . ' -1 year'));
         return [
             [
-                'period'    => 'year',
-                'table'     => 'sales_bestsellers_aggregated_yearly',
+                'period' => 'year',
+                'table' => 'sales_bestsellers_aggregated_yearly',
                 'date_from' => null,
-                'date_to'   => null,
+                'date_to' => null,
             ],
             [
-                'period'    => 'month',
-                'table'     => 'sales_bestsellers_aggregated_monthly',
+                'period' => 'month',
+                'table' => 'sales_bestsellers_aggregated_monthly',
                 'date_from' => null,
-                'date_to'   => null
+                'date_to' => null
             ],
             [
-                'period'    => 'day',
-                'table'     => 'sales_bestsellers_aggregated_daily',
+                'period' => 'day',
+                'table' => 'sales_bestsellers_aggregated_daily',
                 'date_from' => null,
-                'date_to'   => null
+                'date_to' => null
             ],
             [
-                'period'    => 'undefinedPeriod',
-                'table'     => 'sales_bestsellers_aggregated_daily',
+                'period' => 'undefinedPeriod',
+                'table' => 'sales_bestsellers_aggregated_daily',
                 'date_from' => null,
-                'date_to'   => null
+                'date_to' => null
             ],
             [
-                'period'    => null,
-                'table'     => 'sales_bestsellers_aggregated_daily',
+                'period' => null,
+                'table' => 'sales_bestsellers_aggregated_daily',
                 'date_from' => $dateYearAgo,
-                'date_to'   => $dateNow
+                'date_to' => $dateNow
             ],
             [
-                'period'    => null,
-                'table'     => 'sales_bestsellers_aggregated_daily',
+                'period' => null,
+                'table' => 'sales_bestsellers_aggregated_daily',
                 'date_from' => $dateNow,
-                'date_to'   => $dateNow
+                'date_to' => $dateNow
             ],
             [
-                'period'    => null,
-                'table'     => 'sales_bestsellers_aggregated_daily',
+                'period' => null,
+                'table' => 'sales_bestsellers_aggregated_daily',
                 'date_from' => $dateYearAgo,
-                'date_to'   => $dateYearAgo
+                'date_to' => $dateYearAgo
             ],
             [
-                'period'    => null,
-                'table'     => 'sales_bestsellers_aggregated_yearly',
+                'period' => null,
+                'table' => 'sales_bestsellers_aggregated_yearly',
                 'date_from' => null,
-                'date_to'   => null
+                'date_to' => null
             ],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->_collection = Bootstrap::getObjectManager()->create(
+            Collection::class
+        );
+        $this->_collection->setPeriod('day')->setDateRange(null, null)->addStoreFilter([1]);
     }
 }

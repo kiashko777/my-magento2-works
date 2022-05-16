@@ -22,26 +22,17 @@ use PHPUnit\Framework\TestCase;
 class TransportBuilderTest extends TestCase
 {
     /**
-     * @var ObjectManagerInterface
-     */
-    private $di;
-
-    /**
      * @var TransportBuilder
      */
     protected $builder;
-
     /**
      * @var Template
      */
     protected $template;
-
-    protected function setUp(): void
-    {
-        $this->di = Bootstrap::getObjectManager();
-        $this->builder = $this->di->get(TransportBuilder::class);
-        $this->template = $this->di->get(Template::class);
-    }
+    /**
+     * @var ObjectManagerInterface
+     */
+    private $di;
 
     /**
      * @magentoDataFixture Magento/Email/Model/_files/email_template.php
@@ -195,5 +186,12 @@ class TransportBuilderTest extends TestCase
                 ]
             ]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->di = Bootstrap::getObjectManager();
+        $this->builder = $this->di->get(TransportBuilder::class);
+        $this->template = $this->di->get(Template::class);
     }
 }

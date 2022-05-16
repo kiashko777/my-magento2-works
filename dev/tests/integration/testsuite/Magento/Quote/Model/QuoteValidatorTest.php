@@ -8,17 +8,21 @@ declare(strict_types=1);
 namespace Magento\Quote\Model;
 
 use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\App\Config\MutableScopeConfigInterface;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Api\Data\AddressInterface;
 use Magento\Quote\Model\Quote\Address\Rate;
+use Magento\Store\Model\ScopeInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class QuoteValidatorTest.
  *
  * @magentoDbIsolation enabled
  */
-class QuoteValidatorTest extends \PHPUnit\Framework\TestCase
+class QuoteValidatorTest extends TestCase
 {
     /**
      * @var QuoteValidator
@@ -26,18 +30,10 @@ class QuoteValidatorTest extends \PHPUnit\Framework\TestCase
     private $quoteValidator;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->quoteValidator = Bootstrap::getObjectManager()->create(QuoteValidator::class);
-    }
-
-    /**
      */
     public function testValidateBeforeSubmitShippingAddressInvalid()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage('Please check the shipping address information.');
 
         $quote = $this->getQuote();
@@ -47,19 +43,73 @@ class QuoteValidatorTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * @return Quote
+     */
+    private function getQuote(): Quote
+    {
+        /** @var Quote $quote */
+        $quote = Bootstrap::getObjectManager()->create(Quote::class);
+
+        /** @var AddressInterface $billingAddress */
+        $billingAddress = Bootstrap::getObjectManager()->create(AddressInterface::class);
+        $billingAddress->setFirstname('Joe')
+            ->setLastname('Doe')
+            ->setCountryId('US')
+            ->setRegion('TX')
+            ->setCity('Austin')
+            ->setStreet('1000 West Parmer Line')
+            ->setPostcode('11501')
+            ->setTelephone('123456789');
+        $quote->setBillingAddress($billingAddress);
+
+        /** @var AddressInterface $shippingAddress */
+        $shippingAddress = Bootstrap::getObjectManager()->create(AddressInterface::class);
+        $shippingAddress->setFirstname('Joe')
+            ->setLastname('Doe')
+            ->setCountryId('US')
+            ->setRegion('TX')
+            ->setCity('Austin')
+            ->setStreet('1000 West Parmer Line')
+            ->setPostcode('11501')
+            ->setTelephone('123456789');
+        $quote->setShippingAddress($shippingAddress);
+
+        $quote->getShippingAddress()
+            ->setShippingMethod('flatrate_flatrate')
+            ->setCollectShippingRates(true);
+        /** @var Rate $shippingRate */
+        $shippingRate = Bootstrap::getObjectManager()->create(Rate::class);
+        $shippingRate->setMethod('flatrate')
+            ->setCarrier('flatrate')
+            ->setPrice('5')
+            ->setCarrierTitle('Flat Rate')
+            ->setCode('flatrate_flatrate');
+        $quote->getShippingAddress()
+            ->addShippingRate($shippingRate);
+
+        $quote->getPayment()->setMethod('CC');
+
+        /** @var QuoteRepository $quoteRepository */
+        $quoteRepository = Bootstrap::getObjectManager()->create(QuoteRepository::class);
+        $quoteRepository->save($quote);
+
+        return $quote;
+    }
+
+    /**
      */
     public function testValidateBeforeSubmitCountryIsNotAllowed()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage('Some addresses can\'t be used due to the configurations for specific countries.');
 
         /** @magentoConfigFixture does not allow to change the value for the website scope */
         Bootstrap::getObjectManager()->get(
-            \Magento\Framework\App\Config\MutableScopeConfigInterface::class
+            MutableScopeConfigInterface::class
         )->setValue(
             'general/country/allow',
             'US',
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE
+            ScopeInterface::SCOPE_STORE
         );
         $quote = $this->getQuote();
         $quote->getShippingAddress()->setCountryId('AF');
@@ -71,7 +121,7 @@ class QuoteValidatorTest extends \PHPUnit\Framework\TestCase
      */
     public function testValidateBeforeSubmitShippingMethodInvalid()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage('The shipping method is missing. Select the shipping method and try again.');
 
         $quote = $this->getQuote();
@@ -84,7 +134,7 @@ class QuoteValidatorTest extends \PHPUnit\Framework\TestCase
      */
     public function testValidateBeforeSubmitBillingAddressInvalid()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage('Please check the billing address information.');
 
         $quote = $this->getQuote();
@@ -97,7 +147,7 @@ class QuoteValidatorTest extends \PHPUnit\Framework\TestCase
      */
     public function testValidateBeforeSubmitPaymentMethodInvalid()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage('Enter a valid payment method and try again.');
 
         $quote = $this->getQuote();
@@ -112,7 +162,7 @@ class QuoteValidatorTest extends \PHPUnit\Framework\TestCase
      */
     public function testValidateBeforeSubmitMinimumAmountInvalid()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
 
         $quote = $this->getQuote();
         $quote->getShippingAddress()
@@ -154,60 +204,6 @@ class QuoteValidatorTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @return Quote
-     */
-    private function getQuote(): Quote
-    {
-        /** @var Quote $quote */
-        $quote = Bootstrap::getObjectManager()->create(Quote::class);
-
-        /** @var AddressInterface $billingAddress */
-        $billingAddress = Bootstrap::getObjectManager()->create(AddressInterface::class);
-        $billingAddress->setFirstname('Joe')
-            ->setLastname('Doe')
-            ->setCountryId('US')
-            ->setRegion('TX')
-            ->setCity('Austin')
-            ->setStreet('1000 West Parmer Line')
-            ->setPostcode('11501')
-            ->setTelephone('123456789');
-        $quote->setBillingAddress($billingAddress);
-
-        /** @var AddressInterface $shippingAddress */
-        $shippingAddress = Bootstrap::getObjectManager()->create(AddressInterface::class);
-        $shippingAddress->setFirstname('Joe')
-        ->setLastname('Doe')
-        ->setCountryId('US')
-        ->setRegion('TX')
-        ->setCity('Austin')
-        ->setStreet('1000 West Parmer Line')
-        ->setPostcode('11501')
-        ->setTelephone('123456789');
-        $quote->setShippingAddress($shippingAddress);
-
-        $quote->getShippingAddress()
-            ->setShippingMethod('flatrate_flatrate')
-            ->setCollectShippingRates(true);
-        /** @var Rate $shippingRate */
-        $shippingRate = Bootstrap::getObjectManager()->create(Rate::class);
-        $shippingRate->setMethod('flatrate')
-            ->setCarrier('flatrate')
-            ->setPrice('5')
-            ->setCarrierTitle('Flat Rate')
-            ->setCode('flatrate_flatrate');
-        $quote->getShippingAddress()
-            ->addShippingRate($shippingRate);
-
-        $quote->getPayment()->setMethod('CC');
-
-        /** @var QuoteRepository $quoteRepository */
-        $quoteRepository = Bootstrap::getObjectManager()->create(QuoteRepository::class);
-        $quoteRepository->save($quote);
-
-        return $quote;
-    }
-
-    /**
      * Gets quote entity by reserved order id.
      *
      * @param string $reservedOrderId
@@ -226,5 +222,13 @@ class QuoteValidatorTest extends \PHPUnit\Framework\TestCase
             ->getItems();
 
         return array_pop($items);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->quoteValidator = Bootstrap::getObjectManager()->create(QuoteValidator::class);
     }
 }

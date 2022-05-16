@@ -6,14 +6,15 @@
 
 namespace Magento\Test\Legacy;
 
-use Magento\Framework\App\Utility\Files;
 use Magento\Framework\App\Utility\AggregateInvoker;
+use Magento\Framework\App\Utility\Files;
 use Magento\Framework\Component\ComponentRegistrar;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Tests to find obsolete install/upgrade schema/data scripts.
  */
-class InstallUpgradeTest extends \PHPUnit\Framework\TestCase
+class InstallUpgradeTest extends TestCase
 {
     public function testForOldInstallUpgradeScripts()
     {
@@ -26,9 +27,9 @@ class InstallUpgradeTest extends \PHPUnit\Framework\TestCase
         }
         $invoker = new AggregateInvoker($this);
         $invoker(
-            /**
-             * @param string $file
-             */
+        /**
+         * @param string $file
+         */
             function ($file) {
                 $this->assertStringStartsNotWith(
                     'install-',

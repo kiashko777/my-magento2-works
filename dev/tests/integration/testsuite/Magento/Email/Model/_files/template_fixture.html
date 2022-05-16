@@ -4,7 +4,8 @@
 <p>{{trans "Welcome to %store_name." store_name=$store.getFrontendName()}}</p>
 <p>
     {{trans
-    'To sign in to our site, use these credentials during checkout or on the <a href="%customer_url">My Account</a> page:'
+    'To sign in to our site, use these credentials during checkout or on the <a href="%customer_url">My Account</a>
+    page:'
 
     customer_url=$this.getUrl($store,'customer/account/',[_nosid:1])
     |raw}}

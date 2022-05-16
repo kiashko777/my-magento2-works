@@ -3,17 +3,25 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\ImportExport\Model;
 
+use Magento\Customer\Model\ResourceModel\Customer\Collection;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Phrase;
+use Magento\ImportExport\Model\Import\AbstractSource;
 use Magento\ImportExport\Model\Import\ErrorProcessing\ProcessingErrorAggregatorInterface;
 use Magento\ImportExport\Model\Import\ImageDirectoryBaseProvider;
+use Magento\ImportExport\Model\Source\Import\Behavior\Basic;
+use Magento\ImportExport\Model\Source\Import\Behavior\Custom;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoDataFixture Magento/ImportExport/_files/import_data.php
  */
-class ImportTest extends \PHPUnit\Framework\TestCase
+class ImportTest extends TestCase
 {
     /**
      * Model object which is used for tests
@@ -34,22 +42,22 @@ class ImportTest extends \PHPUnit\Framework\TestCase
      */
     protected $_entityBehaviors = [
         'catalog_product' => [
-            'token' => \Magento\ImportExport\Model\Source\Import\Behavior\Basic::class,
+            'token' => Basic::class,
             'code' => 'basic_behavior',
             'notes' => [],
         ],
         'customer_composite' => [
-            'token' => \Magento\ImportExport\Model\Source\Import\Behavior\Basic::class,
+            'token' => Basic::class,
             'code' => 'basic_behavior',
             'notes' => [],
         ],
         'customer' => [
-            'token' => \Magento\ImportExport\Model\Source\Import\Behavior\Custom::class,
+            'token' => Custom::class,
             'code' => 'custom_behavior',
             'notes' => [],
         ],
         'customer_address' => [
-            'token' => \Magento\ImportExport\Model\Source\Import\Behavior\Custom::class,
+            'token' => Custom::class,
             'code' => 'custom_behavior',
             'notes' => [],
         ],
@@ -61,25 +69,9 @@ class ImportTest extends \PHPUnit\Framework\TestCase
      * @var array
      */
     protected $_uniqueBehaviors = [
-        'basic_behavior' => \Magento\ImportExport\Model\Source\Import\Behavior\Basic::class,
-        'custom_behavior' => \Magento\ImportExport\Model\Source\Import\Behavior\Custom::class,
+        'basic_behavior' => Basic::class,
+        'custom_behavior' => Custom::class,
     ];
-
-    protected function setUp(): void
-    {
-        $this->_importConfig = Bootstrap::getObjectManager()->create(
-            Import\Config::class
-        );
-        /** @var ImageDirectoryBaseProvider $provider */
-        $provider = Bootstrap::getObjectManager()->get(ImageDirectoryBaseProvider::class);
-        $this->_model = Bootstrap::getObjectManager()->create(
-            Import::class,
-            [
-                'importConfig' => $this->_importConfig
-            ]
-        );
-        $this->_model->setData('images_base_directory', $provider->getDirectory());
-    }
 
     /**
      * Test validation of images directory against provided base directory.
@@ -88,7 +80,7 @@ class ImportTest extends \PHPUnit\Framework\TestCase
      */
     public function testImagesDirBase(): void
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage('Images file directory is outside required directory');
 
         $this->_model->setData(
@@ -104,9 +96,9 @@ class ImportTest extends \PHPUnit\Framework\TestCase
      */
     public function testImportSource()
     {
-        /** @var $customersCollection \Magento\Customer\Model\ResourceModel\Customer\Collection */
+        /** @var $customersCollection Collection */
         $customersCollection = Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Model\ResourceModel\Customer\Collection::class
+            Collection::class
         );
 
         $existCustomersCount = count($customersCollection->load());
@@ -135,9 +127,9 @@ class ImportTest extends \PHPUnit\Framework\TestCase
         $this->_model->setData(Import::FIELD_NAME_VALIDATION_STRATEGY, $validationStrategy);
         $this->_model->setData(Import::FIELD_NAME_ALLOWED_ERROR_COUNT, 0);
 
-        /** @var \Magento\ImportExport\Model\Import\AbstractSource|\PHPUnit\Framework\MockObject\MockObject $source */
+        /** @var AbstractSource|MockObject $source */
         $source = $this->getMockForAbstractClass(
-            \Magento\ImportExport\Model\Import\AbstractSource::class,
+            AbstractSource::class,
             [['sku', 'name']]
         );
         $source->expects($this->any())->method('_getNextRow')->willReturn(false);
@@ -148,11 +140,11 @@ class ImportTest extends \PHPUnit\Framework\TestCase
      */
     public function testValidateSourceException()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage('Entity is unknown');
 
         $source = $this->getMockForAbstractClass(
-            \Magento\ImportExport\Model\Import\AbstractSource::class,
+            AbstractSource::class,
             [],
             '',
             false
@@ -164,7 +156,7 @@ class ImportTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetUnknownEntity()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage('Entity is unknown');
 
         $entityName = 'entity_name';
@@ -183,7 +175,7 @@ class ImportTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetEntityEntityIsNotSet()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage('Entity is unknown');
 
         $this->_model->getEntity();
@@ -209,12 +201,32 @@ class ImportTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Add Catalog Products Notes to expected results.
+     *
+     * @return void
+     * @ SuppressWarnings(PHPMD.)
+     */
+    private function prepareProductNotes(): void
+    {
+        $this->_entityBehaviors['catalog_product']['notes'] =
+            [
+                Import::BEHAVIOR_APPEND => new Phrase('New product data is added to the existing product data for'
+                    . ' the existing entries in the database. All fields except sku can be updated.'),
+                Import::BEHAVIOR_REPLACE => new Phrase('The existing product data is replaced with new data.'
+                    . ' <b>Exercise caution when replacing data because the existing product data will be completely'
+                    . ' cleared and all references in the system will be lost.</b>'),
+                Import::BEHAVIOR_DELETE => new  Phrase('Any entities in the import data that already exist in the'
+                    . ' database are deleted from the database.'),
+            ];
+    }
+
+    /**
      * Test getEntityBehaviors with not existing behavior class
      *
      */
     public function testGetEntityBehaviorsWithUnknownBehavior()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage('The behavior token for customer is invalid.');
 
         $this->_importConfig->merge(
@@ -242,23 +254,19 @@ class ImportTest extends \PHPUnit\Framework\TestCase
         }
     }
 
-    /**
-     * Add Catalog Products Notes to expected results.
-     *
-     * @return void
-     * @ SuppressWarnings(PHPMD.)
-     */
-    private function prepareProductNotes(): void
+    protected function setUp(): void
     {
-        $this->_entityBehaviors['catalog_product']['notes'] =
+        $this->_importConfig = Bootstrap::getObjectManager()->create(
+            Import\Config::class
+        );
+        /** @var ImageDirectoryBaseProvider $provider */
+        $provider = Bootstrap::getObjectManager()->get(ImageDirectoryBaseProvider::class);
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Import::class,
             [
-                Import::BEHAVIOR_APPEND => new Phrase('New product data is added to the existing product data for'
-                    . ' the existing entries in the database. All fields except sku can be updated.'),
-                Import::BEHAVIOR_REPLACE => new Phrase('The existing product data is replaced with new data.'
-                    . ' <b>Exercise caution when replacing data because the existing product data will be completely'
-                    . ' cleared and all references in the system will be lost.</b>'),
-                Import::BEHAVIOR_DELETE => new  Phrase('Any entities in the import data that already exist in the'
-                    . ' database are deleted from the database.'),
-            ];
+                'importConfig' => $this->_importConfig
+            ]
+        );
+        $this->_model->setData('images_base_directory', $provider->getDirectory());
     }
 }

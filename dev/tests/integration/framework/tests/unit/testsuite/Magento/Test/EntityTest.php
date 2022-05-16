@@ -3,21 +3,35 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test;
 
-class EntityTest extends \PHPUnit\Framework\TestCase
+use InvalidArgumentException;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Model\AbstractModel;
+use Magento\TestFramework\Entity;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+
+class EntityTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Model\AbstractModel|\PHPUnit\Framework\MockObject\MockObject
+     * @var AbstractModel|MockObject
      */
     protected $_model;
 
-    protected function setUp(): void
+    /**
+     * Callback for save method in mocked model
+     *
+     * @throws LocalizedException
+     */
+    public function saveModelAndFailOnUpdate()
     {
-        $this->_model = $this->createPartialMock(
-            \Magento\Framework\Model\AbstractModel::class,
-            ['load', 'save', 'delete', 'getIdFieldName', '__wakeup']
-        );
+        if (!$this->_model->getId()) {
+            $this->saveModelSuccessfully();
+        } else {
+            throw new LocalizedException(__('Synthetic model update failure.'));
+        }
     }
 
     /**
@@ -26,20 +40,6 @@ class EntityTest extends \PHPUnit\Framework\TestCase
     public function saveModelSuccessfully()
     {
         $this->_model->setId('1');
-    }
-
-    /**
-     * Callback for save method in mocked model
-     *
-     * @throws \Magento\Framework\Exception\LocalizedException
-     */
-    public function saveModelAndFailOnUpdate()
-    {
-        if (!$this->_model->getId()) {
-            $this->saveModelSuccessfully();
-        } else {
-            throw new \Magento\Framework\Exception\LocalizedException(__('Synthetic model update failure.'));
-        }
     }
 
     /**
@@ -54,10 +54,10 @@ class EntityTest extends \PHPUnit\Framework\TestCase
      */
     public function testConstructorIrrelevantModelClass()
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Class \'stdClass\' is irrelevant to the tested model');
 
-        new \Magento\TestFramework\Entity($this->_model, [], 'stdClass');
+        new Entity($this->_model, [], 'stdClass');
     }
 
     public function crudDataProvider()
@@ -66,7 +66,7 @@ class EntityTest extends \PHPUnit\Framework\TestCase
             'successful CRUD' => ['saveModelSuccessfully'],
             'cleanup on update error' => [
                 'saveModelAndFailOnUpdate',
-                \Magento\Framework\Exception\LocalizedException::class
+                LocalizedException::class
             ]
         ];
     }
@@ -96,12 +96,20 @@ class EntityTest extends \PHPUnit\Framework\TestCase
 
         $this->_model->expects($this->any())->method('getIdFieldName')->willReturn('id');
 
-        $test = $this->getMockBuilder(\Magento\TestFramework\Entity::class)
+        $test = $this->getMockBuilder(Entity::class)
             ->setMethods(['_getEmptyModel'])
             ->setConstructorArgs([$this->_model, ['test' => 'test']])
             ->getMock();
 
         $test->expects($this->any())->method('_getEmptyModel')->willReturn($this->_model);
         $test->testCrud();
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = $this->createPartialMock(
+            AbstractModel::class,
+            ['load', 'save', 'delete', 'getIdFieldName', '__wakeup']
+        );
     }
 }

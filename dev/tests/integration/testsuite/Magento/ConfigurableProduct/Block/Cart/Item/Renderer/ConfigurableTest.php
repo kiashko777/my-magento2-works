@@ -3,19 +3,23 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\ConfigurableProduct\Block\Cart\Item\Renderer;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\ConfigurableProduct\Block\Cart\Item\Renderer\Configurable as ConfigurableRenderer;
 use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Pricing\Render;
 use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test \Magento\ConfigurableProduct\Block\Cart\Item\Renderer\Configurable block
  *
  * @magentoAppArea frontend
  */
-class ConfigurableTest extends \PHPUnit\Framework\TestCase
+class ConfigurableTest extends TestCase
 {
     /**
      * @var ConfigurableRenderer
@@ -26,16 +30,6 @@ class ConfigurableTest extends \PHPUnit\Framework\TestCase
      * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->block = $this->objectManager->get(LayoutInterface::class)
-            ->createBlock(ConfigurableRenderer::class);
-    }
 
     /**
      * @magentoDbIsolation enabled
@@ -49,7 +43,7 @@ class ConfigurableTest extends \PHPUnit\Framework\TestCase
 
         $layout = $this->objectManager->get(LayoutInterface::class);
         $layout->createBlock(
-            \Magento\Framework\Pricing\Render::class,
+            Render::class,
             'product.price.render.default',
             [
                 'data' => [
@@ -64,5 +58,15 @@ class ConfigurableTest extends \PHPUnit\Framework\TestCase
         );
         $html = $this->block->getProductPriceHtml($configurableProduct);
         $this->assertStringContainsString('<span class="price">$10.00</span>', $html);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->block = $this->objectManager->get(LayoutInterface::class)
+            ->createBlock(ConfigurableRenderer::class);
     }
 }

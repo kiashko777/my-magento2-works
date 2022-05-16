@@ -12,7 +12,7 @@ use Magento\TestFramework\Helper\Bootstrap;
 
 /** @var QuoteFactory $quoteFactory */
 $quoteFactory = Bootstrap::getObjectManager()->get(QuoteFactory::class);
-/** @var CartRepositoryInterface  $cartRepository */
+/** @var CartRepositoryInterface $cartRepository */
 $cartRepository = Bootstrap::getObjectManager()->get(CartRepositoryInterface::class);
 /** @var QuoteResource $quoteResource */
 $quoteResource = Bootstrap::getObjectManager()->get(QuoteResource::class);

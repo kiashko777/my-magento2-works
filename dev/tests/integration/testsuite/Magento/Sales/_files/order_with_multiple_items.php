@@ -8,8 +8,9 @@ declare(strict_types=1);
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Sales\Api\Data\OrderInterfaceFactory;
 use Magento\Sales\Model\Order;
-use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
+use Magento\Sales\Model\Order\Item;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Sales/_files/order.php');
 
@@ -51,12 +52,12 @@ $orderItems[] = [
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/product_simple_with_url_key.php');
 $product = $productRepository->get('simple2');
 $orderItems[] = [
-        'product_id' => $product->getId(),
-        'base_price' => 123,
-        'order_id' => $order->getId(),
-        'price' => 123,
-        'row_total' => 126,
-        'product_type' => 'simple'
+    'product_id' => $product->getId(),
+    'base_price' => 123,
+    'order_id' => $order->getId(),
+    'price' => 123,
+    'row_total' => 126,
+    'product_type' => 'simple'
 ];
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/product_simple_with_all_fields.php');
 $product = $productRepository->get('simple');
@@ -81,9 +82,9 @@ $orderItems[] = [
 
 /** @var array $orderItemData */
 foreach ($orderItems as $orderItemData) {
-    /** @var $orderItem \Magento\Sales\Model\Order\Item */
-    $orderItem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-        \Magento\Sales\Model\Order\Item::class
+    /** @var $orderItem Item */
+    $orderItem = Bootstrap::getObjectManager()->create(
+        Item::class
     );
     $orderItem
         ->setData($orderItemData)

@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Code\GeneratorTest;
 
 use Laminas\Code\Generator\DocBlockGenerator;
@@ -12,10 +13,14 @@ use Laminas\Code\Generator\DocBlockGenerator;
  */
 class ParentClassWithNamespace
 {
+    public static function publicParentStatic()
+    {
+    }
+
     /**
      * Public parent method
      *
-     * @param \Laminas\Code\Generator\DocBlockGenerator $docBlockGenerator
+     * @param DocBlockGenerator $docBlockGenerator
      * @param string $param1
      * @param string $param2
      * @param string $param3
@@ -25,17 +30,26 @@ class ParentClassWithNamespace
      */
     public function publicParentMethod(
         DocBlockGenerator $docBlockGenerator,
-        $param1 = '',
-        $param2 = '\\',
-        $param3 = '\'',
-        array $array = []
-    ) {
+                          $param1 = '',
+                          $param2 = '\\',
+                          $param3 = '\'',
+        array             $array = []
+    )
+    {
+    }
+
+    public function publicParentWithoutParameters()
+    {
+    }
+
+    final public function publicParentFinal()
+    {
     }
 
     /**
      * Protected parent method
      *
-     * @param \Laminas\Code\Generator\DocBlockGenerator $docBlockGenerator
+     * @param DocBlockGenerator $docBlockGenerator
      * @param string $param1
      * @param string $param2
      * @param string $param3
@@ -45,17 +59,18 @@ class ParentClassWithNamespace
      */
     protected function _protectedParentMethod(
         DocBlockGenerator $docBlockGenerator,
-        $param1 = '',
-        $param2 = '\\',
-        $param3 = '\'',
-        array $array = []
-    ) {
+                          $param1 = '',
+                          $param2 = '\\',
+                          $param3 = '\'',
+        array             $array = []
+    )
+    {
     }
 
     /**
      * Private parent method
      *
-     * @param \Laminas\Code\Generator\DocBlockGenerator $docBlockGenerator
+     * @param DocBlockGenerator $docBlockGenerator
      * @param string $param1
      * @param string $param2
      * @param string $param3
@@ -66,22 +81,11 @@ class ParentClassWithNamespace
      */
     private function _privateParentMethod(
         DocBlockGenerator $docBlockGenerator,
-        $param1 = '',
-        $param2 = '\\',
-        $param3 = '\'',
-        array $array = []
-    ) {
-    }
-
-    public function publicParentWithoutParameters()
-    {
-    }
-
-    public static function publicParentStatic()
-    {
-    }
-
-    final public function publicParentFinal()
+                          $param1 = '',
+                          $param2 = '\\',
+                          $param3 = '\'',
+        array             $array = []
+    )
     {
     }
 }

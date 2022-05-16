@@ -3,12 +3,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Payment\Block\Transparent;
+
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for \Magento\Payment\Block\Transparent\Iframe
  */
-class IframeTest extends \PHPUnit\Framework\TestCase
+class IframeTest extends TestCase
 {
     /**
      * @magentoAppIsolation enabled
@@ -18,10 +23,10 @@ class IframeTest extends \PHPUnit\Framework\TestCase
     public function testToHtml($xssString)
     {
         /** @var $block Iframe */
-        $block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
+        $block = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
         )->createBlock(
-            \Magento\Payment\Block\Transparent\Iframe::class
+            Iframe::class
         );
 
         $block->setTemplate('transparent/iframe.phtml');

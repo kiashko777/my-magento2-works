@@ -5,9 +5,9 @@
  */
 declare(strict_types=1);
 
+use Magento\Framework\Registry;
 use Magento\SalesRule\Model\Rule;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Framework\Registry;
 
 /** @var Registry $registry */
 $registry = Bootstrap::getObjectManager()->get(Registry::class);

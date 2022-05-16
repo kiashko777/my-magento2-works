@@ -3,11 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Quote\Api;
 
 use Magento\Catalog\Model\Product;
 use Magento\CatalogInventory\Api\StockRegistryInterface;
 use Magento\CatalogInventory\Model\Stock;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Quote\Api\Data\CartItemInterface;
 use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\QuoteIdMask;
 use Magento\Quote\Model\QuoteIdMaskFactory;
@@ -31,14 +34,6 @@ class GuestCartItemRepositoryTest extends WebapiAbstract
     private $objectManager;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
-
-    /**
      * Test quote items
      *
      * @magentoApiDataFixture Magento/Checkout/_files/quote_with_items_saved.php
@@ -59,7 +54,7 @@ class GuestCartItemRepositoryTest extends WebapiAbstract
         $cartId = $quoteIdMask->getMaskedId();
 
         $output = [];
-        /** @var  \Magento\Quote\Api\Data\CartItemInterface $item */
+        /** @var  CartItemInterface $item */
         foreach ($quote->getAllItems() as $item) {
             //Set masked Cart ID
             $item->setQuoteId($cartId);
@@ -78,7 +73,7 @@ class GuestCartItemRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $cartId . '/items',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -116,7 +111,7 @@ class GuestCartItemRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $cartId . '/items',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -166,7 +161,7 @@ class GuestCartItemRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $cartId . '/items/' . $itemId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -214,7 +209,7 @@ class GuestCartItemRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $cartId . '/items/' . $itemId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -240,6 +235,24 @@ class GuestCartItemRepositoryTest extends WebapiAbstract
         $item = $quote->getItemByProduct($product);
         $this->assertEquals(5, $item->getQty());
         $this->assertEquals($itemId, $item->getItemId());
+    }
+
+    /**
+     * Update product stock
+     *
+     * @param string $sku
+     * @param array $stockData
+     * @return void
+     */
+    private function updateStockData(string $sku, array $stockData): void
+    {
+        if ($stockData) {
+            /** @var $stockRegistry StockRegistryInterface */
+            $stockRegistry = $this->objectManager->create(StockRegistryInterface::class);
+            $stockItem = $stockRegistry->getStockItemBySku($sku);
+            $stockItem->addData($stockData);
+            $stockRegistry->updateStockItemBySku($sku, $stockItem);
+        }
     }
 
     /**
@@ -269,7 +282,7 @@ class GuestCartItemRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $cartId . '/items/' . $itemId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -343,20 +356,10 @@ class GuestCartItemRepositoryTest extends WebapiAbstract
     }
 
     /**
-     * Update product stock
-     *
-     * @param string $sku
-     * @param array $stockData
-     * @return void
+     * @inheritdoc
      */
-    private function updateStockData(string $sku, array $stockData): void
+    protected function setUp(): void
     {
-        if ($stockData) {
-            /** @var $stockRegistry StockRegistryInterface */
-            $stockRegistry = $this->objectManager->create(StockRegistryInterface::class);
-            $stockItem = $stockRegistry->getStockItemBySku($sku);
-            $stockItem->addData($stockData);
-            $stockRegistry->updateStockItemBySku($sku, $stockItem);
-        }
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

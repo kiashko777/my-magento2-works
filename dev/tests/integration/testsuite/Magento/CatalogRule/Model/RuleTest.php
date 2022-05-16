@@ -3,14 +3,33 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogRule\Model;
 
-class RuleTest extends \PHPUnit\Framework\TestCase
+use Magento\Catalog\Model\Product;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class RuleTest extends TestCase
 {
     /**
-     * @var \Magento\CatalogRule\Model\Rule
+     * @var Rule
      */
     protected $_object;
+
+    /**
+     * @magentoAppIsolation enabled
+     * @covers \Magento\CatalogRule\Model\Rule::calcProductPriceRule
+     */
+    public function testCalcProductPriceRule()
+    {
+        $product = Bootstrap::getObjectManager()->create(
+            Product::class
+        );
+        $this->assertEquals($this->_object->calcProductPriceRule($product, 100), 45);
+        $product->setParentId(true);
+        $this->assertEquals($this->_object->calcProductPriceRule($product, 50), 50);
+    }
 
     /**
      * Sets up the fixture, for example, opens a network connection.
@@ -31,24 +50,10 @@ class RuleTest extends \PHPUnit\Framework\TestCase
             $this->_getCatalogRulesFixtures()
         );
 
-        $this->_object = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\CatalogRule\Model\Rule::class,
+        $this->_object = Bootstrap::getObjectManager()->create(
+            Rule::class,
             ['ruleResourceModel' => $resourceMock]
         );
-    }
-
-    /**
-     * @magentoAppIsolation enabled
-     * @covers \Magento\CatalogRule\Model\Rule::calcProductPriceRule
-     */
-    public function testCalcProductPriceRule()
-    {
-        $product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\Product::class
-        );
-        $this->assertEquals($this->_object->calcProductPriceRule($product, 100), 45);
-        $product->setParentId(true);
-        $this->assertEquals($this->_object->calcProductPriceRule($product, 50), 50);
     }
 
     /**

@@ -3,12 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Paypal\Controller\Adminhtml\Paypal\Reports;
+
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class FetchTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class FetchTest extends AbstractBackendController
 {
     protected function setUp(): void
     {

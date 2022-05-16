@@ -5,6 +5,8 @@
  */
 declare(strict_types=1);
 
+use Magento\Framework\DataObject;
+use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\QuoteFactory;
 use Magento\Quote\Model\ResourceModel\Quote as QuoteResource;
 use Magento\TestFramework\Helper\Bootstrap;
@@ -20,8 +22,8 @@ $quoteResource = $objectManager->get(QuoteResource::class);
 $quote = $quoteFactory->create();
 $quoteResource->load($quote, 'test01', 'reserved_order_id');
 
-$buyRequest = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Framework\DataObject::class,
+$buyRequest = Bootstrap::getObjectManager()->create(
+    DataObject::class,
     [
         'data' => [
             'qty' => 1,
@@ -29,7 +31,7 @@ $buyRequest = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->creat
         ],
     ]
 );
-/** @var \Magento\Quote\Model\Quote $items */
+/** @var Quote $items */
 $items = $quote->getItemsCollection()->getItems();
 $quoteItem = reset($items);
 $quote->updateItem($quoteItem->getId(), $buyRequest)->save();

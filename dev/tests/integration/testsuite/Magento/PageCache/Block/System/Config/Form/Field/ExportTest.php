@@ -3,12 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\PageCache\Block\System\Config\Form\Field;
+
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class ExportTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class ExportTest extends AbstractBackendController
 {
     /**
      * Check Varnish export buttons

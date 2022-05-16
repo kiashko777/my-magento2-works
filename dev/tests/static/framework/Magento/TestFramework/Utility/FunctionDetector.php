@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Utility;
 
 /**
@@ -40,12 +41,26 @@ class FunctionDetector
             return $result;
         }
 
-        $fileContent = \Magento\TestFramework\Utility\ChangedFiles::getChangedContent($filePath);
+        $fileContent = ChangedFiles::getChangedContent($filePath);
         $file = file($filePath);
 
         return $fileContent
             ? $this->grepChangedContent($file, $regexp, $functions, $fileContent)
             : $this->grepFile($file, $regexp);
+    }
+
+    /**
+     * Compose regular expression
+     *
+     * @param array $functions
+     * @return string
+     */
+    private function composeRegexp(array $functions)
+    {
+        if (empty($functions)) {
+            return '';
+        }
+        return '/(?<!function |->|::)\b(' . join('|', $functions) . ')\s*\(/i';
     }
 
     /**
@@ -95,19 +110,5 @@ class FunctionDetector
         }
 
         return $result;
-    }
-
-    /**
-     * Compose regular expression
-     *
-     * @param array $functions
-     * @return string
-     */
-    private function composeRegexp(array $functions)
-    {
-        if (empty($functions)) {
-            return '';
-        }
-        return '/(?<!function |->|::)\b(' . join('|', $functions) . ')\s*\(/i';
     }
 }

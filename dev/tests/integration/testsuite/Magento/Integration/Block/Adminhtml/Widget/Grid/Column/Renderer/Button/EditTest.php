@@ -4,55 +4,37 @@
  * See COPYING.txt for license details.
  *
  */
+
 namespace Magento\Integration\Block\Adminhtml\Widget\Grid\Column\Renderer\Button;
 
+use Magento\Backend\Block\Widget\Grid\Column;
+use Magento\Framework\App\Request\Http;
 use Magento\Integration\Model\Integration;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  * @magentoDataFixture Magento/Integration/_files/integration_all_permissions.php
  */
-class EditTest extends \PHPUnit\Framework\TestCase
+class EditTest extends TestCase
 {
     /**
-     * @var \Magento\Integration\Block\Adminhtml\Widget\Grid\Column\Renderer\Button\Edit
+     * @var Edit
      */
     protected $editButtonBlock;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var \Magento\Framework\App\Request\Http $request */
-        $request = $objectManager->get(\Magento\Framework\App\Request\Http::class);
-        $request->setRouteName('Adminhtml')->setControllerName('integration');
-        $this->editButtonBlock = $objectManager->create(
-            \Magento\Integration\Block\Adminhtml\Widget\Grid\Column\Renderer\Button\Edit::class
-        );
-        $column = $objectManager->create(\Magento\Backend\Block\Widget\Grid\Column::class);
-        $this->editButtonBlock->setColumn($column);
-    }
 
     public function testRenderEdit()
     {
         $integration = $this->getFixtureIntegration();
         $buttonHtml = $this->editButtonBlock->render($integration);
         $this->assertStringContainsString('title="Edit"', $buttonHtml);
-        $this->assertStringContainsString('class="' .$this->editButtonBlock->escapeHtmlAttr('action edit') .'"', $buttonHtml);
+        $this->assertStringContainsString('class="' . $this->editButtonBlock->escapeHtmlAttr('action edit') . '"', $buttonHtml);
         $this->assertStringContainsString(
             'window.location.href=\'http://localhost/index.php/backend/admin/integration/edit/id/'
             . $integration->getId(),
             $buttonHtml
         );
-    }
-
-    public function testRenderView()
-    {
-        $integration = $this->getFixtureIntegration();
-        $integration->setSetupType(Integration::TYPE_CONFIG);
-        $buttonHtml = $this->editButtonBlock->render($integration);
-        $this->assertStringContainsString('title="View"', $buttonHtml);
-        $this->assertStringContainsString('class="' .$this->editButtonBlock->escapeHtmlAttr('action info') .'"', $buttonHtml);
     }
 
     /**
@@ -61,8 +43,31 @@ class EditTest extends \PHPUnit\Framework\TestCase
     protected function getFixtureIntegration()
     {
         /** @var $integration Integration */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $integration = $objectManager->create(\Magento\Integration\Model\Integration::class);
+        $objectManager = Bootstrap::getObjectManager();
+        $integration = $objectManager->create(Integration::class);
         return $integration->load('Fixture Integration', 'name');
+    }
+
+    public function testRenderView()
+    {
+        $integration = $this->getFixtureIntegration();
+        $integration->setSetupType(Integration::TYPE_CONFIG);
+        $buttonHtml = $this->editButtonBlock->render($integration);
+        $this->assertStringContainsString('title="View"', $buttonHtml);
+        $this->assertStringContainsString('class="' . $this->editButtonBlock->escapeHtmlAttr('action info') . '"', $buttonHtml);
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var Http $request */
+        $request = $objectManager->get(Http::class);
+        $request->setRouteName('Adminhtml')->setControllerName('integration');
+        $this->editButtonBlock = $objectManager->create(
+            Edit::class
+        );
+        $column = $objectManager->create(Column::class);
+        $this->editButtonBlock->setColumn($column);
     }
 }

@@ -21,14 +21,6 @@ class ConfigManagerTest extends TestCase
     private $manager;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->manager = Bootstrap::getObjectManager()->get(ConfigManager::class);
-    }
-
-    /**
      * Check the default configurations of CSP.
      *
      * @magentoAppArea frontend
@@ -82,5 +74,13 @@ class ConfigManagerTest extends TestCase
         $config = $this->manager->getConfigured();
         $this->assertFalse($config->isReportOnly());
         $this->assertEquals('https://magento.com', $config->getReportUri());
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->manager = Bootstrap::getObjectManager()->get(ConfigManager::class);
     }
 }

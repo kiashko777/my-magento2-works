@@ -4,7 +4,10 @@
  * See COPYING.txt for license details.
  */
 
-$model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Customer\Model\Attribute::class);
+use Magento\Customer\Setup\CustomerSetup;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$model = Bootstrap::getObjectManager()->create(\Magento\Customer\Model\Attribute::class);
 $model->setName(
     'address_user_attribute'
 )->setEntityTypeId(
@@ -22,9 +25,9 @@ $model->setName(
 );
 $model->save();
 
-/** @var \Magento\Customer\Setup\CustomerSetup $setupResource */
-$setupResource = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Setup\CustomerSetup::class
+/** @var CustomerSetup $setupResource */
+$setupResource = Bootstrap::getObjectManager()->create(
+    CustomerSetup::class
 );
 $data = [['form_code' => 'customer_address_edit', 'attribute_id' => $model->getAttributeId()]];
 $setupResource->getSetup()->getConnection()->insertMultiple(

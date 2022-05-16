@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\MessageQueue\UseCase;
 
 use Magento\TestModuleAsyncAmqp\Model\AsyncTestData;
@@ -42,6 +43,17 @@ class WildcardTopicTest extends QueueTestCaseAbstract
         }
     }
 
+    /**
+     * @return AsyncTestData
+     */
+    private function generateTestObject()
+    {
+        $testObject = $this->objectManager->create(AsyncTestData::class); // @phpstan-ignore-line
+        $testObject->setValue('||Message Contents||');
+        $testObject->setTextFilePath($this->logFilePath);
+        return $testObject;
+    }
+
     public function wildCardTopicsDataProvider()
     {
         return [
@@ -64,16 +76,5 @@ class WildcardTopicTest extends QueueTestCaseAbstract
         $this->publisher->publish('not.matching.wildcard.topic', $testObject);
         sleep(2);
         $this->assertFileDoesNotExist($this->logFilePath, "No log file must be created for non-matching topic.");
-    }
-
-    /**
-     * @return AsyncTestData
-     */
-    private function generateTestObject()
-    {
-        $testObject = $this->objectManager->create(AsyncTestData::class); // @phpstan-ignore-line
-        $testObject->setValue('||Message Contents||');
-        $testObject->setTextFilePath($this->logFilePath);
-        return $testObject;
     }
 }

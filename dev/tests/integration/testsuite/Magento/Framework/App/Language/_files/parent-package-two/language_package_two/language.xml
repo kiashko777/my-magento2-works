@@ -5,7 +5,8 @@
 * See COPYING.txt for license details.
 */
 -->
-<language xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:App/Language/package.xsd">
+<language xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="urn:magento:framework:App/Language/package.xsd">
     <code>en_US</code>
     <vendor>parent-package-two</vendor>
     <package>language_package_two</package>

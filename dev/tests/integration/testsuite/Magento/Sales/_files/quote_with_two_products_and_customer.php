@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\QuoteIdMask;
+use Magento\Quote\Model\QuoteIdMaskFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
@@ -31,9 +33,9 @@ $quote->setReservedOrderId('test01');
 $quote->collectTotals()
     ->save();
 
-/** @var \Magento\Quote\Model\QuoteIdMask $quoteIdMask */
+/** @var QuoteIdMask $quoteIdMask */
 $quoteIdMask = Bootstrap::getObjectManager()
-    ->create(\Magento\Quote\Model\QuoteIdMaskFactory::class)
+    ->create(QuoteIdMaskFactory::class)
     ->create();
 $quoteIdMask->setQuoteId($quote->getId());
 $quoteIdMask->setDataChanges(true);

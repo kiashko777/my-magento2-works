@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Dependency\Report\Dependency\Data;
 
 /**
@@ -53,16 +54,6 @@ class Dependency
     }
 
     /**
-     * Get type
-     *
-     * @return string
-     */
-    public function getType()
-    {
-        return $this->type;
-    }
-
-    /**
      * Check is hard dependency
      *
      * @return bool
@@ -70,6 +61,16 @@ class Dependency
     public function isHard()
     {
         return self::TYPE_HARD == $this->getType();
+    }
+
+    /**
+     * Get type
+     *
+     * @return string
+     */
+    public function getType()
+    {
+        return $this->type;
     }
 
     /**

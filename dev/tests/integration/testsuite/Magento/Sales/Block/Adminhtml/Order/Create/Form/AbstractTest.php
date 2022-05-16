@@ -7,58 +7,71 @@
 /**
  * Test class for \Magento\Sales\Block\Adminhtml\Order\Create\Form\AbstractForm
  */
+
 namespace Magento\Sales\Block\Adminhtml\Order\Create\Form;
 
+use Magento\Backend\App\Area\FrontNameResolver;
+use Magento\Backend\Block\Template\Context;
+use Magento\Backend\Model\Session\Quote;
 use Magento\Customer\Api\Data\AttributeMetadataInterfaceFactory;
 use Magento\Customer\Api\Data\OptionInterfaceFactory;
 use Magento\Customer\Api\Data\ValidationRuleInterfaceFactory;
+use Magento\Framework\Data\FormFactory;
+use Magento\Framework\Pricing\PriceCurrencyInterface;
+use Magento\Framework\Reflection\DataObjectProcessor;
+use Magento\Framework\View\DesignInterface;
+use Magento\Framework\View\Layout;
+use Magento\Sales\Model\AdminOrder\Create;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 
 /**
  * Class AbstractTest
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class AbstractTest extends \PHPUnit\Framework\TestCase
+class AbstractTest extends TestCase
 {
     /**
      * @magentoAppIsolation enabled
      */
     public function testAddAttributesToForm()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        \Magento\TestFramework\Helper\Bootstrap::getInstance()
-            ->loadArea(\Magento\Backend\App\Area\FrontNameResolver::AREA_CODE);
+        $objectManager = Bootstrap::getObjectManager();
+        Bootstrap::getInstance()
+            ->loadArea(FrontNameResolver::AREA_CODE);
 
-        $objectManager->get(\Magento\Framework\View\DesignInterface::class)->setDefaultDesignTheme();
+        $objectManager->get(DesignInterface::class)->setDefaultDesignTheme();
         $arguments = [
-            $objectManager->get(\Magento\Backend\Block\Template\Context::class),
-            $objectManager->get(\Magento\Backend\Model\Session\Quote::class),
-            $objectManager->get(\Magento\Sales\Model\AdminOrder\Create::class),
-            $objectManager->get(\Magento\Framework\Pricing\PriceCurrencyInterface::class),
-            $objectManager->get(\Magento\Framework\Data\FormFactory::class),
-            $objectManager->get(\Magento\Framework\Reflection\DataObjectProcessor::class)
+            $objectManager->get(Context::class),
+            $objectManager->get(Quote::class),
+            $objectManager->get(Create::class),
+            $objectManager->get(PriceCurrencyInterface::class),
+            $objectManager->get(FormFactory::class),
+            $objectManager->get(DataObjectProcessor::class)
         ];
 
-        /** @var $block \Magento\Sales\Block\Adminhtml\Order\Create\Form\AbstractForm */
+        /** @var $block AbstractForm */
         $block = $this->getMockForAbstractClass(
-            \Magento\Sales\Block\Adminhtml\Order\Create\Form\AbstractForm::class,
+            AbstractForm::class,
             $arguments
         );
-        $block->setLayout($objectManager->create(\Magento\Framework\View\Layout::class));
+        $block->setLayout($objectManager->create(Layout::class));
 
-        $method = new \ReflectionMethod(
-            \Magento\Sales\Block\Adminhtml\Order\Create\Form\AbstractForm::class,
+        $method = new ReflectionMethod(
+            AbstractForm::class,
             '_addAttributesToForm'
         );
         $method->setAccessible(true);
 
-        /** @var $formFactory \Magento\Framework\Data\FormFactory */
-        $formFactory = $objectManager->get(\Magento\Framework\Data\FormFactory::class);
+        /** @var $formFactory FormFactory */
+        $formFactory = $objectManager->get(FormFactory::class);
         $form = $formFactory->create();
         $fieldset = $form->addFieldset('test_fieldset', []);
-        /** @var \Magento\Customer\Api\Data\AttributeMetadataInterfaceFactory $attributeMetadataFactory */
+        /** @var AttributeMetadataInterfaceFactory $attributeMetadataFactory */
         $attributeMetadataFactory =
-            $objectManager->create(\Magento\Customer\Api\Data\AttributeMetadataInterfaceFactory::class);
+            $objectManager->create(AttributeMetadataInterfaceFactory::class);
         $dateAttribute = $attributeMetadataFactory->create()->setAttributeCode('date')
             ->setBackendType('datetime')
             ->setFrontendInput('date')

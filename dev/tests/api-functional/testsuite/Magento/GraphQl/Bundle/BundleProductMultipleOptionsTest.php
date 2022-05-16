@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Bundle;
 
+use Exception;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Helper\CompareArraysRecursively;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
@@ -22,20 +23,11 @@ class BundleProductMultipleOptionsTest extends GraphQlAbstract
     private $compareArraysRecursively;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->compareArraysRecursively = $objectManager->create(CompareArraysRecursively::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Bundle/_files/product_with_multiple_options.php
      * @param array $bundleProductDataProvider
      *
      * @dataProvider getBundleProductDataProvider
-     * @throws \Exception
+     * @throws Exception
      */
     public function testBundleProductWithMultipleOptions(array $bundleProductDataProvider): void
     {
@@ -318,5 +310,14 @@ QUERY;
                 ],
             ],
         ];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->compareArraysRecursively = $objectManager->create(CompareArraysRecursively::class);
     }
 }

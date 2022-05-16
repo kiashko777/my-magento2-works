@@ -3,7 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\TestCase\HttpClient;
+
+use Exception;
+use Magento\Framework\Webapi\Rest\Request;
 
 /**
  * Generic cURL client wrapper for get/delete/post/put requests
@@ -27,80 +31,7 @@ class CurlClient
         }
 
         $curlOpts = [];
-        $curlOpts[CURLOPT_CUSTOMREQUEST] = \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET;
-        $resp = $this->invokeApi($url, $curlOpts, $headers);
-        return $resp["body"];
-    }
-
-    /**
-     * Perform a HTTP GET request and return the full response
-     *
-     * @param string $url
-     * @param array $data
-     * @param array $headers
-     * @return array
-     */
-    public function getWithFullResponse($url, $data = [], $headers = []): array
-    {
-        if (!empty($data)) {
-            $url .= '?' . http_build_query($data);
-        }
-
-        $curlOpts = [];
-        $curlOpts[CURLOPT_CUSTOMREQUEST] = \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET;
-        return $this->invokeApi($url, $curlOpts, $headers);
-    }
-
-    /**
-     * Perform HTTP DELETE request
-     *
-     * @param string $url
-     * @param array $headers
-     * @return string
-     */
-    public function delete($url, $headers = [])
-    {
-        $curlOpts = [];
-        $curlOpts[CURLOPT_CUSTOMREQUEST] = \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE;
-
-        $resp = $this->invokeApi($url, $curlOpts, $headers);
-        return $resp["body"];
-    }
-
-    /**
-     * Perform HTTP POST request
-     *
-     * @param string $url
-     * @param array|string $data
-     * @param array $headers
-     * @return string
-     */
-    public function post($url, $data, $headers = [])
-    {
-        $curlOpts = [];
-        $curlOpts[CURLOPT_CUSTOMREQUEST] = \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST;
-        $headers[] = 'Content-Length: ' . strlen($data);
-        $curlOpts[CURLOPT_POSTFIELDS] = $data;
-
-        $resp = $this->invokeApi($url, $curlOpts, $headers);
-        return $resp["body"];
-    }
-
-    /**
-     * Perform HTTP PUT request
-     *
-     * @param string $url
-     * @param array|string $data
-     * @param array $headers
-     * @return string
-     */
-    public function put($url, $data, $headers = [])
-    {
-        $curlOpts = [];
-        $curlOpts[CURLOPT_CUSTOMREQUEST] = \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT;
-        $headers[] = 'Content-Length: ' . strlen($data);
-        $curlOpts[CURLOPT_POSTFIELDS] = $data;
-
+        $curlOpts[CURLOPT_CUSTOMREQUEST] = Request::HTTP_METHOD_GET;
         $resp = $this->invokeApi($url, $curlOpts, $headers);
         return $resp["body"];
     }
@@ -112,7 +43,7 @@ class CurlClient
      * @param array $additionalCurlOpts cURL Options
      * @param array $headers
      * @return array
-     * @throws \Exception
+     * @throws Exception
      */
     public function invokeApi($url, $additionalCurlOpts, $headers = [])
     {
@@ -121,7 +52,7 @@ class CurlClient
         $curl = curl_init($url);
         if ($curl === false) {
             // phpcs:ignore Magento2.Exceptions.DirectThrow
-            throw new \Exception("Error Initializing cURL for baseUrl: " . $url);
+            throw new Exception("Error Initializing cURL for baseUrl: " . $url);
         }
 
         // get cURL options
@@ -139,7 +70,7 @@ class CurlClient
             // phpcs:ignore Magento2.Functions.DiscouragedFunction
             $error = curl_error($curl);
             // phpcs:ignore Magento2.Exceptions.DirectThrow
-            throw new \Exception($error);
+            throw new Exception($error);
         }
 
         $resp = [];
@@ -154,7 +85,7 @@ class CurlClient
             // phpcs:ignore Magento2.Functions.DiscouragedFunction
             $error = curl_error($curl);
             // phpcs:ignore Magento2.Exceptions.DirectThrow
-            throw new \Exception($error);
+            throw new Exception($error);
         }
 
         // phpcs:ignore Magento2.Functions.DiscouragedFunction
@@ -163,7 +94,7 @@ class CurlClient
         $meta = $resp["meta"];
         if ($meta && $meta['http_code'] >= 400) {
             // phpcs:ignore Magento2.Exceptions.DirectThrow
-            throw new \Exception($resp["body"], $meta['http_code']);
+            throw new Exception($resp["body"], $meta['http_code']);
         }
 
         return $resp;
@@ -201,5 +132,78 @@ class CurlClient
         }
 
         return $curlOpts;
+    }
+
+    /**
+     * Perform a HTTP GET request and return the full response
+     *
+     * @param string $url
+     * @param array $data
+     * @param array $headers
+     * @return array
+     */
+    public function getWithFullResponse($url, $data = [], $headers = []): array
+    {
+        if (!empty($data)) {
+            $url .= '?' . http_build_query($data);
+        }
+
+        $curlOpts = [];
+        $curlOpts[CURLOPT_CUSTOMREQUEST] = Request::HTTP_METHOD_GET;
+        return $this->invokeApi($url, $curlOpts, $headers);
+    }
+
+    /**
+     * Perform HTTP DELETE request
+     *
+     * @param string $url
+     * @param array $headers
+     * @return string
+     */
+    public function delete($url, $headers = [])
+    {
+        $curlOpts = [];
+        $curlOpts[CURLOPT_CUSTOMREQUEST] = Request::HTTP_METHOD_DELETE;
+
+        $resp = $this->invokeApi($url, $curlOpts, $headers);
+        return $resp["body"];
+    }
+
+    /**
+     * Perform HTTP POST request
+     *
+     * @param string $url
+     * @param array|string $data
+     * @param array $headers
+     * @return string
+     */
+    public function post($url, $data, $headers = [])
+    {
+        $curlOpts = [];
+        $curlOpts[CURLOPT_CUSTOMREQUEST] = Request::HTTP_METHOD_POST;
+        $headers[] = 'Content-Length: ' . strlen($data);
+        $curlOpts[CURLOPT_POSTFIELDS] = $data;
+
+        $resp = $this->invokeApi($url, $curlOpts, $headers);
+        return $resp["body"];
+    }
+
+    /**
+     * Perform HTTP PUT request
+     *
+     * @param string $url
+     * @param array|string $data
+     * @param array $headers
+     * @return string
+     */
+    public function put($url, $data, $headers = [])
+    {
+        $curlOpts = [];
+        $curlOpts[CURLOPT_CUSTOMREQUEST] = Request::HTTP_METHOD_PUT;
+        $headers[] = 'Content-Length: ' . strlen($data);
+        $curlOpts[CURLOPT_POSTFIELDS] = $data;
+
+        $resp = $this->invokeApi($url, $curlOpts, $headers);
+        return $resp["body"];
     }
 }

@@ -22,16 +22,6 @@ class PriceTest extends AbstractAlertTest
     private $block;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Price::class);
-    }
-
-    /**
      * @dataProvider alertsDataProvider
      *
      * @magentoDbIsolation disabled
@@ -95,5 +85,15 @@ class PriceTest extends AbstractAlertTest
                 'store_code' => 'default',
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Price::class);
     }
 }

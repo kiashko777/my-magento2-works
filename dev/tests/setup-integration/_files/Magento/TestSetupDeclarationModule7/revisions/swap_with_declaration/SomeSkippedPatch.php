@@ -3,8 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestSetupDeclarationModule7\Setup\Patch\Data;
 
+use Exception;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
 use Magento\Framework\Setup\Patch\PatchVersionInterface;
@@ -42,6 +44,14 @@ class SomeSkippedPatch implements
     /**
      * @return array
      */
+    public static function getDependencies()
+    {
+        return [];
+    }
+
+    /**
+     * @return array
+     */
     public function getAliases()
     {
         return [];
@@ -52,14 +62,6 @@ class SomeSkippedPatch implements
      */
     public function apply()
     {
-        throw new \Exception('This patch should be skipped!');
-    }
-
-    /**
-     * @return array
-     */
-    public static function getDependencies()
-    {
-        return [];
+        throw new Exception('This patch should be skipped!');
     }
 }

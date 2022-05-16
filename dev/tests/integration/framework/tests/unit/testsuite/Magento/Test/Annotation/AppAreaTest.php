@@ -7,30 +7,28 @@
 namespace Magento\Test\Annotation;
 
 use Magento\Framework\App\Area;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\TestFramework\Annotation\AppArea;
+use Magento\TestFramework\Application;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
-class AppAreaTest extends \PHPUnit\Framework\TestCase
+class AppAreaTest extends TestCase
 {
     /**
-     * @var \Magento\TestFramework\Annotation\AppArea
+     * @var AppArea
      */
     protected $_object;
 
     /**
-     * @var \Magento\TestFramework\Application|\PHPUnit\Framework\MockObject\MockObject
+     * @var Application|MockObject
      */
     protected $_applicationMock;
 
     /**
-     * @var \PHPUnit\Framework\TestCase|\PHPUnit\Framework\MockObject\MockObject
+     * @var TestCase|MockObject
      */
     protected $_testCaseMock;
-
-    protected function setUp(): void
-    {
-        $this->_testCaseMock = $this->createMock(\PHPUnit\Framework\TestCase::class);
-        $this->_applicationMock = $this->createMock(\Magento\TestFramework\Application::class);
-        $this->_object = new \Magento\TestFramework\Annotation\AppArea($this->_applicationMock);
-    }
 
     /**
      * @param array $annotations
@@ -66,7 +64,7 @@ class AppAreaTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetTestAppAreaWithInvalidArea()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
 
         $annotations = ['method' => ['magentoAppArea' => ['some_invalid_area']]];
         $this->_testCaseMock->expects($this->once())->method('getAnnotations')->willReturn($annotations);
@@ -140,5 +138,12 @@ class AppAreaTest extends \PHPUnit\Framework\TestCase
                 'area_code' => Area::AREA_GRAPHQL,
             ],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->_testCaseMock = $this->createMock(TestCase::class);
+        $this->_applicationMock = $this->createMock(Application::class);
+        $this->_object = new AppArea($this->_applicationMock);
     }
 }

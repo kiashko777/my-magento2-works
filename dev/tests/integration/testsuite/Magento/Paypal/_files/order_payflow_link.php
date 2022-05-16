@@ -36,7 +36,7 @@ $payment->setMethod(Config::METHOD_PAYFLOWLINK)
     ->setBaseAmountAuthorized(100)
     ->setAdditionalInformation(
         [
-        'secure_silent_post_hash' => 'cf7i85d01ed7c92223031afb4rdl2f1f'
+            'secure_silent_post_hash' => 'cf7i85d01ed7c92223031afb4rdl2f1f'
         ]
     );
 

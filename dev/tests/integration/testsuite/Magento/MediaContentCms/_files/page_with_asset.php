@@ -4,8 +4,12 @@
  * See COPYING.txt for license details.
  */
 
-/** @var $page \Magento\Cms\Model\Page */
-$page = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Cms\Model\Page::class);
+/** @var $page Page */
+
+use Magento\Cms\Model\Page;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$page = Bootstrap::getObjectManager()->create(Page::class);
 $page->setTitle('Cms Page 100')
     ->setIdentifier('fixture_page_with_asset')
     ->setStores([0])

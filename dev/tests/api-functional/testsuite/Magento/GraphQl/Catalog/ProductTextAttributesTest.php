@@ -18,11 +18,6 @@ class ProductTextAttributesTest extends GraphQlAbstract
      */
     private $productRepository;
 
-    protected function setUp(): void
-    {
-        $this->productRepository = Bootstrap::getObjectManager()::getInstance()->get(ProductRepositoryInterface::class);
-    }
-
     /**
      * @magentoApiDataFixture Magento/Catalog/_files/product_simple.php
      */
@@ -150,5 +145,10 @@ QUERY;
             '{{block id',
             $response['products']['items'][0]['short_description']['html']
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->productRepository = Bootstrap::getObjectManager()::getInstance()->get(ProductRepositoryInterface::class);
     }
 }

@@ -3,8 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Service\V1;
 
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Sales\Model\Order\Shipment\Comment;
+use Magento\Sales\Model\ResourceModel\Order\Shipment\Collection;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
@@ -22,12 +27,12 @@ class ShipmentCommentsListTest extends WebapiAbstract
     public function testShipmentCommentsList()
     {
         $comment = 'Test comment';
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
 
-        /** @var \Magento\Sales\Model\ResourceModel\Order\Shipment\Collection $shipmentCollection */
-        $shipmentCollection = $objectManager->get(\Magento\Sales\Model\ResourceModel\Order\Shipment\Collection::class);
+        /** @var Collection $shipmentCollection */
+        $shipmentCollection = $objectManager->get(Collection::class);
         $shipment = $shipmentCollection->getFirstItem();
-        $shipmentComment = $objectManager->get(\Magento\Sales\Model\Order\Shipment\Comment::class);
+        $shipmentComment = $objectManager->get(Comment::class);
         $shipmentComment->setComment($comment);
         $shipmentComment->setParentId($shipment->getId());
         $shipmentComment->save();
@@ -35,7 +40,7 @@ class ShipmentCommentsListTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/shipment/' . $shipment->getId() . '/comments',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -47,8 +52,8 @@ class ShipmentCommentsListTest extends WebapiAbstract
         $result = $this->_webApiCall($serviceInfo, $requestData);
         // TODO Test fails, due to the inability of the framework API to handle data collection
         foreach ($result['items'] as $item) {
-            /** @var \Magento\Sales\Model\Order\Shipment\Comment $shipmentHistoryStatus */
-            $shipmentHistoryStatus = $objectManager->get(\Magento\Sales\Model\Order\Shipment\Comment::class)
+            /** @var Comment $shipmentHistoryStatus */
+            $shipmentHistoryStatus = $objectManager->get(Comment::class)
                 ->load($item['entity_id']);
             $this->assertEquals($shipmentHistoryStatus->getComment(), $item['comment']);
         }

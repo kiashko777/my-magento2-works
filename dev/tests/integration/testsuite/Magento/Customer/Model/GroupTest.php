@@ -6,32 +6,37 @@
 
 namespace Magento\Customer\Model;
 
-class GroupTest extends \PHPUnit\Framework\TestCase
+use Magento\Customer\Api\Data\GroupInterfaceFactory;
+use Magento\TestFramework\Entity;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class GroupTest extends TestCase
 {
     /**
-     * @var \Magento\Customer\Model\Group
+     * @var Group
      */
     protected $groupModel;
 
     /**
-     * @var \Magento\Customer\Api\Data\GroupInterfaceFactory
+     * @var GroupInterfaceFactory
      */
     protected $groupFactory;
-
-    protected function setUp(): void
-    {
-        $this->groupModel = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Model\Group::class
-        );
-        $this->groupFactory = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Api\Data\GroupInterfaceFactory::class
-        );
-    }
 
     public function testCRUD()
     {
         $this->groupModel->setCode('test');
-        $crud = new \Magento\TestFramework\Entity($this->groupModel, ['customer_group_code' => uniqid()]);
+        $crud = new Entity($this->groupModel, ['customer_group_code' => uniqid()]);
         $crud->testCrud();
+    }
+
+    protected function setUp(): void
+    {
+        $this->groupModel = Bootstrap::getObjectManager()->create(
+            Group::class
+        );
+        $this->groupFactory = Bootstrap::getObjectManager()->create(
+            GroupInterfaceFactory::class
+        );
     }
 }

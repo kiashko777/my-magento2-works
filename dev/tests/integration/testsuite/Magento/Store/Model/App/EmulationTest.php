@@ -3,12 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Store\Model\App;
 
-class EmulationTest extends \PHPUnit\Framework\TestCase
+use Magento\Backend\App\Area\FrontNameResolver;
+use Magento\Framework\View\DesignInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class EmulationTest extends TestCase
 {
     /**
-     * @var \Magento\Store\Model\App\Emulation
+     * @var Emulation
      */
     protected $_model;
 
@@ -18,15 +24,15 @@ class EmulationTest extends \PHPUnit\Framework\TestCase
      */
     public function testEnvironmentEmulation()
     {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Store\Model\App\Emulation::class);
-        \Magento\TestFramework\Helper\Bootstrap::getInstance()
-            ->loadArea(\Magento\Backend\App\Area\FrontNameResolver::AREA_CODE);
-        $design = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\View\DesignInterface::class);
+        $this->_model = Bootstrap::getObjectManager()
+            ->create(Emulation::class);
+        Bootstrap::getInstance()
+            ->loadArea(FrontNameResolver::AREA_CODE);
+        $design = Bootstrap::getObjectManager()
+            ->get(DesignInterface::class);
 
         $this->_model->startEnvironmentEmulation(1);
         $this->_model->stopEnvironmentEmulation();
-        $this->assertEquals(\Magento\Backend\App\Area\FrontNameResolver::AREA_CODE, $design->getArea());
+        $this->assertEquals(FrontNameResolver::AREA_CODE, $design->getArea());
     }
 }

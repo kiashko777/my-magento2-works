@@ -9,9 +9,9 @@ namespace Magento\Catalog\Model\ResourceModel\Product;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product\Gallery\ReadHandler;
+use Magento\Framework\App\ResourceConnection;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
-use Magento\Framework\App\ResourceConnection;
 
 /**
  * Test for \Magento\Catalog\Model\ResourceModel\Products\Gallery.
@@ -39,19 +39,6 @@ class GalleryTest extends TestCase
      * @var ReadHandler
      */
     private $readHandler;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-
-        $this->productRepository = $objectManager->create(ProductRepositoryInterface::class);
-        $this->galleryResource = $objectManager->create(Gallery::class);
-        $this->resource = $objectManager->create(ResourceConnection::class);
-        $this->readHandler = $objectManager->create(ReadHandler::class);
-    }
 
     /**
      * Verify catalog_product_entity_media_gallery table will not have data after deleting the product
@@ -89,5 +76,18 @@ class GalleryTest extends TestCase
             ->where('value_id IN (?)', $values);
 
         return $connection->fetchAll($select);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+
+        $this->productRepository = $objectManager->create(ProductRepositoryInterface::class);
+        $this->galleryResource = $objectManager->create(Gallery::class);
+        $this->resource = $objectManager->create(ResourceConnection::class);
+        $this->readHandler = $objectManager->create(ReadHandler::class);
     }
 }

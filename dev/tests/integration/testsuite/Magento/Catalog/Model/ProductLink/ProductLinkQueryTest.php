@@ -8,12 +8,14 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Model\ProductLink;
 
+use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\ProductLink\Data\ListCriteria;
 use Magento\Catalog\Model\ProductLink\Data\ListCriteriaInterface;
 use Magento\Catalog\Model\ProductRepository;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
+use Throwable;
 
 /**
  * Test links query.
@@ -36,71 +38,11 @@ class ProductLinkQueryTest extends TestCase
     private $criteriaBuilder;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $objectManager = Bootstrap::getObjectManager();
-        $this->query = $objectManager->get(ProductLinkQuery::class);
-        $this->productRepo = $objectManager->get(ProductRepository::class);
-        $this->criteriaBuilder = $objectManager->get(SearchCriteriaBuilder::class);
-    }
-
-    /**
-     * Generate search criteria.
-     *
-     * @param \Magento\Catalog\Model\Product[] $products
-     * @return ListCriteriaInterface[]
-     */
-    private function generateCriteriaList(array $products): array
-    {
-        $typesList = ['related', 'crosssell', 'upsell'];
-        /** @var ListCriteriaInterface[] $criteriaList */
-        $criteriaList = [];
-        foreach ($products as $product) {
-            $sku = $product->getSku();
-            $typesFilter = [$typesList[rand(0, 2)], $typesList[rand(0, 2)]];
-            //Not always providing product entity or the default criteria implementation for testing purposes.
-            //Getting 1 list with types filter and one without.
-            $criteriaList[] = new ListCriteria($sku, $typesFilter, $product);
-            $criteria = new class implements ListCriteriaInterface
-            {
-                /**
-                 * @var string
-                 */
-                public $sku;
-
-                /**
-                 * @inheritDoc
-                 */
-                public function getBelongsToProductSku(): string
-                {
-                    return $this->sku;
-                }
-
-                /**
-                 * @inheritDoc
-                 */
-                public function getLinkTypes(): ?array
-                {
-                    return null;
-                }
-            };
-            $criteria->sku = $sku;
-            $criteriaList[] = $criteria;
-        }
-
-        return $criteriaList;
-    }
-
-    /**
      * Test getting links for a list of products.
      *
      * @magentoDataFixture Magento/Catalog/_files/multiple_related_products.php
      * @return void
-     * @throws \Throwable
+     * @throws Throwable
      */
     public function testSearch(): void
     {
@@ -136,10 +78,69 @@ class ProductLinkQueryTest extends TestCase
                 $this->assertNotEmpty($productIndex);
                 $this->assertNotEmpty($productIndex[1]);
                 $productIndex = (int)$productIndex[1];
-                $this->assertMatchesRegularExpression('/^related\-product\-' .$productIndex .'\-\d+$/i', $link->getLinkedProductSku());
+                $this->assertMatchesRegularExpression('/^related\-product\-' . $productIndex . '\-\d+$/i', $link->getLinkedProductSku());
                 //Position must be set
                 $this->assertGreaterThan(0, $link->getPosition());
             }
         }
+    }
+
+    /**
+     * Generate search criteria.
+     *
+     * @param Product[] $products
+     * @return ListCriteriaInterface[]
+     */
+    private function generateCriteriaList(array $products): array
+    {
+        $typesList = ['related', 'crosssell', 'upsell'];
+        /** @var ListCriteriaInterface[] $criteriaList */
+        $criteriaList = [];
+        foreach ($products as $product) {
+            $sku = $product->getSku();
+            $typesFilter = [$typesList[rand(0, 2)], $typesList[rand(0, 2)]];
+            //Not always providing product entity or the default criteria implementation for testing purposes.
+            //Getting 1 list with types filter and one without.
+            $criteriaList[] = new ListCriteria($sku, $typesFilter, $product);
+            $criteria = new class implements ListCriteriaInterface {
+                /**
+                 * @var string
+                 */
+                public $sku;
+
+                /**
+                 * @inheritDoc
+                 */
+                public function getBelongsToProductSku(): string
+                {
+                    return $this->sku;
+                }
+
+                /**
+                 * @inheritDoc
+                 */
+                public function getLinkTypes(): ?array
+                {
+                    return null;
+                }
+            };
+            $criteria->sku = $sku;
+            $criteriaList[] = $criteria;
+        }
+
+        return $criteriaList;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $objectManager = Bootstrap::getObjectManager();
+        $this->query = $objectManager->get(ProductLinkQuery::class);
+        $this->productRepo = $objectManager->get(ProductRepository::class);
+        $this->criteriaBuilder = $objectManager->get(SearchCriteriaBuilder::class);
     }
 }

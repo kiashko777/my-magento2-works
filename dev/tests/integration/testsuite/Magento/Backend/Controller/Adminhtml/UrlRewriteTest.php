@@ -3,14 +3,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Backend\Controller\Adminhtml;
 
+use Magento\Cms\Model\Page;
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\Message\MessageInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class UrlRewriteTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class UrlRewriteTest extends AbstractBackendController
 {
     /**
      * Check save cms page rewrite
@@ -19,7 +24,7 @@ class UrlRewriteTest extends \Magento\TestFramework\TestCase\AbstractBackendCont
      */
     public function testSaveActionCmsPage()
     {
-        $page = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Cms\Model\Page::class);
+        $page = Bootstrap::getObjectManager()->get(Page::class);
         $page->load('page_design_blank', 'identifier');
 
         $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
@@ -36,7 +41,7 @@ class UrlRewriteTest extends \Magento\TestFramework\TestCase\AbstractBackendCont
 
         $this->assertSessionMessages(
             $this->containsEqual('The URL Rewrite has been saved.'),
-            \Magento\Framework\Message\MessageInterface::TYPE_SUCCESS
+            MessageInterface::TYPE_SUCCESS
         );
         $this->assertRedirect($this->stringContains('backend/admin/url_rewrite/index'));
     }

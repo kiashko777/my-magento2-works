@@ -5,16 +5,20 @@
  */
 
 // refresh report statistics
-/** @var \Magento\Sales\Model\ResourceModel\Report\Invoiced $reportResource */
-$reportResource = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Sales\Model\ResourceModel\Report\Invoiced::class
+/** @var Invoiced $reportResource */
+
+use Magento\Sales\Model\ResourceModel\Report\Invoiced;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$reportResource = Bootstrap::getObjectManager()->create(
+    Invoiced::class
 );
 $reportResource->beginTransaction();
 // prevent table truncation by incrementing the transaction nesting level counter
 try {
     $reportResource->aggregate();
     $reportResource->commit();
-} catch (\Exception $e) {
+} catch (Exception $e) {
     $reportResource->rollBack();
     throw $e;
 }

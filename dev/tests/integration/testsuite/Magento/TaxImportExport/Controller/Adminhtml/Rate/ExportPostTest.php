@@ -3,9 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TaxImportExport\Controller\Adminhtml\Rate;
 
-class ExportPostTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+use Magento\TestFramework\TestCase\AbstractBackendController;
+
+class ExportPostTest extends AbstractBackendController
 {
     protected function setUp(): void
     {

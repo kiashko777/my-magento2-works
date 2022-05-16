@@ -7,7 +7,11 @@
 /**
  * After installation system has two categories: root one with ID:1 and Default category with ID:2
  */
-/** @var $category \Magento\Catalog\Model\Category */
+/** @var $category Category */
+
+use Magento\Catalog\Model\Category;
+use Magento\TestFramework\Helper\Bootstrap;
+
 $categories = [
     [
         'id' => 400,
@@ -44,8 +48,8 @@ $categories = [
     ],
 ];
 foreach ($categories as $data) {
-    $model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-        \Magento\Catalog\Model\Category::class
+    $model = Bootstrap::getObjectManager()->create(
+        Category::class
     );
     $model->isObjectNew(true);
     $model->setId($data['id'])

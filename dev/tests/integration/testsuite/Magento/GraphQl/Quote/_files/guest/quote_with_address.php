@@ -5,6 +5,7 @@
  */
 declare(strict_types=1);
 
+use Magento\Framework\Api\DataObjectHelper;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Api\Data\AddressInterface;
 use Magento\Quote\Api\Data\AddressInterfaceFactory;
@@ -12,7 +13,6 @@ use Magento\Quote\Api\GuestCartManagementInterface;
 use Magento\Quote\Model\MaskedQuoteIdToQuoteIdInterface;
 use Magento\Quote\Model\ShippingAddressManagementInterface;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Framework\Api\DataObjectHelper;
 
 /** @var GuestCartManagementInterface $guestCartManagement */
 $guestCartManagement = Bootstrap::getObjectManager()->get(GuestCartManagementInterface::class);

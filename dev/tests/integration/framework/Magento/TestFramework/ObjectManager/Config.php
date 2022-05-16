@@ -3,9 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\ObjectManager;
 
-class Config extends \Magento\Framework\Interception\ObjectManager\Config\Developer
+use Magento\Framework\Interception\ObjectManager\Config\Developer;
+
+class Config extends Developer
 {
     /**
      * Clean configuration

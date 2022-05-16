@@ -6,7 +6,10 @@
 
 namespace Magento\Sales\Service\V1;
 
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\Sales\Api\Data\OrderAddressInterface as OrderAddress;
+use Magento\Sales\Model\Order;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
@@ -24,9 +27,9 @@ class OrderAddressUpdateTest extends WebapiAbstract
      */
     public function testOrderAddressUpdate()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var \Magento\Sales\Model\Order $order */
-        $order = $objectManager->get(\Magento\Sales\Model\Order::class)->loadByIncrementId('100000001');
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var Order $order */
+        $order = $objectManager->get(Order::class)->loadByIncrementId('100000001');
 
         $address = [
             OrderAddress::REGION => 'CA',
@@ -60,7 +63,7 @@ class OrderAddressUpdateTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/orders/' . $order->getId(),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -71,8 +74,8 @@ class OrderAddressUpdateTest extends WebapiAbstract
         $result = $this->_webApiCall($serviceInfo, $requestData);
         $this->assertGreaterThan(1, count($result));
 
-        /** @var \Magento\Sales\Model\Order $actualOrder */
-        $actualOrder = $objectManager->get(\Magento\Sales\Model\Order::class)->load($order->getId());
+        /** @var Order $actualOrder */
+        $actualOrder = $objectManager->get(Order::class)->load($order->getId());
         $billingAddress = $actualOrder->getBillingAddress();
 
         $validate = [

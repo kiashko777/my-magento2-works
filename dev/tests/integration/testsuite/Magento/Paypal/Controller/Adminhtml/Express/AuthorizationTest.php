@@ -17,26 +17,15 @@ use Magento\Sales\Model\Order\Payment;
 use Magento\Sales\Model\Order\Payment\Transaction;
 use Magento\Sales\Model\Order\Validation\CanInvoice;
 use Magento\Sales\Model\ValidatorResultInterface;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * Makes a test of the payment authorization for Paypal Express when payment action is order.
  *
  * @magentoAppArea Adminhtml
  */
-class AuthorizationTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class AuthorizationTest extends AbstractBackendController
 {
-    /**
-     * {@inheritdoc}
-     */
-    protected function setUp(): void
-    {
-        $this->resource = 'Magento_Paypal::authorization';
-        $this->uri = 'backend/paypal/express/authorization';
-
-        parent::setUp();
-        $this->createSharedInstances();
-    }
-
     /**
      * Negative scenario for controller calls.
      *
@@ -97,6 +86,18 @@ class AuthorizationTest extends \Magento\TestFramework\TestCase\AbstractBackendC
         $this->assertEquals($order->getBaseGrandTotal(), $payment->getAmountAuthorized());
         $this->assertEmpty($validationResult->getMessages());
         $this->assertRedirect($this->stringContains('backend/sales/order/view/order_id/' . $order->getId()));
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function setUp(): void
+    {
+        $this->resource = 'Magento_Paypal::authorization';
+        $this->uri = 'backend/paypal/express/authorization';
+
+        parent::setUp();
+        $this->createSharedInstances();
     }
 
     /**

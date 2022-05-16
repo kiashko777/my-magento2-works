@@ -16,23 +16,23 @@ define([
         order,
         confirmSpy = jasmine.createSpy('confirm'),
         tmpl = '<form id="edit_form" action="/">' +
-                '<section id="order-methods">' +
-                    '<div id="order-billing_method"></div>' +
-                    '<div id="order-shipping_method"></div>' +
-                '</section>' +
-                '<div id="order-billing_method_form">' +
-                    '<input id="p_method_payment1" type="radio" name="payment[method]" value="payment1"/>' +
-                    '<fieldset id="payment_form_payment1">' +
-                        '<input type="number" name="payment[cc_number]"/>' +
-                        '<input type="number" name="payment[cc_cid]"/>' +
-                    '</fieldset>' +
-                    '<input id="p_method_payment2" type="radio" name="payment[method]" value="payment2"/>' +
-                    '<fieldset id="payment_form_payment2">' +
-                        '<input type="number" name="payment[cc_number]"/>' +
-                        '<input type="number" name="payment[cc_cid]"/>' +
-                    '</fieldset>' +
-                    '<input id="p_method_free" type="radio" name="payment[method]" value="free"/>' +
-                '</div>' +
+            '<section id="order-methods">' +
+            '<div id="order-billing_method"></div>' +
+            '<div id="order-shipping_method"></div>' +
+            '</section>' +
+            '<div id="order-billing_method_form">' +
+            '<input id="p_method_payment1" type="radio" name="payment[method]" value="payment1"/>' +
+            '<fieldset id="payment_form_payment1">' +
+            '<input type="number" name="payment[cc_number]"/>' +
+            '<input type="number" name="payment[cc_cid]"/>' +
+            '</fieldset>' +
+            '<input id="p_method_payment2" type="radio" name="payment[method]" value="payment2"/>' +
+            '<fieldset id="payment_form_payment2">' +
+            '<input type="number" name="payment[cc_number]"/>' +
+            '<input type="number" name="payment[cc_cid]"/>' +
+            '</fieldset>' +
+            '<input id="p_method_free" type="radio" name="payment[method]" value="free"/>' +
+            '</div>' +
             '</form>';
 
     $.widget('magetest.testPaymentMethodA', {

@@ -8,13 +8,12 @@ declare(strict_types=1);
 
 namespace Magento\Sitemap\Model;
 
+use Laminas\Stdlib\Parameters;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Filesystem;
 use Magento\Framework\ObjectManagerInterface;
-use Magento\Sitemap\Model\Sitemap;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Request;
-use Laminas\Stdlib\Parameters;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -38,16 +37,6 @@ class SitemapTest extends TestCase
     private $filesystem;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->model = $this->objectManager->get(Sitemap::class);
-        $this->filesystem = $this->objectManager->get(Filesystem::class);
-    }
-
-    /**
      * Test get sitemap URL from parent root directory path
      *
      * @return void
@@ -66,5 +55,15 @@ class SitemapTest extends TestCase
         $sitemapUrl = $this->model->getSitemapUrl('/', 'sitemap.xml');
 
         $this->assertEquals('http://localhost/sitemap.xml', $sitemapUrl);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->model = $this->objectManager->get(Sitemap::class);
+        $this->filesystem = $this->objectManager->get(Filesystem::class);
     }
 }

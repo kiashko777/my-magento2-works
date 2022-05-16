@@ -5,12 +5,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework;
+
+use InvalidArgumentException;
+use LogicException;
+use Magento\TestFramework\Helper\Memory;
 
 class MemoryLimit
 {
     /**
-     * @var \Magento\TestFramework\Helper\Memory
+     * @var Memory
      */
     private $_helper;
 
@@ -29,10 +34,10 @@ class MemoryLimit
      *
      * @param string $memCap
      * @param string $leakCap
-     * @param \Magento\TestFramework\Helper\Memory $helper
-     * @throws \InvalidArgumentException
+     * @param Memory $helper
+     * @throws InvalidArgumentException
      */
-    public function __construct($memCap, $leakCap, \Magento\TestFramework\Helper\Memory $helper)
+    public function __construct($memCap, $leakCap, Memory $helper)
     {
         $this->_memCap = $memCap ? $helper->convertToBytes($memCap) : 0;
         $this->_leakCap = $leakCap ? $helper->convertToBytes($leakCap) : 0;
@@ -81,6 +86,17 @@ class MemoryLimit
     }
 
     /**
+     * Usage/leak getter sub-routine
+     *
+     * @return array
+     */
+    private function _getUsage()
+    {
+        $usage = $this->_helper->getRealMemoryUsage();
+        return [$usage, $usage - memory_get_usage(true)];
+    }
+
+    /**
      * Convert bytes to mebibytes (2^20)
      *
      * @param int $bytes
@@ -95,7 +111,7 @@ class MemoryLimit
      * Raise error if memory usage breaks configured thresholds
      *
      * @return null
-     * @throws \LogicException
+     * @throws LogicException
      */
     public function validateUsage()
     {
@@ -104,27 +120,16 @@ class MemoryLimit
         }
         list($usage, $leak) = $this->_getUsage();
         if ($this->_memCap && $usage >= $this->_memCap) {
-            throw new \LogicException(
+            throw new LogicException(
                 "Memory limit of {$this->_toMb($this->_memCap)} ({$this->_memCap} bytes) has been reached."
             );
         }
         if ($this->_leakCap && $leak >= $this->_leakCap) {
-            throw new \LogicException(
+            throw new LogicException(
                 "Estimated memory leak limit of {$this->_toMb(
                     $this->_leakCap
                 )}" . " ({$this->_leakCap} bytes) has been reached."
             );
         }
-    }
-
-    /**
-     * Usage/leak getter sub-routine
-     *
-     * @return array
-     */
-    private function _getUsage()
-    {
-        $usage = $this->_helper->getRealMemoryUsage();
-        return [$usage, $usage - memory_get_usage(true)];
     }
 }

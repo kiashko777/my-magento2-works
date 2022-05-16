@@ -43,59 +43,59 @@ $salesRule->getConditions()->loadArray([
     'aggregator' => 'any',
     'conditions' =>
         [
-                [
-                    'type' => Found::class,
-                    'attribute' => null,
-                    'operator' => null,
-                    'value' => '1',
-                    'is_value_processed' => null,
-                    'aggregator' => 'all',
-                    'conditions' =>
+            [
+                'type' => Found::class,
+                'attribute' => null,
+                'operator' => null,
+                'value' => '1',
+                'is_value_processed' => null,
+                'aggregator' => 'all',
+                'conditions' =>
+                    [
                         [
-                                [
-                                    'type' => Product::class,
-                                    'attribute' => 'category_ids',
-                                    'operator' => '==',
-                                    'value' => '2',
-                                    'is_value_processed' => false,
-                                ],
+                            'type' => Product::class,
+                            'attribute' => 'category_ids',
+                            'operator' => '==',
+                            'value' => '2',
+                            'is_value_processed' => false,
                         ],
-                ],
-                [
-                    'type' => Address::class,
-                    'attribute' => 'payment_method',
-                    'operator' => '==',
-                    'value' => 'payflowpro'
-                ],                [
-                    'type' => Address::class,
-                    'attribute' => 'shipping_method',
-                    'operator' => '==',
-                    'value' => 'fedex_FEDEX_2_DAY'
-                ],
-                [
-                    'type' => Address::class,
-                    'attribute' => 'postcode',
-                    'operator' => '==',
-                    'value' => '78000'
-                ],
-                [
-                    'type' => Address::class,
-                    'attribute' => 'region',
-                    'operator' => '==',
-                    'value' => 'HD'
-                ],
-                [
-                    'type' => Address::class,
-                    'attribute' => 'region_id',
-                    'operator' => '==',
-                    'value' => '56'
-                ],
-                [
-                    'type' => Address::class,
-                    'attribute' => 'country_id',
-                    'operator' => '==',
-                    'value' => 'US'
-                ]
+                    ],
+            ],
+            [
+                'type' => Address::class,
+                'attribute' => 'payment_method',
+                'operator' => '==',
+                'value' => 'payflowpro'
+            ], [
+            'type' => Address::class,
+            'attribute' => 'shipping_method',
+            'operator' => '==',
+            'value' => 'fedex_FEDEX_2_DAY'
+        ],
+            [
+                'type' => Address::class,
+                'attribute' => 'postcode',
+                'operator' => '==',
+                'value' => '78000'
+            ],
+            [
+                'type' => Address::class,
+                'attribute' => 'region',
+                'operator' => '==',
+                'value' => 'HD'
+            ],
+            [
+                'type' => Address::class,
+                'attribute' => 'region_id',
+                'operator' => '==',
+                'value' => '56'
+            ],
+            [
+                'type' => Address::class,
+                'attribute' => 'country_id',
+                'operator' => '==',
+                'value' => 'US'
+            ]
         ],
 ]);
 

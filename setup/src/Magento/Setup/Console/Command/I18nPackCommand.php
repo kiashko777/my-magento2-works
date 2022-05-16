@@ -3,8 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Console\Command;
 
+use InvalidArgumentException;
+use Magento\Framework\Console\Cli;
 use Magento\Setup\Module\I18n\ServiceLocator;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -74,14 +77,14 @@ class I18nPackCommand extends Command
 
     /**
      * {@inheritdoc}
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $generator = ServiceLocator::getPackGenerator();
         $mode = $input->getOption(self::INPUT_KEY_MODE);
         if ($mode !== self::MODE_MERGE && $mode !== self::MODE_REPLACE) {
-            throw new \InvalidArgumentException("Possible values for 'mode' option are 'replace' and 'merge'");
+            throw new InvalidArgumentException("Possible values for 'mode' option are 'replace' and 'merge'");
         }
         $locale = $input->getArgument(self::INPUT_KEY_LOCALE);
         $generator->generate(
@@ -91,6 +94,6 @@ class I18nPackCommand extends Command
             $input->getOption(self::INPUT_KEY_ALLOW_DUPLICATES)
         );
         $output->writeln("<info>Successfully saved $locale language package.</info>");
-        return \Magento\Framework\Console\Cli::RETURN_SUCCESS;
+        return Cli::RETURN_SUCCESS;
     }
 }

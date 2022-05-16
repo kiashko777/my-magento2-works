@@ -5,6 +5,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\App;
 
 use Magento\Framework\App\Config\ScopeCodeResolver;
@@ -28,32 +29,6 @@ class Config extends \Magento\Framework\App\Config
     private $scopeCodeResolver;
 
     /**
-     * Initialize data object with all settings data
-     *
-     * @param array $data
-     * @param string $configType
-     * @return void
-     */
-    private function setData(array $data, $configType)
-    {
-        $this->data[$configType] = new DataObject($data);
-    }
-
-    /**
-     * Retrieve Scope Code Resolver
-     *
-     * @return ScopeCodeResolver
-     */
-    private function getScopeCodeResolver()
-    {
-        if (!$this->scopeCodeResolver) {
-            $this->scopeCodeResolver = ObjectManager::getInstance()->get(ScopeCodeResolver::class);
-        }
-
-        return $this->scopeCodeResolver;
-    }
-
-    /**
      * Set config value in the corresponding config scope
      *
      * @param string $path
@@ -67,7 +42,8 @@ class Config extends \Magento\Framework\App\Config
         $value,
         $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
         $scopeCode = null
-    ) {
+    )
+    {
         $result = $this->get('system');
 
         if ($scope === 'store') {
@@ -92,6 +68,33 @@ class Config extends \Magento\Framework\App\Config
     }
 
     /**
+     * @inheritdoc
+     */
+    public function get($configType, $path = null, $default = null)
+    {
+        $path = $path === null ? '' : $path;
+        if (!isset($this->data[$configType]) || $this->data[$configType]->getData($path) === null) {
+            return parent::get($configType, $path, $default);
+        }
+
+        return $this->data[$configType]->getData($path);
+    }
+
+    /**
+     * Retrieve Scope Code Resolver
+     *
+     * @return ScopeCodeResolver
+     */
+    private function getScopeCodeResolver()
+    {
+        if (!$this->scopeCodeResolver) {
+            $this->scopeCodeResolver = ObjectManager::getInstance()->get(ScopeCodeResolver::class);
+        }
+
+        return $this->scopeCodeResolver;
+    }
+
+    /**
      * Recursively update results in global variable, which hold configs
      *
      * @param array $keys
@@ -99,7 +102,7 @@ class Config extends \Magento\Framework\App\Config
      * @param mixed $value
      * @return void
      */
-    private function updateResult(array $keys, & $result, $value)
+    private function updateResult(array $keys, &$result, $value)
     {
         $key = array_shift($keys);
 
@@ -108,6 +111,18 @@ class Config extends \Magento\Framework\App\Config
         } else {
             $this->updateResult($keys, $result[$key], $value);
         }
+    }
+
+    /**
+     * Initialize data object with all settings data
+     *
+     * @param array $data
+     * @param string $configType
+     * @return void
+     */
+    private function setData(array $data, $configType)
+    {
+        $this->data[$configType] = new DataObject($data);
     }
 
     /**
@@ -120,18 +135,5 @@ class Config extends \Magento\Framework\App\Config
         $this->data = null;
         $this->scopeCodeResolver = null;
         parent::clean();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function get($configType, $path = null, $default = null)
-    {
-        $path = $path === null ? '' : $path;
-        if (!isset($this->data[$configType]) || $this->data[$configType]->getData($path) === null) {
-            return parent::get($configType, $path, $default);
-        }
-
-        return $this->data[$configType]->getData($path);
     }
 }

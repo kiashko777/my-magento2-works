@@ -6,13 +6,15 @@
 
 namespace Magento\Setup\Model\FixtureGenerator;
 
+use Magento\Framework\App\ResourceConnection;
+
 /**
  * Class provides information about MySQL auto_increment configuration setting.
  */
 class AutoIncrement
 {
     /**
-     * @var \Magento\Framework\App\ResourceConnection
+     * @var ResourceConnection
      */
     private $resource;
 
@@ -22,9 +24,9 @@ class AutoIncrement
     private $incrementValue;
 
     /**
-     * @param \Magento\Framework\App\ResourceConnection $resource
+     * @param ResourceConnection $resource
      */
-    public function __construct(\Magento\Framework\App\ResourceConnection $resource)
+    public function __construct(ResourceConnection $resource)
     {
         $this->resource = $resource;
     }

@@ -3,52 +3,26 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Backend\Block\System\Store\Edit\Form;
+
+use Magento\Framework\Registry;
+use Magento\Framework\View\Layout;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppIsolation enabled
  * @magentoAppArea Adminhtml
  */
-class StoreTest extends \PHPUnit\Framework\TestCase
+class StoreTest extends TestCase
 {
     /**
-     * @var \Magento\Backend\Block\System\Store\Edit\Form\Store
+     * @var Store
      */
     protected $_block;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $registryData = [
-            'store_type' => 'store',
-            'store_data' => \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-                \Magento\Store\Model\Store::class
-            ),
-            'store_action' => 'add',
-        ];
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        foreach ($registryData as $key => $value) {
-            $objectManager->get(\Magento\Framework\Registry::class)->register($key, $value);
-        }
-
-        /** @var $layout \Magento\Framework\View\Layout */
-        $layout = $objectManager->get(\Magento\Framework\View\LayoutInterface::class);
-
-        $this->_block = $layout->createBlock(\Magento\Backend\Block\System\Store\Edit\Form\Store::class);
-
-        $this->_block->toHtml();
-    }
-
-    protected function tearDown(): void
-    {
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $objectManager->get(\Magento\Framework\Registry::class)->unregister('store_type');
-        $objectManager->get(\Magento\Framework\Registry::class)->unregister('store_data');
-        $objectManager->get(\Magento\Framework\Registry::class)->unregister('store_action');
-    }
 
     public function testPrepareForm()
     {
@@ -56,5 +30,39 @@ class StoreTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('store_fieldset', $form->getElement('store_fieldset')->getId());
         $this->assertEquals('store_name', $form->getElement('store_name')->getId());
         $this->assertEquals('store', $form->getElement('store_type')->getValue());
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $registryData = [
+            'store_type' => 'store',
+            'store_data' => Bootstrap::getObjectManager()->create(
+                \Magento\Store\Model\Store::class
+            ),
+            'store_action' => 'add',
+        ];
+        /** @var $objectManager ObjectManager */
+        $objectManager = Bootstrap::getObjectManager();
+        foreach ($registryData as $key => $value) {
+            $objectManager->get(Registry::class)->register($key, $value);
+        }
+
+        /** @var $layout Layout */
+        $layout = $objectManager->get(LayoutInterface::class);
+
+        $this->_block = $layout->createBlock(Store::class);
+
+        $this->_block->toHtml();
+    }
+
+    protected function tearDown(): void
+    {
+        /** @var $objectManager ObjectManager */
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->get(Registry::class)->unregister('store_type');
+        $objectManager->get(Registry::class)->unregister('store_data');
+        $objectManager->get(Registry::class)->unregister('store_action');
     }
 }

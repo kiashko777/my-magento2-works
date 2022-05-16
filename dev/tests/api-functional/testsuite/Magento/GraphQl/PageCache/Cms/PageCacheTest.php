@@ -23,17 +23,6 @@ class PageCacheTest extends GraphQlAbstract
     private $pageByIdentifier;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->markTestSkipped(
-            'This test will stay skipped until DEVOPS-4924 is resolved'
-        );
-        $this->pageByIdentifier = Bootstrap::getObjectManager()->get(GetPageByIdentifier::class);
-    }
-
-    /**
      * Test that X-Magento-Tags are correct
      *
      * @magentoApiDataFixture Magento/Cms/_files/pages.php
@@ -42,7 +31,7 @@ class PageCacheTest extends GraphQlAbstract
     {
         $pageIdentifier = 'page100';
         $page = $this->pageByIdentifier->execute($pageIdentifier, 0);
-        $pageId = (int) $page->getId();
+        $pageId = (int)$page->getId();
 
         $query = $this->getPageQuery($pageId);
 
@@ -56,6 +45,26 @@ class PageCacheTest extends GraphQlAbstract
     }
 
     /**
+     * Get page query
+     *
+     * @param int $pageId
+     * @return string
+     */
+    private function getPageQuery(int $pageId): string
+    {
+        $query = <<<QUERY
+{
+    cmsPage(id: $pageId) {
+        title
+   	    url_key
+        content
+    }
+}
+QUERY;
+        return $query;
+    }
+
+    /**
      * Test the second request for the same page will return a cached result
      *
      * @magentoApiDataFixture Magento/Cms/_files/pages.php
@@ -64,7 +73,7 @@ class PageCacheTest extends GraphQlAbstract
     {
         $pageIdentifier = 'page100';
         $page = $this->pageByIdentifier->execute($pageIdentifier, 0);
-        $pageId = (int) $page->getId();
+        $pageId = (int)$page->getId();
 
         $query = $this->getPageQuery($pageId);
 
@@ -93,10 +102,10 @@ class PageCacheTest extends GraphQlAbstract
     {
         $page100Identifier = 'page100';
         $page100 = $this->pageByIdentifier->execute($page100Identifier, 0);
-        $page100Id = (int) $page100->getId();
+        $page100Id = (int)$page100->getId();
         $pageBlankIdentifier = 'page_design_blank';
         $pageBlank = $this->pageByIdentifier->execute($pageBlankIdentifier, 0);
-        $pageBlankId = (int) $pageBlank->getId();
+        $pageBlankId = (int)$pageBlank->getId();
 
         $page100Query = $this->getPageQuery($page100Id);
         $pageBlankQuery = $this->getPageQuery($pageBlankId);
@@ -132,22 +141,13 @@ class PageCacheTest extends GraphQlAbstract
     }
 
     /**
-     * Get page query
-     *
-     * @param int $pageId
-     * @return string
+     * @inheritdoc
      */
-    private function getPageQuery(int $pageId): string
+    protected function setUp(): void
     {
-        $query = <<<QUERY
-{   
-    cmsPage(id: $pageId) {    
-        title
-   	    url_key
-        content
-    }
-}
-QUERY;
-        return $query;
+        $this->markTestSkipped(
+            'This test will stay skipped until DEVOPS-4924 is resolved'
+        );
+        $this->pageByIdentifier = Bootstrap::getObjectManager()->get(GetPageByIdentifier::class);
     }
 }

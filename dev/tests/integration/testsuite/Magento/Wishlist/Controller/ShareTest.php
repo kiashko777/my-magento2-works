@@ -38,23 +38,6 @@ class ShareTest extends AbstractController
     }
 
     /**
-     * Test share wishlist with incorrect data
-     *
-     * @magentoDataFixture Magento/Wishlist/_files/wishlist.php
-     */
-    public function testShareWishlistWithoutEmails()
-    {
-        $this->login(1);
-        $this->prepareRequestData(true);
-        $this->dispatch('wishlist/index/send/');
-
-        $this->assertSessionMessages(
-            $this->equalTo(['Please enter an email address.']),
-            MessageInterface::TYPE_ERROR
-        );
-    }
-
-    /**
      * Login the user
      *
      * @param string $customerId Customer to mark as logged in for the session
@@ -88,5 +71,22 @@ class ShareTest extends AbstractController
 
         $this->getRequest()->setMethod(Request::METHOD_POST);
         $this->getRequest()->setPostValue($post);
+    }
+
+    /**
+     * Test share wishlist with incorrect data
+     *
+     * @magentoDataFixture Magento/Wishlist/_files/wishlist.php
+     */
+    public function testShareWishlistWithoutEmails()
+    {
+        $this->login(1);
+        $this->prepareRequestData(true);
+        $this->dispatch('wishlist/index/send/');
+
+        $this->assertSessionMessages(
+            $this->equalTo(['Please enter an email address.']),
+            MessageInterface::TYPE_ERROR
+        );
     }
 }

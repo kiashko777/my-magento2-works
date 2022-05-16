@@ -7,17 +7,62 @@
 namespace Magento\Framework\Code\Generator;
 
 use Magento\Framework\Code\Generator;
-use Magento\Framework\Logger\Monolog as MagentoMonologLogger;
 use Magento\TestFramework\ObjectManager;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject as MockObject;
+use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * @magentoAppIsolation enabled
  */
 class AutoloaderTest extends TestCase
 {
+    public function testLogsExceptionDuringGeneration(): void
+    {
+        $exceptionMessage = 'Test exception thrown during generation';
+        $testException = new RuntimeException($exceptionMessage);
+
+        $loggerMock = ObjectManager::getInstance()->get(LoggerInterface::class);
+        $loggerMock->expects($this->once())->method('debug')->with($exceptionMessage, ['exception' => $testException]);
+
+        $autoloader = new Autoloader($this->createExceptionThrowingGeneratorTestDouble($testException));
+        $this->assertNull($autoloader->load(NonExistingClassName::class));
+    }
+
+    /**
+     * @param RuntimeException $testException
+     * @return Generator|MockObject
+     */
+    private function createExceptionThrowingGeneratorTestDouble(RuntimeException $testException)
+    {
+        /** @var Generator|MockObject $generatorStub */
+        $generatorStub = $this->createMock(Generator::class);
+        $generatorStub->method('generateClass')->willThrowException($testException);
+
+        return $generatorStub;
+    }
+
+    public function testFiltersDuplicateExceptionMessages(): void
+    {
+        $exceptionMessage = 'Test exception thrown during generation';
+        $testException = new RuntimeException($exceptionMessage);
+
+        $loggerMock = ObjectManager::getInstance()->get(LoggerInterface::class);
+        $loggerMock->expects($this->once())->method('debug')->with($exceptionMessage, ['exception' => $testException]);
+
+        $autoloader = new Autoloader($this->createExceptionThrowingGeneratorTestDouble($testException));
+        $autoloader->load(OneNonExistingClassName::class);
+        $autoloader->load(AnotherNonExistingClassName::class);
+    }
+
+    protected function setUp(): void
+    {
+        $loggerTestDouble = $this->createMock(LoggerInterface::class);
+        $this->getTestFrameworkObjectManager()->addSharedInstance($loggerTestDouble, LoggerInterface::class, true);
+        // magentoAppIsolation will cleanup the mess
+    }
+
     /**
      * This method exists to fix the wrong return type hint on \Magento\Framework\App\ObjectManager::getInstance.
      * This way the IDE knows it's dealing with an instance of \Magento\TestFramework\ObjectManager and
@@ -29,50 +74,5 @@ class AutoloaderTest extends TestCase
     private function getTestFrameworkObjectManager()
     {
         return ObjectManager::getInstance();
-    }
-
-    protected function setUp(): void
-    {
-        $loggerTestDouble = $this->createMock(LoggerInterface::class);
-        $this->getTestFrameworkObjectManager()->addSharedInstance($loggerTestDouble, LoggerInterface::class, true);
-        // magentoAppIsolation will cleanup the mess
-    }
-
-    /**
-     * @param \RuntimeException $testException
-     * @return Generator|MockObject
-     */
-    private function createExceptionThrowingGeneratorTestDouble(\RuntimeException $testException)
-    {
-        /** @var Generator|MockObject $generatorStub */
-        $generatorStub = $this->createMock(Generator::class);
-        $generatorStub->method('generateClass')->willThrowException($testException);
-
-        return $generatorStub;
-    }
-
-    public function testLogsExceptionDuringGeneration(): void
-    {
-        $exceptionMessage = 'Test exception thrown during generation';
-        $testException = new \RuntimeException($exceptionMessage);
-
-        $loggerMock = ObjectManager::getInstance()->get(LoggerInterface::class);
-        $loggerMock->expects($this->once())->method('debug')->with($exceptionMessage, ['exception' => $testException]);
-
-        $autoloader = new Autoloader($this->createExceptionThrowingGeneratorTestDouble($testException));
-        $this->assertNull($autoloader->load(NonExistingClassName::class));
-    }
-
-    public function testFiltersDuplicateExceptionMessages(): void
-    {
-        $exceptionMessage = 'Test exception thrown during generation';
-        $testException = new \RuntimeException($exceptionMessage);
-
-        $loggerMock = ObjectManager::getInstance()->get(LoggerInterface::class);
-        $loggerMock->expects($this->once())->method('debug')->with($exceptionMessage, ['exception' => $testException]);
-
-        $autoloader = new Autoloader($this->createExceptionThrowingGeneratorTestDouble($testException));
-        $autoloader->load(OneNonExistingClassName::class);
-        $autoloader->load(AnotherNonExistingClassName::class);
     }
 }

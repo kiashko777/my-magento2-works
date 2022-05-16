@@ -31,9 +31,10 @@ class GetAttributeSetByName
      * @param AttributeSetRepositoryInterface $attributeSetRepository
      */
     public function __construct(
-        SearchCriteriaBuilder $searchCriteriaBuilder,
+        SearchCriteriaBuilder           $searchCriteriaBuilder,
         AttributeSetRepositoryInterface $attributeSetRepository
-    ) {
+    )
+    {
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
         $this->attributeSetRepository = $attributeSetRepository;
     }

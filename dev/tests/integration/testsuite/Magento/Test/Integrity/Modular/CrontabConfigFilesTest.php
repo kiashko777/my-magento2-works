@@ -3,7 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Modular;
+
+use Magento\Cron\Model\Config\SchemaLocator;
+use Magento\Framework\App\Utility\Files;
+use Magento\TestFramework\Helper\Bootstrap;
 
 class CrontabConfigFilesTest extends AbstractMergedConfigTest
 {
@@ -26,12 +31,12 @@ class CrontabConfigFilesTest extends AbstractMergedConfigTest
     protected function getMergedSchemaFile()
     {
 
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        return $objectManager->get(\Magento\Cron\Model\Config\SchemaLocator::class)->getSchema();
+        $objectManager = Bootstrap::getObjectManager();
+        return $objectManager->get(SchemaLocator::class)->getSchema();
     }
 
     protected function getConfigFiles()
     {
-        return \Magento\Framework\App\Utility\Files::init()->getConfigFiles('crontab.xml');
+        return Files::init()->getConfigFiles('crontab.xml');
     }
 }

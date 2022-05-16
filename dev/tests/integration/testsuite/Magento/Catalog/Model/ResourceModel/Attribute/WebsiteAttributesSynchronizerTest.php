@@ -12,12 +12,13 @@ use Magento\Catalog\Model\Product\Attribute\Source\Status as AttributeStatus;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Store\Api\StoreRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class WebsiteAttributesSynchronizerTest
  * @package Magento\Catalog\Model\ResourceModel\Attribute
  */
-class WebsiteAttributesSynchronizerTest extends \PHPUnit\Framework\TestCase
+class WebsiteAttributesSynchronizerTest extends TestCase
 {
     const PRODUCT_ID = 333;
     const PRODUCT_NOT_EDIT_MODE = false;
@@ -41,16 +42,6 @@ class WebsiteAttributesSynchronizerTest extends \PHPUnit\Framework\TestCase
     private $storeRepository;
 
     /**
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->storeRepository = $this->objectManager->get(StoreRepositoryInterface::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/Model/ResourceModel/_files/website_attribute_sync_flag.php
      * @magentoDbIsolation disabled
      */
@@ -60,6 +51,14 @@ class WebsiteAttributesSynchronizerTest extends \PHPUnit\Framework\TestCase
         $this->assertFalse($instance->isSynchronizationRequired());
         $instance->scheduleSynchronization();
         $this->assertTrue($instance->isSynchronizationRequired());
+    }
+
+    /**
+     * @return WebsiteAttributesSynchronizer
+     */
+    private function getWebsiteAttributesSynchronizer()
+    {
+        return $this->objectManager->get(WebsiteAttributesSynchronizer::class);
     }
 
     /**
@@ -111,10 +110,12 @@ class WebsiteAttributesSynchronizerTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @return WebsiteAttributesSynchronizer
+     * @return void
      */
-    private function getWebsiteAttributesSynchronizer()
+    protected function setUp(): void
     {
-        return $this->objectManager->get(WebsiteAttributesSynchronizer::class);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->storeRepository = $this->objectManager->get(StoreRepositoryInterface::class);
     }
 }

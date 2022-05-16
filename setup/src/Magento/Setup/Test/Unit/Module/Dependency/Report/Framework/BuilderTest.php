@@ -18,14 +18,6 @@ class BuilderTest extends TestCase
      */
     protected $builder;
 
-    protected function setUp(): void
-    {
-        $objectManagerHelper = new ObjectManager($this);
-        $this->builder = $objectManagerHelper->getObject(
-            Builder::class
-        );
-    }
-
     /**
      * @param array $options
      * @dataProvider dataProviderWrongOptionConfigFiles
@@ -51,5 +43,13 @@ class BuilderTest extends TestCase
             ],
             [['parse' => ['files_for_parse' => [1, 2]], 'write' => [1, 2]]]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $objectManagerHelper = new ObjectManager($this);
+        $this->builder = $objectManagerHelper->getObject(
+            Builder::class
+        );
     }
 }

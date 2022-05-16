@@ -3,13 +3,25 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\App\Language;
 
-use Magento\Framework\App\Utility\Files;
 use Magento\Framework\Component\ComponentRegistrar;
+use Magento\Setup\Module\I18n\Context;
 use Magento\Setup\Module\I18n\Dictionary\Options\ResolverFactory;
+use Magento\Setup\Module\I18n\Dictionary\Phrase;
+use Magento\Setup\Module\I18n\Factory;
+use Magento\Setup\Module\I18n\FilesCollector;
 use Magento\Setup\Module\I18n\Locale;
 use Magento\Setup\Module\I18n\Pack\Writer\File\Csv;
+use Magento\Setup\Module\I18n\Parser\Adapter\Html;
+use Magento\Setup\Module\I18n\Parser\Adapter\Js;
+use Magento\Setup\Module\I18n\Parser\Adapter\Php;
+use Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer;
+use Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer\PhraseCollector;
+use Magento\Setup\Module\I18n\Parser\Adapter\Xml;
+use Magento\Setup\Module\I18n\Parser\Contextual;
+use RuntimeException;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
@@ -19,7 +31,7 @@ class TranslationFilesTest extends TranslationFiles
     /**
      * Context
      *
-     * @var \Magento\Setup\Module\I18n\Context
+     * @var Context
      */
     protected $context;
 
@@ -45,7 +57,7 @@ class TranslationFilesTest extends TranslationFiles
 
     /**
      * @return array
-     * @throws \RuntimeException
+     * @throws RuntimeException
      */
     public function defaultLocaleDataProvider()
     {
@@ -59,7 +71,7 @@ class TranslationFilesTest extends TranslationFiles
         $defaultLocale = [];
         foreach ($parser->getPhrases() as $key => $phrase) {
             if (!$phrase->getContextType() || !$phrase->getContextValue()) {
-                throw new \RuntimeException(sprintf('Missed context in row #%d.', $key + 1));
+                throw new RuntimeException(sprintf('Missed context in row #%d.', $key + 1));
             }
             foreach ($phrase->getContextValue() as $context) {
                 $phraseText = $this->eliminateSpecialChars($phrase->getPhrase());
@@ -73,48 +85,26 @@ class TranslationFilesTest extends TranslationFiles
     }
 
     /**
-     * @param \Magento\Setup\Module\I18n\Dictionary\Phrase $phrase
-     * @param array $context
-     * @return string
-     */
-    protected function buildFilePath($phrase, $context)
-    {
-        $path = $this->getContext()->buildPathToLocaleDirectoryByContext($phrase->getContextType(), $context);
-        return $path . Locale::DEFAULT_SYSTEM_LOCALE . '.' . Csv::FILE_EXTENSION;
-    }
-
-    /**
-     * @return \Magento\Setup\Module\I18n\Context
-     */
-    protected function getContext()
-    {
-        if ($this->context === null) {
-            $this->context = new \Magento\Setup\Module\I18n\Context(new ComponentRegistrar());
-        }
-        return $this->context;
-    }
-
-    /**
-     * @return \Magento\Setup\Module\I18n\Parser\Contextual
+     * @return Contextual
      */
     protected function prepareParser()
     {
-        $filesCollector = new \Magento\Setup\Module\I18n\FilesCollector();
+        $filesCollector = new FilesCollector();
 
-        $phraseCollector = new \Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer\PhraseCollector(
-            new \Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer()
+        $phraseCollector = new PhraseCollector(
+            new Tokenizer()
         );
         $adapters = [
-            'php' => new \Magento\Setup\Module\I18n\Parser\Adapter\Php($phraseCollector),
-            'js' =>  new \Magento\Setup\Module\I18n\Parser\Adapter\Js(),
-            'xml' => new \Magento\Setup\Module\I18n\Parser\Adapter\Xml(),
-            'html' => new \Magento\Setup\Module\I18n\Parser\Adapter\Html(),
+            'php' => new Php($phraseCollector),
+            'js' => new Js(),
+            'xml' => new Xml(),
+            'html' => new Html(),
         ];
 
-        $parserContextual = new \Magento\Setup\Module\I18n\Parser\Contextual(
+        $parserContextual = new Contextual(
             $filesCollector,
-            new \Magento\Setup\Module\I18n\Factory(),
-            new \Magento\Setup\Module\I18n\Context(new ComponentRegistrar())
+            new Factory(),
+            new Context(new ComponentRegistrar())
         );
         foreach ($adapters as $type => $adapter) {
             $parserContextual->addAdapter($type, $adapter);
@@ -130,6 +120,28 @@ class TranslationFilesTest extends TranslationFiles
     protected function eliminateSpecialChars($text)
     {
         return preg_replace(['/\\\\\'/', '/\\\\\\\\/'], ['\'', '\\'], $text);
+    }
+
+    /**
+     * @param Phrase $phrase
+     * @param array $context
+     * @return string
+     */
+    protected function buildFilePath($phrase, $context)
+    {
+        $path = $this->getContext()->buildPathToLocaleDirectoryByContext($phrase->getContextType(), $context);
+        return $path . Locale::DEFAULT_SYSTEM_LOCALE . '.' . Csv::FILE_EXTENSION;
+    }
+
+    /**
+     * @return Context
+     */
+    protected function getContext()
+    {
+        if ($this->context === null) {
+            $this->context = new Context(new ComponentRegistrar());
+        }
+        return $this->context;
     }
 
     /**

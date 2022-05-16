@@ -6,41 +6,32 @@
 
 namespace Magento\Framework\Model\ResourceModel\Db;
 
-class AbstractTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\App\ResourceConnection;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
+use ReflectionProperty;
+
+class AbstractTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Model\ResourceModel\Db\AbstractDb
+     * @var AbstractDb
      */
     protected $_model;
 
-    protected function setUp(): void
-    {
-        $resource = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\App\ResourceConnection::class
-        );
-        $context = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\Model\ResourceModel\Db\Context::class,
-            ['resource' => $resource]
-        );
-        $this->_model = $this->getMockForAbstractClass(
-            \Magento\Framework\Model\ResourceModel\Db\AbstractDb::class,
-            ['context' => $context]
-        );
-    }
-
     public function testConstruct()
     {
-        $resourceProperty = new \ReflectionProperty(get_class($this->_model), '_resources');
+        $resourceProperty = new ReflectionProperty(get_class($this->_model), '_resources');
         $resourceProperty->setAccessible(true);
         $this->assertInstanceOf(
-            \Magento\Framework\App\ResourceConnection::class,
+            ResourceConnection::class,
             $resourceProperty->getValue($this->_model)
         );
     }
 
     public function testSetMainTable()
     {
-        $setMainTableMethod = new \ReflectionMethod($this->_model, '_setMainTable');
+        $setMainTableMethod = new ReflectionMethod($this->_model, '_setMainTable');
         $setMainTableMethod->setAccessible(true);
 
         $tableName = $this->_model->getTable('store_website');
@@ -58,21 +49,36 @@ class AbstractTest extends \PHPUnit\Framework\TestCase
     {
         $tableNameOrig = 'store_website';
         $tableSuffix = 'suffix';
-        $resource = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\App\ResourceConnection::class,
+        $resource = Bootstrap::getObjectManager()->create(
+            ResourceConnection::class,
             ['tablePrefix' => 'prefix_']
         );
-        $context = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\Model\ResourceModel\Db\Context::class,
+        $context = Bootstrap::getObjectManager()->create(
+            Context::class,
             ['resource' => $resource]
         );
 
         $model = $this->getMockForAbstractClass(
-            \Magento\Framework\Model\ResourceModel\Db\AbstractDb::class,
+            AbstractDb::class,
             ['context' => $context]
         );
 
         $tableName = $model->getTable([$tableNameOrig, $tableSuffix]);
         $this->assertEquals('prefix_store_website_suffix', $tableName);
+    }
+
+    protected function setUp(): void
+    {
+        $resource = Bootstrap::getObjectManager()->get(
+            ResourceConnection::class
+        );
+        $context = Bootstrap::getObjectManager()->create(
+            Context::class,
+            ['resource' => $resource]
+        );
+        $this->_model = $this->getMockForAbstractClass(
+            AbstractDb::class,
+            ['context' => $context]
+        );
     }
 }

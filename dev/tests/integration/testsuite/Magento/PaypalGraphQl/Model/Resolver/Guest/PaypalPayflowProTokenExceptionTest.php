@@ -8,9 +8,10 @@ declare(strict_types=1);
 namespace Magento\PaypalGraphQl\Model\Resolver\Guest;
 
 use Magento\Framework\GraphQl\Exception\GraphQlInputException;
-use Magento\PaypalGraphQl\PaypalPayflowProAbstractTest;
 use Magento\Framework\Serialize\SerializerInterface;
+use Magento\PaypalGraphQl\PaypalPayflowProAbstractTest;
 use Magento\Quote\Model\QuoteIdToMaskedQuoteId;
+use Zend_Http_Client_Exception;
 
 /**
  * Test PaypalPayflowProTokenExceptionTest graphql endpoint for guest
@@ -28,14 +29,6 @@ class PaypalPayflowProTokenExceptionTest extends PaypalPayflowProAbstractTest
      * @var QuoteIdToMaskedQuoteId
      */
     private $quoteIdToMaskedId;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->json = $this->objectManager->get(SerializerInterface::class);
-        $this->quoteIdToMaskedId = $this->objectManager->get(QuoteIdToMaskedQuoteId::class);
-    }
 
     /**
      * Test create paypal token for guest
@@ -60,7 +53,7 @@ class PaypalPayflowProTokenExceptionTest extends PaypalPayflowProAbstractTest
         $query = $this->getCreatePayflowTokenMutation($cartId);
 
         $expectedExceptionMessage = "Payment Gateway is unreachable at the moment. Please use another payment option.";
-        $expectedException = new \Zend_Http_Client_Exception($expectedExceptionMessage);
+        $expectedException = new Zend_Http_Client_Exception($expectedExceptionMessage);
 
         $this->gatewayMock
             ->method('postRequest')
@@ -74,5 +67,13 @@ class PaypalPayflowProTokenExceptionTest extends PaypalPayflowProAbstractTest
         $actualError = $responseData['errors'][0];
         $this->assertEquals($expectedExceptionMessage, $actualError['message']);
         $this->assertEquals(GraphQlInputException::EXCEPTION_CATEGORY, $actualError['extensions']['category']);
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->json = $this->objectManager->get(SerializerInterface::class);
+        $this->quoteIdToMaskedId = $this->objectManager->get(QuoteIdToMaskedQuoteId::class);
     }
 }

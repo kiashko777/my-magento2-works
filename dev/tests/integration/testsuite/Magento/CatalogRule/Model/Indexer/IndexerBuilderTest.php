@@ -3,36 +3,43 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogRule\Model\Indexer;
 
+use DateTime;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\ResourceModel\Product\Collection;
+use Magento\CatalogRule\Model\ResourceModel\Rule;
+use Magento\Framework\Registry;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class IndexerBuilderTest extends \PHPUnit\Framework\TestCase
+class IndexerBuilderTest extends TestCase
 {
     /**
-     * @var \Magento\CatalogRule\Model\Indexer\IndexBuilder
+     * @var IndexBuilder
      */
     protected $indexerBuilder;
 
     /**
-     * @var \Magento\CatalogRule\Model\ResourceModel\Rule
+     * @var Rule
      */
     protected $resourceRule;
 
     /**
-     * @var \Magento\Catalog\Model\Product
+     * @var Product
      */
     protected $product;
 
     /**
-     * @var \Magento\Catalog\Model\Product
+     * @var Product
      */
     protected $productSecond;
 
     /**
-     * @var \Magento\Catalog\Model\Product
+     * @var Product
      */
     protected $productThird;
 
@@ -45,38 +52,6 @@ class IndexerBuilderTest extends \PHPUnit\Framework\TestCase
      * @var ProductRepositoryInterface
      */
     private $productRepository;
-
-    protected function setUp(): void
-    {
-        $this->indexerBuilder = Bootstrap::getObjectManager()->get(
-            \Magento\CatalogRule\Model\Indexer\IndexBuilder::class
-        );
-        $this->resourceRule = Bootstrap::getObjectManager()->get(\Magento\CatalogRule\Model\ResourceModel\Rule::class);
-        $this->product = Bootstrap::getObjectManager()->get(\Magento\Catalog\Model\Product::class);
-        $this->storeManager = Bootstrap::getObjectManager()->get(StoreManagerInterface::class);
-        $this->productRepository = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class);
-    }
-
-    protected function tearDown(): void
-    {
-        /** @var \Magento\Framework\Registry $registry */
-        $registry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\Registry::class);
-
-        $registry->unregister('isSecureArea');
-        $registry->register('isSecureArea', true);
-
-        /** @var \Magento\Catalog\Model\ResourceModel\Product\Collection $productCollection */
-        $productCollection = Bootstrap::getObjectManager()->get(
-            \Magento\Catalog\Model\ResourceModel\Product\Collection::class
-        );
-        $productCollection->delete();
-
-        $registry->unregister('isSecureArea');
-        $registry->register('isSecureArea', false);
-
-        parent::tearDown();
-    }
 
     /**
      * @magentoDbIsolation disabled
@@ -93,7 +68,7 @@ class IndexerBuilderTest extends \PHPUnit\Framework\TestCase
 
         $this->indexerBuilder->reindexById($product->getId());
 
-        $this->assertEquals(9.8, $this->resourceRule->getRulePrice(new \DateTime(), 1, 1, $product->getId()));
+        $this->assertEquals(9.8, $this->resourceRule->getRulePrice(new DateTime(), 1, 1, $product->getId()));
     }
 
     /**
@@ -110,7 +85,7 @@ class IndexerBuilderTest extends \PHPUnit\Framework\TestCase
 
         $mainWebsiteId = $this->storeManager->getWebsite('base')->getId();
         $secondWebsiteId = $this->storeManager->getWebsite('test')->getId();
-        $rawTimestamp = (new \DateTime('+1 day'))->getTimestamp();
+        $rawTimestamp = (new DateTime('+1 day'))->getTimestamp();
         $timestamp = $rawTimestamp - ($rawTimestamp % (60 * 60 * 24));
         $mainWebsiteActiveRules =
             $this->resourceRule->getRulesFromProduct($timestamp, $mainWebsiteId, 1, $productId);
@@ -143,32 +118,12 @@ class IndexerBuilderTest extends \PHPUnit\Framework\TestCase
             ]
         );
 
-        $this->assertEquals(9.8, $this->resourceRule->getRulePrice(new \DateTime(), 1, 1, $this->product->getId()));
+        $this->assertEquals(9.8, $this->resourceRule->getRulePrice(new DateTime(), 1, 1, $this->product->getId()));
         $this->assertEquals(
             9.8,
-            $this->resourceRule->getRulePrice(new \DateTime(), 1, 1, $this->productSecond->getId())
+            $this->resourceRule->getRulePrice(new DateTime(), 1, 1, $this->productSecond->getId())
         );
-        $this->assertFalse($this->resourceRule->getRulePrice(new \DateTime(), 1, 1, $this->productThird->getId()));
-    }
-
-    /**
-     * @magentoDbIsolation disabled
-     * @magentoAppIsolation enabled
-     * @magentoDataFixtureBeforeTransaction Magento/CatalogRule/_files/attribute.php
-     * @magentoDataFixtureBeforeTransaction Magento/CatalogRule/_files/rule_by_attribute.php
-     * @magentoDataFixture Magento/Catalog/_files/product_simple.php
-     */
-    public function testReindexFull()
-    {
-        $this->prepareProducts();
-
-        $this->indexerBuilder->reindexFull();
-
-        $rulePrice = $this->resourceRule->getRulePrice(new \DateTime(), 1, 1, $this->product->getId());
-        $this->assertEquals(9.8, $rulePrice);
-        $rulePrice = $this->resourceRule->getRulePrice(new \DateTime(), 1, 1, $this->productSecond->getId());
-        $this->assertEquals(9.8, $rulePrice);
-        $this->assertFalse($this->resourceRule->getRulePrice(new \DateTime(), 1, 1, $this->productThird->getId()));
+        $this->assertFalse($this->resourceRule->getRulePrice(new DateTime(), 1, 1, $this->productThird->getId()));
     }
 
     protected function prepareProducts()
@@ -185,5 +140,57 @@ class IndexerBuilderTest extends \PHPUnit\Framework\TestCase
             ->setUrlKey('product-third')
             ->setData('test_attribute', 'NO_test_attribute_value')
             ->save();
+    }
+
+    /**
+     * @magentoDbIsolation disabled
+     * @magentoAppIsolation enabled
+     * @magentoDataFixtureBeforeTransaction Magento/CatalogRule/_files/attribute.php
+     * @magentoDataFixtureBeforeTransaction Magento/CatalogRule/_files/rule_by_attribute.php
+     * @magentoDataFixture Magento/Catalog/_files/product_simple.php
+     */
+    public function testReindexFull()
+    {
+        $this->prepareProducts();
+
+        $this->indexerBuilder->reindexFull();
+
+        $rulePrice = $this->resourceRule->getRulePrice(new DateTime(), 1, 1, $this->product->getId());
+        $this->assertEquals(9.8, $rulePrice);
+        $rulePrice = $this->resourceRule->getRulePrice(new DateTime(), 1, 1, $this->productSecond->getId());
+        $this->assertEquals(9.8, $rulePrice);
+        $this->assertFalse($this->resourceRule->getRulePrice(new DateTime(), 1, 1, $this->productThird->getId()));
+    }
+
+    protected function setUp(): void
+    {
+        $this->indexerBuilder = Bootstrap::getObjectManager()->get(
+            IndexBuilder::class
+        );
+        $this->resourceRule = Bootstrap::getObjectManager()->get(Rule::class);
+        $this->product = Bootstrap::getObjectManager()->get(Product::class);
+        $this->storeManager = Bootstrap::getObjectManager()->get(StoreManagerInterface::class);
+        $this->productRepository = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class);
+    }
+
+    protected function tearDown(): void
+    {
+        /** @var Registry $registry */
+        $registry = Bootstrap::getObjectManager()
+            ->get(Registry::class);
+
+        $registry->unregister('isSecureArea');
+        $registry->register('isSecureArea', true);
+
+        /** @var Collection $productCollection */
+        $productCollection = Bootstrap::getObjectManager()->get(
+            Collection::class
+        );
+        $productCollection->delete();
+
+        $registry->unregister('isSecureArea');
+        $registry->register('isSecureArea', false);
+
+        parent::tearDown();
     }
 }

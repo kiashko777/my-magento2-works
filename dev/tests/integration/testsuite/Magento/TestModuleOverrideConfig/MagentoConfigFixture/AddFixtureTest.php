@@ -22,16 +22,6 @@ class AddFixtureTest extends AbstractOverridesTest
     private $config;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->config = $this->objectManager->get(ScopeConfigInterface::class);
-    }
-
-    /**
      * Checks that fixture added in global node successfully applied
      *
      * @return void
@@ -98,5 +88,15 @@ class AddFixtureTest extends AbstractOverridesTest
     {
         $value = $this->config->getValue('test_section/test_group/field_1', ScopeInterface::SCOPE_WEBSITES, 'base');
         $this->assertEquals('overridden value for base website scope', $value);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->config = $this->objectManager->get(ScopeConfigInterface::class);
     }
 }

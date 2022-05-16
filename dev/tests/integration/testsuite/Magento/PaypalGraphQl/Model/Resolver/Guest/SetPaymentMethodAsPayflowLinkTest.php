@@ -36,14 +36,6 @@ class SetPaymentMethodAsPayflowLinkTest extends TestCase
     /** @var ObjectManager */
     private $objectManager;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->json = $this->objectManager->get(SerializerInterface::class);
-        $this->getMaskedQuoteIdByReservedOrderId = $this->objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->graphQlRequest = $this->objectManager->create(GraphQlRequest::class);
-    }
-
     /**
      * Test SetPayment method for payflow_link and validate that the additional information is set on the quote
      *
@@ -71,13 +63,13 @@ class SetPaymentMethodAsPayflowLinkTest extends TestCase
       cart_id: "$maskedCartId"
       payment_method: {
           code: "$paymentMethod"
-            payflow_link: {           
+            payflow_link: {
                return_url:"paypal/payflow/link/success"
                cancel_url:"paypal/payflow/link/cancel"
                error_url:"paypal/payflow/link/error"
             }
       }
-  }) {    
+  }) {
        cart {
           selected_payment_method {
           code
@@ -145,13 +137,13 @@ QUERY;
       cart_id: "$cartId"
       payment_method: {
           code: "$paymentMethod"
-            payflow_link: {           
+            payflow_link: {
                return_url:"http://magento.com/paypal/payflow/link/success"
                cancel_url:"paypal/payflow/link/cancel"
                error_url:"paypal/payflow/link/error"
             }
       }
-  }) {    
+  }) {
        cart {
           selected_payment_method {
           code
@@ -169,5 +161,13 @@ QUERY;
         $actualError = $responseData['errors'][0];
         $this->assertEquals($expectedExceptionMessage, $actualError['message']);
         $this->assertEquals(GraphQlInputException::EXCEPTION_CATEGORY, $actualError['extensions']['category']);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->json = $this->objectManager->get(SerializerInterface::class);
+        $this->getMaskedQuoteIdByReservedOrderId = $this->objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->graphQlRequest = $this->objectManager->create(GraphQlRequest::class);
     }
 }

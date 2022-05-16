@@ -7,6 +7,7 @@
 /**
  * Bootstrap of the HTTP environment
  */
+
 namespace Magento\TestFramework\Bootstrap;
 
 class Environment

@@ -4,15 +4,20 @@
  * See COPYING.txt for license details.
  */
 
-/** @var \Magento\Framework\Registry $registry */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-$registry = $objectManager->get(\Magento\Framework\Registry::class);
+/** @var Registry $registry */
+
+use Magento\Catalog\Model\ResourceModel\Product\Collection;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
+$registry = $objectManager->get(Registry::class);
 
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
-/** @var \Magento\Catalog\Model\ResourceModel\Product\Collection $collection */
-$collection = $objectManager->create(\Magento\Catalog\Model\ResourceModel\Product\Collection::class);
+/** @var Collection $collection */
+$collection = $objectManager->create(Collection::class);
 $collection->addAttributeToSelect('id')->load()->delete();
 
 $registry->unregister('isSecureArea');

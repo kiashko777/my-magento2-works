@@ -17,7 +17,8 @@ define([
          * Dummy constructor to use for instantiation
          * @constructor
          */
-        var Constr = function () {};
+        var Constr = function () {
+        };
 
         Constr.prototype = browser;
 

@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Deploy\Console\Command\App;
 
 use Magento\Deploy\Console\Command\App\SensitiveConfigSet\CollectorFactory;
@@ -16,6 +17,8 @@ use Magento\Framework\Config\File\ConfigFilePool;
 use Magento\Framework\Filesystem;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -23,7 +26,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class SensitiveConfigSetCommandTest extends \PHPUnit\Framework\TestCase
+class SensitiveConfigSetCommandTest extends TestCase
 {
     /**
      * @var ObjectManagerInterface
@@ -59,26 +62,6 @@ class SensitiveConfigSetCommandTest extends \PHPUnit\Framework\TestCase
      * @var Filesystem
      */
     private $filesystem;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->reader = $this->objectManager->get(FileReader::class);
-        $this->writer = $this->objectManager->get(Writer::class);
-        $this->configFilePool = $this->objectManager->get(ConfigFilePool::class);
-        $this->filesystem = $this->objectManager->get(Filesystem::class);
-
-        $this->envConfig = $this->loadEnvConfig();
-        $this->config = $this->loadConfig();
-
-        $this->filesystem->getDirectoryWrite(DirectoryList::CONFIG)->writeFile(
-            $this->configFilePool->getPath(ConfigFilePool::APP_CONFIG),
-            file_get_contents(__DIR__ . '/../../../_files/config.php')
-        );
-    }
 
     /**
      * @param $scope
@@ -129,6 +112,47 @@ class SensitiveConfigSetCommandTest extends \PHPUnit\Framework\TestCase
         $config = $this->loadEnvConfig();
 
         $assertCallback($config);
+    }
+
+    /**
+     * @param string|null $key
+     * @param string|null $val
+     * @param string $scope
+     * @param string|null $scopeCode
+     * @return InputInterface|MockObject
+     */
+    private function createInputMock($key, $val, $scope, $scopeCode)
+    {
+        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
+        $isInteractive = $key === null;
+
+        if (!$isInteractive) {
+            $inputMock->expects($this->exactly(2))
+                ->method('getArgument')
+                ->withConsecutive(
+                    [SensitiveConfigSetCommand::INPUT_ARGUMENT_PATH],
+                    [SensitiveConfigSetCommand::INPUT_ARGUMENT_VALUE]
+                )
+                ->willReturnOnConsecutiveCalls(
+                    $key,
+                    $val
+                );
+        }
+
+        $inputMock->expects($this->exactly(3))
+            ->method('getOption')
+            ->withConsecutive(
+                [SensitiveConfigSetCommand::INPUT_OPTION_SCOPE],
+                [SensitiveConfigSetCommand::INPUT_OPTION_SCOPE_CODE],
+                [SensitiveConfigSetCommand::INPUT_OPTION_INTERACTIVE]
+            )
+            ->willReturnOnConsecutiveCalls(
+                $scope,
+                $scopeCode,
+                $isInteractive
+            );
+
+        return $inputMock;
     }
 
     public function executeDataProvider()
@@ -202,6 +226,48 @@ class SensitiveConfigSetCommandTest extends \PHPUnit\Framework\TestCase
         $assertCallback($config);
     }
 
+    /**
+     * @param string|null $inputValue
+     * @return SensitiveConfigSetCommand
+     */
+    private function createInteractiveCommand($inputValue)
+    {
+        $questionHelperMock = $this->createMock(QuestionHelper::class);
+        $questionHelperMock->expects($this->exactly(3))
+            ->method('ask')
+            ->willReturn($inputValue);
+
+        $interactiveCollectorMock = $this->objectManager->create(
+            InteractiveCollector::class,
+            [
+                'questionHelper' => $questionHelperMock
+            ]
+        );
+        $collectorFactoryMock = $this->getMockBuilder(CollectorFactory::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $collectorFactoryMock->expects($this->once())
+            ->method('create')
+            ->with(CollectorFactory::TYPE_INTERACTIVE)
+            ->willReturn($interactiveCollectorMock);
+
+        /** @var SensitiveConfigSetCommand command */
+        $command = $this->objectManager->create(
+            SensitiveConfigSetCommand::class,
+            [
+                'facade' => $this->objectManager->create(
+                    SensitiveConfigSetFacade::class,
+                    [
+                        'collectorFactory' => $collectorFactoryMock
+                    ]
+                )
+            ]
+        );
+
+        return $command;
+    }
+
     public function executeInteractiveDataProvider()
     {
         return [
@@ -253,24 +319,21 @@ class SensitiveConfigSetCommandTest extends \PHPUnit\Framework\TestCase
     /**
      * @inheritdoc
      */
-    protected function tearDown(): void
+    protected function setUp(): void
     {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->reader = $this->objectManager->get(FileReader::class);
+        $this->writer = $this->objectManager->get(Writer::class);
+        $this->configFilePool = $this->objectManager->get(ConfigFilePool::class);
+        $this->filesystem = $this->objectManager->get(Filesystem::class);
+
+        $this->envConfig = $this->loadEnvConfig();
+        $this->config = $this->loadConfig();
+
         $this->filesystem->getDirectoryWrite(DirectoryList::CONFIG)->writeFile(
             $this->configFilePool->getPath(ConfigFilePool::APP_CONFIG),
-            "<?php\n return array();\n"
+            file_get_contents(__DIR__ . '/../../../_files/config.php')
         );
-        $this->filesystem->getDirectoryWrite(DirectoryList::CONFIG)->writeFile(
-            $this->configFilePool->getPath(ConfigFilePool::APP_ENV),
-            "<?php\n return array();\n"
-        );
-
-        /** @var Writer $writer */
-        $writer = $this->objectManager->get(Writer::class);
-        $writer->saveConfig([ConfigFilePool::APP_ENV => $this->envConfig]);
-
-        /** @var Writer $writer */
-        $writer = $this->objectManager->get(Writer::class);
-        $writer->saveConfig([ConfigFilePool::APP_CONFIG => $this->config]);
     }
 
     /**
@@ -290,85 +353,25 @@ class SensitiveConfigSetCommandTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @param string|null $key
-     * @param string|null $val
-     * @param string $scope
-     * @param string|null $scopeCode
-     * @return InputInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @inheritdoc
      */
-    private function createInputMock($key, $val, $scope, $scopeCode)
+    protected function tearDown(): void
     {
-        $inputMock = $this->getMockForAbstractClass(InputInterface::class);
-        $isInteractive = $key === null;
-        
-        if (!$isInteractive) {
-            $inputMock->expects($this->exactly(2))
-                ->method('getArgument')
-                ->withConsecutive(
-                    [SensitiveConfigSetCommand::INPUT_ARGUMENT_PATH],
-                    [SensitiveConfigSetCommand::INPUT_ARGUMENT_VALUE]
-                )
-                ->willReturnOnConsecutiveCalls(
-                    $key,
-                    $val
-                );
-        }
-
-        $inputMock->expects($this->exactly(3))
-            ->method('getOption')
-            ->withConsecutive(
-                [SensitiveConfigSetCommand::INPUT_OPTION_SCOPE],
-                [SensitiveConfigSetCommand::INPUT_OPTION_SCOPE_CODE],
-                [SensitiveConfigSetCommand::INPUT_OPTION_INTERACTIVE]
-            )
-            ->willReturnOnConsecutiveCalls(
-                $scope,
-                $scopeCode,
-                $isInteractive
-            );
-
-        return $inputMock;
-    }
-
-    /**
-     * @param string|null $inputValue
-     * @return SensitiveConfigSetCommand
-     */
-    private function createInteractiveCommand($inputValue)
-    {
-        $questionHelperMock = $this->createMock(QuestionHelper::class);
-        $questionHelperMock->expects($this->exactly(3))
-            ->method('ask')
-            ->willReturn($inputValue);
-
-        $interactiveCollectorMock = $this->objectManager->create(
-            InteractiveCollector::class,
-            [
-                'questionHelper' => $questionHelperMock
-            ]
+        $this->filesystem->getDirectoryWrite(DirectoryList::CONFIG)->writeFile(
+            $this->configFilePool->getPath(ConfigFilePool::APP_CONFIG),
+            "<?php\n return array();\n"
         );
-        $collectorFactoryMock = $this->getMockBuilder(CollectorFactory::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $collectorFactoryMock->expects($this->once())
-            ->method('create')
-            ->with(CollectorFactory::TYPE_INTERACTIVE)
-            ->willReturn($interactiveCollectorMock);
-
-        /** @var SensitiveConfigSetCommand command */
-        $command = $this->objectManager->create(
-            SensitiveConfigSetCommand::class,
-            [
-                'facade' => $this->objectManager->create(
-                    SensitiveConfigSetFacade::class,
-                    [
-                        'collectorFactory' => $collectorFactoryMock
-                    ]
-                )
-            ]
+        $this->filesystem->getDirectoryWrite(DirectoryList::CONFIG)->writeFile(
+            $this->configFilePool->getPath(ConfigFilePool::APP_ENV),
+            "<?php\n return array();\n"
         );
 
-        return $command;
+        /** @var Writer $writer */
+        $writer = $this->objectManager->get(Writer::class);
+        $writer->saveConfig([ConfigFilePool::APP_ENV => $this->envConfig]);
+
+        /** @var Writer $writer */
+        $writer = $this->objectManager->get(Writer::class);
+        $writer->saveConfig([ConfigFilePool::APP_CONFIG => $this->config]);
     }
 }

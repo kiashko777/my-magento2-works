@@ -3,12 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Paypal\Controller\Adminhtml\Billing\Agreement;
+
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class DeleteTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class DeleteTest extends AbstractBackendController
 {
     protected function setUp(): void
     {

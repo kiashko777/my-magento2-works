@@ -5,16 +5,20 @@
  */
 
 // refresh report statistics
-/** @var \Magento\SalesRule\Model\ResourceModel\Report\Rule $reportResource */
-$reportResource = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\SalesRule\Model\ResourceModel\Report\Rule::class
+/** @var Rule $reportResource */
+
+use Magento\SalesRule\Model\ResourceModel\Report\Rule;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$reportResource = Bootstrap::getObjectManager()->create(
+    Rule::class
 );
 $reportResource->beginTransaction();
 // prevent table truncation by incrementing the transaction nesting level counter
 try {
     $reportResource->aggregate();
     $reportResource->commit();
-} catch (\Exception $e) {
+} catch (Exception $e) {
     $reportResource->rollBack();
     throw $e;
 }

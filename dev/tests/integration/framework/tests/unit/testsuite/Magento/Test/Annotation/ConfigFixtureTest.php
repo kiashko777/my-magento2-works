@@ -11,7 +11,9 @@ use Magento\Store\Model\ScopeInterface;
 use Magento\TestFramework\Annotation\ConfigFixture;
 use Magento\TestFramework\App\MutableScopeConfig;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 /**
  * Test class for \Magento\TestFramework\Annotation\ConfigFixture.
@@ -19,31 +21,9 @@ use PHPUnit\Framework\TestCase;
 class ConfigFixtureTest extends TestCase
 {
     /**
-     * @var ConfigFixture|\PHPUnit\Framework\MockObject\MockObject
+     * @var ConfigFixture|MockObject
      */
     protected $object;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->object = $this->createPartialMock(
-            ConfigFixture::class,
-            [
-                '_getConfigValue',
-                '_setConfigValue',
-                'getScopeConfig',
-                'getMutableScopeConfig',
-                'setScopeConfigValue',
-                'getScopeConfigValue'
-            ]
-        );
-        $this->object->method('getMutableScopeConfig')
-            ->willReturn(
-                new MutableScopeConfig()
-            );
-    }
 
     /**
      * @magentoConfigFixture default/web/unsecure/base_url http://example.com/
@@ -81,6 +61,25 @@ class ConfigFixtureTest extends TestCase
             'http://localhost/'
         );
         $this->object->endTest($this);
+    }
+
+    /**
+     * Create mock for Resolver object
+     *
+     * @return void
+     */
+    private function createResolverMock(): void
+    {
+        $mock = $this->getMockBuilder(Resolver::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['applyConfigFixtures'])
+            ->getMock();
+        $mock->method('applyConfigFixtures')
+            ->willReturn($this->getAnnotations()['method'][$this->object::ANNOTATION]);
+        $reflection = new ReflectionClass(Resolver::class);
+        $reflectionProperty = $reflection->getProperty('instance');
+        $reflectionProperty->setAccessible(true);
+        $reflectionProperty->setValue(Resolver::class, $mock);
     }
 
     /**
@@ -294,21 +293,24 @@ class ConfigFixtureTest extends TestCase
     }
 
     /**
-     * Create mock for Resolver object
-     *
-     * @return void
+     * @inheritdoc
      */
-    private function createResolverMock(): void
+    protected function setUp(): void
     {
-        $mock = $this->getMockBuilder(Resolver::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['applyConfigFixtures'])
-            ->getMock();
-        $mock->method('applyConfigFixtures')
-            ->willReturn($this->getAnnotations()['method'][$this->object::ANNOTATION]);
-        $reflection = new \ReflectionClass(Resolver::class);
-        $reflectionProperty = $reflection->getProperty('instance');
-        $reflectionProperty->setAccessible(true);
-        $reflectionProperty->setValue(Resolver::class, $mock);
+        $this->object = $this->createPartialMock(
+            ConfigFixture::class,
+            [
+                '_getConfigValue',
+                '_setConfigValue',
+                'getScopeConfig',
+                'getMutableScopeConfig',
+                'setScopeConfigValue',
+                'getScopeConfigValue'
+            ]
+        );
+        $this->object->method('getMutableScopeConfig')
+            ->willReturn(
+                new MutableScopeConfig()
+            );
     }
 }

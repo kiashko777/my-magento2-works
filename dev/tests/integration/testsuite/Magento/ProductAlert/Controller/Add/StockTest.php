@@ -8,11 +8,12 @@ declare(strict_types=1);
 namespace Magento\ProductAlert\Controller\Add;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\Framework\App\ResourceConnection;
-use Magento\Framework\ObjectManagerInterface;
-use Magento\Framework\App\Action\Action;
-use Magento\Framework\Url\Helper\Data;
 use Magento\Customer\Model\Session;
+use Magento\Framework\App\Action\Action;
+use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\DB\Adapter\AdapterInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Url\Helper\Data;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\AbstractController;
@@ -26,49 +27,31 @@ use Magento\TestFramework\TestCase\AbstractController;
 class StockTest extends AbstractController
 {
     /**
+     * @var ResourceConnection
+     */
+    protected $resource;
+    /**
+     * Connection adapter
+     *
+     * @var AdapterInterface
+     */
+    protected $connectionMock;
+    /**
      * @var Session
      */
     private $customerSession;
-
     /**
      * @var ObjectManagerInterface
      */
     private $objectManager;
-
     /**
      * @var Data
      */
     private $dataUrlHelper;
-
-    /**
-     * @var ResourceConnection
-     */
-    protected $resource;
-
-    /**
-     * Connection adapter
-     *
-     * @var \Magento\Framework\DB\Adapter\AdapterInterface
-     */
-    protected $connectionMock;
-
     /**
      * @var ProductRepositoryInterface
      */
     private $productRepository;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->objectManager = Bootstrap::getObjectManager();
-
-        $this->customerSession = $this->objectManager->get(Session::class);
-        $this->dataUrlHelper = $this->objectManager->get(Data::class);
-
-        $this->resource = $this->objectManager->get(ResourceConnection::class);
-        $this->connectionMock = $this->resource->getConnection();
-        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
-    }
 
     /**
      * @magentoAppArea     frontend
@@ -89,7 +72,7 @@ class StockTest extends AbstractController
         $this->dispatch('productalert/add/stock');
 
         $select = $this->connectionMock->select()->from($this->resource->getTableName('product_alert_stock'))
-                                       ->where('`product_id` LIKE ?', $productId);
+            ->where('`product_id` LIKE ?', $productId);
         $result = $this->connectionMock->fetchAll($select);
         $this->assertCount(1, $result);
     }
@@ -99,7 +82,7 @@ class StockTest extends AbstractController
      *
      * @return string
      */
-    private function getUrlEncodedParameter($productId):string
+    private function getUrlEncodedParameter($productId): string
     {
         $baseUrl = $this->objectManager->get(StoreManagerInterface::class)->getStore()->getBaseUrl();
         $encodedParameterValue = urlencode(
@@ -107,5 +90,18 @@ class StockTest extends AbstractController
         );
 
         return $encodedParameterValue;
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->customerSession = $this->objectManager->get(Session::class);
+        $this->dataUrlHelper = $this->objectManager->get(Data::class);
+
+        $this->resource = $this->objectManager->get(ResourceConnection::class);
+        $this->connectionMock = $this->resource->getConnection();
+        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
     }
 }

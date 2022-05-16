@@ -20,12 +20,6 @@ class GiftMessageTest extends GraphQlAbstract
      */
     private $getMaskedQuoteIdByReservedOrderId;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-    }
-
     /**
      * @magentoConfigFixture default_store sales/gift_options/allow_order 1
      * @magentoApiDataFixture Magento/GiftMessage/_files/quote_with_message.php
@@ -40,6 +34,30 @@ class GiftMessageTest extends GraphQlAbstract
         self::assertSame('Mercutio', $response['cart']['gift_message']['to']);
         self::assertSame('Romeo', $response['cart']['gift_message']['from']);
         self::assertSame('I thought all for the best.', $response['cart']['gift_message']['message']);
+    }
+
+    /**
+     * Get Gift Message Assertion
+     *
+     * @param string $quoteId
+     *
+     * @return array
+     * @throws Exception
+     */
+    private function requestCartAndAssertResult(string $quoteId)
+    {
+        $query = <<<QUERY
+{
+    cart(cart_id: "$quoteId") {
+        gift_message {
+            to
+            from
+            message
+        }
+    }
+}
+QUERY;
+        return $this->graphQlQuery($query);
     }
 
     /**
@@ -70,27 +88,9 @@ class GiftMessageTest extends GraphQlAbstract
         self::assertNull($response['cart']['gift_message']);
     }
 
-    /**
-     * Get Gift Message Assertion
-     *
-     * @param string $quoteId
-     *
-     * @return array
-     * @throws Exception
-     */
-    private function requestCartAndAssertResult(string $quoteId)
+    protected function setUp(): void
     {
-        $query =  <<<QUERY
-{
-    cart(cart_id: "$quoteId") {
-        gift_message {
-            to
-            from
-            message
-        }
-    }
-}
-QUERY;
-        return $this->graphQlQuery($query);
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
     }
 }

@@ -4,22 +4,27 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Framework\DB\Transaction;
+use Magento\Sales\Api\InvoiceManagementInterface;
+use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\ShipmentFactory;
+use Magento\Sales\Model\Service\InvoiceService;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Sales/_files/order.php');
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 
-/** @var \Magento\Sales\Model\Order $order */
-$order = $objectManager->create(\Magento\Sales\Model\Order::class)
+/** @var Order $order */
+$order = $objectManager->create(Order::class)
     ->loadByIncrementId('100000001');
 
-/** @var \Magento\Sales\Model\Service\InvoiceService $invoiceService */
-$invoiceService = $objectManager->create(\Magento\Sales\Api\InvoiceManagementInterface::class);
+/** @var InvoiceService $invoiceService */
+$invoiceService = $objectManager->create(InvoiceManagementInterface::class);
 
-/** @var \Magento\Framework\DB\Transaction $transaction */
-$transaction = $objectManager->create(\Magento\Framework\DB\Transaction::class);
+/** @var Transaction $transaction */
+$transaction = $objectManager->create(Transaction::class);
 
 $order->setData(
     'base_to_global_rate',

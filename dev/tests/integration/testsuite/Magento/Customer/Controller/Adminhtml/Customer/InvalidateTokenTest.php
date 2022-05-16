@@ -24,16 +24,6 @@ class InvalidateTokenTest extends AbstractBackendController
     private $escaper;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->escaper = $this->_objectManager->get(Escaper::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Integration/_files/customer_with_integration_token.php
      *
      * @return void
@@ -75,5 +65,15 @@ class InvalidateTokenTest extends AbstractBackendController
         $this->assertRedirect($this->stringContains('backend/customer/index/index'));
         $message = $this->escaper->escapeHtml('We can\'t find a customer to revoke.');
         $this->assertSessionMessages($this->equalTo([(string)__($message)]), MessageInterface::TYPE_ERROR);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->escaper = $this->_objectManager->get(Escaper::class);
     }
 }

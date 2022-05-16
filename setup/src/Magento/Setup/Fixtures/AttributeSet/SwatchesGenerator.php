@@ -3,9 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Fixtures\AttributeSet;
 
-use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Setup\Fixtures\ImagesGenerator\ImagesGenerator;
+use Magento\Setup\Fixtures\ImagesGenerator\ImagesGeneratorFactory;
+use Magento\Swatches\Helper\Media;
 use Magento\Swatches\Model\Swatch;
 
 /**
@@ -35,28 +38,29 @@ class SwatchesGenerator
     const GENERATED_SWATCH_TMP_NAME = 'tmp_swatch.jpg';
 
     /**
-     * @var \Magento\Swatches\Helper\Media
+     * @var Media
      */
     private $swatchHelper;
 
     /**
-     * @var \Magento\Setup\Fixtures\ImagesGenerator\ImagesGeneratorFactory
+     * @var ImagesGeneratorFactory
      */
     private $imagesGeneratorFactory;
 
     /**
-     * @var \Magento\Setup\Fixtures\ImagesGenerator\ImagesGenerator
+     * @var ImagesGenerator
      */
     private $imagesGenerator;
 
     /**
-     * @param \Magento\Swatches\Helper\Media $swatchHelper
-     * @param \Magento\Setup\Fixtures\ImagesGenerator\ImagesGeneratorFactory $imagesGeneratorFactory
+     * @param Media $swatchHelper
+     * @param ImagesGeneratorFactory $imagesGeneratorFactory
      */
     public function __construct(
-        \Magento\Swatches\Helper\Media $swatchHelper,
-        \Magento\Setup\Fixtures\ImagesGenerator\ImagesGeneratorFactory $imagesGeneratorFactory
-    ) {
+        Media                                 $swatchHelper,
+        ImagesGeneratorFactory $imagesGeneratorFactory
+    )
+    {
         $this->swatchHelper = $swatchHelper;
         $this->imagesGeneratorFactory = $imagesGeneratorFactory;
     }
@@ -102,19 +106,6 @@ class SwatchesGenerator
     }
 
     /**
-     * Generate hex-coded color for Swatch Attribute based on provided index
-     *
-     * Colors will change gradually according to index value.
-     *
-     * @param int $index
-     * @return string
-     */
-    private function generateSwatchColor($index)
-    {
-        return '#' . str_repeat(dechex(255 * $index), 3);
-    }
-
-    /**
      * Generate and save image for Swatch Attribute
      *
      * Image is generated with a set background color rgb(240, 240, 240), random foreground color, and pattern which
@@ -141,5 +132,18 @@ class SwatchesGenerator
         $this->swatchHelper->generateSwatchVariations($imagePath);
 
         return $imagePath;
+    }
+
+    /**
+     * Generate hex-coded color for Swatch Attribute based on provided index
+     *
+     * Colors will change gradually according to index value.
+     *
+     * @param int $index
+     * @return string
+     */
+    private function generateSwatchColor($index)
+    {
+        return '#' . str_repeat(dechex(255 * $index), 3);
     }
 }

@@ -16,14 +16,6 @@ class Filesystem extends \Magento\Framework\Filesystem
     private $paths = [];
 
     /**
-     * {@inheritdoc}
-     */
-    protected function getDirPath($code)
-    {
-        return $this->getOverriddenPath($code, parent::getDirPath($code));
-    }
-
-    /**
      * Overrides a path to directory for testing purposes
      *
      * @param string $code
@@ -35,6 +27,14 @@ class Filesystem extends \Magento\Framework\Filesystem
         $this->paths[$code] = str_replace('\\', '/', $value);
         unset($this->readInstances[$code]);
         unset($this->writeInstances[$code]);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function getDirPath($code)
+    {
+        return $this->getOverriddenPath($code, parent::getDirPath($code));
     }
 
     /**

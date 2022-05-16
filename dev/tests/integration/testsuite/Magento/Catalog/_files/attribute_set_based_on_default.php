@@ -4,11 +4,15 @@
  * See COPYING.txt for license details.
  */
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\Catalog\Model\Product;
+use Magento\Eav\Model\Entity\Attribute\Set;
+use Magento\TestFramework\Helper\Bootstrap;
 
-$attributeSet = $objectManager->create(\Magento\Eav\Model\Entity\Attribute\Set::class);
+$objectManager = Bootstrap::getObjectManager();
+
+$attributeSet = $objectManager->create(Set::class);
 $entityType = $objectManager->create(\Magento\Eav\Model\Entity\Type::class)->loadByCode('catalog_product');
-$defaultSetId = $objectManager->create(\Magento\Catalog\Model\Product::class)->getDefaultAttributeSetid();
+$defaultSetId = $objectManager->create(Product::class)->getDefaultAttributeSetid();
 $data = [
     'attribute_set_name' => 'new_attribute_set',
     'entity_type_id' => $entityType->getId(),

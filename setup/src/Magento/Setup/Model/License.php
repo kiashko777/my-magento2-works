@@ -8,6 +8,7 @@ namespace Magento\Setup\Model;
 
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Filesystem;
+use Magento\Framework\Filesystem\Directory\ReadInterface;
 
 /**
  * License file reader
@@ -33,7 +34,7 @@ class License
     /**
      * Directory that contains license file
      *
-     * @var \Magento\Framework\Filesystem\Directory\ReadInterface
+     * @var ReadInterface
      */
     private $dir;
 

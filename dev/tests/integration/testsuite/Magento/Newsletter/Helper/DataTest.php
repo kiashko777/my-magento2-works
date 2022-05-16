@@ -3,25 +3,25 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Newsletter\Helper;
 
-class DataTest extends \PHPUnit\Framework\TestCase
+use Magento\Newsletter\Model\Subscriber;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
+
+class DataTest extends TestCase
 {
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     protected $_objectManager;
 
     /**
-     * @var \Magento\Newsletter\Model\Subscriber
+     * @var Subscriber
      */
     protected $_subscriber;
-
-    protected function setUp(): void
-    {
-        $this->_objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->_subscriber = $this->_objectManager->get(\Magento\Newsletter\Model\Subscriber::class);
-    }
 
     /**
      * @magentoAppIsolation enabled
@@ -29,7 +29,7 @@ class DataTest extends \PHPUnit\Framework\TestCase
     public function testGetConfirmationUrl()
     {
         $url = $this->_objectManager->get(
-            \Magento\Newsletter\Helper\Data::class
+            Data::class
         )->getConfirmationUrl($this->_subscriber);
         $this->assertTrue(strpos($url, 'newsletter/subscriber/confirm') > 0);
         $this->assertFalse(strpos($url, 'admin'));
@@ -41,9 +41,15 @@ class DataTest extends \PHPUnit\Framework\TestCase
     public function testGetUnsubscribeUrl()
     {
         $url = $this->_objectManager->get(
-            \Magento\Newsletter\Helper\Data::class
+            Data::class
         )->getUnsubscribeUrl($this->_subscriber);
         $this->assertTrue(strpos($url, 'newsletter/subscriber/unsubscribe') > 0);
         $this->assertFalse(strpos($url, 'admin'));
+    }
+
+    protected function setUp(): void
+    {
+        $this->_objectManager = Bootstrap::getObjectManager();
+        $this->_subscriber = $this->_objectManager->get(Subscriber::class);
     }
 }

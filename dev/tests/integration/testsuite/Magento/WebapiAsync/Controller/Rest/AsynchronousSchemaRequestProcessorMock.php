@@ -6,12 +6,14 @@
 
 namespace Magento\WebapiAsync\Controller\Rest;
 
+use Magento\Framework\Webapi\Rest\Request;
+
 class AsynchronousSchemaRequestProcessorMock extends AsynchronousSchemaRequestProcessor
 {
     /**
      * {@inheritdoc}
      */
-    public function canProcess(\Magento\Framework\Webapi\Rest\Request $request)
+    public function canProcess(Request $request)
     {
         return true;
     }

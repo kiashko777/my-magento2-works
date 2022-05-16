@@ -68,6 +68,78 @@ class DiCompileCommandTest extends TestCase
     /** @var Filesystem\Io\File|MockObject */
     private $fileMock;
 
+    public function testExecuteModulesNotEnabled()
+    {
+        $this->deploymentConfigMock->expects($this->once())
+            ->method('get')
+            ->with(ConfigOptionsListConstants::KEY_MODULES)
+            ->willReturn(null);
+        $tester = new CommandTester($this->command);
+        $tester->execute([]);
+        $this->assertEquals(
+            'You cannot run this command because modules are not enabled. You can enable modules by running the '
+            . "'module:enable --all' command." . PHP_EOL,
+            $tester->getDisplay()
+        );
+    }
+
+    public function testExecute()
+    {
+        $this->directoryListMock->expects($this->atLeastOnce())->method('getPath')->willReturn(null);
+        $this->objectManagerMock->expects($this->once())
+            ->method('get')
+            ->with(Cache::class)
+            ->willReturn($this->cacheMock);
+        $this->cacheMock->expects($this->once())->method('clean');
+        $writeDirectory = $this->getMockForAbstractClass(WriteInterface::class);
+        $writeDirectory->expects($this->atLeastOnce())->method('delete');
+        $this->filesystemMock->expects($this->atLeastOnce())->method('getDirectoryWrite')->willReturn($writeDirectory);
+
+        $this->deploymentConfigMock->expects($this->once())
+            ->method('get')
+            ->with(ConfigOptionsListConstants::KEY_MODULES)
+            ->willReturn(['Magento_Catalog' => 1]);
+        $progressBar = new ProgressBar($this->outputMock);
+
+        $this->objectManagerMock->expects($this->once())->method('configure');
+        $this->objectManagerMock
+            ->expects($this->once())
+            ->method('create')
+            ->with(ProgressBar::class)
+            ->willReturn($progressBar);
+
+        $this->managerMock->expects($this->exactly(9))->method('addOperation')
+            ->withConsecutive(
+                [OperationFactory::PROXY_GENERATOR, []],
+                [OperationFactory::REPOSITORY_GENERATOR, $this->anything()],
+                [OperationFactory::DATA_ATTRIBUTES_GENERATOR, []],
+                [OperationFactory::APPLICATION_CODE_GENERATOR, $this->callback(function ($subject) {
+                    $this->assertEmpty(array_diff($subject['excludePatterns'], [
+                        "#^(?:/path \(1\)/to/setup/)(/[\w]+)*/Test#",
+                        "#^(?:/path/to/library/one|/path \(1\)/to/library/two)/([\w]+/)?Test#",
+                        "#^(?:/path/to/library/one|/path \(1\)/to/library/two)/([\w]+/)?tests#",
+                        "#^(?:/path/to/(?:module/(?:one))|/path \(1\)/to/(?:module/(?:two)))/Test#",
+                        "#^(?:/path/to/(?:module/(?:one))|/path \(1\)/to/(?:module/(?:two)))/tests#"
+                    ]));
+                    return true;
+                })],
+                [OperationFactory::INTERCEPTION, $this->anything()],
+                [OperationFactory::AREA_CONFIG_GENERATOR, $this->anything()],
+                [OperationFactory::INTERCEPTION_CACHE, $this->anything()],
+                [OperationFactory::APPLICATION_ACTION_LIST_GENERATOR, $this->anything()],
+                [OperationFactory::PLUGIN_LIST_GENERATOR, $this->anything()]
+            );
+
+        $this->managerMock->expects($this->once())->method('process');
+        $tester = new CommandTester($this->command);
+        $tester->execute([]);
+        $this->assertContains(
+            'Generated code and dependency injection configuration successfully.',
+            explode(PHP_EOL, $tester->getDisplay())
+        );
+        $this->assertSame(DiCompileCommand::NAME, $this->command->getName());
+    }
+
     protected function setUp(): void
     {
         $this->deploymentConfigMock = $this->createMock(DeploymentConfig::class);
@@ -141,77 +213,5 @@ class DiCompileCommandTest extends TestCase
             $this->componentRegistrarMock,
             $this->fileMock
         );
-    }
-
-    public function testExecuteModulesNotEnabled()
-    {
-        $this->deploymentConfigMock->expects($this->once())
-            ->method('get')
-            ->with(ConfigOptionsListConstants::KEY_MODULES)
-            ->willReturn(null);
-        $tester = new CommandTester($this->command);
-        $tester->execute([]);
-        $this->assertEquals(
-            'You cannot run this command because modules are not enabled. You can enable modules by running the '
-            . "'module:enable --all' command." . PHP_EOL,
-            $tester->getDisplay()
-        );
-    }
-
-    public function testExecute()
-    {
-        $this->directoryListMock->expects($this->atLeastOnce())->method('getPath')->willReturn(null);
-        $this->objectManagerMock->expects($this->once())
-            ->method('get')
-            ->with(Cache::class)
-            ->willReturn($this->cacheMock);
-        $this->cacheMock->expects($this->once())->method('clean');
-        $writeDirectory = $this->getMockForAbstractClass(WriteInterface::class);
-        $writeDirectory->expects($this->atLeastOnce())->method('delete');
-        $this->filesystemMock->expects($this->atLeastOnce())->method('getDirectoryWrite')->willReturn($writeDirectory);
-
-        $this->deploymentConfigMock->expects($this->once())
-            ->method('get')
-            ->with(ConfigOptionsListConstants::KEY_MODULES)
-            ->willReturn(['Magento_Catalog' => 1]);
-        $progressBar = new ProgressBar($this->outputMock);
-
-        $this->objectManagerMock->expects($this->once())->method('configure');
-        $this->objectManagerMock
-            ->expects($this->once())
-            ->method('create')
-            ->with(ProgressBar::class)
-            ->willReturn($progressBar);
-
-        $this->managerMock->expects($this->exactly(9))->method('addOperation')
-            ->withConsecutive(
-                [OperationFactory::PROXY_GENERATOR, []],
-                [OperationFactory::REPOSITORY_GENERATOR, $this->anything()],
-                [OperationFactory::DATA_ATTRIBUTES_GENERATOR, []],
-                [OperationFactory::APPLICATION_CODE_GENERATOR, $this->callback(function ($subject) {
-                    $this->assertEmpty(array_diff($subject['excludePatterns'], [
-                        "#^(?:/path \(1\)/to/setup/)(/[\w]+)*/Test#",
-                        "#^(?:/path/to/library/one|/path \(1\)/to/library/two)/([\w]+/)?Test#",
-                        "#^(?:/path/to/library/one|/path \(1\)/to/library/two)/([\w]+/)?tests#",
-                        "#^(?:/path/to/(?:module/(?:one))|/path \(1\)/to/(?:module/(?:two)))/Test#",
-                        "#^(?:/path/to/(?:module/(?:one))|/path \(1\)/to/(?:module/(?:two)))/tests#"
-                    ]));
-                    return true;
-                })],
-                [OperationFactory::INTERCEPTION, $this->anything()],
-                [OperationFactory::AREA_CONFIG_GENERATOR, $this->anything()],
-                [OperationFactory::INTERCEPTION_CACHE, $this->anything()],
-                [OperationFactory::APPLICATION_ACTION_LIST_GENERATOR, $this->anything()],
-                [OperationFactory::PLUGIN_LIST_GENERATOR, $this->anything()]
-            );
-
-        $this->managerMock->expects($this->once())->method('process');
-        $tester = new CommandTester($this->command);
-        $tester->execute([]);
-        $this->assertContains(
-            'Generated code and dependency injection configuration successfully.',
-            explode(PHP_EOL, $tester->getDisplay())
-        );
-        $this->assertSame(DiCompileCommand::NAME, $this->command->getName());
     }
 }

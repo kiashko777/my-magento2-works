@@ -3,10 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Catalog\Model\Category;
+use Magento\Store\Model\Store;
 use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var \Magento\Catalog\Model\Category $category */
-$category = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Category::class);
+/** @var Category $category */
+$category = Bootstrap::getObjectManager()->create(Category::class);
 $category->isObjectNew(true);
 $category->setId(
     555
@@ -32,8 +35,8 @@ $category->setId(
     'category-admin'
 )->save();
 
-/** @var \Magento\Store\Model\Store $store */
-$store = Bootstrap::getObjectManager()->create(\Magento\Store\Model\Store::class);
+/** @var Store $store */
+$store = Bootstrap::getObjectManager()->create(Store::class);
 
 $category->setStoreId($store->load('default')->getId())
     ->setName('category-defaultstore')

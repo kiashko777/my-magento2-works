@@ -3,7 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+
+use Magento\Eav\Model\Entity\Attribute\Set;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
 
 $entityTypeId = $objectManager->create(\Magento\Eav\Model\Entity\Type::class)
     ->loadByCode('catalog_product')
@@ -33,8 +37,8 @@ $attributeSetData = [
 ];
 
 foreach ($attributeSetData as $data) {
-    /** @var \Magento\Eav\Model\Entity\Attribute\Set $attributeSet */
-    $attributeSet = $objectManager->create(\Magento\Eav\Model\Entity\Attribute\Set::class);
+    /** @var Set $attributeSet */
+    $attributeSet = $objectManager->create(Set::class);
     $attributeSet->setData($data);
     $attributeSet->validate();
     $attributeSet->save();

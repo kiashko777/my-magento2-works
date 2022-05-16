@@ -9,9 +9,10 @@
 /**
  * See \Magento\TestFramework\Db\Adapter\TransactionInterface
  */
+
 namespace Magento\TestFramework\Db\Adapter;
 
-class Mysql extends \Magento\Framework\DB\Adapter\Pdo\Mysql implements \Magento\TestFramework\Db\Adapter\TransactionInterface
+class Mysql extends \Magento\Framework\DB\Adapter\Pdo\Mysql implements TransactionInterface
 {
     /**
      * @var int
@@ -21,7 +22,7 @@ class Mysql extends \Magento\Framework\DB\Adapter\Pdo\Mysql implements \Magento\
     /**
      * See \Magento\TestFramework\Db\Adapter\TransactionInterface
      *
-     * @return \Magento\TestFramework\Db\Adapter\Mysql
+     * @return Mysql
      */
     public function beginTransparentTransaction()
     {
@@ -32,7 +33,7 @@ class Mysql extends \Magento\Framework\DB\Adapter\Pdo\Mysql implements \Magento\
     /**
      * See \Magento\TestFramework\Db\Adapter\TransactionInterface
      *
-     * @return \Magento\TestFramework\Db\Adapter\Mysql
+     * @return Mysql
      */
     public function commitTransparentTransaction()
     {
@@ -43,7 +44,7 @@ class Mysql extends \Magento\Framework\DB\Adapter\Pdo\Mysql implements \Magento\
     /**
      * See \Magento\TestFramework\Db\Adapter\TransactionInterface
      *
-     * @return \Magento\TestFramework\Db\Adapter\Mysql
+     * @return Mysql
      */
     public function rollbackTransparentTransaction()
     {

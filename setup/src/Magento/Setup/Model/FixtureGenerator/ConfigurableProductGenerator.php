@@ -38,8 +38,9 @@ class ConfigurableProductGenerator
      */
     public function __construct(
         ProductGeneratorFactory $productGeneratorFactory,
-        AutoIncrement $autoIncrement
-    ) {
+        AutoIncrement           $autoIncrement
+    )
+    {
         $this->productGeneratorFactory = $productGeneratorFactory;
         $this->autoIncrement = $autoIncrement;
     }

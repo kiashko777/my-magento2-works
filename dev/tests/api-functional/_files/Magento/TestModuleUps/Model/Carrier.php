@@ -7,11 +7,24 @@ declare(strict_types=1);
 
 namespace Magento\TestModuleUps\Model;
 
+use Magento\CatalogInventory\Api\StockRegistryInterface;
+use Magento\Directory\Helper\Data;
+use Magento\Directory\Model\CountryFactory;
+use Magento\Directory\Model\CurrencyFactory;
+use Magento\Directory\Model\RegionFactory;
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\HTTP\AsyncClientInterface;
 use Magento\Framework\HTTP\ClientFactory;
+use Magento\Framework\Locale\FormatInterface;
 use Magento\Framework\Xml\Security;
+use Magento\Quote\Model\Quote\Address\RateResult\MethodFactory;
 use Magento\Shipping\Model\Rate\Result\ProxyDeferredFactory;
+use Magento\Shipping\Model\Simplexml\ElementFactory;
+use Magento\Shipping\Model\Tracking\Result\ErrorFactory;
+use Magento\Shipping\Model\Tracking\Result\StatusFactory;
+use Magento\Shipping\Model\Tracking\ResultFactory;
 use Magento\Ups\Helper\Config;
+use Psr\Log\LoggerInterface;
 
 /**
  * Mock UPS shipping implementation
@@ -25,22 +38,22 @@ class Carrier extends \Magento\Ups\Model\Carrier
     private $mockResponseLoader;
 
     /**
-     * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
+     * @param ScopeConfigInterface $scopeConfig
      * @param \Magento\Quote\Model\Quote\Address\RateResult\ErrorFactory $rateErrorFactory
-     * @param \Psr\Log\LoggerInterface $logger
+     * @param LoggerInterface $logger
      * @param Security $xmlSecurity
-     * @param \Magento\Shipping\Model\Simplexml\ElementFactory $xmlElFactory
+     * @param ElementFactory $xmlElFactory
      * @param \Magento\Shipping\Model\Rate\ResultFactory $rateFactory
-     * @param \Magento\Quote\Model\Quote\Address\RateResult\MethodFactory $rateMethodFactory
-     * @param \Magento\Shipping\Model\Tracking\ResultFactory $trackFactory
-     * @param \Magento\Shipping\Model\Tracking\Result\ErrorFactory $trackErrorFactory
-     * @param \Magento\Shipping\Model\Tracking\Result\StatusFactory $trackStatusFactory
-     * @param \Magento\Directory\Model\RegionFactory $regionFactory
-     * @param \Magento\Directory\Model\CountryFactory $countryFactory
-     * @param \Magento\Directory\Model\CurrencyFactory $currencyFactory
-     * @param \Magento\Directory\Helper\Data $directoryData
-     * @param \Magento\CatalogInventory\Api\StockRegistryInterface $stockRegistry
-     * @param \Magento\Framework\Locale\FormatInterface $localeFormat
+     * @param MethodFactory $rateMethodFactory
+     * @param ResultFactory $trackFactory
+     * @param ErrorFactory $trackErrorFactory
+     * @param StatusFactory $trackStatusFactory
+     * @param RegionFactory $regionFactory
+     * @param CountryFactory $countryFactory
+     * @param CurrencyFactory $currencyFactory
+     * @param Data $directoryData
+     * @param StockRegistryInterface $stockRegistry
+     * @param FormatInterface $localeFormat
      * @param Config $configHelper
      * @param ClientFactory $httpClientFactory
      * @param array $data
@@ -51,29 +64,30 @@ class Carrier extends \Magento\Ups\Model\Carrier
      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
      */
     public function __construct(
-        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
-        \Magento\Quote\Model\Quote\Address\RateResult\ErrorFactory $rateErrorFactory,
-        \Psr\Log\LoggerInterface $logger,
-        Security $xmlSecurity,
-        \Magento\Shipping\Model\Simplexml\ElementFactory $xmlElFactory,
-        \Magento\Shipping\Model\Rate\ResultFactory $rateFactory,
-        \Magento\Quote\Model\Quote\Address\RateResult\MethodFactory $rateMethodFactory,
-        \Magento\Shipping\Model\Tracking\ResultFactory $trackFactory,
-        \Magento\Shipping\Model\Tracking\Result\ErrorFactory $trackErrorFactory,
-        \Magento\Shipping\Model\Tracking\Result\StatusFactory $trackStatusFactory,
-        \Magento\Directory\Model\RegionFactory $regionFactory,
-        \Magento\Directory\Model\CountryFactory $countryFactory,
-        \Magento\Directory\Model\CurrencyFactory $currencyFactory,
-        \Magento\Directory\Helper\Data $directoryData,
-        \Magento\CatalogInventory\Api\StockRegistryInterface $stockRegistry,
-        \Magento\Framework\Locale\FormatInterface $localeFormat,
-        Config $configHelper,
-        ClientFactory $httpClientFactory,
-        AsyncClientInterface $asyncHttpClient,
-        ProxyDeferredFactory $proxyDeferredFactory,
-        MockResponseBodyLoader $mockResponseLoader,
-        array $data = []
-    ) {
+        ScopeConfigInterface          $scopeConfig,
+        \Magento\Quote\Model\Quote\Address\RateResult\ErrorFactory  $rateErrorFactory,
+        LoggerInterface                                    $logger,
+        Security                                                    $xmlSecurity,
+        ElementFactory            $xmlElFactory,
+        \Magento\Shipping\Model\Rate\ResultFactory                  $rateFactory,
+        MethodFactory $rateMethodFactory,
+        ResultFactory              $trackFactory,
+        ErrorFactory        $trackErrorFactory,
+        StatusFactory       $trackStatusFactory,
+        RegionFactory                      $regionFactory,
+        CountryFactory                     $countryFactory,
+        CurrencyFactory                    $currencyFactory,
+        Data                              $directoryData,
+        StockRegistryInterface        $stockRegistry,
+        FormatInterface                   $localeFormat,
+        Config                                                      $configHelper,
+        ClientFactory                                               $httpClientFactory,
+        AsyncClientInterface                                        $asyncHttpClient,
+        ProxyDeferredFactory                                        $proxyDeferredFactory,
+        MockResponseBodyLoader                                      $mockResponseLoader,
+        array                                                       $data = []
+    )
+    {
         parent::__construct(
             $scopeConfig,
             $rateErrorFactory,

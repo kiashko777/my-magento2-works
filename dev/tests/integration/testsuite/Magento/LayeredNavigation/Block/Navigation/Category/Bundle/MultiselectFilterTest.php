@@ -7,10 +7,10 @@ declare(strict_types=1);
 
 namespace Magento\LayeredNavigation\Block\Navigation\Category\Bundle;
 
+use Magento\Catalog\Model\Layer\Filter\AbstractFilter;
 use Magento\Catalog\Model\Layer\Resolver;
 use Magento\Framework\Module\Manager;
 use Magento\LayeredNavigation\Block\Navigation\AbstractFiltersTest;
-use Magento\Catalog\Model\Layer\Filter\AbstractFilter;
 
 /**
  * Provides tests for custom multiselect filter in navigation block on category page with bundle products.
@@ -25,19 +25,6 @@ class MultiselectFilterTest extends AbstractFiltersTest
      * @var Manager
      */
     private $moduleManager;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->moduleManager = $this->objectManager->get(Manager::class);
-        //This check is needed because LayeredNavigation independent of Magento_Bundle
-        if (!$this->moduleManager->isEnabled('Magento_Bundle')) {
-            $this->markTestSkipped('Magento_Bundle module disabled.');
-        }
-    }
 
     /**
      * @magentoDataFixture Magento/Catalog/_files/multiselect_attribute.php
@@ -89,6 +76,19 @@ class MultiselectFilterTest extends AbstractFiltersTest
                 ],
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->moduleManager = $this->objectManager->get(Manager::class);
+        //This check is needed because LayeredNavigation independent of Magento_Bundle
+        if (!$this->moduleManager->isEnabled('Magento_Bundle')) {
+            $this->markTestSkipped('Magento_Bundle module disabled.');
+        }
     }
 
     /**

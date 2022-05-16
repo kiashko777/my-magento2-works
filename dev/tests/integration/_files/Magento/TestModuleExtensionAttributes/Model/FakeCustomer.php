@@ -7,12 +7,16 @@ declare(strict_types=1);
 
 namespace Magento\TestModuleExtensionAttributes\Api\Model;
 
+use Magento\Framework\Api\AbstractExtensibleObject;
+use Magento\TestModuleExtensionAttributes\Api\Data\FakeCustomerExtensionInterface;
+use Magento\TestModuleExtensionAttributes\Api\Data\FakeCustomerInterface;
+
 /**
  * Class Customer
  *
  */
-class FakeCustomer extends \Magento\Framework\Api\AbstractExtensibleObject implements
-    \Magento\TestModuleExtensionAttributes\Api\Data\FakeCustomerInterface
+class FakeCustomer extends AbstractExtensibleObject implements
+    FakeCustomerInterface
 {
     /**
      * Get customer id
@@ -122,7 +126,7 @@ class FakeCustomer extends \Magento\Framework\Api\AbstractExtensibleObject imple
     /**
      * {@inheritdoc}
      *
-     * @return \Magento\TestModuleExtensionAttributes\Api\Data\FakeCustomerExtensionInterface|null
+     * @return FakeCustomerExtensionInterface|null
      */
     public function getExtensionAttributes()
     {
@@ -132,12 +136,13 @@ class FakeCustomer extends \Magento\Framework\Api\AbstractExtensibleObject imple
     /**
      * {@inheritdoc}
      *
-     * @param \Magento\TestModuleExtensionAttributes\Api\Data\FakeCustomerExtensionInterface $extensionAttributes
+     * @param FakeCustomerExtensionInterface $extensionAttributes
      * @return $this
      */
     public function setExtensionAttributes(
-        \Magento\TestModuleExtensionAttributes\Api\Data\FakeCustomerExtensionInterface $extensionAttributes
-    ) {
+        FakeCustomerExtensionInterface $extensionAttributes
+    )
+    {
         return $this->_setExtensionAttributes($extensionAttributes);
     }
 }

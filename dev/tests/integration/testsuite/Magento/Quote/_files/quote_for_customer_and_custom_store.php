@@ -5,13 +5,13 @@
  */
 declare(strict_types=1);
 
+use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\Quote\Address;
 use Magento\Store\Api\StoreRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
-use Magento\Customer\Api\CustomerRepositoryInterface;
 
 /** @var ObjectManager $objectManager */
 $objectManager = Bootstrap::getObjectManager();

@@ -7,11 +7,13 @@ declare(strict_types=1);
 
 namespace Magento\Test\Workaround\Override\Fixture;
 
+use InvalidArgumentException;
 use Magento\Framework\Component\ComponentRegistrar;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 /**
  * Provide tests for \Magento\TestFramework\Workaround\Override\Fixture\Resolver.
@@ -40,6 +42,43 @@ class ResolverTest extends TestCase
             INTEGRATION_TESTS_DIR . '/testsuite/' . 'Some/Module/_files/some_fixture.php',
             $fixture
         );
+    }
+
+    /**
+     * Invoke resolver processFixturePath method
+     *
+     * @param string $annotation
+     * @return string|array
+     */
+    private function processFixturePath(string $annotation)
+    {
+        $resolverMock = $this->createResolverMock();
+        $resolverMock->method('getComponentRegistrar')->willReturn(new ComponentRegistrar());
+        $reflection = new ReflectionClass(Resolver::class);
+        $reflectionMethod = $reflection->getMethod('processFixturePath');
+        $reflectionMethod->setAccessible(true);
+
+        return $reflectionMethod->invoke($resolverMock, $this, $annotation);
+    }
+
+    /**
+     * Create mock for resolver object
+     *
+     * @return MockObject
+     */
+    private function createResolverMock(): MockObject
+    {
+        $mock = $this->getMockBuilder(Resolver::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['getComponentRegistrar'])
+            ->getMock();
+        $mock->method('getComponentRegistrar')->willReturn(new ComponentRegistrar());
+        $reflection = new ReflectionClass(Resolver::class);
+        $reflectionProperty = $reflection->getProperty('instance');
+        $reflectionProperty->setAccessible(true);
+        $reflectionProperty->setValue(Resolver::class, $mock);
+
+        return $mock;
     }
 
     /**
@@ -82,10 +121,10 @@ class ResolverTest extends TestCase
      */
     public function testGetApplierByFixtureType(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Unsupported fixture type unsupportedFixtureType provided');
         $resolverMock = $this->createResolverMock();
-        $reflection = new \ReflectionClass(Resolver::class);
+        $reflection = new ReflectionClass(Resolver::class);
         $reflectionMethod = $reflection->getMethod('getApplierByFixtureType');
         $reflectionMethod->setAccessible(true);
         $reflectionMethod->invoke($resolverMock, 'unsupportedFixtureType');
@@ -101,42 +140,5 @@ class ResolverTest extends TestCase
         $this->createResolverMock();
         $resolver = Resolver::getInstance();
         $resolver->requireDataFixture('path/to/fixture.php');
-    }
-
-    /**
-     * Invoke resolver processFixturePath method
-     *
-     * @param string $annotation
-     * @return string|array
-     */
-    private function processFixturePath(string $annotation)
-    {
-        $resolverMock = $this->createResolverMock();
-        $resolverMock->method('getComponentRegistrar')->willReturn(new ComponentRegistrar());
-        $reflection = new \ReflectionClass(Resolver::class);
-        $reflectionMethod = $reflection->getMethod('processFixturePath');
-        $reflectionMethod->setAccessible(true);
-
-        return $reflectionMethod->invoke($resolverMock, $this, $annotation);
-    }
-
-    /**
-     * Create mock for resolver object
-     *
-     * @return MockObject
-     */
-    private function createResolverMock(): MockObject
-    {
-        $mock = $this->getMockBuilder(Resolver::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['getComponentRegistrar'])
-            ->getMock();
-        $mock->method('getComponentRegistrar')->willReturn(new ComponentRegistrar());
-        $reflection = new \ReflectionClass(Resolver::class);
-        $reflectionProperty = $reflection->getProperty('instance');
-        $reflectionProperty->setAccessible(true);
-        $reflectionProperty->setValue(Resolver::class, $mock);
-
-        return $mock;
     }
 }

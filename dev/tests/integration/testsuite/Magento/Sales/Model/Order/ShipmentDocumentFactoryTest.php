@@ -39,21 +39,6 @@ class ShipmentDocumentFactoryTest extends TestCase
     private $shipmentCreationArgumentsExtensionInterfaceFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-
-        $this->order = $objectManager->create(Order::class);
-        $this->shipmentDocumentFactory = $objectManager->create(ShipmentDocumentFactory::class);
-        $this->shipmentCreationArgumentsInterface = $objectManager
-            ->create(ShipmentCreationArgumentsInterface::class);
-        $this->shipmentCreationArgumentsExtensionInterfaceFactory = $objectManager
-            ->create(ShipmentCreationArgumentsExtensionInterfaceFactory::class);
-    }
-
-    /**
      * Create shipment with shipment creation arguments.
      *
      * @magentoDataFixture Magento/Sales/_files/order.php
@@ -76,5 +61,20 @@ class ShipmentDocumentFactoryTest extends TestCase
         );
         $shipmentExtensionAttributes = $shipment->getExtensionAttributes();
         self::assertEquals('test_value', $shipmentExtensionAttributes->getTestAttributeValue());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+
+        $this->order = $objectManager->create(Order::class);
+        $this->shipmentDocumentFactory = $objectManager->create(ShipmentDocumentFactory::class);
+        $this->shipmentCreationArgumentsInterface = $objectManager
+            ->create(ShipmentCreationArgumentsInterface::class);
+        $this->shipmentCreationArgumentsExtensionInterfaceFactory = $objectManager
+            ->create(ShipmentCreationArgumentsExtensionInterfaceFactory::class);
     }
 }

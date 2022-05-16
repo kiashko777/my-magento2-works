@@ -7,8 +7,10 @@ declare(strict_types=1);
 
 namespace Magento\MediaGallery\Model\ResourceModel;
 
-use Magento\MediaGalleryApi\Api\GetAssetsByPathsInterface;
+use Magento\Framework\Exception\CouldNotSaveException;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\MediaGalleryApi\Api\DeleteAssetsByPathsInterface;
+use Magento\MediaGalleryApi\Api\GetAssetsByPathsInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
 
@@ -29,22 +31,13 @@ class DeleteAssetsTest extends TestCase
     private $deleteAssetsByPaths;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->getAssetsByPath = Bootstrap::getObjectManager()->get(GetAssetsByPathsInterface::class);
-        $this->deleteAssetsByPaths = Bootstrap::getObjectManager()->get(DeleteAssetsByPathsInterface::class);
-    }
-
-    /**
      * Test deletion of assets by path
      *
      * @magentoDataFixture Magento/MediaGallery/_files/media_asset.php
      *
      * @param array $paths
-     * @throws \Magento\Framework\Exception\CouldNotSaveException
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @throws CouldNotSaveException
+     * @throws LocalizedException
      *
      * @dataProvider matchingPathsProvider
      */
@@ -60,8 +53,8 @@ class DeleteAssetsTest extends TestCase
      * @magentoDataFixture Magento/MediaGallery/_files/media_asset.php
      *
      * @param array $paths
-     * @throws \Magento\Framework\Exception\CouldNotSaveException
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @throws CouldNotSaveException
+     * @throws LocalizedException
      *
      * @dataProvider notMatchingPathsProvider
      */
@@ -97,5 +90,14 @@ class DeleteAssetsTest extends TestCase
             [['anotherDirectory/path.jpg']],
             [['path.jpg']]
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->getAssetsByPath = Bootstrap::getObjectManager()->get(GetAssetsByPathsInterface::class);
+        $this->deleteAssetsByPaths = Bootstrap::getObjectManager()->get(DeleteAssetsByPathsInterface::class);
     }
 }

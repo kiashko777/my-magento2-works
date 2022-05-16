@@ -24,15 +24,6 @@ class MultiWebsiteCombinationTest extends CombinationAbstract
     private $executeInStoreContext;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->executeInStoreContext = $this->objectManager->get(ExecuteInStoreContext::class);
-    }
-
-    /**
      * Assert that product price rendered with expected special and regular prices if
      * product has special price which lower than regular and tier prices on second website.
      *
@@ -48,7 +39,8 @@ class MultiWebsiteCombinationTest extends CombinationAbstract
         float $specialPrice,
         float $regularPrice,
         array $tierData
-    ): void {
+    ): void
+    {
         $this->executeInStoreContext->execute(
             'fixture_second_store',
             [$this, 'assertRenderedPrices'],
@@ -59,6 +51,20 @@ class MultiWebsiteCombinationTest extends CombinationAbstract
             (int)$this->storeManager->getStore('fixture_second_store')->getWebsiteId()
         );
         $this->assertRenderedPricesOnDefaultStore('second-website-price-product');
+    }
+
+    /**
+     * Checks price data for product on default store.
+     *
+     * @param string $sku
+     * @return void
+     */
+    private function assertRenderedPricesOnDefaultStore(string $sku): void
+    {
+        //Reset layout page to get new block html
+        $this->page = $this->objectManager->get(PageFactory::class)->create();
+        $defaultStoreTierData = ['prices' => [], 'message_config' => null];
+        $this->assertRenderedPrices($sku, 15, 20, $defaultStoreTierData);
     }
 
     /**
@@ -81,7 +87,8 @@ class MultiWebsiteCombinationTest extends CombinationAbstract
         float $specialPrice,
         float $regularPrice,
         array $tierData
-    ): void {
+    ): void
+    {
         try {
             $this->customerSession->setCustomerId(1);
             $this->executeInStoreContext->execute(
@@ -119,7 +126,8 @@ class MultiWebsiteCombinationTest extends CombinationAbstract
         float $regularPrice,
         array $catalogRules,
         array $tierData
-    ): void {
+    ): void
+    {
         $this->createCatalogRulesForProduct($catalogRules, 'test');
         $this->indexBuilder->reindexFull();
         $this->executeInStoreContext->execute(
@@ -148,7 +156,8 @@ class MultiWebsiteCombinationTest extends CombinationAbstract
     public function testRenderSpecialPriceInCombinationWithCustomOptionPrice(
         float $optionPrice,
         array $productPrices
-    ): void {
+    ): void
+    {
         $this->executeInStoreContext->execute(
             'fixture_second_store',
             [$this, 'assertRenderedCustomOptionPrices'],
@@ -157,20 +166,6 @@ class MultiWebsiteCombinationTest extends CombinationAbstract
             $productPrices
         );
         $this->assertRenderedCustomOptionPricesOnDefaultStore('second-website-price-product');
-    }
-
-    /**
-     * Checks price data for product on default store.
-     *
-     * @param string $sku
-     * @return void
-     */
-    private function assertRenderedPricesOnDefaultStore(string $sku): void
-    {
-        //Reset layout page to get new block html
-        $this->page = $this->objectManager->get(PageFactory::class)->create();
-        $defaultStoreTierData = ['prices' => [], 'message_config' => null];
-        $this->assertRenderedPrices($sku, 15, 20, $defaultStoreTierData);
     }
 
     /**
@@ -184,5 +179,14 @@ class MultiWebsiteCombinationTest extends CombinationAbstract
         //Reset layout page to get new block html
         $this->page = $this->objectManager->get(PageFactory::class)->create();
         $this->assertRenderedCustomOptionPrices($sku, 7.5, []);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->executeInStoreContext = $this->objectManager->get(ExecuteInStoreContext::class);
     }
 }

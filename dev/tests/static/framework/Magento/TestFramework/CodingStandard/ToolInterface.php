@@ -7,6 +7,7 @@
 /**
  * Code standard tool wrapper interface
  */
+
 namespace Magento\TestFramework\CodingStandard;
 
 interface ToolInterface

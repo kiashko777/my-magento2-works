@@ -7,13 +7,13 @@ declare(strict_types=1);
 
 namespace Magento\SendFriend\Model;
 
+use Laminas\Stdlib\Parameters;
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Stdlib\CookieManagerInterface;
 use Magento\SendFriend\Helper\Data as SendFriendHelper;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
-use Laminas\Stdlib\Parameters;
 
 /**
  * Class checks send friend model behavior
@@ -38,20 +38,6 @@ class SendFriendTest extends TestCase
     private $request;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->sendFriend = $this->objectManager->get(SendFriendFactory::class)->create();
-        $this->sendFriendResource = $this->objectManager->get(ResourceModel\SendFriend::class);
-        $this->cookieManager = $this->objectManager->get(CookieManagerInterface::class);
-        $this->request = $this->objectManager->get(RequestInterface::class);
-    }
-
-    /**
      * @magentoConfigFixture current_store sendfriend/email/max_recipients 1
      *
      * @dataProvider validateDataProvider
@@ -66,6 +52,37 @@ class SendFriendTest extends TestCase
     {
         $this->prepareData($sender, $recipients);
         $this->checkResult($expectedResult, $this->sendFriend->validate());
+    }
+
+    /**
+     * Prepare sender and recipient data
+     *
+     * @param array $sender
+     * @param array $recipients
+     *
+     * @return void
+     */
+    private function prepareData(array $sender, array $recipients): void
+    {
+        $this->sendFriend->setSender($sender);
+        $this->sendFriend->setRecipients($recipients);
+    }
+
+    /**
+     * Check test result
+     *
+     * @param array|bool $expectedResult
+     * @param array|bool $result
+     *
+     * @return void
+     */
+    private function checkResult($expectedResult, $result): void
+    {
+        if ($expectedResult === true) {
+            $this->assertTrue($result);
+        } else {
+            $this->assertEquals($expectedResult, (string)reset($result) ?? '');
+        }
     }
 
     /**
@@ -213,33 +230,16 @@ class SendFriendTest extends TestCase
     }
 
     /**
-     * Check test result
-     *
-     * @param array|bool $expectedResult
-     * @param array|bool $result
-     *
-     * @return void
+     * @inheritdoc
      */
-    private function checkResult($expectedResult, $result): void
+    protected function setUp(): void
     {
-        if ($expectedResult === true) {
-            $this->assertTrue($result);
-        } else {
-            $this->assertEquals($expectedResult, (string)reset($result) ?? '');
-        }
-    }
+        parent::setUp();
 
-    /**
-     * Prepare sender and recipient data
-     *
-     * @param array $sender
-     * @param array $recipients
-     *
-     * @return void
-     */
-    private function prepareData(array $sender, array $recipients): void
-    {
-        $this->sendFriend->setSender($sender);
-        $this->sendFriend->setRecipients($recipients);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->sendFriend = $this->objectManager->get(SendFriendFactory::class)->create();
+        $this->sendFriendResource = $this->objectManager->get(ResourceModel\SendFriend::class);
+        $this->cookieManager = $this->objectManager->get(CookieManagerInterface::class);
+        $this->request = $this->objectManager->get(RequestInterface::class);
     }
 }

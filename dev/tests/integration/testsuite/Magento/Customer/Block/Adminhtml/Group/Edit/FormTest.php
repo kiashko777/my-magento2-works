@@ -7,57 +7,44 @@
 namespace Magento\Customer\Block\Adminhtml\Group\Edit;
 
 use Magento\Customer\Api\Data\GroupInterface;
+use Magento\Customer\Api\GroupManagementInterface;
+use Magento\Customer\Api\GroupRepositoryInterface;
 use Magento\Customer\Controller\RegistryConstants;
+use Magento\Framework\Api\FilterBuilder;
+use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\Registry;
+use Magento\Framework\View\Layout;
+use Magento\Framework\View\LayoutInterface;
+use Magento\Tax\Model\TaxClass\Source\Customer;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Magento\Customer\Block\Adminhtml\Group\Edit\Form
  *
  * @magentoAppArea Adminhtml
  */
-class FormTest extends \PHPUnit\Framework\TestCase
+class FormTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\View\LayoutInterface
+     * @var LayoutInterface
      */
     private $layout;
 
     /**
-     * @var \Magento\Customer\Api\GroupRepositoryInterface
+     * @var GroupRepositoryInterface
      */
     private $groupRepository;
 
     /**
-     * @var \Magento\Customer\Api\GroupManagementInterface
+     * @var GroupManagementInterface
      */
     private $groupManagement;
 
     /**
-     * @var \Magento\Framework\Registry
+     * @var Registry
      */
     private $registry;
-
-    /**
-     * Execute per test initialization.
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->layout = Bootstrap::getObjectManager()->create(\Magento\Framework\View\Layout::class);
-        $this->groupRepository = Bootstrap::getObjectManager()
-            ->get(\Magento\Customer\Api\GroupRepositoryInterface::class);
-        $this->groupManagement = Bootstrap::getObjectManager()
-            ->get(\Magento\Customer\Api\GroupManagementInterface::class);
-        $this->registry = Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
-    }
-
-    /**
-     * Execute per test cleanup.
-     */
-    protected function tearDown(): void
-    {
-        $this->registry->unregister(RegistryConstants::CURRENT_GROUP_ID);
-    }
 
     /**
      * Test retrieving a valid group form.
@@ -68,7 +55,7 @@ class FormTest extends \PHPUnit\Framework\TestCase
             ->register(RegistryConstants::CURRENT_GROUP_ID, $this->groupManagement->getDefaultGroup(0)->getId());
 
         /** @var $block Form */
-        $block = $this->layout->createBlock(\Magento\Customer\Block\Adminhtml\Group\Edit\Form::class, 'block');
+        $block = $this->layout->createBlock(Form::class, 'block');
         $form = $block->getForm();
 
         $this->assertEquals('edit_form', $form->getId());
@@ -83,8 +70,8 @@ class FormTest extends \PHPUnit\Framework\TestCase
         $this->assertNotNull($idElement);
         $this->assertEquals('1', $idElement->getValue());
         $this->assertEquals('3', $taxClassIdElement->getValue());
-        /** @var \Magento\Tax\Model\TaxClass\Source\Customer $taxClassCustomer */
-        $taxClassCustomer = Bootstrap::getObjectManager()->get(\Magento\Tax\Model\TaxClass\Source\Customer::class);
+        /** @var Customer $taxClassCustomer */
+        $taxClassCustomer = Bootstrap::getObjectManager()->get(Customer::class);
         $this->assertEquals($taxClassCustomer->toOptionArray(false), $taxClassIdElement->getData('values'));
         $this->assertEquals('General', $groupCodeElement->getValue());
     }
@@ -94,17 +81,17 @@ class FormTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetFormExistInCustomGroup()
     {
-        $builder = Bootstrap::getObjectManager()->create(\Magento\Framework\Api\FilterBuilder::class);
-        /** @var \Magento\Framework\Api\SearchCriteriaBuilder $searchCriteria */
+        $builder = Bootstrap::getObjectManager()->create(FilterBuilder::class);
+        /** @var SearchCriteriaBuilder $searchCriteria */
         $searchCriteria = Bootstrap::getObjectManager()
-            ->create(\Magento\Framework\Api\SearchCriteriaBuilder::class)
+            ->create(SearchCriteriaBuilder::class)
             ->addFilters([$builder->setField('code')->setValue('custom_group')->create()]);
         /** @var GroupInterface $customerGroup */
         $customerGroup = $this->groupRepository->getList($searchCriteria->create())->getItems()[0];
         $this->registry->register(RegistryConstants::CURRENT_GROUP_ID, $customerGroup->getId());
 
         /** @var $block Form */
-        $block = $this->layout->createBlock(\Magento\Customer\Block\Adminhtml\Group\Edit\Form::class, 'block');
+        $block = $this->layout->createBlock(Form::class, 'block');
         $form = $block->getForm();
 
         $this->assertEquals('edit_form', $form->getId());
@@ -119,9 +106,31 @@ class FormTest extends \PHPUnit\Framework\TestCase
         $this->assertNotNull($idElement);
         $this->assertEquals($customerGroup->getId(), $idElement->getValue());
         $this->assertEquals($customerGroup->getTaxClassId(), $taxClassIdElement->getValue());
-        /** @var \Magento\Tax\Model\TaxClass\Source\Customer $taxClassCustomer */
-        $taxClassCustomer = Bootstrap::getObjectManager()->get(\Magento\Tax\Model\TaxClass\Source\Customer::class);
+        /** @var Customer $taxClassCustomer */
+        $taxClassCustomer = Bootstrap::getObjectManager()->get(Customer::class);
         $this->assertEquals($taxClassCustomer->toOptionArray(false), $taxClassIdElement->getData('values'));
         $this->assertEquals($customerGroup->getCode(), $groupCodeElement->getValue());
+    }
+
+    /**
+     * Execute per test initialization.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->layout = Bootstrap::getObjectManager()->create(Layout::class);
+        $this->groupRepository = Bootstrap::getObjectManager()
+            ->get(GroupRepositoryInterface::class);
+        $this->groupManagement = Bootstrap::getObjectManager()
+            ->get(GroupManagementInterface::class);
+        $this->registry = Bootstrap::getObjectManager()->get(Registry::class);
+    }
+
+    /**
+     * Execute per test cleanup.
+     */
+    protected function tearDown(): void
+    {
+        $this->registry->unregister(RegistryConstants::CURRENT_GROUP_ID);
     }
 }

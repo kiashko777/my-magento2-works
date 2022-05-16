@@ -3,14 +3,28 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Communication;
+
+use LogicException;
+use Magento\Framework\App\DeploymentConfig;
+use Magento\Framework\App\DeploymentConfig\Reader;
+use Magento\Framework\Communication\Config\CompositeReader;
+use Magento\Framework\Communication\Config\Data;
+use Magento\Framework\Communication\Config\Reader\EnvReader;
+use Magento\Framework\Communication\Config\Reader\XmlReader;
+use Magento\Framework\Config\FileResolverInterface;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Reflection\MethodsMap;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test of communication configuration reading and parsing.
  *
  * @magentoCache config disabled
  */
-class ConfigTest extends \PHPUnit\Framework\TestCase
+class ConfigTest extends TestCase
 {
     /**
      * Check how valid communication XML config is parsed.
@@ -25,12 +39,93 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Create config instance initialized with configuration from $configFilePath
+     *
+     * @param array $configFilePaths
+     * @param string|null $envConfigFilePath
+     * @return ConfigInterface
+     */
+    protected function getConfigInstance($configFilePaths, $envConfigFilePath = null)
+    {
+        $fileResolver = $this->getMockForAbstractClass(FileResolverInterface::class);
+        $fileResolverResult = [];
+        foreach ($configFilePaths as $configFilePath) {
+            $fileResolverResult[] = file_get_contents($configFilePath);
+        }
+        $fileResolver->expects($this->any())
+            ->method('get')
+            ->willReturn($fileResolverResult);
+        $objectManager = Bootstrap::getObjectManager();
+        $xmlReader = $objectManager->create(
+            XmlReader::class,
+            ['fileResolver' => $fileResolver]
+        );
+        $deploymentConfigReader = $this->getMockBuilder(Reader::class)
+            ->disableOriginalConstructor()
+            ->setMethods([])
+            ->getMock();
+        $envConfigData = include $envConfigFilePath ?: __DIR__ . '/_files/valid_communication_input.php';
+        $deploymentConfigReader->expects($this->any())->method('load')->willReturn($envConfigData);
+        $deploymentConfig = $objectManager->create(
+            DeploymentConfig::class,
+            ['reader' => $deploymentConfigReader]
+        );
+        $methodsMap = $objectManager->create(MethodsMap::class);
+        $envReader = $objectManager->create(
+            EnvReader::class,
+            [
+                'deploymentConfig' => $deploymentConfig,
+                'methodsMap' => $methodsMap
+            ]
+        );
+        $readersConfig = [
+            'xmlReader' => ['reader' => $xmlReader, 'sortOrder' => 10],
+            'envReader' => ['reader' => $envReader, 'sortOrder' => 20]
+        ];
+        /** @var CompositeReader $reader */
+        $reader = $objectManager->create(
+            CompositeReader::class,
+            ['readers' => $readersConfig]
+        );
+        /** @var Config $config */
+        $configData = $objectManager->create(
+            Data::class,
+            [
+                'reader' => $reader
+            ]
+        );
+        return $objectManager->create(
+            ConfigInterface::class,
+            ['configData' => $configData]
+        );
+    }
+
+    // @codingStandardsIgnoreStart
+    /**
+     * Get topic configuration by its name
+     *
+     * Element 'topic', attribute 'schema': [facet 'pattern'] The value '55\Customer\Api\CustomerRepositoryInterface::delete' is not accepted by the pattern '[a-zA-Z]+[a-zA-Z0-9\\]+::[a-zA-Z0-9]+'.
+     * Line: 9
+     *
+     * Element 'topic', attribute 'schema': '55\Customer\Api\CustomerRepositoryInterface::delete' is not a valid value of the atomic type 'schemaType'.
+     * Line: 9
+     *
+     * Element 'handler', attribute 'type': [facet 'pattern'] The value '55\Customer\Api\CustomerRepositoryInterface' is not accepted by the pattern '[a-zA-Z]+[a-zA-Z0-9\\]+'.
+     * Line: 10
+     *
+     * Element 'handler', attribute 'type': '55\Customer\Api\CustomerRepositoryInterface' is not a valid value of the atomic type 'serviceTypeType'.
+     * Line: 10
+     * Verify the XML and try again.
+     *
+     */
+    // @codingStandardsIgnoreEnd
+    /**
      * Get topic configuration by its name
      *
      */
     public function testGetTopicsNumeric()
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage(
             'Service method specified in the definition of topic "customerDeletedNumbers" is not av'
         );
@@ -38,28 +133,10 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
         $this->getConfigInstance([__DIR__ . '/_files/valid_communication_numeric.xml'])->getTopics();
     }
 
-    // @codingStandardsIgnoreStart
-    /**
-     * Get topic configuration by its name
-     *
-    Element 'topic', attribute 'schema': [facet 'pattern'] The value '55\Customer\Api\CustomerRepositoryInterface::delete' is not accepted by the pattern '[a-zA-Z]+[a-zA-Z0-9\\]+::[a-zA-Z0-9]+'.
-    Line: 9
 
-    Element 'topic', attribute 'schema': '55\Customer\Api\CustomerRepositoryInterface::delete' is not a valid value of the atomic type 'schemaType'.
-    Line: 9
-
-    Element 'handler', attribute 'type': [facet 'pattern'] The value '55\Customer\Api\CustomerRepositoryInterface' is not accepted by the pattern '[a-zA-Z]+[a-zA-Z0-9\\]+'.
-    Line: 10
-
-    Element 'handler', attribute 'type': '55\Customer\Api\CustomerRepositoryInterface' is not a valid value of the atomic type 'serviceTypeType'.
-    Line: 10
-    Verify the XML and try again.
-     *
-     */
-    // @codingStandardsIgnoreEnd
     public function testGetTopicsNumericInvalid()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage('The XML in file "0" is invalid:');
 
         $this->getConfigInstance([__DIR__ . '/_files/invalid_communication_numeric.xml'])->getTopics();
@@ -83,7 +160,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetTopicInvalidName()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage('Topic "invalidTopic" is not configured.');
 
         $this->getConfigInstance([__DIR__ . '/_files/valid_communication.xml'])->getTopic('invalidTopic');
@@ -93,7 +170,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetTopicsExceptionMissingRequest()
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage(
             'Either "request" or "schema" attribute must be specified for topic "customerUpdated"'
         );
@@ -105,7 +182,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetTopicsExceptionNotExistingServiceMethod()
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage('Service method specified in the definition of topic "customerRetrieved" is not');
 
         $this->getConfigInstance([__DIR__ . '/_files/communication_not_existing_service_method.xml'])->getTopics();
@@ -115,7 +192,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetTopicsExceptionNotExistingService()
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage('Service method specified in the definition of topic "customerRetrieved" is not');
 
         $this->getConfigInstance([__DIR__ . '/_files/communication_not_existing_service.xml'])->getTopics();
@@ -125,7 +202,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetTopicsExceptionNoAttributes()
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage(
             'Either "request" or "schema" attribute must be specified for topic "customerRetrieved"'
         );
@@ -137,7 +214,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetTopicsExceptionInvalidResponseSchema()
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage(
             'Response schema definition for topic "customerUpdated" should reference existing'
         );
@@ -149,7 +226,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetTopicsExceptionInvalidRequestSchema()
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage(
             'Request schema definition for topic "customerUpdated" should reference existing'
         );
@@ -161,7 +238,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetTopicsExceptionMultipleHandlersSynchronousMode()
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage(
             'Topic "customerDeleted" is configured for synchronous requests, that is why it must'
         );
@@ -174,7 +251,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetTopicsExceptionInvalidHandler()
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage(
             'Service method specified in the definition of handler "customHandler" for topic "custo'
         );
@@ -186,7 +263,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetTopicsExceptionInvalidTopicNameInEnv()
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage(
             'Topic name "customerAdded" and attribute "name" = "customerCreated" must be equal'
         );
@@ -201,7 +278,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetTopicsExceptionTopicWithoutDataInEnv()
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage('Topic "customerCreated" must contain data');
 
         $this->getConfigInstance(
@@ -214,7 +291,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetTopicsExceptionTopicWithMissedKeysInEnv()
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage('Topic "customerCreated" has missed keys: [response]');
 
         $this->getConfigInstance(
@@ -227,7 +304,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetTopicsExceptionTopicWithExcessiveKeysInEnv()
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage('Topic "customerCreated" has excessive keys: [some_incorrect_key]');
 
         $this->getConfigInstance(
@@ -240,7 +317,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetTopicsExceptionTopicWithNonMatchedNameInEnv()
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage(
             'Topic name "customerDeleted" and attribute "name" = "customerRemoved" must be equal'
         );
@@ -255,7 +332,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetTopicsExceptionMultipleHandlersSynchronousModeInEnv()
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage(
             'Topic "customerDeleted" is configured for synchronous requests, that is why it must'
         );
@@ -270,7 +347,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetTopicsExceptionInvalidRequestSchemaInEnv()
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage(
             'Request schema definition for topic "customerCreated" should reference existing service'
         );
@@ -285,7 +362,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetTopicsExceptionInvalidResponseSchemaInEnv()
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage(
             'Response schema definition for topic "customerCreated" should reference existing type o'
         );
@@ -300,7 +377,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetTopicsExceptionInvalidMethodInHandlerInEnv()
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage(
             'Service method specified in the definition of handler "customerCreatedFirst" for topic'
         );
@@ -315,7 +392,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetTopicsExceptionWithDisabledHandlerInEnv()
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage(
             'Disabled handler "default" for topic "customerCreated" cannot be added to the config fi'
         );
@@ -330,7 +407,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetTopicsExceptionIncorrectRequestSchemaTypeInEnv()
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage(
             'Request schema type for topic "customerCreated" must be "object_interface" or "service_'
         );
@@ -345,7 +422,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetTopicsExceptionIsNotBooleanTypeOfIsSynchronousInEnv()
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage(
             'The attribute "is_synchronous" for topic "customerCreated" should have the value of the'
         );
@@ -354,67 +431,5 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
             [__DIR__ . '/_files/valid_communication.xml'],
             __DIR__ . '/_files/communication_is_synchronous_is_not_boolean.php'
         )->getTopics();
-    }
-
-    /**
-     * Create config instance initialized with configuration from $configFilePath
-     *
-     * @param array $configFilePaths
-     * @param string|null $envConfigFilePath
-     * @return \Magento\Framework\Communication\ConfigInterface
-     */
-    protected function getConfigInstance($configFilePaths, $envConfigFilePath = null)
-    {
-        $fileResolver = $this->getMockForAbstractClass(\Magento\Framework\Config\FileResolverInterface::class);
-        $fileResolverResult = [];
-        foreach ($configFilePaths as $configFilePath) {
-            $fileResolverResult[] = file_get_contents($configFilePath);
-        }
-        $fileResolver->expects($this->any())
-            ->method('get')
-            ->willReturn($fileResolverResult);
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $xmlReader = $objectManager->create(
-            \Magento\Framework\Communication\Config\Reader\XmlReader::class,
-            ['fileResolver' => $fileResolver]
-        );
-        $deploymentConfigReader = $this->getMockBuilder(\Magento\Framework\App\DeploymentConfig\Reader::class)
-            ->disableOriginalConstructor()
-            ->setMethods([])
-            ->getMock();
-        $envConfigData = include $envConfigFilePath ?: __DIR__ . '/_files/valid_communication_input.php';
-        $deploymentConfigReader->expects($this->any())->method('load')->willReturn($envConfigData);
-        $deploymentConfig = $objectManager->create(
-            \Magento\Framework\App\DeploymentConfig::class,
-            ['reader' => $deploymentConfigReader]
-        );
-        $methodsMap = $objectManager->create(\Magento\Framework\Reflection\MethodsMap::class);
-        $envReader = $objectManager->create(
-            \Magento\Framework\Communication\Config\Reader\EnvReader::class,
-            [
-                'deploymentConfig' => $deploymentConfig,
-                'methodsMap' => $methodsMap
-            ]
-        );
-        $readersConfig = [
-            'xmlReader' => ['reader' => $xmlReader, 'sortOrder' => 10],
-            'envReader' => ['reader' => $envReader, 'sortOrder' => 20]
-        ];
-        /** @var \Magento\Framework\Communication\Config\CompositeReader $reader */
-        $reader = $objectManager->create(
-            \Magento\Framework\Communication\Config\CompositeReader::class,
-            ['readers' => $readersConfig]
-        );
-        /** @var \Magento\Framework\Communication\Config $config */
-        $configData = $objectManager->create(
-            \Magento\Framework\Communication\Config\Data::class,
-            [
-                'reader' => $reader
-            ]
-        );
-        return $objectManager->create(
-            \Magento\Framework\Communication\ConfigInterface::class,
-            ['configData' => $configData]
-        );
     }
 }

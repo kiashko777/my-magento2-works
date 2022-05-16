@@ -18,12 +18,6 @@ class XmlTest extends TestCase
      */
     protected $parser;
 
-    protected function setUp(): void
-    {
-        $objectManagerHelper = new ObjectManager($this);
-        $this->parser = $objectManagerHelper->getObject(Xml::class);
-    }
-
     /**
      * @param array $options
      * @dataProvider dataProviderWrongOptionFilesForParse
@@ -45,5 +39,11 @@ class XmlTest extends TestCase
             [['files_for_parse' => 'sting']],
             [['there_are_no_files_for_parse' => [1, 3]]]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $objectManagerHelper = new ObjectManager($this);
+        $this->parser = $objectManagerHelper->getObject(Xml::class);
     }
 }

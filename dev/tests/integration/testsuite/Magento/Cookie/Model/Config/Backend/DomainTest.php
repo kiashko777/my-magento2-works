@@ -3,16 +3,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Cookie\Model\Config\Backend;
 
 use Magento\Framework\Exception\LocalizedException;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test \Magento\Cookie\Model\Config\Backend\Domain
  *
  * @magentoAppArea Adminhtml
  */
-class DomainTest extends \PHPUnit\Framework\TestCase
+class DomainTest extends TestCase
 {
     /**
      * @param string $value
@@ -22,9 +25,9 @@ class DomainTest extends \PHPUnit\Framework\TestCase
      */
     public function testBeforeSave($value, $exceptionMessage = null)
     {
-        /** @var $domain \Magento\Cookie\Model\Config\Backend\Domain */
-        $domain = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Cookie\Model\Config\Backend\Domain::class
+        /** @var $domain Domain */
+        $domain = Bootstrap::getObjectManager()->create(
+            Domain::class
         );
         $domain->setValue($value);
         $domain->setPath('path');

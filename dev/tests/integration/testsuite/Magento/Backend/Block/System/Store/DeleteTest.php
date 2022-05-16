@@ -3,23 +3,30 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Backend\Block\System\Store;
+
+use Magento\Framework\DataObject;
+use Magento\Framework\View\Layout;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class DeleteTest extends \PHPUnit\Framework\TestCase
+class DeleteTest extends TestCase
 {
     public function testGetHeaderText()
     {
-        /** @var $layout \Magento\Framework\View\Layout */
-        $layout = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
+        /** @var $layout Layout */
+        $layout = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
         );
-        /** @var $block \Magento\Backend\Block\System\Store\Delete */
-        $block = $layout->createBlock(\Magento\Backend\Block\System\Store\Delete::class, 'block');
+        /** @var $block Delete */
+        $block = $layout->createBlock(Delete::class, 'block');
 
-        $dataObject = new \Magento\Framework\DataObject();
+        $dataObject = new DataObject();
         $form = $block->getChildBlock('form');
         $form->setDataObject($dataObject);
 

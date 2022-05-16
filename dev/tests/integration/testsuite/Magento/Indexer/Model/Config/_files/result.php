@@ -4,6 +4,13 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\CatalogSearch\Model\Indexer\Fulltext;
+use Magento\Cms\Model\Indexer\IndexStructure;
+use Magento\Cms\Model\Indexer\StoreResource;
+use Magento\Framework\Search\Index\Filter\LowercaseFilter;
+use Magento\Framework\Search\Index\Handler;
+use Magento\Indexer\Model\Fieldset\ProductFieldset;
+
 return [
     'indexer_4' => [
         'indexer_id' => 'indexer_4',
@@ -28,19 +35,19 @@ return [
             'indexer_4'
         ],
     ],
-    'catalogsearch_fulltext' =>  [
+    'catalogsearch_fulltext' => [
         'indexer_id' => 'catalogsearch_fulltext',
         'shared_index' => null,
         'primary' => 'first',
         'view_id' => 'catalogsearch_fulltext',
-        'action_class' => \Magento\CatalogSearch\Model\Indexer\Fulltext::class,
+        'action_class' => Fulltext::class,
         'title' => __('Catalog Search'),
         'description' => __('Rebuild Catalog product fulltext search index'),
         'fieldsets' => [
             [
                 'source' => 'MagentoModule\\ServiceClassOrRepositoryClass',
                 'name' => 'first',
-                'provider' => \Magento\Indexer\Model\Fieldset\ProductFieldset::class,
+                'provider' => ProductFieldset::class,
                 'fields' => [
                     'title_alias' => [
                         'name' => 'title_alias',
@@ -50,12 +57,12 @@ return [
                         'type' => 'searchable',
                         'filters' =>
                             [
-                                0 => \Magento\Framework\Search\Index\Filter\LowercaseFilter::class,
+                                0 => LowercaseFilter::class,
                             ],
                     ],
                     'identifier' => [
                         'name' => 'identifier',
-                        'handler' => \Magento\Framework\Search\Index\Handler::class,
+                        'handler' => Handler::class,
                         'origin' => 'identifier',
                         'dataType' => null,
                         'type' => 'filterable',
@@ -90,8 +97,8 @@ return [
                 ],
             ],
         ],
-        'saveHandler' => \Magento\Cms\Model\Indexer\StoreResource::class,
-        'structure' => \Magento\Cms\Model\Indexer\IndexStructure::class,
+        'saveHandler' => StoreResource::class,
+        'structure' => IndexStructure::class,
         'dependencies' => ['indexer_2'],
     ],
     'indexer_3' => [

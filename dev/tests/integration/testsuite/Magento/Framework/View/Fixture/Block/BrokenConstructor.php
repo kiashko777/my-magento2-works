@@ -3,12 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\View\Fixture\Block;
 
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Phrase;
+use Magento\Framework\View\Element\AbstractBlock;
 
-class BrokenConstructor extends \Magento\Framework\View\Element\AbstractBlock
+class BrokenConstructor extends AbstractBlock
 {
     /**
      * @throws LocalizedException

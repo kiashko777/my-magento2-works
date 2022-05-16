@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Setup\Declaration;
 
+use Exception;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\App\Utility\Files;
 use Magento\Framework\Component\ComponentRegistrar;
@@ -17,13 +18,14 @@ use Magento\Framework\Setup\Declaration\Schema\Dto\Index;
 use Magento\Framework\Setup\Declaration\Schema\SchemaConfigInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Checks whitelisted tables behaviour
  *
  * @magentoDbIsolation disabled
  */
-class WhitelistDeclarationTest extends \PHPUnit\Framework\TestCase
+class WhitelistDeclarationTest extends TestCase
 {
     /**
      * @var ComponentRegistrarInterface
@@ -35,22 +37,11 @@ class WhitelistDeclarationTest extends \PHPUnit\Framework\TestCase
      */
     private $schemaConfig;
 
-    protected function setUp(): void
-    {
-        /** @var ObjectManagerInterface|ObjectManager $objectManager */
-        $objectManager = Bootstrap::getObjectManager();
-        $resourceConnection = $objectManager->create(ResourceConnection::class);
-        $objectManager->removeSharedInstance(ResourceConnection::class);
-        $objectManager->addSharedInstance($resourceConnection, ResourceConnection::class);
-        $this->componentRegistrar = $objectManager->get(ComponentRegistrarInterface::class);
-        $this->schemaConfig = $objectManager->create(SchemaConfigInterface::class);
-    }
-
     /**
      * Checks that all declared table elements also declared into whitelist declaration.
      *
      * @magentoAppIsolation enabled
-     * @throws \Exception
+     * @throws Exception
      */
     public function testConstraintsAndIndexesAreWhitelisted()
     {
@@ -87,6 +78,28 @@ class WhitelistDeclarationTest extends \PHPUnit\Framework\TestCase
         }
 
         $this->assertEmpty($undeclaredElements, $resultMessage);
+    }
+
+    /**
+     * @return array
+     */
+    private function getWhiteListTables(): array
+    {
+        $whiteListTables = [];
+
+        foreach ($this->componentRegistrar->getPaths(ComponentRegistrar::MODULE) as $path) {
+            $whiteListPath = $path . DIRECTORY_SEPARATOR . 'etc' .
+                DIRECTORY_SEPARATOR . 'db_schema_whitelist.json';
+
+            if (file_exists($whiteListPath)) {
+                $whiteListTables = array_replace_recursive(
+                    $whiteListTables,
+                    json_decode(file_get_contents($whiteListPath), true)
+                );
+            }
+        }
+
+        return $whiteListTables;
     }
 
     /**
@@ -140,25 +153,14 @@ class WhitelistDeclarationTest extends \PHPUnit\Framework\TestCase
         return $diffResult;
     }
 
-    /**
-     * @return array
-     */
-    private function getWhiteListTables(): array
+    protected function setUp(): void
     {
-        $whiteListTables = [];
-
-        foreach ($this->componentRegistrar->getPaths(ComponentRegistrar::MODULE) as $path) {
-            $whiteListPath = $path . DIRECTORY_SEPARATOR . 'etc' .
-                DIRECTORY_SEPARATOR . 'db_schema_whitelist.json';
-
-            if (file_exists($whiteListPath)) {
-                $whiteListTables = array_replace_recursive(
-                    $whiteListTables,
-                    json_decode(file_get_contents($whiteListPath), true)
-                );
-            }
-        }
-
-        return $whiteListTables;
+        /** @var ObjectManagerInterface|ObjectManager $objectManager */
+        $objectManager = Bootstrap::getObjectManager();
+        $resourceConnection = $objectManager->create(ResourceConnection::class);
+        $objectManager->removeSharedInstance(ResourceConnection::class);
+        $objectManager->addSharedInstance($resourceConnection, ResourceConnection::class);
+        $this->componentRegistrar = $objectManager->get(ComponentRegistrarInterface::class);
+        $this->schemaConfig = $objectManager->create(SchemaConfigInterface::class);
     }
 }

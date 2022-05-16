@@ -4,7 +4,11 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Catalog\Api\Data\ProductLinkInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
@@ -18,28 +22,28 @@ Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/products_wit
 $objectManager = Bootstrap::getObjectManager();
 /** @var ProductRepositoryInterface $productRepository */
 $productRepository = $objectManager->create(ProductRepositoryInterface::class);
-/** @var \Magento\Catalog\Api\Data\ProductLinkInterface $productLink */
-$productCrosssellLink = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->create(\Magento\Catalog\Api\Data\ProductLinkInterface::class);
+/** @var ProductLinkInterface $productLink */
+$productCrosssellLink = Bootstrap::getObjectManager()
+    ->create(ProductLinkInterface::class);
 $productCrosssellLink->setSku('simple');
 $productCrosssellLink->setLinkedProductSku('simple_ms_1');
 $productCrosssellLink->setPosition(2);
 $productCrosssellLink->setLinkType('crosssell');
-$productUpsellLink = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->create(\Magento\Catalog\Api\Data\ProductLinkInterface::class);
+$productUpsellLink = Bootstrap::getObjectManager()
+    ->create(ProductLinkInterface::class);
 $productUpsellLink->setSku('simple');
 $productUpsellLink->setLinkedProductSku('simple_ms_1');
 $productUpsellLink->setPosition(1);
 $productUpsellLink->setLinkType('upsell');
-$productRelatedLink = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->create(\Magento\Catalog\Api\Data\ProductLinkInterface::class);
+$productRelatedLink = Bootstrap::getObjectManager()
+    ->create(ProductLinkInterface::class);
 $productRelatedLink->setSku('simple');
 $productRelatedLink->setLinkedProductSku('simple_ms_1');
 $productRelatedLink->setPosition(3);
 $productRelatedLink->setLinkType('related');
 
 $productModel = $objectManager->create(
-    \Magento\Catalog\Model\Product::class
+    Product::class
 );
 
 $productModel->setTypeId(
@@ -57,9 +61,9 @@ $productModel->setTypeId(
 )->setTierPrice(
     [0 => ['website_id' => 0, 'cust_group' => 0, 'price_qty' => 3, 'price' => 8]]
 )->setVisibility(
-    \Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH
+    Visibility::VISIBILITY_BOTH
 )->setStatus(
-    \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED
+    Status::STATUS_ENABLED
 )->setWebsiteIds(
     [1]
 )->setCategoryIds(

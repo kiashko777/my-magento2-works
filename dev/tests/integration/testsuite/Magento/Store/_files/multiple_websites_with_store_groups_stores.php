@@ -5,14 +5,14 @@
  */
 declare(strict_types=1);
 
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Store\Model\Website;
-use Magento\Store\Model\Store;
 use Magento\Store\Model\Group;
+use Magento\Store\Model\Store;
+use Magento\Store\Model\Website;
+use Magento\TestFramework\Helper\Bootstrap;
 
 $objectManager = Bootstrap::getObjectManager();
 //Creating second website with a store.
-/** @var $website \Magento\Store\Model\Website */
+/** @var $website Website */
 $website = $objectManager->create(Website::class);
 $website->load('second', 'code');
 
@@ -55,7 +55,7 @@ if (!$store->getId()) {
 }
 
 //Creating third website with a store and a storeview
-/** @var $website2 \Magento\Store\Model\Website */
+/** @var $website2 Website */
 $website2 = $objectManager->create(Website::class);
 $website2->load('third', 'code');
 

@@ -6,19 +6,15 @@
 
 namespace Magento\Translation\Model;
 
-class StringTest extends \PHPUnit\Framework\TestCase
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class StringTest extends TestCase
 {
     /**
-     * @var \Magento\Translation\Model\StringUtils
+     * @var StringUtils
      */
     protected $_model;
-
-    protected function setUp(): void
-    {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Translation\Model\StringUtils::class
-        );
-    }
 
     public function testConstructor()
     {
@@ -34,5 +30,12 @@ class StringTest extends \PHPUnit\Framework\TestCase
         $this->_model->setString($expectedString);
         $actualString = $this->_model->getString();
         $this->assertEquals($expectedString, $actualString);
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()->create(
+            StringUtils::class
+        );
     }
 }

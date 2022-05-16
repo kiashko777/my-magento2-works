@@ -3,9 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestModule4\Service\V1\Entity;
 
-class DataObjectResponse extends \Magento\Framework\Api\AbstractExtensibleObject
+use Magento\Framework\Api\AbstractExtensibleObject;
+
+class DataObjectResponse extends AbstractExtensibleObject
 {
     /**
      * @return int

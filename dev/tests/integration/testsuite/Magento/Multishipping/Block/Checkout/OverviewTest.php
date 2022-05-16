@@ -49,38 +49,6 @@ class OverviewTest extends TestCase
     private $item;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        Bootstrap::getInstance()->loadArea(Area::AREA_FRONTEND);
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->block = $this->objectManager->get(LayoutInterface::class)
-            ->createBlock(
-                Overview::class,
-                'checkout_overview',
-                [
-                    'data' => [
-                        'renderer_template' => 'Magento_Multishipping::checkout/item/default.phtml',
-                        'row_renderer_template' => 'Magento_Multishipping::checkout/overview/item.phtml',
-                    ],
-                ]
-            );
-
-        $this->block->addChild('renderer.list', RendererList::class);
-        $this->block->getChildBlock(
-            'renderer.list'
-        )->addChild(
-            'default',
-            Renderer::class,
-            ['template' => 'cart/item/default.phtml']
-        );
-        $this->quote = $this->objectManager->create(Quote::class);
-        $this->product = $this->objectManager->create(ProductRepository::class);
-        $this->item = $this->objectManager->create(Item::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
      */
     public function testGetRowItemHtml()
@@ -112,5 +80,37 @@ class OverviewTest extends TestCase
                 $this->block->getRowItemHtml($item)
             )
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        Bootstrap::getInstance()->loadArea(Area::AREA_FRONTEND);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->block = $this->objectManager->get(LayoutInterface::class)
+            ->createBlock(
+                Overview::class,
+                'checkout_overview',
+                [
+                    'data' => [
+                        'renderer_template' => 'Magento_Multishipping::checkout/item/default.phtml',
+                        'row_renderer_template' => 'Magento_Multishipping::checkout/overview/item.phtml',
+                    ],
+                ]
+            );
+
+        $this->block->addChild('renderer.list', RendererList::class);
+        $this->block->getChildBlock(
+            'renderer.list'
+        )->addChild(
+            'default',
+            Renderer::class,
+            ['template' => 'cart/item/default.phtml']
+        );
+        $this->quote = $this->objectManager->create(Quote::class);
+        $this->product = $this->objectManager->create(ProductRepository::class);
+        $this->item = $this->objectManager->create(Item::class);
     }
 }

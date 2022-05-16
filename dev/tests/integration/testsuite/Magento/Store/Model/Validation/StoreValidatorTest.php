@@ -18,11 +18,6 @@ class StoreValidatorTest extends TestCase
      */
     private $storeValidator;
 
-    protected function setUp(): void
-    {
-        $this->storeValidator =  Bootstrap::getObjectManager()->create(StoreValidator::class);
-    }
-
     /**
      * @dataProvider isValidDataProvider
      * @param Store $store
@@ -55,5 +50,10 @@ class StoreValidatorTest extends TestCase
             [$storeWithEmptyCode, false],
             [$storeWithInvalidCode, false],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->storeValidator = Bootstrap::getObjectManager()->create(StoreValidator::class);
     }
 }

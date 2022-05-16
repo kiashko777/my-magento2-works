@@ -13,8 +13,8 @@ $objectManager = Bootstrap::getObjectManager();
 /** @var WebsiteRepositoryInterface $websiteRepository */
 $websiteRepository = $objectManager->get(WebsiteRepositoryInterface::class);
 $baseWebsiteId = $websiteRepository->get('base')->getId();
-$ip =  ip2long('127.0.0.1');
-$updateDatetime =  new \DateTime('-0.5 hours');
+$ip = ip2long('127.0.0.1');
+$updateDatetime = new DateTime('-0.5 hours');
 /** @var SendFriendResource $sendFriendResource */
 $sendFriendResource = $objectManager->get(SendFriendResource::class);
 $sendFriendResource->addSendItem($ip, $updateDatetime->getTimestamp(), $baseWebsiteId);

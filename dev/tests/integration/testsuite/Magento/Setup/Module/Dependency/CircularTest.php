@@ -3,19 +3,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Dependency;
 
-class CircularTest extends \PHPUnit\Framework\TestCase
+use PHPUnit\Framework\TestCase;
+
+class CircularTest extends TestCase
 {
     /**
      * @var Circular
      */
     protected $circular;
-
-    protected function setUp(): void
-    {
-        $this->circular = new Circular();
-    }
 
     public function testBuildCircularDependencies()
     {
@@ -27,5 +25,10 @@ class CircularTest extends \PHPUnit\Framework\TestCase
             5 => [[5, 2, 5]],
         ];
         $this->assertEquals($expectedCircularDependencies, $this->circular->buildCircularDependencies($dependencies));
+    }
+
+    protected function setUp(): void
+    {
+        $this->circular = new Circular();
     }
 }

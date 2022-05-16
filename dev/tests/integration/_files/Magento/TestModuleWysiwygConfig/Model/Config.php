@@ -3,9 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestModuleWysiwygConfig\Model;
 
-class Config implements \Magento\Framework\Data\Wysiwyg\ConfigProviderInterface
+use Magento\Cms\Model\Wysiwyg\DefaultConfigProvider;
+use Magento\Framework\Data\Wysiwyg\ConfigProviderInterface;
+use Magento\Framework\DataObject;
+
+class Config implements ConfigProviderInterface
 {
     /**
      * Configuration override for WYSIWYG height
@@ -19,13 +24,13 @@ class Config implements \Magento\Framework\Data\Wysiwyg\ConfigProviderInterface
      */
     const CONFIG_CONTENT_CSS = 'something_else.css';
 
-    /** @var \Magento\Cms\Model\Wysiwyg\DefaultConfigProvider */
+    /** @var DefaultConfigProvider */
     private $cmsConfigProvider;
 
     /**
-     * @param \Magento\Cms\Model\Wysiwyg\DefaultConfigProvider $cmsConfigProvider
+     * @param DefaultConfigProvider $cmsConfigProvider
      */
-    public function __construct(\Magento\Cms\Model\Wysiwyg\DefaultConfigProvider $cmsConfigProvider)
+    public function __construct(DefaultConfigProvider $cmsConfigProvider)
     {
         $this->cmsConfigProvider = $cmsConfigProvider;
     }
@@ -33,7 +38,7 @@ class Config implements \Magento\Framework\Data\Wysiwyg\ConfigProviderInterface
     /**
      * @inheritdoc
      */
-    public function getConfig(\Magento\Framework\DataObject $config): \Magento\Framework\DataObject
+    public function getConfig(DataObject $config): DataObject
     {
         //get default config
         $config = $this->cmsConfigProvider->getConfig($config);
@@ -45,30 +50,15 @@ class Config implements \Magento\Framework\Data\Wysiwyg\ConfigProviderInterface
     }
 
     /**
-     * Modify height and content_css in the config
-     *
-     * @param \Magento\Framework\DataObject $config
-     * @return \Magento\Framework\DataObject
-     */
-    private function modifyHeightAndContentCss(\Magento\Framework\DataObject $config) : \Magento\Framework\DataObject
-    {
-        return $config->addData(
-            [
-                'height' => self::CONFIG_HEIGHT,
-                'content_css' => self::CONFIG_CONTENT_CSS
-            ]
-        );
-    }
-
-    /**
      * Remove the special character from the toolbar configuration
      *
-     * @param \Magento\Framework\DataObject $config
-     * @return \Magento\Framework\DataObject
+     * @param DataObject $config
+     * @return DataObject
      */
     private function removeSpecialCharacterFromToolbar(
-        \Magento\Framework\DataObject $config
-    ) : \Magento\Framework\DataObject {
+        DataObject $config
+    ): DataObject
+    {
         $tinymce4 = $config->getData('tinymce4');
         if (isset($tinymce4['toolbar']) && isset($tinymce4['plugins'])) {
             $toolbar = $tinymce4['toolbar'];
@@ -78,5 +68,21 @@ class Config implements \Magento\Framework\Data\Wysiwyg\ConfigProviderInterface
             $config->setData('tinymce4', $tinymce4);
         }
         return $config;
+    }
+
+    /**
+     * Modify height and content_css in the config
+     *
+     * @param DataObject $config
+     * @return DataObject
+     */
+    private function modifyHeightAndContentCss(DataObject $config): DataObject
+    {
+        return $config->addData(
+            [
+                'height' => self::CONFIG_HEIGHT,
+                'content_css' => self::CONFIG_CONTENT_CSS
+            ]
+        );
     }
 }

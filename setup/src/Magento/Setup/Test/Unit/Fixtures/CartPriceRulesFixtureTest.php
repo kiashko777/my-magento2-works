@@ -16,6 +16,7 @@ use Magento\SalesRule\Model\Rule\Condition\Address;
 use Magento\SalesRule\Model\Rule\Condition\Combine;
 use Magento\SalesRule\Model\Rule\Condition\Product;
 use Magento\SalesRule\Model\Rule\Condition\Product\Found;
+use Magento\SalesRule\Model\RuleFactory;
 use Magento\Setup\Fixtures\CartPriceRulesFixture;
 use Magento\Setup\Fixtures\FixtureModel;
 use Magento\Store\Model\Store;
@@ -23,6 +24,7 @@ use Magento\Store\Model\StoreManager;
 use Magento\Store\Model\Website;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
@@ -40,16 +42,9 @@ class CartPriceRulesFixtureTest extends TestCase
     private $model;
 
     /**
-     * @var \Magento\SalesRule\Model\RuleFactory|MockObject
+     * @var RuleFactory|MockObject
      */
     private $ruleFactoryMock;
-
-    protected function setUp(): void
-    {
-        $this->fixtureModelMock = $this->createMock(FixtureModel::class);
-        $this->ruleFactoryMock = $this->createPartialMock(\Magento\SalesRule\Model\RuleFactory::class, ['create']);
-        $this->model = new CartPriceRulesFixture($this->fixtureModelMock, $this->ruleFactoryMock);
-    }
 
     public function testExecute()
     {
@@ -162,7 +157,7 @@ class CartPriceRulesFixtureTest extends TestCase
      */
     public function testGenerateAdvancedCondition($ruleId, $categoriesArray, $ruleCount)
     {
-        $reflection = new \ReflectionClass($this->model);
+        $reflection = new ReflectionClass($this->model);
         $reflectionProperty = $reflection->getProperty('cartPriceRulesCount');
         $reflectionProperty->setAccessible(true);
         $reflectionProperty->setValue($this->model, $ruleCount);
@@ -201,7 +196,7 @@ class CartPriceRulesFixtureTest extends TestCase
                 ],
                 'actions' => [
                     1 => [
-                        'type' => \Magento\SalesRule\Model\Rule\Condition\Product\Combine::class,
+                        'type' => Product\Combine::class,
                         'aggregator' => 'all',
                         'value' => '1',
                         'new_child' => '',
@@ -244,7 +239,7 @@ class CartPriceRulesFixtureTest extends TestCase
                 ],
                 'actions' => [
                     1 => [
-                        'type' => \Magento\SalesRule\Model\Rule\Condition\Product\Combine::class,
+                        'type' => Product\Combine::class,
                         'aggregator' => 'all',
                         'value' => '1',
                         'new_child' => '',
@@ -279,5 +274,12 @@ class CartPriceRulesFixtureTest extends TestCase
             ],
             $this->model->introduceParamLabels()
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->fixtureModelMock = $this->createMock(FixtureModel::class);
+        $this->ruleFactoryMock = $this->createPartialMock(RuleFactory::class, ['create']);
+        $this->model = new CartPriceRulesFixture($this->fixtureModelMock, $this->ruleFactoryMock);
     }
 }

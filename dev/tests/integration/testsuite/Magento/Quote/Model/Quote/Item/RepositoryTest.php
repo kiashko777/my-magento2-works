@@ -3,11 +3,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Quote\Model\Quote\Item;
 
+use Magento\Quote\Api\CartItemRepositoryInterface;
+use Magento\Quote\Api\Data\CartItemInterface;
+use Magento\Quote\Model\Quote;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\User\Api\Data\UserInterface;
+use PHPUnit\Framework\TestCase;
 
-class RepositoryTest extends \PHPUnit\Framework\TestCase
+class RepositoryTest extends TestCase
 {
     /**
      * @magentoDataFixture Magento/Sales/_files/quote.php
@@ -20,20 +26,20 @@ class RepositoryTest extends \PHPUnit\Framework\TestCase
             'email' => 'admin@example.com'
         ];
 
-        /** @var \Magento\Quote\Api\CartItemRepositoryInterface $quoteItemRepository */
+        /** @var CartItemRepositoryInterface $quoteItemRepository */
         $quoteItemRepository = Bootstrap::getObjectManager()->create(
-            \Magento\Quote\Api\CartItemRepositoryInterface::class
+            CartItemRepositoryInterface::class
         );
-        /** @var \Magento\Quote\Model\Quote $quote */
-        $quote = Bootstrap::getObjectManager()->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = Bootstrap::getObjectManager()->create(Quote::class);
         $quoteId = $quote->load('test01', 'reserved_order_id')->getId();
 
-        /** @var \Magento\Quote\Api\Data\CartItemInterface[] $quoteItems */
+        /** @var CartItemInterface[] $quoteItems */
         $quoteItems = $quoteItemRepository->getList($quoteId);
-        /** @var \Magento\Quote\Api\Data\CartItemInterface $actualQuoteItem */
+        /** @var CartItemInterface $actualQuoteItem */
         $actualQuoteItem = array_pop($quoteItems);
-        $this->assertInstanceOf(\Magento\Quote\Api\Data\CartItemInterface::class, $actualQuoteItem);
-        /** @var \Magento\User\Api\Data\UserInterface $testAttribute */
+        $this->assertInstanceOf(CartItemInterface::class, $actualQuoteItem);
+        /** @var UserInterface $testAttribute */
         $testAttribute = $actualQuoteItem->getExtensionAttributes()->__toArray();
         $this->assertEquals(
             $expectedExtensionAttributes['firstname'],

@@ -4,8 +4,12 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Backend\App\Area\FrontNameResolver;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Customer\Model\CustomerRegistry;
+use Magento\Framework\Registry;
+use Magento\Review\Model\Review;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
@@ -13,7 +17,7 @@ Resolver::getInstance()->requireDataFixture('Magento/Customer/_files/customer.ph
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/product_simple.php');
 
 Bootstrap::getInstance()->loadArea(
-    \Magento\Backend\App\Area\FrontNameResolver::AREA_CODE
+    FrontNameResolver::AREA_CODE
 );
 $objectManager = Bootstrap::getObjectManager();
 /** @var CustomerRegistry $customerRegistry */
@@ -23,7 +27,7 @@ $customer = $customerRegistry->retrieve(1);
 $productRepository = $objectManager->create(ProductRepositoryInterface::class);
 $product = $productRepository->get('simple');
 $review = $objectManager->create(
-    \Magento\Review\Model\Review::class,
+    Review::class,
     ['data' => [
         'customer_id' => $customer->getId(),
         'title' => 'Review Summary',
@@ -33,22 +37,22 @@ $review = $objectManager->create(
 );
 
 $review
-    ->setEntityId($review->getEntityIdByCode(\Magento\Review\Model\Review::ENTITY_PRODUCT_CODE))
+    ->setEntityId($review->getEntityIdByCode(Review::ENTITY_PRODUCT_CODE))
     ->setEntityPkValue($product->getId())
-    ->setStatusId(\Magento\Review\Model\Review::STATUS_PENDING)
+    ->setStatusId(Review::STATUS_PENDING)
     ->setStoreId(
         $objectManager->get(
-            \Magento\Store\Model\StoreManagerInterface::class
+            StoreManagerInterface::class
         )->getStore()->getId()
     )
     ->setStores([
         $objectManager->get(
-            \Magento\Store\Model\StoreManagerInterface::class
+            StoreManagerInterface::class
         )->getStore()->getId()
     ])
     ->save();
 
-$objectManager->get(\Magento\Framework\Registry::class)->register(
+$objectManager->get(Registry::class)->register(
     'review_data',
     $review
 );

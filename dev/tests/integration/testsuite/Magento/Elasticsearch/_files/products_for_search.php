@@ -9,15 +9,18 @@ use Magento\Catalog\Api\CategoryLinkManagementInterface;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use Magento\Catalog\Model\Product\Visibility;
+use Magento\Eav\Model\Entity\Attribute\Set;
+use Magento\Store\Model\Store;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/category.php');
 
 $categoryId = 333;
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-$attributeSet = $objectManager->create(\Magento\Eav\Model\Entity\Attribute\Set::class);
+$objectManager = Bootstrap::getObjectManager();
+$attributeSet = $objectManager->create(Set::class);
 $entityType = $objectManager->create(\Magento\Eav\Model\Entity\Type::class)->loadByCode('catalog_product');
-$defaultSetId = $objectManager->create(\Magento\Catalog\Model\Product::class)->getDefaultAttributeSetid();
+$defaultSetId = $objectManager->create(Product::class)->getDefaultAttributeSetid();
 
 $products = [
     [
@@ -27,7 +30,7 @@ $products = [
         'status' => Status::STATUS_ENABLED,
         'visibility' => Visibility::VISIBILITY_BOTH,
         'attribute_set' => $defaultSetId,
-        'website_ids' => [\Magento\Store\Model\Store::DISTRO_STORE_ID],
+        'website_ids' => [Store::DISTRO_STORE_ID],
         'price' => 10,
         'category_id' => $categoryId,
         'meta_title' => 'Key Title',
@@ -41,7 +44,7 @@ $products = [
         'status' => Status::STATUS_ENABLED,
         'visibility' => Visibility::VISIBILITY_BOTH,
         'attribute_set' => $defaultSetId,
-        'website_ids' => [\Magento\Store\Model\Store::DISTRO_STORE_ID],
+        'website_ids' => [Store::DISTRO_STORE_ID],
         'price' => 10,
         'category_id' => $categoryId,
         'meta_title' => 'Last Title',
@@ -55,7 +58,7 @@ $products = [
         'status' => Status::STATUS_ENABLED,
         'visibility' => Visibility::VISIBILITY_BOTH,
         'attribute_set' => $defaultSetId,
-        'website_ids' => [\Magento\Store\Model\Store::DISTRO_STORE_ID],
+        'website_ids' => [Store::DISTRO_STORE_ID],
         'price' => 20,
         'category_id' => $categoryId,
         'meta_title' => 'First Title',
@@ -69,7 +72,7 @@ $products = [
         'status' => Status::STATUS_ENABLED,
         'visibility' => Visibility::VISIBILITY_BOTH,
         'attribute_set' => $defaultSetId,
-        'website_ids' => [\Magento\Store\Model\Store::DISTRO_STORE_ID],
+        'website_ids' => [Store::DISTRO_STORE_ID],
         'price' => 30,
         'category_id' => $categoryId,
         'meta_title' => 'A title',
@@ -79,7 +82,7 @@ $products = [
 ];
 
 /** @var CategoryLinkManagementInterface $categoryLinkManagement */
-$categoryLinkManagement =  $objectManager->create(CategoryLinkManagementInterface::class);
+$categoryLinkManagement = $objectManager->create(CategoryLinkManagementInterface::class);
 
 $categoriesToAssign = [];
 

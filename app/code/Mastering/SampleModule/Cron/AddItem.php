@@ -2,8 +2,8 @@
 
 namespace Mastering\SampleModule\Cron;
 
-use Mastering\SampleModule\Model\ItemFactory;
 use Mastering\SampleModule\Model\Config;
+use Mastering\SampleModule\Model\ItemFactory;
 
 
 class AddItem

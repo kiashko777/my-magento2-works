@@ -5,20 +5,28 @@
  */
 declare(strict_types=1);
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Action;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Catalog\Setup\CategorySetup;
+use Magento\Store\Model\StoreManager;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/CatalogRule/_files/attribute.php');
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 
-$storeManager = $objectManager->get(\Magento\Store\Model\StoreManager::class);
+$storeManager = $objectManager->get(StoreManager::class);
 $store = $storeManager->getStore('default');
-$productRepository = $objectManager->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+$productRepository = $objectManager->get(ProductRepositoryInterface::class);
 
-$installer = $objectManager->get(\Magento\Catalog\Setup\CategorySetup::class);
+$installer = $objectManager->get(CategorySetup::class);
 $attributeSetId = $installer->getAttributeSetId('catalog_product', 'Default');
 
-$product = $objectManager->create(\Magento\Catalog\Model\Product::class)
+$product = $objectManager->create(Product::class)
     ->setTypeId('simple')
     ->setId(1)
     ->setAttributeSetId($attributeSetId)
@@ -26,8 +34,8 @@ $product = $objectManager->create(\Magento\Catalog\Model\Product::class)
     ->setName('Simple Products 1')
     ->setSku('simple1')
     ->setPrice(10)
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setStockData([
         'use_config_manage_stock' => 1,
         'qty' => 100,
@@ -35,10 +43,10 @@ $product = $objectManager->create(\Magento\Catalog\Model\Product::class)
         'is_in_stock' => 1,
     ]);
 $productRepository->save($product);
-$productAction = $objectManager->get(\Magento\Catalog\Model\Product\Action::class);
+$productAction = $objectManager->get(Action::class);
 $productAction->updateAttributes([$product->getId()], ['test_attribute' => 'test_attribute_value'], $store->getId());
 
-$product = $objectManager->create(\Magento\Catalog\Model\Product::class)
+$product = $objectManager->create(Product::class)
     ->setTypeId('simple')
     ->setId(2)
     ->setAttributeSetId($attributeSetId)
@@ -46,8 +54,8 @@ $product = $objectManager->create(\Magento\Catalog\Model\Product::class)
     ->setName('Simple Products 2')
     ->setSku('simple2')
     ->setPrice(9.9)
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setStockData([
         'use_config_manage_stock' => 1,
         'qty' => 100,

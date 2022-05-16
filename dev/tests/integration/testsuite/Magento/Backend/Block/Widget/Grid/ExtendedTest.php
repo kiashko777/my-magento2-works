@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Backend\Block\Widget\Grid;
 
 use Laminas\Stdlib\Parameters;
@@ -26,30 +27,6 @@ class ExtendedTest extends TestCase
      * @var LayoutInterface
      */
     protected $_layoutMock;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->_layoutMock = Bootstrap::getObjectManager()->get(
-            LayoutInterface::class
-        );
-        $context = Bootstrap::getObjectManager()->create(
-            Context::class,
-            ['layout' => $this->_layoutMock]
-        );
-        $this->_block = $this->_layoutMock->createBlock(
-            Extended::class,
-            'grid',
-            ['context' => $context]
-        );
-
-        $this->_block->addColumn('column1', ['id' => 'columnId1']);
-        $this->_block->addColumn('column2', ['id' => 'columnId2']);
-    }
 
     /**
      * @magentoAppIsolation enabled
@@ -109,17 +86,41 @@ class ExtendedTest extends TestCase
         $this->_block->getRequest()
             ->setQuery(
                 Bootstrap::getObjectManager()
-                ->create(
-                    Parameters::class,
-                    [
-                        'values' => [
-                            'ajax' => true
+                    ->create(
+                        Parameters::class,
+                        [
+                            'values' => [
+                                'ajax' => true
+                            ]
                         ]
-                    ]
-                )
+                    )
             );
         $html = $this->_block->getHtml();
         $html = str_replace(["\n", " "], '', $html);
         $this->assertStringEndsWith("</table></div>", $html);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->_layoutMock = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
+        );
+        $context = Bootstrap::getObjectManager()->create(
+            Context::class,
+            ['layout' => $this->_layoutMock]
+        );
+        $this->_block = $this->_layoutMock->createBlock(
+            Extended::class,
+            'grid',
+            ['context' => $context]
+        );
+
+        $this->_block->addColumn('column1', ['id' => 'columnId1']);
+        $this->_block->addColumn('column2', ['id' => 'columnId2']);
     }
 }

@@ -8,14 +8,17 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Api;
 
-use Magento\Framework\Api\Data\ImageContentInterface;
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Catalog\Model\ProductFactory;
+use Exception;
+use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Attribute\Backend\Media\ImageEntryConverter;
+use Magento\Catalog\Model\ProductFactory;
 use Magento\Catalog\Model\ProductRepository;
-use Magento\Framework\Webapi\Rest\Request;
-use Magento\TestFramework\TestCase\WebapiAbstract;
+use Magento\Framework\Api\Data\ImageContentInterface;
 use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
  * Class ProductAttributeMediaGalleryManagementInterfaceTest
@@ -54,76 +57,6 @@ class ProductAttributeMediaGalleryManagementInterfaceTest extends WebapiAbstract
     private $objectManager;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-
-        $this->createServiceInfo = [
-            'rest' => [
-                'resourcePath' => '/V1/products/simple/media',
-                'httpMethod' => Request::HTTP_METHOD_POST,
-            ],
-            'soap' => [
-                'service' => 'catalogProductAttributeMediaGalleryManagementV1',
-                'serviceVersion' => 'V1',
-                'operation' => 'catalogProductAttributeMediaGalleryManagementV1Create',
-            ],
-        ];
-
-        $this->updateServiceInfo = [
-            'rest' => [
-                'resourcePath' => '/V1/products/simple/media',
-                'httpMethod' => Request::HTTP_METHOD_PUT,
-            ],
-            'soap' => [
-                'service' => 'catalogProductAttributeMediaGalleryManagementV1',
-                'serviceVersion' => 'V1',
-                'operation' => 'catalogProductAttributeMediaGalleryManagementV1Update',
-            ],
-        ];
-
-        $this->deleteServiceInfo = [
-            'rest' => [
-                'httpMethod' => Request::HTTP_METHOD_DELETE,
-            ],
-            'soap' => [
-                'service' => 'catalogProductAttributeMediaGalleryManagementV1',
-                'serviceVersion' => 'V1',
-                'operation' => 'catalogProductAttributeMediaGalleryManagementV1Remove',
-            ],
-        ];
-
-        $this->testImagePath = __DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'test_image.jpg';
-    }
-
-    /**
-     * Retrieve product that was updated by test
-     *
-     * @return \Magento\Catalog\Model\Product
-     */
-    protected function getTargetSimpleProduct()
-    {
-        return $this->objectManager->get(ProductFactory::class)->create()->load(1);
-    }
-
-    /**
-     * Retrieve target product image ID
-     *
-     * Target product must have single image if this function is used
-     *
-     * @return int
-     */
-    protected function getTargetGalleryEntryId()
-    {
-        $mediaGallery = $this->getTargetSimpleProduct()->getData('media_gallery');
-        $image = array_shift($mediaGallery['images']);
-
-        return (int)$image['value_id'];
-    }
-
-    /**
      * Test create() method
      *
      * @magentoApiDataFixture Magento/Catalog/_files/product_simple.php
@@ -156,6 +89,16 @@ class ProductAttributeMediaGalleryManagementInterfaceTest extends WebapiAbstract
         $this->assertEquals(0, $updatedImage['disabled']);
         $this->assertStringStartsWith('/t/e/test_image', $updatedImage['file']);
         $this->assertEquals($updatedImage['file'], $targetProduct->getData('image'));
+    }
+
+    /**
+     * Retrieve product that was updated by test
+     *
+     * @return Product
+     */
+    protected function getTargetSimpleProduct()
+    {
+        return $this->objectManager->get(ProductFactory::class)->create()->load(1);
     }
 
     /**
@@ -247,7 +190,7 @@ class ProductAttributeMediaGalleryManagementInterfaceTest extends WebapiAbstract
     public function testUpdate()
     {
         $productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
-        /** @var \Magento\Catalog\Api\Data\ProductInterface $product */
+        /** @var ProductInterface $product */
         $product = $productRepository->get('simple');
         $imageId = (int)$product->getMediaGalleryImages()->getFirstItem()->getValueId();
         $requestData = [
@@ -272,6 +215,48 @@ class ProductAttributeMediaGalleryManagementInterfaceTest extends WebapiAbstract
     }
 
     /**
+     * Retrieve target product image ID
+     *
+     * Target product must have single image if this function is used
+     *
+     * @return int
+     */
+    protected function getTargetGalleryEntryId()
+    {
+        $mediaGallery = $this->getTargetSimpleProduct()->getData('media_gallery');
+        $image = array_shift($mediaGallery['images']);
+
+        return (int)$image['value_id'];
+    }
+
+    /**
+     * Check that Media Gallery data is correct.
+     *
+     * @param int $imageId
+     * @param string $file
+     * @param string $label
+     * @return array
+     */
+    private function assertMediaGalleryData(int $imageId, string $file, string $label): array
+    {
+        $targetProduct = $this->getTargetSimpleProduct();
+        $this->assertEquals($file, $targetProduct->getData('thumbnail'));
+        $this->assertEquals('no_selection', $targetProduct->getData('image'));
+        $this->assertEquals('no_selection', $targetProduct->getData('small_image'));
+        $mediaGallery = $targetProduct->getData('media_gallery');
+        $this->assertCount(1, $mediaGallery['images']);
+        $updatedImage = array_shift($mediaGallery['images']);
+        $this->assertEquals($imageId, $updatedImage['value_id']);
+        $this->assertEquals('Updated Image Text', $updatedImage['label']);
+        $this->assertEquals($file, $updatedImage['file']);
+        $this->assertEquals(10, $updatedImage['position']);
+        $this->assertEquals(1, $updatedImage['disabled']);
+        $this->assertEquals($label, $updatedImage['label_default']);
+
+        return $updatedImage;
+    }
+
+    /**
      * Update media gallery entity with new image.
      *
      * @magentoApiDataFixture Magento/Catalog/_files/product_with_image.php
@@ -280,7 +265,7 @@ class ProductAttributeMediaGalleryManagementInterfaceTest extends WebapiAbstract
     public function testUpdateWithNewImage(): void
     {
         $productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
-        /** @var \Magento\Catalog\Api\Data\ProductInterface $product */
+        /** @var ProductInterface $product */
         $product = $productRepository->get('simple');
         $imageId = (int)$product->getMediaGalleryImages()->getFirstItem()->getValueId();
 
@@ -320,7 +305,7 @@ class ProductAttributeMediaGalleryManagementInterfaceTest extends WebapiAbstract
     public function testUpdateWithNotDefaultStoreId()
     {
         $productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
-        /** @var \Magento\Catalog\Api\Data\ProductInterface $product */
+        /** @var ProductInterface $product */
         $product = $productRepository->get('simple');
         $imageId = (int)$product->getMediaGalleryImages()->getFirstItem()->getValueId();
 
@@ -343,33 +328,6 @@ class ProductAttributeMediaGalleryManagementInterfaceTest extends WebapiAbstract
         $updatedImage = $this->assertMediaGalleryData($imageId, '/m/a/magento_image.jpg', 'Image Alt Text');
         $this->assertEquals(1, $updatedImage['position_default']);
         $this->assertEquals(0, $updatedImage['disabled_default']);
-    }
-
-    /**
-     * Check that Media Gallery data is correct.
-     *
-     * @param int $imageId
-     * @param string $file
-     * @param string $label
-     * @return array
-     */
-    private function assertMediaGalleryData(int $imageId, string $file, string $label): array
-    {
-        $targetProduct = $this->getTargetSimpleProduct();
-        $this->assertEquals($file, $targetProduct->getData('thumbnail'));
-        $this->assertEquals('no_selection', $targetProduct->getData('image'));
-        $this->assertEquals('no_selection', $targetProduct->getData('small_image'));
-        $mediaGallery = $targetProduct->getData('media_gallery');
-        $this->assertCount(1, $mediaGallery['images']);
-        $updatedImage = array_shift($mediaGallery['images']);
-        $this->assertEquals($imageId, $updatedImage['value_id']);
-        $this->assertEquals('Updated Image Text', $updatedImage['label']);
-        $this->assertEquals($file, $updatedImage['file']);
-        $this->assertEquals(10, $updatedImage['position']);
-        $this->assertEquals(1, $updatedImage['disabled']);
-        $this->assertEquals($label, $updatedImage['label_default']);
-
-        return $updatedImage;
     }
 
     /**
@@ -399,7 +357,7 @@ class ProductAttributeMediaGalleryManagementInterfaceTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfProvidedContentIsNotBase64Encoded()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The image content must be valid base64 encoded data.');
 
         $encodedContent = 'not_a_base64_encoded_content';
@@ -427,7 +385,7 @@ class ProductAttributeMediaGalleryManagementInterfaceTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfProvidedContentIsNotAnImage()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The image content must be valid base64 encoded data.');
 
         $encodedContent = base64_encode('not_an_image');
@@ -455,7 +413,7 @@ class ProductAttributeMediaGalleryManagementInterfaceTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfProvidedImageHasWrongMimeType()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The image MIME type is not valid or not supported.');
 
         $encodedContent = base64_encode(file_get_contents($this->testImagePath));
@@ -482,7 +440,7 @@ class ProductAttributeMediaGalleryManagementInterfaceTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfTargetProductDoesNotExist()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage(
             'The product that was requested doesn\'t exist. Verify the product and try again.'
         );
@@ -513,7 +471,7 @@ class ProductAttributeMediaGalleryManagementInterfaceTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfProvidedImageNameContainsForbiddenCharacters()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Provided image name contains forbidden characters.');
 
         $requestData = [
@@ -539,7 +497,7 @@ class ProductAttributeMediaGalleryManagementInterfaceTest extends WebapiAbstract
      */
     public function testUpdateThrowsExceptionIfTargetProductDoesNotExist()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage(
             'The product that was requested doesn\'t exist. Verify the product and try again.'
         );
@@ -568,7 +526,7 @@ class ProductAttributeMediaGalleryManagementInterfaceTest extends WebapiAbstract
      */
     public function testUpdateThrowsExceptionIfThereIsNoImageWithGivenId()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('No image with the provided ID was found. Verify the ID and try again.');
 
         $requestData = [
@@ -595,7 +553,7 @@ class ProductAttributeMediaGalleryManagementInterfaceTest extends WebapiAbstract
      */
     public function testDeleteThrowsExceptionIfTargetProductDoesNotExist()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage(
             'The product that was requested doesn\'t exist. Verify the product and try again.'
         );
@@ -616,7 +574,7 @@ class ProductAttributeMediaGalleryManagementInterfaceTest extends WebapiAbstract
      */
     public function testDeleteThrowsExceptionIfThereIsNoImageWithGivenId()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('No image with the provided ID was found. Verify the ID and try again.');
 
         $this->deleteServiceInfo['rest']['resourcePath'] = '/V1/products/simple/media/9999';
@@ -789,5 +747,50 @@ class ProductAttributeMediaGalleryManagementInterfaceTest extends WebapiAbstract
         $this->assertEquals(0, $updatedImage['disabled']);
         $this->assertStringStartsWith('/t/e/test_image', $updatedImage['file']);
         $this->assertEquals($videoContent, array_intersect_key($updatedImage, $videoContent));
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->createServiceInfo = [
+            'rest' => [
+                'resourcePath' => '/V1/products/simple/media',
+                'httpMethod' => Request::HTTP_METHOD_POST,
+            ],
+            'soap' => [
+                'service' => 'catalogProductAttributeMediaGalleryManagementV1',
+                'serviceVersion' => 'V1',
+                'operation' => 'catalogProductAttributeMediaGalleryManagementV1Create',
+            ],
+        ];
+
+        $this->updateServiceInfo = [
+            'rest' => [
+                'resourcePath' => '/V1/products/simple/media',
+                'httpMethod' => Request::HTTP_METHOD_PUT,
+            ],
+            'soap' => [
+                'service' => 'catalogProductAttributeMediaGalleryManagementV1',
+                'serviceVersion' => 'V1',
+                'operation' => 'catalogProductAttributeMediaGalleryManagementV1Update',
+            ],
+        ];
+
+        $this->deleteServiceInfo = [
+            'rest' => [
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
+            ],
+            'soap' => [
+                'service' => 'catalogProductAttributeMediaGalleryManagementV1',
+                'serviceVersion' => 'V1',
+                'operation' => 'catalogProductAttributeMediaGalleryManagementV1Remove',
+            ],
+        ];
+
+        $this->testImagePath = __DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'test_image.jpg';
     }
 }

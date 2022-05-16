@@ -12,10 +12,10 @@ use Magento\Framework\ObjectManagerInterface;
 use Magento\Quote\Api\GuestCartManagementInterface;
 use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\QuoteIdMask;
+use Magento\Quote\Model\QuoteIdMaskFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Mail\Template\TransportBuilderMock;
 use PHPUnit\Framework\TestCase;
-use Magento\Quote\Model\QuoteIdMaskFactory;
 
 /**
  * Test order confirmation email for downloadable product.
@@ -39,17 +39,6 @@ class DownloadableTest extends TestCase
      * @var QuoteIdMaskFactory
      */
     private $quoteIdMaskFactory;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->transportBuilder = $this->objectManager->get(TransportBuilderMock::class);
-        $this->quoteIdMaskFactory = $this->objectManager->get(QuoteIdMaskFactory::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Downloadable/_files/quote_with_configurable_downloadable_product.php
@@ -79,5 +68,16 @@ class DownloadableTest extends TestCase
         $this->assertStringContainsString('SKU: downloadable-product', $rawMessage);
         $this->assertStringContainsString('Downloadable Products link', $rawMessage);
         $this->assertStringContainsString('/downloadable/download/link/id/', $rawMessage);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->transportBuilder = $this->objectManager->get(TransportBuilderMock::class);
+        $this->quoteIdMaskFactory = $this->objectManager->get(QuoteIdMaskFactory::class);
     }
 }

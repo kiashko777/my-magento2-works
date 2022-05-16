@@ -86,36 +86,6 @@ class QuoteRepositoryTest extends TestCase
     private $quote;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = BootstrapHelper::getObjectManager();
-        $this->quoteRepository = $this->objectManager->create(CartRepositoryInterface::class);
-        $this->searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
-        $this->filterBuilder = $this->objectManager->get(FilterBuilder::class);
-        $this->getQuoteByReservedOrderId = $this->objectManager->get(GetQuoteByReservedOrderId::class);
-        $this->storeRepository = $this->objectManager->get(StoreRepositoryInterface::class);
-        $this->addressFactory = $this->objectManager->get(AddressInterfaceFactory::class);
-        $this->quoteFactory = $this->objectManager->get(CartInterfaceFactory::class);
-        $this->itemFactory = $this->objectManager->get(CartItemInterfaceFactory::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        if ($this->quote instanceof CartInterface) {
-            $this->quoteRepository->delete($this->quote);
-        }
-
-        parent::tearDown();
-    }
-
-    /**
      * Tests that quote saved with custom store id has same store id after getting via repository.
      *
      * @magentoDataFixture Magento/Sales/_files/quote.php
@@ -149,6 +119,47 @@ class QuoteRepositoryTest extends TestCase
         $searchCriteria = $this->getSearchCriteria('test01');
         $searchResult = $this->quoteRepository->getList($searchCriteria);
         $this->performAssertions($searchResult);
+    }
+
+    /**
+     * Get search criteria
+     *
+     * @param string $filterValue
+     * @return SearchCriteria
+     */
+    private function getSearchCriteria(string $filterValue): SearchCriteria
+    {
+        $filters = [];
+        $filters[] = $this->filterBuilder->setField('reserved_order_id')
+            ->setConditionType('=')
+            ->setValue($filterValue)
+            ->create();
+        $this->searchCriteriaBuilder->addFilters($filters);
+
+        return $this->searchCriteriaBuilder->create();
+    }
+
+    /**
+     * Perform assertions
+     *
+     * @param CartSearchResultsInterface $searchResult
+     * @return void
+     */
+    private function performAssertions(CartSearchResultsInterface $searchResult): void
+    {
+        $expectedExtensionAttributes = [
+            'firstname' => 'firstname',
+            'lastname' => 'lastname',
+            'email' => 'admin@example.com',
+        ];
+        $items = $searchResult->getItems();
+        $actualQuote = array_pop($items);
+        $testAttribute = $actualQuote->getExtensionAttributes()->getQuoteTestAttribute();
+        $this->assertInstanceOf(CartInterface::class, $actualQuote);
+        $this->assertEquals('test01', $actualQuote->getReservedOrderId());
+        $this->assertEquals($expectedExtensionAttributes['firstname'], $testAttribute->getFirstName());
+        $this->assertEquals($expectedExtensionAttributes['lastname'], $testAttribute->getLastName());
+        $this->assertEquals($expectedExtensionAttributes['email'], $testAttribute->getEmail());
     }
 
     /**
@@ -239,43 +250,32 @@ class QuoteRepositoryTest extends TestCase
     }
 
     /**
-     * Get search criteria
-     *
-     * @param string $filterValue
-     * @return SearchCriteria
+     * @inheritdoc
      */
-    private function getSearchCriteria(string $filterValue): SearchCriteria
+    protected function setUp(): void
     {
-        $filters = [];
-        $filters[] = $this->filterBuilder->setField('reserved_order_id')
-            ->setConditionType('=')
-            ->setValue($filterValue)
-            ->create();
-        $this->searchCriteriaBuilder->addFilters($filters);
+        parent::setUp();
 
-        return $this->searchCriteriaBuilder->create();
+        $this->objectManager = BootstrapHelper::getObjectManager();
+        $this->quoteRepository = $this->objectManager->create(CartRepositoryInterface::class);
+        $this->searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
+        $this->filterBuilder = $this->objectManager->get(FilterBuilder::class);
+        $this->getQuoteByReservedOrderId = $this->objectManager->get(GetQuoteByReservedOrderId::class);
+        $this->storeRepository = $this->objectManager->get(StoreRepositoryInterface::class);
+        $this->addressFactory = $this->objectManager->get(AddressInterfaceFactory::class);
+        $this->quoteFactory = $this->objectManager->get(CartInterfaceFactory::class);
+        $this->itemFactory = $this->objectManager->get(CartItemInterfaceFactory::class);
     }
 
     /**
-     * Perform assertions
-     *
-     * @param CartSearchResultsInterface $searchResult
-     * @return void
+     * @inheritdoc
      */
-    private function performAssertions(CartSearchResultsInterface $searchResult): void
+    protected function tearDown(): void
     {
-        $expectedExtensionAttributes = [
-            'firstname' => 'firstname',
-            'lastname' => 'lastname',
-            'email' => 'admin@example.com',
-        ];
-        $items = $searchResult->getItems();
-        $actualQuote = array_pop($items);
-        $testAttribute = $actualQuote->getExtensionAttributes()->getQuoteTestAttribute();
-        $this->assertInstanceOf(CartInterface::class, $actualQuote);
-        $this->assertEquals('test01', $actualQuote->getReservedOrderId());
-        $this->assertEquals($expectedExtensionAttributes['firstname'], $testAttribute->getFirstName());
-        $this->assertEquals($expectedExtensionAttributes['lastname'], $testAttribute->getLastName());
-        $this->assertEquals($expectedExtensionAttributes['email'], $testAttribute->getEmail());
+        if ($this->quote instanceof CartInterface) {
+            $this->quoteRepository->delete($this->quote);
+        }
+
+        parent::tearDown();
     }
 }

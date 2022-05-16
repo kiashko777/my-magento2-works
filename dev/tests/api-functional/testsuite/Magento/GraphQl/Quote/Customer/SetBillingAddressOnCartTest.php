@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Quote\Customer;
 
+use Exception;
 use Magento\Customer\Api\AddressRepositoryInterface;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Framework\Api\SearchCriteriaBuilder;
@@ -60,19 +61,6 @@ class SetBillingAddressOnCartTest extends GraphQlAbstract
      * @var CustomerRepositoryInterface
      */
     private $customerRepository;
-
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->quoteResource = $objectManager->get(QuoteResource::class);
-        $this->quoteFactory = $objectManager->get(QuoteFactory::class);
-        $this->quoteIdToMaskedId = $objectManager->get(QuoteIdToMaskedQuoteIdInterface::class);
-        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-        $this->customerAddressRepository = $objectManager->get(AddressRepositoryInterface::class);
-        $this->searchCriteriaBuilder = $objectManager->get(SearchCriteriaBuilder::class);
-        $this->customerRepository = $objectManager->get(CustomerRepositoryInterface::class);
-    }
 
     /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
@@ -148,6 +136,41 @@ QUERY;
         $shippingAddressResponse = current($cartResponse['shipping_addresses']);
         $this->assertNewAddressFields($billingAddressResponse);
         $this->assertNewAddressFields($shippingAddressResponse, 'ShippingCartAddress');
+    }
+
+    /**
+     * @param string $username
+     * @param string $password
+     * @return array
+     */
+    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
+        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
+        return $headerMap;
+    }
+
+    /**
+     * Verify the all the whitelisted fields for a New Address Object
+     *
+     * @param array $addressResponse
+     * @param string $addressType
+     */
+    private function assertNewAddressFields(array $addressResponse, string $addressType = 'BillingCartAddress'): void
+    {
+        $assertionMap = [
+            ['response_field' => 'firstname', 'expected_value' => 'test firstname'],
+            ['response_field' => 'lastname', 'expected_value' => 'test lastname'],
+            ['response_field' => 'company', 'expected_value' => 'test company'],
+            ['response_field' => 'street', 'expected_value' => [0 => 'test street 1', 1 => 'test street 2']],
+            ['response_field' => 'city', 'expected_value' => 'test city'],
+            ['response_field' => 'postcode', 'expected_value' => '887766'],
+            ['response_field' => 'telephone', 'expected_value' => '88776655'],
+            ['response_field' => 'country', 'expected_value' => ['code' => 'US', 'label' => 'US']],
+            ['response_field' => '__typename', 'expected_value' => $addressType]
+        ];
+
+        $this->assertResponseFields($addressResponse, $assertionMap);
     }
 
     /**
@@ -277,6 +300,27 @@ QUERY;
     }
 
     /**
+     * Verify the all the whitelisted fields for a Address Object
+     *
+     * @param array $billingAddressResponse
+     */
+    private function assertSavedBillingAddressFields(array $billingAddressResponse): void
+    {
+        $assertionMap = [
+            ['response_field' => 'firstname', 'expected_value' => 'John'],
+            ['response_field' => 'lastname', 'expected_value' => 'Smith'],
+            ['response_field' => 'company', 'expected_value' => 'CompanyName'],
+            ['response_field' => 'street', 'expected_value' => [0 => 'Green str, 67']],
+            ['response_field' => 'city', 'expected_value' => 'CityM'],
+            ['response_field' => 'postcode', 'expected_value' => '75477'],
+            ['response_field' => 'telephone', 'expected_value' => '3468676'],
+            ['response_field' => 'country', 'expected_value' => ['code' => 'US', 'label' => 'US']],
+        ];
+
+        $this->assertResponseFields($billingAddressResponse, $assertionMap);
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      * @magentoApiDataFixture Magento/Customer/_files/customer_two_addresses.php
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
@@ -321,7 +365,7 @@ QUERY;
      */
     public function testSetNotExistedBillingAddressFromAddressBook()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Could not find a address with ID "100"');
 
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
@@ -549,6 +593,23 @@ QUERY;
     }
 
     /**
+     * @param string $reservedOrderId
+     * @param int $customerId
+     * @return string
+     */
+    private function assignQuoteToCustomer(
+        string $reservedOrderId = 'test_order_with_simple_product_without_address',
+        int    $customerId = 1
+    ): string
+    {
+        $quote = $this->quoteFactory->create();
+        $this->quoteResource->load($quote, $reservedOrderId, 'reserved_order_id');
+        $quote->setCustomerId($customerId);
+        $this->quoteResource->save($quote);
+        return $this->quoteIdToMaskedId->execute((int)$quote->getId());
+    }
+
+    /**
      * _security
      * @magentoApiDataFixture Magento/Customer/_files/three_customers.php
      * @magentoApiDataFixture Magento/Customer/_files/customer_address.php
@@ -557,7 +618,7 @@ QUERY;
      */
     public function testSetBillingAddressIfCustomerIsNotOwnerOfAddress()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Current customer does not have permission to address with ID "1"');
 
         $maskedQuoteId = $this->assignQuoteToCustomer('test_order_with_simple_product_without_address', 2);
@@ -589,7 +650,7 @@ QUERY;
      */
     public function testSetBillingAddressOnNonExistentCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Could not find a cart with ID "non_existent_masked_id"');
 
         $maskedQuoteId = 'non_existent_masked_id';
@@ -623,7 +684,7 @@ QUERY;
      * @dataProvider dataProviderSetWithoutRequiredParameters
      * @param string $input
      * @param string $message
-     * @throws \Exception
+     * @throws Exception
      */
     public function testSetBillingAddressWithoutRequiredParameters(string $input, string $message)
     {
@@ -1440,75 +1501,85 @@ QUERY;
     }
 
     /**
-     * Verify the all the whitelisted fields for a New Address Object
-     *
-     * @param array $addressResponse
-     * @param string $addressType
+     * @magentoApiDataFixture Magento/Customer/_files/customer.php
+     * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
+     * @magentoApiDataFixture Magento/GraphQl/Quote/_files/customer/create_empty_cart.php
+     * @magentoApiDataFixture Magento/GraphQl/Quote/_files/add_simple_product.php
      */
-    private function assertNewAddressFields(array $addressResponse, string $addressType = 'BillingCartAddress'): void
+    public function testSetBillingAddressWithDefaultValueOfSaveInAddressBookAndPlaceOrder()
     {
-        $assertionMap = [
-            ['response_field' => 'firstname', 'expected_value' => 'test firstname'],
-            ['response_field' => 'lastname', 'expected_value' => 'test lastname'],
-            ['response_field' => 'company', 'expected_value' => 'test company'],
-            ['response_field' => 'street', 'expected_value' => [0 => 'test street 1', 1 => 'test street 2']],
-            ['response_field' => 'city', 'expected_value' => 'test city'],
-            ['response_field' => 'postcode', 'expected_value' => '887766'],
-            ['response_field' => 'telephone', 'expected_value' => '88776655'],
-            ['response_field' => 'country', 'expected_value' => ['code' => 'US', 'label' => 'US']],
-            ['response_field' => '__typename', 'expected_value' => $addressType]
-        ];
-
-        $this->assertResponseFields($addressResponse, $assertionMap);
+        $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
+        $query = <<<QUERY
+mutation {
+  setBillingAddressOnCart(
+    input: {
+      cart_id: "$maskedQuoteId"
+      billing_address: {
+        same_as_shipping: true
+         address: {
+          firstname: "test firstname"
+            lastname: "test lastname"
+            company: "test company"
+            street: ["test street 1", "test street 2"]
+            city: "test city"
+            region: "AZ"
+            postcode: "88776"
+            country_code: "US"
+            telephone: "88776655"
+         }
+      }
     }
-
-    /**
-     * Verify the all the whitelisted fields for a Address Object
-     *
-     * @param array $billingAddressResponse
-     */
-    private function assertSavedBillingAddressFields(array $billingAddressResponse): void
-    {
-        $assertionMap = [
-            ['response_field' => 'firstname', 'expected_value' => 'John'],
-            ['response_field' => 'lastname', 'expected_value' => 'Smith'],
-            ['response_field' => 'company', 'expected_value' => 'CompanyName'],
-            ['response_field' => 'street', 'expected_value' => [0 => 'Green str, 67']],
-            ['response_field' => 'city', 'expected_value' => 'CityM'],
-            ['response_field' => 'postcode', 'expected_value' => '75477'],
-            ['response_field' => 'telephone', 'expected_value' => '3468676'],
-            ['response_field' => 'country', 'expected_value' => ['code' => 'US', 'label' => 'US']],
-        ];
-
-        $this->assertResponseFields($billingAddressResponse, $assertionMap);
+  ) {
+    cart {
+      billing_address {
+        firstname
+        lastname
+        company
+        street
+        city
+        postcode
+        telephone
+        country {
+          code
+          label
+        }
+        __typename
+      }
     }
+  }
+}
+QUERY;
+        $response = $this->graphQlMutation($query, [], '', $this->getHeaderMap());
+        $this->graphQlMutation(
+            $this->getSetShippingMethodsQuery($maskedQuoteId, 'flatrate', 'flatrate'),
+            [],
+            '',
+            $this->getHeaderMap()
+        );
+        $this->graphQlMutation(
+            $this->getSetPaymentMethodQuery(
+                $maskedQuoteId,
+                'checkmo'
+            ),
+            [],
+            '',
+            $this->getHeaderMap()
+        );
+        $this->graphQlMutation(
+            $this->getPlaceOrderQuery($maskedQuoteId),
+            [],
+            '',
+            $this->getHeaderMap()
+        );
+        $customer = $this->customerRepository->get('customer@example.com');
+        $searchCriteria = $this->searchCriteriaBuilder->addFilter('parent_id', $customer->getId())->create();
+        $addresses = $this->customerAddressRepository->getList($searchCriteria)->getItems();
 
-    /**
-     * @param string $username
-     * @param string $password
-     * @return array
-     */
-    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
-    {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
-        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
-        return $headerMap;
-    }
-
-    /**
-     * @param string $reservedOrderId
-     * @param int $customerId
-     * @return string
-     */
-    private function assignQuoteToCustomer(
-        string $reservedOrderId = 'test_order_with_simple_product_without_address',
-        int $customerId = 1
-    ): string {
-        $quote = $this->quoteFactory->create();
-        $this->quoteResource->load($quote, $reservedOrderId, 'reserved_order_id');
-        $quote->setCustomerId($customerId);
-        $this->quoteResource->save($quote);
-        return $this->quoteIdToMaskedId->execute((int)$quote->getId());
+        $this->assertCount(1, $addresses);
+        $this->assertArrayHasKey('cart', $response['setBillingAddressOnCart']);
+        foreach ($addresses as $address) {
+            $this->customerAddressRepository->delete($address);
+        }
     }
 
     /**
@@ -1521,7 +1592,8 @@ QUERY;
         string $maskedQuoteId,
         string $shippingMethodCode,
         string $shippingCarrierCode
-    ): string {
+    ): string
+    {
         return <<<QUERY
 mutation {
   setShippingMethodsOnCart(input:
@@ -1549,6 +1621,63 @@ mutation {
   }
 }
 QUERY;
+    }
+
+    /**
+     * @param string $maskedQuoteId
+     * @param string $methodCode
+     * @return string
+     */
+    private function getSetPaymentMethodQuery(
+        string $maskedQuoteId,
+        string $methodCode
+    ): string
+    {
+        return <<<QUERY
+mutation {
+  setPaymentMethodOnCart(input: {
+      cart_id: "$maskedQuoteId"
+      payment_method: {
+          code: "$methodCode"
+      }
+  }) {
+    cart {
+      selected_payment_method {
+        code
+      }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
+     * @param string $maskedQuoteId
+     * @return string
+     */
+    private function getPlaceOrderQuery(string $maskedQuoteId): string
+    {
+        return <<<QUERY
+mutation {
+  placeOrder(input: {cart_id: "{$maskedQuoteId}"}) {
+    order {
+      order_number
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
+     * @magentoApiDataFixture Magento/Customer/_files/customer.php
+     * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
+     * @magentoApiDataFixture Magento/GraphQl/Quote/_files/customer/create_empty_cart.php
+     * @magentoApiDataFixture Magento/GraphQl/Quote/_files/add_simple_product.php
+     * @magentoConfigFixture default_store checkout/options/guest_checkout 0
+     */
+    public function testSetBillingAddressAndPlaceOrderWithGuestCheckoutDisabled()
+    {
+        $this->testSetBillingAddressAndPlaceOrder();
     }
 
     /**
@@ -1634,141 +1763,16 @@ QUERY;
         }
     }
 
-    /**
-     * @magentoApiDataFixture Magento/Customer/_files/customer.php
-     * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
-     * @magentoApiDataFixture Magento/GraphQl/Quote/_files/customer/create_empty_cart.php
-     * @magentoApiDataFixture Magento/GraphQl/Quote/_files/add_simple_product.php
-     */
-    public function testSetBillingAddressWithDefaultValueOfSaveInAddressBookAndPlaceOrder()
+    protected function setUp(): void
     {
-        $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
-        $query = <<<QUERY
-mutation {
-  setBillingAddressOnCart(
-    input: {
-      cart_id: "$maskedQuoteId"
-      billing_address: {
-        same_as_shipping: true
-         address: {
-          firstname: "test firstname"
-            lastname: "test lastname"
-            company: "test company"
-            street: ["test street 1", "test street 2"]
-            city: "test city"
-            region: "AZ"
-            postcode: "88776"
-            country_code: "US"
-            telephone: "88776655"
-         }
-      }
-    }
-  ) {
-    cart {
-      billing_address {
-        firstname
-        lastname
-        company
-        street
-        city
-        postcode
-        telephone
-        country {
-          code
-          label
-        }
-        __typename
-      }
-    }
-  }
-}
-QUERY;
-        $response = $this->graphQlMutation($query, [], '', $this->getHeaderMap());
-        $this->graphQlMutation(
-            $this->getSetShippingMethodsQuery($maskedQuoteId, 'flatrate', 'flatrate'),
-            [],
-            '',
-            $this->getHeaderMap()
-        );
-        $this->graphQlMutation(
-            $this->getSetPaymentMethodQuery(
-                $maskedQuoteId,
-                'checkmo'
-            ),
-            [],
-            '',
-            $this->getHeaderMap()
-        );
-        $this->graphQlMutation(
-            $this->getPlaceOrderQuery($maskedQuoteId),
-            [],
-            '',
-            $this->getHeaderMap()
-        );
-        $customer = $this->customerRepository->get('customer@example.com');
-        $searchCriteria = $this->searchCriteriaBuilder->addFilter('parent_id', $customer->getId())->create();
-        $addresses = $this->customerAddressRepository->getList($searchCriteria)->getItems();
-
-        $this->assertCount(1, $addresses);
-        $this->assertArrayHasKey('cart', $response['setBillingAddressOnCart']);
-        foreach ($addresses as $address) {
-            $this->customerAddressRepository->delete($address);
-        }
-    }
-
-    /**
-     * @param string $maskedQuoteId
-     * @param string $methodCode
-     * @return string
-     */
-    private function getSetPaymentMethodQuery(
-        string $maskedQuoteId,
-        string $methodCode
-    ) : string {
-        return <<<QUERY
-mutation {
-  setPaymentMethodOnCart(input: {
-      cart_id: "$maskedQuoteId"
-      payment_method: {
-          code: "$methodCode"
-      }
-  }) {
-    cart {
-      selected_payment_method {
-        code
-      }
-    }
-  }
-}
-QUERY;
-    }
-
-    /**
-     * @param string $maskedQuoteId
-     * @return string
-     */
-    private function getPlaceOrderQuery(string $maskedQuoteId): string
-    {
-        return <<<QUERY
-mutation {
-  placeOrder(input: {cart_id: "{$maskedQuoteId}"}) {
-    order {
-      order_number
-    }
-  }
-}
-QUERY;
-    }
-
-    /**
-     * @magentoApiDataFixture Magento/Customer/_files/customer.php
-     * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
-     * @magentoApiDataFixture Magento/GraphQl/Quote/_files/customer/create_empty_cart.php
-     * @magentoApiDataFixture Magento/GraphQl/Quote/_files/add_simple_product.php
-     * @magentoConfigFixture default_store checkout/options/guest_checkout 0
-     */
-    public function testSetBillingAddressAndPlaceOrderWithGuestCheckoutDisabled()
-    {
-        $this->testSetBillingAddressAndPlaceOrder();
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->quoteResource = $objectManager->get(QuoteResource::class);
+        $this->quoteFactory = $objectManager->get(QuoteFactory::class);
+        $this->quoteIdToMaskedId = $objectManager->get(QuoteIdToMaskedQuoteIdInterface::class);
+        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
+        $this->customerAddressRepository = $objectManager->get(AddressRepositoryInterface::class);
+        $this->searchCriteriaBuilder = $objectManager->get(SearchCriteriaBuilder::class);
+        $this->customerRepository = $objectManager->get(CustomerRepositoryInterface::class);
     }
 }

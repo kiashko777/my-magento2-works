@@ -8,15 +8,15 @@ declare(strict_types=1);
 namespace Magento\GraphQl\Wishlist;
 
 use Exception;
+use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Framework\Exception\AuthenticationException;
+use Magento\Framework\Registry;
 use Magento\Integration\Api\CustomerTokenServiceInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
 use Magento\Wishlist\Model\Item;
 use Magento\Wishlist\Model\ResourceModel\Wishlist\CollectionFactory;
 use Magento\Wishlist\Model\Wishlist;
-use Magento\Customer\Api\CustomerRepositoryInterface;
-use Magento\Framework\Registry;
 
 /**
  * Test coverage for customer wishlists
@@ -32,15 +32,6 @@ class CustomerWishlistsTest extends GraphQlAbstract
      * @var CollectionFactory
      */
     private $wishlistCollectionFactory;
-
-    /**
-     * Set Up
-     */
-    protected function setUp(): void
-    {
-        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
-        $this->wishlistCollectionFactory = Bootstrap::getObjectManager()->get(CollectionFactory::class);
-    }
 
     /**
      * Test fetching customer wishlist
@@ -68,6 +59,49 @@ class CustomerWishlistsTest extends GraphQlAbstract
         $this->assertEquals($wishlistItem->getUpdatedAt(), $wishlist['updated_at']);
         $wishlistItemResponse = $wishlist['items_v2']['items'][0];
         $this->assertEquals('simple', $wishlistItemResponse['product']['sku']);
+    }
+
+    /**
+     * Returns GraphQl query string
+     *
+     * @return string
+     */
+    private function getQuery(): string
+    {
+        return <<<QUERY
+query {
+  customer {
+    wishlists {
+      id
+      items_count
+      sharing_code
+      updated_at
+      items_v2 {
+        items {
+        product {name sku}
+        }
+      }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
+     * Getting customer auth headers
+     *
+     * @param string $email
+     * @param string $password
+     *
+     * @return array
+     *
+     * @throws AuthenticationException
+     */
+    private function getCustomerAuthHeaders(string $email, string $password): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($email, $password);
+
+        return ['Authorization' => 'Bearer ' . $customerToken];
     }
 
     /**
@@ -144,6 +178,25 @@ QUERY;
         }
     }
 
+    private function getCreateCustomerQuery($customerEmail): string
+    {
+        return <<<QUERY
+mutation {
+  createCustomer(input: {
+    firstname: "test"
+    lastname: "test"
+    email: "$customerEmail"
+    password: "123123^q"
+  })
+   {
+  customer {
+    email
+  }
+}
+}
+QUERY;
+    }
+
     /**
      * Testing fetching the wishlist when wishlist is disabled
      *
@@ -175,64 +228,11 @@ QUERY;
     }
 
     /**
-     * Returns GraphQl query string
-     *
-     * @return string
+     * Set Up
      */
-    private function getQuery(): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-query {
-  customer {
-    wishlists {
-      id
-      items_count
-      sharing_code
-      updated_at
-      items_v2 {
-        items {
-        product {name sku}
-        }
-      }
-    }
-  }
-}
-QUERY;
-    }
-
-    private function getCreateCustomerQuery($customerEmail): string
-    {
-        return <<<QUERY
-mutation {
-  createCustomer(input: {
-    firstname: "test"
-    lastname: "test"
-    email: "$customerEmail"
-    password: "123123^q"
-  })
-   {
-  customer {
-    email
-  }
-}
-}
-QUERY;
-    }
-
-    /**
-     * Getting customer auth headers
-     *
-     * @param string $email
-     * @param string $password
-     *
-     * @return array
-     *
-     * @throws AuthenticationException
-     */
-    private function getCustomerAuthHeaders(string $email, string $password): array
-    {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($email, $password);
-
-        return ['Authorization' => 'Bearer ' . $customerToken];
+        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
+        $this->wishlistCollectionFactory = Bootstrap::getObjectManager()->get(CollectionFactory::class);
     }
 }

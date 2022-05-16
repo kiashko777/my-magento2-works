@@ -28,17 +28,6 @@ class CartTest extends AbstractBackendController
     private $quoteRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->customerRepository = $this->_objectManager->get(CustomerRepositoryInterface::class);
-        $this->quoteRepository = $this->_objectManager->get(CartRepositoryInterface::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Customer/_files/customer_sample.php
      * @return void
      */
@@ -53,6 +42,21 @@ class CartTest extends AbstractBackendController
         );
         $body = $this->getResponse()->getBody();
         $this->assertStringContainsString('<div id="customer_cart_grid"', $body);
+    }
+
+    /**
+     * Dispatch admin shopping cart using backend/customer/index/cart action.
+     *
+     * @param array $params
+     * @param array $postValue
+     * @return void
+     */
+    private function dispatchShoppingCart(array $params = [], array $postValue = []): void
+    {
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
+        $this->getRequest()->setParams($params);
+        $this->getRequest()->setPostValue($postValue);
+        $this->dispatch('backend/customer/index/cart');
     }
 
     /**
@@ -83,17 +87,13 @@ class CartTest extends AbstractBackendController
     }
 
     /**
-     * Dispatch admin shopping cart using backend/customer/index/cart action.
-     *
-     * @param array $params
-     * @param array $postValue
-     * @return void
+     * @inheritdoc
      */
-    private function dispatchShoppingCart(array $params = [], array $postValue = []): void
+    protected function setUp(): void
     {
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
-        $this->getRequest()->setParams($params);
-        $this->getRequest()->setPostValue($postValue);
-        $this->dispatch('backend/customer/index/cart');
+        parent::setUp();
+
+        $this->customerRepository = $this->_objectManager->get(CustomerRepositoryInterface::class);
+        $this->quoteRepository = $this->_objectManager->get(CartRepositoryInterface::class);
     }
 }

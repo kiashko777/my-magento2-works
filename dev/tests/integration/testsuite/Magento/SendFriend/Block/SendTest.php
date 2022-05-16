@@ -24,7 +24,7 @@ use PHPUnit\Framework\TestCase;
  */
 class SendTest extends TestCase
 {
-    /** @var array  */
+    /** @var array */
     private $elementsXpath = [
         'sender name field' => "//input[@name='sender[name]']",
         'sender email field' => "//input[@name='sender[email]']",
@@ -32,7 +32,7 @@ class SendTest extends TestCase
         'recipient name field' => "//input[contains(@name, 'recipients[name]')]",
         'recipient email field' => "//input[contains(@name, 'recipients[email]')]",
         'submit button' => "//button[@type='submit']/span[contains(text(), 'Send Email')]",
-        'notice massage' =>  "//div[@id='max-recipient-message']"
+        'notice massage' => "//div[@id='max-recipient-message']"
             . "/span[contains(text(), 'Maximum 1 email addresses allowed.')]"
     ];
 
@@ -52,28 +52,6 @@ class SendTest extends TestCase
     private $accountManagement;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->block = $this->layout->createBlock(Send::class);
-        $this->session = $this->objectManager->get(Session::class);
-        $this->accountManagement = $this->objectManager->get(AccountManagementInterface::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        parent::tearDown();
-
-        $this->session->logout();
-    }
-
-    /**
      * @dataProvider formDataProvider
      *
      * @param string $field
@@ -85,6 +63,24 @@ class SendTest extends TestCase
         $formData = ['sender' => [$field => $value]];
         $this->block->setFormData($formData);
         $this->assertEquals(trim($value), $this->_callBlockMethod($field));
+    }
+
+    /**
+     * Call block method based on form field
+     *
+     * @param string $field
+     * @return null|string
+     */
+    protected function _callBlockMethod(string $field): ?string
+    {
+        switch ($field) {
+            case 'name':
+                return $this->block->getUserName();
+            case 'email':
+                return $this->block->getEmail();
+            default:
+                return null;
+        }
     }
 
     /**
@@ -146,20 +142,24 @@ class SendTest extends TestCase
     }
 
     /**
-     * Call block method based on form field
-     *
-     * @param string $field
-     * @return null|string
+     * @inheritdoc
      */
-    protected function _callBlockMethod(string $field): ?string
+    protected function setUp(): void
     {
-        switch ($field) {
-            case 'name':
-                return $this->block->getUserName();
-            case 'email':
-                return $this->block->getEmail();
-            default:
-                return null;
-        }
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->block = $this->layout->createBlock(Send::class);
+        $this->session = $this->objectManager->get(Session::class);
+        $this->accountManagement = $this->objectManager->get(AccountManagementInterface::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+
+        $this->session->logout();
     }
 }

@@ -3,12 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-use Magento\Vault\Model\PaymentToken;
+
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
+use Magento\Vault\Model\PaymentToken;
 
 Resolver::getInstance()->requireDataFixture('Magento/Vault/_files/customer.php');
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 $paymentTokens = [
     [
         'customer_id' => 1,

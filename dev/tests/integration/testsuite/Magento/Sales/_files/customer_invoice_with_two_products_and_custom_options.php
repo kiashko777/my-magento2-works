@@ -4,28 +4,37 @@
  * See COPYING.txt for license details.
  */
 
-use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\ProductRepository;
+use Magento\Framework\DB\Transaction;
 use Magento\Sales\Api\InvoiceManagementInterface;
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Address;
+use Magento\Sales\Model\Order\Item;
+use Magento\Sales\Model\Order\Payment;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Customer/_files/customer.php');
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/products_in_category.php');
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 
 $addressData = include __DIR__ . '/../../../Magento/Sales/_files/address_data.php';
 
-$billingAddress = $objectManager->create(\Magento\Sales\Model\Order\Address::class, ['data' => $addressData]);
+$billingAddress = $objectManager->create(Address::class, ['data' => $addressData]);
 $billingAddress->setAddressType('billing');
 
 $shippingAddress = clone $billingAddress;
 $shippingAddress->setId(null)->setAddressType('shipping');
 
-$payment = $objectManager->create(\Magento\Sales\Model\Order\Payment::class);
+$payment = $objectManager->create(Payment::class);
 $payment->setMethod('checkmo');
 
-/** @var $product \Magento\Catalog\Model\Product */
-$product = $objectManager->create(\Magento\Catalog\Model\Product::class);
-$repository = $objectManager->create(\Magento\Catalog\Model\ProductRepository::class);
+/** @var $product Product */
+$product = $objectManager->create(Product::class);
+$repository = $objectManager->create(ProductRepository::class);
 $product = $repository->get('simple');
 
 $optionValuesByType = [
@@ -49,12 +58,12 @@ foreach ($productOptions as $option) {
     $requestInfo['options'][$option->getOptionId()] = $optionValuesByType[$option->getType()];
 }
 
-/** @var $product \Magento\Catalog\Model\Product */
-$product2 = $objectManager->create(\Magento\Catalog\Model\Product::class);
+/** @var $product Product */
+$product2 = $objectManager->create(Product::class);
 $product2 = $repository->get('simple_with_cross');
 
-/** @var \Magento\Sales\Model\Order\Item $orderItem */
-$orderItem = $objectManager->create(\Magento\Sales\Model\Order\Item::class);
+/** @var Item $orderItem */
+$orderItem = $objectManager->create(Item::class);
 $orderItem->setProductId($product->getId());
 $orderItem->setName($product->getName());
 $orderItem->setSku($product->getSku());
@@ -65,8 +74,8 @@ $orderItem->setRowTotal($product->getPrice());
 $orderItem->setProductType($product->getTypeId());
 $orderItem->setProductOptions(['info_buyRequest' => $requestInfo]);
 
-/** @var \Magento\Sales\Model\Order\Item $orderItem2 */
-$orderItem2 = $objectManager->create(\Magento\Sales\Model\Order\Item::class);
+/** @var Item $orderItem2 */
+$orderItem2 = $objectManager->create(Item::class);
 $orderItem2->setProductId($product2->getId());
 $orderItem2->setSku($product2->getSku());
 $orderItem2->setName($product2->getName());
@@ -77,11 +86,11 @@ $orderItem2->setRowTotal($product2->getPrice());
 $orderItem2->setProductType($product2->getTypeId());
 $orderItem2->setProductOptions(['info_buyRequest' => $requestInfo]);
 
-/** @var \Magento\Sales\Model\Order $order */
-$order = $objectManager->create(\Magento\Sales\Model\Order::class);
+/** @var Order $order */
+$order = $objectManager->create(Order::class);
 $order->setIncrementId('100000001');
-$order->setState(\Magento\Sales\Model\Order::STATE_PROCESSING);
-$order->setStatus($order->getConfig()->getStateDefaultStatus(\Magento\Sales\Model\Order::STATE_PROCESSING));
+$order->setState(Order::STATE_PROCESSING);
+$order->setStatus($order->getConfig()->getStateDefaultStatus(Order::STATE_PROCESSING));
 $order->setCustomerIsGuest(true);
 $order->setCustomerEmail('customer@null.com');
 $order->setCustomerFirstname('firstname');
@@ -92,7 +101,7 @@ $order->setAddresses([$billingAddress, $shippingAddress]);
 $order->setPayment($payment);
 $order->addItem($orderItem);
 $order->addItem($orderItem2);
-$order->setStoreId($objectManager->get(\Magento\Store\Model\StoreManagerInterface::class)->getStore()->getId());
+$order->setStoreId($objectManager->get(StoreManagerInterface::class)->getStore()->getId());
 $order->setSubtotal(100);
 $order->setBaseSubtotal(100);
 $order->setBaseGrandTotal(100);
@@ -111,5 +120,5 @@ $invoice->register();
 $order = $invoice->getOrder();
 $order->setIsInProcess(true);
 $transactionSave = $objectManager
-    ->create(\Magento\Framework\DB\Transaction::class);
+    ->create(Transaction::class);
 $transactionSave->addObject($invoice)->addObject($order)->save();

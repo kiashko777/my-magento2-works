@@ -7,27 +7,36 @@ declare(strict_types=1);
 
 namespace Magento\Customer\Model;
 
+use Exception;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Category;
 use Magento\Catalog\Model\Indexer\Product\Price\Processor;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Attribute\Source\Status as AttributeStatus;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Catalog\Model\ResourceModel\Layer\Filter\Price;
+use Magento\CatalogRule\Api\CatalogRuleRepositoryInterface;
 use Magento\CatalogRule\Model\Indexer\Product\ProductRuleProcessor;
+use Magento\CatalogRule\Model\ResourceModel\Rule as RuleResourceModel;
+use Magento\CatalogRule\Model\Rule;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Api\Data\CustomerInterface;
 use Magento\Customer\Api\Data\CustomerInterfaceFactory;
+use Magento\Customer\Api\Data\GroupExtensionInterfaceFactory;
 use Magento\Customer\Api\Data\GroupInterfaceFactory;
 use Magento\Customer\Api\GroupRepositoryInterface;
-use Magento\Catalog\Model\ResourceModel\Layer\Filter\Price;
-use Magento\CatalogRule\Model\Rule;
 use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Indexer\IndexerRegistry;
-use Magento\Indexer\Model\Indexer;
-use Magento\Store\Api\StoreRepositoryInterface;
-use Magento\Framework\App\ResourceConnection;
-use Magento\CatalogRule\Model\ResourceModel\Rule as RuleResourceModel;
 use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Registry;
+use Magento\Framework\Stdlib\DateTime\DateTime;
+use Magento\Indexer\Model\Indexer;
+use Magento\Indexer\Model\Indexer\Collection as IndexerCollection;
+use Magento\Msrp\Model\Product\Attribute\Source\Type;
+use Magento\Store\Api\StoreRepositoryInterface;
 use Magento\Store\Model\Group;
 use Magento\Store\Model\ResourceModel\Group as StoreGroupResourceModel;
 use Magento\Store\Model\ResourceModel\Store as StoreResourceModel;
@@ -35,17 +44,14 @@ use Magento\Store\Model\ResourceModel\Website as WebsiteResourceModel;
 use Magento\Store\Model\Store;
 use Magento\Store\Model\Website;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Framework\Registry;
-use Magento\CatalogRule\Api\CatalogRuleRepositoryInterface;
-use Magento\Framework\Stdlib\DateTime\DateTime;
-use Magento\Indexer\Model\Indexer\Collection as IndexerCollection;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Checks excluding websites from customer group functionality that affects price and catalog rule indexes.
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class GroupExcludedWebsiteTest extends \PHPUnit\Framework\TestCase
+class GroupExcludedWebsiteTest extends TestCase
 {
     private const GROUP_CODE = 'Aliens';
     private const STORE_WEBSITE_CODE = 'customwebsite1';
@@ -80,125 +86,17 @@ class GroupExcludedWebsiteTest extends \PHPUnit\Framework\TestCase
     /** @var StoreResourceModel */
     private $storeResourceModel;
 
-    /** @var ProductRepositoryInterface  */
+    /** @var ProductRepositoryInterface */
     private $productRepository;
 
     /** @var ResourceConnection */
     private $resourceConnection;
 
-    /** @var \Magento\Customer\Api\Data\GroupExtensionInterfaceFactory */
+    /** @var GroupExtensionInterfaceFactory */
     private $groupExtensionInterfaceFactory;
 
     /** @var IndexerRegistry */
     private $indexRegistry;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->customerRepository = $this->objectManager->create(CustomerRepositoryInterface::class);
-        $this->customerFactory = $this->objectManager->create(CustomerInterfaceFactory::class);
-        $this->groupRepository = $this->objectManager->create(GroupRepositoryInterface::class);
-        $this->groupFactory = $this->objectManager->create(GroupInterfaceFactory::class);
-        $this->websiteResourceModel = $this->objectManager->get(WebsiteResourceModel::class);
-        $this->storeGroupResourceModel = $this->objectManager->get(StoreGroupResourceModel::class);
-        $this->storeResourceModel = $this->objectManager->get(StoreResourceModel::class);
-        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
-        $this->resourceConnection = $this->objectManager->get(ResourceConnection::class);
-        $this->groupExtensionInterfaceFactory = $this->objectManager
-            ->get(\Magento\Customer\Api\Data\GroupExtensionInterfaceFactory::class);
-        $this->indexRegistry = $this->objectManager->create(IndexerRegistry::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $registry = $this->objectManager->get(Registry::class);
-        /** Marks area as secure so Products repository would allow product removal */
-        $isSecuredAreaSystemState = $registry->registry('isSecuredArea');
-        $registry->unregister('isSecureArea');
-        $registry->register('isSecureArea', true);
-
-        $storeRepository = $this->objectManager->get(StoreRepositoryInterface::class);
-        /** @var AdapterInterface $connection */
-        $connection = $this->resourceConnection->getConnection();
-        $productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-
-        /** @var \Magento\Store\Model\Store $store */
-        $store = $storeRepository->get(self::STORE_CODE);
-        $storeGroupId = $store->getStoreGroupId();
-        $websiteId = $store->getWebsiteId();
-
-        /** Remove product */
-        $product = $productRepository->getById(self::PRODUCT_ID);
-        if ($product->getId()) {
-            $productRepository->delete($product);
-        }
-
-        /** Remove customer */
-        /** @var CustomerInterface $customer */
-        $customer = $this->customerRepository->get(self::CUSTOMER_EMAIL, $websiteId);
-        $this->customerRepository->delete($customer);
-
-        /** Remove customer group */
-        $groupId = $this->findGroupIdWithCode(self::GROUP_CODE);
-        $group = $this->groupRepository->getById($groupId);
-        $this->groupRepository->delete($group);
-
-        /** Remove category */
-        /** @var $category \Magento\Catalog\Model\Category */
-        $category = $this->objectManager->create(\Magento\Catalog\Model\Category::class);
-        $category->load(self::CATEGORY_ID);
-        if ($category->getId()) {
-            $category->delete();
-        }
-
-        /** Remove store by code */
-        $storeCodes = [self::STORE_CODE];
-        $connection->delete(
-            $this->resourceConnection->getTableName('store'),
-            ['code IN (?)' => $storeCodes]
-        );
-
-        /** Remove store group by id*/
-        $connection->delete(
-            $this->resourceConnection->getTableName('store_group'),
-            ['group_id = ?' => $storeGroupId]
-        );
-
-        /** Remove website by id */
-        /** @var \Magento\Store\Model\Website $website */
-        $website = $this->objectManager->create(\Magento\Store\Model\Website::class);
-        $website->load((int)$websiteId);
-        $website->delete();
-
-        /** Remove catalog rule */
-        /** @var RuleResourceModel $catalogRuleResource */
-        $catalogRuleResource = $this->objectManager->create(RuleResourceModel::class);
-        $select = $connection->select();
-        $select->from($catalogRuleResource->getMainTable(), 'rule_id');
-        $select->where('name = ?', 'Test Catalog Rule With 50 Percent Off');
-        $ruleId = $connection->fetchOne($select);
-        /** @var CatalogRuleRepositoryInterface $ruleRepository */
-        $ruleRepository = $this->objectManager->create(CatalogRuleRepositoryInterface::class);
-        $ruleRepository->deleteById($ruleId);
-
-        /** @var IndexerCollection $indexerCollection */
-        $indexerCollection = $this->objectManager->get(IndexerCollection::class);
-        $indexerCollection->load();
-        foreach ($indexerCollection->getItems() as $indexer) {
-            /** @var Indexer $indexer */
-            $indexer->reindexAll();
-        }
-
-        /** Revert mark area secured */
-        $registry->unregister('isSecuredArea');
-        $registry->register('isSecuredArea', $isSecuredAreaSystemState);
-    }
 
     /**
      * Test excluding website from customer group
@@ -262,8 +160,8 @@ class GroupExcludedWebsiteTest extends \PHPUnit\Framework\TestCase
         $this->customerRepository->save($newCustomerEntity);
 
         /** Create new category */
-        /** @var \Magento\Catalog\Model\Category $category */
-        $category = $this->objectManager->create(\Magento\Catalog\Model\Category::class);
+        /** @var Category $category */
+        $category = $this->objectManager->create(Category::class);
         $category->isObjectNew(true);
         $category->setId(self::CATEGORY_ID)
             ->setCreatedAt('2020-06-23 09:50:07')
@@ -290,13 +188,13 @@ class GroupExcludedWebsiteTest extends \PHPUnit\Framework\TestCase
             ->setDescription('description')
             ->setShortDescription('short description')
             ->setOptionsContainer('container1')
-            ->setMsrpDisplayActualPriceType(\Magento\Msrp\Model\Product\Attribute\Source\Type::TYPE_IN_CART)
+            ->setMsrpDisplayActualPriceType(Type::TYPE_IN_CART)
             ->setPrice(10)
             ->setWeight(1)
             ->setMetaTitle('meta title')
             ->setMetaKeyword('meta keyword')
             ->setMetaDescription('meta description')
-            ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
+            ->setVisibility(Visibility::VISIBILITY_BOTH)
             ->setStatus(AttributeStatus::STATUS_ENABLED)
             ->setWebsiteIds([$websiteId])
             ->setCategoryIds([self::CATEGORY_ID])
@@ -370,32 +268,9 @@ class GroupExcludedWebsiteTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Find the customer group with a given code.
-     *
-     * @param string $code
-     * @return int
-     * @throws LocalizedException
-     */
-    private function findGroupIdWithCode(string $code): int
-    {
-        /** @var GroupRepositoryInterface $groupRepository */
-        $groupRepository = $this->objectManager->create(GroupRepositoryInterface::class);
-        /** @var SearchCriteriaBuilder $searchBuilder */
-        $searchBuilder = $this->objectManager->create(SearchCriteriaBuilder::class);
-
-        foreach ($groupRepository->getList($searchBuilder->create())->getItems() as $group) {
-            if ($group->getCode() === $code) {
-                return (int)$group->getId();
-            }
-        }
-
-        return -1;
-    }
-
-    /**
      * Reindex product price and catalog rule indexes.
      *
-     * @throws \Exception
+     * @throws Exception
      */
     private function reindexPriceAndCatalogRule(): void
     {
@@ -451,5 +326,136 @@ class GroupExcludedWebsiteTest extends \PHPUnit\Framework\TestCase
             self::assertEquals($groupId, $price['customer_group_id']);
             self::assertEquals($websiteId, $price['website_id']);
         }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->customerRepository = $this->objectManager->create(CustomerRepositoryInterface::class);
+        $this->customerFactory = $this->objectManager->create(CustomerInterfaceFactory::class);
+        $this->groupRepository = $this->objectManager->create(GroupRepositoryInterface::class);
+        $this->groupFactory = $this->objectManager->create(GroupInterfaceFactory::class);
+        $this->websiteResourceModel = $this->objectManager->get(WebsiteResourceModel::class);
+        $this->storeGroupResourceModel = $this->objectManager->get(StoreGroupResourceModel::class);
+        $this->storeResourceModel = $this->objectManager->get(StoreResourceModel::class);
+        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+        $this->resourceConnection = $this->objectManager->get(ResourceConnection::class);
+        $this->groupExtensionInterfaceFactory = $this->objectManager
+            ->get(GroupExtensionInterfaceFactory::class);
+        $this->indexRegistry = $this->objectManager->create(IndexerRegistry::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $registry = $this->objectManager->get(Registry::class);
+        /** Marks area as secure so Products repository would allow product removal */
+        $isSecuredAreaSystemState = $registry->registry('isSecuredArea');
+        $registry->unregister('isSecureArea');
+        $registry->register('isSecureArea', true);
+
+        $storeRepository = $this->objectManager->get(StoreRepositoryInterface::class);
+        /** @var AdapterInterface $connection */
+        $connection = $this->resourceConnection->getConnection();
+        $productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+
+        /** @var Store $store */
+        $store = $storeRepository->get(self::STORE_CODE);
+        $storeGroupId = $store->getStoreGroupId();
+        $websiteId = $store->getWebsiteId();
+
+        /** Remove product */
+        $product = $productRepository->getById(self::PRODUCT_ID);
+        if ($product->getId()) {
+            $productRepository->delete($product);
+        }
+
+        /** Remove customer */
+        /** @var CustomerInterface $customer */
+        $customer = $this->customerRepository->get(self::CUSTOMER_EMAIL, $websiteId);
+        $this->customerRepository->delete($customer);
+
+        /** Remove customer group */
+        $groupId = $this->findGroupIdWithCode(self::GROUP_CODE);
+        $group = $this->groupRepository->getById($groupId);
+        $this->groupRepository->delete($group);
+
+        /** Remove category */
+        /** @var $category Category */
+        $category = $this->objectManager->create(Category::class);
+        $category->load(self::CATEGORY_ID);
+        if ($category->getId()) {
+            $category->delete();
+        }
+
+        /** Remove store by code */
+        $storeCodes = [self::STORE_CODE];
+        $connection->delete(
+            $this->resourceConnection->getTableName('store'),
+            ['code IN (?)' => $storeCodes]
+        );
+
+        /** Remove store group by id*/
+        $connection->delete(
+            $this->resourceConnection->getTableName('store_group'),
+            ['group_id = ?' => $storeGroupId]
+        );
+
+        /** Remove website by id */
+        /** @var Website $website */
+        $website = $this->objectManager->create(Website::class);
+        $website->load((int)$websiteId);
+        $website->delete();
+
+        /** Remove catalog rule */
+        /** @var RuleResourceModel $catalogRuleResource */
+        $catalogRuleResource = $this->objectManager->create(RuleResourceModel::class);
+        $select = $connection->select();
+        $select->from($catalogRuleResource->getMainTable(), 'rule_id');
+        $select->where('name = ?', 'Test Catalog Rule With 50 Percent Off');
+        $ruleId = $connection->fetchOne($select);
+        /** @var CatalogRuleRepositoryInterface $ruleRepository */
+        $ruleRepository = $this->objectManager->create(CatalogRuleRepositoryInterface::class);
+        $ruleRepository->deleteById($ruleId);
+
+        /** @var IndexerCollection $indexerCollection */
+        $indexerCollection = $this->objectManager->get(IndexerCollection::class);
+        $indexerCollection->load();
+        foreach ($indexerCollection->getItems() as $indexer) {
+            /** @var Indexer $indexer */
+            $indexer->reindexAll();
+        }
+
+        /** Revert mark area secured */
+        $registry->unregister('isSecuredArea');
+        $registry->register('isSecuredArea', $isSecuredAreaSystemState);
+    }
+
+    /**
+     * Find the customer group with a given code.
+     *
+     * @param string $code
+     * @return int
+     * @throws LocalizedException
+     */
+    private function findGroupIdWithCode(string $code): int
+    {
+        /** @var GroupRepositoryInterface $groupRepository */
+        $groupRepository = $this->objectManager->create(GroupRepositoryInterface::class);
+        /** @var SearchCriteriaBuilder $searchBuilder */
+        $searchBuilder = $this->objectManager->create(SearchCriteriaBuilder::class);
+
+        foreach ($groupRepository->getList($searchBuilder->create())->getItems() as $group) {
+            if ($group->getCode() === $code) {
+                return (int)$group->getId();
+            }
+        }
+
+        return -1;
     }
 }

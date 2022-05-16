@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\ObjectManager\TestAsset;
 
 class ComplexDependencies
@@ -52,14 +53,15 @@ class ComplexDependencies
      * @param DependsOnAlias $dependsOnAlias
      */
     public function __construct(
-        \Magento\Framework\ObjectManager\TestAsset\Basic $basic,
-        \Magento\Framework\ObjectManager\TestAsset\BasicInjection $basicInjection,
-        \Magento\Framework\ObjectManager\TestAsset\DependsOnInterface $dependsOnInterface,
-        \Magento\Framework\ObjectManager\TestAsset\HasOptionalParameters $hasOptionalParameters,
-        \Magento\Framework\ObjectManager\TestAsset\TestAssetInterface $testAssetInterface,
-        \Magento\Framework\ObjectManager\TestAsset\ConstructorNineArguments $constructorNineArguments,
-        DependsOnAlias $dependsOnAlias
-    ) {
+        Basic                    $basic,
+        BasicInjection           $basicInjection,
+        DependsOnInterface       $dependsOnInterface,
+        HasOptionalParameters    $hasOptionalParameters,
+        TestAssetInterface       $testAssetInterface,
+        ConstructorNineArguments $constructorNineArguments,
+        DependsOnAlias           $dependsOnAlias
+    )
+    {
         $this->basic = $basic;
         $this->basicInjection = $basicInjection;
         $this->dependsOnInterface = $dependsOnInterface;

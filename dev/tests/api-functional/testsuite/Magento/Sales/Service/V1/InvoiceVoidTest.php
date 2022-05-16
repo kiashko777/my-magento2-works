@@ -6,6 +6,10 @@
 
 namespace Magento\Sales\Service\V1;
 
+use Exception;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Sales\Model\Order\Invoice;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
@@ -22,15 +26,15 @@ class InvoiceVoidTest extends WebapiAbstract
      */
     public function testInvoiceVoid()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
 
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var \Magento\Sales\Model\Order\Invoice $invoice */
-        $invoice = $objectManager->get(\Magento\Sales\Model\Order\Invoice::class)->loadByIncrementId('100000001');
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var Invoice $invoice */
+        $invoice = $objectManager->get(Invoice::class)->loadByIncrementId('100000001');
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/invoices/' . $invoice->getId() . '/void',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,

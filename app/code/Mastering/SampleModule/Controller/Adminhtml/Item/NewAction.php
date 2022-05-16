@@ -2,9 +2,10 @@
 
 namespace Mastering\SampleModule\Controller\Adminhtml\Item;
 
+use Magento\Backend\App\Action;
 use Magento\Framework\Controller\ResultFactory;
 
-class NewAction extends \Magento\Backend\App\Action
+class NewAction extends Action
 {
     public function execute()
     {

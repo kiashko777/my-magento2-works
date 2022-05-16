@@ -20,12 +20,6 @@ class GiftMessageTest extends GraphQlAbstract
      */
     private $getMaskedQuoteIdByReservedOrderId;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-    }
-
     /**
      * @magentoConfigFixture default_store sales/gift_options/allow_items 0
      * @magentoApiDataFixture Magento/GiftMessage/_files/guest/quote_with_item_message.php
@@ -38,23 +32,6 @@ class GiftMessageTest extends GraphQlAbstract
         foreach ($this->requestCartResult($maskedQuoteId)['cart']['items'] as $item) {
             self::assertArrayHasKey('gift_message', $item);
             self::assertNull($item['gift_message']);
-        }
-    }
-
-    /**
-     * @magentoConfigFixture default_store sales/gift_options/allow_items 1
-     * @magentoApiDataFixture Magento/GiftMessage/_files/guest/quote_with_item_message.php
-     * @throws NoSuchEntityException
-     * @throws Exception
-     */
-    public function testGiftMessageCartForItem()
-    {
-        $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_guest_order_with_gift_message');
-        foreach ($this->requestCartResult($maskedQuoteId)['cart']['items'] as $item) {
-            self::assertArrayHasKey('gift_message', $item);
-            self::assertArrayHasKey('to', $item['gift_message']);
-            self::assertArrayHasKey('from', $item['gift_message']);
-            self::assertArrayHasKey('message', $item['gift_message']);
         }
     }
 
@@ -85,5 +62,28 @@ class GiftMessageTest extends GraphQlAbstract
 }
 QUERY;
         return $this->graphQlQuery($query);
+    }
+
+    /**
+     * @magentoConfigFixture default_store sales/gift_options/allow_items 1
+     * @magentoApiDataFixture Magento/GiftMessage/_files/guest/quote_with_item_message.php
+     * @throws NoSuchEntityException
+     * @throws Exception
+     */
+    public function testGiftMessageCartForItem()
+    {
+        $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_guest_order_with_gift_message');
+        foreach ($this->requestCartResult($maskedQuoteId)['cart']['items'] as $item) {
+            self::assertArrayHasKey('gift_message', $item);
+            self::assertArrayHasKey('to', $item['gift_message']);
+            self::assertArrayHasKey('from', $item['gift_message']);
+            self::assertArrayHasKey('message', $item['gift_message']);
+        }
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
     }
 }

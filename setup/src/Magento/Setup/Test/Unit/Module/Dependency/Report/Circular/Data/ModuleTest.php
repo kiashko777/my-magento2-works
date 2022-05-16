@@ -13,6 +13,14 @@ use PHPUnit\Framework\TestCase;
 
 class ModuleTest extends TestCase
 {
+    public function testGetName()
+    {
+        $name = 'name';
+        $module = $this->createModule($name, []);
+
+        $this->assertEquals($name, $module->getName());
+    }
+
     /**
      * @param string $name
      * @param array $chains
@@ -25,14 +33,6 @@ class ModuleTest extends TestCase
             Module::class,
             ['name' => $name, 'chains' => $chains]
         );
-    }
-
-    public function testGetName()
-    {
-        $name = 'name';
-        $module = $this->createModule($name, []);
-
-        $this->assertEquals($name, $module->getName());
     }
 
     public function testGetChains()

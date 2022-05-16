@@ -6,10 +6,11 @@
 declare(strict_types=1);
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Helper\Product;
 use Magento\Customer\Model\CustomerRegistry;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Wishlist\Model\WishlistFactory;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
+use Magento\Wishlist\Model\WishlistFactory;
 
 Resolver::getInstance()->requireDataFixture('Magento/Customer/_files/customer.php');
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/multiple_products.php');
@@ -26,8 +27,8 @@ $product2 = $productRepository->get('simple2');
 $wishlistFactory = $objectManager->get(WishlistFactory::class);
 $wishlist = $wishlistFactory->create();
 $wishlist->loadByCustomerId($customer->getId(), true);
-/** @var \Magento\Catalog\Helper\Product $productHelper */
-$productHelper = $objectManager->get(\Magento\Catalog\Helper\Product::class);
+/** @var Product $productHelper */
+$productHelper = $objectManager->get(Product::class);
 $isSkipSaleableCheck = $productHelper->getSkipSaleableCheck();
 $productHelper->setSkipSaleableCheck(true);
 $wishlist->addNewItem($product);

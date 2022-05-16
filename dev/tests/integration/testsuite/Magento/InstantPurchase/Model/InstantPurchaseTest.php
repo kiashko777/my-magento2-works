@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\InstantPurchase\Model;
 
 use Magento\Customer\Api\CustomerRepositoryInterface;
@@ -26,11 +27,6 @@ class InstantPurchaseTest extends TestCase
      */
     private $objectManager;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
-
     /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
      * @magentoDataFixture Magento/Customer/_files/customer_address.php
@@ -45,6 +41,47 @@ class InstantPurchaseTest extends TestCase
         $this->assertInstanceOf(Address::class, $option->getShippingAddress());
         $this->assertInstanceOf(Address::class, $option->getBillingAddress());
         $this->assertInstanceOf(ShippingMethodInterface::class, $option->getShippingMethod());
+    }
+
+    /**
+     * Run system under test
+     *
+     * @return InstantPurchaseOption
+     */
+    private function invokeTestInstantPurchaseOptionCalculation(): InstantPurchaseOption
+    {
+        /** @var InstantPurchaseInterface $instantPurchase */
+        $instantPurchase = $this->objectManager->create(InstantPurchaseInterface::class);
+        $store = $this->getFixtureStore();
+        $customer = $this->getFixtureCustomer();
+        $option = $instantPurchase->getOption($store, $customer);
+        return $option;
+    }
+
+    /**
+     * Returns Store created by fixture.
+     *
+     * @return Store
+     */
+    private function getFixtureStore(): Store
+    {
+        $repository = $this->objectManager->create(StoreRepositoryInterface::class);
+        $store = $repository->get('default');
+        return $store;
+    }
+
+    /**
+     * Returns Customer created by fixture.
+     *
+     * @return Customer
+     */
+    private function getFixtureCustomer(): Customer
+    {
+        $repository = $this->objectManager->create(CustomerRepositoryInterface::class);
+        $customerData = $repository->getById(1);
+        $customer = $this->objectManager->create(Customer::class);
+        $customer->updateData($customerData);
+        return $customer;
     }
 
     /**
@@ -127,44 +164,8 @@ class InstantPurchaseTest extends TestCase
         $this->assertFalse($option->isAvailable());
     }
 
-    /**
-     * Run system under test
-     *
-     * @return InstantPurchaseOption
-     */
-    private function invokeTestInstantPurchaseOptionCalculation(): InstantPurchaseOption
+    protected function setUp(): void
     {
-        /** @var InstantPurchaseInterface $instantPurchase */
-        $instantPurchase = $this->objectManager->create(InstantPurchaseInterface::class);
-        $store = $this->getFixtureStore();
-        $customer = $this->getFixtureCustomer();
-        $option = $instantPurchase->getOption($store, $customer);
-        return $option;
-    }
-
-    /**
-     * Returns Store created by fixture.
-     *
-     * @return Store
-     */
-    private function getFixtureStore(): Store
-    {
-        $repository = $this->objectManager->create(StoreRepositoryInterface::class);
-        $store = $repository->get('default');
-        return $store;
-    }
-
-    /**
-     * Returns Customer created by fixture.
-     *
-     * @return Customer
-     */
-    private function getFixtureCustomer(): Customer
-    {
-        $repository = $this->objectManager->create(CustomerRepositoryInterface::class);
-        $customerData = $repository->getById(1);
-        $customer = $this->objectManager->create(Customer::class);
-        $customer->updateData($customerData);
-        return $customer;
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

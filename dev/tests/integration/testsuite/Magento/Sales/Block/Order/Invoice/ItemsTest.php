@@ -13,9 +13,9 @@ use Magento\Framework\View\Element\Text;
 use Magento\Framework\View\LayoutInterface;
 use Magento\Framework\View\Result\PageFactory;
 use Magento\Sales\Api\Data\InvoiceInterface;
+use Magento\Sales\Api\Data\InvoiceInterfaceFactory;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Api\Data\OrderInterfaceFactory;
-use Magento\Sales\Api\Data\InvoiceInterfaceFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Helper\Xpath;
 use PHPUnit\Framework\TestCase;
@@ -49,30 +49,6 @@ class ItemsTest extends TestCase
 
     /** @var PageFactory */
     private $pageFactory;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->block = $this->layout->createBlock(Items::class, 'block');
-        $this->invoiceFactory = $this->objectManager->get(InvoiceInterfaceFactory::class);
-        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
-        $this->pageFactory = $this->objectManager->get(PageFactory::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->registry->unregister('current_order');
-
-        parent::tearDown();
-    }
 
     /**
      * @magentoAppIsolation enabled
@@ -127,6 +103,37 @@ class ItemsTest extends TestCase
         $this->registerOrder($order);
         $blockHtml = $this->renderInvoiceItemsBlock();
         $this->assertInvoicesBlock($order, $blockHtml);
+    }
+
+    /**
+     * Register order in registry.
+     *
+     * @param OrderInterface $order
+     * @return void
+     */
+    private function registerOrder(OrderInterface $order): void
+    {
+        $this->registry->unregister('current_order');
+        $this->registry->register('current_order', $order);
+    }
+
+    /**
+     * Render invoice items block.
+     *
+     * @return string
+     */
+    private function renderInvoiceItemsBlock(): string
+    {
+        $page = $this->pageFactory->create();
+        $page->addHandle([
+            'default',
+            'sales_order_invoice',
+        ]);
+        $page->getLayout()->generateXml();
+        $invoiceItemsBlock = $page->getLayout()->getBlock('invoice_items')->unsetChild('invoice_totals');
+        $invoiceItemsBlock->getRequest()->setRouteName('sales')->setControllerName('order')->setActionName('invoice');
+
+        return $invoiceItemsBlock->toHtml();
     }
 
     /**
@@ -213,33 +220,26 @@ class ItemsTest extends TestCase
     }
 
     /**
-     * Render invoice items block.
-     *
-     * @return string
+     * @inheritdoc
      */
-    private function renderInvoiceItemsBlock(): string
+    protected function setUp(): void
     {
-        $page = $this->pageFactory->create();
-        $page->addHandle([
-            'default',
-            'sales_order_invoice',
-        ]);
-        $page->getLayout()->generateXml();
-        $invoiceItemsBlock = $page->getLayout()->getBlock('invoice_items')->unsetChild('invoice_totals');
-        $invoiceItemsBlock->getRequest()->setRouteName('sales')->setControllerName('order')->setActionName('invoice');
-
-        return $invoiceItemsBlock->toHtml();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->block = $this->layout->createBlock(Items::class, 'block');
+        $this->invoiceFactory = $this->objectManager->get(InvoiceInterfaceFactory::class);
+        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
+        $this->pageFactory = $this->objectManager->get(PageFactory::class);
     }
 
     /**
-     * Register order in registry.
-     *
-     * @param OrderInterface $order
-     * @return void
+     * @inheritdoc
      */
-    private function registerOrder(OrderInterface $order): void
+    protected function tearDown(): void
     {
         $this->registry->unregister('current_order');
-        $this->registry->register('current_order', $order);
+
+        parent::tearDown();
     }
 }

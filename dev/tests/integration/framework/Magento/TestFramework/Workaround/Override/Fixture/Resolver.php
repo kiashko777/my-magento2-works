@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\TestFramework\Workaround\Override\Fixture;
 
+use InvalidArgumentException;
 use Magento\Framework\Component\ComponentRegistrar;
 use Magento\Framework\Component\ComponentRegistrarInterface;
 use Magento\Framework\Exception\LocalizedException;
@@ -23,6 +24,7 @@ use Magento\TestFramework\Workaround\Override\Fixture\Applier\Base;
 use Magento\TestFramework\Workaround\Override\Fixture\Applier\ConfigFixture as ConfigFixtureApplier;
 use Magento\TestFramework\Workaround\Override\Fixture\Applier\DataFixture as DataFixtureApplier;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 /**
  * Class determines fixture applying according to configurations
@@ -31,12 +33,10 @@ use PHPUnit\Framework\TestCase;
  */
 class Resolver implements ResolverInterface
 {
-    /** @var ObjectManagerInterface */
-    protected $objectManager;
-
     /** @var self */
     private static $instance;
-
+    /** @var ObjectManagerInterface */
+    protected $objectManager;
     /** @var TestCase */
     private $currentTest;
 
@@ -66,7 +66,7 @@ class Resolver implements ResolverInterface
     public static function getInstance(): ResolverInterface
     {
         if (empty(self::$instance)) {
-            throw new \RuntimeException('Override fixture resolver isn\'t initialized');
+            throw new RuntimeException('Override fixture resolver isn\'t initialized');
         }
 
         return self::$instance;
@@ -81,22 +81,6 @@ class Resolver implements ResolverInterface
     public static function setInstance(ResolverInterface $instance): void
     {
         self::$instance = $instance;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setCurrentTest(?TestCase $currentTest): void
-    {
-        $this->currentTest = $currentTest;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getCurrentTest(): ?TestCase
-    {
-        return $this->currentTest;
     }
 
     /**
@@ -123,73 +107,6 @@ class Resolver implements ResolverInterface
     }
 
     /**
-     * @inheritdoc
-     */
-    public function applyConfigFixtures(TestCase $test, array $fixtures, string $fixtureType): array
-    {
-        $skipConfig = $this->config->getSkipConfiguration($test);
-
-        return $skipConfig['skip']
-            ? []
-            : $this->getApplier($test, $fixtureType)->apply($fixtures);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function applyDataFixtures(TestCase $test, array $fixtures, string $fixtureType): array
-    {
-        $result = [];
-        $skipConfig = $this->config->getSkipConfiguration($test);
-
-        if (!$skipConfig['skip']) {
-            $fixtures = $this->getApplier($test, $fixtureType)->apply($fixtures);
-
-            foreach ($fixtures as $fixture) {
-                $result[] = $this->processFixturePath($test, $fixture);
-            }
-        }
-
-        return $result;
-    }
-
-    /**
-     * Get appropriate fixture applier according to fixture type
-     *
-     * @param string $fixtureType
-     * @return ApplierInterface
-     */
-    protected function getApplierByFixtureType(string $fixtureType): ApplierInterface
-    {
-        switch ($fixtureType) {
-            case DataFixture::ANNOTATION:
-            case DataFixtureBeforeTransaction::ANNOTATION:
-                $applier = $this->objectManager->get(DataFixtureApplier::class);
-                break;
-            case ConfigFixture::ANNOTATION:
-                $applier = $this->objectManager->get(ConfigFixtureApplier::class);
-                break;
-            case AdminConfigFixture::ANNOTATION:
-                $applier = $this->objectManager->get(AdminConfigFixtureApplier::class);
-                break;
-            default:
-                throw new \InvalidArgumentException(sprintf('Unsupported fixture type %s provided', $fixtureType));
-        }
-
-        return $applier;
-    }
-
-    /**
-     * Get ComponentRegistrar object
-     *
-     * @return ComponentRegistrarInterface
-     */
-    protected function getComponentRegistrar(): ComponentRegistrarInterface
-    {
-        return $this->objectManager->get(ComponentRegistrar::class);
-    }
-
-    /**
      * Get applier with prepared config by annotation type
      *
      * @param TestCase $test
@@ -213,6 +130,48 @@ class Resolver implements ResolverInterface
         );
 
         return $applier;
+    }
+
+    /**
+     * Get appropriate fixture applier according to fixture type
+     *
+     * @param string $fixtureType
+     * @return ApplierInterface
+     */
+    protected function getApplierByFixtureType(string $fixtureType): ApplierInterface
+    {
+        switch ($fixtureType) {
+            case DataFixture::ANNOTATION:
+            case DataFixtureBeforeTransaction::ANNOTATION:
+                $applier = $this->objectManager->get(DataFixtureApplier::class);
+                break;
+            case ConfigFixture::ANNOTATION:
+                $applier = $this->objectManager->get(ConfigFixtureApplier::class);
+                break;
+            case AdminConfigFixture::ANNOTATION:
+                $applier = $this->objectManager->get(AdminConfigFixtureApplier::class);
+                break;
+            default:
+                throw new InvalidArgumentException(sprintf('Unsupported fixture type %s provided', $fixtureType));
+        }
+
+        return $applier;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getCurrentTest(): ?TestCase
+    {
+        return $this->currentTest;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setCurrentTest(?TestCase $currentTest): void
+    {
+        $this->currentTest = $currentTest;
     }
 
     /**
@@ -273,5 +232,46 @@ class Resolver implements ResolverInterface
         }
 
         return $modulePath . '/' . ltrim($fixtureFile, '/');
+    }
+
+    /**
+     * Get ComponentRegistrar object
+     *
+     * @return ComponentRegistrarInterface
+     */
+    protected function getComponentRegistrar(): ComponentRegistrarInterface
+    {
+        return $this->objectManager->get(ComponentRegistrar::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function applyConfigFixtures(TestCase $test, array $fixtures, string $fixtureType): array
+    {
+        $skipConfig = $this->config->getSkipConfiguration($test);
+
+        return $skipConfig['skip']
+            ? []
+            : $this->getApplier($test, $fixtureType)->apply($fixtures);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function applyDataFixtures(TestCase $test, array $fixtures, string $fixtureType): array
+    {
+        $result = [];
+        $skipConfig = $this->config->getSkipConfiguration($test);
+
+        if (!$skipConfig['skip']) {
+            $fixtures = $this->getApplier($test, $fixtureType)->apply($fixtures);
+
+            foreach ($fixtures as $fixture) {
+                $result[] = $this->processFixturePath($test, $fixture);
+            }
+        }
+
+        return $result;
     }
 }

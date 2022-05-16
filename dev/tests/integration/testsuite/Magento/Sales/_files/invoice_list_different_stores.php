@@ -6,12 +6,23 @@
 declare(strict_types=1);
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Framework\DB\Transaction;
+use Magento\Sales\Api\InvoiceManagementInterface;
+use Magento\Sales\Api\OrderRepositoryInterface;
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Address;
+use Magento\Sales\Model\Order\Invoice;
+use Magento\Sales\Model\Order\Item;
+use Magento\Sales\Model\Order\Payment;
+use Magento\Store\Model\Store;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Sales/_files/default_rollback.php');
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/product_simple.php');
-/** @var \Magento\Catalog\Model\Product $product */
+/** @var Product $product */
 Resolver::getInstance()->requireDataFixture('Magento/Store/_files/second_store.php');
 
 $addressData = include __DIR__ . '/address_data.php';
@@ -19,79 +30,79 @@ $objectManager = Bootstrap::getObjectManager();
 /** @var ProductRepositoryInterface $productRepository */
 $productRepository = $objectManager->create(ProductRepositoryInterface::class);
 $product = $productRepository->get('simple');
-$store = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->create(\Magento\Store\Model\Store::class);
+$store = Bootstrap::getObjectManager()
+    ->create(Store::class);
 $secondStoreId = $store->load('fixture_second_store')->getId();
 
 $orders = [
     [
-        'increment_id'     => '100000002',
-        'state'            => \Magento\Sales\Model\Order::STATE_NEW,
-        'status'           => 'processing',
-        'grand_total'      => 120.00,
-        'subtotal'         => 120.00,
+        'increment_id' => '100000002',
+        'state' => Order::STATE_NEW,
+        'status' => 'processing',
+        'grand_total' => 120.00,
+        'subtotal' => 120.00,
         'base_grand_total' => 120.00,
-        'store_id'         => 0,
-        'website_id'       => 1,
+        'store_id' => 0,
+        'website_id' => 1,
     ],
     [
-        'increment_id'     => '100000003',
-        'state'            => \Magento\Sales\Model\Order::STATE_PROCESSING,
-        'status'           => 'processing',
-        'grand_total'      => 140.00,
+        'increment_id' => '100000003',
+        'state' => Order::STATE_PROCESSING,
+        'status' => 'processing',
+        'grand_total' => 140.00,
         'base_grand_total' => 140.00,
-        'subtotal'         => 140.00,
-        'store_id'         => 1,
-        'website_id'       => 0,
+        'subtotal' => 140.00,
+        'store_id' => 1,
+        'website_id' => 0,
     ],
     [
-        'increment_id'     => '100000004',
-        'state'            => \Magento\Sales\Model\Order::STATE_PROCESSING,
-        'status'           => 'closed',
-        'grand_total'      => 140.00,
+        'increment_id' => '100000004',
+        'state' => Order::STATE_PROCESSING,
+        'status' => 'closed',
+        'grand_total' => 140.00,
         'base_grand_total' => 140.00,
-        'subtotal'         => 140.00,
-        'store_id'         => $secondStoreId,
-        'website_id'       => 1,
+        'subtotal' => 140.00,
+        'store_id' => $secondStoreId,
+        'website_id' => 1,
     ],
 ];
 
-/** @var \Magento\Sales\Model\Order\Address $billingAddress */
-$billingAddress = $objectManager->create(\Magento\Sales\Model\Order\Address::class, ['data' => $addressData]);
+/** @var Address $billingAddress */
+$billingAddress = $objectManager->create(Address::class, ['data' => $addressData]);
 $billingAddress->setAddressType('billing');
 
-/** @var \Magento\Sales\Model\Order\Address $shippingAddress */
+/** @var Address $shippingAddress */
 $shippingAddress = clone $billingAddress;
 $shippingAddress->setId(null)->setAddressType('shipping');
 
-/** @var \Magento\Sales\Model\Order\Payment $payment */
-$payment = $objectManager->create(\Magento\Sales\Model\Order\Payment::class);
+/** @var Payment $payment */
+$payment = $objectManager->create(Payment::class);
 $payment->setMethod('checkmo');
 $payment->setAdditionalInformation('last_trans_id', '11122');
 $payment->setAdditionalInformation('metadata', [
-    'type'       => 'free',
+    'type' => 'free',
     'fraudulent' => false,
 ]);
 
-/** @var \Magento\Sales\Model\Order\Item $orderItem */
-$orderItem = $objectManager->create(\Magento\Sales\Model\Order\Item::class);
+/** @var Item $orderItem */
+$orderItem = $objectManager->create(Item::class);
 $orderItem->setProductId($product->getId())->setQtyOrdered(2);
 $orderItem->setBasePrice($product->getPrice());
 $orderItem->setPrice($product->getPrice());
 $orderItem->setRowTotal($product->getPrice());
 $orderItem->setProductType('simple');
 
-/** @var \Magento\Sales\Api\InvoiceManagementInterface $orderService */
-$orderService = \Magento\TestFramework\ObjectManager::getInstance()->create(
-    \Magento\Sales\Api\InvoiceManagementInterface::class
+/** @var InvoiceManagementInterface $orderService */
+$orderService = ObjectManager::getInstance()->create(
+    InvoiceManagementInterface::class
 );
 
-/** @var \Magento\Sales\Api\OrderRepositoryInterface $orderRepository */
-$orderRepository = $objectManager->create(\Magento\Sales\Api\OrderRepositoryInterface::class);
+/** @var OrderRepositoryInterface $orderRepository */
+$orderRepository = $objectManager->create(OrderRepositoryInterface::class);
 
 foreach ($orders as $orderFixture) {
-    /** @var \Magento\Sales\Model\Order $order */
-    $order = $objectManager->create(\Magento\Sales\Model\Order::class);
+    /** @var Order $order */
+    $order = $objectManager->create(Order::class);
     $order->setData($orderFixture);
     $order->setIncrementId(
         $orderFixture['increment_id']
@@ -125,14 +136,14 @@ foreach ($orders as $orderFixture) {
 
     $orderRepository->save($order);
 
-    /** @var \Magento\Sales\Model\Order\Invoice $invoice */
+    /** @var Invoice $invoice */
     $invoice = $orderService->prepareInvoice($order, $order->getItems());
     $invoice->register();
     $invoice->setSendEmail(1);
     $invoice->setStoreId($orderFixture['store_id']);
     $order = $invoice->getOrder();
     $order->setIsInProcess(true);
-    $transactionSave = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-        ->create(\Magento\Framework\DB\Transaction::class);
+    $transactionSave = Bootstrap::getObjectManager()
+        ->create(Transaction::class);
     $transactionSave->addObject($invoice)->addObject($order)->save();
 }

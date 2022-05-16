@@ -41,16 +41,16 @@ module.exports = {
 
         for (i; i < theme[themeName].files.length; i++) {
             cssStringArray[i] = path.pub +
-            theme[themeName].area + '/' +
-            theme[themeName].name + '/' +
-            theme[themeName].locale + '/' +
-            theme[themeName].files[i] + '.css';
+                theme[themeName].area + '/' +
+                theme[themeName].name + '/' +
+                theme[themeName].locale + '/' +
+                theme[themeName].files[i] + '.css';
 
             lessStringArray[i] = path.pub +
-            theme[themeName].area + '/' +
-            theme[themeName].name + '/' +
-            theme[themeName].locale + '/' +
-            theme[themeName].files[i] + '.less';
+                theme[themeName].area + '/' +
+                theme[themeName].name + '/' +
+                theme[themeName].locale + '/' +
+                theme[themeName].files[i] + '.less';
 
             lessFiles[cssStringArray[i]] = lessStringArray[i];
         }

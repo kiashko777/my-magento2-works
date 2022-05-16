@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Catalog;
 
+use Exception;
 use Magento\Catalog\Api\Data\CategoryInterface;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
@@ -30,7 +31,7 @@ use Magento\TestFramework\TestCase\GraphQlAbstract;
 class CategoryTest extends GraphQlAbstract
 {
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     private $objectManager;
 
@@ -48,14 +49,6 @@ class CategoryTest extends GraphQlAbstract
      * @var MetadataPool
      */
     private $metadataPool;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->categoryRepository = $this->objectManager->get(CategoryRepository::class);
-        $this->store = $this->objectManager->get(Store::class);
-        $this->metadataPool = $this->objectManager->get(MetadataPool::class);
-    }
 
     /**
      * @magentoApiDataFixture Magento/Catalog/_files/categories.php
@@ -266,7 +259,7 @@ QUERY;
      */
     public function testGetDisabledCategory()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Category doesn\'t exist');
 
         $categoryId = 8;
@@ -286,7 +279,7 @@ QUERY;
      */
     public function testGetCategoryIdZero()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Category doesn\'t exist');
 
         $categoryId = 0;
@@ -467,6 +460,66 @@ QUERY;
     }
 
     /**
+     * @param ProductInterface $product
+     * @param array $actualResponse
+     */
+    private function assertBaseFields($product, $actualResponse)
+    {
+        $assertionMap = [
+            ['response_field' => 'name', 'expected_value' => $product->getName()],
+            ['response_field' => 'price', 'expected_value' => [
+                'minimalPrice' => [
+                    'amount' => [
+                        'value' => $product->getPrice(),
+                        'currency' => 'USD'
+                    ],
+                    'adjustments' => []
+                ],
+                'regularPrice' => [
+                    'amount' => [
+                        'value' => $product->getPrice(),
+                        'currency' => 'USD'
+                    ],
+                    'adjustments' => []
+                ],
+                'maximalPrice' => [
+                    'amount' => [
+                        'value' => $product->getPrice(),
+                        'currency' => 'USD'
+                    ],
+                    'adjustments' => []
+                ],
+            ]
+            ],
+            ['response_field' => 'sku', 'expected_value' => $product->getSku()],
+            ['response_field' => 'type_id', 'expected_value' => $product->getTypeId()],
+        ];
+        $this->assertResponseFields($actualResponse, $assertionMap);
+    }
+
+    /**
+     * @param array $actualResponse
+     */
+    private function assertAttributes($actualResponse)
+    {
+        $eavAttributes = [
+            'url_key',
+            'description',
+            'meta_description',
+            'meta_keyword',
+            'meta_title',
+            'short_description',
+            'country_of_manufacture',
+            'gift_message_available',
+            'options_container',
+            'special_price'
+        ];
+        foreach ($eavAttributes as $eavAttribute) {
+            $this->assertArrayHasKey($eavAttribute, $actualResponse);
+        }
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Catalog/_files/categories.php
      */
     public function testAnchorCategory()
@@ -586,7 +639,7 @@ QUERY;
         if ($imagePrefix !== null) {
             // update image to account for different stored image format
             $productLinkField = $this->metadataPool
-                ->getMetadata(\Magento\Catalog\Api\Data\ProductInterface::class)
+                ->getMetadata(ProductInterface::class)
                 ->getLinkField();
 
             $defaultStoreId = $this->store->getId();
@@ -755,63 +808,11 @@ QUERY;
         ];
     }
 
-    /**
-     * @param ProductInterface $product
-     * @param array $actualResponse
-     */
-    private function assertBaseFields($product, $actualResponse)
+    protected function setUp(): void
     {
-        $assertionMap = [
-            ['response_field' => 'name', 'expected_value' => $product->getName()],
-            ['response_field' => 'price', 'expected_value' => [
-                    'minimalPrice' => [
-                        'amount' => [
-                            'value' => $product->getPrice(),
-                            'currency' => 'USD'
-                        ],
-                        'adjustments' => []
-                    ],
-                    'regularPrice' => [
-                        'amount' => [
-                            'value' => $product->getPrice(),
-                            'currency' => 'USD'
-                        ],
-                        'adjustments' => []
-                    ],
-                    'maximalPrice' => [
-                        'amount' => [
-                            'value' => $product->getPrice(),
-                            'currency' => 'USD'
-                        ],
-                        'adjustments' => []
-                    ],
-                ]
-            ],
-            ['response_field' => 'sku', 'expected_value' => $product->getSku()],
-            ['response_field' => 'type_id', 'expected_value' => $product->getTypeId()],
-        ];
-        $this->assertResponseFields($actualResponse, $assertionMap);
-    }
-
-    /**
-     * @param array $actualResponse
-     */
-    private function assertAttributes($actualResponse)
-    {
-        $eavAttributes = [
-            'url_key',
-            'description',
-            'meta_description',
-            'meta_keyword',
-            'meta_title',
-            'short_description',
-            'country_of_manufacture',
-            'gift_message_available',
-            'options_container',
-            'special_price'
-        ];
-        foreach ($eavAttributes as $eavAttribute) {
-            $this->assertArrayHasKey($eavAttribute, $actualResponse);
-        }
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->categoryRepository = $this->objectManager->get(CategoryRepository::class);
+        $this->store = $this->objectManager->get(Store::class);
+        $this->metadataPool = $this->objectManager->get(MetadataPool::class);
     }
 }

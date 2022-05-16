@@ -57,10 +57,11 @@ class MultiSelectAttributeTest extends AbstractAttributeTest
      * @return void
      */
     public function testAttributeWithHtmlTags(
-        bool $allowHtmlTags,
+        bool   $allowHtmlTags,
         string $attributeValue,
         string $expectedAttributeValue
-    ): void {
+    ): void
+    {
         $this->attributeCode = 'multiselect_attribute_with_html';
         $attributeValue = $this->getAttribute()->getSource()->getOptionId($attributeValue);
         $this->processAttributeHtmlOutput('simple2', $allowHtmlTags, $attributeValue, $expectedAttributeValue);

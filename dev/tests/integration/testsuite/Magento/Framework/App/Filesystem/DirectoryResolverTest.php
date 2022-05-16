@@ -6,55 +6,31 @@
 
 namespace Magento\Framework\App\Filesystem;
 
+use Magento\Framework\Exception\FileSystemException;
+use Magento\Framework\Filesystem;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for the \Magento\Framework\App\Filesystem\DirectoryResolver verification.
  */
-class DirectoryResolverTest extends \PHPUnit\Framework\TestCase
+class DirectoryResolverTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
     /**
-     * @var \Magento\Framework\App\Filesystem\DirectoryResolver
+     * @var DirectoryResolver
      */
     private $directoryResolver;
 
     /**
-     * @var \Magento\Framework\Filesystem
+     * @var Filesystem
      */
     private $filesystem;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->directoryResolver = $this->objectManager
-            ->create(\Magento\Framework\App\Filesystem\DirectoryResolver::class);
-        $this->filesystem = $this->objectManager->create(\Magento\Framework\Filesystem::class);
-    }
-
-    /**
-     * @param string $path
-     * @param string $directoryConfig
-     * @param bool $expectation
-     * @dataProvider validatePathDataProvider
-     * @throws \Magento\Framework\Exception\FileSystemException
-     * @magentoAppIsolation enabled
-     * @return void
-     */
-    public function testValidatePath($path, $directoryConfig, $expectation)
-    {
-        $directory = $this->filesystem
-            ->getDirectoryWrite(\Magento\Framework\App\Filesystem\DirectoryList::MEDIA);
-        $path = $directory->getAbsolutePath() .'/' .$path;
-        $this->assertEquals($expectation, $this->directoryResolver->validatePath($path, $directoryConfig));
-    }
 
     /**
      * @magentoAppIsolation enabled
@@ -62,10 +38,10 @@ class DirectoryResolverTest extends \PHPUnit\Framework\TestCase
      */
     public function testValidatePathWithException()
     {
-        $this->expectException(\Magento\Framework\Exception\FileSystemException::class);
+        $this->expectException(FileSystemException::class);
 
         $directory = $this->filesystem
-            ->getDirectoryWrite(\Magento\Framework\App\Filesystem\DirectoryList::MEDIA);
+            ->getDirectoryWrite(DirectoryList::MEDIA);
         $path = $directory->getAbsolutePath();
         $this->directoryResolver->validatePath($path, 'wrong_dir');
     }
@@ -75,14 +51,14 @@ class DirectoryResolverTest extends \PHPUnit\Framework\TestCase
      * @param string $directoryConfig
      * @param bool $expectation
      * @dataProvider validatePathDataProvider
-     * @throws \Magento\Framework\Exception\FileSystemException
-     * @magentoAppIsolation enabled
      * @return void
+     * @throws FileSystemException
+     * @magentoAppIsolation enabled
      */
     public function testValidatePathWithSymlink($path, $directoryConfig, $expectation)
     {
         $directory = $this->filesystem
-            ->getDirectoryWrite(\Magento\Framework\App\Filesystem\DirectoryList::PUB);
+            ->getDirectoryWrite(DirectoryList::PUB);
         $driver = $directory->getDriver();
 
         $mediaPath = $directory->getAbsolutePath('media');
@@ -104,6 +80,23 @@ class DirectoryResolverTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * @param string $path
+     * @param string $directoryConfig
+     * @param bool $expectation
+     * @dataProvider validatePathDataProvider
+     * @return void
+     * @throws FileSystemException
+     * @magentoAppIsolation enabled
+     */
+    public function testValidatePath($path, $directoryConfig, $expectation)
+    {
+        $directory = $this->filesystem
+            ->getDirectoryWrite(DirectoryList::MEDIA);
+        $path = $directory->getAbsolutePath() . '/' . $path;
+        $this->assertEquals($expectation, $this->directoryResolver->validatePath($path, $directoryConfig));
+    }
+
+    /**
      * @return array
      */
     public function validatePathDataProvider()
@@ -120,5 +113,16 @@ class DirectoryResolverTest extends \PHPUnit\Framework\TestCase
                 false,
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->directoryResolver = $this->objectManager
+            ->create(DirectoryResolver::class);
+        $this->filesystem = $this->objectManager->create(Filesystem::class);
     }
 }

@@ -3,14 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Store\Model;
 
 use Magento\Framework\ObjectManagerInterface as ObjectManager;
-use Magento\Store\Model\Store;
-use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class StoreManagerTest extends \PHPUnit\Framework\TestCase
+class StoreManagerTest extends TestCase
 {
     /**
      * @var StoreManagerInterface
@@ -23,17 +23,6 @@ class StoreManagerTest extends \PHPUnit\Framework\TestCase
     private $objectManager;
 
     /**
-     * Class dependencies initialization
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-    }
-
-    /**
      * Check that behavior of setting and getting store into StoreManager is correct
      * Setting: Magento\Store\Model\StoreManagerInterface::setCurrentStore
      * Getting: Magento\Store\Model\StoreManagerInterface::getStore
@@ -44,5 +33,16 @@ class StoreManagerTest extends \PHPUnit\Framework\TestCase
     {
         $this->storeManager->setCurrentStore(Store::DEFAULT_STORE_ID);
         $this->assertEquals(Store::DEFAULT_STORE_ID, $this->storeManager->getStore()->getId());
+    }
+
+    /**
+     * Class dependencies initialization
+     *
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
     }
 }

@@ -7,12 +7,16 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Bundle;
 
+use Exception;
+use Magento\Bundle\Model\Option;
+use Magento\Bundle\Model\Product\Type;
 use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\TestFramework\TestCase\GraphQlAbstract;
-use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Catalog\Model\Product;
 use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\QuoteIdToMaskedQuoteIdInterface;
 use Magento\Quote\Model\ResourceModel\Quote as QuoteResource;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\GraphQlAbstract;
 
 /**
  * Test adding bundled products to cart
@@ -40,18 +44,6 @@ class AddBundleProductToCartTest extends GraphQlAbstract
     private $productRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->quoteResource = $objectManager->get(QuoteResource::class);
-        $this->quote = $objectManager->create(Quote::class);
-        $this->quoteIdToMaskedId = $objectManager->get(QuoteIdToMaskedQuoteIdInterface::class);
-        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Bundle/_files/product_1.php
      * @magentoApiDataFixture Magento/Checkout/_files/active_quote.php
      */
@@ -67,12 +59,12 @@ class AddBundleProductToCartTest extends GraphQlAbstract
 
         $product = $this->productRepository->get($sku);
 
-        /** @var $typeInstance \Magento\Bundle\Model\Product\Type */
+        /** @var $typeInstance Type */
         $typeInstance = $product->getTypeInstance();
         $typeInstance->setStoreFilter($product->getStoreId(), $product);
-        /** @var $option \Magento\Bundle\Model\Option */
+        /** @var $option Option */
         $option = $typeInstance->getOptionsCollection($product)->getFirstItem();
-        /** @var \Magento\Catalog\Model\Product $selection */
+        /** @var Product $selection */
         $selection = $typeInstance->getSelectionsCollection([$option->getId()], $product)->getFirstItem();
         $optionId = $option->getId();
         $selectionId = $selection->getSelectionId();
@@ -143,7 +135,7 @@ QUERY;
         $this->assertEquals($option->getType(), $bundleItemOption['type']);
         $value = current($bundleItemOption['values']);
         $this->assertEquals($selection->getSelectionId(), $value['id']);
-        $this->assertEquals((float) $selection->getSelectionPriceValue(), $value['price']);
+        $this->assertEquals((float)$selection->getSelectionPriceValue(), $value['price']);
         $this->assertEquals(1, $value['quantity']);
     }
 
@@ -214,7 +206,7 @@ QUERY;
      */
     public function testAddBundleToCartWithoutOptions()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Please select all required options');
 
         $this->quoteResource->load(
@@ -282,7 +274,7 @@ QUERY;
      */
     public function testAddBundleToCartWithRadioAndSelectErr()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Option type (select, radio) should have only one element.');
 
         $sku = 'bundle-product';
@@ -295,10 +287,10 @@ QUERY;
 
         $product = $this->productRepository->get($sku);
 
-        /** @var $typeInstance \Magento\Bundle\Model\Product\Type */
+        /** @var $typeInstance Type */
         $typeInstance = $product->getTypeInstance();
         $typeInstance->setStoreFilter($product->getStoreId(), $product);
-        /** @var $option \Magento\Bundle\Model\Option */
+        /** @var $option Option */
         $options = $typeInstance->getOptionsCollection($product);
 
         $selectionIds = [];
@@ -306,7 +298,7 @@ QUERY;
         foreach ($options as $option) {
             $type = $option->getType();
 
-            /** @var \Magento\Catalog\Model\Product $selection */
+            /** @var Product $selection */
             $selections = $typeInstance->getSelectionsCollection([$option->getId()], $product);
             $optionIds[$type] = $option->getId();
 
@@ -375,5 +367,17 @@ mutation {
 QUERY;
 
         $this->graphQlMutation($query);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->quoteResource = $objectManager->get(QuoteResource::class);
+        $this->quote = $objectManager->create(Quote::class);
+        $this->quoteIdToMaskedId = $objectManager->get(QuoteIdToMaskedQuoteIdInterface::class);
+        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
     }
 }

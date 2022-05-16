@@ -7,9 +7,9 @@ declare(strict_types=1);
 
 namespace Magento\Wishlist\Model;
 
+use InvalidArgumentException;
 use Magento\Bundle\Model\Product\OptionList;
 use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\Catalog\Model\Product\Attribute\Source\Status as ProductStatus;
 use Magento\Framework\App\ObjectManager;
 use Magento\Framework\DataObjectFactory;
 use Magento\Framework\Exception\LocalizedException;
@@ -42,20 +42,6 @@ class WishlistTest extends TestCase
 
     /** @var SerializerInterface */
     private $json;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = ObjectManager::getInstance();
-        $this->wishlistFactory = $this->objectManager->get(WishlistFactory::class);
-        $this->getWishlistByCustomerId = $this->objectManager->get(GetWishlistByCustomerId::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->dataObjectFactory = $this->objectManager->get(DataObjectFactory::class);
-        $this->json = $this->objectManager->get(SerializerInterface::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
@@ -99,7 +85,7 @@ class WishlistTest extends TestCase
         $customerId = 1;
         $product = $this->productRepository->get($productSku);
         $wishlist = $this->getWishlistByCustomerId->execute($customerId);
-        $this->expectExceptionObject(new \InvalidArgumentException('Invalid wishlist item configuration.'));
+        $this->expectExceptionObject(new InvalidArgumentException('Invalid wishlist item configuration.'));
         $wishlist->addNewItem($product, '{"qty":2');
     }
 
@@ -150,6 +136,21 @@ class WishlistTest extends TestCase
         $item = $this->getWishlistByCustomerId->getItemBySku(1, 'Configurable product');
         $this->assertNotNull($item);
         $this->assertWishListItem($item, $option['sku'], $buyRequest);
+    }
+
+    /**
+     * Assert item in wish list.
+     *
+     * @param Item $item
+     * @param string $itemSku
+     * @param array $buyRequest
+     * @return void
+     */
+    private function assertWishListItem(Item $item, string $itemSku, array $buyRequest): void
+    {
+        $this->assertEquals($itemSku, $item->getProduct()->getSku());
+        $buyRequestOption = $item->getOptionByCode('info_buyRequest');
+        $this->assertEquals($buyRequest, $this->json->unserialize($buyRequestOption->getValue()));
     }
 
     /**
@@ -290,17 +291,16 @@ class WishlistTest extends TestCase
     }
 
     /**
-     * Assert item in wish list.
-     *
-     * @param Item $item
-     * @param string $itemSku
-     * @param array $buyRequest
-     * @return void
+     * @inheritdoc
      */
-    private function assertWishListItem(Item $item, string $itemSku, array $buyRequest): void
+    protected function setUp(): void
     {
-        $this->assertEquals($itemSku, $item->getProduct()->getSku());
-        $buyRequestOption = $item->getOptionByCode('info_buyRequest');
-        $this->assertEquals($buyRequest, $this->json->unserialize($buyRequestOption->getValue()));
+        $this->objectManager = ObjectManager::getInstance();
+        $this->wishlistFactory = $this->objectManager->get(WishlistFactory::class);
+        $this->getWishlistByCustomerId = $this->objectManager->get(GetWishlistByCustomerId::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->dataObjectFactory = $this->objectManager->get(DataObjectFactory::class);
+        $this->json = $this->objectManager->get(SerializerInterface::class);
     }
 }

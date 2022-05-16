@@ -5,16 +5,25 @@
  */
 declare(strict_types=1);
 
-/** @var \Magento\Framework\Registry $registry */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-$registry = $objectManager->get(\Magento\Framework\Registry::class);
+/** @var Registry $registry */
+
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\CatalogInventory\Model\StockRegistryStorage;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Registry;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\QuoteIdMask;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
+$registry = $objectManager->get(Registry::class);
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
-/** @var $quote \Magento\Quote\Model\Quote */
-$quote = $objectManager->create(\Magento\Quote\Model\Quote::class);
-/** @var \Magento\Quote\Model\QuoteIdMask $quoteIdMask */
-$quoteIdMask = $objectManager->create(\Magento\Quote\Model\QuoteIdMask::class);
+/** @var $quote Quote */
+$quote = $objectManager->create(Quote::class);
+/** @var QuoteIdMask $quoteIdMask */
+$quoteIdMask = $objectManager->create(QuoteIdMask::class);
 
 $quote->load('guest_quote', 'reserved_order_id');
 
@@ -24,19 +33,19 @@ if (null !== $quoteId) {
     $quoteIdMask->delete($quoteId);
 }
 
-/** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-$productRepository = $objectManager->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+/** @var ProductRepositoryInterface $productRepository */
+$productRepository = $objectManager->get(ProductRepositoryInterface::class);
 
 try {
     $product = $productRepository->get('simple-product-guest-quote', false, null, true);
     $productRepository->delete($product);
-} catch (\Magento\Framework\Exception\NoSuchEntityException $exception) {
+} catch (NoSuchEntityException $exception) {
     //Products already removed
 }
 
-/** @var \Magento\CatalogInventory\Model\StockRegistryStorage $stockRegistryStorage */
-$stockRegistryStorage = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->get(\Magento\CatalogInventory\Model\StockRegistryStorage::class);
+/** @var StockRegistryStorage $stockRegistryStorage */
+$stockRegistryStorage = Bootstrap::getObjectManager()
+    ->get(StockRegistryStorage::class);
 $stockRegistryStorage->clean();
 
 $registry->unregister('isSecureArea');

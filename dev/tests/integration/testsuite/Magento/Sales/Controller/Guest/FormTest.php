@@ -32,6 +32,30 @@ class FormTest extends AbstractController
     }
 
     /**
+     * @param bool $invalidData
+     * @return void
+     */
+    private function prepareRequestData($invalidData = false)
+    {
+        $orderId = 100000001;
+        $email = $invalidData ? 'wrong@example.com' : 'customer@null.com';
+
+        /** @var FormKey $formKey */
+        $formKey = $this->_objectManager->get(FormKey::class);
+        $post = [
+            'oar_order_id' => $orderId,
+            'oar_billing_lastname' => 'lastname',
+            'oar_type' => 'email',
+            'oar_email' => $email,
+            'oar_zip' => '',
+            'form_key' => $formKey->getFormKey(),
+        ];
+
+        $this->getRequest()->setMethod(Request::METHOD_POST);
+        $this->getRequest()->setPostValue($post);
+    }
+
+    /**
      * View order as logged in customer
      *
      * @magentoDataFixture Magento/Sales/_files/order.php
@@ -43,6 +67,19 @@ class FormTest extends AbstractController
         $this->getRequest()->setMethod(Request::METHOD_POST);
         $this->dispatch('sales/guest/view/');
         $this->assertRedirect($this->stringContains('sales/order/history/'));
+    }
+
+    /**
+     * Login the user
+     *
+     * @param string $customerId Customer to mark as logged in for the session
+     * @return void
+     */
+    protected function login($customerId)
+    {
+        /** @var Session $session */
+        $session = $this->_objectManager->get(Session::class);
+        $session->loginById($customerId);
     }
 
     /**
@@ -69,42 +106,5 @@ class FormTest extends AbstractController
             $this->equalTo(['You entered incorrect data. Please try again.']),
             MessageInterface::TYPE_ERROR
         );
-    }
-
-    /**
-     * Login the user
-     *
-     * @param string $customerId Customer to mark as logged in for the session
-     * @return void
-     */
-    protected function login($customerId)
-    {
-        /** @var Session $session */
-        $session = $this->_objectManager->get(Session::class);
-        $session->loginById($customerId);
-    }
-
-    /**
-     * @param bool $invalidData
-     * @return void
-     */
-    private function prepareRequestData($invalidData = false)
-    {
-        $orderId = 100000001;
-        $email = $invalidData ? 'wrong@example.com' : 'customer@null.com';
-
-        /** @var FormKey $formKey */
-        $formKey = $this->_objectManager->get(FormKey::class);
-        $post = [
-            'oar_order_id' => $orderId,
-            'oar_billing_lastname' => 'lastname',
-            'oar_type' => 'email',
-            'oar_email' => $email,
-            'oar_zip' => '',
-            'form_key' => $formKey->getFormKey(),
-        ];
-
-        $this->getRequest()->setMethod(Request::METHOD_POST);
-        $this->getRequest()->setPostValue($post);
     }
 }

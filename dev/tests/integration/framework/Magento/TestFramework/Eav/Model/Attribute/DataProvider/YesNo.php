@@ -47,6 +47,14 @@ class YesNo extends AbstractBaseAttributeData
     /**
      * @inheritdoc
      */
+    protected function getFrontendInput(): string
+    {
+        return 'boolean';
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function getAttributeDataWithCheckArray(): array
     {
         return array_replace_recursive(
@@ -85,9 +93,21 @@ class YesNo extends AbstractBaseAttributeData
     /**
      * @inheritdoc
      */
-    protected function getFrontendInput(): string
+    protected function getUpdateExpectedData(): array
     {
-        return 'boolean';
+        $updatePostData = $this->getUpdatePostData();
+        unset($updatePostData['default_value_yesno']);
+        return array_merge(
+            $updatePostData,
+            [
+                'frontend_label' => 'Boolean Attribute Update',
+                'attribute_code' => 'boolean_attribute',
+                'default_value' => '1',
+                'frontend_class' => null,
+                'is_user_defined' => '1',
+                'backend_type' => 'int',
+            ]
+        );
     }
 
     /**
@@ -120,25 +140,5 @@ class YesNo extends AbstractBaseAttributeData
             'used_in_product_listing' => '0',
             'used_for_sort_by' => '1',
         ];
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function getUpdateExpectedData(): array
-    {
-        $updatePostData = $this->getUpdatePostData();
-        unset($updatePostData['default_value_yesno']);
-        return array_merge(
-            $updatePostData,
-            [
-                'frontend_label' => 'Boolean Attribute Update',
-                'attribute_code' => 'boolean_attribute',
-                'default_value' => '1',
-                'frontend_class' => null,
-                'is_user_defined' => '1',
-                'backend_type' => 'int',
-            ]
-        );
     }
 }

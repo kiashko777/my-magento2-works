@@ -11,14 +11,14 @@
         <column xsi:type="smallint" identity="true" name="smallint" padding="3" nullable="true"/>
         <column xsi:type="varchar" name="varchar" length="254" nullable="true"/>
         <constraint xsi:type="primary" referenceId="PRIMARY">
-            <column name="smallint" />
+            <column name="smallint"/>
         </constraint>
     </table>
     <table name="test_table_two" resource="shard_two">
         <column xsi:type="smallint" identity="true" name="smallint" padding="3" nullable="true"/>
         <column xsi:type="varchar" name="varchar" length="254" nullable="true"/>
         <constraint xsi:type="primary" referenceId="PRIMARY">
-            <column name="smallint" />
+            <column name="smallint"/>
         </constraint>
     </table>
     <table name="reference_table" resource="default">

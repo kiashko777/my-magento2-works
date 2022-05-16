@@ -22,15 +22,6 @@ class CartTotalsTest extends GraphQlAbstract
     private $getMaskedQuoteIdByReservedOrderId;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/GraphQl/Tax/_files/tax_rule_for_region_1.php
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/apply_tax_for_simple_product.php
@@ -62,6 +53,72 @@ class CartTotalsTest extends GraphQlAbstract
         self::assertEquals('US-TEST-*-Rate-1', $appliedTaxesResponse[0]['label']);
         self::assertEquals(1.5, $appliedTaxesResponse[0]['amount']['value']);
         self::assertEquals('USD', $appliedTaxesResponse[0]['amount']['currency']);
+    }
+
+    /**
+     * Generates GraphQl query for retrieving cart totals
+     *
+     * @param string $maskedQuoteId
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId): string
+    {
+        return <<<QUERY
+{
+  cart(cart_id: "$maskedQuoteId") {
+    items {
+      prices {
+        price {
+          value
+          currency
+        }
+        row_total {
+          value
+          currency
+        }
+        row_total_including_tax {
+          value
+          currency
+        }
+        total_item_discount {
+            value
+        }
+        discounts {
+            label
+            amount {
+                value
+            }
+        }
+      }
+    }
+    prices {
+      grand_total {
+        value
+        currency
+      }
+      subtotal_including_tax {
+        value
+        currency
+      }
+      subtotal_excluding_tax {
+        value
+        currency
+      }
+      subtotal_with_discount_excluding_tax {
+        value
+        currency
+      }
+      applied_taxes {
+        label
+        amount {
+          value
+          currency
+        }
+      }
+    }
+  }
+}
+QUERY;
     }
 
     /**
@@ -254,68 +311,11 @@ class CartTotalsTest extends GraphQlAbstract
     }
 
     /**
-     * Generates GraphQl query for retrieving cart totals
-     *
-     * @param string $maskedQuoteId
-     * @return string
+     * @inheritdoc
      */
-    private function getQuery(string $maskedQuoteId): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-{
-  cart(cart_id: "$maskedQuoteId") {
-    items {
-      prices {
-        price {
-          value
-          currency
-        }
-        row_total {
-          value
-          currency
-        }
-        row_total_including_tax {
-          value
-          currency
-        }
-        total_item_discount {
-            value
-        }
-        discounts {
-            label
-            amount {
-                value
-            }
-        }
-      }
-    }
-    prices {
-      grand_total {
-        value
-        currency
-      }
-      subtotal_including_tax {
-        value
-        currency
-      }
-      subtotal_excluding_tax {
-        value
-        currency
-      }
-      subtotal_with_discount_excluding_tax {
-        value
-        currency
-      }
-      applied_taxes {
-        label
-        amount {
-          value
-          currency
-        }
-      }
-    }
-  }
-}
-QUERY;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
     }
 }

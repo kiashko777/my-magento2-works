@@ -33,20 +33,6 @@ class QtyincrementsTest extends TestCase
     private $backendFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->backendFactory = $this->objectManager->get(BackendFactory::class);
-        $this->qtyIncrements = $this->backendFactory->create(Qtyincrements::class, [
-            'data' => [
-                'path' => Configuration::XML_PATH_QTY_INCREMENTS,
-            ],
-        ]);
-    }
-
-    /**
      * @return void
      */
     public function testAfterSaveWithDecimals(): void
@@ -58,5 +44,19 @@ class QtyincrementsTest extends TestCase
         $value = 10.5;
         $this->qtyIncrements->setValue((string)$value);
         $this->qtyIncrements->beforeSave();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->backendFactory = $this->objectManager->get(BackendFactory::class);
+        $this->qtyIncrements = $this->backendFactory->create(Qtyincrements::class, [
+            'data' => [
+                'path' => Configuration::XML_PATH_QTY_INCREMENTS,
+            ],
+        ]);
     }
 }

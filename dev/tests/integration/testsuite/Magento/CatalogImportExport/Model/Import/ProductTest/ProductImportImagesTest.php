@@ -7,11 +7,14 @@ declare(strict_types=1);
 
 namespace Magento\CatalogImportExport\Model\Import\ProductTest;
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
 use Magento\CatalogImportExport\Model\Import\ProductTestBase;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\App\ObjectManager;
 use Magento\Framework\DataObject;
 use Magento\Framework\Filesystem;
+use Magento\Framework\Filesystem\Directory\WriteInterface;
 use Magento\ImportExport\Model\Import;
 use Magento\ImportExport\Model\Import\Source\Csv;
 use Magento\TestFramework\Helper\Bootstrap as BootstrapHelper;
@@ -42,13 +45,14 @@ class ProductImportImagesTest extends ProductTestBase
         string $importFile,
         string $productSku,
         string $storeCode,
-        array $expectedImages,
-        array $select = ['file', 'label', 'position']
-    ): void {
+        array  $expectedImages,
+        array  $select = ['file', 'label', 'position']
+    ): void
+    {
         $this->importDataForMediaTest($importFile);
         $product = $this->getProductBySku($productSku, $storeCode);
         $actualImages = array_map(
-            function (\Magento\Framework\DataObject $item) use ($select) {
+            function (DataObject $item) use ($select) {
                 return $item->toArray($select);
             },
             $product->getMediaGalleryImages()->getItems()
@@ -110,25 +114,6 @@ class ProductImportImagesTest extends ProductTestBase
     }
 
     /**
-     * Make sure the non existing image in the csv file won't erase the qty key of the existing products.
-     */
-    public function testImportWithNonExistingImage()
-    {
-        $products = [
-            'simple_new' => 100,
-        ];
-
-        $this->importFile('products_to_import_with_non_existing_image.csv');
-
-        $productRepository = $this->objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
-        foreach ($products as $productSku => $productQty) {
-            $product = $productRepository->get($productSku);
-            $stockItem = $product->getExtensionAttributes()->getStockItem();
-            $this->assertEquals($productQty, $stockItem->getQty());
-        }
-    }
-
-    /**
      * Tests situation when images for importing products are already present in filesystem.
      *
      * @magentoDataFixture Magento/CatalogImportExport/Model/Import/_files/import_with_filesystem_images.php
@@ -137,7 +122,7 @@ class ProductImportImagesTest extends ProductTestBase
     {
         /** @var Filesystem $filesystem */
         $filesystem = ObjectManager::getInstance()->get(Filesystem::class);
-        /** @var \Magento\Framework\Filesystem\Directory\WriteInterface $writeAdapter */
+        /** @var WriteInterface $writeAdapter */
         $writeAdapter = $filesystem->getDirectoryWrite(DirectoryList::MEDIA);
 
         if (!$writeAdapter->isWritable()) {
@@ -372,8 +357,27 @@ class ProductImportImagesTest extends ProductTestBase
 
         $this->testImportWithNonExistingImage();
 
-        /** @var $productAfterImport \Magento\Catalog\Model\Product */
+        /** @var $productAfterImport Product */
         $productAfterImport = $this->getProductBySku('simple_new');
         $this->assertNotEquals('/no/exists/image/magento_image.jpg', $productAfterImport->getData('image'));
+    }
+
+    /**
+     * Make sure the non existing image in the csv file won't erase the qty key of the existing products.
+     */
+    public function testImportWithNonExistingImage()
+    {
+        $products = [
+            'simple_new' => 100,
+        ];
+
+        $this->importFile('products_to_import_with_non_existing_image.csv');
+
+        $productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+        foreach ($products as $productSku => $productQty) {
+            $product = $productRepository->get($productSku);
+            $stockItem = $product->getExtensionAttributes()->getStockItem();
+            $this->assertEquals($productQty, $stockItem->getQty());
+        }
     }
 }

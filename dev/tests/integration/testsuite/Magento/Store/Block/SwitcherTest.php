@@ -3,20 +3,24 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Store\Block;
 
 use Magento\Framework\App\ActionInterface;
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Framework\Url\DecoderInterface;
 use Magento\Framework\App\ScopeInterface;
+use Magento\Framework\Url\DecoderInterface;
+use Magento\Store\Api\StoreRepositoryInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Integration tests for \Magento\Store\Block\Switcher block.
  */
-class SwitcherTest extends \PHPUnit\Framework\TestCase
+class SwitcherTest extends TestCase
 {
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     private $_objectManager;
 
@@ -24,17 +28,6 @@ class SwitcherTest extends \PHPUnit\Framework\TestCase
      * @var DecoderInterface
      */
     private $decoder;
-
-    /**
-     * Set up.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->_objectManager = Bootstrap::getObjectManager();
-        $this->decoder = Bootstrap::getObjectManager()->create(DecoderInterface::class);
-    }
 
     /**
      * Test that GetTargetStorePostData() method returns correct data.
@@ -45,10 +38,10 @@ class SwitcherTest extends \PHPUnit\Framework\TestCase
     public function testGetTargetStorePostData()
     {
         $storeCode = 'test';
-        /** @var \Magento\Store\Block\Switcher $block */
-        $block = $this->_objectManager->create(\Magento\Store\Block\Switcher::class);
-        /** @var \Magento\Store\Api\StoreRepositoryInterface $storeRepository */
-        $storeRepository = $this->_objectManager->create(\Magento\Store\Api\StoreRepositoryInterface::class);
+        /** @var Switcher $block */
+        $block = $this->_objectManager->create(Switcher::class);
+        /** @var StoreRepositoryInterface $storeRepository */
+        $storeRepository = $this->_objectManager->create(StoreRepositoryInterface::class);
         $store = $storeRepository->get($storeCode);
 
         $result = json_decode($block->getTargetStorePostData($store), true);
@@ -61,5 +54,16 @@ class SwitcherTest extends \PHPUnit\Framework\TestCase
         $this->assertSame($storeCode, $result['data']['___store']);
         $this->assertSame($storeCode, $storeParsedQuery['___store']);
         $this->assertSame(ScopeInterface::SCOPE_DEFAULT, $result['data']['___from_store']);
+    }
+
+    /**
+     * Set up.
+     *
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        $this->_objectManager = Bootstrap::getObjectManager();
+        $this->decoder = Bootstrap::getObjectManager()->create(DecoderInterface::class);
     }
 }

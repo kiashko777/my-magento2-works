@@ -6,7 +6,10 @@
 
 namespace Magento\Test\Integrity\App\Language;
 
-class ConfigTest extends \Magento\TestFramework\Integrity\AbstractConfig
+use Magento\Framework\Config\Dom\UrnResolver;
+use Magento\TestFramework\Integrity\AbstractConfig;
+
+class ConfigTest extends AbstractConfig
 {
     public function testSchemaUsingInvalidXml($expectedErrors = null)
     {
@@ -27,7 +30,7 @@ class ConfigTest extends \Magento\TestFramework\Integrity\AbstractConfig
      */
     protected function _getXsd()
     {
-        $urnResolver = new \Magento\Framework\Config\Dom\UrnResolver();
+        $urnResolver = new UrnResolver();
         return $urnResolver->getRealPath('urn:magento:framework:App/Language/package.xsd');
     }
 

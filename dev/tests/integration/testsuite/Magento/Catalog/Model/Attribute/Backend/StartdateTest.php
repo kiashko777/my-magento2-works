@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Model\Attribute\Backend;
 
+use DateTime;
 use Magento\Catalog\Api\Data\ProductInterfaceFactory;
 use Magento\Catalog\Model\Product;
 use Magento\Eav\Model\Config;
@@ -35,21 +36,6 @@ class StartdateTest extends TestCase
     private $startDate;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productFactory = $this->objectManager->get(ProductInterfaceFactory::class);
-        $this->startDate = $this->objectManager->get(Startdate::class);
-        $attribute = $this->objectManager->get(Config::class)->getAttribute(Product::ENTITY, 'news_from_date');
-        $attribute->setMaxValue(new \DateTime('-10 days'));
-        $this->startDate->setAttribute($attribute);
-    }
-
-    /**
      * @return void
      */
     public function testBeforeSave(): void
@@ -66,10 +52,25 @@ class StartdateTest extends TestCase
     public function testValidate(): void
     {
         $product = $this->productFactory->create();
-        $product->setNewsFromDate(new \DateTime());
+        $product->setNewsFromDate(new DateTime());
         $this->expectException(Exception::class);
         $msg = __('Make sure the To Date is later than or the same as the From Date.');
         $this->expectExceptionMessage((string)$msg);
         $this->startDate->validate($product);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productFactory = $this->objectManager->get(ProductInterfaceFactory::class);
+        $this->startDate = $this->objectManager->get(Startdate::class);
+        $attribute = $this->objectManager->get(Config::class)->getAttribute(Product::ENTITY, 'news_from_date');
+        $attribute->setMaxValue(new DateTime('-10 days'));
+        $this->startDate->setAttribute($attribute);
     }
 }

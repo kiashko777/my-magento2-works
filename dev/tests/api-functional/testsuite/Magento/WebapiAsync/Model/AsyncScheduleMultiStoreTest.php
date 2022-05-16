@@ -44,23 +44,18 @@ class AsyncScheduleMultiStoreTest extends WebapiAbstract
 
     const STORE_CODE_ALL = 'all';
     const STORE_CODE_DEFAULT = 'default';
-
+    const KEY_TIER_PRICES = 'tier_prices';
+    const KEY_SPECIAL_PRICE = 'special_price';
+    const KEY_CATEGORY_LINKS = 'category_links';
+    const BULK_UUID_KEY = 'bulk_uuid';
+    protected $consumers = [
+        self::ASYNC_CONSUMER_NAME,
+    ];
     private $stores = [
         self::STORE_CODE_DEFAULT,
         self::STORE_CODE_ALL,
         self::STORE_CODE_FROM_FIXTURE,
     ];
-
-    const KEY_TIER_PRICES = 'tier_prices';
-    const KEY_SPECIAL_PRICE = 'special_price';
-    const KEY_CATEGORY_LINKS = 'category_links';
-
-    const BULK_UUID_KEY = 'bulk_uuid';
-
-    protected $consumers = [
-        self::ASYNC_CONSUMER_NAME,
-    ];
-
     /**
      * @var string[]
      */
@@ -85,38 +80,6 @@ class AsyncScheduleMultiStoreTest extends WebapiAbstract
      * @var Registry
      */
     private $registry;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $logFilePath = TESTS_TEMP_DIR . "/MessageQueueTestLog.txt";
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->registry = $this->objectManager->get(Registry::class);
-
-        $this->publisherConsumerController = $this->objectManager->create(
-            PublisherConsumerController::class,
-            [
-                'consumers' => $this->consumers,
-                'logFilePath' => $logFilePath,
-                'appInitParams' => Bootstrap::getInstance()->getAppInitParams(),
-            ]
-        );
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-
-        try {
-            $this->publisherConsumerController->initialize();
-        } catch (EnvironmentPreconditionException $e) {
-            $this->markTestSkipped($e->getMessage());
-        } catch (PreconditionFailedException $e) {
-            $this->fail(
-                $e->getMessage()
-            );
-        }
-
-        parent::setUp();
-    }
 
     /**
      * @dataProvider storeProvider
@@ -151,6 +114,50 @@ class AsyncScheduleMultiStoreTest extends WebapiAbstract
 
         $this->asyncScheduleAndTest($product, $storeCode);
         $this->clearProducts();
+    }
+
+    /**
+     * @return array
+     */
+    public function getProductData(): array
+    {
+        $productBuilder = function ($data) {
+            return array_replace_recursive(
+                $this->getSimpleProductData(),
+                $data
+            );
+        };
+
+        return [
+            'product' => $productBuilder(
+                [
+                    ProductInterface::TYPE_ID => 'simple',
+                    ProductInterface::SKU => 'multistore-sku-test-1',
+                    ProductInterface::NAME => 'Test Name ',
+                ]
+            ),
+        ];
+    }
+
+    /**
+     * Get Simple Products Data
+     *
+     * @param array $productData
+     * @return array
+     */
+    private function getSimpleProductData($productData = []): array
+    {
+        return [
+            ProductInterface::SKU => isset($productData[ProductInterface::SKU])
+                ? $productData[ProductInterface::SKU] : uniqid('sku-', true),
+            ProductInterface::NAME => isset($productData[ProductInterface::NAME])
+                ? $productData[ProductInterface::NAME] : uniqid('sku-', true),
+            ProductInterface::VISIBILITY => 4,
+            ProductInterface::TYPE_ID => 'simple',
+            ProductInterface::PRICE => 3.62,
+            ProductInterface::STATUS => 1,
+            ProductInterface::ATTRIBUTE_SET_ID => 4,
+        ];
     }
 
     /**
@@ -223,13 +230,21 @@ class AsyncScheduleMultiStoreTest extends WebapiAbstract
     }
 
     /**
-     * @inheritDoc
+     * @param array $requestData
+     * @param string $sku
+     * @param string|null $storeCode
+     * @return mixed
      */
-    protected function tearDown(): void
+    private function updateProductAsync(array $requestData, string $sku, $storeCode = null)
     {
-        $this->clearProducts();
-        $this->publisherConsumerController->stopConsumers();
-        parent::tearDown();
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::ASYNC_RESOURCE_PATH . '/' . $sku,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
+            ],
+        ];
+
+        return $this->_webApiCall($serviceInfo, $requestData, null, $storeCode);
     }
 
     /**
@@ -273,29 +288,6 @@ class AsyncScheduleMultiStoreTest extends WebapiAbstract
     /**
      * @return array
      */
-    public function getProductData(): array
-    {
-        $productBuilder = function ($data) {
-            return array_replace_recursive(
-                $this->getSimpleProductData(),
-                $data
-            );
-        };
-
-        return [
-            'product' => $productBuilder(
-                [
-                    ProductInterface::TYPE_ID => 'simple',
-                    ProductInterface::SKU => 'multistore-sku-test-1',
-                    ProductInterface::NAME => 'Test Name ',
-                ]
-            ),
-        ];
-    }
-
-    /**
-     * @return array
-     */
     public function storeProvider(): array
     {
         $dataSets = [];
@@ -304,45 +296,6 @@ class AsyncScheduleMultiStoreTest extends WebapiAbstract
         }
 
         return $dataSets;
-    }
-
-    /**
-     * Get Simple Products Data
-     *
-     * @param array $productData
-     * @return array
-     */
-    private function getSimpleProductData($productData = []): array
-    {
-        return [
-            ProductInterface::SKU => isset($productData[ProductInterface::SKU])
-                ? $productData[ProductInterface::SKU] : uniqid('sku-', true),
-            ProductInterface::NAME => isset($productData[ProductInterface::NAME])
-                ? $productData[ProductInterface::NAME] : uniqid('sku-', true),
-            ProductInterface::VISIBILITY => 4,
-            ProductInterface::TYPE_ID => 'simple',
-            ProductInterface::PRICE => 3.62,
-            ProductInterface::STATUS => 1,
-            ProductInterface::ATTRIBUTE_SET_ID => 4,
-        ];
-    }
-
-    /**
-     * @param array $requestData
-     * @param string $sku
-     * @param string|null $storeCode
-     * @return mixed
-     */
-    private function updateProductAsync(array $requestData, string $sku, $storeCode = null)
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::ASYNC_RESOURCE_PATH . '/' . $sku,
-                'httpMethod' => Request::HTTP_METHOD_PUT,
-            ],
-        ];
-
-        return $this->_webApiCall($serviceInfo, $requestData, null, $storeCode);
     }
 
     /**
@@ -359,5 +312,47 @@ class AsyncScheduleMultiStoreTest extends WebapiAbstract
         $size = $collection->getSize();
 
         return $size > 0;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $logFilePath = TESTS_TEMP_DIR . "/MessageQueueTestLog.txt";
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->registry = $this->objectManager->get(Registry::class);
+
+        $this->publisherConsumerController = $this->objectManager->create(
+            PublisherConsumerController::class,
+            [
+                'consumers' => $this->consumers,
+                'logFilePath' => $logFilePath,
+                'appInitParams' => Bootstrap::getInstance()->getAppInitParams(),
+            ]
+        );
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+
+        try {
+            $this->publisherConsumerController->initialize();
+        } catch (EnvironmentPreconditionException $e) {
+            $this->markTestSkipped($e->getMessage());
+        } catch (PreconditionFailedException $e) {
+            $this->fail(
+                $e->getMessage()
+            );
+        }
+
+        parent::setUp();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function tearDown(): void
+    {
+        $this->clearProducts();
+        $this->publisherConsumerController->stopConsumers();
+        parent::tearDown();
     }
 }

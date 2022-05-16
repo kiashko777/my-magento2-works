@@ -7,47 +7,33 @@
 namespace Magento\Customer\Block\Account\Dashboard;
 
 use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Api\Data\CustomerInterfaceFactory;
+use Magento\Customer\Model\CustomerRegistry;
+use Magento\Customer\Model\Session;
+use Magento\Framework\App\ViewInterface;
+use Magento\Framework\Module\Manager;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\View\LayoutInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class address test.
  */
-class AddressTest extends \PHPUnit\Framework\TestCase
+class AddressTest extends TestCase
 {
     /**
-     * @var \Magento\Customer\Block\Account\Dashboard\Address
+     * @var Address
      */
     protected $_block;
 
-    /** @var  \Magento\Customer\Model\Session */
+    /** @var  Session */
     protected $_customerSession;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->_customerSession = $this->objectManager->get(\Magento\Customer\Model\Session::class);
-        $this->_block = $this->objectManager->get(\Magento\Framework\View\LayoutInterface::class)
-            ->createBlock(
-                \Magento\Customer\Block\Account\Dashboard\Address::class,
-                '',
-                ['customerSession' => $this->_customerSession]
-            );
-        $this->objectManager->get(\Magento\Framework\App\ViewInterface::class)->setIsLayoutLoaded(true);
-    }
-
-    protected function tearDown(): void
-    {
-        $this->_customerSession->unsCustomerId();
-        /** @var \Magento\Customer\Model\CustomerRegistry $customerRegistry */
-        $customerRegistry = $this->objectManager->get(\Magento\Customer\Model\CustomerRegistry::class);
-        //Cleanup customer from registry
-        $customerRegistry->remove(1);
-    }
 
     /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
@@ -55,11 +41,11 @@ class AddressTest extends \PHPUnit\Framework\TestCase
     public function testGetCustomer()
     {
         $objectManager = Bootstrap::getObjectManager();
-        $layout = $objectManager->get(\Magento\Framework\View\LayoutInterface::class);
+        $layout = $objectManager->get(LayoutInterface::class);
         $layout->setIsCacheable(false);
         /** @var CustomerRepositoryInterface $customerRepository */
         $customerRepository = $objectManager
-            ->get(\Magento\Customer\Api\CustomerRepositoryInterface::class);
+            ->get(CustomerRepositoryInterface::class);
         $customer = $customerRepository->getById(1);
         $this->_customerSession->setCustomerId(1);
         $object = $this->_block->getCustomer();
@@ -69,10 +55,10 @@ class AddressTest extends \PHPUnit\Framework\TestCase
 
     public function testGetCustomerMissingCustomer()
     {
-        $moduleManager = $this->objectManager->get(\Magento\Framework\Module\Manager::class);
+        $moduleManager = $this->objectManager->get(Manager::class);
         if ($moduleManager->isEnabled('Magento_PageCache')) {
             $customerDataFactory = $this->objectManager->create(
-                \Magento\Customer\Api\Data\CustomerInterfaceFactory::class
+                CustomerInterfaceFactory::class
             );
             $customerData = $customerDataFactory->create()->setGroupId($this->_customerSession->getCustomerGroupId());
             $this->assertEquals($customerData, $this->_block->getCustomer());
@@ -171,5 +157,27 @@ class AddressTest extends \PHPUnit\Framework\TestCase
         return [
             '1' => [1, 'http://localhost/index.php/customer/address/edit/id/1/'],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->_customerSession = $this->objectManager->get(Session::class);
+        $this->_block = $this->objectManager->get(LayoutInterface::class)
+            ->createBlock(
+                Address::class,
+                '',
+                ['customerSession' => $this->_customerSession]
+            );
+        $this->objectManager->get(ViewInterface::class)->setIsLayoutLoaded(true);
+    }
+
+    protected function tearDown(): void
+    {
+        $this->_customerSession->unsCustomerId();
+        /** @var CustomerRegistry $customerRegistry */
+        $customerRegistry = $this->objectManager->get(CustomerRegistry::class);
+        //Cleanup customer from registry
+        $customerRegistry->remove(1);
     }
 }

@@ -17,8 +17,8 @@ define([
     return function ($form) {
         var idSet = productIds(),
             product = _.findWhere($form.serializeArray(), {
-            name: 'product'
-        });
+                name: 'product'
+            });
 
         if (!_.isUndefined(product)) {
             idSet.push(product.value);

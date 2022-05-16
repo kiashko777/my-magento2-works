@@ -14,8 +14,8 @@
 ## Description
 
 Canvas to Blob is a
-[polyfill](https://developer.mozilla.org/en-US/docs/Glossary/Polyfill) for
-Browsers that don't support the standard JavaScript
+[polyfill](https://developer.mozilla.org/en-US/docs/Glossary/Polyfill) for Browsers that don't support the standard
+JavaScript
 [HTMLCanvasElement.toBlob](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toBlob)
 method.
 
@@ -33,8 +33,8 @@ npm install blueimp-canvas-to-blob
 ```
 
 This will install the JavaScript files inside
-`./node_modules/blueimp-canvas-to-blob/js/` relative to your current directory,
-from where you can copy them into a folder that is served by your web server.
+`./node_modules/blueimp-canvas-to-blob/js/` relative to your current directory, from where you can copy them into a
+folder that is served by your web server.
 
 Next include the minified JavaScript Canvas to Blob script in your HTML markup:
 
@@ -50,8 +50,7 @@ Or alternatively, include the non-minified version:
 
 ## Usage
 
-You can use the `canvas.toBlob()` method in the same way as the native
-implementation:
+You can use the `canvas.toBlob()` method in the same way as the native implementation:
 
 ```js
 var canvas = document.createElement('canvas')
@@ -88,8 +87,7 @@ The following browsers have native support for
 - Mobile Safari 11+ (iOS)
 - Edge 79+
 
-Browsers which implement the following APIs support `canvas.toBlob()` via
-polyfill:
+Browsers which implement the following APIs support `canvas.toBlob()` via polyfill:
 
 - [HTMLCanvasElement](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement)
 - [HTMLCanvasElement.toDataURL](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toDataURL)
@@ -112,8 +110,8 @@ This includes the following browsers:
 
 ## API
 
-In addition to the `canvas.toBlob()` polyfill, the JavaScript Canvas to Blob
-script exposes its helper function `dataURLtoBlob(url)`:
+In addition to the `canvas.toBlob()` polyfill, the JavaScript Canvas to Blob script exposes its helper
+function `dataURLtoBlob(url)`:
 
 ```js
 // Uncomment the following line when using a module loader like webpack:

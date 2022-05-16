@@ -6,16 +6,17 @@
 
 namespace Magento\Integration\Model;
 
+use Exception;
 use Magento\Customer\Api\AccountManagementInterface;
+use Magento\Framework\Webapi\Exception as HTTPExceptionCodes;
 use Magento\Framework\Webapi\Rest\Request;
+use Magento\Integration\Api\CustomerTokenServiceInterface;
 use Magento\Integration\Model\Oauth\Token as TokenModel;
+use Magento\Integration\Model\Oauth\Token\RequestLog\Config as TokenThrottlerConfig;
+use Magento\Integration\Model\ResourceModel\Oauth\Token\CollectionFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 use Magento\User\Model\User as UserModel;
-use Magento\Framework\Webapi\Exception as HTTPExceptionCodes;
-use Magento\Integration\Model\ResourceModel\Oauth\Token\CollectionFactory;
-use Magento\Integration\Model\Oauth\Token\RequestLog\Config as TokenThrottlerConfig;
-use Magento\Integration\Api\CustomerTokenServiceInterface;
 
 /**
  * api-functional test for \Magento\Integration\Model\CustomerTokenService.
@@ -54,28 +55,6 @@ class CustomerTokenServiceTest extends WebapiAbstract
     private $attemptsCountToLockAccount;
 
     /**
-     * Setup CustomerTokenService
-     */
-    protected function setUp(): void
-    {
-        $this->_markTestAsRestOnly();
-        $this->tokenService = Bootstrap::getObjectManager()->get(
-            \Magento\Integration\Model\CustomerTokenService::class
-        );
-        $this->customerAccountManagement = Bootstrap::getObjectManager()->get(
-            \Magento\Customer\Api\AccountManagementInterface::class
-        );
-        $tokenCollectionFactory = Bootstrap::getObjectManager()->get(
-            \Magento\Integration\Model\ResourceModel\Oauth\Token\CollectionFactory::class
-        );
-        $this->tokenCollection = $tokenCollectionFactory->create();
-        $this->userModel = Bootstrap::getObjectManager()->get(\Magento\User\Model\User::class);
-        /** @var TokenThrottlerConfig $tokenThrottlerConfig */
-        $tokenThrottlerConfig = Bootstrap::getObjectManager()->get(TokenThrottlerConfig::class);
-        $this->attemptsCountToLockAccount = $tokenThrottlerConfig->getMaxFailuresCount();
-    }
-
-    /**
      * Create customer access token
      *
      * @dataProvider storesDataProvider
@@ -99,6 +78,28 @@ class CustomerTokenServiceTest extends WebapiAbstract
         $accessToken = $this->_webApiCall($serviceInfo, $requestData, null, $store);
 
         $this->assertToken($accessToken, $userName, $password);
+    }
+
+    /**
+     * Make sure provided token is valid and belongs to the specified user.
+     *
+     * @param string $accessToken
+     * @param string $userName
+     * @param string $password
+     */
+    private function assertToken($accessToken, $userName, $password)
+    {
+        $customerData = $this->customerAccountManagement->authenticate($userName, $password);
+        /** @var $this ->tokenCollection \Magento\Integration\Model\ResourceModel\Oauth\Token\Collection */
+        $this->tokenCollection->addFilterByCustomerId($customerData->getId());
+        $isTokenCorrect = false;
+        foreach ($this->tokenCollection->getItems() as $item) {
+            /** @var $item TokenModel */
+            if ($item->getToken() == $accessToken) {
+                $isTokenCorrect = true;
+            }
+        }
+        $this->assertTrue($isTokenCorrect);
     }
 
     /**
@@ -130,7 +131,7 @@ class CustomerTokenServiceTest extends WebapiAbstract
             $requestData = ['username' => $username, 'password' => $password];
             $this->_webApiCall($serviceInfo, $requestData);
             $noExceptionOccurred = true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->assertInputExceptionMessages($e);
         }
         if ($noExceptionOccurred) {
@@ -138,46 +139,10 @@ class CustomerTokenServiceTest extends WebapiAbstract
         }
     }
 
-    public function testCreateCustomerAccessTokenInvalidCustomer()
-    {
-        $customerUserName = 'invalid';
-        $password = 'invalid';
-        $noExceptionOccurred = false;
-        try {
-            $serviceInfo = [
-                'rest' => [
-                    'resourcePath' => self::RESOURCE_PATH_CUSTOMER_TOKEN,
-                    'httpMethod' => Request::HTTP_METHOD_POST,
-                ],
-            ];
-            $requestData = ['username' => $customerUserName, 'password' => $password];
-            $this->_webApiCall($serviceInfo, $requestData);
-            $noExceptionOccurred = true;
-        } catch (\Exception $e) {
-            $this->assertInvalidCredentialsException($e);
-        }
-        if ($noExceptionOccurred) {
-            $this->fail("Exception was expected to be thrown when provided credentials are invalid.");
-        }
-    }
-
-    /**
-     * Provider to test input validation
-     *
-     * @return array
-     */
-    public function validationDataProvider()
-    {
-        return [
-            'Check for empty credentials' => ['', ''],
-            'Check for null credentials' => [null, null]
-        ];
-    }
-
     /**
      * Assert for presence of Input exception messages
      *
-     * @param \Exception $e
+     * @param Exception $e
      */
     private function assertInputExceptionMessages($e)
     {
@@ -201,6 +166,58 @@ class CustomerTokenServiceTest extends WebapiAbstract
             ],
         ];
         $this->assertEquals($expectedExceptionData, $exceptionData);
+    }
+
+    public function testCreateCustomerAccessTokenInvalidCustomer()
+    {
+        $customerUserName = 'invalid';
+        $password = 'invalid';
+        $noExceptionOccurred = false;
+        try {
+            $serviceInfo = [
+                'rest' => [
+                    'resourcePath' => self::RESOURCE_PATH_CUSTOMER_TOKEN,
+                    'httpMethod' => Request::HTTP_METHOD_POST,
+                ],
+            ];
+            $requestData = ['username' => $customerUserName, 'password' => $password];
+            $this->_webApiCall($serviceInfo, $requestData);
+            $noExceptionOccurred = true;
+        } catch (Exception $e) {
+            $this->assertInvalidCredentialsException($e);
+        }
+        if ($noExceptionOccurred) {
+            $this->fail("Exception was expected to be thrown when provided credentials are invalid.");
+        }
+    }
+
+    /**
+     * Make sure that status code and message are correct in case of authentication failure.
+     *
+     * @param Exception $e
+     */
+    private function assertInvalidCredentialsException($e)
+    {
+        $this->assertEquals(HTTPExceptionCodes::HTTP_UNAUTHORIZED, $e->getCode(), "Response HTTP code is invalid.");
+        $exceptionData = $this->processRestExceptionResult($e);
+        $expectedExceptionData = [
+            'message' => 'The account sign-in was incorrect or your account is disabled temporarily. '
+                . 'Please wait and try again later.'
+        ];
+        $this->assertEquals($expectedExceptionData, $exceptionData, "Exception message is invalid.");
+    }
+
+    /**
+     * Provider to test input validation
+     *
+     * @return array
+     */
+    public function validationDataProvider()
+    {
+        return [
+            'Check for empty credentials' => ['', ''],
+            'Check for null credentials' => [null, null]
+        ];
     }
 
     /**
@@ -232,7 +249,7 @@ class CustomerTokenServiceTest extends WebapiAbstract
             try {
                 $this->_webApiCall($serviceInfo, $invalidCredentials);
                 $noExceptionOccurred = true;
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
             }
         }
         if ($noExceptionOccurred) {
@@ -275,7 +292,7 @@ class CustomerTokenServiceTest extends WebapiAbstract
             try {
                 $this->_webApiCall($serviceInfo, $invalidCredentials);
                 $noExceptionOccurred = true;
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->assertInvalidCredentialsException($e);
             }
             if ($noExceptionOccurred) {
@@ -287,7 +304,7 @@ class CustomerTokenServiceTest extends WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, $validCredentials);
             $noExceptionOccurred = true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->assertInvalidCredentialsException($e);
         }
         if ($noExceptionOccurred) {
@@ -296,40 +313,24 @@ class CustomerTokenServiceTest extends WebapiAbstract
     }
 
     /**
-     * Make sure that status code and message are correct in case of authentication failure.
-     *
-     * @param \Exception $e
+     * Setup CustomerTokenService
      */
-    private function assertInvalidCredentialsException($e)
+    protected function setUp(): void
     {
-        $this->assertEquals(HTTPExceptionCodes::HTTP_UNAUTHORIZED, $e->getCode(), "Response HTTP code is invalid.");
-        $exceptionData = $this->processRestExceptionResult($e);
-        $expectedExceptionData = [
-            'message' => 'The account sign-in was incorrect or your account is disabled temporarily. '
-                . 'Please wait and try again later.'
-        ];
-        $this->assertEquals($expectedExceptionData, $exceptionData, "Exception message is invalid.");
-    }
-
-    /**
-     * Make sure provided token is valid and belongs to the specified user.
-     *
-     * @param string $accessToken
-     * @param string $userName
-     * @param string $password
-     */
-    private function assertToken($accessToken, $userName, $password)
-    {
-        $customerData = $this->customerAccountManagement->authenticate($userName, $password);
-        /** @var $this ->tokenCollection \Magento\Integration\Model\ResourceModel\Oauth\Token\Collection */
-        $this->tokenCollection->addFilterByCustomerId($customerData->getId());
-        $isTokenCorrect = false;
-        foreach ($this->tokenCollection->getItems() as $item) {
-            /** @var $item TokenModel */
-            if ($item->getToken() == $accessToken) {
-                $isTokenCorrect = true;
-            }
-        }
-        $this->assertTrue($isTokenCorrect);
+        $this->_markTestAsRestOnly();
+        $this->tokenService = Bootstrap::getObjectManager()->get(
+            CustomerTokenService::class
+        );
+        $this->customerAccountManagement = Bootstrap::getObjectManager()->get(
+            AccountManagementInterface::class
+        );
+        $tokenCollectionFactory = Bootstrap::getObjectManager()->get(
+            CollectionFactory::class
+        );
+        $this->tokenCollection = $tokenCollectionFactory->create();
+        $this->userModel = Bootstrap::getObjectManager()->get(UserModel::class);
+        /** @var TokenThrottlerConfig $tokenThrottlerConfig */
+        $tokenThrottlerConfig = Bootstrap::getObjectManager()->get(TokenThrottlerConfig::class);
+        $this->attemptsCountToLockAccount = $tokenThrottlerConfig->getMaxFailuresCount();
     }
 }

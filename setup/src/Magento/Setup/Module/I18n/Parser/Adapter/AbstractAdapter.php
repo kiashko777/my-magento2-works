@@ -3,8 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\I18n\Parser\Adapter;
 
+use InvalidArgumentException;
 use Magento\Setup\Module\I18n\Dictionary\Phrase;
 use Magento\Setup\Module\I18n\Parser\AdapterInterface;
 
@@ -58,7 +60,7 @@ abstract class AbstractAdapter implements AdapterInterface
      * @param string $phrase
      * @param string|int $line
      * @return void
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     protected function _addPhrase($phrase, $line = '')
     {
@@ -81,30 +83,6 @@ abstract class AbstractAdapter implements AdapterInterface
     }
 
     /**
-     * Prepare phrase
-     *
-     * @param string $phrase
-     * @return string
-     */
-    protected function _stripFirstAndLastChar($phrase)
-    {
-        return substr($phrase, 1, strlen($phrase) - 2);
-    }
-
-    /**
-     * Check if first and last char is quote
-     *
-     * @param string $phrase
-     * @return bool
-     */
-    protected function _isFirstAndLastCharIsQuote($phrase)
-    {
-        $firstCharacter = $phrase[0];
-        $lastCharacter = $phrase[strlen($phrase) - 1];
-        return $this->isQuote($firstCharacter) && $firstCharacter == $lastCharacter;
-    }
-
-    /**
      * Get enclosing character if any
      *
      * @param string $phrase
@@ -121,12 +99,16 @@ abstract class AbstractAdapter implements AdapterInterface
     }
 
     /**
+     * Check if first and last char is quote
+     *
      * @param string $phrase
-     * @return string
+     * @return bool
      */
-    protected function trimEnclosure($phrase)
+    protected function _isFirstAndLastCharIsQuote($phrase)
     {
-        return $this->_stripFirstAndLastChar($phrase);
+        $firstCharacter = $phrase[0];
+        $lastCharacter = $phrase[strlen($phrase) - 1];
+        return $this->isQuote($firstCharacter) && $firstCharacter == $lastCharacter;
     }
 
     /**
@@ -136,5 +118,25 @@ abstract class AbstractAdapter implements AdapterInterface
     protected function isQuote($char)
     {
         return in_array($char, [Phrase::QUOTE_DOUBLE, Phrase::QUOTE_SINGLE]);
+    }
+
+    /**
+     * @param string $phrase
+     * @return string
+     */
+    protected function trimEnclosure($phrase)
+    {
+        return $this->_stripFirstAndLastChar($phrase);
+    }
+
+    /**
+     * Prepare phrase
+     *
+     * @param string $phrase
+     * @return string
+     */
+    protected function _stripFirstAndLastChar($phrase)
+    {
+        return substr($phrase, 1, strlen($phrase) - 2);
     }
 }

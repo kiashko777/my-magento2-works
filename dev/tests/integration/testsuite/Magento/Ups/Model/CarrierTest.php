@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Ups\Model;
 
+use DOMDocument;
 use Magento\Framework\App\Config\ReinitableConfigInterface;
 use Magento\Framework\DataObject;
 use Magento\Framework\HTTP\AsyncClient\HttpException;
@@ -14,13 +15,13 @@ use Magento\Framework\HTTP\AsyncClient\HttpResponseDeferredInterface;
 use Magento\Framework\HTTP\AsyncClient\Response;
 use Magento\Framework\HTTP\AsyncClientInterface;
 use Magento\Quote\Model\Quote\Address\RateRequest;
-use Magento\Quote\Model\Quote\Address\RateResult\Error;
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Quote\Model\Quote\Address\RateRequestFactory;
-use Magento\TestFramework\HTTP\AsyncClientInterfaceMock;
-use PHPUnit\Framework\TestCase;
-use PHPUnit\Framework\MockObject\MockObject;
+use Magento\Quote\Model\Quote\Address\RateResult\Error;
 use Magento\Shipping\Model\Shipment\Request;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\HTTP\AsyncClientInterfaceMock;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -54,24 +55,6 @@ class CarrierTest extends TestCase
      * @var string[]
      */
     private $logs = [];
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->httpClient = Bootstrap::getObjectManager()->get(AsyncClientInterface::class);
-        $this->config = Bootstrap::getObjectManager()->get(ReinitableConfigInterface::class);
-        $this->logs = [];
-        $this->loggerMock = $this->getMockForAbstractClass(LoggerInterface::class);
-        $this->loggerMock->method('debug')
-            ->willReturnCallback(
-                function (string $message) {
-                    $this->logs[] = $message;
-                }
-            );
-        $this->carrier = Bootstrap::getObjectManager()->create(Carrier::class, ['logger' => $this->loggerMock]);
-    }
 
     /**
      * @return void
@@ -181,7 +164,7 @@ class CarrierTest extends TestCase
                 new Response(
                     200,
                     [],
-                    file_get_contents(__DIR__ ."/../_files/ups_rates_response_option$responseId.xml")
+                    file_get_contents(__DIR__ . "/../_files/ups_rates_response_option$responseId.xml")
                 )
             ]
         );
@@ -214,14 +197,14 @@ class CarrierTest extends TestCase
     public function collectRatesDataProvider()
     {
         return [
-            [0, 0, 1, '11', 6.45 ],
-            [0, 0, 2, '65', 29.59 ],
-            [0, 1, 3, '11', 7.74 ],
-            [0, 1, 4, '65', 29.59 ],
-            [1, 0, 5, '11', 9.35 ],
-            [1, 0, 6, '65', 41.61 ],
-            [1, 1, 7, '11', 11.22 ],
-            [1, 1, 8, '65', 41.61 ],
+            [0, 0, 1, '11', 6.45],
+            [0, 0, 2, '65', 29.59],
+            [0, 1, 3, '11', 7.74],
+            [0, 1, 4, '65', 29.59],
+            [1, 0, 5, '11', 9.35],
+            [1, 0, 6, '65', 41.61],
+            [1, 1, 7, '11', 11.22],
+            [1, 1, 8, '65', 41.61],
         ];
     }
 
@@ -245,9 +228,9 @@ class CarrierTest extends TestCase
     public function testRequestToShipment(): void
     {
         //phpcs:disable Magento2.Functions.DiscouragedFunction
-        $expectedShipmentRequest = file_get_contents(__DIR__ .'/../_files/ShipmentConfirmRequest.xml');
-        $shipmentResponse = file_get_contents(__DIR__ .'/../_files/ShipmentConfirmResponse.xml');
-        $acceptResponse = file_get_contents(__DIR__ .'/../_files/ShipmentAcceptResponse.xml');
+        $expectedShipmentRequest = file_get_contents(__DIR__ . '/../_files/ShipmentConfirmRequest.xml');
+        $shipmentResponse = file_get_contents(__DIR__ . '/../_files/ShipmentConfirmResponse.xml');
+        $acceptResponse = file_get_contents(__DIR__ . '/../_files/ShipmentAcceptResponse.xml');
         //phpcs:enable Magento2.Functions.DiscouragedFunction
         $this->httpClient->nextResponses(
             [
@@ -326,6 +309,39 @@ class CarrierTest extends TestCase
     }
 
     /**
+     * Extracts shipment request.
+     *
+     * @param string $requestBody
+     * @return string
+     */
+    private function extractShipmentRequest(string $requestBody): string
+    {
+        $resultXml = '';
+        $pattern = '%(<\?xml version="1.0"\?>\n<ShipmentConfirmRequest)(.*)$%im';
+        if (preg_match($pattern, $requestBody, $result)) {
+            $resultXml = array_shift($result);
+        }
+
+        return $resultXml;
+    }
+
+    /**
+     * Format XML string.
+     *
+     * @param string $xmlString
+     * @return string
+     */
+    private function formatXml(string $xmlString): string
+    {
+        $xmlDocument = new DOMDocument('1.0');
+        $xmlDocument->preserveWhiteSpace = false;
+        $xmlDocument->formatOutput = true;
+        $xmlDocument->loadXML($xmlString);
+
+        return $xmlDocument->saveXML();
+    }
+
+    /**
      * Test get carriers rates if has HttpException.
      *
      * @magentoConfigFixture default_store shipping/origin/country_id GB
@@ -371,35 +387,20 @@ class CarrierTest extends TestCase
     }
 
     /**
-     * Extracts shipment request.
-     *
-     * @param string $requestBody
-     * @return string
+     * @inheritDoc
      */
-    private function extractShipmentRequest(string $requestBody): string
+    protected function setUp(): void
     {
-        $resultXml = '';
-        $pattern = '%(<\?xml version="1.0"\?>\n<ShipmentConfirmRequest)(.*)$%im';
-        if (preg_match($pattern, $requestBody, $result)) {
-            $resultXml = array_shift($result);
-        }
-
-        return $resultXml;
-    }
-
-    /**
-     * Format XML string.
-     *
-     * @param string $xmlString
-     * @return string
-     */
-    private function formatXml(string $xmlString): string
-    {
-        $xmlDocument = new \DOMDocument('1.0');
-        $xmlDocument->preserveWhiteSpace = false;
-        $xmlDocument->formatOutput = true;
-        $xmlDocument->loadXML($xmlString);
-
-        return $xmlDocument->saveXML();
+        $this->httpClient = Bootstrap::getObjectManager()->get(AsyncClientInterface::class);
+        $this->config = Bootstrap::getObjectManager()->get(ReinitableConfigInterface::class);
+        $this->logs = [];
+        $this->loggerMock = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->loggerMock->method('debug')
+            ->willReturnCallback(
+                function (string $message) {
+                    $this->logs[] = $message;
+                }
+            );
+        $this->carrier = Bootstrap::getObjectManager()->create(Carrier::class, ['logger' => $this->loggerMock]);
     }
 }

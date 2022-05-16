@@ -3,8 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-$customer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Customer::class
+
+use Magento\Customer\Model\Customer;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$customer = Bootstrap::getObjectManager()->create(
+    Customer::class
 );
 /** @var Magento\Customer\Model\Customer $customer */
 $customer->setWebsiteId(1)
@@ -24,8 +28,8 @@ $customer->setWebsiteId(1)
 $customer->isObjectNew(true);
 
 $customer->save();
-$customer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Customer::class
+$customer = Bootstrap::getObjectManager()->create(
+    Customer::class
 );
 $customer->setWebsiteId(1)
     ->setEntityId(2)
@@ -44,8 +48,8 @@ $customer->setWebsiteId(1)
 $customer->isObjectNew(true);
 $customer->save();
 
-$customer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Customer::class
+$customer = Bootstrap::getObjectManager()->create(
+    Customer::class
 );
 $customer->setWebsiteId(1)
     ->setEntityId(3)
@@ -64,8 +68,8 @@ $customer->setWebsiteId(1)
 $customer->isObjectNew(true);
 $customer->save();
 
-$customer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Customer::class
+$customer = Bootstrap::getObjectManager()->create(
+    Customer::class
 );
 /** @var Magento\Customer\Model\Customer $customer */
 $customer->setWebsiteId(1)
@@ -85,8 +89,8 @@ $customer->setWebsiteId(1)
 $customer->isObjectNew(true);
 
 $customer->save();
-$customer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Customer::class
+$customer = Bootstrap::getObjectManager()->create(
+    Customer::class
 );
 $customer->setWebsiteId(1)
     ->setEntityId(5)
@@ -105,8 +109,8 @@ $customer->setWebsiteId(1)
 $customer->isObjectNew(true);
 $customer->save();
 
-$customer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Customer::class
+$customer = Bootstrap::getObjectManager()->create(
+    Customer::class
 );
 $customer->setWebsiteId(1)
     ->setEntityId(6)
@@ -125,8 +129,8 @@ $customer->setWebsiteId(1)
 $customer->isObjectNew(true);
 $customer->save();
 
-$customer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Customer::class
+$customer = Bootstrap::getObjectManager()->create(
+    Customer::class
 );
 $customer->setWebsiteId(1)
     ->setEntityId(7)
@@ -145,8 +149,8 @@ $customer->setWebsiteId(1)
 $customer->isObjectNew(true);
 $customer->save();
 
-$customer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Customer::class
+$customer = Bootstrap::getObjectManager()->create(
+    Customer::class
 );
 $customer->setWebsiteId(1)
     ->setEntityId(8)
@@ -165,8 +169,8 @@ $customer->setWebsiteId(1)
 $customer->isObjectNew(true);
 $customer->save();
 
-$customer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Customer::class
+$customer = Bootstrap::getObjectManager()->create(
+    Customer::class
 );
 $customer->setWebsiteId(1)
     ->setEntityId(9)
@@ -185,8 +189,8 @@ $customer->setWebsiteId(1)
 $customer->isObjectNew(true);
 $customer->save();
 
-$customer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Customer::class
+$customer = Bootstrap::getObjectManager()->create(
+    Customer::class
 );
 $customer->setWebsiteId(1)
     ->setEntityId(10)
@@ -205,8 +209,8 @@ $customer->setWebsiteId(1)
 $customer->isObjectNew(true);
 $customer->save();
 
-$customer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Customer::class
+$customer = Bootstrap::getObjectManager()->create(
+    Customer::class
 );
 $customer->setWebsiteId(1)
     ->setEntityId(11)
@@ -225,8 +229,8 @@ $customer->setWebsiteId(1)
 $customer->isObjectNew(true);
 $customer->save();
 
-$customer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Customer::class
+$customer = Bootstrap::getObjectManager()->create(
+    Customer::class
 );
 $customer->setWebsiteId(1)
     ->setEntityId(12)
@@ -245,8 +249,8 @@ $customer->setWebsiteId(1)
 $customer->isObjectNew(true);
 $customer->save();
 
-$customer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Customer::class
+$customer = Bootstrap::getObjectManager()->create(
+    Customer::class
 );
 $customer->setWebsiteId(1)
     ->setEntityId(13)
@@ -265,8 +269,8 @@ $customer->setWebsiteId(1)
 $customer->isObjectNew(true);
 $customer->save();
 
-$customer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Customer::class
+$customer = Bootstrap::getObjectManager()->create(
+    Customer::class
 );
 $customer->setWebsiteId(1)
     ->setEntityId(14)
@@ -285,8 +289,8 @@ $customer->setWebsiteId(1)
 $customer->isObjectNew(true);
 $customer->save();
 
-$customer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Customer::class
+$customer = Bootstrap::getObjectManager()->create(
+    Customer::class
 );
 $customer->setWebsiteId(1)
     ->setEntityId(15)
@@ -305,8 +309,8 @@ $customer->setWebsiteId(1)
 $customer->isObjectNew(true);
 $customer->save();
 
-$customer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Customer::class
+$customer = Bootstrap::getObjectManager()->create(
+    Customer::class
 );
 $customer->setWebsiteId(1)
     ->setEntityId(16)
@@ -325,8 +329,8 @@ $customer->setWebsiteId(1)
 $customer->isObjectNew(true);
 $customer->save();
 
-$customer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Customer::class
+$customer = Bootstrap::getObjectManager()->create(
+    Customer::class
 );
 $customer->setWebsiteId(1)
     ->setEntityId(17)
@@ -345,8 +349,8 @@ $customer->setWebsiteId(1)
 $customer->isObjectNew(true);
 $customer->save();
 
-$customer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Customer::class
+$customer = Bootstrap::getObjectManager()->create(
+    Customer::class
 );
 $customer->setWebsiteId(1)
     ->setEntityId(18)
@@ -365,8 +369,8 @@ $customer->setWebsiteId(1)
 $customer->isObjectNew(true);
 $customer->save();
 
-$customer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Customer::class
+$customer = Bootstrap::getObjectManager()->create(
+    Customer::class
 );
 $customer->setWebsiteId(1)
     ->setEntityId(19)
@@ -385,8 +389,8 @@ $customer->setWebsiteId(1)
 $customer->isObjectNew(true);
 $customer->save();
 
-$customer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Customer::class
+$customer = Bootstrap::getObjectManager()->create(
+    Customer::class
 );
 $customer->setWebsiteId(1)
     ->setEntityId(20)
@@ -405,8 +409,8 @@ $customer->setWebsiteId(1)
 $customer->isObjectNew(true);
 $customer->save();
 
-$customer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Customer\Model\Customer::class
+$customer = Bootstrap::getObjectManager()->create(
+    Customer::class
 );
 $customer->setWebsiteId(1)
     ->setEntityId(21)

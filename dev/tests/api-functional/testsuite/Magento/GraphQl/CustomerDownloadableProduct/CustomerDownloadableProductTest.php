@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\CustomerDownloadableProduct;
 
+use Exception;
+use Magento\Framework\Exception\AuthenticationException;
 use Magento\Integration\Api\CustomerTokenServiceInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
@@ -20,14 +22,7 @@ class CustomerDownloadableProductTest extends GraphQlAbstract
      * @var CustomerTokenServiceInterface
      */
     private $customerTokenService;
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-    }
+
     /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      * @magentoApiDataFixture Magento/Downloadable/_files/product_downloadable.php
@@ -51,41 +46,7 @@ class CustomerDownloadableProductTest extends GraphQlAbstract
         self::assertArrayHasKey('status', $response['customerDownloadableProducts']['items'][0]);
         self::assertNotEmpty($response['customerDownloadableProducts']['items'][0]['status']);
     }
-    /**
-     * @magentoApiDataFixture Magento/Customer/_files/customer.php
-     * @magentoApiDataFixture Magento/Downloadable/_files/product_downloadable.php
-     * @magentoApiDataFixture Magento/Downloadable/_files/customer_order_with_downloadable_product.php
-     *
-     */
-    public function testGuestCannotAccessDownloadableProducts()
-    {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('The current customer isn\'t authorized.');
 
-        $this->graphQlQuery($this->getQuery());
-    }
-    /**
-     * @magentoApiDataFixture Magento/Customer/_files/customer.php
-     * @magentoApiDataFixture Magento/Downloadable/_files/product_downloadable_with_download_limit.php
-     * @magentoApiDataFixture Magento/Downloadable/_files/customer_order_with_downloadable_product.php
-     */
-    public function testRemainingDownloads()
-    {
-        $query = $this->getQuery();
-        $response = $this->graphQlQuery($query, [], '', $this->getHeaderMap());
-        self::assertArrayHasKey('remaining_downloads', $response['customerDownloadableProducts']['items'][0]);
-        self::assertEquals(100, $response['customerDownloadableProducts']['items'][0]['remaining_downloads']);
-    }
-    /**
-     * @magentoApiDataFixture Magento/Customer/_files/customer.php
-     */
-    public function testCustomerHasNoOrders()
-    {
-        $query = $this->getQuery();
-        $response = $this->graphQlQuery($query, [], '', $this->getHeaderMap());
-        self::assertArrayHasKey('items', $response['customerDownloadableProducts']);
-        self::assertCount(0, $response['customerDownloadableProducts']['items']);
-    }
     /**
      * @return string
      */
@@ -105,15 +66,63 @@ class CustomerDownloadableProductTest extends GraphQlAbstract
 }
 QUERY;
     }
+
     /**
      * @param string $username
      * @param string $password
      * @return array
-     * @throws \Magento\Framework\Exception\AuthenticationException
+     * @throws AuthenticationException
      */
     private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
     {
         $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
         return ['Authorization' => 'Bearer ' . $customerToken];
+    }
+
+    /**
+     * @magentoApiDataFixture Magento/Customer/_files/customer.php
+     * @magentoApiDataFixture Magento/Downloadable/_files/product_downloadable.php
+     * @magentoApiDataFixture Magento/Downloadable/_files/customer_order_with_downloadable_product.php
+     *
+     */
+    public function testGuestCannotAccessDownloadableProducts()
+    {
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('The current customer isn\'t authorized.');
+
+        $this->graphQlQuery($this->getQuery());
+    }
+
+    /**
+     * @magentoApiDataFixture Magento/Customer/_files/customer.php
+     * @magentoApiDataFixture Magento/Downloadable/_files/product_downloadable_with_download_limit.php
+     * @magentoApiDataFixture Magento/Downloadable/_files/customer_order_with_downloadable_product.php
+     */
+    public function testRemainingDownloads()
+    {
+        $query = $this->getQuery();
+        $response = $this->graphQlQuery($query, [], '', $this->getHeaderMap());
+        self::assertArrayHasKey('remaining_downloads', $response['customerDownloadableProducts']['items'][0]);
+        self::assertEquals(100, $response['customerDownloadableProducts']['items'][0]['remaining_downloads']);
+    }
+
+    /**
+     * @magentoApiDataFixture Magento/Customer/_files/customer.php
+     */
+    public function testCustomerHasNoOrders()
+    {
+        $query = $this->getQuery();
+        $response = $this->graphQlQuery($query, [], '', $this->getHeaderMap());
+        self::assertArrayHasKey('items', $response['customerDownloadableProducts']);
+        self::assertCount(0, $response['customerDownloadableProducts']['items']);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
     }
 }

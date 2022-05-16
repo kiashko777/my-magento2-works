@@ -50,32 +50,6 @@ class ItemsTest extends TestCase
     private $pageFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->block = $this->layout->createBlock(Items::class, 'block');
-        $this->creditmemo = $this->objectManager->get(CreditmemoInterface::class);
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
-        $this->pageFactory = $this->objectManager->get(PageFactory::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->registry->unregister('current_order');
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoAppIsolation enabled
      *
      * @return void
@@ -130,6 +104,38 @@ class ItemsTest extends TestCase
         $this->registerOrder($order);
         $blockHtml = $this->renderCreditmemoItemsBlock();
         $this->assertCreditmemosBlock($order, $blockHtml);
+    }
+
+    /**
+     * Register order in registry.
+     *
+     * @param OrderInterface $order
+     * @return void
+     */
+    private function registerOrder(OrderInterface $order): void
+    {
+        $this->registry->unregister('current_order');
+        $this->registry->register('current_order', $order);
+    }
+
+    /**
+     * Render creditmemo items block.
+     *
+     * @return string
+     */
+    private function renderCreditmemoItemsBlock(): string
+    {
+        $page = $this->pageFactory->create();
+        $page->addHandle([
+            'default',
+            'sales_order_creditmemo',
+        ]);
+        $page->getLayout()->generateXml();
+        $creditmemoItemsBlock = $page->getLayout()->getBlock('creditmemo_items')->unsetChild('creditmemo_totals');
+        $creditmemoItemsBlock->getRequest()->setRouteName('sales')->setControllerName('order')
+            ->setActionName('creditmemo');
+
+        return $creditmemoItemsBlock->toHtml();
     }
 
     /**
@@ -218,34 +224,28 @@ class ItemsTest extends TestCase
     }
 
     /**
-     * Render creditmemo items block.
-     *
-     * @return string
+     * @inheritdoc
      */
-    private function renderCreditmemoItemsBlock(): string
+    protected function setUp(): void
     {
-        $page = $this->pageFactory->create();
-        $page->addHandle([
-            'default',
-            'sales_order_creditmemo',
-        ]);
-        $page->getLayout()->generateXml();
-        $creditmemoItemsBlock = $page->getLayout()->getBlock('creditmemo_items')->unsetChild('creditmemo_totals');
-        $creditmemoItemsBlock->getRequest()->setRouteName('sales')->setControllerName('order')
-            ->setActionName('creditmemo');
+        parent::setUp();
 
-        return $creditmemoItemsBlock->toHtml();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->block = $this->layout->createBlock(Items::class, 'block');
+        $this->creditmemo = $this->objectManager->get(CreditmemoInterface::class);
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
+        $this->pageFactory = $this->objectManager->get(PageFactory::class);
     }
 
     /**
-     * Register order in registry.
-     *
-     * @param OrderInterface $order
-     * @return void
+     * @inheritdoc
      */
-    private function registerOrder(OrderInterface $order): void
+    protected function tearDown(): void
     {
         $this->registry->unregister('current_order');
-        $this->registry->register('current_order', $order);
+
+        parent::tearDown();
     }
 }

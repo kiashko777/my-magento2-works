@@ -6,11 +6,14 @@
 
 namespace Magento\Setup\Console\Command;
 
+use Magento\Framework\Console\Cli;
 use Magento\Framework\Setup\ConsoleLogger;
 use Magento\Framework\Validation\ValidationException;
+use Magento\Framework\Validator\DataObject;
 use Magento\Setup\Model\AdminAccount;
 use Magento\Setup\Model\InstallerFactory;
 use Magento\User\Model\UserValidationRules;
+use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -56,16 +59,60 @@ class AdminUserCreateCommand extends AbstractSetupCommand
     }
 
     /**
+     * Get list of arguments for the command
+     *
+     * @param int $mode The mode of options.
+     * @return InputOption[]
+     */
+    public function getOptionsList($mode = InputOption::VALUE_REQUIRED)
+    {
+        $requiredStr = ($mode === InputOption::VALUE_REQUIRED ? '(Required) ' : '');
+
+        return [
+            new InputOption(
+                AdminAccount::KEY_USER,
+                null,
+                $mode,
+                $requiredStr . 'Admin user'
+            ),
+            new InputOption(
+                AdminAccount::KEY_PASSWORD,
+                null,
+                $mode,
+                $requiredStr . 'Admin password'
+            ),
+            new InputOption(
+                AdminAccount::KEY_EMAIL,
+                null,
+                $mode,
+                $requiredStr . 'Admin email'
+            ),
+            new InputOption(
+                AdminAccount::KEY_FIRST_NAME,
+                null,
+                $mode,
+                $requiredStr . 'Admin first name'
+            ),
+            new InputOption(
+                AdminAccount::KEY_LAST_NAME,
+                null,
+                $mode,
+                $requiredStr . 'Admin last name'
+            ),
+        ];
+    }
+
+    /**
      * Creation admin user in interaction mode.
      *
-     * @param \Symfony\Component\Console\Input\InputInterface $input
-     * @param \Symfony\Component\Console\Output\OutputInterface $output
+     * @param InputInterface $input
+     * @param OutputInterface $output
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
     protected function interact(InputInterface $input, OutputInterface $output)
     {
-        /** @var \Symfony\Component\Console\Helper\QuestionHelper $questionHelper */
+        /** @var QuestionHelper $questionHelper */
         $questionHelper = $this->getHelper('question');
 
         if (!$input->getOption(AdminAccount::KEY_USER)) {
@@ -86,7 +133,7 @@ class AdminUserCreateCommand extends AbstractSetupCommand
                 $user = new \Magento\Framework\DataObject();
                 $user->setPassword($value);
 
-                $validator = new \Magento\Framework\Validator\DataObject();
+                $validator = new DataObject();
                 $this->validationRules->addPasswordRules($validator);
 
                 $validator->isValid($user);
@@ -137,7 +184,7 @@ class AdminUserCreateCommand extends AbstractSetupCommand
     /**
      * Add not empty validator.
      *
-     * @param \Symfony\Component\Console\Question\Question $question
+     * @param Question $question
      * @return void
      */
     private function addNotEmptyValidator(Question $question)
@@ -160,58 +207,14 @@ class AdminUserCreateCommand extends AbstractSetupCommand
         if ($errors) {
             $output->writeln('<error>' . implode('</error>' . PHP_EOL . '<error>', $errors) . '</error>');
             // we must have an exit code higher than zero to indicate something was wrong
-            return \Magento\Framework\Console\Cli::RETURN_FAILURE;
+            return Cli::RETURN_FAILURE;
         }
         $installer = $this->installerFactory->create(new ConsoleLogger($output));
         $installer->installAdminUser($input->getOptions());
         $output->writeln(
             '<info>Created Magento administrator user named ' . $input->getOption(AdminAccount::KEY_USER) . '</info>'
         );
-        return \Magento\Framework\Console\Cli::RETURN_SUCCESS;
-    }
-
-    /**
-     * Get list of arguments for the command
-     *
-     * @param int $mode The mode of options.
-     * @return InputOption[]
-     */
-    public function getOptionsList($mode = InputOption::VALUE_REQUIRED)
-    {
-        $requiredStr = ($mode === InputOption::VALUE_REQUIRED ? '(Required) ' : '');
-
-        return [
-            new InputOption(
-                AdminAccount::KEY_USER,
-                null,
-                $mode,
-                $requiredStr . 'Admin user'
-            ),
-            new InputOption(
-                AdminAccount::KEY_PASSWORD,
-                null,
-                $mode,
-                $requiredStr . 'Admin password'
-            ),
-            new InputOption(
-                AdminAccount::KEY_EMAIL,
-                null,
-                $mode,
-                $requiredStr . 'Admin email'
-            ),
-            new InputOption(
-                AdminAccount::KEY_FIRST_NAME,
-                null,
-                $mode,
-                $requiredStr . 'Admin first name'
-            ),
-            new InputOption(
-                AdminAccount::KEY_LAST_NAME,
-                null,
-                $mode,
-                $requiredStr . 'Admin last name'
-            ),
-        ];
+        return Cli::RETURN_SUCCESS;
     }
 
     /**
@@ -230,10 +233,10 @@ class AdminUserCreateCommand extends AbstractSetupCommand
             ->setEmail($input->getOption(AdminAccount::KEY_EMAIL))
             ->setPassword(
                 $input->getOption(AdminAccount::KEY_PASSWORD) === null
-                ? '' : $input->getOption(AdminAccount::KEY_PASSWORD)
+                    ? '' : $input->getOption(AdminAccount::KEY_PASSWORD)
             );
 
-        $validator = new \Magento\Framework\Validator\DataObject();
+        $validator = new DataObject();
         $this->validationRules->addUserInfoRules($validator);
         $this->validationRules->addPasswordRules($validator);
 

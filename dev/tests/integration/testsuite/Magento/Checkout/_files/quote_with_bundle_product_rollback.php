@@ -5,6 +5,12 @@
  */
 declare(strict_types=1);
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Registry;
+use Magento\Quote\Model\Quote;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 /*
@@ -14,23 +20,23 @@ use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
  */
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/products_rollback.php');
 
-/** @var \Magento\Framework\Registry $registry */
-$registry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
+/** @var Registry $registry */
+$registry = Bootstrap::getObjectManager()->get(Registry::class);
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
-$productRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+$productRepository = Bootstrap::getObjectManager()
+    ->get(ProductRepositoryInterface::class);
 try {
     $product = $productRepository->get('bundle-product', false, null, true);
     $productRepository->delete($product);
-} catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+} catch (NoSuchEntityException $e) {
     //Products already removed
 }
 
-/** @var $objectManager \Magento\TestFramework\ObjectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-$quote = $objectManager->create(\Magento\Quote\Model\Quote::class);
+/** @var $objectManager ObjectManager */
+$objectManager = Bootstrap::getObjectManager();
+$quote = $objectManager->create(Quote::class);
 $quote->load('test_cart_with_bundle', 'reserved_order_id');
 $quote->delete();
 

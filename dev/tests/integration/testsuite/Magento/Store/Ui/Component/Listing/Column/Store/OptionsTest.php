@@ -49,21 +49,6 @@ class OptionsTest extends TestCase
     private $groupResource;
 
     /**
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-
-        $this->modelFactory = $objectManager->get(OptionsFactory::class);
-        $this->storeManager = $objectManager->get(StoreManagerInterface::class);
-
-        $this->websiteResource = $objectManager->get(WebsiteResource::class);
-        $this->groupResource = $objectManager->get(GroupResource::class);
-        $this->storeResource = $objectManager->get(StoreResource::class);
-    }
-
-    /**
      * To option array test with duplicate website, store group, store view names
      *
      * @magentoDataFixture Magento/Store/_files/second_website_with_store_group_and_store.php
@@ -110,5 +95,20 @@ class OptionsTest extends TestCase
         }
 
         return $expectedOptions;
+    }
+
+    /**
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+
+        $this->modelFactory = $objectManager->get(OptionsFactory::class);
+        $this->storeManager = $objectManager->get(StoreManagerInterface::class);
+
+        $this->websiteResource = $objectManager->get(WebsiteResource::class);
+        $this->groupResource = $objectManager->get(GroupResource::class);
+        $this->storeResource = $objectManager->get(StoreResource::class);
     }
 }

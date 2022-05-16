@@ -5,37 +5,46 @@
  */
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\ProductRepository;
+use Magento\Eav\Model\Config;
+use Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection;
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Address;
+use Magento\Sales\Model\Order\Item;
+use Magento\Sales\Model\Order\Payment;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/ConfigurableProduct/_files/product_configurable.php');
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 // phpcs:ignore Magento2.Security.IncludeFile
 $addressData = include __DIR__ . '/../../../Magento/Sales/_files/address_data.php';
 
-$billingAddress = $objectManager->create(\Magento\Sales\Model\Order\Address::class, ['data' => $addressData]);
+$billingAddress = $objectManager->create(Address::class, ['data' => $addressData]);
 $billingAddress->setAddressType('billing');
 
 $shippingAddress = clone $billingAddress;
 $shippingAddress->setId(null)->setAddressType('shipping');
 
-$payment = $objectManager->create(\Magento\Sales\Model\Order\Payment::class);
+$payment = $objectManager->create(Payment::class);
 $payment->setMethod('checkmo');
 
 /** @var ProductRepository $productRepository */
 $productRepository = $objectManager->get(ProductRepositoryInterface::class);
 $product = $productRepository->getById(1);
-/** @var \Magento\Catalog\Model\Product $productSimple */
+/** @var Product $productSimple */
 $simpleProduct = $productRepository->getById(20);
 
 
 /** @var $attribute \Magento\Catalog\Model\ResourceModel\Eav\Attribute */
-$eavConfig = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Eav\Model\Config::class);
+$eavConfig = Bootstrap::getObjectManager()->get(Config::class);
 $attribute = $eavConfig->getAttribute('catalog_product', 'test_configurable');
 
-/** @var $options \Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection */
-$options = $objectManager->create(\Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection::class);
+/** @var $options Collection */
+$options = $objectManager->create(Collection::class);
 $option = $options->setAttributeFilter($attribute->getId())
     ->getFirstItem();
 
@@ -45,15 +54,15 @@ $requestInfo = [
         $attribute->getId() => $option->getId(),
     ],
 ];
-/** @var \Magento\Sales\Model\Order $order */
-$order = $objectManager->create(\Magento\Sales\Model\Order::class);
+/** @var Order $order */
+$order = $objectManager->create(Order::class);
 $order->setIncrementId('100000001');
 $order->loadByIncrementId('100000001');
 if ($order->getId()) {
     $order->delete();
 }
-/** @var \Magento\Sales\Model\Order\Item $orderItem */
-$orderItem = $objectManager->create(\Magento\Sales\Model\Order\Item::class);
+/** @var Item $orderItem */
+$orderItem = $objectManager->create(Item::class);
 $orderItemSimple = clone $orderItem;
 $orderItem->setProductId($product->getId());
 $orderItem->setQtyOrdered(1);
@@ -71,11 +80,11 @@ $orderItemSimple->setProductType($simpleProduct->getTypeId());
 $orderItemSimple->setProductOptions(['info_buyRequest' => $requestInfo]);
 $orderItemSimple->setSku($simpleProduct->getSku());
 
-/** @var \Magento\Sales\Model\Order $order */
-$order = $objectManager->create(\Magento\Sales\Model\Order::class);
+/** @var Order $order */
+$order = $objectManager->create(Order::class);
 $order->setIncrementId('100001001');
-$order->setState(\Magento\Sales\Model\Order::STATE_NEW);
-$order->setStatus($order->getConfig()->getStateDefaultStatus(\Magento\Sales\Model\Order::STATE_NEW));
+$order->setState(Order::STATE_NEW);
+$order->setStatus($order->getConfig()->getStateDefaultStatus(Order::STATE_NEW));
 $order->setCustomerIsGuest(true);
 $order->setCustomerEmail('customer@null.com');
 $order->setCustomerFirstname('firstname');
@@ -86,7 +95,7 @@ $order->setAddresses([$billingAddress, $shippingAddress]);
 $order->setPayment($payment);
 $order->addItem($orderItem);
 $order->addItem($orderItemSimple);
-$order->setStoreId($objectManager->get(\Magento\Store\Model\StoreManagerInterface::class)->getStore()->getId());
+$order->setStoreId($objectManager->get(StoreManagerInterface::class)->getStore()->getId());
 $order->setSubtotal(100);
 $order->setBaseSubtotal(100);
 $order->setBaseGrandTotal(100);

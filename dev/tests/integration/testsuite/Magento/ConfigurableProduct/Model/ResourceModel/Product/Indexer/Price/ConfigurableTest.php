@@ -7,18 +7,22 @@ declare(strict_types=1);
 
 namespace Magento\ConfigurableProduct\Model\ResourceModel\Product\Indexer\Price;
 
+use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Indexer\Product\Price\Processor as PriceIndexerProcessor;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use Magento\Catalog\Model\ResourceModel\Product\Collection;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
+use Magento\CatalogInventory\Api\StockItemRepositoryInterface;
+use Magento\CatalogInventory\Model\Stock;
+use Magento\Framework\Exception\CouldNotSaveException;
+use Magento\Framework\Exception\InputException;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Exception\StateException;
 use Magento\Store\Model\Store;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\CatalogInventory\Model\Stock;
-use Magento\CatalogInventory\Api\StockItemRepositoryInterface;
 use PHPUnit\Framework\TestCase;
-use Magento\Catalog\Api\Data\ProductInterface;
 
 /**
  * Test reindex of configurable products
@@ -44,26 +48,16 @@ class ConfigurableTest extends TestCase
     private $stockRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->storeManager = Bootstrap::getObjectManager()->get(StoreManagerInterface::class);
-        $this->productRepository = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class);
-        $this->stockRepository = Bootstrap::getObjectManager()->get(StockItemRepositoryInterface::class);
-    }
-
-    /**
      * Test get product final price if one of child is disabled
      *
      * @magentoDataFixture Magento/ConfigurableProduct/_files/product_configurable.php
      * @magentoDbIsolation disabled
      *
      * @return void
-     * @throws \Magento\Framework\Exception\CouldNotSaveException
-     * @throws \Magento\Framework\Exception\InputException
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
-     * @throws \Magento\Framework\Exception\StateException
+     * @throws CouldNotSaveException
+     * @throws InputException
+     * @throws NoSuchEntityException
+     * @throws StateException
      */
     public function testGetProductFinalPriceIfOneOfChildIsDisabled(): void
     {
@@ -83,16 +77,39 @@ class ConfigurableTest extends TestCase
     }
 
     /**
+     * Retrieve configurable product.
+     * Returns Configurable product that was created by Magento/ConfigurableProduct/_files/product_configurable.php
+     * fixture
+     *
+     * @param int $productId
+     * @return ProductInterface
+     */
+    private function getConfigurableProductFromCollection(int $productId): ProductInterface
+    {
+        /** @var Collection $collection */
+        $collection = Bootstrap::getObjectManager()->get(CollectionFactory::class)
+            ->create();
+        /** @var ProductInterface $configurableProduct */
+        $configurableProduct = $collection
+            ->addIdFilter([$productId])
+            ->addMinimalPrice()
+            ->load()
+            ->getFirstItem();
+
+        return $configurableProduct;
+    }
+
+    /**
      * Test get product final price if one of child is disabled per store
      *
      * @magentoDataFixture Magento/ConfigurableProduct/_files/product_configurable.php
      * @magentoDbIsolation disabled
      *
      * @return void
-     * @throws \Magento\Framework\Exception\CouldNotSaveException
-     * @throws \Magento\Framework\Exception\InputException
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
-     * @throws \Magento\Framework\Exception\StateException
+     * @throws CouldNotSaveException
+     * @throws InputException
+     * @throws NoSuchEntityException
+     * @throws StateException
      */
     public function testGetProductFinalPriceIfOneOfChildIsDisabledPerStore(): void
     {
@@ -121,7 +138,7 @@ class ConfigurableTest extends TestCase
      * @magentoDbIsolation disabled
      *
      * @return void
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @throws NoSuchEntityException
      */
     public function testGetProductMinimalPriceIfOneOfChildIsOutOfStock(): void
     {
@@ -168,7 +185,7 @@ class ConfigurableTest extends TestCase
      * @magentoDbIsolation disabled
      *
      * @return void
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @throws NoSuchEntityException
      */
     public function testReindexIfAllChildrenIsOutOfStock(): void
     {
@@ -196,25 +213,12 @@ class ConfigurableTest extends TestCase
     }
 
     /**
-     * Retrieve configurable product.
-     * Returns Configurable product that was created by Magento/ConfigurableProduct/_files/product_configurable.php
-     * fixture
-     *
-     * @param int $productId
-     * @return ProductInterface
+     * @inheritdoc
      */
-    private function getConfigurableProductFromCollection(int $productId): ProductInterface
+    protected function setUp(): void
     {
-        /** @var Collection $collection */
-        $collection = Bootstrap::getObjectManager()->get(CollectionFactory::class)
-            ->create();
-        /** @var ProductInterface $configurableProduct */
-        $configurableProduct = $collection
-            ->addIdFilter([$productId])
-            ->addMinimalPrice()
-            ->load()
-            ->getFirstItem();
-
-        return $configurableProduct;
+        $this->storeManager = Bootstrap::getObjectManager()->get(StoreManagerInterface::class);
+        $this->productRepository = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class);
+        $this->stockRepository = Bootstrap::getObjectManager()->get(StockItemRepositoryInterface::class);
     }
 }

@@ -3,36 +3,33 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Downloadable\Model\ResourceModel\Indexer;
 
-use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Catalog\Model\Indexer\Product\Price\Processor;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\ProductRepository;
+use Magento\Catalog\Model\ResourceModel\Product\Collection;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class PriceTest extends \PHPUnit\Framework\TestCase
+class PriceTest extends TestCase
 {
     /**
-     * @var \Magento\Catalog\Model\Indexer\Product\Price\Processor
+     * @var Processor
      */
     private $indexer;
 
     /**
-     * @var \Magento\Catalog\Model\ProductRepository
+     * @var ProductRepository
      */
     private $productRepository;
 
     /**
-     * @var \Magento\Catalog\Model\ResourceModel\Product\Collection
+     * @var Collection
      */
     private $productCollectionFactory;
-
-    protected function setUp(): void
-    {
-        $this->indexer = Bootstrap::getObjectManager()->get(
-            \Magento\Catalog\Model\Indexer\Product\Price\Processor::class
-        );
-        $this->productCollectionFactory = Bootstrap::getObjectManager()->get(CollectionFactory::class);
-        $this->productRepository = Bootstrap::getObjectManager()->get(\Magento\Catalog\Model\ProductRepository::class);
-    }
 
     /**
      * Steps:
@@ -58,10 +55,10 @@ class PriceTest extends \PHPUnit\Framework\TestCase
 
         $this->indexer->reindexAll();
 
-        /** @var \Magento\Catalog\Model\ResourceModel\Product\Collection $collection */
+        /** @var Collection $collection */
         $collection = $this->productCollectionFactory->create();
         $collection->addPriceData()->addFieldToFilter('sku', 'downloadable-product');
-        /** @var \Magento\Catalog\Model\Product $product */
+        /** @var Product $product */
         $product = $collection->getFirstItem();
 
         $this->assertEquals(10, $product->getPrice(), 'Wrong downloadable product price');
@@ -75,5 +72,14 @@ class PriceTest extends \PHPUnit\Framework\TestCase
             $this->assertEquals($tierData[$i]['price_qty'], $resultTiers[$i]->getQty(), 'Wrong tier price quantity');
             $this->assertEquals($tierData[$i]['price'], $resultTiers[$i]->getValue(), 'Wrong tier price value');
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->indexer = Bootstrap::getObjectManager()->get(
+            Processor::class
+        );
+        $this->productCollectionFactory = Bootstrap::getObjectManager()->get(CollectionFactory::class);
+        $this->productRepository = Bootstrap::getObjectManager()->get(ProductRepository::class);
     }
 }

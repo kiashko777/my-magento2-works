@@ -32,20 +32,6 @@ class ApplicationCodeGeneratorTest extends TestCase
      */
     private $classesScannerMock;
 
-    protected function setUp(): void
-    {
-        $this->directoryScannerMock = $this->getMockBuilder(
-            DirectoryScanner::class
-        )->disableOriginalConstructor()
-            ->getMock();
-        $this->phpScannerMock = $this->getMockBuilder(PhpScanner::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $this->classesScannerMock = $this->getMockBuilder(ClassesScanner::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-    }
-
     /**
      * @param array $data
      *
@@ -113,5 +99,19 @@ class ApplicationCodeGeneratorTest extends TestCase
             ->willReturn([]);
 
         $this->assertEmpty($model->doOperation());
+    }
+
+    protected function setUp(): void
+    {
+        $this->directoryScannerMock = $this->getMockBuilder(
+            DirectoryScanner::class
+        )->disableOriginalConstructor()
+            ->getMock();
+        $this->phpScannerMock = $this->getMockBuilder(PhpScanner::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->classesScannerMock = $this->getMockBuilder(ClassesScanner::class)
+            ->disableOriginalConstructor()
+            ->getMock();
     }
 }

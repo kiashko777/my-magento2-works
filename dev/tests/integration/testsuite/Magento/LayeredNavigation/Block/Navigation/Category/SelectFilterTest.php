@@ -7,9 +7,9 @@ declare(strict_types=1);
 
 namespace Magento\LayeredNavigation\Block\Navigation\Category;
 
+use Magento\Catalog\Model\Layer\Filter\AbstractFilter;
 use Magento\Catalog\Model\Layer\Resolver;
 use Magento\LayeredNavigation\Block\Navigation\AbstractFiltersTest;
-use Magento\Catalog\Model\Layer\Filter\AbstractFilter;
 
 /**
  * Provides tests for custom select filter in navigation block on category page.
@@ -82,11 +82,12 @@ class SelectFilterTest extends AbstractFiltersTest
      * @return void
      */
     public function testGetActiveFiltersWithCustomAttribute(
-        array $products,
-        array $expectation,
+        array  $products,
+        array  $expectation,
         string $filterValue,
-        int $productsCount
-    ): void {
+        int    $productsCount
+    ): void
+    {
         $this->getCategoryActiveFiltersAndAssert($products, $expectation, 'Category 999', $filterValue, $productsCount);
     }
 
@@ -98,14 +99,14 @@ class SelectFilterTest extends AbstractFiltersTest
         return [
             'filter_by_first_option_in_products_with_first_option' => [
                 'products_data' => ['simple1000' => 'Option 1', 'simple1001' => 'Option 1'],
-                'expectation' => ['label' =>  'Option 1', 'count' => 0],
-                'filter_value' =>  'Option 1',
+                'expectation' => ['label' => 'Option 1', 'count' => 0],
+                'filter_value' => 'Option 1',
                 'products_count' => 2,
             ],
             'filter_by_first_option_in_products_with_different_options' => [
                 'products_data' => ['simple1000' => 'Option 1', 'simple1001' => 'Option 2'],
-                'expectation' => ['label' =>  'Option 1', 'count' => 0],
-                'filter_value' =>  'Option 1',
+                'expectation' => ['label' => 'Option 1', 'count' => 0],
+                'filter_value' => 'Option 1',
                 'products_count' => 1,
             ],
             'filter_by_second_option_in_products_with_different_options' => [

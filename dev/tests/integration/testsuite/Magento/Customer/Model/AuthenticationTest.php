@@ -27,17 +27,6 @@ class AuthenticationTest extends TestCase
     private $authentication;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->authentication = $this->objectManager->get(AuthenticationInterface::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Customer/_files/expired_lock_for_customer.php
      *
      * @return void
@@ -56,5 +45,16 @@ class AuthenticationTest extends TestCase
     {
         $this->expectExceptionObject(new InvalidEmailOrPasswordException(__('Invalid login or password.')));
         $this->authentication->authenticate(1, 'password1');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->authentication = $this->objectManager->get(AuthenticationInterface::class);
     }
 }

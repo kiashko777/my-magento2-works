@@ -29,15 +29,6 @@ class AddDownloadableProductToCartTest extends GraphQlAbstract
     private $objectManager;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $this->objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-    }
-
-    /**
      * Add a downloadable product into shopping cart when "Links can be purchased separately" is enabled
      *
      * @magentoApiDataFixture Magento/Downloadable/_files/product_downloadable_with_purchased_separately_links.php
@@ -56,11 +47,11 @@ class AddDownloadableProductToCartTest extends GraphQlAbstract
 mutation {
     addDownloadableProductsToCart(
         input: {
-            cart_id: "{$maskedQuoteId}", 
+            cart_id: "{$maskedQuoteId}",
             cart_items: [
                 {
                     data: {
-                        quantity: {$qty}, 
+                        quantity: {$qty},
                         sku: "{$sku}"
                     },
                     downloadable_product_links: [
@@ -98,6 +89,30 @@ MUTATION;
             $links[$linkId],
             $response['addDownloadableProductsToCart']['cart']['items'][0]['links'][0]
         );
+    }
+
+    /**
+     * Function returns array of all product's links
+     *
+     * @param string $sku
+     * @return array
+     */
+    private function getProductsLinks(string $sku): array
+    {
+        $result = [];
+        $productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+
+        $product = $productRepository->get($sku, false, null, true);
+
+        foreach ($product->getDownloadableLinks() as $linkObject) {
+            $result[$linkObject->getLinkId()] = [
+                'title' => $linkObject->getTitle(),
+                'link_type' => null, //deprecated field
+                'price' => $linkObject->getPrice(),
+            ];
+        }
+
+        return $result;
     }
 
     /**
@@ -153,26 +168,11 @@ MUTATION;
     }
 
     /**
-     * Function returns array of all product's links
-     *
-     * @param string $sku
-     * @return array
+     * @inheritdoc
      */
-    private function getProductsLinks(string $sku) : array
+    protected function setUp(): void
     {
-        $result = [];
-        $productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-
-        $product = $productRepository->get($sku, false, null, true);
-
-        foreach ($product->getDownloadableLinks() as $linkObject) {
-            $result[$linkObject->getLinkId()] = [
-                'title' => $linkObject->getTitle(),
-                'link_type' => null, //deprecated field
-                'price' => $linkObject->getPrice(),
-            ];
-        }
-
-        return $result;
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $this->objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
     }
 }

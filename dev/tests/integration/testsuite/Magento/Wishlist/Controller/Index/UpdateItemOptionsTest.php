@@ -42,31 +42,6 @@ class UpdateItemOptionsTest extends AbstractController
     private $getWishlistByCustomerId;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->customerSession = $this->_objectManager->get(Session::class);
-        $this->getWishlistByCustomerId = $this->_objectManager->get(GetWishlistByCustomerId::class);
-        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->escaper = $this->_objectManager->get(Escaper::class);
-        $this->json = $this->_objectManager->get(SerializerInterface::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->customerSession->setCustomerId(null);
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Wishlist/_files/wishlist_with_configurable_product.php
      * @magentoDbIsolation disabled
      *
@@ -91,6 +66,49 @@ class UpdateItemOptionsTest extends AbstractController
             $this->getWishlistByCustomerId->getItemBySku(1, 'Configurable product'),
             $params
         );
+    }
+
+    /**
+     * Perform configurable option to select.
+     *
+     * @param ProductInterface $product
+     * @return array
+     */
+    private function performConfigurableOption(ProductInterface $product): array
+    {
+        $configurableOptions = $product->getTypeInstance()->getConfigurableOptions($product);
+        $attributeId = key($configurableOptions);
+        $option = reset($configurableOptions[$attributeId]);
+
+        return [$attributeId => $option['value_index']];
+    }
+
+    /**
+     * Perform request update wish list item.
+     *
+     * @param array $params
+     * @return void
+     */
+    private function performUpdateWishListItemRequest(array $params): void
+    {
+        $this->getRequest()->setParams($params)->setMethod(HttpRequest::METHOD_POST);
+        $this->dispatch('wishlist/index/updateItemOptions');
+    }
+
+    /**
+     * Assert updated item in wish list.
+     *
+     * @param Item $item
+     * @param array $expectedData
+     * @return void
+     */
+    private function assertUpdatedItem(Item $item, array $expectedData): void
+    {
+        $this->assertEquals($expectedData['qty'], $item->getQty());
+        $buyRequestOption = $this->json->unserialize($item->getOptionByCode('info_buyRequest')->getValue());
+        foreach ($expectedData as $key => $value) {
+            $this->assertEquals($value, $buyRequestOption[$key]);
+        }
     }
 
     /**
@@ -181,49 +199,6 @@ class UpdateItemOptionsTest extends AbstractController
     }
 
     /**
-     * Perform request update wish list item.
-     *
-     * @param array $params
-     * @return void
-     */
-    private function performUpdateWishListItemRequest(array $params): void
-    {
-        $this->getRequest()->setParams($params)->setMethod(HttpRequest::METHOD_POST);
-        $this->dispatch('wishlist/index/updateItemOptions');
-    }
-
-    /**
-     * Assert updated item in wish list.
-     *
-     * @param Item $item
-     * @param array $expectedData
-     * @return void
-     */
-    private function assertUpdatedItem(Item $item, array $expectedData): void
-    {
-        $this->assertEquals($expectedData['qty'], $item->getQty());
-        $buyRequestOption = $this->json->unserialize($item->getOptionByCode('info_buyRequest')->getValue());
-        foreach ($expectedData as $key => $value) {
-            $this->assertEquals($value, $buyRequestOption[$key]);
-        }
-    }
-
-    /**
-     * Perform configurable option to select.
-     *
-     * @param ProductInterface $product
-     * @return array
-     */
-    private function performConfigurableOption(ProductInterface $product): array
-    {
-        $configurableOptions = $product->getTypeInstance()->getConfigurableOptions($product);
-        $attributeId = key($configurableOptions);
-        $option = reset($configurableOptions[$attributeId]);
-
-        return [$attributeId => $option['value_index']];
-    }
-
-    /**
      * Perform group option to select.
      *
      * @return array
@@ -237,5 +212,30 @@ class UpdateItemOptionsTest extends AbstractController
             $simple1->getId() => '3',
             $simple2->getId() => '3',
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->customerSession = $this->_objectManager->get(Session::class);
+        $this->getWishlistByCustomerId = $this->_objectManager->get(GetWishlistByCustomerId::class);
+        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->escaper = $this->_objectManager->get(Escaper::class);
+        $this->json = $this->_objectManager->get(SerializerInterface::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->customerSession->setCustomerId(null);
+
+        parent::tearDown();
     }
 }

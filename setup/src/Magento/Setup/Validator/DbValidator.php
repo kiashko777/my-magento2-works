@@ -6,9 +6,13 @@
 
 namespace Magento\Setup\Validator;
 
+use InvalidArgumentException;
 use Magento\Framework\Config\ConfigOptionsListConstants;
+use Magento\Framework\DB\Adapter\AdapterInterface;
+use Magento\Setup\Exception;
 use Magento\Setup\Model\Installer;
 use Magento\Setup\Module\ConnectionFactory;
+use PDO;
 
 /**
  * Class DbValidator - validates DB related settings
@@ -43,21 +47,21 @@ class DbValidator
      *
      * @param string $prefix
      * @return bool
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     public function checkDatabaseTablePrefix($prefix)
     {
         //The table prefix should contain only letters (a-z), numbers (0-9) or underscores (_);
         // the first character should be a letter.
         if ($prefix !== '' && !preg_match('/^([a-zA-Z])([[:alnum:]_]+)$/', $prefix)) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Please correct the table prefix format, should contain only numbers, letters or underscores.'
-                .' The first character should be a letter.'
+                . ' The first character should be a letter.'
             );
         }
 
         if (strlen($prefix) > self::DB_PREFIX_LENGTH) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Table prefix length can\'t be more than ' . self::DB_PREFIX_LENGTH . ' characters.'
             );
         }
@@ -73,7 +77,7 @@ class DbValidator
      * @param string $dbUser
      * @param string $dbPass
      * @return bool
-     * @throws \Magento\Setup\Exception
+     * @throws Exception
      * @deprecated
      */
     public function checkDatabaseConnection($dbName, $dbHost, $dbUser, $dbPass = '')
@@ -90,7 +94,7 @@ class DbValidator
      * @param string $dbPass
      * @param array $driverOptions
      * @return bool
-     * @throws \Magento\Setup\Exception
+     * @throws Exception
      */
     public function checkDatabaseConnectionWithDriverOptions(
         $dbName,
@@ -98,7 +102,8 @@ class DbValidator
         $dbUser,
         $dbPass = '',
         $driverOptions = []
-    ) {
+    )
+    {
         // establish connection to information_schema view to retrieve information about user and table privileges
         $connection = $this->connectionFactory->create(
             [
@@ -112,7 +117,7 @@ class DbValidator
         );
 
         if (!$connection) {
-            throw new \Magento\Setup\Exception('Database connection failure.');
+            throw new Exception('Database connection failure.');
         }
 
         $mysqlVersion = $connection->fetchOne('SELECT version()');
@@ -120,7 +125,7 @@ class DbValidator
             if (preg_match('/^([0-9\.]+)/', $mysqlVersion, $matches)) {
                 if (isset($matches[1]) && !empty($matches[1])) {
                     if (version_compare($matches[1], Installer::MYSQL_VERSION_REQUIRED) < 0) {
-                        throw new \Magento\Setup\Exception(
+                        throw new Exception(
                             'Sorry, but we support MySQL version ' . Installer::MYSQL_VERSION_REQUIRED . ' or later.'
                         );
                     }
@@ -134,35 +139,35 @@ class DbValidator
     /**
      * Checks if specified database exists and visible to current user
      *
-     * @param \Magento\Framework\DB\Adapter\AdapterInterface $connection
+     * @param AdapterInterface $connection
      * @param string $dbName
      * @return bool
-     * @throws \Magento\Setup\Exception
+     * @throws Exception
      */
-    private function checkDatabaseName(\Magento\Framework\DB\Adapter\AdapterInterface $connection, $dbName)
+    private function checkDatabaseName(AdapterInterface $connection, $dbName)
     {
         $query = "SHOW DATABASES";
-        $accessibleDbs = $connection->query($query)->fetchAll(\PDO::FETCH_COLUMN, 0);
+        $accessibleDbs = $connection->query($query)->fetchAll(PDO::FETCH_COLUMN, 0);
         foreach ($accessibleDbs as $accessibleDbName) {
             if ($dbName == $accessibleDbName) {
                 return true;
             }
         }
-        throw new \Magento\Setup\Exception(
+        throw new Exception(
             "Database '{$dbName}' does not exist "
-            ."or specified database server user does not have privileges to access this database."
+            . "or specified database server user does not have privileges to access this database."
         );
     }
 
     /**
      * Checks database privileges
      *
-     * @param \Magento\Framework\DB\Adapter\AdapterInterface $connection
+     * @param AdapterInterface $connection
      * @param string $dbName
      * @return bool
-     * @throws \Magento\Setup\Exception
+     * @throws Exception
      */
-    private function checkDatabasePrivileges(\Magento\Framework\DB\Adapter\AdapterInterface $connection, $dbName)
+    private function checkDatabasePrivileges(AdapterInterface $connection, $dbName)
     {
         $requiredPrivileges = [
             'SELECT',
@@ -187,7 +192,7 @@ class DbValidator
         // phpcs:ignore Magento2.SQL.RawQuery
         $userPrivilegesQuery = "SELECT PRIVILEGE_TYPE FROM USER_PRIVILEGES "
             . "WHERE REPLACE(GRANTEE, '\'', '') = current_user()";
-        $grantInfo = $connection->query($userPrivilegesQuery)->fetchAll(\PDO::FETCH_NUM);
+        $grantInfo = $connection->query($userPrivilegesQuery)->fetchAll(PDO::FETCH_NUM);
         if (empty(array_diff($requiredPrivileges, $this->parseGrantInfo($grantInfo)))) {
             return true;
         }
@@ -196,14 +201,14 @@ class DbValidator
         // phpcs:ignore Magento2.SQL.RawQuery
         $schemaPrivilegesQuery = "SELECT PRIVILEGE_TYPE FROM SCHEMA_PRIVILEGES " .
             "WHERE '$dbName' LIKE TABLE_SCHEMA AND REPLACE(GRANTEE, '\'', '') = current_user()";
-        $grantInfo = $connection->query($schemaPrivilegesQuery)->fetchAll(\PDO::FETCH_NUM);
+        $grantInfo = $connection->query($schemaPrivilegesQuery)->fetchAll(PDO::FETCH_NUM);
         if (empty(array_diff($requiredPrivileges, $this->parseGrantInfo($grantInfo)))) {
             return true;
         }
 
         $errorMessage = 'Database user does not have enough privileges. Please make sure '
             . implode(', ', $requiredPrivileges) . " privileges are granted to database '{$dbName}'.";
-        throw new \Magento\Setup\Exception($errorMessage);
+        throw new Exception($errorMessage);
     }
 
     /**

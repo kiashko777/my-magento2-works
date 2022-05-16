@@ -3,18 +3,23 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Setup\Declaration\Schema\Db\MySQL;
 
 use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\DB\Adapter\Pdo\Mysql;
 use Magento\Framework\DB\Ddl\Table;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+use Zend_Db_Exception;
+use Zend_Db_Expr;
 
 /**
  * Test DB schema writer
  *
  * @magentoDbIsolation disabled
  */
-class DbSchemaWriterTest extends \PHPUnit\Framework\TestCase
+class DbSchemaWriterTest extends TestCase
 {
     /**
      * @var ResourceConnection
@@ -26,34 +31,12 @@ class DbSchemaWriterTest extends \PHPUnit\Framework\TestCase
      */
     private $dbSchemaWriter;
 
-    protected function setUp(): void
-    {
-        set_error_handler(null);
-        $this->resourceConnection = Bootstrap::getObjectManager()->get(ResourceConnection::class);
-        $this->dbSchemaWriter = Bootstrap::getObjectManager()->get(DbSchemaWriter::class);
-    }
-
-    protected function tearDown(): void
-    {
-        restore_error_handler();
-    }
-
-    /**
-     * Retrieve database adapter instance
-     *
-     * @return \Magento\Framework\DB\Adapter\Pdo\Mysql
-     */
-    private function getDbAdapter()
-    {
-        return $this->resourceConnection->getConnection();
-    }
-
     /**
      * Test reset auto increment
      *
      * @param array $options
      * @param string|bool $expected
-     * @throws \Zend_Db_Exception
+     * @throws Zend_Db_Exception
      * @dataProvider getAutoIncrementFieldDataProvider
      */
     public function testResetAutoIncrement(array $options, $expected)
@@ -74,7 +57,7 @@ class DbSchemaWriterTest extends \PHPUnit\Framework\TestCase
                 'created_at',
                 Table::TYPE_DATETIME,
                 null,
-                ['default' => new \Zend_Db_Expr('CURRENT_TIMESTAMP')]
+                ['default' => new Zend_Db_Expr('CURRENT_TIMESTAMP')]
             )
             ->addColumn(
                 'integer_column',
@@ -97,6 +80,16 @@ class DbSchemaWriterTest extends \PHPUnit\Framework\TestCase
         $adapter->dropTable($tableName);
     }
 
+    /**
+     * Retrieve database adapter instance
+     *
+     * @return Mysql
+     */
+    private function getDbAdapter()
+    {
+        return $this->resourceConnection->getConnection();
+    }
+
     public function getAutoIncrementFieldDataProvider()
     {
         return [
@@ -109,5 +102,17 @@ class DbSchemaWriterTest extends \PHPUnit\Framework\TestCase
                 'expected result' => 'AUTO_INCREMENT = 1',
             ]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        set_error_handler(null);
+        $this->resourceConnection = Bootstrap::getObjectManager()->get(ResourceConnection::class);
+        $this->dbSchemaWriter = Bootstrap::getObjectManager()->get(DbSchemaWriter::class);
+    }
+
+    protected function tearDown(): void
+    {
+        restore_error_handler();
     }
 }

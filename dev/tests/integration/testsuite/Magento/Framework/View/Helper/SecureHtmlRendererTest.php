@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 namespace Magento\Framework\View\Helper;
 
+use InvalidArgumentException;
 use Magento\Framework\View\Helper\SecureHtmlRender\TagData;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
@@ -21,16 +22,6 @@ class SecureHtmlRendererTest extends TestCase
      * @var SecureHtmlRenderer
      */
     private $helper;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        //Clearing the processors list to ensure stable results.
-        $this->helper = $objectManager->create(SecureHtmlRenderer::class, ['processors' => []]);
-    }
 
     /**
      * Provides tags to render.
@@ -109,7 +100,7 @@ class SecureHtmlRendererTest extends TestCase
      */
     public function testInvalidEventListener(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->helper->renderEventListenerAsTag('nonevent', '', '');
     }
 
@@ -135,7 +126,17 @@ class SecureHtmlRendererTest extends TestCase
      */
     public function testInvalidStyle(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->helper->renderStyleAsTag('display;', '');
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        //Clearing the processors list to ensure stable results.
+        $this->helper = $objectManager->create(SecureHtmlRenderer::class, ['processors' => []]);
     }
 }

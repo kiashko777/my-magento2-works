@@ -64,22 +64,22 @@ define([
     beforeEach(function () {
         $('<form>' +
             '<div id="media_gallery_content" class="gallery">' +
-                '<script id="media_gallery_content-template" data-template="image" type="text/x-magento-template">' +
-                    '<div class="image item <% if(data.disabled == 1){ %>hidden-for-front<% } %>" data-role="image">' +
-                        '<input type="hidden" name="product[media_gallery][images][<%- data.file_id %>][position]"' +
-                        ' value="<%- data.position %>" data-form-part="product_form" class="position"/>' +
-                        '<input type="hidden" name="product[media_gallery][images][<%- data.file_id %>][file]"' +
-                        ' value="<%- data.file %>" data-form-part="product_form"/>' +
-                        '<input type="hidden" name="product[media_gallery][images][<%- data.file_id %>][label]"' +
-                        ' value="<%- data.label %>" data-form-part="product_form"/>' +
-                        '<div class="product-image-wrapper">' +
-                            '<img class="product-image" data-role="image-element" src="<%- data.url %>" alt=""/>' +
-                            '<div class="actions"></div>' +
-                        '</div>' +
-                    '</div>' +
-                '</script>' +
+            '<script id="media_gallery_content-template" data-template="image" type="text/x-magento-template">' +
+            '<div class="image item <% if(data.disabled == 1){ %>hidden-for-front<% } %>" data-role="image">' +
+            '<input type="hidden" name="product[media_gallery][images][<%- data.file_id %>][position]"' +
+            ' value="<%- data.position %>" data-form-part="product_form" class="position"/>' +
+            '<input type="hidden" name="product[media_gallery][images][<%- data.file_id %>][file]"' +
+            ' value="<%- data.file %>" data-form-part="product_form"/>' +
+            '<input type="hidden" name="product[media_gallery][images][<%- data.file_id %>][label]"' +
+            ' value="<%- data.label %>" data-form-part="product_form"/>' +
+            '<div class="product-image-wrapper">' +
+            '<img class="product-image" data-role="image-element" src="<%- data.url %>" alt=""/>' +
+            '<div class="actions"></div>' +
             '</div>' +
-        '</form>'
+            '</div>' +
+            '</script>' +
+            '</div>' +
+            '</form>'
         ).appendTo(document.body);
         galleryEl = document.getElementById('media_gallery_content');
     });

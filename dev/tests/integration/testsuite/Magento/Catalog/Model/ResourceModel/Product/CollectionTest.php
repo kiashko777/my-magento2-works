@@ -7,52 +7,40 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Model\ResourceModel\Product;
 
+use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\Indexer\Product\Price\Processor;
 use Magento\Catalog\Model\Product\Visibility;
 use Magento\Framework\App\Area;
+use Magento\Framework\App\ObjectManager;
 use Magento\Framework\App\State;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Store\Model\Store;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for Magento\Catalog\Model\ResourceModel\Products\Collection
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class CollectionTest extends \PHPUnit\Framework\TestCase
+class CollectionTest extends TestCase
 {
     /**
-     * @var \Magento\Catalog\Model\ResourceModel\Product\Collection
+     * @var Collection
      */
     protected $collection;
 
     /**
-     * @var \Magento\Catalog\Model\Indexer\Product\Price\Processor
+     * @var Processor
      */
     protected $processor;
 
     /**
-     * @var \Magento\Catalog\Api\ProductRepositoryInterface
+     * @var ProductRepositoryInterface
      */
     private $productRepository;
-
-    /**
-     * Sets up the fixture, for example, opens a network connection.
-     * This method is called before a test is executed.
-     */
-    protected function setUp(): void
-    {
-        $this->collection = Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\ResourceModel\Product\Collection::class
-        );
-
-        $this->processor = Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\Indexer\Product\Price\Processor::class
-        );
-
-        $this->productRepository = Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Api\ProductRepositoryInterface::class
-        );
-    }
 
     /**
      * @magentoDataFixture Magento/Catalog/_files/products.php
@@ -65,17 +53,17 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue($this->processor->getIndexer()->isScheduled());
 
         $productRepository = Bootstrap::getObjectManager()
-            ->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
-        /** @var \Magento\Catalog\Api\Data\ProductInterface $product */
+            ->create(ProductRepositoryInterface::class);
+        /** @var ProductInterface $product */
         $product = $productRepository->get('simple');
         $this->assertEquals(10, $product->getPrice());
         $product->setPrice(15);
         $productRepository->save($product);
         $this->collection->addPriceData(0, 1);
         $this->collection->load();
-        /** @var \Magento\Catalog\Api\Data\ProductInterface[] $product */
+        /** @var ProductInterface[] $product */
         $items = $this->collection->getItems();
-        /** @var \Magento\Catalog\Api\Data\ProductInterface $product */
+        /** @var ProductInterface $product */
         $product = reset($items);
         $this->assertCount(2, $items);
         $this->assertEquals(10, $product->getPrice());
@@ -84,14 +72,14 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
         $this->processor->getIndexer()->reindexList([1]);
 
         $this->collection = Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\ResourceModel\Product\Collection::class
+            Collection::class
         );
         $this->collection->addPriceData(0, 1);
         $this->collection->load();
 
-        /** @var \Magento\Catalog\Api\Data\ProductInterface[] $product */
+        /** @var ProductInterface[] $product */
         $items = $this->collection->getItems();
-        /** @var \Magento\Catalog\Api\Data\ProductInterface $product */
+        /** @var ProductInterface $product */
         $product = reset($items);
         $this->assertCount(2, $items);
         $this->assertEquals(15, $product->getPrice());
@@ -112,7 +100,7 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
         $this->collection->setStoreId(Store::DEFAULT_STORE_ID);
         $this->collection->setVisibility([Visibility::VISIBILITY_BOTH]);
         $this->collection->load();
-        /** @var \Magento\Catalog\Api\Data\ProductInterface[] $product */
+        /** @var ProductInterface[] $product */
         $items = $this->collection->getItems();
         $this->assertCount(2, $items);
     }
@@ -128,14 +116,14 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
             ->create(State::class);
         $appState->setAreaCode(Area::AREA_CRONTAB);
 
-        $category = \Magento\Framework\App\ObjectManager::getInstance()->get(
-            \Magento\Catalog\Model\Category::class
+        $category = ObjectManager::getInstance()->get(
+            Category::class
         )->load(333);
         $this->collection->addCategoryFilter($category)->addStoreFilter(1);
         $this->collection->load();
 
         $collectionStoreFilterAfter = Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory::class
+            CollectionFactory::class
         )->create();
         $collectionStoreFilterAfter->addStoreFilter(1)->addCategoryFilter($category);
         $collectionStoreFilterAfter->load();
@@ -154,8 +142,8 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
             ->create(State::class);
         $appState->setAreaCode(Area::AREA_CRONTAB);
 
-        $category = \Magento\Framework\App\ObjectManager::getInstance()->get(
-            \Magento\Catalog\Model\Category::class
+        $category = ObjectManager::getInstance()->get(
+            Category::class
         )->load(3);
         $this->collection->addCategoryFilter($category);
         $this->collection->load();
@@ -172,17 +160,17 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
         $this->processor->getIndexer()->setScheduled(false);
         $this->assertFalse($this->processor->getIndexer()->isScheduled());
         $productRepository = Bootstrap::getObjectManager()
-            ->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
-        /** @var \Magento\Catalog\Api\Data\ProductInterface $product */
+            ->create(ProductRepositoryInterface::class);
+        /** @var ProductInterface $product */
         $product = $productRepository->get('simple');
         $this->assertNotEquals(15, $product->getPrice());
         $product->setPrice(15);
         $productRepository->save($product);
         $this->collection->addPriceData(0, 1);
         $this->collection->load();
-        /** @var \Magento\Catalog\Api\Data\ProductInterface[] $product */
+        /** @var ProductInterface[] $product */
         $items = $this->collection->getItems();
-        /** @var \Magento\Catalog\Api\Data\ProductInterface $product */
+        /** @var ProductInterface $product */
         $product = reset($items);
         $this->assertCount(2, $items);
         $this->assertEquals(15, $product->getPrice());
@@ -242,7 +230,7 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
     /**
      * Checks a case if table for join specified as an array.
      *
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @throws LocalizedException
      */
     public function testJoinTable()
     {
@@ -253,7 +241,7 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
             '{{table}}.entity_type = \'product\'',
             'left'
         );
-        $sql = (string) $this->collection->getSelect();
+        $sql = (string)$this->collection->getSelect();
         $productTable = $this->collection->getTable('catalog_product_entity');
         $urlRewriteTable = $this->collection->getTable('url_rewrite');
 
@@ -329,5 +317,24 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
             'condition is int' => [1],
             'condition is null' => [null]
         ];
+    }
+
+    /**
+     * Sets up the fixture, for example, opens a network connection.
+     * This method is called before a test is executed.
+     */
+    protected function setUp(): void
+    {
+        $this->collection = Bootstrap::getObjectManager()->create(
+            Collection::class
+        );
+
+        $this->processor = Bootstrap::getObjectManager()->create(
+            Processor::class
+        );
+
+        $this->productRepository = Bootstrap::getObjectManager()->create(
+            ProductRepositoryInterface::class
+        );
     }
 }

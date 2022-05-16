@@ -32,14 +32,6 @@ class DataProviderTest extends TestCase
     private $dataProvider;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->initLocaleResolverMock();
-    }
-
-    /**
      * Test to filter by region name in custom locale
      *
      * @param array $filterData
@@ -82,6 +74,14 @@ class DataProviderTest extends TestCase
             [['condition_type' => 'fulltext', 'field' => 'fulltext', 'value' => 'アラバマ']],
             [['condition_type' => 'regular', 'field' => 'billing_region', 'value' => 'アラバマ']],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->initLocaleResolverMock();
     }
 
     /**

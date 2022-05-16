@@ -25,7 +25,8 @@ class QuickSearchByQuery
      */
     public function __construct(
         SearchFactory $searchFactory
-    ) {
+    )
+    {
         $this->searchFactory = $searchFactory;
     }
 
@@ -41,7 +42,8 @@ class QuickSearchByQuery
         string $query,
         string $sortedField = 'relevance',
         string $sortOrder = 'desc'
-    ): Collection {
+    ): Collection
+    {
         $productCollection = $this->searchFactory->create()->getProductCollection();
         $productCollection->addSearchFilter($query);
         $productCollection->setOrder($sortedField, $sortOrder);

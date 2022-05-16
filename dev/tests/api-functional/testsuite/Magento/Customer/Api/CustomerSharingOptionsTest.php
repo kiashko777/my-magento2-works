@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Customer\Api;
 
+use Exception;
 use Magento\Customer\Api\Data\CustomerInterface;
 use Magento\Customer\Model\CustomerRegistry;
 use Magento\Framework\Registry;
@@ -63,7 +64,7 @@ class CustomerSharingOptionsTest extends WebapiAbstract
     public function setUp(): void
     {
         $this->customerRegistry = Bootstrap::getObjectManager()->get(
-            \Magento\Customer\Model\CustomerRegistry::class
+            CustomerRegistry::class
         );
 
         $this->customerRepository = Bootstrap::getObjectManager()->get(
@@ -77,6 +78,26 @@ class CustomerSharingOptionsTest extends WebapiAbstract
 
         // get token
         $this->resetTokenForCustomerSampleData();
+    }
+
+    /**
+     * Sets the test's access token for the created customer sample data
+     */
+    private function resetTokenForCustomerSampleData()
+    {
+        $this->resetTokenForCustomer($this->customerData[CustomerInterface::EMAIL], 'test@123');
+    }
+
+    /**
+     * Sets the test's access token for a particular username and password.
+     *
+     * @param string $username
+     * @param string $password
+     */
+    private function resetTokenForCustomer($username, $password)
+    {
+        $this->token = $this->tokenService->createCustomerAccessToken($username, $password);
+        $this->customerRegistry->remove($this->customerRepository->get($username)->getId());
     }
 
     /**
@@ -112,18 +133,6 @@ class CustomerSharingOptionsTest extends WebapiAbstract
     /**
      * @param string $storeCode
      * @param bool $expectingException
-     * @dataProvider getCustomerDataGlobalScopeDataProvider
-     *
-     * @magentoConfigFixture customer/account_share/scope 0
-     */
-    public function testGetCustomerDataGlobalScope(string $storeCode, bool $expectingException)
-    {
-        $this->processGetCustomerData($storeCode, $expectingException);
-    }
-
-    /**
-     * @param string $storeCode
-     * @param bool $expectingException
      */
     private function processGetCustomerData(string $storeCode, bool $expectingException)
     {
@@ -146,11 +155,23 @@ class CustomerSharingOptionsTest extends WebapiAbstract
         }
 
         if ($expectingException) {
-            self::expectException(\Exception::class);
+            self::expectException(Exception::class);
             self::expectExceptionMessage("The consumer isn't authorized to access %resources.");
         }
 
         $this->_webApiCall($serviceInfo, $arguments, null, $storeCode);
+    }
+
+    /**
+     * @param string $storeCode
+     * @param bool $expectingException
+     * @dataProvider getCustomerDataGlobalScopeDataProvider
+     *
+     * @magentoConfigFixture customer/account_share/scope 0
+     */
+    public function testGetCustomerDataGlobalScope(string $storeCode, bool $expectingException)
+    {
+        $this->processGetCustomerData($storeCode, $expectingException);
     }
 
     /**
@@ -189,25 +210,5 @@ class CustomerSharingOptionsTest extends WebapiAbstract
                 'exception' => false
             ]
         ];
-    }
-
-    /**
-     * Sets the test's access token for the created customer sample data
-     */
-    private function resetTokenForCustomerSampleData()
-    {
-        $this->resetTokenForCustomer($this->customerData[CustomerInterface::EMAIL], 'test@123');
-    }
-
-    /**
-     * Sets the test's access token for a particular username and password.
-     *
-     * @param string $username
-     * @param string $password
-     */
-    private function resetTokenForCustomer($username, $password)
-    {
-        $this->token = $this->tokenService->createCustomerAccessToken($username, $password);
-        $this->customerRegistry->remove($this->customerRepository->get($username)->getId());
     }
 }

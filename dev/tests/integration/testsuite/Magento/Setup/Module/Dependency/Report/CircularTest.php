@@ -3,11 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Dependency\Report;
 
 use Magento\Setup\Module\Dependency\ServiceLocator;
+use PHPUnit\Framework\TestCase;
 
-class CircularTest extends \PHPUnit\Framework\TestCase
+class CircularTest extends TestCase
 {
     /**
      * @var string
@@ -23,14 +25,6 @@ class CircularTest extends \PHPUnit\Framework\TestCase
      * @var BuilderInterface
      */
     protected $builder;
-
-    protected function setUp(): void
-    {
-        $this->fixtureDir = realpath(__DIR__ . '/../_files') . '/';
-        $this->sourceFilename = $this->fixtureDir . 'circular-dependencies.csv';
-
-        $this->builder = ServiceLocator::getCircularDependenciesReportBuilder();
-    }
 
     public function testBuild()
     {
@@ -59,6 +53,14 @@ class CircularTest extends \PHPUnit\Framework\TestCase
             $this->fixtureDir . 'expected/without-circular-dependencies.csv',
             $this->sourceFilename
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->fixtureDir = realpath(__DIR__ . '/../_files') . '/';
+        $this->sourceFilename = $this->fixtureDir . 'circular-dependencies.csv';
+
+        $this->builder = ServiceLocator::getCircularDependenciesReportBuilder();
     }
 
     protected function tearDown(): void

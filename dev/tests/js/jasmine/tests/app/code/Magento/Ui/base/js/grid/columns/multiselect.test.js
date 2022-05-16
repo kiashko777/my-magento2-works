@@ -23,7 +23,8 @@ define([
             });
             multiSelect.source = {
                 /** Stub */
-                set: function () {}
+                set: function () {
+                }
             };
             spyOn(multiSelect.source, 'set');
         });

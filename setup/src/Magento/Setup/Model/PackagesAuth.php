@@ -6,10 +6,6 @@
 
 namespace Magento\Setup\Model;
 
-use Magento\Framework\App\Filesystem\DirectoryList;
-use Magento\Framework\Exception\LocalizedException;
-use Magento\Framework\Phrase;
-
 /**
  * Class PackagesAuth contains auth details.
  */

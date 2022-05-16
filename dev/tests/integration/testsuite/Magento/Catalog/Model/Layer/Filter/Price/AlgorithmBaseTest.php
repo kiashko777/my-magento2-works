@@ -3,10 +3,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Model\Layer\Filter\Price;
 
-use Magento\Framework\Search\Dynamic\IntervalInterface;
+use Magento\Catalog\Model\Layer;
+use Magento\Catalog\Model\Layer\Category;
+use Magento\Catalog\Model\ResourceModel\Layer\Filter\Price;
+use Magento\CatalogSearch\Model\Price\Interval;
+use Magento\CatalogSearch\Model\Price\IntervalFactory;
+use Magento\Elasticsearch\SearchAdapter\DocumentFactory;
+use Magento\Framework\Api\Search\Document;
+use Magento\Framework\Search\Dynamic\Algorithm;
+use Magento\Framework\Search\EntityMetadata;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\Catalog\Model\Layer\Filter\Price.
@@ -15,12 +25,12 @@ use Magento\TestFramework\Helper\Bootstrap;
  * @magentoDbIsolation disabled
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class AlgorithmBaseTest extends \PHPUnit\Framework\TestCase
+class AlgorithmBaseTest extends TestCase
 {
     /**
      * Layer model
      *
-     * @var \Magento\Catalog\Model\Layer
+     * @var Layer
      */
     protected $_layer;
 
@@ -32,7 +42,7 @@ class AlgorithmBaseTest extends \PHPUnit\Framework\TestCase
     protected $_filter;
 
     /**
-     * @var \Magento\Catalog\Model\ResourceModel\Layer\Filter\Price
+     * @var Price
      */
     protected $priceResource;
 
@@ -43,27 +53,27 @@ class AlgorithmBaseTest extends \PHPUnit\Framework\TestCase
      * @param $categoryId
      * @param array $entityIds
      * @param array $intervalItems
-     * @covers \Magento\Framework\Search\Dynamic\Algorithm::calculateSeparators
+     * @covers       \Magento\Framework\Search\Dynamic\Algorithm::calculateSeparators
      */
     public function testPricesSegmentation($categoryId, array $entityIds, array $intervalItems)
     {
         $this->markTestSkipped('MC-33826:'
-        . 'Stabilize skipped test cases for Integration AlgorithmBaseTest with elasticsearch');
+            . 'Stabilize skipped test cases for Integration AlgorithmBaseTest with elasticsearch');
         $objectManager = Bootstrap::getObjectManager();
-        $layer = $objectManager->create(\Magento\Catalog\Model\Layer\Category::class);
+        $layer = $objectManager->create(Category::class);
 
-        /** @var \Magento\Framework\Search\EntityMetadata $entityMetadata */
-        $entityMetadata = $objectManager->create(\Magento\Framework\Search\EntityMetadata::class, ['entityId' => 'id']);
+        /** @var EntityMetadata $entityMetadata */
+        $entityMetadata = $objectManager->create(EntityMetadata::class, ['entityId' => 'id']);
         $idKey = $entityMetadata->getEntityId();
 
         // this class has been removed
-        /** @var \Magento\Elasticsearch\SearchAdapter\DocumentFactory $documentFactory */
+        /** @var DocumentFactory $documentFactory */
         $documentFactory = $objectManager->create(
-            \Magento\Elasticsearch\SearchAdapter\DocumentFactory::class,
+            DocumentFactory::class,
             ['entityMetadata' => $entityMetadata]
         );
 
-        /** @var \Magento\Framework\Api\Search\Document[] $documents */
+        /** @var Document[] $documents */
         $documents = [];
         foreach ($entityIds as $entityId) {
             $rawDocument = [
@@ -72,15 +82,15 @@ class AlgorithmBaseTest extends \PHPUnit\Framework\TestCase
             ];
             $documents[] = $documentFactory->create($rawDocument);
         }
-        /** @var \Magento\CatalogSearch\Model\Price\IntervalFactory $intervalFactory */
+        /** @var IntervalFactory $intervalFactory */
         $intervalFactory = $objectManager->create(
-            \Magento\CatalogSearch\Model\Price\IntervalFactory::class
+            IntervalFactory::class
         );
-        /** @var \Magento\CatalogSearch\Model\Price\Interval $interval */
+        /** @var Interval $interval */
         $interval = $intervalFactory->create();
 
-        /** @var \Magento\Framework\Search\Dynamic\Algorithm $model */
-        $model = $objectManager->create(\Magento\Framework\Search\Dynamic\Algorithm::class);
+        /** @var Algorithm $model */
+        $model = $objectManager->create(Algorithm::class);
 
         $layer->setCurrentCategory($categoryId);
         $collection = $layer->getProductCollection();
@@ -131,7 +141,7 @@ class AlgorithmBaseTest extends \PHPUnit\Framework\TestCase
      * @param array $testCases
      * @return array
      */
-    private function getUnSkippedTestCases(array $testCases) : array
+    private function getUnSkippedTestCases(array $testCases): array
     {
         // TO DO UnSkip skipped test cases and remove this function
         $SkippedTestCases = [];

@@ -3,14 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Magento\ImportExport\Model\Export\Adapter;
 
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Filesystem;
-use Magento\ImportExport\Model\Import;
 use Magento\Framework\ObjectManagerInterface;
+use Magento\ImportExport\Model\Import;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
 
@@ -28,14 +28,6 @@ class CsvTest extends TestCase
      * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
 
     /**
      * Test to destruct export adapter
@@ -77,5 +69,13 @@ class CsvTest extends TestCase
             'temporary file' => [$this->destination, true],
             'import history file' => [Import::IMPORT_HISTORY_DIR . $this->destination, false],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

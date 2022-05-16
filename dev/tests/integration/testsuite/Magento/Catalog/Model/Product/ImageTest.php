@@ -6,25 +6,31 @@
 
 namespace Magento\Catalog\Model\Product;
 
+use Magento\Catalog\Model\View\Asset\Placeholder;
+use Magento\Framework\View\FileSystem;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+
 /**
  * Class \Magento\Catalog\Model\Products\ImageTest
  * @magentoAppArea frontend
  */
-class ImageTest extends \PHPUnit\Framework\TestCase
+class ImageTest extends TestCase
 {
     /**
-     * @return \Magento\Catalog\Model\Product\Image
+     * @return Image
      */
     public function testSetBaseFilePlaceholder()
     {
-        /** @var $model \Magento\Catalog\Model\Product\Image */
-        $model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\Product\Image::class
+        /** @var $model Image */
+        $model = Bootstrap::getObjectManager()->create(
+            Image::class
         );
-        /** @var \Magento\Catalog\Model\View\Asset\Placeholder $defaultPlaceholder */
-        $defaultPlaceholder = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
+        /** @var Placeholder $defaultPlaceholder */
+        $defaultPlaceholder = Bootstrap::getObjectManager()
             ->create(
-                \Magento\Catalog\Model\View\Asset\Placeholder::class,
+                Placeholder::class,
                 ['type' => 'image']
             );
 
@@ -35,7 +41,7 @@ class ImageTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @param \Magento\Catalog\Model\Product\Image $model
+     * @param Image $model
      * @depends testSetBaseFilePlaceholder
      */
     public function testSaveFilePlaceholder($model)
@@ -46,7 +52,7 @@ class ImageTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @param \Magento\Catalog\Model\Product\Image $model
+     * @param Image $model
      * @depends testSetBaseFilePlaceholder
      */
     public function testGetUrlPlaceholder($model)
@@ -62,16 +68,16 @@ class ImageTest extends \PHPUnit\Framework\TestCase
         $inputFile = 'watermark.png';
         $expectedFile = '/somewhere/watermark.png';
 
-        /** @var \Magento\Framework\View\FileSystem|\PHPUnit\Framework\MockObject\MockObject $viewFilesystem */
-        $viewFileSystem = $this->createMock(\Magento\Framework\View\FileSystem::class);
+        /** @var FileSystem|MockObject $viewFilesystem */
+        $viewFileSystem = $this->createMock(FileSystem::class);
         $viewFileSystem->expects($this->once())
             ->method('getStaticFileName')
             ->with($inputFile)
             ->willReturn($expectedFile);
 
-        /** @var $model \Magento\Catalog\Model\Product\Image */
-        $model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Catalog\Model\Product\Image::class, ['viewFileSystem' => $viewFileSystem]);
+        /** @var $model Image */
+        $model = Bootstrap::getObjectManager()
+            ->create(Image::class, ['viewFileSystem' => $viewFileSystem]);
         $processor = $this->createPartialMock(
             \Magento\Framework\Image::class,
             [

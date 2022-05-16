@@ -25,29 +25,6 @@ class ButtonTest extends TestCase
     private $layout;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->layout = $objectManager->get(LayoutInterface::class);
-    }
-
-    /**
-     * Create the block.
-     *
-     * @return Button
-     */
-    private function createBlock(): Button
-    {
-        /** @var Button $block */
-        $block = $this->layout->createBlock(Button::class, 'button_block');
-        $block->setLayout($this->layout);
-
-        return $block;
-    }
-
-    /**
      * Test resulting button HTML.
      *
      * @return void
@@ -76,8 +53,31 @@ class ButtonTest extends TestCase
         $this->assertStringContainsString('<span>A button control</span>', $html);
         $this->assertStringNotContainsString('onclick=', $html);
         $this->assertStringNotContainsString('style=', $html);
-        $this->assertMatchesRegularExpression('/\<script.*?\>.*?' .preg_quote($onclick) .'.*?\<\/script\>/ims', $html);
+        $this->assertMatchesRegularExpression('/\<script.*?\>.*?' . preg_quote($onclick) . '.*?\<\/script\>/ims', $html);
         $this->assertStringContainsString('height', $html);
         $this->assertStringContainsString('200px', $html);
+    }
+
+    /**
+     * Create the block.
+     *
+     * @return Button
+     */
+    private function createBlock(): Button
+    {
+        /** @var Button $block */
+        $block = $this->layout->createBlock(Button::class, 'button_block');
+        $block->setLayout($this->layout);
+
+        return $block;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->layout = $objectManager->get(LayoutInterface::class);
     }
 }

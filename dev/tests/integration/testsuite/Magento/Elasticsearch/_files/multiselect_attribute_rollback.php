@@ -4,9 +4,12 @@
  * See COPYING.txt for license details.
  */
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
 
-$registry = $objectManager->get(\Magento\Framework\Registry::class);
+$objectManager = Bootstrap::getObjectManager();
+
+$registry = $objectManager->get(Registry::class);
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 /** @var \Magento\Catalog\Model\ResourceModel\Eav\Attribute $attribute */

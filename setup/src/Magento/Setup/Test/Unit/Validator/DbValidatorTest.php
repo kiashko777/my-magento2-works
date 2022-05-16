@@ -10,8 +10,10 @@ namespace Magento\Setup\Test\Unit\Validator;
 use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Setup\Module\ConnectionFactory;
 use Magento\Setup\Validator\DbValidator;
+use PDO;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Zend_Db_Statement_Interface;
 
 class DbValidatorTest extends TestCase
 {
@@ -30,14 +32,6 @@ class DbValidatorTest extends TestCase
      */
     private $connection;
 
-    protected function setUp(): void
-    {
-        $this->connectionFactory = $this->createMock(ConnectionFactory::class);
-        $this->connection = $this->getMockForAbstractClass(AdapterInterface::class);
-        $this->connectionFactory->expects($this->any())->method('create')->willReturn($this->connection);
-        $this->dbValidator = new DbValidator($this->connectionFactory);
-    }
-
     public function testCheckDatabaseConnection()
     {
         $this->connection
@@ -45,7 +39,7 @@ class DbValidatorTest extends TestCase
             ->method('fetchOne')
             ->with('SELECT version()')
             ->willReturn('5.6.0-0ubuntu0.12.04.1');
-        $pdo = $this->getMockForAbstractClass(\Zend_Db_Statement_Interface::class, [], '', false);
+        $pdo = $this->getMockForAbstractClass(Zend_Db_Statement_Interface::class, [], '', false);
         $this->connection
             ->expects($this->atLeastOnce())
             ->method('query')
@@ -75,8 +69,8 @@ class DbValidatorTest extends TestCase
             ->method('fetchAll')
             ->willReturnMap(
                 [
-                    [\PDO::FETCH_COLUMN, 0, $accessibleDbs],
-                    [\PDO::FETCH_NUM, null, $listOfPrivileges]
+                    [PDO::FETCH_COLUMN, 0, $accessibleDbs],
+                    [PDO::FETCH_NUM, null, $listOfPrivileges]
                 ]
             );
         $this->assertTrue($this->dbValidator->checkDatabaseConnection('name', 'host', 'user', 'password'));
@@ -92,7 +86,7 @@ class DbValidatorTest extends TestCase
             ->method('fetchOne')
             ->with('SELECT version()')
             ->willReturn('5.6.0-0ubuntu0.12.04.1');
-        $pdo = $this->getMockForAbstractClass(\Zend_Db_Statement_Interface::class, [], '', false);
+        $pdo = $this->getMockForAbstractClass(Zend_Db_Statement_Interface::class, [], '', false);
         $this->connection
             ->expects($this->atLeastOnce())
             ->method('query')
@@ -104,8 +98,8 @@ class DbValidatorTest extends TestCase
             ->method('fetchAll')
             ->willReturnMap(
                 [
-                    [\PDO::FETCH_COLUMN, 0, $accessibleDbs],
-                    [\PDO::FETCH_NUM, null, $listOfPrivileges]
+                    [PDO::FETCH_COLUMN, 0, $accessibleDbs],
+                    [PDO::FETCH_NUM, null, $listOfPrivileges]
                 ]
             );
         $this->dbValidator->checkDatabaseConnection('name', 'host', 'user', 'password');
@@ -122,7 +116,7 @@ class DbValidatorTest extends TestCase
             ->method('fetchOne')
             ->with('SELECT version()')
             ->willReturn('5.6.0-0ubuntu0.12.04.1');
-        $pdo = $this->getMockForAbstractClass(\Zend_Db_Statement_Interface::class, [], '', false);
+        $pdo = $this->getMockForAbstractClass(Zend_Db_Statement_Interface::class, [], '', false);
         $this->connection
             ->expects($this->atLeastOnce())
             ->method('query')
@@ -176,5 +170,13 @@ class DbValidatorTest extends TestCase
             ->with('SELECT version()')
             ->willReturn('5.5.40-0ubuntu0.12.04.1');
         $this->dbValidator->checkDatabaseConnection('name', 'host', 'user', 'password');
+    }
+
+    protected function setUp(): void
+    {
+        $this->connectionFactory = $this->createMock(ConnectionFactory::class);
+        $this->connection = $this->getMockForAbstractClass(AdapterInterface::class);
+        $this->connectionFactory->expects($this->any())->method('create')->willReturn($this->connection);
+        $this->dbValidator = new DbValidator($this->connectionFactory);
     }
 }

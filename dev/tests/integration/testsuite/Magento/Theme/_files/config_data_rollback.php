@@ -4,9 +4,12 @@
  * See COPYING.txt for license details.
  */
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-/** @var \Magento\Framework\App\ResourceConnection $resource */
-$resource = $objectManager->get(\Magento\Framework\App\ResourceConnection::class);
+use Magento\Framework\App\ResourceConnection;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
+/** @var ResourceConnection $resource */
+$resource = $objectManager->get(ResourceConnection::class);
 $connection = $resource->getConnection();
 $tableName = $resource->getTableName('core_config_data');
 

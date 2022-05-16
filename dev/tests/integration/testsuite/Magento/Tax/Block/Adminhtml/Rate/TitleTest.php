@@ -3,28 +3,28 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Tax\Block\Adminhtml\Rate;
 
+use Magento\Framework\Registry;
+use Magento\Store\Model\Store;
 use Magento\Tax\Controller\RegistryConstants;
 use Magento\Tax\Model\Calculation\Rate;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
-class TitleTest extends \PHPUnit\Framework\TestCase
+class TitleTest extends TestCase
 {
     /**
-     * @var \Magento\Tax\Block\Adminhtml\Rate\Title
+     * @var Title
      */
     protected $_block;
 
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     protected $_objectManager;
-
-    protected function setUp(): void
-    {
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
-        $this->_objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoDataFixture Magento/Store/_files/store.php
@@ -32,21 +32,21 @@ class TitleTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetTitles()
     {
-        /** @var \Magento\Tax\Model\Calculation\Rate $rate */
-        $rate = $this->_objectManager->create(\Magento\Tax\Model\Calculation\Rate::class);
+        /** @var Rate $rate */
+        $rate = $this->_objectManager->create(Rate::class);
         $rate->load(1);
-        /** @var \Magento\Store\Model\Store $store */
-        $store = $this->_objectManager->get(\Magento\Store\Model\Store::class);
+        /** @var Store $store */
+        $store = $this->_objectManager->get(Store::class);
         $store->load('test', 'code');
         $title = 'title';
         $rate->saveTitles([$store->getId() => $title]);
 
-        $coreRegistry = $this->_objectManager->create(\Magento\Framework\Registry::class);
+        $coreRegistry = $this->_objectManager->create(Registry::class);
         $coreRegistry->register(RegistryConstants::CURRENT_TAX_RATE_ID, 1);
 
-        /** @var \Magento\Tax\Block\Adminhtml\Rate\Title $block */
-        $block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Tax\Block\Adminhtml\Rate\Title::class,
+        /** @var Title $block */
+        $block = Bootstrap::getObjectManager()->create(
+            Title::class,
             [
                 'coreRegistry' => $coreRegistry,
             ]
@@ -54,5 +54,11 @@ class TitleTest extends \PHPUnit\Framework\TestCase
         $titles = $block->getTitles();
         $this->assertArrayHasKey($store->getId(), $titles, 'Store was not created');
         $this->assertEquals($title, $titles[$store->getId()], 'Invalid Tax Title');
+    }
+
+    protected function setUp(): void
+    {
+        /** @var $objectManager ObjectManager */
+        $this->_objectManager = Bootstrap::getObjectManager();
     }
 }

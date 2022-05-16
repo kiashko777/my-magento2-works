@@ -9,6 +9,7 @@ namespace Magento\Test\Workaround\Override\Fixture\Applier;
 
 use Magento\TestFramework\Workaround\Override\Fixture\Applier\DataFixture;
 use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 
 /**
  * Provide tests for \Magento\TestFramework\Workaround\Override\Fixture\Applier\DataFixture
@@ -19,22 +20,12 @@ class DataFixtureTest extends TestCase
     private $object;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->object = new DataFixture();
-    }
-
-    /**
      * @return void
      */
     public function testGetPrioritizedConfig(): void
     {
         $this->object = $this->getMockBuilder(DataFixture::class)
-            ->setMethods(['getGlobalConfig','getClassConfig', 'getMethodConfig', 'getDataSetConfig'])
+            ->setMethods(['getGlobalConfig', 'getClassConfig', 'getMethodConfig', 'getDataSetConfig'])
             ->getMock();
         $this->object->expects($this->once())
             ->method('getGlobalConfig')
@@ -54,7 +45,7 @@ class DataFixtureTest extends TestCase
             ['method_config'],
             ['data_set_config'],
         ];
-        $reflectionMethod = new \ReflectionMethod(DataFixture::class, 'getPrioritizedConfig');
+        $reflectionMethod = new ReflectionMethod(DataFixture::class, 'getPrioritizedConfig');
         $reflectionMethod->setAccessible(true);
         $this->assertEquals($expectedResult, $reflectionMethod->invoke($this->object));
     }
@@ -71,6 +62,35 @@ class DataFixtureTest extends TestCase
     {
         $fixtures = $this->processApply($existingFixtures, $config);
         $this->assertEquals($expectedOrder, $fixtures);
+    }
+
+    /**
+     * Process apply configurations
+     *
+     * @param array $existingFixtures
+     * @param array $config
+     * @return array
+     */
+    private function processApply(array $existingFixtures, array $config): array
+    {
+        $this->setConfig($config);
+        $fixtures = $this->object->apply($existingFixtures);
+
+        return array_values($fixtures);
+    }
+
+    /**
+     * Set config to method scope
+     *
+     * @param array $config
+     * @return void
+     */
+    private function setConfig(array $config): void
+    {
+        $this->object->setGlobalConfig([]);
+        $this->object->setClassConfig([]);
+        $this->object->setDataSetConfig([]);
+        $this->object->setMethodConfig($config);
     }
 
     /**
@@ -253,31 +273,12 @@ class DataFixtureTest extends TestCase
     }
 
     /**
-     * Process apply configurations
-     *
-     * @param array $existingFixtures
-     * @param array $config
-     * @return array
+     * @inheritdoc
      */
-    private function processApply(array $existingFixtures, array $config): array
+    protected function setUp(): void
     {
-        $this->setConfig($config);
-        $fixtures = $this->object->apply($existingFixtures);
+        parent::setUp();
 
-        return array_values($fixtures);
-    }
-
-    /**
-     * Set config to method scope
-     *
-     * @param array $config
-     * @return void
-     */
-    private function setConfig(array $config): void
-    {
-        $this->object->setGlobalConfig([]);
-        $this->object->setClassConfig([]);
-        $this->object->setDataSetConfig([]);
-        $this->object->setMethodConfig($config);
+        $this->object = new DataFixture();
     }
 }

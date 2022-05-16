@@ -10,11 +10,12 @@ namespace Magento\Sales\Block\Adminhtml;
 use Magento\Framework\View\LayoutInterface;
 use Magento\Sales\Model\Order;
 use Magento\Sales\Model\OrderFactory;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * Test class for \Magento\Sales\Block\Adminhtml\Totals
  */
-class TotalsTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class TotalsTest extends AbstractBackendController
 {
     /** @var LayoutInterface */
     private $layout;
@@ -24,17 +25,6 @@ class TotalsTest extends \Magento\TestFramework\TestCase\AbstractBackendControll
 
     /** @var OrderFactory */
     private $orderFactory;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->layout = $this->_objectManager->get(LayoutInterface::class);
-        $this->block = $this->layout->createBlock(Totals::class, 'totals_block');
-        $this->orderFactory = $this->_objectManager->get(OrderFactory::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Sales/_files/order_with_free_shipping_by_coupon.php
@@ -55,5 +45,16 @@ class TotalsTest extends \Magento\TestFramework\TestCase\AbstractBackendControll
             $shippingTotal->getLabel(),
             'Coupon code is absent in the shipping method label name.'
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->layout = $this->_objectManager->get(LayoutInterface::class);
+        $this->block = $this->layout->createBlock(Totals::class, 'totals_block');
+        $this->orderFactory = $this->_objectManager->get(OrderFactory::class);
     }
 }

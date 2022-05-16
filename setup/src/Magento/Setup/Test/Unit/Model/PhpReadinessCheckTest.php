@@ -9,6 +9,7 @@ namespace Magento\Setup\Test\Unit\Model;
 
 use Composer\Package\Version\VersionParser;
 use Composer\Semver\Constraint\ConstraintInterface;
+use Exception;
 use Magento\Framework\Composer\ComposerInformation;
 use Magento\Framework\Convert\DataSize;
 use Magento\Setup\Controller\ResponseTypeInterface;
@@ -16,55 +17,38 @@ use Magento\Setup\Model\PhpInformation;
 use Magento\Setup\Model\PhpReadinessCheck;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use UnexpectedValueException;
 
 class PhpReadinessCheckTest extends TestCase
 {
-    /**
-     * @var MockObject|ComposerInformation
-     */
-    private $composerInfo;
-
-    /**
-     * @var MockObject|PhpInformation
-     */
-    private $phpInfo;
-
-    /**
-     * @var MockObject|VersionParser
-     */
-    private $versionParser;
-
     /**
      * Data size converter
      *
      * @var DataSize|MockObject
      */
     protected $dataSize;
-
+    /**
+     * @var MockObject|ComposerInformation
+     */
+    private $composerInfo;
+    /**
+     * @var MockObject|PhpInformation
+     */
+    private $phpInfo;
+    /**
+     * @var MockObject|VersionParser
+     */
+    private $versionParser;
     /**
      * @var PhpReadinessCheck
      */
     private $phpReadinessCheck;
 
-    protected function setUp(): void
-    {
-        $this->composerInfo = $this->createMock(ComposerInformation::class);
-        $this->phpInfo = $this->createMock(PhpInformation::class);
-        $this->versionParser = $this->createMock(VersionParser::class);
-        $this->dataSize = $this->createMock(DataSize::class);
-        $this->phpReadinessCheck = new PhpReadinessCheck(
-            $this->composerInfo,
-            $this->phpInfo,
-            $this->versionParser,
-            $this->dataSize
-        );
-    }
-
     public function testCheckPhpVersionNoRequiredVersion()
     {
         $this->composerInfo->expects($this->once())
             ->method('getRequiredPhpVersion')
-            ->willThrowException(new \Exception());
+            ->willThrowException(new Exception());
         $expected = [
             'responseType' => ResponseTypeInterface::RESPONSE_TYPE_ERROR,
             'data' => [
@@ -87,7 +71,7 @@ class PhpReadinessCheckTest extends TestCase
         $this->versionParser->expects($this->at(0))->method('parseConstraints')->willReturn($multipleConstraints);
         $this->versionParser->expects($this->at(1))
             ->method('normalize')
-            ->willThrowException(new \UnexpectedValueException());
+            ->willThrowException(new UnexpectedValueException());
         $this->versionParser->expects($this->at(2))->method('normalize')->willReturn('1.0');
         $currentPhpVersion = $this->getMockForAbstractClass(
             ConstraintInterface::class,
@@ -119,7 +103,7 @@ class PhpReadinessCheckTest extends TestCase
         $this->versionParser->expects($this->at(0))->method('parseConstraints')->willReturn($multipleConstraints);
         $this->versionParser->expects($this->at(1))
             ->method('normalize')
-            ->willThrowException(new \UnexpectedValueException());
+            ->willThrowException(new UnexpectedValueException());
         $this->versionParser->expects($this->at(2))->method('normalize')->willReturn('1.0');
         $currentPhpVersion = $this->getMockForAbstractClass(
             ConstraintInterface::class,
@@ -131,6 +115,21 @@ class PhpReadinessCheckTest extends TestCase
         $multipleConstraints->expects($this->once())->method('matches')->willReturn(false);
         $expected = [
             'responseType' => ResponseTypeInterface::RESPONSE_TYPE_ERROR,
+            'data' => [
+                'required' => 1.0,
+                'current' => PHP_VERSION,
+            ],
+        ];
+        $this->assertEquals($expected, $this->phpReadinessCheck->checkPhpVersion());
+    }
+
+    public function testCheckPhpVersion()
+    {
+        $this->composerInfo->expects($this->once())->method('getRequiredPhpVersion')->willReturn('1.0');
+
+        $this->setUpNoPrettyVersionParser();
+        $expected = [
+            'responseType' => ResponseTypeInterface::RESPONSE_TYPE_SUCCESS,
             'data' => [
                 'required' => 1.0,
                 'current' => PHP_VERSION,
@@ -157,21 +156,6 @@ class PhpReadinessCheckTest extends TestCase
         );
         $this->versionParser->expects($this->at(2))->method('parseConstraints')->willReturn($currentPhpVersion);
         $multipleConstraints->expects($this->once())->method('matches')->willReturn(true);
-    }
-
-    public function testCheckPhpVersion()
-    {
-        $this->composerInfo->expects($this->once())->method('getRequiredPhpVersion')->willReturn('1.0');
-
-        $this->setUpNoPrettyVersionParser();
-        $expected = [
-            'responseType' => ResponseTypeInterface::RESPONSE_TYPE_SUCCESS,
-            'data' => [
-                'required' => 1.0,
-                'current' => PHP_VERSION,
-            ],
-        ];
-        $this->assertEquals($expected, $this->phpReadinessCheck->checkPhpVersion());
     }
 
     public function testCheckPhpVersionFailed()
@@ -246,6 +230,14 @@ class PhpReadinessCheckTest extends TestCase
             ];
         }
         $this->assertEquals($expected, $this->phpReadinessCheck->checkPhpSettings());
+    }
+
+    /**
+     * @return bool
+     */
+    protected function isPhp7OrHhvm()
+    {
+        return version_compare(PHP_VERSION, '7.0.0-beta') >= 0 || defined('HHVM_VERSION');
     }
 
     public function testCheckPhpSettingsFailed()
@@ -341,7 +333,7 @@ class PhpReadinessCheckTest extends TestCase
         );
 
         $rawPostMessage =
-                'Your current PHP memory limit is 512M.
+            'Your current PHP memory limit is 512M.
                  Magento 2 requires it to be set to 756M or more.
                  As a user with root privileges, edit your php.ini file to increase memory_limit.
                  (The command php --ini tells you where it is located.)
@@ -360,7 +352,7 @@ class PhpReadinessCheckTest extends TestCase
     {
         $this->composerInfo->expects($this->once())
             ->method('getRequiredExtensions')
-            ->willThrowException(new \Exception());
+            ->willThrowException(new Exception());
         $expected = [
             'responseType' => ResponseTypeInterface::RESPONSE_TYPE_ERROR,
             'data' => [
@@ -407,12 +399,18 @@ class PhpReadinessCheckTest extends TestCase
         $this->assertEquals($expected, $this->phpReadinessCheck->checkPhpExtensions());
     }
 
-    /**
-     * @return bool
-     */
-    protected function isPhp7OrHhvm()
+    protected function setUp(): void
     {
-        return version_compare(PHP_VERSION, '7.0.0-beta') >= 0 || defined('HHVM_VERSION');
+        $this->composerInfo = $this->createMock(ComposerInformation::class);
+        $this->phpInfo = $this->createMock(PhpInformation::class);
+        $this->versionParser = $this->createMock(VersionParser::class);
+        $this->dataSize = $this->createMock(DataSize::class);
+        $this->phpReadinessCheck = new PhpReadinessCheck(
+            $this->composerInfo,
+            $this->phpInfo,
+            $this->versionParser,
+            $this->dataSize
+        );
     }
 }
 

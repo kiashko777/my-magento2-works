@@ -34,16 +34,6 @@ class DescriptionParagraphGeneratorTest extends TestCase
         ]
     ];
 
-    protected function setUp(): void
-    {
-        $this->sentenceGeneratorMock =
-            $this->createMock(DescriptionSentenceGenerator::class);
-        $this->paragraphGenerator = new DescriptionParagraphGenerator(
-            $this->sentenceGeneratorMock,
-            $this->paragraphConfig
-        );
-    }
-
     public function testParagraphGeneration()
     {
         // @codingStandardsIgnoreStart
@@ -68,6 +58,16 @@ class DescriptionParagraphGeneratorTest extends TestCase
         $this->assertEquals(
             implode(' ', $consecutiveSentences),
             $this->paragraphGenerator->generate()
+        );
+    }
+
+    protected function setUp(): void
+    {
+        $this->sentenceGeneratorMock =
+            $this->createMock(DescriptionSentenceGenerator::class);
+        $this->paragraphGenerator = new DescriptionParagraphGenerator(
+            $this->sentenceGeneratorMock,
+            $this->paragraphConfig
         );
     }
 }

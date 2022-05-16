@@ -112,6 +112,28 @@ class ModuleStatusCommand extends AbstractSetupCommand
     }
 
     /**
+     * Returns all modules
+     *
+     * @return FullModuleList
+     */
+    private function getAllModules(): FullModuleList
+    {
+        return $this->objectManagerProvider->get()
+            ->create(FullModuleList::class);
+    }
+
+    /**
+     * Returns enabled modules
+     *
+     * @return ModuleList
+     */
+    private function getEnabledModules(): ModuleList
+    {
+        return $this->objectManagerProvider->get()
+            ->create(ModuleList::class);
+    }
+
+    /**
      * Enable modules show
      *
      * @param OutputInterface $output
@@ -148,28 +170,6 @@ class ModuleStatusCommand extends AbstractSetupCommand
         $output->writeln(join("\n", $disabledModuleNames));
 
         return Cli::RETURN_SUCCESS;
-    }
-
-    /**
-     * Returns all modules
-     *
-     * @return FullModuleList
-     */
-    private function getAllModules(): FullModuleList
-    {
-        return $this->objectManagerProvider->get()
-            ->create(FullModuleList::class);
-    }
-
-    /**
-     * Returns enabled modules
-     *
-     * @return ModuleList
-     */
-    private function getEnabledModules(): ModuleList
-    {
-        return $this->objectManagerProvider->get()
-            ->create(ModuleList::class);
     }
 
     /**

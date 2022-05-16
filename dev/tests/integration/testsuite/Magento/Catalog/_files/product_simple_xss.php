@@ -4,16 +4,26 @@
  * See COPYING.txt for license details.
  */
 
-/** @var \Magento\TestFramework\ObjectManager $objectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+/** @var ObjectManager $objectManager */
 
-$objectManager->removeSharedInstance(\Magento\Catalog\Model\ProductRepository::class);
-$objectManager->removeSharedInstance(\Magento\Catalog\Model\CategoryLinkRepository::class);
+use Magento\Catalog\Api\CategoryLinkManagementInterface;
+use Magento\Catalog\Model\CategoryLinkRepository;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Catalog\Model\ProductRepository;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 
-/** @var \Magento\Catalog\Api\CategoryLinkManagementInterface $categoryLinkManagement */
-$categoryLinkManagement = $objectManager->create(\Magento\Catalog\Api\CategoryLinkManagementInterface::class);
+$objectManager = Bootstrap::getObjectManager();
 
-$product = $objectManager->create(\Magento\Catalog\Model\Product::class);
+$objectManager->removeSharedInstance(ProductRepository::class);
+$objectManager->removeSharedInstance(CategoryLinkRepository::class);
+
+/** @var CategoryLinkManagementInterface $categoryLinkManagement */
+$categoryLinkManagement = $objectManager->create(CategoryLinkManagementInterface::class);
+
+$product = $objectManager->create(Product::class);
 
 $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setAttributeSetId(4)
@@ -22,8 +32,8 @@ $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setSku('product-with-xss')
     ->setPrice(10)
     ->setDescription('Description with <b>html tag</b>')
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setStockData(['use_config_manage_stock' => 1, 'qty' => 100, 'is_qty_decimal' => 0, 'is_in_stock' => 1])
     ->save();
 

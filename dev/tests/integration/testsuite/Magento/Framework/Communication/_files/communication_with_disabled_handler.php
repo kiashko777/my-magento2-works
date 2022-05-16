@@ -4,18 +4,21 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Api\Data\CustomerInterface;
+
 return [
     'communication' => [
         'topics' => [
             'customerAdded' => [
                 'name' => 'customerAdded',
                 'is_synchronous' => false,
-                'request' => \Magento\Customer\Api\Data\CustomerInterface::class,
+                'request' => CustomerInterface::class,
                 'request_type' => 'object_interface',
                 'response' => null,
                 'handlers' => [
                     'customerCreatedFirst' => [
-                        'type' => \Magento\Customer\Api\CustomerRepositoryInterface::class,
+                        'type' => CustomerRepositoryInterface::class,
                         'method' => 'save',
                         'disabled' => false
                     ],
@@ -24,12 +27,12 @@ return [
             'customerCreated' => [
                 'name' => 'customerCreated',
                 'is_synchronous' => false,
-                'request' => \Magento\Customer\Api\Data\CustomerInterface::class,
+                'request' => CustomerInterface::class,
                 'request_type' => 'object_interface',
                 'response' => null,
                 'handlers' => [
                     'default' => [
-                        'type' => \Magento\Customer\Api\CustomerRepositoryInterface::class,
+                        'type' => CustomerRepositoryInterface::class,
                         'method' => 'save',
                         'disabled' => true
                     ],

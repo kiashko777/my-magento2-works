@@ -4,14 +4,19 @@
  * See COPYING.txt for license details.
  */
 
-/** @var \Magento\Framework\Registry $registry */
-$registry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
+/** @var Registry $registry */
+
+use Magento\Customer\Model\Address;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$registry = Bootstrap::getObjectManager()->get(Registry::class);
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
-/** @var \Magento\Customer\Model\Address $customerAddress */
-$customerAddress = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->create(\Magento\Customer\Model\Address::class);
+/** @var Address $customerAddress */
+$customerAddress = Bootstrap::getObjectManager()
+    ->create(Address::class);
 $customerAddress->load(1);
 if ($customerAddress->getId()) {
     $customerAddress->delete();

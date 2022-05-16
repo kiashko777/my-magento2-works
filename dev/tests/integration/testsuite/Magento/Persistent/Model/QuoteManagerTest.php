@@ -7,8 +7,8 @@ declare(strict_types=1);
 
 namespace Magento\Persistent\Model;
 
-use Magento\Customer\Api\Data\GroupInterface;
 use Magento\Checkout\Model\Session as CheckoutSession;
+use Magento\Customer\Api\Data\GroupInterface;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Persistent\Helper\Session as PersistentSessionHelper;
 use Magento\Quote\Api\CartRepositoryInterface;
@@ -62,20 +62,6 @@ class QuoteManagerTest extends TestCase
     }
 
     /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->checkoutSession->clearQuote();
-        $this->checkoutSession->setCustomerData(null);
-        if ($this->quote instanceof CartInterface) {
-            $this->quoteRepository->delete($this->quote);
-        }
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Persistent/_files/persistent_with_customer_quote_and_cookie.php
      * @magentoConfigFixture current_store persistent/options/enabled 1
      * @magentoConfigFixture current_store persistent/options/shopping_cart 1
@@ -112,5 +98,19 @@ class QuoteManagerTest extends TestCase
         $this->checkoutSession->setQuoteId($quote->getId());
         $this->model->setGuest(true);
         $this->assertNull($this->checkoutSession->getQuote()->getId());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->checkoutSession->clearQuote();
+        $this->checkoutSession->setCustomerData(null);
+        if ($this->quote instanceof CartInterface) {
+            $this->quoteRepository->delete($this->quote);
+        }
+
+        parent::tearDown();
     }
 }

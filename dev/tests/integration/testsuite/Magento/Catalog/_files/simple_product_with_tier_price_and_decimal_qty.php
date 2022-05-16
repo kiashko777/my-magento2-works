@@ -5,9 +5,10 @@
  */
 declare(strict_types=1);
 
-use Magento\Catalog\Api\Data\ProductTierPriceInterfaceFactory;
 use Magento\Catalog\Api\Data\ProductTierPriceExtensionFactory;
+use Magento\Catalog\Api\Data\ProductTierPriceInterfaceFactory;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Customer\Model\Group;
 use Magento\Store\Api\WebsiteRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
@@ -30,7 +31,7 @@ $tierPriceExtensionAttributes = $tierPriceExtensionAttributesFactory->create()->
 $tierPrices[] = $tierPriceFactory->create(
     [
         'data' => [
-            'customer_group_id' => \Magento\Customer\Model\Group::CUST_GROUP_ALL,
+            'customer_group_id' => Group::CUST_GROUP_ALL,
             'qty' => 0.5,
             'value' => 2.99
         ]

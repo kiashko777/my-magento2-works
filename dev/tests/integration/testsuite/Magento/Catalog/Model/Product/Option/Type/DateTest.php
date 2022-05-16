@@ -8,11 +8,15 @@ namespace Magento\Catalog\Model\Product\Option\Type;
 
 use Magento\Catalog\Model\Product\Option;
 use Magento\Framework\DataObject;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Quote\Model\Quote\Item;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for customizable product option with "Date" type
  */
-class DateTest extends \PHPUnit\Framework\TestCase
+class DateTest extends TestCase
 {
     /**
      * @var Date
@@ -20,20 +24,9 @@ class DateTest extends \PHPUnit\Framework\TestCase
     protected $model;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    /**
-     * {@inheritDoc}
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->model = $this->objectManager->create(
-            Date::class
-        );
-    }
 
     /**
      * Check if option value for request is the same as expected
@@ -49,14 +42,15 @@ class DateTest extends \PHPUnit\Framework\TestCase
         array $infoBuyRequest,
         array $productOptionData,
         array $expectedOptionValueForRequest
-    ) {
+    )
+    {
         /** @var \Magento\Quote\Model\Quote\Item\Option $option */
         $option = $this->objectManager->create(
             \Magento\Quote\Model\Quote\Item\Option::class,
             ['data' => $infoBuyRequest]
         );
-        /** @var \Magento\Quote\Model\Quote\Item $item */
-        $item = $this->objectManager->create(\Magento\Quote\Model\Quote\Item::class);
+        /** @var Item $item */
+        $item = $this->objectManager->create(Item::class);
         $item->addOption($option);
         /** @var Option|null $productOption */
         $productOption = $productOptionData
@@ -128,11 +122,12 @@ class DateTest extends \PHPUnit\Framework\TestCase
      * @magentoConfigFixture current_store general/locale/timezone Asia/Singapore
      */
     public function testPrepareForCart(
-        array $dateData,
-        array $productOptionData,
-        array $requestData,
+        array  $dateData,
+        array  $productOptionData,
+        array  $requestData,
         string $expectedOptionValueForRequest
-    ) {
+    )
+    {
         $this->model->setData($dateData);
         /** @var Option|null $productOption */
         $productOption = $productOptionData
@@ -186,5 +181,16 @@ class DateTest extends \PHPUnit\Framework\TestCase
                 '2019-09-30 00:00:00'
             ]
         ];
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->model = $this->objectManager->create(
+            Date::class
+        );
     }
 }

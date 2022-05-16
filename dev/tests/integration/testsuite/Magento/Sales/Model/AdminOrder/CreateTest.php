@@ -3,15 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Model\AdminOrder;
 
+use Exception;
 use Magento\Backend\Model\Session\Quote as SessionQuote;
+use Magento\Catalog\Model\Product;
 use Magento\Customer\Api\AddressRepositoryInterface;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Model\Customer;
 use Magento\Customer\Model\CustomerRegistry;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Message\Error;
 use Magento\Framework\Message\ManagerInterface;
 use Magento\Framework\Registry;
+use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Quote\Model\Quote;
 use Magento\Sales\Api\Data\OrderAddressExtensionInterface;
 use Magento\Sales\Api\Data\OrderAddressExtensionInterfaceFactory;
@@ -19,13 +25,15 @@ use Magento\Sales\Api\OrderManagementInterface;
 use Magento\Sales\Model\Order;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
+use Magento\Wishlist\Model\Wishlist;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @magentoAppArea Adminhtml
  * @magentoAppIsolation enabled
  */
-class CreateTest extends \PHPUnit\Framework\TestCase
+class CreateTest extends TestCase
 {
     /**
      * @var Create
@@ -41,13 +49,6 @@ class CreateTest extends \PHPUnit\Framework\TestCase
      * @var ObjectManager
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->messageManager = $this->objectManager->get(ManagerInterface::class);
-        $this->model =$this->objectManager->create(Create::class, ['messageManager' => $this->messageManager]);
-    }
 
     /**
      * @magentoDataFixture Magento/Downloadable/_files/product_downloadable.php
@@ -76,14 +77,14 @@ class CreateTest extends \PHPUnit\Framework\TestCase
      */
     public function testInitFromOrderAndCreateOrderFromQuoteWithAdditionalOptions()
     {
-        /** @var $serializer \Magento\Framework\Serialize\Serializer\Json */
-        $serializer = $this->objectManager->create(\Magento\Framework\Serialize\Serializer\Json::class);
+        /** @var $serializer Json */
+        $serializer = $this->objectManager->create(Json::class);
 
         /** @var $order Order */
         $order = $this->objectManager->create(Order::class);
         $order->loadByIncrementId('100000001');
 
-        /** @var $orderCreate \Magento\Sales\Model\AdminOrder\Create */
+        /** @var $orderCreate Create */
         $orderCreate = $this->model->initFromOrder($order);
 
         $quoteItems = $orderCreate->getQuote()->getItemsCollection();
@@ -260,10 +261,10 @@ class CreateTest extends \PHPUnit\Framework\TestCase
         $session->setCustomerId($customerIdFromFixture);
 
         /** Test new wishlist creation for the customer specified above */
-        /** @var \Magento\Wishlist\Model\Wishlist $wishlist */
+        /** @var Wishlist $wishlist */
         $wishlist = $this->model->getCustomerWishlist(true);
         self::assertInstanceOf(
-            \Magento\Wishlist\Model\Wishlist::class,
+            Wishlist::class,
             $wishlist,
             'New Wish List is expected to be created if existing Customer does not have one yet.'
         );
@@ -326,6 +327,34 @@ class CreateTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Get valid address data for address creation.
+     *
+     * @return array
+     */
+    private function getValidAddressData()
+    {
+        return [
+            'prefix' => 'prefix',
+            'firstname' => 'FirstName',
+            'middlename' => 'MiddleName',
+            'lastname' => 'LastName',
+            'suffix' => 'suffix',
+            'company' => 'Company Name',
+            'street' => [0 => 'Line1', 1 => 'Line2'],
+            'city' => 'City',
+            'country_id' => 'US',
+            'region' => [
+                'region' => '',
+                'region_id' => '1',
+            ],
+            'postcode' => '76868',
+            'telephone' => '+8709273498729384',
+            'fax' => '',
+            'vat_id' => ''
+        ];
+    }
+
+    /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
      * @magentoDbIsolation disabled
      */
@@ -345,11 +374,11 @@ class CreateTest extends \PHPUnit\Framework\TestCase
         try {
             $this->model->createOrder();
             $this->fail('Validation errors are expected to lead to exception during createOrder() call.');
-        } catch (\Magento\Framework\Exception\LocalizedException $e) {
+        } catch (LocalizedException $e) {
             /** createOrder is expected to throw exception with empty message when validation error occurs */
         }
         $errorMessages = [];
-        /** @var $validationError \Magento\Framework\Message\Error */
+        /** @var $validationError Error */
         foreach ($this->messageManager->getMessages()->getItems() as $validationError) {
             $errorMessages[] = $validationError->getText();
         }
@@ -411,6 +440,124 @@ class CreateTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Prepare preconditions for createOrder method invocation.
+     *
+     * @param int $productIdFromFixture
+     * @param string $customerEmail
+     * @param string $shippingMethod
+     * @param int $shippingAddressAsBilling
+     * @param array $paymentData
+     * @param array $orderData
+     * @param string $paymentMethod
+     * @param int|null $customerIdFromFixture
+     */
+    private function preparePreconditionsForCreateOrder(
+        $productIdFromFixture,
+        $customerEmail,
+        $shippingMethod,
+        $shippingAddressAsBilling,
+        $paymentData,
+        $orderData,
+        $paymentMethod,
+        $customerIdFromFixture = null
+    )
+    {
+        /** Disable product options */
+        /** @var Product $product */
+        $product = $this->objectManager->create(Product::class);
+        $product->load($productIdFromFixture)->setHasOptions(false)->save();
+
+        /** Set current customer */
+        /** @var SessionQuote $session */
+        $session = $this->objectManager->get(SessionQuote::class);
+        if ($customerIdFromFixture !== null) {
+            $session->setCustomerId($customerIdFromFixture);
+
+            /** Unset fake IDs for default billing and shipping customer addresses */
+            /** @var Customer $customer */
+            $customer = $this->objectManager->create(Customer::class);
+            $customer->load($customerIdFromFixture)->setDefaultBilling(null)->setDefaultShipping(null)->save();
+        } else {
+            /**
+             * Customer ID must be set to session to pass \Magento\Sales\Model\AdminOrder\Create::_validate()
+             * This code emulates order placement via admin panel.
+             */
+            $session->setCustomerId(0);
+        }
+
+        /** Emulate availability of shipping method (all are disabled by default) */
+        /** @var $rate Quote\Address\Rate */
+        $rate = $this->objectManager->create(Quote\Address\Rate::class);
+        $rate->setCode($shippingMethod);
+        $this->model->getQuote()->getShippingAddress()->addShippingRate($rate);
+
+        $this->model->setShippingAsBilling($shippingAddressAsBilling);
+        $this->model->addProduct($productIdFromFixture, ['qty' => 1]);
+        $this->model->setPaymentData($paymentData);
+        $this->model->setIsValidate(true)->importPostData($orderData);
+
+        /** Check preconditions */
+
+        self::assertEquals(
+            0,
+            $this->messageManager->getMessages()->getCount(),
+            "Precondition failed: Errors occurred before SUT execution."
+        );
+        /** Selectively check quote data */
+        $createOrderData = $this->model->getData();
+        self::assertEquals(
+            $shippingMethod,
+            $createOrderData['shipping_method'],
+            'Precondition failed: Shipping method specified in create order model is invalid'
+        );
+        self::assertEquals(
+            'FirstName',
+            $createOrderData['billing_address']['firstname'],
+            'Precondition failed: Address data is invalid in create order model'
+        );
+        self::assertEquals(
+            'Simple Products',
+            $this->model->getQuote()->getItemByProduct($product)->getData('name'),
+            'Precondition failed: Quote items data is invalid in create order model'
+        );
+        self::assertEquals(
+            $customerEmail,
+            $this->model->getQuote()->getCustomer()->getEmail(),
+            'Precondition failed: Customer data is invalid in create order model'
+        );
+        self::assertEquals(
+            $paymentMethod,
+            $this->model->getQuote()->getPayment()->getData('method'),
+            'Precondition failed: Payment method data is invalid in create order model'
+        );
+    }
+
+    /**
+     * Ensure that order is created correctly via createOrder().
+     *
+     * @param Order $order
+     * @param string $shippingMethod
+     */
+    private function verifyCreatedOrder($order, $shippingMethod)
+    {
+        /** Selectively check order data */
+        $orderData = $order->getData();
+        self::assertNotEmpty($orderData['increment_id'], 'Order increment ID is empty.');
+        self::assertEquals($this->model->getQuote()->getId(), $orderData['quote_id'], 'Quote ID is invalid.');
+        self::assertEquals(
+            $this->model->getQuote()->getCustomer()->getEmail(),
+            $orderData['customer_email'],
+            'Customer email is invalid.'
+        );
+        self::assertEquals(
+            $this->model->getQuote()->getCustomer()->getFirstname(),
+            $orderData['customer_firstname'],
+            'Customer first name is invalid.'
+        );
+        self::assertEquals($shippingMethod, $orderData['shipping_method'], 'Shipping method is invalid.');
+    }
+
+    /**
      * @magentoDataFixture Magento/Catalog/_files/product_simple_with_decimal_qty.php
      * @magentoDbIsolation disabled
      * @magentoAppIsolation enabled
@@ -462,7 +609,8 @@ class CreateTest extends \PHPUnit\Framework\TestCase
     public function testCreateOrderNewCustomerWithFailedFirstPlaceOrderAction(
         $customerEmailFirstAttempt,
         $customerEmailSecondAttempt
-    ) {
+    )
+    {
         $productIdFromFixture = 1;
         $shippingMethod = 'freeshipping_freeshipping';
         $paymentMethod = 'checkmo';
@@ -491,15 +639,15 @@ class CreateTest extends \PHPUnit\Framework\TestCase
         // Emulates failing place order action
         $orderManagement = $this->getMockForAbstractClass(OrderManagementInterface::class);
         $orderManagement->method('place')
-            ->willThrowException(new \Exception('Can\'t place order'));
+            ->willThrowException(new Exception('Can\'t place order'));
         $this->objectManager->addSharedInstance($orderManagement, OrderManagementInterface::class);
         try {
             $this->model->createOrder();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->objectManager->removeSharedInstance(OrderManagementInterface::class);
         }
 
-        $customerEmail = $customerEmailSecondAttempt ? :$this->model->getQuote()->getCustomer()->getEmail();
+        $customerEmail = $customerEmailSecondAttempt ?: $this->model->getQuote()->getCustomer()->getEmail();
         $orderData['account']['email'] = $customerEmailSecondAttempt;
 
         $this->preparePreconditionsForCreateOrder(
@@ -696,148 +844,10 @@ class CreateTest extends \PHPUnit\Framework\TestCase
         self::assertEmpty($customerQuote->getData());
     }
 
-    /**
-     * Prepare preconditions for createOrder method invocation.
-     *
-     * @param int $productIdFromFixture
-     * @param string $customerEmail
-     * @param string $shippingMethod
-     * @param int $shippingAddressAsBilling
-     * @param array $paymentData
-     * @param array $orderData
-     * @param string $paymentMethod
-     * @param int|null $customerIdFromFixture
-     */
-    private function preparePreconditionsForCreateOrder(
-        $productIdFromFixture,
-        $customerEmail,
-        $shippingMethod,
-        $shippingAddressAsBilling,
-        $paymentData,
-        $orderData,
-        $paymentMethod,
-        $customerIdFromFixture = null
-    ) {
-        /** Disable product options */
-        /** @var \Magento\Catalog\Model\Product $product */
-        $product = $this->objectManager->create(\Magento\Catalog\Model\Product::class);
-        $product->load($productIdFromFixture)->setHasOptions(false)->save();
-
-        /** Set current customer */
-        /** @var SessionQuote $session */
-        $session = $this->objectManager->get(SessionQuote::class);
-        if ($customerIdFromFixture !== null) {
-            $session->setCustomerId($customerIdFromFixture);
-
-            /** Unset fake IDs for default billing and shipping customer addresses */
-            /** @var Customer $customer */
-            $customer = $this->objectManager->create(Customer::class);
-            $customer->load($customerIdFromFixture)->setDefaultBilling(null)->setDefaultShipping(null)->save();
-        } else {
-            /**
-             * Customer ID must be set to session to pass \Magento\Sales\Model\AdminOrder\Create::_validate()
-             * This code emulates order placement via admin panel.
-             */
-            $session->setCustomerId(0);
-        }
-
-        /** Emulate availability of shipping method (all are disabled by default) */
-        /** @var $rate Quote\Address\Rate */
-        $rate = $this->objectManager->create(Quote\Address\Rate::class);
-        $rate->setCode($shippingMethod);
-        $this->model->getQuote()->getShippingAddress()->addShippingRate($rate);
-
-        $this->model->setShippingAsBilling($shippingAddressAsBilling);
-        $this->model->addProduct($productIdFromFixture, ['qty' => 1]);
-        $this->model->setPaymentData($paymentData);
-        $this->model->setIsValidate(true)->importPostData($orderData);
-
-        /** Check preconditions */
-
-        self::assertEquals(
-            0,
-            $this->messageManager->getMessages()->getCount(),
-            "Precondition failed: Errors occurred before SUT execution."
-        );
-        /** Selectively check quote data */
-        $createOrderData = $this->model->getData();
-        self::assertEquals(
-            $shippingMethod,
-            $createOrderData['shipping_method'],
-            'Precondition failed: Shipping method specified in create order model is invalid'
-        );
-        self::assertEquals(
-            'FirstName',
-            $createOrderData['billing_address']['firstname'],
-            'Precondition failed: Address data is invalid in create order model'
-        );
-        self::assertEquals(
-            'Simple Products',
-            $this->model->getQuote()->getItemByProduct($product)->getData('name'),
-            'Precondition failed: Quote items data is invalid in create order model'
-        );
-        self::assertEquals(
-            $customerEmail,
-            $this->model->getQuote()->getCustomer()->getEmail(),
-            'Precondition failed: Customer data is invalid in create order model'
-        );
-        self::assertEquals(
-            $paymentMethod,
-            $this->model->getQuote()->getPayment()->getData('method'),
-            'Precondition failed: Payment method data is invalid in create order model'
-        );
-    }
-
-    /**
-     * Ensure that order is created correctly via createOrder().
-     *
-     * @param Order $order
-     * @param string $shippingMethod
-     */
-    private function verifyCreatedOrder($order, $shippingMethod)
+    protected function setUp(): void
     {
-        /** Selectively check order data */
-        $orderData = $order->getData();
-        self::assertNotEmpty($orderData['increment_id'], 'Order increment ID is empty.');
-        self::assertEquals($this->model->getQuote()->getId(), $orderData['quote_id'], 'Quote ID is invalid.');
-        self::assertEquals(
-            $this->model->getQuote()->getCustomer()->getEmail(),
-            $orderData['customer_email'],
-            'Customer email is invalid.'
-        );
-        self::assertEquals(
-            $this->model->getQuote()->getCustomer()->getFirstname(),
-            $orderData['customer_firstname'],
-            'Customer first name is invalid.'
-        );
-        self::assertEquals($shippingMethod, $orderData['shipping_method'], 'Shipping method is invalid.');
-    }
-
-    /**
-     * Get valid address data for address creation.
-     *
-     * @return array
-     */
-    private function getValidAddressData()
-    {
-        return [
-            'prefix' => 'prefix',
-            'firstname' => 'FirstName',
-            'middlename' => 'MiddleName',
-            'lastname' => 'LastName',
-            'suffix' => 'suffix',
-            'company' => 'Company Name',
-            'street' => [0 => 'Line1', 1 => 'Line2'],
-            'city' => 'City',
-            'country_id' => 'US',
-            'region' => [
-                'region' => '',
-                'region_id' => '1',
-            ],
-            'postcode' => '76868',
-            'telephone' => '+8709273498729384',
-            'fax' => '',
-            'vat_id' => ''
-        ];
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->messageManager = $this->objectManager->get(ManagerInterface::class);
+        $this->model = $this->objectManager->create(Create::class, ['messageManager' => $this->messageManager]);
     }
 }

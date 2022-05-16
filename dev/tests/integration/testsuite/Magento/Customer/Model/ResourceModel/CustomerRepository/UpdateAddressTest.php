@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Customer\Model\ResourceModel\CustomerRepository;
 
+use Exception;
 use Magento\Customer\Model\Address\UpdateAddressTest as UpdateAddressViaAddressRepositoryTest;
 
 /**
@@ -35,7 +36,8 @@ class UpdateAddressTest extends UpdateAddressViaAddressRepositoryTest
         bool $isBillingDefault,
         ?int $expectedShipping,
         ?int $expectedBilling
-    ): void {
+    ): void
+    {
         $customer = $this->customerRepository->get('customer@example.com');
         $this->assertEquals(1, $customer->getDefaultShipping());
         $this->assertEquals(1, $customer->getDefaultBilling());
@@ -89,10 +91,10 @@ class UpdateAddressTest extends UpdateAddressViaAddressRepositoryTest
      * @dataProvider updateWrongAddressesDataProvider
      *
      * @param array $updateData
-     * @param \Exception $expectException
+     * @param Exception $expectException
      * @return void
      */
-    public function testExceptionThrownDuringUpdateAddress(array $updateData, \Exception $expectException): void
+    public function testExceptionThrownDuringUpdateAddress(array $updateData, Exception $expectException): void
     {
         $this->processedAddressesIds[] = 1;
         $address = $this->addressRepository->getById(1);

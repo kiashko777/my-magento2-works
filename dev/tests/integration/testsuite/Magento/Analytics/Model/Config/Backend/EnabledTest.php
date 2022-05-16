@@ -14,16 +14,20 @@ use Magento\Config\Model\PreparedValueFactory;
 use Magento\Config\Model\ResourceModel\Config\Data as ConfigDataResource;
 use Magento\Framework\App\Config\ReinitableConfigInterface;
 use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\Exception\AlreadyExistsException;
+use Magento\Framework\Exception\RuntimeException;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class EnabledTest extends \PHPUnit\Framework\TestCase
+class EnabledTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
@@ -53,19 +57,6 @@ class EnabledTest extends \PHPUnit\Framework\TestCase
     private $reinitableConfig;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->scopeConfig = $this->objectManager->get(ScopeConfigInterface::class);
-        $this->subscriptionStatusProvider = $this->objectManager->get(SubscriptionStatusProvider::class);
-        $this->preparedValueFactory = $this->objectManager->get(PreparedValueFactory::class);
-        $this->configValueResourceModel = $this->objectManager->get(ConfigDataResource::class);
-        $this->reinitableConfig = $this->objectManager->get(ReinitableConfigInterface::class);
-    }
-
-    /**
      * @magentoDbIsolation enabled
      */
     public function testDisable()
@@ -78,14 +69,12 @@ class EnabledTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @depends testDisable
-     * @magentoDbIsolation enabled
+     * Check the instance status after installation
      */
-    public function testReEnable()
+    private function checkInitialStatus()
     {
-        $this->checkDisabledStatus();
-        $this->saveConfigValue(Enabled::XML_ENABLED_CONFIG_STRUCTURE_PATH, (string)Enabledisable::ENABLE_VALUE);
-        $this->checkReEnabledStatus();
+        $this->assertNotSame(SubscriptionStatusProvider::DISABLED, $this->subscriptionStatusProvider->getStatus());
+        $this->assertNotEmpty($this->getConfigValue(CollectionTime::CRON_SCHEDULE_PATH));
     }
 
     /**
@@ -98,7 +87,8 @@ class EnabledTest extends \PHPUnit\Framework\TestCase
     private function getConfigValue(
         string $path,
         string $scopeType = ScopeConfigInterface::SCOPE_TYPE_DEFAULT
-    ) {
+    )
+    {
         return $this->scopeConfig->getValue(
             $path,
             $scopeType
@@ -112,14 +102,15 @@ class EnabledTest extends \PHPUnit\Framework\TestCase
      * @param string $value The configuration value
      * @param string $scope The configuration scope (default, website, or store)
      * @return void
-     * @throws \Magento\Framework\Exception\RuntimeException
-     * @throws \Magento\Framework\Exception\AlreadyExistsException
+     * @throws RuntimeException
+     * @throws AlreadyExistsException
      */
     private function saveConfigValue(
         string $path,
         string $value,
         string $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT
-    ) {
+    )
+    {
         $configValue = $this->preparedValueFactory->create(
             $path,
             $value,
@@ -129,21 +120,23 @@ class EnabledTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Check the instance status after installation
-     */
-    private function checkInitialStatus()
-    {
-        $this->assertNotSame(SubscriptionStatusProvider::DISABLED, $this->subscriptionStatusProvider->getStatus());
-        $this->assertNotEmpty($this->getConfigValue(CollectionTime::CRON_SCHEDULE_PATH));
-    }
-
-    /**
      * Check the instance status after disabling AR synchronisation
      */
     private function checkDisabledStatus()
     {
         $this->assertSame(SubscriptionStatusProvider::DISABLED, $this->subscriptionStatusProvider->getStatus());
         $this->assertEmpty($this->getConfigValue(CollectionTime::CRON_SCHEDULE_PATH));
+    }
+
+    /**
+     * @depends testDisable
+     * @magentoDbIsolation enabled
+     */
+    public function testReEnable()
+    {
+        $this->checkDisabledStatus();
+        $this->saveConfigValue(Enabled::XML_ENABLED_CONFIG_STRUCTURE_PATH, (string)Enabledisable::ENABLE_VALUE);
+        $this->checkReEnabledStatus();
     }
 
     /**
@@ -159,5 +152,18 @@ class EnabledTest extends \PHPUnit\Framework\TestCase
             ]
         );
         $this->assertNotEmpty($this->getConfigValue(CollectionTime::CRON_SCHEDULE_PATH));
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->scopeConfig = $this->objectManager->get(ScopeConfigInterface::class);
+        $this->subscriptionStatusProvider = $this->objectManager->get(SubscriptionStatusProvider::class);
+        $this->preparedValueFactory = $this->objectManager->get(PreparedValueFactory::class);
+        $this->configValueResourceModel = $this->objectManager->get(ConfigDataResource::class);
+        $this->reinitableConfig = $this->objectManager->get(ReinitableConfigInterface::class);
     }
 }

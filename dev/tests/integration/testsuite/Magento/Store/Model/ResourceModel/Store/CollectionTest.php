@@ -6,19 +6,16 @@
 
 namespace Magento\Store\Model\ResourceModel\Store;
 
-class CollectionTest extends \PHPUnit\Framework\TestCase
+use Magento\Store\Model\Store;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class CollectionTest extends TestCase
 {
     /**
-     * @var \Magento\Store\Model\ResourceModel\Store\Collection
+     * @var Collection
      */
     protected $_collection;
-
-    protected function setUp(): void
-    {
-        $this->_collection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Store\Model\ResourceModel\Store\Collection::class
-        );
-    }
 
     public function testSetGetLoadDefault()
     {
@@ -37,6 +34,16 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
         $quote = $this->_getQuoteIdentifierSymbol();
 
         $this->assertStringContainsString("{$quote}store_id{$quote} > 0", (string)$this->_collection->getSelect());
+    }
+
+    /**
+     * Get quote symbol from adapter.
+     *
+     * @return string
+     */
+    protected function _getQuoteIdentifierSymbol()
+    {
+        return $this->_collection->getConnection()->getQuoteIdentifierSymbol();
     }
 
     /**
@@ -75,16 +82,6 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
             (string)$this->_collection->getSelect(),
             'Category filter'
         );
-    }
-
-    /**
-     * Get quote symbol from adapter.
-     *
-     * @return string
-     */
-    protected function _getQuoteIdentifierSymbol()
-    {
-        return $this->_collection->getConnection()->getQuoteIdentifierSymbol();
     }
 
     public function testToOptionArrayHash()
@@ -131,7 +128,7 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetAllIds()
     {
-        $this->assertContainsEquals(\Magento\Store\Model\Store::DISTRO_STORE_ID, $this->_collection->getAllIds());
+        $this->assertContainsEquals(Store::DISTRO_STORE_ID, $this->_collection->getAllIds());
     }
 
     /**
@@ -149,5 +146,12 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
     {
         $this->_collection->join(['w' => 'store_website'], 'main_table.website_id=w.website_id');
         $this->assertStringContainsString('store_website', (string)$this->_collection->getSelect());
+    }
+
+    protected function setUp(): void
+    {
+        $this->_collection = Bootstrap::getObjectManager()->create(
+            Collection::class
+        );
     }
 }

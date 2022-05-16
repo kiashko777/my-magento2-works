@@ -7,11 +7,11 @@ declare(strict_types=1);
 
 namespace Magento\LayeredNavigation\Block\Navigation\Category\Bundle;
 
+use Magento\Catalog\Model\Layer\Filter\AbstractFilter;
+use Magento\Catalog\Model\Layer\Filter\Item;
 use Magento\Catalog\Model\Layer\Resolver;
 use Magento\Framework\Module\Manager;
 use Magento\LayeredNavigation\Block\Navigation\AbstractFiltersTest;
-use Magento\Catalog\Model\Layer\Filter\AbstractFilter;
-use Magento\Catalog\Model\Layer\Filter\Item;
 
 /**
  * Provides price filter tests for bundle products in navigation block on category page.
@@ -26,19 +26,6 @@ class PriceFilterTest extends AbstractFiltersTest
      * @var Manager
      */
     private $moduleManager;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->moduleManager = $this->objectManager->get(Manager::class);
-        //This check is needed because LayeredNavigation independent of Magento_Bundle
-        if (!$this->moduleManager->isEnabled('Magento_Bundle')) {
-            $this->markTestSkipped('Magento_Bundle module disabled.');
-        }
-    }
 
     /**
      * @magentoDataFixture Magento/Bundle/_files/dynamic_and_fixed_bundle_products_in_category.php
@@ -57,6 +44,19 @@ class PriceFilterTest extends AbstractFiltersTest
             ],
             'Category 1'
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->moduleManager = $this->objectManager->get(Manager::class);
+        //This check is needed because LayeredNavigation independent of Magento_Bundle
+        if (!$this->moduleManager->isEnabled('Magento_Bundle')) {
+            $this->markTestSkipped('Magento_Bundle module disabled.');
+        }
     }
 
     /**
@@ -84,7 +84,7 @@ class PriceFilterTest extends AbstractFiltersTest
         /** @var Item $item */
         foreach ($filter->getItems() as $item) {
             $item = [
-                'label' =>  strip_tags(__($item->getData('label'))->render()),
+                'label' => strip_tags(__($item->getData('label'))->render()),
                 'value' => $item->getData('value'),
                 'count' => $item->getData('count'),
             ];

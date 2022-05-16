@@ -23,36 +23,21 @@ use PHPUnit\Framework\TestCase;
 class DeleteAddressTest extends TestCase
 {
     /**
-     * @var ObjectManager
-     */
-    private $objectManager;
-
-    /**
      * @var CustomerRegistry
      */
     protected $customerRegistry;
-
     /**
      * @var AddressRepositoryInterface
      */
     protected $addressRepository;
-
     /**
      * @var CustomerRepositoryInterface
      */
     protected $customerRepository;
-
     /**
-     * @inheritdoc
+     * @var ObjectManager
      */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->customerRegistry = $this->objectManager->get(CustomerRegistry::class);
-        $this->addressRepository = $this->objectManager->get(AddressRepositoryInterface::class);
-        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
-        parent::setUp();
-    }
+    private $objectManager;
 
     /**
      * Assert that address deleted successfully.
@@ -85,9 +70,21 @@ class DeleteAddressTest extends TestCase
      */
     public function testDeleteMissingAddress(): void
     {
-        $this->expectException(\Magento\Framework\Exception\NoSuchEntityException::class);
+        $this->expectException(NoSuchEntityException::class);
         $this->expectExceptionMessage('No such entity with addressId = 1');
 
         $this->addressRepository->deleteById(1);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->customerRegistry = $this->objectManager->get(CustomerRegistry::class);
+        $this->addressRepository = $this->objectManager->get(AddressRepositoryInterface::class);
+        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
+        parent::setUp();
     }
 }

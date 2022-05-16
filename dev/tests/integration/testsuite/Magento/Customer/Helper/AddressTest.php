@@ -3,19 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Customer\Helper;
 
-class AddressTest extends \PHPUnit\Framework\TestCase
-{
-    /** @var \Magento\Customer\Helper\Address */
-    protected $helper;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-    protected function setUp(): void
-    {
-        $this->helper = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Customer\Helper\Address::class
-        );
-    }
+class AddressTest extends TestCase
+{
+    /** @var Address */
+    protected $helper;
 
     /**
      * @param $attributeCode
@@ -39,5 +36,12 @@ class AddressTest extends \PHPUnit\Framework\TestCase
             ['middlename', ''],
             ['postcode', '']
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->helper = Bootstrap::getObjectManager()->get(
+            Address::class
+        );
     }
 }

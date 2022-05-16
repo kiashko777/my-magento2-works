@@ -7,11 +7,18 @@ declare(strict_types=1);
 
 namespace Magento\CatalogImportExport\Model\Import\ProductTest;
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\CatalogImportExport\Model\Import\ProductTestBase;
 use Magento\CatalogInventory\Model\Stock;
+use Magento\CatalogInventory\Model\Stock\Item;
 use Magento\CatalogInventory\Model\StockRegistry;
 use Magento\CatalogInventory\Model\StockRegistryStorage;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Filesystem;
+use Magento\ImportExport\Model\Import;
+use Magento\ImportExport\Model\Import\Source\Csv;
+use Magento\Indexer\Model\Processor;
+use Magento\TestFramework\Helper\Bootstrap;
 
 /**
  * Integration test for \Magento\CatalogImportExport\Model\Import\Products class.
@@ -30,9 +37,9 @@ class ProductStockTest extends ProductTestBase
      */
     public function testSaveStockItemQty()
     {
-        /** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-        $productRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Api\ProductRepositoryInterface::class
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = Bootstrap::getObjectManager()->create(
+            ProductRepositoryInterface::class
         );
         $id1 = $productRepository->get('simple1')->getId();
         $id2 = $productRepository->get('simple2')->getId();
@@ -41,7 +48,7 @@ class ProductStockTest extends ProductTestBase
         $stockItems = [];
         foreach ($existingProductIds as $productId) {
             /** @var $stockRegistry StockRegistry */
-            $stockRegistry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+            $stockRegistry = Bootstrap::getObjectManager()->create(
                 StockRegistry::class
             );
 
@@ -49,18 +56,18 @@ class ProductStockTest extends ProductTestBase
             $stockItems[$productId] = $stockItem;
         }
 
-        $filesystem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Framework\Filesystem::class);
+        $filesystem = Bootstrap::getObjectManager()
+            ->create(Filesystem::class);
         $directory = $filesystem->getDirectoryWrite(DirectoryList::ROOT);
         $source = $this->objectManager->create(
-            \Magento\ImportExport\Model\Import\Source\Csv::class,
+            Csv::class,
             [
                 'file' => __DIR__ . '/../_files/products_to_import.csv',
                 'directory' => $directory
             ]
         );
         $errors = $this->_model->setParameters(
-            ['behavior' => \Magento\ImportExport\Model\Import::BEHAVIOR_APPEND, 'entity' => 'catalog_product']
+            ['behavior' => Import::BEHAVIOR_APPEND, 'entity' => 'catalog_product']
         )->setSource(
             $source
         )->validateData();
@@ -69,10 +76,10 @@ class ProductStockTest extends ProductTestBase
 
         $this->_model->importData();
 
-        /** @var $stockItmBeforeImport \Magento\CatalogInventory\Model\Stock\Item */
+        /** @var $stockItmBeforeImport Item */
         foreach ($stockItems as $productId => $stockItmBeforeImport) {
             /** @var $stockRegistry StockRegistry */
-            $stockRegistry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+            $stockRegistry = Bootstrap::getObjectManager()->create(
                 StockRegistry::class
             );
 
@@ -95,27 +102,27 @@ class ProductStockTest extends ProductTestBase
      */
     public function testSaveIsInStockByZeroQty(): void
     {
-        /** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-        $productRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Api\ProductRepositoryInterface::class
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = Bootstrap::getObjectManager()->create(
+            ProductRepositoryInterface::class
         );
         $id1 = $productRepository->get('simple1')->getId();
         $id2 = $productRepository->get('simple2')->getId();
         $id3 = $productRepository->get('simple3')->getId();
         $existingProductIds = [$id1, $id2, $id3];
 
-        $filesystem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Framework\Filesystem::class);
+        $filesystem = Bootstrap::getObjectManager()
+            ->create(Filesystem::class);
         $directory = $filesystem->getDirectoryWrite(DirectoryList::ROOT);
         $source = $this->objectManager->create(
-            \Magento\ImportExport\Model\Import\Source\Csv::class,
+            Csv::class,
             [
                 'file' => __DIR__ . '/../_files/products_to_import_zero_qty.csv',
                 'directory' => $directory
             ]
         );
         $errors = $this->_model->setParameters(
-            ['behavior' => \Magento\ImportExport\Model\Import::BEHAVIOR_APPEND, 'entity' => 'catalog_product']
+            ['behavior' => Import::BEHAVIOR_APPEND, 'entity' => 'catalog_product']
         )->setSource(
             $source
         )->validateData();
@@ -124,10 +131,10 @@ class ProductStockTest extends ProductTestBase
 
         $this->_model->importData();
 
-        /** @var $stockItmBeforeImport \Magento\CatalogInventory\Model\Stock\Item */
+        /** @var $stockItmBeforeImport Item */
         foreach ($existingProductIds as $productId) {
             /** @var $stockRegistry StockRegistry */
-            $stockRegistry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+            $stockRegistry = Bootstrap::getObjectManager()->create(
                 StockRegistry::class
             );
 
@@ -145,11 +152,11 @@ class ProductStockTest extends ProductTestBase
      */
     public function testStockState()
     {
-        $filesystem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Framework\Filesystem::class);
+        $filesystem = Bootstrap::getObjectManager()
+            ->create(Filesystem::class);
         $directory = $filesystem->getDirectoryWrite(DirectoryList::ROOT);
         $source = $this->objectManager->create(
-            \Magento\ImportExport\Model\Import\Source\Csv::class,
+            Csv::class,
             [
                 'file' => __DIR__ . '/../_files/products_to_import_with_qty.csv',
                 'directory' => $directory
@@ -157,7 +164,7 @@ class ProductStockTest extends ProductTestBase
         );
 
         $errors = $this->_model->setParameters(
-            ['behavior' => \Magento\ImportExport\Model\Import::BEHAVIOR_APPEND, 'entity' => 'catalog_product']
+            ['behavior' => Import::BEHAVIOR_APPEND, 'entity' => 'catalog_product']
         )->setSource(
             $source
         )->validateData();
@@ -227,8 +234,8 @@ class ProductStockTest extends ProductTestBase
      */
     public function testProductStockStatusShouldBeUpdatedOnSchedule()
     {
-        /** * @var $indexProcessor \Magento\Indexer\Model\Processor */
-        $indexProcessor = $this->objectManager->create(\Magento\Indexer\Model\Processor::class);
+        /** * @var $indexProcessor Processor */
+        $indexProcessor = $this->objectManager->create(Processor::class);
         /** @var $stockRegistry StockRegistry */
         $stockRegistry = $this->objectManager->create(StockRegistry::class);
         /** @var StockRegistryStorage $stockRegistryStorage */

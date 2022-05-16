@@ -33,7 +33,7 @@
         @_icon-image-position-x: -26px,
         @_icon-image-position-y: 0,
         @_icon-image-position: after
-   );
+    );
 }
 
 .example-icon-3 {
@@ -42,14 +42,14 @@
         @_icon-image-position-x: -156px,
         @_icon-image-position-y: -52px,
         @_icon-image-text-hide: true
-   );
+    );
 }
 
 .example-icon-4 {
     .lib-icon-font(
         @_icon-font-content: @icon-settings,
         @_icon-font-size: 24px
-   );
+    );
 }
 
 .example-icon-5 {
@@ -57,7 +57,7 @@
         @_icon-font-content: @icon-star,
         @_icon-font-size: 24px,
         @_icon-font-position: after
-   );
+    );
 }
 
 .example-icon-6 {
@@ -65,7 +65,7 @@
         @_icon-font-content: @icon-flag,
         @_icon-font-size: 24px,
         @_icon-font-text-hide: true
-   );
+    );
 }
 
 //  # Icon with image or sprite
@@ -168,7 +168,7 @@
     .lib-icon-image(@_icon-image: '@{baseDir}images/blank-theme-icons.png');
     .lib-icon-image-position(
         @_icon-image-position-x: -182px
-   );
+    );
 }
 
 .example-icon-9 {
@@ -177,7 +177,7 @@
         @_icon-image-position-x: -52px,
         @_icon-image-position-y: -26px,
         @_icon-image-position: after
-   );
+    );
 }
 
 //  # Position for icon with image or sprite mixin variables
@@ -277,6 +277,7 @@
 .example-icon-11 {
     .lib-icon-image(@_icon-image: '@{baseDir}images/blank-theme-icons.png');
     .lib-icon-image-size(30px, 30px);
+
     &:before {
         background-color: #f1f1f1;
     }
@@ -328,7 +329,7 @@
     .lib-icon-font(
         @icon-calendar,
         @_icon-font-size: 28px
-   );
+    );
 }
 
 //  # Font icon variables
@@ -440,7 +441,7 @@
     .lib-icon-font(@icon-calendar);
     .lib-icon-font-size(
         @_icon-font-size: 26px
-   );
+    );
 }
 
 //  # Change the size of font icon variables
@@ -489,7 +490,7 @@
     .lib-icon-font(
         @icon-envelope,
         @_icon-font-size: 26px
-   );
+    );
     .lib-icon-text-hide();
 }
 
@@ -738,114 +739,151 @@
 .icons-image-list {
     list-style: none;
     padding: 0;
+
     li {
         float: left;
         width: 33%;
+
         > span {
             .lib-icon-image(@_icon-image: '@{baseDir}images/blank-theme-icons.png');
         }
+
         .icon-search {
             .lib-icon-sprite-position(0, 0);
         }
+
         .icon-cart {
             .lib-icon-sprite-position(1, 0);
         }
+
         .icon-arrow-down {
             .lib-icon-sprite-position(2, 0);
         }
+
         .icon-arrow-up {
             .lib-icon-sprite-position(3, 0);
         }
+
         .icon-grid {
             .lib-icon-sprite-position(4, 0);
         }
+
         .icon-list {
             .lib-icon-sprite-position(5, 0);
         }
+
         .icon-remove {
             .lib-icon-sprite-position(6, 0);
         }
+
         .icon-star {
             .lib-icon-sprite-position(7, 0);
         }
+
         .icon-pointer-down {
             .lib-icon-sprite-position(8, 0);
         }
+
         .icon-pointer-up {
             .lib-icon-sprite-position(9, 0);
         }
+
         .icon-pointer-left {
             .lib-icon-sprite-position(10, 0);
         }
+
         .icon-pointer-right {
             .lib-icon-sprite-position(11, 0);
         }
+
         .icon-compare-empty {
             .lib-icon-sprite-position(0, 1);
         }
+
         .icon-compare-full {
             .lib-icon-sprite-position(1, 1);
         }
+
         .icon-wishlist-empty {
             .lib-icon-sprite-position(2, 1);
         }
+
         .icon-wishlist-full {
             .lib-icon-sprite-position(3, 1);
         }
+
         .icon-update {
             .lib-icon-sprite-position(4, 1);
         }
+
         .icon-collapse {
             .lib-icon-sprite-position(5, 1);
         }
+
         .icon-expand {
             .lib-icon-sprite-position(6, 1);
         }
+
         .icon-menu {
             .lib-icon-sprite-position(7, 1);
         }
+
         .icon-prev {
             .lib-icon-sprite-position(8, 1);
         }
+
         .icon-next {
             .lib-icon-sprite-position(9, 1);
         }
+
         .icon-settings {
             .lib-icon-sprite-position(10, 1);
         }
+
         .icon-info {
             .lib-icon-sprite-position(11, 1);
         }
+
         .icon-checkmark {
             .lib-icon-sprite-position(0, 2);
         }
+
         .icon-calendar {
             .lib-icon-sprite-position(1, 2);
         }
+
         .icon-comment {
             .lib-icon-sprite-position(2, 2);
         }
+
         .icon-comment-reflected {
             .lib-icon-sprite-position(3, 2);
         }
+
         .icon-envelope {
             .lib-icon-sprite-position(4, 2);
         }
+
         .icon-warning {
             .lib-icon-sprite-position(5, 2);
         }
+
         .icon-trash {
             .lib-icon-sprite-position(6, 2);
         }
+
         .icon-flag {
             .lib-icon-sprite-position(7, 2);
         }
+
         .icon-location {
             .lib-icon-sprite-position(8, 2);
         }
+
         .icon-up {
             .lib-icon-sprite-position(9, 2);
         }
+
         .icon-down {
             .lib-icon-sprite-position(10, 2);
         }
@@ -895,13 +933,16 @@
 .icons-font-list {
     list-style: none;
     padding: 0;
+
     li {
         float: left;
         width: 25%;
         margin-bottom: 35px;
         text-align: center;
+
         > span {
             .lib-icon-font('', @_icon-font-size: 34px);
+
             &:before {
                 content: attr(data-icon);
                 margin: 0 auto;

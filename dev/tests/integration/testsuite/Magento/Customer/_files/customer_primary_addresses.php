@@ -4,15 +4,17 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Customer\Model\Customer;
 use Magento\Customer\Model\CustomerRegistry;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Customer/_files/customer_two_addresses.php');
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-/** @var \Magento\Customer\Model\Customer $customer */
+$objectManager = Bootstrap::getObjectManager();
+/** @var Customer $customer */
 $customer = $objectManager->create(
-    \Magento\Customer\Model\Customer::class
+    Customer::class
 )->load(
     1
 );

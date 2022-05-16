@@ -20,12 +20,6 @@ class GiftMessageTest extends GraphQlAbstract
      */
     private $customerTokenService;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
-    }
-
     /**
      * @magentoConfigFixture default_store sales/gift_options/allow_order 1
      * @magentoConfigFixture default_store sales/gift_options/allow_items 1
@@ -49,34 +43,6 @@ class GiftMessageTest extends GraphQlAbstract
     }
 
     /**
-     * @magentoConfigFixture default_store sales/gift_options/allow_order 0
-     * @magentoConfigFixture default_store sales/gift_options/allow_items 0
-     * @magentoApiDataFixture Magento/Customer/_files/customer.php
-     * @magentoApiDataFixture Magento/GiftMessage/_files/customer/order_with_message.php
-     */
-    public function testGiftMessageNotAllowForOrder()
-    {
-        $query = $this->getCustomerOrdersQuery();
-        $currentEmail = 'customer@example.com';
-        $currentPassword = 'password';
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Can\'t load gift message for order');
-        $this->graphQlQuery($query, [], '', $this->getCustomerAuthHeaders($currentEmail, $currentPassword));
-    }
-
-    /**
-     * @param string $email
-     * @param string $password
-     * @return array
-     * @throws AuthenticationException
-     */
-    private function getCustomerAuthHeaders(string $email, string $password): array
-    {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($email, $password);
-        return ['Authorization' => 'Bearer ' . $customerToken];
-    }
-
-    /**
      * Get Customer Orders query
      *
      * @return string
@@ -97,5 +63,39 @@ query {
     }
 }
 QUERY;
+    }
+
+    /**
+     * @param string $email
+     * @param string $password
+     * @return array
+     * @throws AuthenticationException
+     */
+    private function getCustomerAuthHeaders(string $email, string $password): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($email, $password);
+        return ['Authorization' => 'Bearer ' . $customerToken];
+    }
+
+    /**
+     * @magentoConfigFixture default_store sales/gift_options/allow_order 0
+     * @magentoConfigFixture default_store sales/gift_options/allow_items 0
+     * @magentoApiDataFixture Magento/Customer/_files/customer.php
+     * @magentoApiDataFixture Magento/GiftMessage/_files/customer/order_with_message.php
+     */
+    public function testGiftMessageNotAllowForOrder()
+    {
+        $query = $this->getCustomerOrdersQuery();
+        $currentEmail = 'customer@example.com';
+        $currentPassword = 'password';
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Can\'t load gift message for order');
+        $this->graphQlQuery($query, [], '', $this->getCustomerAuthHeaders($currentEmail, $currentPassword));
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
     }
 }

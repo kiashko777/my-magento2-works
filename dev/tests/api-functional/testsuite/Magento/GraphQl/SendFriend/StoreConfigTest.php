@@ -28,6 +28,26 @@ class StoreConfigTest extends GraphQlAbstract
     }
 
     /**
+     * Return simple storeConfig query to get sendFriend configuration
+     *
+     * @return string
+     */
+    private function getStoreConfigQuery()
+    {
+        return <<<QUERY
+{
+    storeConfig{
+        id
+        send_friend {
+            enabled_for_customers
+            enabled_for_guests
+        }
+    }
+}
+QUERY;
+    }
+
+    /**
      * @magentoConfigFixture default_store sendfriend/email/enabled 0
      */
     public function testSendFriendDisabled()
@@ -36,34 +56,6 @@ class StoreConfigTest extends GraphQlAbstract
 
         $this->assertResponse(
             ['enabled_for_customers' => false, 'enabled_for_guests' => false],
-            $response
-        );
-    }
-
-    /**
-     * @magentoConfigFixture default_store sendfriend/email/enabled 1
-     * @magentoConfigFixture default_store sendfriend/email/allow_guest 0
-     */
-    public function testSendFriendEnabledGuestDisabled()
-    {
-        $response = $this->graphQlQuery($this->getStoreConfigQuery());
-
-        $this->assertResponse(
-            ['enabled_for_customers' => true, 'enabled_for_guests' => false],
-            $response
-        );
-    }
-
-    /**
-     * @magentoConfigFixture default_store sendfriend/email/enabled 1
-     * @magentoConfigFixture default_store sendfriend/email/allow_guest 1
-     */
-    public function testSendFriendEnabledGuestEnabled()
-    {
-        $response = $this->graphQlQuery($this->getStoreConfigQuery());
-
-        $this->assertResponse(
-            ['enabled_for_customers' => true, 'enabled_for_guests' => true],
             $response
         );
     }
@@ -103,22 +95,30 @@ class StoreConfigTest extends GraphQlAbstract
     }
 
     /**
-     * Return simple storeConfig query to get sendFriend configuration
-     *
-     * @return string
+     * @magentoConfigFixture default_store sendfriend/email/enabled 1
+     * @magentoConfigFixture default_store sendfriend/email/allow_guest 0
      */
-    private function getStoreConfigQuery()
+    public function testSendFriendEnabledGuestDisabled()
     {
-        return <<<QUERY
-{
-    storeConfig{
-        id
-        send_friend {
-            enabled_for_customers
-            enabled_for_guests
-        }
+        $response = $this->graphQlQuery($this->getStoreConfigQuery());
+
+        $this->assertResponse(
+            ['enabled_for_customers' => true, 'enabled_for_guests' => false],
+            $response
+        );
     }
-}
-QUERY;
+
+    /**
+     * @magentoConfigFixture default_store sendfriend/email/enabled 1
+     * @magentoConfigFixture default_store sendfriend/email/allow_guest 1
+     */
+    public function testSendFriendEnabledGuestEnabled()
+    {
+        $response = $this->graphQlQuery($this->getStoreConfigQuery());
+
+        $this->assertResponse(
+            ['enabled_for_customers' => true, 'enabled_for_guests' => true],
+            $response
+        );
     }
 }

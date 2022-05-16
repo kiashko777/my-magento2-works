@@ -5,9 +5,9 @@
  */
 declare(strict_types=1);
 
-use Magento\Cms\Model\ResourceModel\Page as PageResource;
 use Magento\Cms\Model\Page as PageModel;
 use Magento\Cms\Model\PageFactory as PageModelFactory;
+use Magento\Cms\Model\ResourceModel\Page as PageResource;
 use Magento\TestFramework\Cms\Model\CustomLayoutManager;
 use Magento\TestFramework\Helper\Bootstrap;
 

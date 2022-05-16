@@ -6,16 +6,18 @@
 
 namespace Magento\Backend\Model\Search;
 
+use Magento\Framework\Authorization;
+
 /**
  * @SuppressWarnings("unused")
  */
-class AuthorizationMock extends \Magento\Framework\Authorization
+class AuthorizationMock extends Authorization
 {
     /**
      * Check current user permission on resource and privilege
      *
-     * @param   string $resource
-     * @param   string $privilege
+     * @param string $resource
+     * @param string $privilege
      * @return  boolean
      */
     public function isAllowed($resource, $privilege = null)

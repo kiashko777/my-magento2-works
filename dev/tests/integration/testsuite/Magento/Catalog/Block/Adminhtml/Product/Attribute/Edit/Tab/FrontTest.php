@@ -3,31 +3,32 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Block\Adminhtml\Product\Attribute\Edit\Tab;
+
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\ResourceModel\Eav\Attribute;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Registry;
+use Magento\Framework\View\Layout;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class FrontTest extends \PHPUnit\Framework\TestCase
+class FrontTest extends TestCase
 {
     /**
-     * @var \Magento\Catalog\Block\Adminhtml\Product\Attribute\Edit\Tab\Front
+     * @var Front
      */
     private $block;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-
-        /** @var $layout \Magento\Framework\View\Layout */
-        $layout = $this->objectManager->create(\Magento\Framework\View\LayoutInterface::class);
-        $this->block = $layout->createBlock(\Magento\Catalog\Block\Adminhtml\Product\Attribute\Edit\Tab\Front::class);
-    }
 
     /**
      * @param $attributeCode
@@ -35,12 +36,12 @@ class FrontTest extends \PHPUnit\Framework\TestCase
      */
     public function testToHtml($attributeCode)
     {
-        /** @var \Magento\Catalog\Model\ResourceModel\Eav\Attribute $model */
-        $model = $this->objectManager->create(\Magento\Catalog\Model\ResourceModel\Eav\Attribute::class);
-        $model->loadByCode(\Magento\Catalog\Model\Product::ENTITY, $attributeCode);
+        /** @var Attribute $model */
+        $model = $this->objectManager->create(Attribute::class);
+        $model->loadByCode(Product::ENTITY, $attributeCode);
 
-        /** @var \Magento\Framework\Registry $coreRegistry */
-        $coreRegistry = $this->objectManager->get(\Magento\Framework\Registry::class);
+        /** @var Registry $coreRegistry */
+        $coreRegistry = $this->objectManager->get(Registry::class);
         $coreRegistry->unregister('entity_attribute');
         $coreRegistry->register('entity_attribute', $model);
 
@@ -61,5 +62,14 @@ class FrontTest extends \PHPUnit\Framework\TestCase
             ['media_gallery'],
             ['country_of_manufacture'],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        /** @var $layout Layout */
+        $layout = $this->objectManager->create(LayoutInterface::class);
+        $this->block = $layout->createBlock(Front::class);
     }
 }

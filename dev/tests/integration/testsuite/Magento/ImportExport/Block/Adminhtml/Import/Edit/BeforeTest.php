@@ -7,14 +7,19 @@
 /**
  * Test class for \Magento\ImportExport\Block\Adminhtml\Import\Edit\Before
  */
+
 namespace Magento\ImportExport\Block\Adminhtml\Import\Edit;
 
-class BeforeTest extends \PHPUnit\Framework\TestCase
+use Magento\ImportExport\Model\Import;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class BeforeTest extends TestCase
 {
     /**
      * Test model
      *
-     * @var \Magento\ImportExport\Block\Adminhtml\Import\Edit\Before
+     * @var Before
      */
     protected $_model;
 
@@ -52,36 +57,6 @@ class BeforeTest extends \PHPUnit\Framework\TestCase
      */
     protected $_expectedBehaviors = ['behavior_1', 'behavior_2'];
 
-    protected function setUp(): void
-    {
-        $importModel = $this->createPartialMock(
-            \Magento\ImportExport\Model\Import::class,
-            ['getEntityBehaviors', 'getUniqueEntityBehaviors']
-        );
-        $importModel->expects(
-            $this->any()
-        )->method(
-            'getEntityBehaviors'
-        )->willReturn(
-            $this->_sourceEntities
-        );
-        $importModel->expects(
-            $this->any()
-        )->method(
-            'getUniqueEntityBehaviors'
-        )->willReturn(
-            $this->_sourceBehaviors
-        );
-
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->_model = $objectManager->create(
-            \Magento\ImportExport\Block\Adminhtml\Import\Edit\Before::class,
-            [
-                'importModel' => $importModel,
-            ]
-        );
-    }
-
     /**
      * Test for getEntityBehaviors method
      *
@@ -104,5 +79,35 @@ class BeforeTest extends \PHPUnit\Framework\TestCase
         $actualBehaviors = $this->_model->getUniqueBehaviors();
         $expectedBehaviors = json_encode($this->_expectedBehaviors);
         $this->assertEquals($expectedBehaviors, $actualBehaviors);
+    }
+
+    protected function setUp(): void
+    {
+        $importModel = $this->createPartialMock(
+            Import::class,
+            ['getEntityBehaviors', 'getUniqueEntityBehaviors']
+        );
+        $importModel->expects(
+            $this->any()
+        )->method(
+            'getEntityBehaviors'
+        )->willReturn(
+            $this->_sourceEntities
+        );
+        $importModel->expects(
+            $this->any()
+        )->method(
+            'getUniqueEntityBehaviors'
+        )->willReturn(
+            $this->_sourceBehaviors
+        );
+
+        $objectManager = Bootstrap::getObjectManager();
+        $this->_model = $objectManager->create(
+            Before::class,
+            [
+                'importModel' => $importModel,
+            ]
+        );
     }
 }

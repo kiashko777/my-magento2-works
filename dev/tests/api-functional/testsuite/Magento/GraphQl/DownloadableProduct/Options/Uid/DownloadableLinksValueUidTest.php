@@ -27,21 +27,9 @@ class DownloadableLinksValueUidTest extends GraphQlAbstract
         self::assertNotEmpty($responseProduct['downloadable_product_links']);
 
         foreach ($responseProduct['downloadable_product_links'] as $productLink) {
-            $uid = $this->getUidByLinkId((int) $productLink['id']);
+            $uid = $this->getUidByLinkId((int)$productLink['id']);
             self::assertEquals($uid, $productLink['uid']);
         }
-    }
-
-    /**
-     * Get uid by link id
-     *
-     * @param int $linkId
-     *
-     * @return string
-     */
-    private function getUidByLinkId(int $linkId): string
-    {
-        return base64_encode('downloadable/' . $linkId);
     }
 
     /**
@@ -69,5 +57,17 @@ query {
   }
 }
 QUERY;
+    }
+
+    /**
+     * Get uid by link id
+     *
+     * @param int $linkId
+     *
+     * @return string
+     */
+    private function getUidByLinkId(int $linkId): string
+    {
+        return base64_encode('downloadable/' . $linkId);
     }
 }

@@ -47,6 +47,26 @@ class MultipleSelect extends AbstractAttributeDataWithOptions
     /**
      * @inheritdoc
      */
+    protected function getUpdateExpectedData(): array
+    {
+        $updatePostData = $this->getUpdatePostData();
+        return array_merge(
+            $updatePostData,
+            [
+                'frontend_label' => 'Multiselect Attribute Update',
+                'attribute_code' => 'multiselect_attribute',
+                'default_value' => null,
+                'frontend_class' => null,
+                'used_for_sort_by' => '0',
+                'is_user_defined' => '1',
+                'backend_type' => 'varchar',
+            ]
+        );
+    }
+
+    /**
+     * @inheritdoc
+     */
     protected function getUpdatePostData(): array
     {
         return [
@@ -72,25 +92,5 @@ class MultipleSelect extends AbstractAttributeDataWithOptions
             'is_visible_on_front' => '1',
             'used_in_product_listing' => '1',
         ];
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function getUpdateExpectedData(): array
-    {
-        $updatePostData = $this->getUpdatePostData();
-        return array_merge(
-            $updatePostData,
-            [
-                'frontend_label' => 'Multiselect Attribute Update',
-                'attribute_code' => 'multiselect_attribute',
-                'default_value' => null,
-                'frontend_class' => null,
-                'used_for_sort_by' => '0',
-                'is_user_defined' => '1',
-                'backend_type' => 'varchar',
-            ]
-        );
     }
 }

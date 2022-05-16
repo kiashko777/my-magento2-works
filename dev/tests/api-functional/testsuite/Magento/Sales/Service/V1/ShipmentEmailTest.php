@@ -6,6 +6,9 @@
 
 namespace Magento\Sales\Service\V1;
 
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Sales\Model\ResourceModel\Order\Shipment\Collection;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
@@ -22,13 +25,13 @@ class ShipmentEmailTest extends WebapiAbstract
      */
     public function testShipmentEmail()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $shipmentCollection = $objectManager->get(\Magento\Sales\Model\ResourceModel\Order\Shipment\Collection::class);
+        $objectManager = Bootstrap::getObjectManager();
+        $shipmentCollection = $objectManager->get(Collection::class);
         $shipment = $shipmentCollection->getFirstItem();
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/shipment/' . $shipment->getId() . '/emails',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,

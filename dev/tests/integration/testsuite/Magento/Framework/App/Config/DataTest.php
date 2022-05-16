@@ -3,39 +3,36 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\App\Config;
 
+use Magento\Config\Model\ResourceModel\Config\Data\Collection;
+use Magento\Framework\App\CacheInterface;
 use Magento\Framework\App\Config;
+use Magento\Framework\App\Config\Storage\WriterInterface;
 use Magento\Framework\App\ObjectManager;
+use Magento\TestFramework\Entity;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class DataTest extends \PHPUnit\Framework\TestCase
+class DataTest extends TestCase
 {
     const SAMPLE_CONFIG_PATH = 'web/unsecure/base_url';
 
     const SAMPLE_VALUE = 'http://example.com/';
 
     /**
-     * @var \Magento\Framework\App\Config\Value
+     * @var Value
      */
     protected $_model;
 
     public static function setUpBeforeClass(): void
     {
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\App\Config\Storage\WriterInterface::class
+        Bootstrap::getObjectManager()->get(
+            WriterInterface::class
         )->save(
             self::SAMPLE_CONFIG_PATH,
             self::SAMPLE_VALUE
-        );
-        self::_refreshConfiguration();
-    }
-
-    public static function tearDownAfterClass(): void
-    {
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\App\Config\Storage\WriterInterface::class
-        )->delete(
-            self::SAMPLE_CONFIG_PATH
         );
         self::_refreshConfiguration();
     }
@@ -45,25 +42,28 @@ class DataTest extends \PHPUnit\Framework\TestCase
      */
     protected static function _refreshConfiguration()
     {
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\App\CacheInterface::class)
-            ->clean([\Magento\Framework\App\Config::CACHE_TAG]);
-        \Magento\TestFramework\Helper\Bootstrap::getInstance()->reinitialize();
+        Bootstrap::getObjectManager()->get(CacheInterface::class)
+            ->clean([Config::CACHE_TAG]);
+        Bootstrap::getInstance()->reinitialize();
         $appConfig = ObjectManager::getInstance()->get(Config::class);
         $appConfig->clean();
     }
 
-    protected function setUp(): void
+    public static function tearDownAfterClass(): void
     {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\App\Config\Value::class
+        Bootstrap::getObjectManager()->get(
+            WriterInterface::class
+        )->delete(
+            self::SAMPLE_CONFIG_PATH
         );
+        self::_refreshConfiguration();
     }
 
     public function testIsValueChanged()
     {
         // load the model
-        $collection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Config\Model\ResourceModel\Config\Data\Collection::class
+        $collection = Bootstrap::getObjectManager()->create(
+            Collection::class
         );
         $collection->addFieldToFilter(
             'path',
@@ -111,7 +111,7 @@ class DataTest extends \PHPUnit\Framework\TestCase
         $this->_model->setData(
             ['scope' => 'default', 'scope_id' => 0, 'path' => 'test/config/path', 'value' => 'test value']
         );
-        $crud = new \Magento\TestFramework\Entity($this->_model, ['value' => 'new value']);
+        $crud = new Entity($this->_model, ['value' => 'new value']);
         $crud->testCrud();
     }
 
@@ -128,5 +128,12 @@ class DataTest extends \PHPUnit\Framework\TestCase
             'not_existing_value'
         );
         $this->assertEmpty($collection->getItems());
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Value::class
+        );
     }
 }

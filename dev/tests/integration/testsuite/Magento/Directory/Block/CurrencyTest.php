@@ -35,18 +35,6 @@ class CurrencyTest extends TestCase
     private $storeManager;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-    }
-
-    /**
      * @magentoConfigFixture current_store currency/options/allow USD
      *
      * @return void
@@ -54,6 +42,46 @@ class CurrencyTest extends TestCase
     public function testDefaultCurrencySwitcher(): void
     {
         $this->assertCurrencySwitcherPerStore('');
+    }
+
+    /**
+     * Check currency switcher diplaying per stores
+     *
+     * @param string $expectedData
+     * @param string $storeCode
+     * @return void
+     */
+    private function assertCurrencySwitcherPerStore(
+        string $expectedData,
+        string $storeCode = 'default'
+    ): void
+    {
+        $currentStore = $this->storeManager->getStore();
+        try {
+            if ($currentStore->getCode() !== $storeCode) {
+                $this->storeManager->setCurrentStore($storeCode);
+            }
+
+            $actualData = trim(preg_replace('/\s+/', ' ', strip_tags($this->getBlock()->toHtml())));
+            $this->assertEquals($expectedData, $actualData);
+        } finally {
+            if ($currentStore->getCode() !== $storeCode) {
+                $this->storeManager->setCurrentStore($currentStore);
+            }
+        }
+    }
+
+    /**
+     * Get currency block
+     *
+     * @return Currency
+     */
+    private function getBlock(): Currency
+    {
+        $block = $this->layout->createBlock(Currency::class);
+        $block->setTemplate(self::CURRENCY_SWITCHER_TEMPLATE);
+
+        return $block;
     }
 
     /**
@@ -83,41 +111,14 @@ class CurrencyTest extends TestCase
     }
 
     /**
-     * Check currency switcher diplaying per stores
-     *
-     * @param string $expectedData
-     * @param string $storeCode
-     * @return void
+     * @inheritdoc
      */
-    private function assertCurrencySwitcherPerStore(
-        string $expectedData,
-        string $storeCode = 'default'
-    ): void {
-        $currentStore = $this->storeManager->getStore();
-        try {
-            if ($currentStore->getCode() !== $storeCode) {
-                $this->storeManager->setCurrentStore($storeCode);
-            }
-
-            $actualData = trim(preg_replace('/\s+/', ' ', strip_tags($this->getBlock()->toHtml())));
-            $this->assertEquals($expectedData, $actualData);
-        } finally {
-            if ($currentStore->getCode() !== $storeCode) {
-                $this->storeManager->setCurrentStore($currentStore);
-            }
-        }
-    }
-
-    /**
-     * Get currency block
-     *
-     * @return Currency
-     */
-    private function getBlock(): Currency
+    protected function setUp(): void
     {
-        $block = $this->layout->createBlock(Currency::class);
-        $block->setTemplate(self::CURRENCY_SWITCHER_TEMPLATE);
+        parent::setUp();
 
-        return $block;
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
     }
 }

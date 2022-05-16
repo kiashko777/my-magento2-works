@@ -29,6 +29,21 @@ class StartTest extends AbstractBackendController
     private $session;
 
     /**
+     * @magentoDataFixture Magento/Sales/_files/order.php
+     *
+     * @return void
+     */
+    public function testExecute(): void
+    {
+        $order = $this->orderFactory->create()->loadByIncrementId('100000001');
+        $this->session->setInvoiceItemQtys('test');
+        $this->getRequest()->setMethod(Http::METHOD_GET)->setParams(['order_id' => $order->getEntityId()]);
+        $this->dispatch('backend/sales/order_invoice/start');
+        $this->assertRedirect($this->stringContains('sales/order_invoice/new'));
+        $this->assertNull($this->session->getInvoiceItemQtys());
+    }
+
+    /**
      * @inheridoc
      */
     protected function setUp(): void
@@ -47,20 +62,5 @@ class StartTest extends AbstractBackendController
         $this->session->getInvoiceItemQtys(true);
 
         parent::tearDown();
-    }
-
-    /**
-     * @magentoDataFixture Magento/Sales/_files/order.php
-     *
-     * @return void
-     */
-    public function testExecute(): void
-    {
-        $order = $this->orderFactory->create()->loadByIncrementId('100000001');
-        $this->session->setInvoiceItemQtys('test');
-        $this->getRequest()->setMethod(Http::METHOD_GET)->setParams(['order_id' => $order->getEntityId()]);
-        $this->dispatch('backend/sales/order_invoice/start');
-        $this->assertRedirect($this->stringContains('sales/order_invoice/new'));
-        $this->assertNull($this->session->getInvoiceItemQtys());
     }
 }

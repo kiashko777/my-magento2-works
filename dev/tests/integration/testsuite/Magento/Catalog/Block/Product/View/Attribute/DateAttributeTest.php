@@ -49,16 +49,16 @@ class DateAttributeTest extends AbstractAttributeTest
     /**
      * @inheritdoc
      */
-    protected function getAttributeCode(): string
+    protected function getDefaultAttributeValue(): string
     {
-        return 'date_attribute';
+        return $this->getAttribute()->getBackend()->formatDate('11/20/19');
     }
 
     /**
      * @inheritdoc
      */
-    protected function getDefaultAttributeValue(): string
+    protected function getAttributeCode(): string
     {
-        return $this->getAttribute()->getBackend()->formatDate('11/20/19');
+        return 'date_attribute';
     }
 }

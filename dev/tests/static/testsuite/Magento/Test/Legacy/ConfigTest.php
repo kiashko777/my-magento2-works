@@ -7,17 +7,22 @@
 /**
  * Tests for obsolete and removed config nodes
  */
+
 namespace Magento\Test\Legacy;
 
-class ConfigTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\App\Utility\AggregateInvoker;
+use Magento\Framework\App\Utility\Files;
+use PHPUnit\Framework\TestCase;
+
+class ConfigTest extends TestCase
 {
     public function testConfigFiles()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
-            /**
-             * @param string $file
-             */
+        /**
+         * @param string $file
+         */
             function ($file) {
                 $obsoleteNodes = [];
                 $obsoleteNodesFiles = glob(__DIR__ . '/_files/obsolete_config_nodes*.php');
@@ -33,7 +38,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
                     );
                 }
             },
-            \Magento\Framework\App\Utility\Files::init()->getMainConfigFiles()
+            Files::init()->getMainConfigFiles()
         );
     }
 }

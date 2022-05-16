@@ -77,6 +77,18 @@ abstract class AbstractCurrencyTest extends TestCase
     }
 
     /**
+     * Register the product
+     *
+     * @param ProductInterface $product
+     * @return void
+     */
+    private function registerProduct(ProductInterface $product): void
+    {
+        $this->registry->unregister('product');
+        $this->registry->register('product', $product);
+    }
+
+    /**
      * Get product price block content
      *
      * @param string $blockName
@@ -95,17 +107,5 @@ abstract class AbstractCurrencyTest extends TestCase
         $this->assertNotFalse($block);
 
         return $block->toHtml();
-    }
-
-    /**
-     * Register the product
-     *
-     * @param ProductInterface $product
-     * @return void
-     */
-    private function registerProduct(ProductInterface $product): void
-    {
-        $this->registry->unregister('product');
-        $this->registry->register('product', $product);
     }
 }

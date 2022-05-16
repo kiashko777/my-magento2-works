@@ -4,38 +4,45 @@
  * See COPYING.txt for license details.
  */
 declare(strict_types=1);
+
+use Magento\Config\App\Config\Type\System;
+use Magento\Config\Model\ResourceModel\Config;
+use Magento\Directory\Model\ResourceModel\Currency;
+use Magento\Store\Model\ScopeInterface;
+use Magento\Store\Model\Store;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Store/_files/second_store.php');
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-$store = $objectManager->create(\Magento\Store\Model\Store::class);
+$objectManager = Bootstrap::getObjectManager();
+$store = $objectManager->create(Store::class);
 if ($storeId = $store->load('fixture_second_store', 'code')->getId()) {
-    /** @var \Magento\Config\Model\ResourceModel\Config $configResource */
-    $configResource = $objectManager->get(\Magento\Config\Model\ResourceModel\Config::class);
+    /** @var Config $configResource */
+    $configResource = $objectManager->get(Config::class);
     $configResource->saveConfig(
         \Magento\Directory\Model\Currency::XML_PATH_CURRENCY_DEFAULT,
         'EUR',
-        \Magento\Store\Model\ScopeInterface::SCOPE_STORES,
+        ScopeInterface::SCOPE_STORES,
         $storeId
     );
     $configResource->saveConfig(
         \Magento\Directory\Model\Currency::XML_PATH_CURRENCY_ALLOW,
         'EUR',
-        \Magento\Store\Model\ScopeInterface::SCOPE_STORES,
+        ScopeInterface::SCOPE_STORES,
         $storeId
     );
     /**
      * Configuration cache clean is required to reload currency setting
      */
     /** @var Magento\Config\App\Config\Type\System $config */
-    $config = $objectManager->get(\Magento\Config\App\Config\Type\System::class);
+    $config = $objectManager->get(System::class);
     $config->clean();
 }
 
 
-/** @var \Magento\Directory\Model\ResourceModel\Currency $rate */
-$rate = $objectManager->create(\Magento\Directory\Model\ResourceModel\Currency::class);
+/** @var Currency $rate */
+$rate = $objectManager->create(Currency::class);
 $rate->saveRates(
     [
         'USD' => ['EUR' => 2],

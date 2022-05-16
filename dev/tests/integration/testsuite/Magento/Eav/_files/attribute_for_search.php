@@ -4,7 +4,11 @@
  * See COPYING.txt for license details.
  */
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\Eav\Model\Entity\Attribute\Group;
+use Magento\Eav\Model\Entity\Attribute\Set;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
 
 /** @var \Magento\Eav\Model\Entity\Type $entityType */
 $entityType = $objectManager->create(\Magento\Eav\Model\Entity\Type::class)
@@ -18,8 +22,8 @@ $testEntityType = $objectManager->create(\Magento\Eav\Model\Entity\Type::class)
     ->save();
 $entityTypeId = $testEntityType->getId();
 
-/** @var \Magento\Eav\Model\Entity\Attribute\Set $attributeSet */
-$attributeSet = $objectManager->create(\Magento\Eav\Model\Entity\Attribute\Set::class);
+/** @var Set $attributeSet */
+$attributeSet = $objectManager->create(Set::class);
 $attributeSet->setData([
     'attribute_set_name' => 'test_attribute_set',
     'entity_type_id' => $entityTypeId,
@@ -28,8 +32,8 @@ $attributeSet->setData([
 $attributeSet->validate();
 $attributeSet->save();
 
-/** @var \Magento\Eav\Model\Entity\Attribute\Group $attributeGroup */
-$attributeGroup = $objectManager->create(\Magento\Eav\Model\Entity\Attribute\Group::class);
+/** @var Group $attributeGroup */
+$attributeGroup = $objectManager->create(Group::class);
 $attributeGroup->setData(
     [
         'attribute_set_id' => $attributeSet->getAttributeSetId(),

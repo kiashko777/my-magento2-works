@@ -21,10 +21,11 @@ class FilesSearch
      * @return string[]
      */
     public static function getFilesFromListFile(
-        string $listsBaseDir,
-        string $listFilePattern,
+        string   $listsBaseDir,
+        string   $listFilePattern,
         callable $noListCallback
-    ): array {
+    ): array
+    {
         $filesDefinedInList = [];
         $listFiles = glob($listsBaseDir . '/_files/' . $listFilePattern);
         if (!empty($listFiles)) {

@@ -7,54 +7,41 @@
 /**
  * Test class for \Magento\TestFramework\Bootstrap\Memory.
  */
+
 namespace Magento\Test\Bootstrap;
 
+use InvalidArgumentException;
+use Magento\TestFramework\Bootstrap\Memory;
 use Magento\TestFramework\MemoryLimit;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use stdClass;
 
-class MemoryTest extends \PHPUnit\Framework\TestCase
+class MemoryTest extends TestCase
 {
     /**
-     * @var \Magento\TestFramework\Bootstrap\Memory
+     * @var Memory
      */
     protected $_object;
 
     /**
-     * @var MemoryLimit|\PHPUnit\Framework\MockObject\MockObject
+     * @var MemoryLimit|MockObject
      */
     protected $_memoryLimit;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     protected $_activationPolicy;
-
-    protected function setUp(): void
-    {
-        $this->_memoryLimit = $this->createPartialMock(MemoryLimit::class, ['printStats']);
-        $this->_activationPolicy = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['register_shutdown_function'])
-            ->getMock();
-        $this->_object = new \Magento\TestFramework\Bootstrap\Memory(
-            $this->_memoryLimit,
-            [$this->_activationPolicy, 'register_shutdown_function']
-        );
-    }
-
-    protected function tearDown(): void
-    {
-        $this->_memoryLimit = null;
-        $this->_activationPolicy = null;
-        $this->_object = null;
-    }
 
     /**
      */
     public function testConstructorException()
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Activation policy is expected to be a callable.');
 
-        new \Magento\TestFramework\Bootstrap\Memory($this->_memoryLimit, 'non_existing_callable');
+        new Memory($this->_memoryLimit, 'non_existing_callable');
     }
 
     public function testDisplayStats()
@@ -93,5 +80,24 @@ class MemoryTest extends \PHPUnit\Framework\TestCase
             $this->identicalTo([$this->_memoryLimit, 'validateUsage'])
         );
         $this->_object->activateLimitValidation();
+    }
+
+    protected function setUp(): void
+    {
+        $this->_memoryLimit = $this->createPartialMock(MemoryLimit::class, ['printStats']);
+        $this->_activationPolicy = $this->getMockBuilder(stdClass::class)
+            ->addMethods(['register_shutdown_function'])
+            ->getMock();
+        $this->_object = new Memory(
+            $this->_memoryLimit,
+            [$this->_activationPolicy, 'register_shutdown_function']
+        );
+    }
+
+    protected function tearDown(): void
+    {
+        $this->_memoryLimit = null;
+        $this->_activationPolicy = null;
+        $this->_object = null;
     }
 }

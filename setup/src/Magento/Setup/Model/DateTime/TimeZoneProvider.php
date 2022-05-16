@@ -3,9 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Model\DateTime;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\Stdlib\DateTime\Timezone;
 use Magento\Setup\Model\ObjectManagerProvider;
 
 /**
@@ -23,7 +25,7 @@ class TimeZoneProvider
     /**
      * Instance of Timezone
      *
-     * @var \Magento\Framework\Stdlib\DateTime\Timezone
+     * @var Timezone
      */
     private $timezone;
 
@@ -40,13 +42,13 @@ class TimeZoneProvider
     /**
      * Get instance of Timezone
      *
-     * @return \Magento\Framework\Stdlib\DateTime\Timezone
+     * @return Timezone
      */
     public function get()
     {
         if (!$this->timezone) {
             $this->timezone = $this->objectManagerProvider->get()->create(
-                \Magento\Framework\Stdlib\DateTime\Timezone::class,
+                Timezone::class,
                 ['scopeType' => ScopeConfigInterface::SCOPE_TYPE_DEFAULT]
             );
         }

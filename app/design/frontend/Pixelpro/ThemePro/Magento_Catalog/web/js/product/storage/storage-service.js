@@ -65,7 +65,7 @@ define([
             /**
              * Required properties to storage
              */
-            storagesInterface =  {
+            storagesInterface = {
                 data: 'function',
                 initialize: 'function',
                 namespace: 'string'

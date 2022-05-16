@@ -3,25 +3,37 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Widget\Block\Adminhtml\Widget\Instance\Edit\Chooser;
+
+use Magento\Framework\View\Element\Template\Context;
+use Magento\Framework\View\Layout\PageType\Config;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class LayoutTest extends \PHPUnit\Framework\TestCase
+class LayoutTest extends TestCase
 {
     /**
-     * @var \Magento\Widget\Block\Adminhtml\Widget\Instance\Edit\Chooser\Layout|\PHPUnit\Framework\MockObject\MockObject
+     * @var Layout|MockObject
      */
     protected $_block;
+
+    public function testToHtml()
+    {
+        $this->assertXmlStringEqualsXmlFile(__DIR__ . '/_files/page_types_select.html', $this->_block->toHtml());
+    }
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
         $config = $this->getMockBuilder(
-            \Magento\Framework\View\Layout\PageType\Config::class
+            Config::class
         )->setMethods(
             ['getPageTypes']
         )->disableOriginalConstructor()->getMock();
@@ -35,8 +47,8 @@ class LayoutTest extends \PHPUnit\Framework\TestCase
         ];
         $config->expects($this->any())->method('getPageTypes')->willReturn($pageTypeValues);
 
-        $this->_block = new \Magento\Widget\Block\Adminhtml\Widget\Instance\Edit\Chooser\Layout(
-            $objectManager->get(\Magento\Framework\View\Element\Template\Context::class),
+        $this->_block = new Layout(
+            $objectManager->get(Context::class),
             $config,
             [
                 'name' => 'page_type',
@@ -45,10 +57,5 @@ class LayoutTest extends \PHPUnit\Framework\TestCase
                 'title' => 'Page Types Select'
             ]
         );
-    }
-
-    public function testToHtml()
-    {
-        $this->assertXmlStringEqualsXmlFile(__DIR__ . '/_files/page_types_select.html', $this->_block->toHtml());
     }
 }

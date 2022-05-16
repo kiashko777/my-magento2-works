@@ -6,18 +6,25 @@
 
 namespace Magento\Customer\Controller;
 
+use Laminas\Mail\Header\HeaderWrap;
+use Laminas\Mime\Part;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Api\Data\CustomerInterface;
+use Magento\Customer\Model\Customer;
 use Magento\Customer\Model\CustomerRegistry;
 use Magento\Customer\Model\Session;
 use Magento\Framework\App\Http;
 use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Framework\Data\Form\FormKey;
+use Magento\Framework\Exception\InputException;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Exception\State\InputMismatchException;
+use Magento\Framework\Mail\Message;
+use Magento\Framework\Math\Random;
 use Magento\Framework\Message\MessageInterface;
 use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Framework\Stdlib\CookieManagerInterface;
-use Magento\Store\Model\StoreManager;
-use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Helper\Xpath;
 use Magento\TestFramework\Mail\Template\TransportBuilderMock;
@@ -37,12 +44,16 @@ class AccountTest extends AbstractController
     private $transportBuilderMock;
 
     /**
-     * @inheritdoc
+     * @magentoDataFixture Magento/Customer/_files/customer.php
+     * @magentoDataFixture Magento/Customer/_files/customer_address.php
      */
-    protected function setUp(): void
+    public function testIndexAction()
     {
-        parent::setUp();
-        $this->transportBuilderMock = $this->_objectManager->get(TransportBuilderMock::class);
+        $this->login(1);
+        $this->dispatch('customer/account/index');
+
+        $body = $this->getResponse()->getBody();
+        $this->assertStringContainsString('Green str, 67', $body);
     }
 
     /**
@@ -56,19 +67,6 @@ class AccountTest extends AbstractController
         /** @var Session $session */
         $session = Bootstrap::getObjectManager()->get(Session::class);
         $session->loginById($customerId);
-    }
-
-    /**
-     * @magentoDataFixture Magento/Customer/_files/customer.php
-     * @magentoDataFixture Magento/Customer/_files/customer_address.php
-     */
-    public function testIndexAction()
-    {
-        $this->login(1);
-        $this->dispatch('customer/account/index');
-
-        $body = $this->getResponse()->getBody();
-        $this->assertStringContainsString('Green str, 67', $body);
     }
 
     /**
@@ -102,11 +100,11 @@ class AccountTest extends AbstractController
      */
     public function testCreatepasswordActionWithDirectLink()
     {
-        /** @var \Magento\Customer\Model\Customer $customer */
+        /** @var Customer $customer */
         $customer = Bootstrap::getObjectManager()
-            ->create(\Magento\Customer\Model\Customer::class)->load(1);
+            ->create(Customer::class)->load(1);
 
-        $token = Bootstrap::getObjectManager()->get(\Magento\Framework\Math\Random::class)
+        $token = Bootstrap::getObjectManager()->get(Random::class)
             ->getUniqueHash();
         $customer->changeResetPasswordLinkToken($token);
         $customer->setData('confirmation', 'confirmation');
@@ -132,15 +130,27 @@ class AccountTest extends AbstractController
     }
 
     /**
+     * @param int $customerId
+     * @param string|null $confirmation
+     */
+    private function assertCustomerConfirmationEquals(int $customerId, string $confirmation = null)
+    {
+        /** @var Customer $customer */
+        $customer = Bootstrap::getObjectManager()
+            ->create(Customer::class)->load($customerId);
+        $this->assertEquals($confirmation, $customer->getConfirmation());
+    }
+
+    /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
      */
     public function testCreatepasswordActionWithSession()
     {
-        /** @var \Magento\Customer\Model\Customer $customer */
+        /** @var Customer $customer */
         $customer = Bootstrap::getObjectManager()
-            ->create(\Magento\Customer\Model\Customer::class)->load(1);
+            ->create(Customer::class)->load(1);
 
-        $token = Bootstrap::getObjectManager()->get(\Magento\Framework\Math\Random::class)
+        $token = Bootstrap::getObjectManager()->get(Random::class)
             ->getUniqueHash();
         $customer->changeResetPasswordLinkToken($token);
         $customer->setData('confirmation', 'confirmation');
@@ -164,11 +174,11 @@ class AccountTest extends AbstractController
      */
     public function testCreatepasswordActionInvalidToken()
     {
-        /** @var \Magento\Customer\Model\Customer $customer */
+        /** @var Customer $customer */
         $customer = Bootstrap::getObjectManager()
-            ->create(\Magento\Customer\Model\Customer::class)->load(1);
+            ->create(Customer::class)->load(1);
 
-        $token = Bootstrap::getObjectManager()->get(\Magento\Framework\Math\Random::class)
+        $token = Bootstrap::getObjectManager()->get(Random::class)
             ->getUniqueHash();
         $customer->changeResetPasswordLinkToken($token);
         $customer->setData('confirmation', 'confirmation');
@@ -190,25 +200,13 @@ class AccountTest extends AbstractController
     }
 
     /**
-     * @param int $customerId
-     * @param string|null $confirmation
-     */
-    private function assertCustomerConfirmationEquals(int $customerId, string $confirmation = null)
-    {
-        /** @var \Magento\Customer\Model\Customer $customer */
-        $customer = Bootstrap::getObjectManager()
-            ->create(\Magento\Customer\Model\Customer::class)->load($customerId);
-        $this->assertEquals($confirmation, $customer->getConfirmation());
-    }
-
-    /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
      */
     public function testConfirmActionAlreadyActive()
     {
-        /** @var \Magento\Customer\Model\Customer $customer */
+        /** @var Customer $customer */
         $customer = Bootstrap::getObjectManager()
-            ->create(\Magento\Customer\Model\Customer::class)->load(1);
+            ->create(Customer::class)->load(1);
 
         $this->getRequest()->setParam('key', 'abc');
         $this->getRequest()->setParam('id', $customer->getId());
@@ -554,18 +552,18 @@ class AccountTest extends AbstractController
             MessageInterface::TYPE_SUCCESS
         );
 
-        /** @var $message \Magento\Framework\Mail\Message */
+        /** @var $message Message */
         $message = $this->transportBuilderMock->getSentMessage();
         $rawMessage = $message->getRawMessage();
 
-        /** @var \Laminas\Mime\Part $messageBodyPart */
+        /** @var Part $messageBodyPart */
         $messageBodyParts = $message->getBody()->getParts();
         $messageBodyPart = reset($messageBodyParts);
         $messageEncoding = $messageBodyPart->getCharset();
         $name = 'John Smith';
 
         if (strtoupper($messageEncoding) !== 'ASCII') {
-            $name = \Laminas\Mail\Header\HeaderWrap::mimeEncodeValue($name, $messageEncoding);
+            $name = HeaderWrap::mimeEncodeValue($name, $messageEncoding);
         }
 
         $nameEmail = sprintf('%s <%s>', $name, $email);
@@ -586,16 +584,66 @@ class AccountTest extends AbstractController
     }
 
     /**
+     * Get confirmation URL from message content.
+     *
+     * @param string $content
+     * @return string
+     */
+    private function getConfirmationUrlFromMessageContent(string $content): string
+    {
+        $confirmationUrl = '';
+
+        if (preg_match('<a\s*href="(?<url>.*?)".*>', $content, $matches)) {
+            $confirmationUrl = $matches['url'];
+            $confirmationUrl = str_replace('http://localhost/index.php/', '', $confirmationUrl);
+            // phpcs:ignore Magento2.Functions.DiscouragedFunction
+            $confirmationUrl = html_entity_decode($confirmationUrl);
+        }
+
+        return $confirmationUrl;
+    }
+
+    /**
+     * Add new request info (request uri, path info, action name).
+     *
+     * @param string $uri
+     * @param string $actionName
+     * @return void
+     */
+    private function setRequestInfo(string $uri, string $actionName): void
+    {
+        $this->getRequest()
+            ->setRequestUri($uri)
+            ->setPathInfo()
+            ->setActionName($actionName);
+    }
+
+    /**
+     * Clear cookie messages list.
+     *
+     * @return void
+     */
+    private function clearCookieMessagesList(): void
+    {
+        $cookieManager = $this->_objectManager->get(CookieManagerInterface::class);
+        $jsonSerializer = $this->_objectManager->get(Json::class);
+        $cookieManager->setPublicCookie(
+            MessagePlugin::MESSAGES_COOKIES_NAME,
+            $jsonSerializer->serialize([])
+        );
+    }
+
+    /**
      * Check that Customer which change email can't log in with old email.
      *
      * @magentoDataFixture Magento/Customer/_files/customer.php
      * @magentoConfigFixture current_store customer/captcha/enable 0
      *
      * @return void
-     * @throws \Magento\Framework\Exception\InputException
-     * @throws \Magento\Framework\Exception\LocalizedException
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
-     * @throws \Magento\Framework\Exception\State\InputMismatchException
+     * @throws InputException
+     * @throws LocalizedException
+     * @throws NoSuchEntityException
+     * @throws InputMismatchException
      */
     public function testResetPasswordWhenEmailChanged(): void
     {
@@ -627,7 +675,7 @@ class AccountTest extends AbstractController
         /* Set new email */
         /** @var CustomerRepositoryInterface $customerRepository */
         $customerRepository = $this->_objectManager->create(CustomerRepositoryInterface::class);
-        /** @var \Magento\Customer\Api\Data\CustomerInterface $customer */
+        /** @var CustomerInterface $customer */
         $customer = $customerRepository->getById($customerData->getId());
         $customer->setEmail($newEmail);
         $customerRepository->save($customer);
@@ -675,27 +723,6 @@ class AccountTest extends AbstractController
     }
 
     /**
-     * Set needed parameters and dispatch Customer loginPost action.
-     *
-     * @param string $email
-     * @param string $password
-     * @return void
-     */
-    private function dispatchLoginPostAction(string $email, string $password): void
-    {
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
-        $this->getRequest()->setPostValue(
-            [
-                'login' => [
-                    'username' => $email,
-                    'password' => $password,
-                ],
-            ]
-        );
-        $this->dispatch('customer/account/loginPost');
-    }
-
-    /**
      * Check that 'Forgot password' email contains correct data.
      *
      * @param string $token
@@ -724,52 +751,32 @@ class AccountTest extends AbstractController
     }
 
     /**
-     * Add new request info (request uri, path info, action name).
+     * Set needed parameters and dispatch Customer loginPost action.
      *
-     * @param string $uri
-     * @param string $actionName
+     * @param string $email
+     * @param string $password
      * @return void
      */
-    private function setRequestInfo(string $uri, string $actionName): void
+    private function dispatchLoginPostAction(string $email, string $password): void
     {
-        $this->getRequest()
-            ->setRequestUri($uri)
-            ->setPathInfo()
-            ->setActionName($actionName);
-    }
-
-    /**
-     * Clear cookie messages list.
-     *
-     * @return void
-     */
-    private function clearCookieMessagesList(): void
-    {
-        $cookieManager = $this->_objectManager->get(CookieManagerInterface::class);
-        $jsonSerializer = $this->_objectManager->get(Json::class);
-        $cookieManager->setPublicCookie(
-            MessagePlugin::MESSAGES_COOKIES_NAME,
-            $jsonSerializer->serialize([])
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
+        $this->getRequest()->setPostValue(
+            [
+                'login' => [
+                    'username' => $email,
+                    'password' => $password,
+                ],
+            ]
         );
+        $this->dispatch('customer/account/loginPost');
     }
 
     /**
-     * Get confirmation URL from message content.
-     *
-     * @param string $content
-     * @return string
+     * @inheritdoc
      */
-    private function getConfirmationUrlFromMessageContent(string $content): string
+    protected function setUp(): void
     {
-        $confirmationUrl = '';
-
-        if (preg_match('<a\s*href="(?<url>.*?)".*>', $content, $matches)) {
-            $confirmationUrl = $matches['url'];
-            $confirmationUrl = str_replace('http://localhost/index.php/', '', $confirmationUrl);
-            // phpcs:ignore Magento2.Functions.DiscouragedFunction
-            $confirmationUrl = html_entity_decode($confirmationUrl);
-        }
-
-        return $confirmationUrl;
+        parent::setUp();
+        $this->transportBuilderMock = $this->_objectManager->get(TransportBuilderMock::class);
     }
 }

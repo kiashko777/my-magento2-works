@@ -7,7 +7,6 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\CatalogInventory;
 
-use Magento\CatalogInventory\Api\Data\StockStatusInterface;
 use Magento\CatalogInventory\Api\StockRegistryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
@@ -22,11 +21,6 @@ class ProductStockStatusTest extends GraphQlAbstract
      */
     private $stockRegistry;
 
-    protected function setUp(): void
-    {
-        $this->stockRegistry = Bootstrap::getObjectManager()->create(StockRegistryInterface::class);
-    }
-
     /**
      * @magentoApiDataFixture Magento/Catalog/_files/product_simple_with_all_fields.php
      */
@@ -39,7 +33,7 @@ class ProductStockStatusTest extends GraphQlAbstract
             products(filter: {sku: {eq: "{$productSku}"}})
             {
                 items {
-                    stock_status            
+                    stock_status
                 }
             }
         }
@@ -65,7 +59,7 @@ QUERY;
             products(filter: {sku: {eq: "{$productSku}"}})
             {
                 items {
-                    stock_status            
+                    stock_status
                 }
             }
         }
@@ -80,5 +74,10 @@ QUERY;
         $this->assertArrayHasKey(0, $response['products']['items']);
         $this->assertArrayHasKey('stock_status', $response['products']['items'][0]);
         $this->assertEquals('OUT_OF_STOCK', $response['products']['items'][0]['stock_status']);
+    }
+
+    protected function setUp(): void
+    {
+        $this->stockRegistry = Bootstrap::getObjectManager()->create(StockRegistryInterface::class);
     }
 }

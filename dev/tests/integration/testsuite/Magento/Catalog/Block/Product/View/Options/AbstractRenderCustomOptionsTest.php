@@ -87,15 +87,127 @@ abstract class AbstractRenderCustomOptionsTest extends TestCase
      */
     protected function assertTextOptionRenderingOnProduct(
         string $productSku,
-        array $optionData,
-        array $checkArray
-    ): void {
+        array  $optionData,
+        array  $checkArray
+    ): void
+    {
         $product = $this->productRepository->get($productSku);
         $product = $this->addOptionToProduct($product, $optionData);
         $option = $this->findOptionByTitle($product, $optionData[Option::KEY_TITLE]);
         $optionHtml = $this->getOptionHtml($product);
         $this->baseOptionAsserts($option, $optionHtml, $checkArray);
         $this->additionalTypeTextAsserts($option, $optionHtml, $checkArray);
+    }
+
+    /**
+     * Add custom option to product with data.
+     *
+     * @param ProductInterface $product
+     * @param array $optionData
+     * @param array $optionValueData
+     * @return ProductInterface
+     */
+    protected function addOptionToProduct(
+        ProductInterface $product,
+        array            $optionData,
+        array            $optionValueData = []
+    ): ProductInterface
+    {
+        $optionData[Option::KEY_PRODUCT_SKU] = $product->getSku();
+
+        if (!empty($optionValueData)) {
+            $optionValueData = $this->productCustomOptionValuesFactory->create(['data' => $optionValueData]);
+            $optionData['values'] = [$optionValueData];
+        }
+
+        $option = $this->productCustomOptionFactory->create(['data' => $optionData]);
+        $product->setOptions([$option]);
+
+        return $this->productRepository->save($product);
+    }
+
+    /**
+     * Find and return custom option.
+     *
+     * @param ProductInterface $product
+     * @param string $optionTitle
+     * @return null|Option
+     */
+    protected function findOptionByTitle(ProductInterface $product, string $optionTitle): ?Option
+    {
+        $option = null;
+        foreach ($product->getOptions() as $customOption) {
+            if ($customOption->getTitle() === $optionTitle) {
+                $option = $customOption;
+                break;
+            }
+        }
+
+        return $option;
+    }
+
+    /**
+     * Render custom options block.
+     *
+     * @param ProductInterface $product
+     * @return string
+     */
+    protected function getOptionHtml(ProductInterface $product): string
+    {
+        $this->page->addHandle($this->getHandlesList());
+        $this->page->getLayout()->generateXml();
+        /** @var Options $optionsBlock */
+        $optionsBlock = $this->page->getLayout()->getBlock($this->getOptionsBlockName());
+        $this->assertNotFalse($optionsBlock);
+        $optionsBlock->setProduct($product);
+
+        return $optionsBlock->toHtml();
+    }
+
+    /**
+     * Return all need handles for load.
+     *
+     * @return array
+     */
+    abstract protected function getHandlesList(): array;
+
+    /**
+     * @return string
+     */
+    abstract protected function getOptionsBlockName(): string;
+
+    /**
+     * Base asserts for rendered options.
+     *
+     * @param ProductCustomOptionInterface $option
+     * @param string $optionHtml
+     * @param array $checkArray
+     * @return void
+     */
+    protected function baseOptionAsserts(
+        ProductCustomOptionInterface $option,
+        string                       $optionHtml,
+        array                        $checkArray
+    ): void
+    {
+        $this->assertStringContainsString($checkArray['block_with_required_class'], $optionHtml);
+        $this->assertStringContainsString($checkArray['title'], $optionHtml);
+
+        if (isset($checkArray['label_for_created_option'])) {
+            $checkArray['label_for_created_option'] = sprintf(
+                $checkArray['label_for_created_option'],
+                $option->getOptionId()
+            );
+            $this->assertStringContainsString($checkArray['label_for_created_option'], $optionHtml);
+        }
+
+        if (isset($checkArray['price'])) {
+            $this->assertStringContainsString($checkArray['price'], $optionHtml);
+        }
+
+        if (isset($checkArray['required_element'])) {
+            $this->assertMatchesRegularExpression($checkArray['required_element'], $optionHtml);
+        }
     }
 
     /**
@@ -108,15 +220,21 @@ abstract class AbstractRenderCustomOptionsTest extends TestCase
      */
     protected function additionalTypeTextAsserts(
         ProductCustomOptionInterface $option,
-        string $optionHtml,
-        array $checkArray
-    ): void {
+        string                       $optionHtml,
+        array                        $checkArray
+    ): void
+    {
         if ($option->getMaxCharacters() > 0) {
             $this->assertStringContainsString($checkArray['max_characters'], $optionHtml);
         } else {
             $this->assertStringNotContainsString($this->getMaxCharactersCssClass(), $optionHtml);
         }
     }
+
+    /**
+     * @return string
+     */
+    abstract protected function getMaxCharactersCssClass(): string;
 
     /**
      * Add provided options from file group to product, render options block
@@ -129,9 +247,10 @@ abstract class AbstractRenderCustomOptionsTest extends TestCase
      */
     protected function assertFileOptionRenderingOnProduct(
         string $productSku,
-        array $optionData,
-        array $checkArray
-    ): void {
+        array  $optionData,
+        array  $checkArray
+    ): void
+    {
         $product = $this->productRepository->get($productSku);
         $product = $this->addOptionToProduct($product, $optionData);
         $option = $this->findOptionByTitle($product, $optionData[Option::KEY_TITLE]);
@@ -162,10 +281,11 @@ abstract class AbstractRenderCustomOptionsTest extends TestCase
      */
     protected function assertSelectOptionRenderingOnProduct(
         string $productSku,
-        array $optionData,
-        array $optionValueData,
-        array $checkArray
-    ): void {
+        array  $optionData,
+        array  $optionValueData,
+        array  $checkArray
+    ): void
+    {
         $product = $this->productRepository->get($productSku);
         $product = $this->addOptionToProduct($product, $optionData, $optionValueData);
         $option = $this->findOptionByTitle($product, $optionData[Option::KEY_TITLE]);
@@ -184,9 +304,10 @@ abstract class AbstractRenderCustomOptionsTest extends TestCase
      */
     protected function additionalTypeSelectAsserts(
         ProductCustomOptionInterface $option,
-        string $optionHtml,
-        array $checkArray
-    ): void {
+        string                       $optionHtml,
+        array                        $checkArray
+    ): void
+    {
         $optionValues = $option->getValues();
         $optionValue = reset($optionValues);
         if (isset($checkArray['not_contain_arr'])) {
@@ -215,9 +336,10 @@ abstract class AbstractRenderCustomOptionsTest extends TestCase
      */
     protected function assertDateOptionRenderingOnProduct(
         string $productSku,
-        array $optionData,
-        array $checkArray
-    ): void {
+        array  $optionData,
+        array  $checkArray
+    ): void
+    {
         $product = $this->productRepository->get($productSku);
         $product = $this->addOptionToProduct($product, $optionData);
         $option = $this->findOptionByTitle($product, $optionData[Option::KEY_TITLE]);
@@ -307,103 +429,6 @@ abstract class AbstractRenderCustomOptionsTest extends TestCase
     }
 
     /**
-     * Base asserts for rendered options.
-     *
-     * @param ProductCustomOptionInterface $option
-     * @param string $optionHtml
-     * @param array $checkArray
-     * @return void
-     */
-    protected function baseOptionAsserts(
-        ProductCustomOptionInterface $option,
-        string $optionHtml,
-        array $checkArray
-    ): void {
-        $this->assertStringContainsString($checkArray['block_with_required_class'], $optionHtml);
-        $this->assertStringContainsString($checkArray['title'], $optionHtml);
-
-        if (isset($checkArray['label_for_created_option'])) {
-            $checkArray['label_for_created_option'] = sprintf(
-                $checkArray['label_for_created_option'],
-                $option->getOptionId()
-            );
-            $this->assertStringContainsString($checkArray['label_for_created_option'], $optionHtml);
-        }
-
-        if (isset($checkArray['price'])) {
-            $this->assertStringContainsString($checkArray['price'], $optionHtml);
-        }
-
-        if (isset($checkArray['required_element'])) {
-            $this->assertMatchesRegularExpression($checkArray['required_element'], $optionHtml);
-        }
-    }
-
-    /**
-     * Add custom option to product with data.
-     *
-     * @param ProductInterface $product
-     * @param array $optionData
-     * @param array $optionValueData
-     * @return ProductInterface
-     */
-    protected function addOptionToProduct(
-        ProductInterface $product,
-        array $optionData,
-        array $optionValueData = []
-    ): ProductInterface {
-        $optionData[Option::KEY_PRODUCT_SKU] = $product->getSku();
-
-        if (!empty($optionValueData)) {
-            $optionValueData = $this->productCustomOptionValuesFactory->create(['data' => $optionValueData]);
-            $optionData['values'] = [$optionValueData];
-        }
-
-        $option = $this->productCustomOptionFactory->create(['data' => $optionData]);
-        $product->setOptions([$option]);
-
-        return $this->productRepository->save($product);
-    }
-
-    /**
-     * Render custom options block.
-     *
-     * @param ProductInterface $product
-     * @return string
-     */
-    protected function getOptionHtml(ProductInterface $product): string
-    {
-        $this->page->addHandle($this->getHandlesList());
-        $this->page->getLayout()->generateXml();
-        /** @var Options $optionsBlock */
-        $optionsBlock = $this->page->getLayout()->getBlock($this->getOptionsBlockName());
-        $this->assertNotFalse($optionsBlock);
-        $optionsBlock->setProduct($product);
-
-        return $optionsBlock->toHtml();
-    }
-
-    /**
-     * Find and return custom option.
-     *
-     * @param ProductInterface $product
-     * @param string $optionTitle
-     * @return null|Option
-     */
-    protected function findOptionByTitle(ProductInterface $product, string $optionTitle): ?Option
-    {
-        $option = null;
-        foreach ($product->getOptions() as $customOption) {
-            if ($customOption->getTitle() === $optionTitle) {
-                $option = $customOption;
-                break;
-            }
-        }
-
-        return $option;
-    }
-
-    /**
      * Find and return custom option value.
      *
      * @param ProductCustomOptionInterface $option
@@ -412,8 +437,9 @@ abstract class AbstractRenderCustomOptionsTest extends TestCase
      */
     protected function findOptionValueByTitle(
         ProductCustomOptionInterface $option,
-        string $optionValueTitle
-    ): ?ProductCustomOptionValuesInterface {
+        string                       $optionValueTitle
+    ): ?ProductCustomOptionValuesInterface
+    {
         $optionValue = null;
         foreach ($option->getValues() as $customOptionValue) {
             if ($customOptionValue->getTitle() === $optionValueTitle) {
@@ -424,21 +450,4 @@ abstract class AbstractRenderCustomOptionsTest extends TestCase
 
         return $optionValue;
     }
-
-    /**
-     * Return all need handles for load.
-     *
-     * @return array
-     */
-    abstract protected function getHandlesList(): array;
-
-    /**
-     * @return string
-     */
-    abstract protected function getMaxCharactersCssClass(): string;
-
-    /**
-     * @return string
-     */
-    abstract protected function getOptionsBlockName(): string;
 }

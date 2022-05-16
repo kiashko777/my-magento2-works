@@ -3,9 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\EncryptionKey\Block\Adminhtml\Crypt\Key;
 
-class EditTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class EditTest extends TestCase
 {
     /**
      * Test edit block
@@ -13,12 +18,12 @@ class EditTest extends \PHPUnit\Framework\TestCase
     public function testEditBlock()
     {
         /**
-         * @var \Magento\EncryptionKey\Block\Adminhtml\Crypt\Key\Edit
+         * @var Edit
          */
-        $block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
+        $block = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
         )->createBlock(
-            \Magento\EncryptionKey\Block\Adminhtml\Crypt\Key\Edit::class
+            Edit::class
         );
 
         $this->assertEquals('Encryption Key', $block->getHeaderText());

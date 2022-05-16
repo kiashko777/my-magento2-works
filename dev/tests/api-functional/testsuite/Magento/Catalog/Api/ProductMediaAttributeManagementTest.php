@@ -6,6 +6,7 @@
 
 namespace Magento\Catalog\Api;
 
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 class ProductMediaAttributeManagementTest extends WebapiAbstract
@@ -19,7 +20,7 @@ class ProductMediaAttributeManagementTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/products/media/types/' . $attributeSetName,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => 'catalogProductMediaAttributeManagementV1',

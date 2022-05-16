@@ -5,12 +5,13 @@ namespace Pixelpro\Helloworld\Setup;
 use Magento\Framework\Setup\InstallDataInterface;
 use Magento\Framework\Setup\ModuleContextInterface;
 use Magento\Framework\Setup\ModuleDataSetupInterface;
+use Pixelpro\Helloworld\Model\PostFactory;
 
 class InstallData implements InstallDataInterface
 {
     protected $_postFactory;
 
-    public function __construct(\Pixelpro\Helloworld\Model\PostFactory $postFactory)
+    public function __construct(PostFactory $postFactory)
     {
         $this->_postFactory = $postFactory;
     }

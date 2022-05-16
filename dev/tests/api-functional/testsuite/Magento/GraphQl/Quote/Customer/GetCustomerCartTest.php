@@ -8,11 +8,12 @@ declare(strict_types=1);
 namespace Magento\GraphQl\Quote\Customer;
 
 use Exception;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\GraphQl\Quote\GetMaskedQuoteIdByReservedOrderId;
 use Magento\Integration\Api\CustomerTokenServiceInterface;
-use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\ResourceModel\Quote\Collection;
-use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
 
 /**
@@ -34,26 +35,6 @@ class GetCustomerCartTest extends GraphQlAbstract
      * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $this->objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->customerTokenService = $this->objectManager->get(CustomerTokenServiceInterface::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        /** @var \Magento\Quote\Model\Quote $quote */
-        $quoteCollection = $this->objectManager->create(Collection::class);
-        foreach ($quoteCollection as $quote) {
-            $quote->delete();
-        }
-        parent::tearDown();
-    }
 
     /**
      * Query for an existing active customer cart
@@ -81,6 +62,44 @@ class GetCustomerCartTest extends GraphQlAbstract
             $response['customerCart']['items'][0]['quantity'],
             'Incorrect quantity of products in cart'
         );
+    }
+
+    /**
+     * Query customer cart
+     *
+     * @return string
+     */
+    private function getCustomerCartQuery(): string
+    {
+        return <<<QUERY
+{
+  customerCart {
+    total_quantity
+    id
+    items {
+      id
+      quantity
+      product {
+        sku
+      }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
+     * Create a header with customer token
+     *
+     * @param string $username
+     * @param string $password
+     * @return array
+     */
+    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
+        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
+        return $headerMap;
     }
 
     /**
@@ -126,7 +145,7 @@ class GetCustomerCartTest extends GraphQlAbstract
      */
     public function testGetCustomerCartWithNoCustomerToken()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The request is allowed for logged in customer');
 
         $customerCartQuery = $this->getCustomerCartQuery();
@@ -140,7 +159,7 @@ class GetCustomerCartTest extends GraphQlAbstract
      */
     public function testGetCustomerCartAfterTokenRevoked()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The request is allowed for logged in customer');
 
         $customerCartQuery = $this->getCustomerCartQuery();
@@ -153,6 +172,24 @@ class GetCustomerCartTest extends GraphQlAbstract
         $this->revokeCustomerToken();
         $customerCartQuery = $this->getCustomerCartQuery();
         $this->graphQlQuery($customerCartQuery, [], '', $headers);
+    }
+
+    /**
+     * Query to revoke customer token
+     *
+     * @return void
+     */
+    private function revokeCustomerToken(): void
+    {
+        $query = <<<QUERY
+mutation{
+  revokeCustomerToken{
+    result
+  }
+}
+QUERY;
+
+        $this->graphQlMutation($query, [], '', $this->getHeaderMap());
     }
 
     /**
@@ -207,59 +244,23 @@ class GetCustomerCartTest extends GraphQlAbstract
         $this->assertEquals($maskedQuoteIdSecondStore, $responseSecondStore['customerCart']['id']);
     }
 
-    /**
-     * Query to revoke customer token
-     *
-     * @return void
-     */
-    private function revokeCustomerToken(): void
+    protected function setUp(): void
     {
-        $query = <<<QUERY
-mutation{
-  revokeCustomerToken{
-    result
-  }
-}
-QUERY;
-
-        $this->graphQlMutation($query, [], '', $this->getHeaderMap());
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $this->objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->customerTokenService = $this->objectManager->get(CustomerTokenServiceInterface::class);
     }
 
     /**
-     * Query customer cart
-     *
-     * @return string
+     * @inheritdoc
      */
-    private function getCustomerCartQuery(): string
+    protected function tearDown(): void
     {
-        return <<<QUERY
-{
-  customerCart {
-    total_quantity
-    id
-    items {
-      id
-      quantity
-      product {
-        sku
-      }
-    }
-  }
-}
-QUERY;
-    }
-
-    /**
-     * Create a header with customer token
-     *
-     * @param string $username
-     * @param string $password
-     * @return array
-     */
-    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
-    {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
-        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
-        return $headerMap;
+        /** @var Quote $quote */
+        $quoteCollection = $this->objectManager->create(Collection::class);
+        foreach ($quoteCollection as $quote) {
+            $quote->delete();
+        }
+        parent::tearDown();
     }
 }

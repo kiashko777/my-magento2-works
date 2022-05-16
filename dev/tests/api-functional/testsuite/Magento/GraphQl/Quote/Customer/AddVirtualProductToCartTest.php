@@ -29,13 +29,6 @@ class AddVirtualProductToCartTest extends GraphQlAbstract
      */
     private $getMaskedQuoteIdByReservedOrderId;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-    }
-
     /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/virtual_product.php
@@ -55,11 +48,61 @@ class AddVirtualProductToCartTest extends GraphQlAbstract
     }
 
     /**
+     * @param string $maskedQuoteId
+     * @param string $sku
+     * @param float $quantity
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId, string $sku, float $quantity): string
+    {
+        return <<<QUERY
+mutation {
+  addVirtualProductsToCart(input: {
+    cart_id: "{$maskedQuoteId}",
+    cart_items: [
+      {
+        data: {
+          quantity: {$quantity}
+          sku: "{$sku}"
+        }
+      }
+    ]
+  }) {
+    cart {
+      items {
+        id
+        quantity
+        product {
+          sku
+        }
+      }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
+     * Retrieve customer authorization headers
+     *
+     * @param string $username
+     * @param string $password
+     * @return array
+     * @throws AuthenticationException
+     */
+    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
+        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
+        return $headerMap;
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      */
     public function testAddVirtualProductToCartIfCartIdIsEmpty()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Required parameter "cart_id" is missing');
 
         $query = <<<QUERY
@@ -87,7 +130,7 @@ QUERY;
      */
     public function testAddVirtualProductToCartIfCartItemsAreEmpty()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Required parameter "cart_items" is missing');
 
         $query = <<<QUERY
@@ -117,7 +160,7 @@ QUERY;
      */
     public function testAddVirtualToNonExistentCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Could not find a cart with ID "non_existent_masked_id"');
 
         $sku = 'virtual_product';
@@ -135,7 +178,7 @@ QUERY;
      */
     public function testNonExistentProductToCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Could not find a product with SKU "virtual_product"');
 
         $sku = 'virtual_product';
@@ -186,53 +229,10 @@ QUERY;
         $this->graphQlMutation($query, [], '', $this->getHeaderMap('customer2@search.example.com'));
     }
 
-    /**
-     * @param string $maskedQuoteId
-     * @param string $sku
-     * @param float $quantity
-     * @return string
-     */
-    private function getQuery(string $maskedQuoteId, string $sku, float $quantity): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-mutation {
-  addVirtualProductsToCart(input: {
-    cart_id: "{$maskedQuoteId}", 
-    cart_items: [
-      {
-        data: {
-          quantity: {$quantity}
-          sku: "{$sku}"
-        }
-      }                
-    ]
-  }) {
-    cart {
-      items {
-        id
-        quantity
-        product {
-          sku
-        }
-      }
-    }
-  }
-}
-QUERY;
-    }
-
-    /**
-     * Retrieve customer authorization headers
-     *
-     * @param string $username
-     * @param string $password
-     * @return array
-     * @throws AuthenticationException
-     */
-    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
-    {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
-        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
-        return $headerMap;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
     }
 }

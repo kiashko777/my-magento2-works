@@ -29,27 +29,6 @@ class UpdateTest extends AbstractController
     private $getWishlistByCustomerId;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->customerSession = $this->_objectManager->get(Session::class);
-        $this->getWishlistByCustomerId = $this->_objectManager->get(GetWishlistByCustomerId::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->customerSession->setCustomerId(null);
-
-        parent::tearDown();
-    }
-
-    /**
      * @return void
      */
     public function testUpdateWishListItem(): void
@@ -69,6 +48,18 @@ class UpdateTest extends AbstractController
     }
 
     /**
+     * Perform update wish list item request.
+     *
+     * @param array $params
+     * @return void
+     */
+    private function performUpdateWishListItemRequest(array $params): void
+    {
+        $this->getRequest()->setPostValue($params)->setMethod(HttpRequest::METHOD_POST);
+        $this->dispatch('wishlist/index/update');
+    }
+
+    /**
      * @return void
      */
     public function testUpdateWishListItemZeroQty(): void
@@ -85,14 +76,23 @@ class UpdateTest extends AbstractController
     }
 
     /**
-     * Perform update wish list item request.
-     *
-     * @param array $params
-     * @return void
+     * @inheritdoc
      */
-    private function performUpdateWishListItemRequest(array $params): void
+    protected function setUp(): void
     {
-        $this->getRequest()->setPostValue($params)->setMethod(HttpRequest::METHOD_POST);
-        $this->dispatch('wishlist/index/update');
+        parent::setUp();
+
+        $this->customerSession = $this->_objectManager->get(Session::class);
+        $this->getWishlistByCustomerId = $this->_objectManager->get(GetWishlistByCustomerId::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->customerSession->setCustomerId(null);
+
+        parent::tearDown();
     }
 }

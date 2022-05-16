@@ -8,11 +8,15 @@ declare(strict_types=1);
 namespace Magento\Catalog\Model\Product\ProductFrontendAction;
 
 use Magento\Catalog\Model\ProductRepository;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for \Magento\Catalog\Model\Products\ProductFrontendAction\Synchronizer.
  */
-class SynchronizerTest extends \PHPUnit\Framework\TestCase
+class SynchronizerTest extends TestCase
 {
     /**
      * @var Synchronizer
@@ -25,23 +29,12 @@ class SynchronizerTest extends \PHPUnit\Framework\TestCase
     private $productRepository;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-
-        $this->synchronizer = $objectManager->get(Synchronizer::class);
-        $this->productRepository = $objectManager->get(ProductRepository::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
      * @magentoDataFixture Magento/Catalog/_files/second_product_simple.php
      *
      * @return void
-     * @throws \Magento\Framework\Exception\LocalizedException
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @throws LocalizedException
+     * @throws NoSuchEntityException
      */
     public function testSyncActions(): void
     {
@@ -86,8 +79,8 @@ class SynchronizerTest extends \PHPUnit\Framework\TestCase
      * @magentoDataFixture Magento/Catalog/_files/second_product_simple.php
      *
      * @return void
-     * @throws \Magento\Framework\Exception\LocalizedException
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @throws LocalizedException
+     * @throws NoSuchEntityException
      */
     public function testSyncActionsWithoutActionsType(): void
     {
@@ -109,5 +102,16 @@ class SynchronizerTest extends \PHPUnit\Framework\TestCase
         ];
 
         $this->synchronizer->syncActions($productsData, '');
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+
+        $this->synchronizer = $objectManager->get(Synchronizer::class);
+        $this->productRepository = $objectManager->get(ProductRepository::class);
     }
 }

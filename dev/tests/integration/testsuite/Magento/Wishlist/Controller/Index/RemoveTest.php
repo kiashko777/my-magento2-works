@@ -29,27 +29,6 @@ class RemoveTest extends AbstractController
     private $getWishlistByCustomerId;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->customerSession = $this->_objectManager->get(Session::class);
-        $this->getWishlistByCustomerId = $this->_objectManager->get(GetWishlistByCustomerId::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->customerSession->setCustomerId(null);
-
-        parent::tearDown();
-    }
-
-    /**
      * @return void
      */
     public function testRemoveProductFromWishList(): void
@@ -75,5 +54,26 @@ class RemoveTest extends AbstractController
         $this->getRequest()->setParams(['item' => 989])->setMethod(HttpRequest::METHOD_POST);
         $this->dispatch('wishlist/index/remove');
         $this->assert404NotFound();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->customerSession = $this->_objectManager->get(Session::class);
+        $this->getWishlistByCustomerId = $this->_objectManager->get(GetWishlistByCustomerId::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->customerSession->setCustomerId(null);
+
+        parent::tearDown();
     }
 }

@@ -3,30 +3,24 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Model;
 
-use Magento\Catalog\Model\Config;
-use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\TestFramework\Helper\CacheCleaner;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
-class ConfigTest extends \PHPUnit\Framework\TestCase
+class ConfigTest extends TestCase
 {
     /**
      * @var Config
      */
     private $config;
-    
+
     /**
      * @var ObjectManager
      */
     private $objectManager;
-    
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->config = $this->objectManager->get(Config::class);
-    }
 
     public function testGetEntityAttributeCodes()
     {
@@ -54,5 +48,11 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
             $this->config->getEntityType($entityType),
             $this->config->getEntityType($entityType)
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->config = $this->objectManager->get(Config::class);
     }
 }

@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestSetupDeclarationModule3\Setup\Patch\Data;
 
 use Magento\Framework\App\ResourceConnection;
@@ -44,6 +45,16 @@ class ReferenceIncrementalSomeIntegerPatch implements
     /**
      * @return array
      */
+    public static function getDependencies()
+    {
+        return [
+            ZFirstPatch::class
+        ];
+    }
+
+    /**
+     * @return array
+     */
     public function getAliases()
     {
         return [];
@@ -62,15 +73,5 @@ class ReferenceIncrementalSomeIntegerPatch implements
     {
         $adapter = $this->resourceConnection->getConnection();
         $adapter->delete('test_table', ['`smallint` = ?' => 1]);
-    }
-
-    /**
-     * @return array
-     */
-    public static function getDependencies()
-    {
-        return [
-            ZFirstPatch::class
-        ];
     }
 }

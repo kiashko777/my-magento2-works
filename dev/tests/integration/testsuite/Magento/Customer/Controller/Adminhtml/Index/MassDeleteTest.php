@@ -10,11 +10,12 @@ namespace Magento\Customer\Controller\Adminhtml\Index;
 use Magento\Backend\Model\Session;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Api\Data\CustomerInterface;
-use PHPUnit\Framework\Constraint\Constraint;
+use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\Exception\AuthenticationException;
 use Magento\Framework\Message\MessageInterface;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\TestFramework\TestCase\AbstractBackendController;
+use PHPUnit\Framework\Constraint\Constraint;
 
 /**
  * @magentoAppArea Adminhtml
@@ -34,33 +35,6 @@ class MassDeleteTest extends AbstractBackendController
     private $baseControllerUrl = 'http://localhost/index.php/backend/customer/index/index';
 
     /**
-     * @inheritDoc
-     *
-     * @throws \Magento\Framework\Exception\AuthenticationException
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->customerRepository = Bootstrap::getObjectManager()->get(CustomerRepositoryInterface::class);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    protected function tearDown(): void
-    {
-        /**
-         * Unset customer data
-         */
-        Bootstrap::getObjectManager()->get(Session::class)->setCustomerData(null);
-
-        /**
-         * Unset messages
-         */
-        Bootstrap::getObjectManager()->get(Session::class)->getMessages(true);
-    }
-
-    /**
      * Validates failure attempts to delete customers from grid.
      *
      * @param array|null $ids
@@ -73,6 +47,29 @@ class MassDeleteTest extends AbstractBackendController
     public function testFailedMassDeleteAction($ids, Constraint $constraint, $messageType)
     {
         $this->massDeleteAssertions($ids, $constraint, $messageType);
+    }
+
+    /**
+     * Performs required request and assertions.
+     *
+     * @param array|null $ids
+     * @param Constraint $constraint
+     * @param string|null $messageType
+     */
+    private function massDeleteAssertions($ids, Constraint $constraint, $messageType)
+    {
+        $requestData = [
+            'selected' => $ids,
+            'namespace' => 'customer_listing',
+        ];
+
+        $this->getRequest()->setParams($requestData)->setMethod(HttpRequest::METHOD_POST);
+        $this->dispatch('backend/customer/index/massDelete');
+        $this->assertSessionMessages(
+            $constraint,
+            $messageType
+        );
+        $this->assertRedirect($this->stringStartsWith($this->baseControllerUrl));
     }
 
     /**
@@ -99,29 +96,6 @@ class MassDeleteTest extends AbstractBackendController
             $constraint,
             $messageType
         );
-    }
-
-    /**
-     * Performs required request and assertions.
-     *
-     * @param array|null $ids
-     * @param Constraint $constraint
-     * @param string|null $messageType
-     */
-    private function massDeleteAssertions($ids, Constraint $constraint, $messageType)
-    {
-        $requestData = [
-            'selected' => $ids,
-            'namespace' => 'customer_listing',
-        ];
-
-        $this->getRequest()->setParams($requestData)->setMethod(HttpRequest::METHOD_POST);
-        $this->dispatch('backend/customer/index/massDelete');
-        $this->assertSessionMessages(
-            $constraint,
-            $messageType
-        );
-        $this->assertRedirect($this->stringStartsWith($this->baseControllerUrl));
     }
 
     /**
@@ -169,5 +143,32 @@ class MassDeleteTest extends AbstractBackendController
                 'messageType' => MessageInterface::TYPE_SUCCESS,
             ],
         ];
+    }
+
+    /**
+     * @inheritDoc
+     *
+     * @throws AuthenticationException
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->customerRepository = Bootstrap::getObjectManager()->get(CustomerRepositoryInterface::class);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function tearDown(): void
+    {
+        /**
+         * Unset customer data
+         */
+        Bootstrap::getObjectManager()->get(Session::class)->setCustomerData(null);
+
+        /**
+         * Unset messages
+         */
+        Bootstrap::getObjectManager()->get(Session::class)->getMessages(true);
     }
 }

@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Newsletter\Controller\Subscriber;
 
+use Laminas\Stdlib\Parameters;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Model\Session;
 use Magento\Customer\Model\Url;
@@ -14,7 +15,6 @@ use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Newsletter\Model\ResourceModel\Subscriber as SubscriberResource;
 use Magento\Newsletter\Model\ResourceModel\Subscriber\CollectionFactory;
 use Magento\TestFramework\TestCase\AbstractController;
-use Laminas\Stdlib\Parameters;
 
 /**
  * Class checks subscription behaviour from frontend
@@ -43,32 +43,6 @@ class NewActionTest extends AbstractController
     private $customerUrl;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->session = $this->_objectManager->get(Session::class);
-        $this->subscriberCollectionFactory = $this->_objectManager->get(CollectionFactory::class);
-        $this->subscriberResource = $this->_objectManager->get(SubscriberResource::class);
-        $this->customerRepository = $this->_objectManager->get(CustomerRepositoryInterface::class);
-        $this->customerUrl = $this->_objectManager->get(Url::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        if ($this->subscriberToDelete) {
-            $this->deleteSubscriber($this->subscriberToDelete);
-        }
-
-        parent::tearDown();
-    }
-
-    /**
      * @dataProvider subscribersDataProvider
      *
      * @param string $email
@@ -82,6 +56,35 @@ class NewActionTest extends AbstractController
         $this->dispatch('newsletter/subscriber/new');
 
         $this->performAsserts($expectedMessage);
+    }
+
+    /**
+     * Prepare request
+     *
+     * @param string $email
+     * @return void
+     */
+    private function prepareRequest(string $email): void
+    {
+        $parameters = $this->_objectManager->create(Parameters::class);
+        $parameters->set('HTTP_REFERER', 'http://localhost/testRedirect');
+        $this->getRequest()->setServer($parameters);
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
+        $this->getRequest()->setPostValue(['email' => $email]);
+    }
+
+    /**
+     * Assert session message and expected redirect
+     *
+     * @param string $message
+     * @return void
+     */
+    private function performAsserts(string $message): void
+    {
+        if ($message) {
+            $this->assertSessionMessages($this->equalTo([(string)__($message)]));
+        }
+        $this->assertRedirect($this->equalTo('http://localhost/testRedirect'));
     }
 
     /**
@@ -210,32 +213,29 @@ class NewActionTest extends AbstractController
     }
 
     /**
-     * Prepare request
-     *
-     * @param string $email
-     * @return void
+     * @inheritdoc
      */
-    private function prepareRequest(string $email): void
+    protected function setUp(): void
     {
-        $parameters = $this->_objectManager->create(Parameters::class);
-        $parameters->set('HTTP_REFERER', 'http://localhost/testRedirect');
-        $this->getRequest()->setServer($parameters);
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
-        $this->getRequest()->setPostValue(['email' => $email]);
+        parent::setUp();
+
+        $this->session = $this->_objectManager->get(Session::class);
+        $this->subscriberCollectionFactory = $this->_objectManager->get(CollectionFactory::class);
+        $this->subscriberResource = $this->_objectManager->get(SubscriberResource::class);
+        $this->customerRepository = $this->_objectManager->get(CustomerRepositoryInterface::class);
+        $this->customerUrl = $this->_objectManager->get(Url::class);
     }
 
     /**
-     * Assert session message and expected redirect
-     *
-     * @param string $message
-     * @return void
+     * @inheritdoc
      */
-    private function performAsserts(string $message): void
+    protected function tearDown(): void
     {
-        if ($message) {
-            $this->assertSessionMessages($this->equalTo([(string)__($message)]));
+        if ($this->subscriberToDelete) {
+            $this->deleteSubscriber($this->subscriberToDelete);
         }
-        $this->assertRedirect($this->equalTo('http://localhost/testRedirect'));
+
+        parent::tearDown();
     }
 
     /**

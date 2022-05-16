@@ -10,21 +10,21 @@ namespace Magento\GraphQl\Sales;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Downloadable\Api\Data\LinkInterface;
 use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\DB\Transaction;
+use Magento\Framework\Registry;
 use Magento\GraphQl\GetCustomerAuthenticationHeader;
 use Magento\GraphQl\Sales\Fixtures\CustomerPlaceOrderWithDownloadable;
 use Magento\Sales\Api\CreditmemoRepositoryInterface;
+use Magento\Sales\Api\InvoiceManagementInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Creditmemo\ItemFactory;
 use Magento\Sales\Model\Order\CreditmemoFactory;
 use Magento\Sales\Model\ResourceModel\Order\Collection as OrderCollection;
 use Magento\Sales\Model\ResourceModel\Order\Creditmemo\Collection as CreditmemoCollection;
 use Magento\Sales\Model\Service\CreditmemoService;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
-use Magento\Sales\Model\Order\Creditmemo\ItemFactory;
-use Magento\Framework\Registry;
-use Magento\Framework\DB\Transaction;
-use Magento\Sales\Api\InvoiceManagementInterface;
 
 /**
  * Tests downloadable product fields in Orders, Invoices, CreditMemo and Shipments
@@ -53,55 +53,29 @@ class RetrieveOrdersWithDownloadableProductTest extends GraphQlAbstract
     /** @var CreditmemoFactory */
     private $creditMemoFactory;
 
-    /** @var ItemFactory  */
+    /** @var ItemFactory */
     private $creditmemoItemFactory;
 
-    /** @var CustomerPlaceOrderWithDownloadable  */
+    /** @var CustomerPlaceOrderWithDownloadable */
     private $customerPlaceOrderWithDownloadable;
 
-    /** @var InvoiceManagementInterface  */
+    /** @var InvoiceManagementInterface */
     private $invoiceManagement;
 
-    /** @var OrderCollection  */
+    /** @var OrderCollection */
     private $orderCollection;
 
-    /** @var CreditmemoRepositoryInterface  */
+    /** @var CreditmemoRepositoryInterface */
     private $creditmemoRepository;
 
-    /** @var CreditmemoCollection  */
+    /** @var CreditmemoCollection */
     private $creditmemoCollection;
 
-    /** @var Registry  */
+    /** @var Registry */
     private $registry;
 
-    /** @var Transaction  */
+    /** @var Transaction */
     private $transaction;
-
-    protected function setUp():void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->customerAuthenticationHeader = $objectManager->get(GetCustomerAuthenticationHeader::class);
-        $this->orderRepository = $objectManager->get(OrderRepositoryInterface::class);
-        $this->searchCriteriaBuilder = $objectManager->get(SearchCriteriaBuilder::class);
-        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
-        $this->order = $objectManager->create(Order::class);
-        $this->creditMemoService = $objectManager->get(CreditmemoService::class);
-        $this->creditMemoFactory = $objectManager->get(CreditmemoFactory::class);
-        $this->creditmemoItemFactory = $objectManager->create(ItemFactory::class);
-        $this->customerPlaceOrderWithDownloadable = $objectManager->create(CustomerPlaceOrderWithDownloadable::class);
-        $this->invoiceManagement = $objectManager->create(InvoiceManagementInterface::class);
-        $this->orderCollection = $objectManager->create(OrderCollection::class);
-        $this->creditmemoRepository = $objectManager->get(CreditmemoRepositoryInterface::class);
-        $this->creditmemoCollection = $objectManager->create(CreditmemoCollection::class);
-        $this->registry = $objectManager->get(Registry::class);
-        $this->transaction = $objectManager->create(Transaction::class);
-    }
-
-    protected function tearDown(): void
-    {
-        $this->cleanUpCreditMemos();
-        $this->deleteOrder();
-    }
 
     /**
      * @magentoApiDataFixture Magento/Downloadable/_files/order_with_customer_and_downloadable_product.php
@@ -132,14 +106,14 @@ class RetrieveOrdersWithDownloadableProductTest extends GraphQlAbstract
         $expectedDownloadableLinksData =
             [
                 [
-                    'title' =>'Downloadable Products link',
+                    'title' => 'Downloadable Products link',
                     'sort_order' => 1,
-                    'uid'=> base64_encode("downloadable/{$linkId}")
+                    'uid' => base64_encode("downloadable/{$linkId}")
                 ]
             ];
         $this->assertResponseFields($expectedDownloadableLinksData, $downloadableLinksFromResponse);
         // invoices assertions
-        $customerOrderItemsInvoicesResponse  = $customerOrders[0]['invoices'][0];
+        $customerOrderItemsInvoicesResponse = $customerOrders[0]['invoices'][0];
         $this->assertNotEmpty($customerOrderItemsInvoicesResponse);
         $this->assertNotEmpty($customerOrderItemsInvoicesResponse['number']);
         $customerOrderItemsInvoicesItemsResponse = $customerOrderItemsInvoicesResponse['items'][0];
@@ -156,129 +130,12 @@ class RetrieveOrdersWithDownloadableProductTest extends GraphQlAbstract
         $expectedDownloadableLinksData =
             [
                 [
-                    'title' =>'Downloadable Products link',
+                    'title' => 'Downloadable Products link',
                     'sort_order' => 1,
-                    'uid'=> base64_encode("downloadable/{$linkId}")
+                    'uid' => base64_encode("downloadable/{$linkId}")
                 ]
             ];
         $this->assertResponseFields($expectedDownloadableLinksData, $downloadableItemLinks);
-    }
-
-    /**
-     * @magentoApiDataFixture Magento/Customer/_files/customer.php
-     * @magentoApiDataFixture Magento/Downloadable/_files/product_downloadable_with_purchased_separately_links.php
-     */
-    public function testGetCustomerOrdersAndCreditMemoDownloadable()
-    {
-        //Place order with downloadable product
-        $qty = 1;
-        $downloadableSku = 'downloadable-product-with-purchased-separately-links';
-        $orderResponse = $this->customerPlaceOrderWithDownloadable->placeOrderWithDownloadableProduct(
-            ['email' => 'customer@example.com', 'password' => 'password'],
-            ['sku' => $downloadableSku, 'quantity' => $qty]
-        );
-        $orderNumber = $orderResponse['placeOrder']['order']['order_number'];
-        //End place order with downloadable product
-
-        // prepare invoice
-        $this->prepareInvoice($orderNumber, 1);
-        $order = $this->order->loadByIncrementId($orderNumber);
-        // Create a credit memo
-        $creditMemo = $this->creditMemoFactory->createByOrder($order, $order->getData());
-        $creditMemo->setOrder($order);
-        $creditMemo->setState(1);
-        $creditMemo->setSubtotal(12);
-        $creditMemo->setBaseSubTotal(12);
-        $creditMemo->setBaseGrandTotal(12);
-        $creditMemo->setGrandTotal(12);
-        $creditMemo->setAdjustment(-2.00);
-        $creditMemo->addComment("Test comment for downloadable refund", false, true);
-        $creditMemo->save();
-        $this->creditMemoService->refund($creditMemo, true);
-        $response = $this->getCustomerOrderWithCreditMemoQuery();
-        $downloadableProduct = $this->productRepository->get('downloadable-product-with-purchased-separately-links');
-        /** @var LinkInterface $downloadableProductLinks */
-        $downloadableProductLinks = $downloadableProduct->getExtensionAttributes()->getDownloadableProductLinks();
-        $linkId = $downloadableProductLinks[0]->getId();
-        $expectedCreditMemoData = [
-            [
-                'comments' => [
-                    ['message' => 'Test comment for downloadable refund']
-                ],
-                'items' => [
-                    [
-                        'product_name'=> 'Downloadable Products (Links can be purchased separately)',
-                        'product_sku' => 'downloadable-product-with-purchased-separately-links',
-                        'product_sale_price' => ['value' => 12],
-                        'discounts' => [],
-                        'quantity_refunded' => 1,
-                        'downloadable_links' => [
-                            [
-                                'uid'=> base64_encode("downloadable/{$linkId}"),
-                                'title' => 'Downloadable Products link 1']
-                        ]
-                    ]
-                ],
-                'total' => [
-                    'subtotal' => [
-                        'value' => 12
-                    ],
-                    'grand_total' => [
-                        'value' => 12,
-                        'currency' => 'USD'
-                    ],
-                    'base_grand_total' => [
-                        'value' => 12,
-                        'currency' => 'USD'
-                    ],
-                    'total_shipping' => [
-                        'value' => 0
-                    ],
-                    'total_tax' => [
-                        'value' => 0
-                    ],
-                    'shipping_handling' => [
-                        'amount_including_tax' => [
-                            'value' => 0
-                        ],
-                        'amount_excluding_tax' => [
-                            'value' => 0
-                        ],
-                        'total_amount' => [
-                            'value' => 0
-                        ],
-                        'taxes' => []
-
-                    ],
-                    'adjustment' => [
-                        'value' => 2
-                    ]
-                ]
-            ]
-        ];
-        $firstOrderItem = current($response['customer']['orders']['items'] ?? []);
-        $this->assertArrayHasKey('credit_memos', $firstOrderItem);
-
-        $creditMemos = $firstOrderItem['credit_memos'];
-        $this->assertResponseFields($creditMemos, $expectedCreditMemoData);
-    }
-
-    /**
-     * Prepare invoice for the order
-     *
-     * @param string $orderNumber
-     * @param int|null $qty
-     */
-    private function prepareInvoice(string $orderNumber, int $qty = null)
-    {
-        /** @var Order $order */
-        $order = $this->order->loadByIncrementId($orderNumber);
-        $orderItem = current($order->getItems());
-        $invoice = $this->invoiceManagement->prepareInvoice($order, [$orderItem->getId() => $qty]);
-        $invoice->register();
-        $order = $invoice->getOrder();
-        $order->setIsInProcess(true);
-        $this->transaction->addObject($invoice)->addObject($order)->save();
     }
 
     /**
@@ -379,6 +236,123 @@ QUERY;
     }
 
     /**
+     * @magentoApiDataFixture Magento/Customer/_files/customer.php
+     * @magentoApiDataFixture Magento/Downloadable/_files/product_downloadable_with_purchased_separately_links.php
+     */
+    public function testGetCustomerOrdersAndCreditMemoDownloadable()
+    {
+        //Place order with downloadable product
+        $qty = 1;
+        $downloadableSku = 'downloadable-product-with-purchased-separately-links';
+        $orderResponse = $this->customerPlaceOrderWithDownloadable->placeOrderWithDownloadableProduct(
+            ['email' => 'customer@example.com', 'password' => 'password'],
+            ['sku' => $downloadableSku, 'quantity' => $qty]
+        );
+        $orderNumber = $orderResponse['placeOrder']['order']['order_number'];
+        //End place order with downloadable product
+
+        // prepare invoice
+        $this->prepareInvoice($orderNumber, 1);
+        $order = $this->order->loadByIncrementId($orderNumber);
+        // Create a credit memo
+        $creditMemo = $this->creditMemoFactory->createByOrder($order, $order->getData());
+        $creditMemo->setOrder($order);
+        $creditMemo->setState(1);
+        $creditMemo->setSubtotal(12);
+        $creditMemo->setBaseSubTotal(12);
+        $creditMemo->setBaseGrandTotal(12);
+        $creditMemo->setGrandTotal(12);
+        $creditMemo->setAdjustment(-2.00);
+        $creditMemo->addComment("Test comment for downloadable refund", false, true);
+        $creditMemo->save();
+        $this->creditMemoService->refund($creditMemo, true);
+        $response = $this->getCustomerOrderWithCreditMemoQuery();
+        $downloadableProduct = $this->productRepository->get('downloadable-product-with-purchased-separately-links');
+        /** @var LinkInterface $downloadableProductLinks */
+        $downloadableProductLinks = $downloadableProduct->getExtensionAttributes()->getDownloadableProductLinks();
+        $linkId = $downloadableProductLinks[0]->getId();
+        $expectedCreditMemoData = [
+            [
+                'comments' => [
+                    ['message' => 'Test comment for downloadable refund']
+                ],
+                'items' => [
+                    [
+                        'product_name' => 'Downloadable Products (Links can be purchased separately)',
+                        'product_sku' => 'downloadable-product-with-purchased-separately-links',
+                        'product_sale_price' => ['value' => 12],
+                        'discounts' => [],
+                        'quantity_refunded' => 1,
+                        'downloadable_links' => [
+                            [
+                                'uid' => base64_encode("downloadable/{$linkId}"),
+                                'title' => 'Downloadable Products link 1']
+                        ]
+                    ]
+                ],
+                'total' => [
+                    'subtotal' => [
+                        'value' => 12
+                    ],
+                    'grand_total' => [
+                        'value' => 12,
+                        'currency' => 'USD'
+                    ],
+                    'base_grand_total' => [
+                        'value' => 12,
+                        'currency' => 'USD'
+                    ],
+                    'total_shipping' => [
+                        'value' => 0
+                    ],
+                    'total_tax' => [
+                        'value' => 0
+                    ],
+                    'shipping_handling' => [
+                        'amount_including_tax' => [
+                            'value' => 0
+                        ],
+                        'amount_excluding_tax' => [
+                            'value' => 0
+                        ],
+                        'total_amount' => [
+                            'value' => 0
+                        ],
+                        'taxes' => []
+
+                    ],
+                    'adjustment' => [
+                        'value' => 2
+                    ]
+                ]
+            ]
+        ];
+        $firstOrderItem = current($response['customer']['orders']['items'] ?? []);
+        $this->assertArrayHasKey('credit_memos', $firstOrderItem);
+
+        $creditMemos = $firstOrderItem['credit_memos'];
+        $this->assertResponseFields($creditMemos, $expectedCreditMemoData);
+    }
+
+    /**
+     * Prepare invoice for the order
+     *
+     * @param string $orderNumber
+     * @param int|null $qty
+     */
+    private function prepareInvoice(string $orderNumber, int $qty = null)
+    {
+        /** @var Order $order */
+        $order = $this->order->loadByIncrementId($orderNumber);
+        $orderItem = current($order->getItems());
+        $invoice = $this->invoiceManagement->prepareInvoice($order, [$orderItem->getId() => $qty]);
+        $invoice->register();
+        $order = $invoice->getOrder();
+        $order->setIsInProcess(true);
+        $this->transaction->addObject($invoice)->addObject($order)->save();
+    }
+
+    /**
      *  Get CustomerOrder with credit memo details
      *
      * @return array
@@ -457,19 +431,30 @@ QUERY;
         return $response;
     }
 
-    /**
-     * @return void
-     */
-    private function deleteOrder(): void
+    protected function setUp(): void
     {
-        $this->registry->unregister('isSecureArea');
-        $this->registry->register('isSecureArea', true);
+        $objectManager = Bootstrap::getObjectManager();
+        $this->customerAuthenticationHeader = $objectManager->get(GetCustomerAuthenticationHeader::class);
+        $this->orderRepository = $objectManager->get(OrderRepositoryInterface::class);
+        $this->searchCriteriaBuilder = $objectManager->get(SearchCriteriaBuilder::class);
+        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
+        $this->order = $objectManager->create(Order::class);
+        $this->creditMemoService = $objectManager->get(CreditmemoService::class);
+        $this->creditMemoFactory = $objectManager->get(CreditmemoFactory::class);
+        $this->creditmemoItemFactory = $objectManager->create(ItemFactory::class);
+        $this->customerPlaceOrderWithDownloadable = $objectManager->create(CustomerPlaceOrderWithDownloadable::class);
+        $this->invoiceManagement = $objectManager->create(InvoiceManagementInterface::class);
+        $this->orderCollection = $objectManager->create(OrderCollection::class);
+        $this->creditmemoRepository = $objectManager->get(CreditmemoRepositoryInterface::class);
+        $this->creditmemoCollection = $objectManager->create(CreditmemoCollection::class);
+        $this->registry = $objectManager->get(Registry::class);
+        $this->transaction = $objectManager->create(Transaction::class);
+    }
 
-        foreach ($this->orderCollection as $order) {
-            $this->orderRepository->delete($order);
-        }
-        $this->registry->unregister('isSecureArea');
-        $this->registry->register('isSecureArea', false);
+    protected function tearDown(): void
+    {
+        $this->cleanUpCreditMemos();
+        $this->deleteOrder();
     }
 
     /**
@@ -481,6 +466,21 @@ QUERY;
         $this->registry->register('isSecureArea', true);
         foreach ($this->creditmemoCollection as $creditmemo) {
             $this->creditmemoRepository->delete($creditmemo);
+        }
+        $this->registry->unregister('isSecureArea');
+        $this->registry->register('isSecureArea', false);
+    }
+
+    /**
+     * @return void
+     */
+    private function deleteOrder(): void
+    {
+        $this->registry->unregister('isSecureArea');
+        $this->registry->register('isSecureArea', true);
+
+        foreach ($this->orderCollection as $order) {
+            $this->orderRepository->delete($order);
         }
         $this->registry->unregister('isSecureArea');
         $this->registry->register('isSecureArea', false);

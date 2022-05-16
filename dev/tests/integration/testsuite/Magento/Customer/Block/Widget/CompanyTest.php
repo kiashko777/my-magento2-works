@@ -3,23 +3,29 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Customer\Block\Widget;
+
+use Magento\Customer\Model\Attribute;
+use Magento\Eav\Model\Config;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\Customer\Block\Widget\Taxvat
  *
  * @magentoAppArea frontend
  */
-class CompanyTest extends \PHPUnit\Framework\TestCase
+class CompanyTest extends TestCase
 {
     /**
      * @magentoAppIsolation enabled
      */
     public function testToHtml()
     {
-        /** @var \Magento\Customer\Block\Widget\Company $block */
-        $block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Block\Widget\Company::class
+        /** @var Company $block */
+        $block = Bootstrap::getObjectManager()->create(
+            Company::class
         );
 
         $this->assertStringContainsString('title="Company"', $block->toHtml());
@@ -32,16 +38,16 @@ class CompanyTest extends \PHPUnit\Framework\TestCase
      */
     public function testToHtmlRequired()
     {
-        /** @var \Magento\Customer\Model\Attribute $model */
-        $model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Model\Attribute::class
+        /** @var Attribute $model */
+        $model = Bootstrap::getObjectManager()->create(
+            Attribute::class
         );
         $model->loadByCode('customer_address', 'company')->setIsRequired(true);
         $model->save();
 
-        /** @var \Magento\Customer\Block\Widget\Company $block */
-        $block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Block\Widget\Company::class
+        /** @var Company $block */
+        $block = Bootstrap::getObjectManager()->create(
+            Company::class
         );
 
         $this->assertStringContainsString('title="Company"', $block->toHtml());
@@ -50,8 +56,8 @@ class CompanyTest extends \PHPUnit\Framework\TestCase
 
     protected function tearDown(): void
     {
-        /** @var \Magento\Eav\Model\Config $eavConfig */
-        $eavConfig = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Eav\Model\Config::class);
+        /** @var Config $eavConfig */
+        $eavConfig = Bootstrap::getObjectManager()->get(Config::class);
         $eavConfig->clear();
     }
 }

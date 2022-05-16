@@ -5,6 +5,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Filesystem\Directory;
 
 use Magento\Framework\Exception\FileSystemException;
@@ -34,6 +35,25 @@ class WriteTest extends TestCase
         $dir = $this->getDirectoryInstance('newDir1', 0777);
         $this->assertTrue($dir instanceof ReadInterface);
         $this->assertTrue($dir instanceof WriteInterface);
+    }
+
+    /**
+     * Get readable file instance
+     * Get full path for files located in _files directory
+     *
+     * @param string $path
+     * @param string $permissions
+     * @return Write
+     */
+    private function getDirectoryInstance($path, $permissions)
+    {
+        $fullPath = __DIR__ . '/../_files/' . $path;
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var WriteFactory $directoryFactory */
+        $directoryFactory = $objectManager->create(WriteFactory::class);
+        $directory = $directoryFactory->create($fullPath, DriverPool::FILE, $permissions);
+        $this->testDirectories[] = $directory;
+        return $directory;
     }
 
     /**
@@ -700,24 +720,5 @@ class WriteTest extends TestCase
                 $directory->delete();
             }
         }
-    }
-
-    /**
-     * Get readable file instance
-     * Get full path for files located in _files directory
-     *
-     * @param string $path
-     * @param string $permissions
-     * @return Write
-     */
-    private function getDirectoryInstance($path, $permissions)
-    {
-        $fullPath = __DIR__ . '/../_files/' . $path;
-        $objectManager = Bootstrap::getObjectManager();
-        /** @var WriteFactory $directoryFactory */
-        $directoryFactory = $objectManager->create(WriteFactory::class);
-        $directory = $directoryFactory->create($fullPath, DriverPool::FILE, $permissions);
-        $this->testDirectories[] = $directory;
-        return $directory;
     }
 }

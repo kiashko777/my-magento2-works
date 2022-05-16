@@ -3,12 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Di\App\Task\Operation;
 
+use Magento\Framework\App;
+use Magento\Framework\Code\Generator\Io;
+use Magento\Framework\Filesystem\Driver\File;
+use Magento\Framework\Interception\Code\Generator\Interceptor;
 use Magento\Setup\Module\Di\App\Task\OperationInterface;
 use Magento\Setup\Module\Di\Code\Generator\InterceptionConfigurationBuilder;
-use Magento\Framework\Interception\Code\Generator\Interceptor;
-use Magento\Framework\App;
 use Magento\Setup\Module\Di\Code\GeneratorFactory;
 use Magento\Setup\Module\Di\Code\Reader\ClassesScanner;
 
@@ -48,11 +51,12 @@ class Interception implements OperationInterface
      */
     public function __construct(
         InterceptionConfigurationBuilder $interceptionConfigurationBuilder,
-        App\AreaList $areaList,
-        ClassesScanner $classesScanner,
-        GeneratorFactory $generatorFactory,
-        $data = []
-    ) {
+        App\AreaList                     $areaList,
+        ClassesScanner                   $classesScanner,
+        GeneratorFactory                 $generatorFactory,
+                                         $data = []
+    )
+    {
         $this->interceptionConfigurationBuilder = $interceptionConfigurationBuilder;
         $this->areaList = $areaList;
         $this->data = $data;
@@ -84,8 +88,8 @@ class Interception implements OperationInterface
             }
         }
 
-        $generatorIo = new \Magento\Framework\Code\Generator\Io(
-            new \Magento\Framework\Filesystem\Driver\File(),
+        $generatorIo = new Io(
+            new File(),
             $this->data['path_to_store']
         );
         $generator = $this->generatorFactory->create(

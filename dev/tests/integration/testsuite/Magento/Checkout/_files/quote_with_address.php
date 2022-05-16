@@ -5,32 +5,38 @@
  */
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Customer\Api\AccountManagementInterface;
+use Magento\Customer\Api\AddressRepositoryInterface;
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\Quote\Address;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Customer/_files/customer.php');
 Resolver::getInstance()->requireDataFixture('Magento/Customer/_files/customer_address.php');
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/products.php');
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 /** @var ProductRepositoryInterface $productRepository */
 $productRepository = $objectManager->create(ProductRepositoryInterface::class);
 $product = $productRepository->get('simple');
-/** @var \Magento\Quote\Model\Quote\Address $quoteShippingAddress */
-$quoteShippingAddress = $objectManager->create(\Magento\Quote\Model\Quote\Address::class);
+/** @var Address $quoteShippingAddress */
+$quoteShippingAddress = $objectManager->create(Address::class);
 
-/** @var \Magento\Customer\Api\AccountManagementInterface $accountManagement */
-$accountManagement = $objectManager->create(\Magento\Customer\Api\AccountManagementInterface::class);
+/** @var AccountManagementInterface $accountManagement */
+$accountManagement = $objectManager->create(AccountManagementInterface::class);
 
-/** @var \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository */
-$customerRepository = $objectManager->create(\Magento\Customer\Api\CustomerRepositoryInterface::class);
+/** @var CustomerRepositoryInterface $customerRepository */
+$customerRepository = $objectManager->create(CustomerRepositoryInterface::class);
 $customer = $customerRepository->getById(1);
 
-/** @var \Magento\Customer\Api\AddressRepositoryInterface $addressRepository */
-$addressRepository = $objectManager->create(\Magento\Customer\Api\AddressRepositoryInterface::class);
+/** @var AddressRepositoryInterface $addressRepository */
+$addressRepository = $objectManager->create(AddressRepositoryInterface::class);
 $quoteShippingAddress->importCustomerAddressData($addressRepository->getById(1));
 
-/** @var \Magento\Quote\Model\Quote $quote */
-$quote = $objectManager->create(\Magento\Quote\Model\Quote::class);
+/** @var Quote $quote */
+$quote = $objectManager->create(Quote::class);
 $quote->setStoreId(
     1
 )->setIsActive(

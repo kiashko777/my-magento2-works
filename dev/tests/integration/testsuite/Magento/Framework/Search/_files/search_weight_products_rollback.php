@@ -6,15 +6,21 @@
  *
  */
 
-/** @var \Magento\Framework\Registry $registry */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-$registry = $objectManager->get(\Magento\Framework\Registry::class);
+/** @var Registry $registry */
+
+use Magento\Catalog\Api\ProductAttributeRepositoryInterface;
+use Magento\Catalog\Model\ResourceModel\Product\Collection;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
+$registry = $objectManager->get(Registry::class);
 
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
-/** @var \Magento\Catalog\Model\ResourceModel\Product\Collection $collection */
-$collection = $objectManager->create(\Magento\Catalog\Model\ResourceModel\Product\Collection::class);
+/** @var Collection $collection */
+$collection = $objectManager->create(Collection::class);
 $collection->addAttributeToSelect('id')->load();
 if ($collection->count() > 0) {
     $collection->delete();
@@ -23,9 +29,9 @@ if ($collection->count() > 0) {
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', false);
 
-/** @var \Magento\Catalog\Api\ProductAttributeRepositoryInterface $productAttributeRepository */
+/** @var ProductAttributeRepositoryInterface $productAttributeRepository */
 $productAttributeRepository = $objectManager->get(
-    \Magento\Catalog\Api\ProductAttributeRepositoryInterface::class
+    ProductAttributeRepositoryInterface::class
 );
 
 $nameAttribute = $productAttributeRepository->get('name');

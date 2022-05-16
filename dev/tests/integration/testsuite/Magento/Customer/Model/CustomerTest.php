@@ -6,27 +6,21 @@
 
 namespace Magento\Customer\Model;
 
-class CustomerTest extends \PHPUnit\Framework\TestCase
+use Magento\Customer\Api\Data\CustomerInterfaceFactory;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class CustomerTest extends TestCase
 {
     /**
-     * @var \Magento\Customer\Model\Customer
+     * @var Customer
      */
     protected $customerModel;
 
     /**
-     * @var \Magento\Customer\Api\Data\CustomerInterfaceFactory
+     * @var CustomerInterfaceFactory
      */
     protected $customerFactory;
-
-    protected function setUp(): void
-    {
-        $this->customerModel = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Model\Customer::class
-        );
-        $this->customerFactory = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Api\Data\CustomerInterfaceFactory::class
-        );
-    }
 
     public function testUpdateDataSetDataOnEmptyModel()
     {
@@ -66,5 +60,15 @@ class CustomerTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('Jane', $updatedCustomerData->getFirstname());
         $this->assertEquals('Smith', $updatedCustomerData->getLastname());
         $this->assertEquals(0, $updatedCustomerData->getDefaultBilling());
+    }
+
+    protected function setUp(): void
+    {
+        $this->customerModel = Bootstrap::getObjectManager()->create(
+            Customer::class
+        );
+        $this->customerFactory = Bootstrap::getObjectManager()->create(
+            CustomerInterfaceFactory::class
+        );
     }
 }

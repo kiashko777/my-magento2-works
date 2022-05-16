@@ -46,17 +46,6 @@ class PriceTest extends TestCase
     private $customerSession;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productPrice = $this->objectManager->create(Price::class);
-        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
-        $this->customerSession = $this->objectManager->get(Session::class);
-    }
-
-    /**
      * Assert that for logged user product price equal to price from catalog rule.
      *
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
@@ -141,6 +130,34 @@ class PriceTest extends TestCase
     }
 
     /**
+     * Build buy request based on product custom options.
+     *
+     * @param Product $product
+     * @return DataObject
+     */
+    private function prepareBuyRequest(Product $product): DataObject
+    {
+        $options = [];
+        /** @var Option $option */
+        foreach ($product->getOptions() as $option) {
+            switch ($option->getGroupByType()) {
+                case ProductCustomOptionInterface::OPTION_GROUP_DATE:
+                    $value = ['year' => 2013, 'month' => 8, 'day' => 9, 'hour' => 13, 'minute' => 35];
+                    break;
+                case ProductCustomOptionInterface::OPTION_GROUP_SELECT:
+                    $value = key($option->getValues());
+                    break;
+                default:
+                    $value = 'test';
+                    break;
+            }
+            $options[$option->getId()] = $value;
+        }
+
+        return $this->objectManager->create(DataObject::class, ['data' => ['qty' => 1, 'options' => $options]]);
+    }
+
+    /**
      * Assert that formated price is correct.
      *
      * @return void
@@ -196,34 +213,6 @@ class PriceTest extends TestCase
     }
 
     /**
-     * Build buy request based on product custom options.
-     *
-     * @param Product $product
-     * @return DataObject
-     */
-    private function prepareBuyRequest(Product $product): DataObject
-    {
-        $options = [];
-        /** @var Option $option */
-        foreach ($product->getOptions() as $option) {
-            switch ($option->getGroupByType()) {
-                case ProductCustomOptionInterface::OPTION_GROUP_DATE:
-                    $value = ['year' => 2013, 'month' => 8, 'day' => 9, 'hour' => 13, 'minute' => 35];
-                    break;
-                case ProductCustomOptionInterface::OPTION_GROUP_SELECT:
-                    $value = key($option->getValues());
-                    break;
-                default:
-                    $value = 'test';
-                    break;
-            }
-            $options[$option->getId()] = $value;
-        }
-
-        return $this->objectManager->create(DataObject::class, ['data' => ['qty' => 1, 'options' => $options]]);
-    }
-
-    /**
      * Assert price for different product with decimal qty.
      *
      * @magentoDataFixture Magento/Catalog/_files/simple_product_with_tier_price_and_decimal_qty.php
@@ -234,5 +223,16 @@ class PriceTest extends TestCase
     {
         $product = $this->productRepository->get('simple');
         $this->assertEquals(2.99, $this->productPrice->getFinalPrice(0.5, $product));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productPrice = $this->objectManager->create(Price::class);
+        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+        $this->customerSession = $this->objectManager->get(Session::class);
     }
 }

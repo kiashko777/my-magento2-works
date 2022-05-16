@@ -21,7 +21,7 @@ $customerAuthUpdate = $objectManager->get(CustomerAuthUpdate::class);
 $customerId = 1;
 
 $customerSecure = $customerRegistry->retrieveSecureData($customerId);
-$dateTime = new \DateTimeImmutable();
+$dateTime = new DateTimeImmutable();
 $customerSecure->setFailuresNum(10)
     ->setFirstFailure($dateTime->modify('-5 minutes')->format(DateTime::DATETIME_PHP_FORMAT))
     ->setLockExpires($dateTime->modify('+5 minutes')->format(DateTime::DATETIME_PHP_FORMAT));

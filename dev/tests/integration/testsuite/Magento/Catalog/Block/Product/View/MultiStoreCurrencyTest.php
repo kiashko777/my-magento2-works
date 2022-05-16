@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Magento\Catalog\Block\Product\View;
 
 use Magento\Framework\Locale\ResolverInterface;
+use Magento\Setup\Module\I18n\Locale;
 use Magento\Store\Model\StoreManagerInterface;
 
 /**
@@ -23,17 +24,6 @@ class MultiStoreCurrencyTest extends AbstractCurrencyTest
 
     /** @var ResolverInterface */
     private $localeResolver;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->localeResolver = $this->objectManager->get(ResolverInterface::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-    }
 
     /**
      * @magentoConfigFixture default/currency/options/base USD
@@ -57,6 +47,49 @@ class MultiStoreCurrencyTest extends AbstractCurrencyTest
         $this->reloadProductPriceInfo();
         $this->localeResolver->setLocale('uk_UA');
         $this->assertProductStorePrice('simple2', '240,00 ₴', 'fixturestore');
+    }
+
+    /**
+     * Check price per stores
+     *
+     * @param string $productSku
+     * @param string $expectedData
+     * @param string $storeCode
+     * @param string $priceBlockName
+     * @return void
+     */
+    private function assertProductStorePrice(
+        string $productSku,
+        string $expectedData,
+        string $storeCode = 'default',
+        string $priceBlockName = self::FINAL_PRICE_BLOCK_NAME
+    ): void
+    {
+        $currentStore = $this->storeManager->getStore();
+        try {
+            if ($currentStore->getCode() !== $storeCode) {
+                $this->storeManager->setCurrentStore($storeCode);
+            }
+
+            $actualData = $this->processPriceView($productSku, $priceBlockName);
+            self::assertEquals($expectedData, $actualData);
+        } finally {
+            if ($currentStore->getCode() !== $storeCode) {
+                $this->storeManager->setCurrentStore($currentStore);
+            }
+        }
+    }
+
+    /**
+     * Reload product price info
+     *
+     * @return void
+     */
+    private function reloadProductPriceInfo(): void
+    {
+        $product = $this->registry->registry('product');
+        self::assertNotNull($product);
+        $product->reloadPriceInfo();
     }
 
     /**
@@ -118,45 +151,14 @@ class MultiStoreCurrencyTest extends AbstractCurrencyTest
     }
 
     /**
-     * Check price per stores
-     *
-     * @param string $productSku
-     * @param string $expectedData
-     * @param string $storeCode
-     * @param string $priceBlockName
-     * @return void
+     * @inheritdoc
      */
-    private function assertProductStorePrice(
-        string $productSku,
-        string $expectedData,
-        string $storeCode = 'default',
-        string $priceBlockName = self::FINAL_PRICE_BLOCK_NAME
-    ): void {
-        $currentStore = $this->storeManager->getStore();
-        try {
-            if ($currentStore->getCode() !== $storeCode) {
-                $this->storeManager->setCurrentStore($storeCode);
-            }
-
-            $actualData = $this->processPriceView($productSku, $priceBlockName);
-            self::assertEquals($expectedData, $actualData);
-        } finally {
-            if ($currentStore->getCode() !== $storeCode) {
-                $this->storeManager->setCurrentStore($currentStore);
-            }
-        }
-    }
-
-    /**
-     * Reload product price info
-     *
-     * @return void
-     */
-    private function reloadProductPriceInfo(): void
+    protected function setUp(): void
     {
-        $product = $this->registry->registry('product');
-        self::assertNotNull($product);
-        $product->reloadPriceInfo();
+        parent::setUp();
+
+        $this->localeResolver = $this->objectManager->get(ResolverInterface::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
     }
 
     /**
@@ -164,7 +166,7 @@ class MultiStoreCurrencyTest extends AbstractCurrencyTest
      */
     protected function tearDown(): void
     {
-        $this->localeResolver->setLocale(\Magento\Setup\Module\I18n\Locale::DEFAULT_SYSTEM_LOCALE);
+        $this->localeResolver->setLocale(Locale::DEFAULT_SYSTEM_LOCALE);
         parent::tearDown();
     }
 }

@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Catalog;
 
+use Exception;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
@@ -64,21 +65,13 @@ class CategorySpecificFieldsTest extends GraphQlAbstract
     private $objectManager;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
-
-    /**
      * Verify that search returns correct values for given price filter
      *
      * @magentoApiDataFixture Magento/Catalog/_files/category_specific_fields.php
      * @param int $categoryId
      * @param array $categoryFields
      * @return void
-     * @throws \Exception
+     * @throws Exception
      * @dataProvider categoryFieldsDataProvider
      */
     public function testSpecificCategoryFields(int $categoryId, array $categoryFields): void
@@ -137,5 +130,13 @@ QUERY;
                 ],
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

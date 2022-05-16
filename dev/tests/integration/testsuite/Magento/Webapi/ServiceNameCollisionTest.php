@@ -9,11 +9,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Webapi;
 
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Webapi\Model\Config;
 use Magento\Webapi\Model\Config\Converter;
+use Magento\Webapi\Model\ServiceMetadata;
+use PHPUnit\Framework\TestCase;
 
-class ServiceNameCollisionTest extends \PHPUnit\Framework\TestCase
+class ServiceNameCollisionTest extends TestCase
 {
     /**
      * Test there are no collisions between service names.
@@ -23,11 +28,11 @@ class ServiceNameCollisionTest extends \PHPUnit\Framework\TestCase
      */
     public function testServiceNameCollisions()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var \Magento\Webapi\Model\ServiceMetadata $serviceMetadata */
-        $serviceMetadata = $objectManager->get(\Magento\Webapi\Model\ServiceMetadata::class);
-        /** @var \Magento\Webapi\Model\Config $webapiConfig */
-        $webapiConfig = $objectManager->get(\Magento\Webapi\Model\Config::class);
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var ServiceMetadata $serviceMetadata */
+        $serviceMetadata = $objectManager->get(ServiceMetadata::class);
+        /** @var Config $webapiConfig */
+        $webapiConfig = $objectManager->get(Config::class);
         $serviceNames = [];
 
         foreach ($webapiConfig->getServices()[Converter::KEY_SERVICES] as $serviceClassName => $serviceVersionData) {

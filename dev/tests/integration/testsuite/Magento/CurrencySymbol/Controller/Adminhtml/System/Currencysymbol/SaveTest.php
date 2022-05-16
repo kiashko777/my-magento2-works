@@ -3,11 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CurrencySymbol\Controller\Adminhtml\System\Currencysymbol;
 
+use Magento\CurrencySymbol\Model\System\Currencysymbol;
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
-class SaveTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class SaveTest extends AbstractBackendController
 {
     /**
      * Test save action.
@@ -23,9 +27,9 @@ class SaveTest extends \Magento\TestFramework\TestCase\AbstractBackendController
      */
     public function testSaveAction($currencyCode, $inputCurrencySymbol, $outputCurrencySymbol)
     {
-        /** @var \Magento\CurrencySymbol\Model\System\Currencysymbol $currencySymbol */
-        $currencySymbol = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\CurrencySymbol\Model\System\Currencysymbol::class
+        /** @var Currencysymbol $currencySymbol */
+        $currencySymbol = Bootstrap::getObjectManager()->create(
+            Currencysymbol::class
         );
 
         $currencySymbolOriginal = $currencySymbol->getCurrencySymbol($currencyCode);

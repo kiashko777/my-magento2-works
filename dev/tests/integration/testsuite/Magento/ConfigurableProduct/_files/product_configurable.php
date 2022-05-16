@@ -4,6 +4,7 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Catalog\Api\CategoryLinkManagementInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
@@ -14,10 +15,12 @@ use Magento\ConfigurableProduct\Helper\Product\Options\Factory;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 use Magento\Eav\Api\Data\AttributeOptionInterface;
 use Magento\Eav\Model\Config;
+use Magento\Framework\Registry;
+use Magento\Quote\Model\ResourceModel\Quote\Item;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
-\Magento\TestFramework\Helper\Bootstrap::getInstance()->reinitialize();
+Bootstrap::getInstance()->reinitialize();
 
 Resolver::getInstance()->requireDataFixture('Magento/ConfigurableProduct/_files/configurable_attribute.php');
 
@@ -103,21 +106,21 @@ $extensionConfigurableAttributes->setConfigurableProductLinks($associatedProduct
 $product->setExtensionAttributes($extensionConfigurableAttributes);
 
 // Remove any previously created product with the same id.
-/** @var \Magento\Framework\Registry $registry */
-$registry = Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
+/** @var Registry $registry */
+$registry = Bootstrap::getObjectManager()->get(Registry::class);
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 try {
     $productToDelete = $productRepository->getById(1);
     $productRepository->delete($productToDelete);
 
-    /** @var \Magento\Quote\Model\ResourceModel\Quote\Item $itemResource */
-    $itemResource = Bootstrap::getObjectManager()->get(\Magento\Quote\Model\ResourceModel\Quote\Item::class);
+    /** @var Item $itemResource */
+    $itemResource = Bootstrap::getObjectManager()->get(Item::class);
     $itemResource->getConnection()->delete(
         $itemResource->getMainTable(),
         'product_id = ' . $productToDelete->getId()
     );
-} catch (\Exception $e) {
+} catch (Exception $e) {
     // Nothing to remove
 }
 $registry->unregister('isSecureArea');
@@ -135,9 +138,9 @@ $product->setTypeId(Configurable::TYPE_CODE)
 
 $productRepository->save($product);
 
-/** @var \Magento\Catalog\Api\CategoryLinkManagementInterface $categoryLinkManagement */
-$categoryLinkManagement = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->create(\Magento\Catalog\Api\CategoryLinkManagementInterface::class);
+/** @var CategoryLinkManagementInterface $categoryLinkManagement */
+$categoryLinkManagement = Bootstrap::getObjectManager()
+    ->create(CategoryLinkManagementInterface::class);
 
 $categoryLinkManagement->assignProductToCategories(
     $product->getSku(),

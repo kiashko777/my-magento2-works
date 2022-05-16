@@ -51,7 +51,7 @@ define([
                         label: 'hold',
                         url: 'http://local.magento/hold_order',
                         modules: {
-                            selections: ['1','2','3']
+                            selections: ['1', '2', '3']
                         },
                         actions: [{
                             callback: 'defaultCallback'
@@ -64,7 +64,8 @@ define([
             try {
                 injector.clean();
                 injector.remove();
-            } catch (e) {}
+            } catch (e) {
+            }
         });
 
         describe('check applyAction', function () {
@@ -84,18 +85,18 @@ define([
 
             it('check defaultCallback submitted the data', function () {
                 var action = {
-                    component: 'uiComponent',
-                    label: 'Hold',
-                    type: 'hold_order',
-                    url: 'http://local.magento/hold_order/'
-                },
+                        component: 'uiComponent',
+                        label: 'Hold',
+                        type: 'hold_order',
+                        url: 'http://local.magento/hold_order/'
+                    },
                     data = {
-                    excludeMode: true,
-                    excluded: [],
-                    params: {},
-                    selected: ['7', '6', '5', '4', '3', '2', '1'],
-                    total: 7
-                },
+                        excludeMode: true,
+                        excluded: [],
+                        params: {},
+                        selected: ['7', '6', '5', '4', '3', '2', '1'],
+                        total: 7
+                    },
                     result;
 
                 obj.getAction = jasmine.createSpy().and.returnValue('hold_order');

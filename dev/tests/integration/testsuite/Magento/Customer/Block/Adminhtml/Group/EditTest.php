@@ -9,6 +9,10 @@ namespace Magento\Customer\Block\Adminhtml\Group;
 use Magento\Customer\Api\GroupManagementInterface;
 use Magento\Customer\Api\GroupRepositoryInterface;
 use Magento\Customer\Controller\RegistryConstants;
+use Magento\Framework\Api\FilterBuilder;
+use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\Registry;
+use Magento\Framework\View\LayoutInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\AbstractController;
 
@@ -20,7 +24,7 @@ use Magento\TestFramework\TestCase\AbstractController;
 class EditTest extends AbstractController
 {
     /**
-     * @var \Magento\Framework\View\LayoutInterface
+     * @var LayoutInterface
      */
     private $layout;
 
@@ -35,33 +39,9 @@ class EditTest extends AbstractController
     private $groupManagement;
 
     /**
-     * @var \Magento\Framework\Registry
+     * @var Registry
      */
     private $registry;
-
-    /**
-     * Execute per test initialization.
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->layout = Bootstrap::getObjectManager()->get(\Magento\Framework\View\LayoutInterface::class);
-        $this->groupRepository = Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Api\GroupRepositoryInterface::class
-        );
-        $this->groupManagement = Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Api\GroupManagementInterface::class
-        );
-        $this->registry = Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
-    }
-
-    /**
-     * Execute per test cleanup.
-     */
-    protected function tearDown(): void
-    {
-        $this->registry->unregister(RegistryConstants::CURRENT_GROUP_ID);
-    }
 
     /**
      * Verify that the Delete button does not exist for the default group.
@@ -74,7 +54,7 @@ class EditTest extends AbstractController
         $this->getRequest()->setParam('id', $groupId);
 
         /** @var $block Edit */
-        $block = $this->layout->createBlock(\Magento\Customer\Block\Adminhtml\Group\Edit::class, 'block');
+        $block = $this->layout->createBlock(Edit::class, 'block');
         $buttonsHtml = $block->getButtonsHtml();
 
         $this->assertStringNotContainsString('delete', $buttonsHtml);
@@ -85,19 +65,43 @@ class EditTest extends AbstractController
      */
     public function testDeleteButtonExistInCustomGroup()
     {
-        $builder = Bootstrap::getObjectManager()->create(\Magento\Framework\Api\FilterBuilder::class);
-        /** @var \Magento\Framework\Api\SearchCriteriaBuilder $searchCriteria */
+        $builder = Bootstrap::getObjectManager()->create(FilterBuilder::class);
+        /** @var SearchCriteriaBuilder $searchCriteria */
         $searchCriteria = Bootstrap::getObjectManager()
-            ->create(\Magento\Framework\Api\SearchCriteriaBuilder::class)
+            ->create(SearchCriteriaBuilder::class)
             ->addFilters([$builder->setField('code')->setValue('custom_group')->create()])->create();
         $customerGroup = $this->groupRepository->getList($searchCriteria)->getItems()[0];
         $this->getRequest()->setParam('id', $customerGroup->getId());
         $this->registry->register(RegistryConstants::CURRENT_GROUP_ID, $customerGroup->getId());
 
         /** @var $block Edit */
-        $block = $this->layout->createBlock(\Magento\Customer\Block\Adminhtml\Group\Edit::class, 'block');
+        $block = $this->layout->createBlock(Edit::class, 'block');
         $buttonsHtml = $block->getButtonsHtml();
 
         $this->assertStringContainsString('delete', $buttonsHtml);
+    }
+
+    /**
+     * Execute per test initialization.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->layout = Bootstrap::getObjectManager()->get(LayoutInterface::class);
+        $this->groupRepository = Bootstrap::getObjectManager()->create(
+            GroupRepositoryInterface::class
+        );
+        $this->groupManagement = Bootstrap::getObjectManager()->create(
+            GroupManagementInterface::class
+        );
+        $this->registry = Bootstrap::getObjectManager()->get(Registry::class);
+    }
+
+    /**
+     * Execute per test cleanup.
+     */
+    protected function tearDown(): void
+    {
+        $this->registry->unregister(RegistryConstants::CURRENT_GROUP_ID);
     }
 }

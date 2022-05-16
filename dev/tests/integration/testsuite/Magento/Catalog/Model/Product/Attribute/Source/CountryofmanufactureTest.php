@@ -3,29 +3,31 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Model\Product\Attribute\Source;
 
-use Magento\TestFramework\Helper\CacheCleaner;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class CountryofmanufactureTest extends \PHPUnit\Framework\TestCase
+class CountryofmanufactureTest extends TestCase
 {
     /**
-     * @var \Magento\Catalog\Model\Product\Attribute\Source\Countryofmanufacture
+     * @var Countryofmanufacture
      */
     private $model;
-
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->model = $objectManager->create(
-            \Magento\Catalog\Model\Product\Attribute\Source\Countryofmanufacture::class
-        );
-    }
 
     public function testGetAllOptions()
     {
         $allOptions = $this->model->getAllOptions();
         $cachedAllOptions = $this->model->getAllOptions();
         $this->assertEquals($allOptions, $cachedAllOptions);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->model = $objectManager->create(
+            Countryofmanufacture::class
+        );
     }
 }

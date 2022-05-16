@@ -5,15 +5,18 @@
  */
 declare(strict_types=1);
 
+use Magento\Catalog\Model\Category;
+use Magento\Store\Model\Store;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/category_duplicates.php');
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 
-/** @var \Magento\Catalog\Model\Category $category */
-$categoryModel = $objectManager->create(\Magento\Catalog\Model\Category::class);
-$categoryModel->setStoreId(\Magento\Store\Model\Store::DEFAULT_STORE_ID);
+/** @var Category $category */
+$categoryModel = $objectManager->create(Category::class);
+$categoryModel->setStoreId(Store::DEFAULT_STORE_ID);
 
 $categoryModel->load(444)
     ->setName('Category 2-updated')

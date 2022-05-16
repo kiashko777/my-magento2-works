@@ -13,10 +13,10 @@ use Magento\Catalog\Setup\CategorySetup;
 use Magento\ConfigurableProduct\Helper\Product\Options\Factory;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 use Magento\Eav\Api\Data\AttributeOptionInterface;
+use Magento\Eav\Model\Config;
 use Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
-use Magento\Eav\Model\Config;
 
 Resolver::getInstance()->requireDataFixture('Magento/Elasticsearch/_files/select_attribute.php');
 Resolver::getInstance()->requireDataFixture('Magento/Elasticsearch/_files/multiselect_attribute.php');

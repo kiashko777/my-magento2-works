@@ -7,17 +7,23 @@
 /**
  * Helper providing exclusive restricted access to the underlying bootstrap instance
  */
+
 namespace Magento\TestFramework\Helper;
+
+use Magento\Framework\App\AreaList;
+use Magento\Framework\App\State;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\ObjectManagerInterface;
 
 class Bootstrap
 {
     /**
-     * @var \Magento\TestFramework\Helper\Bootstrap
+     * @var Bootstrap
      */
     private static $_instance;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private static $_objectManager;
 
@@ -27,31 +33,41 @@ class Bootstrap
     protected $_bootstrap;
 
     /**
-     * Set self instance for static access
+     * Constructor
      *
-     * @param \Magento\TestFramework\Helper\Bootstrap $instance
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @param \Magento\TestFramework\Bootstrap $bootstrap
      */
-    public static function setInstance(\Magento\TestFramework\Helper\Bootstrap $instance)
+    public function __construct(\Magento\TestFramework\Bootstrap $bootstrap)
     {
-        if (self::$_instance) {
-            throw new \Magento\Framework\Exception\LocalizedException(__('Helper instance cannot be redefined.'));
-        }
-        self::$_instance = $instance;
+        $this->_bootstrap = $bootstrap;
     }
 
     /**
      * Self instance getter
      *
-     * @return \Magento\TestFramework\Helper\Bootstrap
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @return Bootstrap
+     * @throws LocalizedException
      */
     public static function getInstance()
     {
         if (!self::$_instance) {
-            throw new \Magento\Framework\Exception\LocalizedException(__('Helper instance is not defined yet.'));
+            throw new LocalizedException(__('Helper instance is not defined yet.'));
         }
         return self::$_instance;
+    }
+
+    /**
+     * Set self instance for static access
+     *
+     * @param Bootstrap $instance
+     * @throws LocalizedException
+     */
+    public static function setInstance(Bootstrap $instance)
+    {
+        if (self::$_instance) {
+            throw new LocalizedException(__('Helper instance cannot be redefined.'));
+        }
+        self::$_instance = $instance;
     }
 
     /**
@@ -68,13 +84,23 @@ class Bootstrap
     }
 
     /**
-     * Constructor
+     * Retrieve object manager
      *
-     * @param \Magento\TestFramework\Bootstrap $bootstrap
+     * @return ObjectManagerInterface
      */
-    public function __construct(\Magento\TestFramework\Bootstrap $bootstrap)
+    public static function getObjectManager()
     {
-        $this->_bootstrap = $bootstrap;
+        return self::$_objectManager;
+    }
+
+    /**
+     * Set object manager
+     *
+     * @param ObjectManagerInterface $objectManager
+     */
+    public static function setObjectManager(ObjectManagerInterface $objectManager)
+    {
+        self::$_objectManager = $objectManager;
     }
 
     /**
@@ -118,26 +144,6 @@ class Bootstrap
     }
 
     /**
-     * Retrieve object manager
-     *
-     * @return \Magento\Framework\ObjectManagerInterface
-     */
-    public static function getObjectManager()
-    {
-        return self::$_objectManager;
-    }
-
-    /**
-     * Set object manager
-     *
-     * @param \Magento\Framework\ObjectManagerInterface $objectManager
-     */
-    public static function setObjectManager(\Magento\Framework\ObjectManagerInterface $objectManager)
-    {
-        self::$_objectManager = $objectManager;
-    }
-
-    /**
      * Get bootstrap object
      *
      * @return \Magento\TestFramework\Bootstrap
@@ -153,7 +159,7 @@ class Bootstrap
      */
     public function loadArea($areaCode)
     {
-        self::$_objectManager->get(\Magento\Framework\App\State::class)->setAreaCode($areaCode);
-        self::$_objectManager->get(\Magento\Framework\App\AreaList::class)->getArea($areaCode)->load();
+        self::$_objectManager->get(State::class)->setAreaCode($areaCode);
+        self::$_objectManager->get(AreaList::class)->getArea($areaCode)->load();
     }
 }

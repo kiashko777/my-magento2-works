@@ -8,6 +8,7 @@ namespace Magento\Setup\Module\Di\App\Task\Operation;
 
 use Magento\Setup\Module\Di\App\Task\OperationInterface;
 use Magento\Setup\Module\Di\Code\Scanner;
+use Magento\Setup\Module\Di\Code\Scanner\ConfigurationScanner;
 
 /**
  * Class ServiceDataAttributesGenerator
@@ -27,20 +28,21 @@ class ServiceDataAttributesGenerator implements OperationInterface
     private $data;
 
     /**
-     * @var Scanner\ConfigurationScanner
+     * @var ConfigurationScanner
      */
     private $configurationScanner;
 
     /**
      * @param Scanner\ServiceDataAttributesScanner $serviceDataAttributesScanner
-     * @param Scanner\ConfigurationScanner $configurationScanner
+     * @param ConfigurationScanner $configurationScanner
      * @param array $data
      */
     public function __construct(
-        Scanner\ServiceDataAttributesScanner $serviceDataAttributesScanner,
-        \Magento\Setup\Module\Di\Code\Scanner\ConfigurationScanner $configurationScanner,
-        $data = []
-    ) {
+        Scanner\ServiceDataAttributesScanner                       $serviceDataAttributesScanner,
+        ConfigurationScanner $configurationScanner,
+                                                                   $data = []
+    )
+    {
         $this->serviceDataAttributesScanner = $serviceDataAttributesScanner;
         $this->data = $data;
         $this->configurationScanner = $configurationScanner;

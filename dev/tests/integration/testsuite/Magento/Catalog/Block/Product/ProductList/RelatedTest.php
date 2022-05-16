@@ -23,17 +23,6 @@ class RelatedTest extends AbstractLinksTest
     protected $block;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->block = $this->layout->createBlock(Related::class);
-        $this->linkType = 'related';
-    }
-
-    /**
      * Checks for a related product when block code is generated
      *
      * @magentoDataFixture Magento/Catalog/_files/products_related.php
@@ -148,5 +137,16 @@ class RelatedTest extends AbstractLinksTest
             $this->getActualLinks($items),
             'Expected related products do not match actual related products!'
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->block = $this->layout->createBlock(Related::class);
+        $this->linkType = 'related';
     }
 }

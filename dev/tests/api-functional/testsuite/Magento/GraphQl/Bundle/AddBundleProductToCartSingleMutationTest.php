@@ -7,7 +7,10 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Bundle;
 
+use Magento\Bundle\Model\Option;
+use Magento\Bundle\Model\Product\Type;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
 use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\QuoteIdToMaskedQuoteIdInterface;
 use Magento\Quote\Model\ResourceModel\Quote as QuoteResource;
@@ -40,18 +43,6 @@ class AddBundleProductToCartSingleMutationTest extends GraphQlAbstract
     private $productRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->quoteResource = $objectManager->get(QuoteResource::class);
-        $this->quote = $objectManager->create(Quote::class);
-        $this->quoteIdToMaskedId = $objectManager->get(QuoteIdToMaskedQuoteIdInterface::class);
-        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Bundle/_files/product_1.php
      * @magentoApiDataFixture Magento/Checkout/_files/active_quote.php
      */
@@ -67,17 +58,17 @@ class AddBundleProductToCartSingleMutationTest extends GraphQlAbstract
 
         $product = $this->productRepository->get($sku);
 
-        /** @var $typeInstance \Magento\Bundle\Model\Product\Type */
+        /** @var $typeInstance Type */
         $typeInstance = $product->getTypeInstance();
         $typeInstance->setStoreFilter($product->getStoreId(), $product);
-        /** @var $option \Magento\Bundle\Model\Option */
+        /** @var $option Option */
         $option = $typeInstance->getOptionsCollection($product)->getFirstItem();
-        /** @var \Magento\Catalog\Model\Product $selection */
+        /** @var Product $selection */
         $selection = $typeInstance->getSelectionsCollection([$option->getId()], $product)->getFirstItem();
         $optionId = $option->getId();
         $selectionId = $selection->getSelectionId();
 
-        $bundleOptionIdV2 = $this->generateBundleOptionIdV2((int) $optionId, (int) $selectionId, 1);
+        $bundleOptionIdV2 = $this->generateBundleOptionIdV2((int)$optionId, (int)$selectionId, 1);
         $maskedQuoteId = $this->quoteIdToMaskedId->execute((int)$this->quote->getId());
 
         $query = <<<QUERY
@@ -136,7 +127,7 @@ QUERY;
         self::assertEquals($option->getType(), $bundleItemOption['type']);
         $value = current($bundleItemOption['values']);
         self::assertEquals($selection->getSelectionId(), $value['id']);
-        self::assertEquals((float) $selection->getSelectionPriceValue(), $value['price']);
+        self::assertEquals((float)$selection->getSelectionPriceValue(), $value['price']);
         self::assertEquals(1, $value['quantity']);
     }
 
@@ -172,7 +163,7 @@ QUERY;
             'reserved_order_id'
         );
 
-        $bundleOptionIdV2 = $this->generateBundleOptionIdV2((int) 1, (int) 1, 1);
+        $bundleOptionIdV2 = $this->generateBundleOptionIdV2((int)1, (int)1, 1);
         $maskedQuoteId = $this->quoteIdToMaskedId->execute((int)$this->quote->getId());
 
         $query = <<<QUERY
@@ -303,7 +294,8 @@ QUERY;
         string $optionUid0,
         string $optionUid1,
         string $sku
-    ): string {
+    ): string
+    {
         return <<<QUERY
 mutation {
       addProductsToCart(
@@ -357,5 +349,17 @@ mutation {
   }
 }
 QUERY;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->quoteResource = $objectManager->get(QuoteResource::class);
+        $this->quote = $objectManager->create(Quote::class);
+        $this->quoteIdToMaskedId = $objectManager->get(QuoteIdToMaskedQuoteIdInterface::class);
+        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
     }
 }

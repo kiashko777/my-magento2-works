@@ -3,13 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\AsynchronousOperations\Model;
 
 use Magento\AsynchronousOperations\Api\Data\BulkSummaryInterface;
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class BulkNotificationManagementTest extends \PHPUnit\Framework\TestCase
+class BulkNotificationManagementTest extends TestCase
 {
     /**
      * @var BulkNotificationManagement
@@ -20,15 +22,6 @@ class BulkNotificationManagementTest extends \PHPUnit\Framework\TestCase
      * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-
-        $this->model = $this->objectManager->create(
-            BulkNotificationManagement::class
-        );
-    }
 
     /**
      * @magentoDataFixture Magento/AsynchronousOperations/_files/bulk.php
@@ -77,5 +70,14 @@ class BulkNotificationManagementTest extends \PHPUnit\Framework\TestCase
         // 'bulk-uuid-5' and 'bulk-uuid-4' are marked as acknowledged in fixture. Fixture creates 5 bulks in total.
         $ignoredBulks = $this->model->getIgnoredBulksByUser(1);
         $this->assertCount(3, $ignoredBulks);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->model = $this->objectManager->create(
+            BulkNotificationManagement::class
+        );
     }
 }

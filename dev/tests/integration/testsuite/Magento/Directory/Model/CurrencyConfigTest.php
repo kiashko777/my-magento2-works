@@ -47,15 +47,6 @@ class CurrencyConfigTest extends TestCase
     private $currency;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->currency = Bootstrap::getObjectManager()->get(CurrencyModel::class);
-        $this->config = Bootstrap::getObjectManager()->get(ConfigInterface::class);
-    }
-
-    /**
      * Test get currency config for admin, crontab and storefront areas.
      *
      * @dataProvider getConfigCurrenciesDataProvider
@@ -100,48 +91,6 @@ class CurrencyConfigTest extends TestCase
                 );
             }
         }
-    }
-
-    /**
-     * Provide test data for getConfigCurrencies test.
-     *
-     * @return array
-     */
-    public function getConfigCurrenciesDataProvider()
-    {
-        return [
-            [
-                'areaCode' => Area::AREA_ADMINHTML,
-                'expected' => [
-                    'allowed' => ['BDT', 'BNS', 'BTD', 'EUR', 'USD'],
-                    'base' => ['BDT', 'USD'],
-                    'default' => ['BDT', 'USD'],
-                ],
-            ],
-            [
-                'areaCode' => Area::AREA_CRONTAB,
-                'expected' => [
-                    'allowed' => ['BDT', 'BNS', 'BTD', 'EUR', 'USD'],
-                    'base' => ['BDT', 'USD'],
-                    'default' => ['BDT', 'USD'],
-                ],
-            ],
-            [
-                'areaCode' => Area::AREA_FRONTEND,
-                'expected' => [
-                    'default' => [
-                        'allowed' => ['EUR', 'USD'],
-                        'base' => ['USD'],
-                        'default' => ['USD'],
-                    ],
-                    'test' => [
-                        'allowed' => ['BDT', 'BNS', 'BTD', 'USD'],
-                        'base' => ['BDT'],
-                        'default' => ['BDT'],
-                    ],
-                ],
-            ],
-        ];
     }
 
     /**
@@ -201,6 +150,57 @@ class CurrencyConfigTest extends TestCase
         );
         Bootstrap::getObjectManager()->get(ReinitableConfigInterface::class)->reinit();
         Bootstrap::getObjectManager()->create(StoreManagerInterface::class)->reinitStores();
+    }
+
+    /**
+     * Provide test data for getConfigCurrencies test.
+     *
+     * @return array
+     */
+    public function getConfigCurrenciesDataProvider()
+    {
+        return [
+            [
+                'areaCode' => Area::AREA_ADMINHTML,
+                'expected' => [
+                    'allowed' => ['BDT', 'BNS', 'BTD', 'EUR', 'USD'],
+                    'base' => ['BDT', 'USD'],
+                    'default' => ['BDT', 'USD'],
+                ],
+            ],
+            [
+                'areaCode' => Area::AREA_CRONTAB,
+                'expected' => [
+                    'allowed' => ['BDT', 'BNS', 'BTD', 'EUR', 'USD'],
+                    'base' => ['BDT', 'USD'],
+                    'default' => ['BDT', 'USD'],
+                ],
+            ],
+            [
+                'areaCode' => Area::AREA_FRONTEND,
+                'expected' => [
+                    'default' => [
+                        'allowed' => ['EUR', 'USD'],
+                        'base' => ['USD'],
+                        'default' => ['USD'],
+                    ],
+                    'test' => [
+                        'allowed' => ['BDT', 'BNS', 'BTD', 'USD'],
+                        'base' => ['BDT'],
+                        'default' => ['BDT'],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->currency = Bootstrap::getObjectManager()->get(CurrencyModel::class);
+        $this->config = Bootstrap::getObjectManager()->get(ConfigInterface::class);
     }
 
     protected function tearDown(): void

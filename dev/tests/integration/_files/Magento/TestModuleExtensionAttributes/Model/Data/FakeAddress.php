@@ -9,6 +9,7 @@ declare(strict_types=1);
 namespace Magento\TestModuleExtensionAttributes\Model\Data;
 
 use Magento\Framework\Api\AbstractExtensibleObject;
+use Magento\TestModuleExtensionAttributes\Api\Data\FakeAddressExtensionInterface;
 use Magento\TestModuleExtensionAttributes\Api\Data\FakeAddressInterface;
 
 class FakeAddress extends AbstractExtensibleObject implements FakeAddressInterface
@@ -36,7 +37,7 @@ class FakeAddress extends AbstractExtensibleObject implements FakeAddressInterfa
     /**
      * Get region
      *
-     * @return \Magento\TestModuleExtensionAttributes\Model\Data\FakeRegion|null
+     * @return FakeRegion|null
      */
     public function getRegion()
     {
@@ -46,7 +47,7 @@ class FakeAddress extends AbstractExtensibleObject implements FakeAddressInterfa
     /**
      * Get region
      *
-     * @return \Magento\TestModuleExtensionAttributes\Model\Data\FakeRegion[]|null
+     * @return FakeRegion[]|null
      */
     public function getRegions()
     {
@@ -196,7 +197,7 @@ class FakeAddress extends AbstractExtensibleObject implements FakeAddressInterfa
     /**
      * {@inheritdoc}
      *
-     * @return \Magento\TestModuleExtensionAttributes\Api\Data\FakeAddressExtensionInterface|null
+     * @return FakeAddressExtensionInterface|null
      */
     public function getExtensionAttributes()
     {
@@ -216,12 +217,13 @@ class FakeAddress extends AbstractExtensibleObject implements FakeAddressInterfa
     /**
      * {@inheritdoc}
      *
-     * @param \Magento\TestModuleExtensionAttributes\Api\Data\FakeAddressExtensionInterface $extensionAttributes
+     * @param FakeAddressExtensionInterface $extensionAttributes
      * @return $this
      */
     public function setExtensionAttributes(
-        \Magento\TestModuleExtensionAttributes\Api\Data\FakeAddressExtensionInterface $extensionAttributes
-    ) {
+        FakeAddressExtensionInterface $extensionAttributes
+    )
+    {
         return $this->_setExtensionAttributes($extensionAttributes);
     }
 }

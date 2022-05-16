@@ -7,26 +7,23 @@ declare(strict_types=1);
 
 namespace Magento\Sales\Block\Adminhtml\Items\Column;
 
+use Magento\Framework\View\Layout;
+use Magento\Framework\View\LayoutInterface;
+use Magento\Sales\Block\Adminhtml\Items\AbstractItems;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
 /**
  * @magentoAppArea Adminhtml
  */
-class NameTest extends \PHPUnit\Framework\TestCase
+class NameTest extends TestCase
 {
     /**
      * @var Name
      */
     private $block;
 
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var $layout \Magento\Framework\View\Layout */
-        $layout = $objectManager->create(\Magento\Framework\View\LayoutInterface::class);
-        /** @var $block \Magento\Sales\Block\Adminhtml\Items\AbstractItems */
-        $this->block = $layout->createBlock(Name::class, 'block');
-    }
-
-    public function testTruncateString() : void
+    public function testTruncateString(): void
     {
         $remainder = '';
         $this->assertEquals(
@@ -35,7 +32,7 @@ class NameTest extends \PHPUnit\Framework\TestCase
         );
     }
 
-    public function testGetFormattedOptiong() : void
+    public function testGetFormattedOptiong(): void
     {
         $this->assertEquals(
             [
@@ -46,5 +43,14 @@ class NameTest extends \PHPUnit\Framework\TestCase
                 '123456789012345678901234567890123456789012345678901234567890'
             )
         );
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var $layout Layout */
+        $layout = $objectManager->create(LayoutInterface::class);
+        /** @var $block AbstractItems */
+        $this->block = $layout->createBlock(Name::class, 'block');
     }
 }

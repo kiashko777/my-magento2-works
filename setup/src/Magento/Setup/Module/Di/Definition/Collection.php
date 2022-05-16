@@ -16,13 +16,15 @@ class Collection
     private $definitions = [];
 
     /**
-     * Returns definitions as [instance => list of arguments]
+     * Adds collection to current collection
      *
-     * @return array
+     * @param Collection $collection
+     *
+     * @return void
      */
-    public function getCollection()
+    public function addCollection(Collection $collection)
     {
-        return $this->definitions;
+        $this->initialize(array_merge($this->getCollection(), $collection->getCollection()));
     }
 
     /**
@@ -38,15 +40,13 @@ class Collection
     }
 
     /**
-     * Adds collection to current collection
+     * Returns definitions as [instance => list of arguments]
      *
-     * @param Collection $collection
-     *
-     * @return void
+     * @return array
      */
-    public function addCollection(Collection $collection)
+    public function getCollection()
     {
-        $this->initialize(array_merge($this->getCollection(), $collection->getCollection()));
+        return $this->definitions;
     }
 
     /**

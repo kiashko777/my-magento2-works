@@ -22,14 +22,6 @@ class CspWhitelistXmlCollectorTest extends TestCase
     private $collector;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->collector = Bootstrap::getObjectManager()->get(CspWhitelistXmlCollector::class);
-    }
-
-    /**
      * Test collecting configurations from multiple XML files.
      *
      * @return void
@@ -132,5 +124,13 @@ class CspWhitelistXmlCollectorTest extends TestCase
         }
         $this->assertTrue($objectSrcChecked);
         $this->assertTrue($mediaSrcChecked);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->collector = Bootstrap::getObjectManager()->get(CspWhitelistXmlCollector::class);
     }
 }

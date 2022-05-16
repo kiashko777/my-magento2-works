@@ -52,19 +52,6 @@ class PriceTest extends TestCase
     private $getPriceIndexDataByProductId;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->priceModel = $this->objectManager->create(Price::class);
-        $this->websiteRepository = $this->objectManager->get(WebsiteRepositoryInterface::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->getPriceIndexDataByProductId = $this->objectManager->get(GetPriceIndexDataByProductId::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/CatalogRuleConfigurable/_files/configurable_product_with_percent_rule.php
      * @return void
      */
@@ -94,6 +81,70 @@ class PriceTest extends TestCase
             ],
         ];
         $this->assertConfigurableProductPrice(20, 25, $indexPrices);
+    }
+
+    /**
+     * Asserts configurable product prices.
+     *
+     * @param float $priceWithFirstSimple
+     * @param float $priceWithSecondSimple
+     * @param array $indexPrices
+     * @return void
+     */
+    private function assertConfigurableProductPrice(
+        float $priceWithFirstSimple,
+        float $priceWithSecondSimple,
+        array $indexPrices
+    ): void
+    {
+        foreach ($indexPrices as $sku => $prices) {
+            $this->assertIndexTableData($sku, $prices);
+        }
+        $configurable = $this->productRepository->get('configurable');
+        //Add tier price option
+        $optionId = $configurable->getOptions()[0]->getId();
+        $configurable->addCustomOption(AbstractType::OPTION_PREFIX . $optionId, 'text');
+        $configurable->addCustomOption('option_ids', $optionId);
+        //First simple rule price + Option price
+        $this->assertFinalPrice($configurable, $priceWithFirstSimple);
+        $configurable->addCustomOption('simple_product', 20, $this->productRepository->get('simple_20'));
+        //Second simple rule price + Option price
+        $this->assertFinalPrice($configurable, $priceWithSecondSimple);
+    }
+
+    /**
+     * Asserts price data in index table.
+     *
+     * @param string $sku
+     * @param array $expectedPrices
+     * @return void
+     */
+    private function assertIndexTableData(string $sku, array $expectedPrices): void
+    {
+        $data = $this->getPriceIndexDataByProductId->execute(
+            (int)$this->productRepository->get($sku)->getId(),
+            Group::NOT_LOGGED_IN_ID,
+            (int)$this->websiteRepository->get('base')->getId()
+        );
+        $data = reset($data);
+        foreach ($expectedPrices as $column => $price) {
+            $this->assertEquals($price, $data[$column]);
+        }
+    }
+
+    /**
+     * Asserts product final price.
+     *
+     * @param ProductInterface $product
+     * @param float $expectedPrice
+     * @return void
+     */
+    private function assertFinalPrice(ProductInterface $product, float $expectedPrice): void
+    {
+        $this->assertEquals(
+            round($expectedPrice, 2),
+            round($this->priceModel->getFinalPrice(1, $product), 2)
+        );
     }
 
     /**
@@ -129,65 +180,15 @@ class PriceTest extends TestCase
     }
 
     /**
-     * Asserts configurable product prices.
-     *
-     * @param float $priceWithFirstSimple
-     * @param float $priceWithSecondSimple
-     * @param array $indexPrices
-     * @return void
+     * @inheritdoc
      */
-    private function assertConfigurableProductPrice(
-        float $priceWithFirstSimple,
-        float $priceWithSecondSimple,
-        array $indexPrices
-    ): void {
-        foreach ($indexPrices as $sku => $prices) {
-            $this->assertIndexTableData($sku, $prices);
-        }
-        $configurable = $this->productRepository->get('configurable');
-        //Add tier price option
-        $optionId = $configurable->getOptions()[0]->getId();
-        $configurable->addCustomOption(AbstractType::OPTION_PREFIX . $optionId, 'text');
-        $configurable->addCustomOption('option_ids', $optionId);
-        //First simple rule price + Option price
-        $this->assertFinalPrice($configurable, $priceWithFirstSimple);
-        $configurable->addCustomOption('simple_product', 20, $this->productRepository->get('simple_20'));
-        //Second simple rule price + Option price
-        $this->assertFinalPrice($configurable, $priceWithSecondSimple);
-    }
-
-    /**
-     * Asserts product final price.
-     *
-     * @param ProductInterface $product
-     * @param float $expectedPrice
-     * @return void
-     */
-    private function assertFinalPrice(ProductInterface $product, float $expectedPrice): void
+    protected function setUp(): void
     {
-        $this->assertEquals(
-            round($expectedPrice, 2),
-            round($this->priceModel->getFinalPrice(1, $product), 2)
-        );
-    }
-
-    /**
-     * Asserts price data in index table.
-     *
-     * @param string $sku
-     * @param array $expectedPrices
-     * @return void
-     */
-    private function assertIndexTableData(string $sku, array $expectedPrices): void
-    {
-        $data = $this->getPriceIndexDataByProductId->execute(
-            (int)$this->productRepository->get($sku)->getId(),
-            Group::NOT_LOGGED_IN_ID,
-            (int)$this->websiteRepository->get('base')->getId()
-        );
-        $data = reset($data);
-        foreach ($expectedPrices as $column => $price) {
-            $this->assertEquals($price, $data[$column]);
-        }
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->priceModel = $this->objectManager->create(Price::class);
+        $this->websiteRepository = $this->objectManager->get(WebsiteRepositoryInterface::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->getPriceIndexDataByProductId = $this->objectManager->get(GetPriceIndexDataByProductId::class);
     }
 }

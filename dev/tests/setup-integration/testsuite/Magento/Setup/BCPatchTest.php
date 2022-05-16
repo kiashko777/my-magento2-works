@@ -7,7 +7,6 @@
 namespace Magento\Setup;
 
 use Magento\Framework\Module\DbVersionInfo;
-use Magento\Framework\Module\ModuleList;
 use Magento\Framework\Module\ModuleResource;
 use Magento\TestFramework\Deploy\CliCommand;
 use Magento\TestFramework\Deploy\TableData;
@@ -45,16 +44,6 @@ class BCPatchTest extends SetupTestCase
      */
     private $moduleResource;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->moduleManager = $objectManager->get(TestModuleManager::class);
-        $this->cliCommand = $objectManager->get(CliCommand::class);
-        $this->dbVersionInfo = $objectManager->get(DbVersionInfo::class);
-        $this->tableData = $objectManager->get(TableData::class);
-        $this->moduleResource = $objectManager->get(ModuleResource::class);
-    }
-
     /**
      * @moduleName Magento_TestSetupDeclarationModule5
      */
@@ -82,12 +71,12 @@ class BCPatchTest extends SetupTestCase
             'SomePatch.php',
             'Setup/Patch/Data'
         );
-        
+
         $this->cliCommand->install(['Magento_TestSetupDeclarationModule5']);
         self::assertTrue($this->dbVersionInfo->isDataUpToDate('Magento_TestSetupDeclarationModule5'));
         self::assertTrue($this->dbVersionInfo->isSchemaUpToDate('Magento_TestSetupDeclarationModule5'));
         self::assertEquals(
-            [6,12],
+            [6, 12],
             $this->tableData->describeTableData('reference_table', 'some_integer')
         );
         self::assertEquals(
@@ -168,5 +157,15 @@ class BCPatchTest extends SetupTestCase
             ['_ref'],
             $this->tableData->describeTableData('test_table', 'varchar')
         );
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->moduleManager = $objectManager->get(TestModuleManager::class);
+        $this->cliCommand = $objectManager->get(CliCommand::class);
+        $this->dbVersionInfo = $objectManager->get(DbVersionInfo::class);
+        $this->tableData = $objectManager->get(TableData::class);
+        $this->moduleResource = $objectManager->get(ModuleResource::class);
     }
 }

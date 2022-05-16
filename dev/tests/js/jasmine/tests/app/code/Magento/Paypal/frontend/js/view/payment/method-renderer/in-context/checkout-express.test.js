@@ -64,7 +64,8 @@ define([
             try {
                 injector.clean();
                 injector.remove();
-            } catch (e) {}
+            } catch (e) {
+            }
         });
 
         describe('check smart button initialization', function () {

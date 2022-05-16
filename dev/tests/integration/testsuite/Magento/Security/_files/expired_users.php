@@ -5,18 +5,22 @@ declare(strict_types=1);
  * See COPYING.txt for license details.
  */
 
+use Magento\Security\Model\UserExpiration;
+use Magento\TestFramework\Bootstrap;
+use Magento\User\Model\User;
+
 $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
 
 /**
  * Create an admin user with expired and non-expired access date
  */
 
-/** @var $userModelNotExpired \Magento\User\Model\User */
-$userModelNotExpired = $objectManager->create(\Magento\User\Model\User::class);
+/** @var $userModelNotExpired User */
+$userModelNotExpired = $objectManager->create(User::class);
 $userModelNotExpired->setFirstName("John")
     ->setLastName("Doe")
     ->setUserName('adminUserNotExpired')
-    ->setPassword(\Magento\TestFramework\Bootstrap::ADMIN_PASSWORD)
+    ->setPassword(Bootstrap::ADMIN_PASSWORD)
     ->setEmail('adminUserNotExpired@example.com')
     ->setRoleType('G')
     ->setResourceId('Magento_Adminhtml::all')
@@ -26,22 +30,22 @@ $userModelNotExpired->setFirstName("John")
     ->setPermission('allow')
     ->setIsActive(1)
     ->save();
-$futureDate = new \DateTime();
+$futureDate = new DateTime();
 $futureDate->modify('+10 days');
-$notExpiredRecord = $objectManager->create(\Magento\Security\Model\UserExpiration::class);
+$notExpiredRecord = $objectManager->create(UserExpiration::class);
 $notExpiredRecord
     ->setId($userModelNotExpired->getId())
     ->setExpiresAt($futureDate->format('Y-m-d H:i:s'))
     ->save();
 
-/** @var $userModelExpired \Magento\User\Model\User */
-$pastDate = new \DateTime();
+/** @var $userModelExpired User */
+$pastDate = new DateTime();
 $pastDate->modify('-10 days');
-$userModelExpired = $objectManager->create(\Magento\User\Model\User::class);
+$userModelExpired = $objectManager->create(User::class);
 $userModelExpired->setFirstName("John")
     ->setLastName("Doe")
     ->setUserName('adminUserExpired')
-    ->setPassword(\Magento\TestFramework\Bootstrap::ADMIN_PASSWORD)
+    ->setPassword(Bootstrap::ADMIN_PASSWORD)
     ->setEmail('adminUserExpired@example.com')
     ->setRoleType('G')
     ->setResourceId('Magento_Adminhtml::all')
@@ -51,7 +55,7 @@ $userModelExpired->setFirstName("John")
     ->setPermission('allow')
     ->setIsActive(1)
     ->save();
-$expiredRecord = $objectManager->create(\Magento\Security\Model\UserExpiration::class);
+$expiredRecord = $objectManager->create(UserExpiration::class);
 $expiredRecord
     ->setId($userModelExpired->getId())
     ->setExpiresAt($pastDate->format('Y-m-d H:i:s'))

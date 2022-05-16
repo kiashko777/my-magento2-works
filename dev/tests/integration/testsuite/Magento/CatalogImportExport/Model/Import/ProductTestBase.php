@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\CatalogImportExport\Model\Import;
 
+use Magento\Backend\Model\Auth\Session;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Category;
 use Magento\CatalogImportExport\Model\Import\Product as ImportProduct;
@@ -15,6 +16,8 @@ use Magento\Framework\App\Bootstrap;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Filesystem;
+use Magento\Framework\Filesystem\Directory\Write;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Registry;
 use Magento\ImportExport\Helper\Data;
 use Magento\ImportExport\Model\Import;
@@ -23,6 +26,8 @@ use Magento\ImportExport\Model\Import\Source\Csv;
 use Magento\Store\Model\Store;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Indexer\TestCase;
+use Magento\User\Model\User;
+use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -48,17 +53,17 @@ class ProductTestBase extends TestCase
     protected $importedProducts;
 
     /**
-     * @var \Magento\CatalogImportExport\Model\Import\Product
+     * @var Product
      */
     protected $_model;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
 
     /**
-     * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @var LoggerInterface|MockObject
      */
     protected $logger;
 
@@ -73,81 +78,13 @@ class ProductTestBase extends TestCase
     protected $productRepository;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->logger = $this->getMockBuilder(LoggerInterface::class)
-            ->disableOriginalConstructor()
-            ->getMockForAbstractClass();
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\CatalogImportExport\Model\Import\Product::class,
-            ['logger' => $this->logger]
-        );
-        $this->importedProducts = [];
-        $this->searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-
-        parent::setUp();
-    }
-
-    /**
-     * @inheriDoc
-     */
-    protected function tearDown(): void
-    {
-        /* We rollback here the products created during the Import because they were
-           created during test execution and we do not have the rollback for them */
-        foreach ($this->importedProducts as $productSku) {
-            try {
-                $product = $this->productRepository->get($productSku, false, null, true);
-                $this->productRepository->delete($product);
-                // phpcs:disable Magento2.CodeAnalysis.EmptyBlock.DetectedCatch
-            } catch (NoSuchEntityException $e) {
-                // nothing to delete
-            }
-        }
-    }
-
-
-    /**
-     * @param string $pathToFile
-     * @param string $behavior
-     * @return \Magento\CatalogImportExport\Model\Import\Product
-     */
-    protected function createImportModel($pathToFile, $behavior = \Magento\ImportExport\Model\Import::BEHAVIOR_APPEND)
-    {
-        $filesystem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Framework\Filesystem::class);
-        $directory = $filesystem->getDirectoryWrite(DirectoryList::ROOT);
-
-        /** @var \Magento\ImportExport\Model\Import\Source\Csv $source */
-        $source = $this->objectManager->create(
-            \Magento\ImportExport\Model\Import\Source\Csv::class,
-            [
-                'file' => $pathToFile,
-                'directory' => $directory
-            ]
-        );
-
-        /** @var \Magento\CatalogImportExport\Model\Import\Product $importModel */
-        $importModel = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\CatalogImportExport\Model\Import\Product::class
-        );
-        $importModel->setParameters(['behavior' => $behavior, 'entity' => 'catalog_product'])->setSource($source);
-
-        return $importModel;
-    }
-
-    /**
      * Copy fixture images into media import directory
      */
     public static function mediaImportImageFixture()
     {
-        /** @var \Magento\Framework\Filesystem\Directory\Write $varDirectory */
+        /** @var Write $varDirectory */
         $varDirectory = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\Filesystem::class
+            Filesystem::class
         )->getDirectoryWrite(
             DirectoryList::VAR_DIR
         );
@@ -201,12 +138,12 @@ class ProductTestBase extends TestCase
     public static function mediaImportImageFixtureRollback()
     {
         $fileSystem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\Filesystem::class
+            Filesystem::class
         );
-        /** @var \Magento\Framework\Filesystem\Directory\Write $mediaDirectory */
+        /** @var Write $mediaDirectory */
         $mediaDirectory = $fileSystem->getDirectoryWrite(DirectoryList::MEDIA);
 
-        /** @var \Magento\Framework\Filesystem\Directory\Write $varDirectory */
+        /** @var Write $varDirectory */
         $varDirectory = $fileSystem->getDirectoryWrite(DirectoryList::VAR_DIR);
         $varDirectory->delete('import');
         $mediaDirectory->delete('catalog');
@@ -217,9 +154,9 @@ class ProductTestBase extends TestCase
      */
     public static function mediaImportImageFixtureError()
     {
-        /** @var \Magento\Framework\Filesystem\Directory\Write $varDirectory */
+        /** @var Write $varDirectory */
         $varDirectory = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\Filesystem::class
+            Filesystem::class
         )->getDirectoryWrite(
             DirectoryList::VAR_DIR
         );
@@ -233,6 +170,73 @@ class ProductTestBase extends TestCase
         foreach ($items as $item) {
             copy($item['source'], $item['dest']);
         }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $this->logger = $this->getMockBuilder(LoggerInterface::class)
+            ->disableOriginalConstructor()
+            ->getMockForAbstractClass();
+        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+            Product::class,
+            ['logger' => $this->logger]
+        );
+        $this->importedProducts = [];
+        $this->searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+
+        parent::setUp();
+    }
+
+    /**
+     * @inheriDoc
+     */
+    protected function tearDown(): void
+    {
+        /* We rollback here the products created during the Import because they were
+           created during test execution and we do not have the rollback for them */
+        foreach ($this->importedProducts as $productSku) {
+            try {
+                $product = $this->productRepository->get($productSku, false, null, true);
+                $this->productRepository->delete($product);
+                // phpcs:disable Magento2.CodeAnalysis.EmptyBlock.DetectedCatch
+            } catch (NoSuchEntityException $e) {
+                // nothing to delete
+            }
+        }
+    }
+
+    /**
+     * @param string $pathToFile
+     * @param string $behavior
+     * @return Product
+     */
+    protected function createImportModel($pathToFile, $behavior = Import::BEHAVIOR_APPEND)
+    {
+        $filesystem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
+            ->create(Filesystem::class);
+        $directory = $filesystem->getDirectoryWrite(DirectoryList::ROOT);
+
+        /** @var Csv $source */
+        $source = $this->objectManager->create(
+            Csv::class,
+            [
+                'file' => $pathToFile,
+                'directory' => $directory
+            ]
+        );
+
+        /** @var Product $importModel */
+        $importModel = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+            Product::class
+        );
+        $importModel->setParameters(['behavior' => $behavior, 'entity' => 'catalog_product'])->setSource($source);
+
+        return $importModel;
     }
 
     /**
@@ -271,11 +275,11 @@ class ProductTestBase extends TestCase
      */
     protected function importDataForMediaTest(string $fileName, int $expectedErrors = 0)
     {
-        $filesystem = $this->objectManager->create(\Magento\Framework\Filesystem::class);
+        $filesystem = $this->objectManager->create(Filesystem::class);
         $directory = $filesystem->getDirectoryWrite(DirectoryList::ROOT);
 
         $source = $this->objectManager->create(
-            \Magento\ImportExport\Model\Import\Source\Csv::class,
+            Csv::class,
             [
                 'file' => __DIR__ . '/_files/' . $fileName,
                 'directory' => $directory
@@ -283,7 +287,7 @@ class ProductTestBase extends TestCase
         );
         $this->_model->setParameters(
             [
-                'behavior' => \Magento\ImportExport\Model\Import::BEHAVIOR_APPEND,
+                'behavior' => Import::BEHAVIOR_APPEND,
                 'entity' => 'catalog_product',
                 'import_images_file_dir' => 'pub/media/import'
             ]
@@ -399,12 +403,12 @@ class ProductTestBase extends TestCase
     protected function loginAdminUserWithUsername(string $username)
     {
         $user = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\User\Model\User::class
+            User::class
         )->loadByUsername($username);
 
-        /** @var $session \Magento\Backend\Model\Auth\Session */
+        /** @var $session Session */
         $session = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Backend\Model\Auth\Session::class
+            Session::class
         );
         $session->setUser($user);
     }

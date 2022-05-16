@@ -25,12 +25,6 @@ class PriceTiersTest extends GraphQlAbstract
      */
     private $getCustomerAuthenticationHeader;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->getCustomerAuthenticationHeader = $this->objectManager->get(GetCustomerAuthenticationHeader::class);
-    }
-
     /**
      * @magentoApiDataFixture Magento/Catalog/_files/product_simple.php
      */
@@ -46,6 +40,53 @@ class PriceTiersTest extends GraphQlAbstract
         $this->assertEquals(8, $this->getValueForQuantity(2, $itemTiers));
         $this->assertEquals(5, $this->getValueForQuantity(3, $itemTiers));
         $this->assertEquals(6, $this->getValueForQuantity(3.2, $itemTiers));
+    }
+
+    /**
+     * Get a query which user filter for product sku and returns price_tiers
+     *
+     * @param string $productSku
+     * @return string
+     */
+    private function getProductSearchQuery(string $productSku): string
+    {
+        return <<<QUERY
+{
+  products(filter: {sku: {eq: "{$productSku}"}}) {
+    items {
+      price_tiers {
+     	final_price {
+          currency
+          value
+        }
+        discount {
+          amount_off
+          percent_off
+        }
+        quantity
+      }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
+     * Get the tier price value for the given product quantity
+     *
+     * @param float $quantity
+     * @param array $tiers
+     * @return float
+     */
+    private function getValueForQuantity(float $quantity, array $tiers): float
+    {
+        $filteredResult = array_values(array_filter($tiers, function ($tier) use ($quantity) {
+            if ((float)$tier['quantity'] == $quantity) {
+                return $tier;
+            }
+        }));
+
+        return (float)$filteredResult[0]['final_price']['value'];
     }
 
     /**
@@ -104,6 +145,17 @@ class PriceTiersTest extends GraphQlAbstract
     }
 
     /**
+     * Get array that would be used in request header
+     *
+     * @param string $storeViewCode
+     * @return array
+     */
+    private function getHeaderStore(string $storeViewCode): array
+    {
+        return ['Store' => $storeViewCode];
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Catalog/_files/simple_product_with_tier_prices_for_multiple_groups.php
      */
     public function testGetLowestPriceForGuest()
@@ -124,7 +176,7 @@ class PriceTiersTest extends GraphQlAbstract
     public function testProductTierPricesAreCorrectlyReturned()
     {
         $productSku = 'simple';
-        $query =  <<<QUERY
+        $query = <<<QUERY
 {
   products(search: "{$productSku}") {
    items {
@@ -141,7 +193,7 @@ class PriceTiersTest extends GraphQlAbstract
 }
 QUERY;
         $response = $this->graphQlQuery($query);
-        $productsWithTierPrices = ['simple_1','simple_2','simple_3'];
+        $productsWithTierPrices = ['simple_1', 'simple_2', 'simple_3'];
 
         foreach ($response['products']['items'] as $key => $item) {
             if (in_array($item['sku'], $productsWithTierPrices)) {
@@ -152,61 +204,9 @@ QUERY;
         }
     }
 
-    /**
-     * Get the tier price value for the given product quantity
-     *
-     * @param float $quantity
-     * @param array $tiers
-     * @return float
-     */
-    private function getValueForQuantity(float $quantity, array $tiers): float
+    protected function setUp(): void
     {
-        $filteredResult = array_values(array_filter($tiers, function ($tier) use ($quantity) {
-            if ((float)$tier['quantity'] == $quantity) {
-                return $tier;
-            }
-        }));
-
-        return (float)$filteredResult[0]['final_price']['value'];
-    }
-
-    /**
-     * Get a query which user filter for product sku and returns price_tiers
-     *
-     * @param string $productSku
-     * @return string
-     */
-    private function getProductSearchQuery(string $productSku): string
-    {
-        return <<<QUERY
-{
-  products(filter: {sku: {eq: "{$productSku}"}}) {
-    items {
-      price_tiers {
-     	final_price {
-          currency
-          value
-        }
-        discount {
-          amount_off
-          percent_off
-        }
-        quantity
-      }
-    }
-  }
-}
-QUERY;
-    }
-
-    /**
-     * Get array that would be used in request header
-     *
-     * @param string $storeViewCode
-     * @return array
-     */
-    private function getHeaderStore(string $storeViewCode): array
-    {
-        return ['Store' => $storeViewCode];
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->getCustomerAuthenticationHeader = $this->objectManager->get(GetCustomerAuthenticationHeader::class);
     }
 }

@@ -7,8 +7,9 @@ declare(strict_types=1);
 
 namespace Magento\Paypal\Controller\Hostedpro;
 
-use Magento\TestFramework\TestCase\AbstractController;
 use Laminas\Stdlib\Parameters;
+use Magento\TestFramework\TestCase\AbstractController;
+use ReflectionClass;
 
 /**
  * Tests PayPal HostedPro return controller.
@@ -44,7 +45,7 @@ class ReturnActionTest extends AbstractController
     private function setRequestUri(string $requestUri)
     {
         $request = $this->getRequest();
-        $reflection = new \ReflectionClass($request);
+        $reflection = new ReflectionClass($request);
         $property = $reflection->getProperty('requestUri');
         $property->setAccessible(true);
         $property->setValue($request, null);

@@ -12,8 +12,8 @@ use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Filesystem;
 use Magento\Framework\Filesystem\Directory\WriteInterface;
 use Magento\Framework\ObjectManagerInterface;
-use Magento\MediaStorage\Model\File\Storage;
 use Magento\MediaStorage\Helper\File\Storage\Database;
+use Magento\MediaStorage\Model\File\Storage;
 use Magento\MediaStorage\Model\File\Storage\Directory\DatabaseFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
@@ -55,23 +55,14 @@ class ImageUploaderTest extends TestCase
     /**
      * @inheritdoc
      */
-    protected function setUp(): void
+    public static function tearDownAfterClass(): void
     {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->filesystem = $this->objectManager->get(Filesystem::class);
-        $this->mediaDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::MEDIA);
-        $this->tmpDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::SYS_TMP);
-        $dbStorage = $this->objectManager->create(Database::class);
-        $this->imageUploader = $this->objectManager->create(
-            ImageUploader::class,
-            [
-                'baseTmpPath' => self::BASE_TMP_PATH,
-                'basePath' => self::BASE_PATH,
-                'coreFileStorageDatabase' => $dbStorage,
-                'allowedExtensions' => ['jpg', 'jpeg', 'gif', 'png'],
-                'allowedMimeTypes' => ['image/jpg', 'image/jpeg', 'image/gif', 'image/png']
-            ]
-        );
+        parent::tearDownAfterClass();
+        $filesystem = Bootstrap::getObjectManager()->get(Filesystem::class);
+        /** @var WriteInterface $mediaDirectory */
+        $mediaDirectory = $filesystem->getDirectoryWrite(DirectoryList::MEDIA);
+        $mediaDirectory->delete(self::BASE_TMP_PATH);
+        $mediaDirectory->delete(self::BASE_PATH);
     }
 
     /**
@@ -233,13 +224,22 @@ class ImageUploaderTest extends TestCase
     /**
      * @inheritdoc
      */
-    public static function tearDownAfterClass(): void
+    protected function setUp(): void
     {
-        parent::tearDownAfterClass();
-        $filesystem = Bootstrap::getObjectManager()->get(Filesystem::class);
-        /** @var WriteInterface $mediaDirectory */
-        $mediaDirectory = $filesystem->getDirectoryWrite(DirectoryList::MEDIA);
-        $mediaDirectory->delete(self::BASE_TMP_PATH);
-        $mediaDirectory->delete(self::BASE_PATH);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->filesystem = $this->objectManager->get(Filesystem::class);
+        $this->mediaDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::MEDIA);
+        $this->tmpDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::SYS_TMP);
+        $dbStorage = $this->objectManager->create(Database::class);
+        $this->imageUploader = $this->objectManager->create(
+            ImageUploader::class,
+            [
+                'baseTmpPath' => self::BASE_TMP_PATH,
+                'basePath' => self::BASE_PATH,
+                'coreFileStorageDatabase' => $dbStorage,
+                'allowedExtensions' => ['jpg', 'jpeg', 'gif', 'png'],
+                'allowedMimeTypes' => ['image/jpg', 'image/jpeg', 'image/gif', 'image/png']
+            ]
+        );
     }
 }

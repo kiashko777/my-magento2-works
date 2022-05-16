@@ -3,7 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
+use Magento\UrlRewrite\Model\UrlRewrite;
 
 /**
  * Extends valid Url rewrites
@@ -13,9 +16,9 @@ Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/url_rewrites
 /**
  * Invalid rewrite for product assigned to different category
  */
-/** @var $rewrite \Magento\UrlRewrite\Model\UrlRewrite */
-$rewrite = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\UrlRewrite\Model\UrlRewrite::class
+/** @var $rewrite UrlRewrite */
+$rewrite = Bootstrap::getObjectManager()->create(
+    UrlRewrite::class
 );
 $rewrite->setStoreId(
     1
@@ -36,8 +39,8 @@ $rewrite->setStoreId(
 /**
  * Invalid rewrite for product assigned to category that doesn't belong to store
  */
-$rewrite = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\UrlRewrite\Model\UrlRewrite::class
+$rewrite = Bootstrap::getObjectManager()->create(
+    UrlRewrite::class
 );
 $rewrite->setStoreId(
     1

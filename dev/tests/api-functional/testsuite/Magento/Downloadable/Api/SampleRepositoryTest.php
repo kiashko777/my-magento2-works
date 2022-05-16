@@ -6,8 +6,11 @@
 
 namespace Magento\Downloadable\Api;
 
+use Exception;
 use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\ProductFactory;
 use Magento\Downloadable\Model\Sample;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
@@ -35,92 +38,6 @@ class SampleRepositoryTest extends WebapiAbstract
      * @var array
      */
     protected $deleteServiceInfo;
-
-    protected function setUp(): void
-    {
-        $this->createServiceInfo = [
-            'rest' => [
-                'resourcePath' => '/V1/products/downloadable-product/downloadable-links/samples',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
-            ],
-            'soap' => [
-                'service' => 'downloadableSampleRepositoryV1',
-                'serviceVersion' => 'V1',
-                'operation' => 'downloadableSampleRepositoryV1Save',
-            ],
-        ];
-
-        $this->updateServiceInfo = [
-            'rest' => [
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
-            ],
-            'soap' => [
-                'service' => 'downloadableSampleRepositoryV1',
-                'serviceVersion' => 'V1',
-                'operation' => 'downloadableSampleRepositoryV1Save',
-            ],
-        ];
-
-        $this->deleteServiceInfo = [
-            'rest' => [
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
-            ],
-            'soap' => [
-                'service' => 'downloadableSampleRepositoryV1',
-                'serviceVersion' => 'V1',
-                'operation' => 'downloadableSampleRepositoryV1Delete',
-            ],
-        ];
-
-        $this->testImagePath = __DIR__ . str_replace('/', DIRECTORY_SEPARATOR, '/_files/test_image.jpg');
-    }
-
-    /**
-     * Retrieve product that was updated by test
-     *
-     * @param bool $isScopeGlobal if true product store ID will be set to 0
-     * @return Product
-     */
-    protected function getTargetProduct($isScopeGlobal = false)
-    {
-        if ($isScopeGlobal) {
-            $product = Bootstrap::getObjectManager()->get(\Magento\Catalog\Model\ProductFactory::class)
-                ->create()->setStoreId(0)->load(1);
-        } else {
-            $product = Bootstrap::getObjectManager()->get(\Magento\Catalog\Model\ProductFactory::class)
-                ->create()
-                ->load(1);
-        }
-
-        return $product;
-    }
-
-    /**
-     * Retrieve product sample by its ID (or first sample if ID is not specified)
-     *
-     * @param Product $product
-     * @param int|null $sampleId
-     * @return Sample|null
-     */
-    protected function getTargetSample(Product $product, $sampleId = null)
-    {
-        $samples = $product->getExtensionAttributes()->getDownloadableProductSamples();
-        if ($sampleId) {
-            /* @var $sample \Magento\Downloadable\Model\Sample */
-            if ($samples) {
-                foreach ($samples as $sample) {
-                    if ($sample->getId() == $sampleId) {
-                        return $sample;
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        // return first sample
-        return $samples[0];
-    }
 
     /**
      * @magentoApiDataFixture Magento/Downloadable/_files/product_downloadable.php
@@ -153,6 +70,53 @@ class SampleRepositoryTest extends WebapiAbstract
         $this->assertEquals($requestData['sample']['sample_type'], $sample->getSampleType());
         $this->assertStringEndsWith('.jpg', $sample->getSampleFile());
         $this->assertNull($sample->getSampleUrl());
+    }
+
+    /**
+     * Retrieve product sample by its ID (or first sample if ID is not specified)
+     *
+     * @param Product $product
+     * @param int|null $sampleId
+     * @return Sample|null
+     */
+    protected function getTargetSample(Product $product, $sampleId = null)
+    {
+        $samples = $product->getExtensionAttributes()->getDownloadableProductSamples();
+        if ($sampleId) {
+            /* @var $sample Sample */
+            if ($samples) {
+                foreach ($samples as $sample) {
+                    if ($sample->getId() == $sampleId) {
+                        return $sample;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        // return first sample
+        return $samples[0];
+    }
+
+    /**
+     * Retrieve product that was updated by test
+     *
+     * @param bool $isScopeGlobal if true product store ID will be set to 0
+     * @return Product
+     */
+    protected function getTargetProduct($isScopeGlobal = false)
+    {
+        if ($isScopeGlobal) {
+            $product = Bootstrap::getObjectManager()->get(ProductFactory::class)
+                ->create()->setStoreId(0)->load(1);
+        } else {
+            $product = Bootstrap::getObjectManager()->get(ProductFactory::class)
+                ->create()
+                ->load(1);
+        }
+
+        return $product;
     }
 
     /**
@@ -212,7 +176,7 @@ class SampleRepositoryTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfSampleTypeIsInvalid()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The sample type is invalid. Verify the sample type and try again.');
 
         $requestData = [
@@ -236,7 +200,7 @@ class SampleRepositoryTest extends WebapiAbstract
      */
     public function testCreateSampleWithMissingFileThrowsException(): void
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Sample file not found. Please try again.');
 
         $requestData = [
@@ -258,7 +222,7 @@ class SampleRepositoryTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfSampleFileContentIsNotAValidBase64EncodedString()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Provided content must be valid base64 encoded data.');
 
         $requestData = [
@@ -283,7 +247,7 @@ class SampleRepositoryTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfSampleFileNameContainsForbiddenCharacters()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Provided file name contains forbidden characters.');
 
         $requestData = [
@@ -309,7 +273,7 @@ class SampleRepositoryTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfSampleUrlHasWrongFormat()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Sample URL must have valid format.');
 
         $requestData = [
@@ -332,7 +296,7 @@ class SampleRepositoryTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfSortOrderIsInvalid($sortOrder)
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Sort order must be a positive integer.');
 
         $requestData = [
@@ -422,7 +386,7 @@ class SampleRepositoryTest extends WebapiAbstract
      */
     public function testUpdateThrowsExceptionIfThereIsNoDownloadableSampleWithGivenId()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage(
             'No downloadable sample with the provided ID was found. Verify the ID and try again.'
         );
@@ -450,7 +414,7 @@ class SampleRepositoryTest extends WebapiAbstract
      */
     public function testUpdateThrowsExceptionIfSortOrderIsInvalid($sortOrder)
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Sort order must be a positive integer.');
 
         $sampleId = $this->getTargetSample($this->getTargetProduct())->getId();
@@ -496,7 +460,7 @@ class SampleRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/products/' . $sku . $urlTail,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => 'downloadableSampleRepositoryV1',
@@ -541,7 +505,7 @@ class SampleRepositoryTest extends WebapiAbstract
      */
     public function testDeleteThrowsExceptionIfThereIsNoDownloadableSampleWithGivenId()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage(
             'No downloadable sample with the provided ID was found. Verify the ID and try again.'
         );
@@ -560,7 +524,7 @@ class SampleRepositoryTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfTargetProductTypeIsNotDownloadable()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage(
             'The product needs to be the downloadable type. Verify the product and try again.'
         );
@@ -583,7 +547,7 @@ class SampleRepositoryTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfTargetProductDoesNotExist()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage(
             'The product that was requested doesn\'t exist. Verify the product and try again.'
         );
@@ -606,7 +570,7 @@ class SampleRepositoryTest extends WebapiAbstract
      */
     public function testUpdateThrowsExceptionIfTargetProductDoesNotExist()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage(
             'The product that was requested doesn\'t exist. Verify the product and try again.'
         );
@@ -623,5 +587,44 @@ class SampleRepositoryTest extends WebapiAbstract
             ],
         ];
         $this->_webApiCall($this->updateServiceInfo, $requestData);
+    }
+
+    protected function setUp(): void
+    {
+        $this->createServiceInfo = [
+            'rest' => [
+                'resourcePath' => '/V1/products/downloadable-product/downloadable-links/samples',
+                'httpMethod' => Request::HTTP_METHOD_POST,
+            ],
+            'soap' => [
+                'service' => 'downloadableSampleRepositoryV1',
+                'serviceVersion' => 'V1',
+                'operation' => 'downloadableSampleRepositoryV1Save',
+            ],
+        ];
+
+        $this->updateServiceInfo = [
+            'rest' => [
+                'httpMethod' => Request::HTTP_METHOD_PUT,
+            ],
+            'soap' => [
+                'service' => 'downloadableSampleRepositoryV1',
+                'serviceVersion' => 'V1',
+                'operation' => 'downloadableSampleRepositoryV1Save',
+            ],
+        ];
+
+        $this->deleteServiceInfo = [
+            'rest' => [
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
+            ],
+            'soap' => [
+                'service' => 'downloadableSampleRepositoryV1',
+                'serviceVersion' => 'V1',
+                'operation' => 'downloadableSampleRepositoryV1Delete',
+            ],
+        ];
+
+        $this->testImagePath = __DIR__ . str_replace('/', DIRECTORY_SEPARATOR, '/_files/test_image.jpg');
     }
 }

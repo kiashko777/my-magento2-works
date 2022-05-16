@@ -12,6 +12,7 @@ use Magento\Setup\Console\Command\InfoTimezoneListCommand;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Helper\Table;
+use Symfony\Component\Console\Helper\TableFactory;
 use Symfony\Component\Console\Tester\CommandTester;
 
 class InfoTimezoneListCommandTest extends TestCase
@@ -26,8 +27,8 @@ class InfoTimezoneListCommandTest extends TestCase
         $table->expects($this->once())->method('setHeaders')->with(['Timezone', 'Code']);
         $table->expects($this->once())->method('addRow')->with(['timezone description', 'timezone']);
 
-        /** @var \Symfony\Component\Console\Helper\TableFactory|MockObject $helperSet */
-        $tableFactoryMock = $this->createMock(\Symfony\Component\Console\Helper\TableFactory::class);
+        /** @var TableFactory|MockObject $helperSet */
+        $tableFactoryMock = $this->createMock(TableFactory::class);
         $tableFactoryMock->expects($this->once())->method('create')->willReturn($table);
 
         /** @var Lists|MockObject $list */

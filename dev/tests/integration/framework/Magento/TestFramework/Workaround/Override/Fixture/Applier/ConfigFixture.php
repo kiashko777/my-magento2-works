@@ -37,25 +37,6 @@ class ConfigFixture extends Base
     }
 
     /**
-     * Check is annotation fixture match override node
-     *
-     * @param array $attributes
-     * @param string $currentFixture
-     * @return bool
-     */
-    protected function isFixtureMatch(array $attributes, string $currentFixture): bool
-    {
-        $pattern = sprintf(
-            '/\s*(%s_%s?|default\/)\s*%s\s/i',
-            $attributes['scopeCode'],
-            $attributes['scopeType'],
-            str_replace('/', '\/', $attributes['path'])
-        );
-
-        return (bool)preg_match($pattern, $currentFixture);
-    }
-
-    /**
      * Create config annotation string
      *
      * @param array $attributes
@@ -68,7 +49,7 @@ class ConfigFixture extends Base
         if (empty($attributes['scopeType'])) {
             $result = sprintf('%s %s', $attributes['path'], $value);
         } elseif ($attributes['scopeType'] === ScopeConfigInterface::SCOPE_TYPE_DEFAULT) {
-            $result  = sprintf('%s/%s %s', $attributes['scopeType'], $attributes['path'], $value);
+            $result = sprintf('%s/%s %s', $attributes['scopeType'], $attributes['path'], $value);
         } else {
             $result = sprintf(
                 '%s_%s %s %s',
@@ -98,6 +79,25 @@ class ConfigFixture extends Base
         }
 
         return $fixtures;
+    }
+
+    /**
+     * Check is annotation fixture match override node
+     *
+     * @param array $attributes
+     * @param string $currentFixture
+     * @return bool
+     */
+    protected function isFixtureMatch(array $attributes, string $currentFixture): bool
+    {
+        $pattern = sprintf(
+            '/\s*(%s_%s?|default\/)\s*%s\s/i',
+            $attributes['scopeCode'],
+            $attributes['scopeType'],
+            str_replace('/', '\/', $attributes['path'])
+        );
+
+        return (bool)preg_match($pattern, $currentFixture);
     }
 
     /**

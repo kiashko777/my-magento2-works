@@ -4,12 +4,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Quote\Api;
 
-use Magento\Quote\Model\Cart\Totals;
-use Magento\Quote\Model\Cart\Totals\Item as ItemTotals;
+use Exception;
 use Magento\Framework\Api\FilterBuilder;
 use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Quote\Model\Cart\Totals;
+use Magento\Quote\Model\Cart\Totals\Item as ItemTotals;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\Quote\Address;
+use Magento\Quote\Model\QuoteIdMask;
+use Magento\Quote\Model\QuoteIdMaskFactory;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
@@ -30,36 +38,17 @@ class GuestCartTotalRepositoryTest extends WebapiAbstract
      */
     private $filterBuilder;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->searchCriteriaBuilder = $this->objectManager->create(
-            \Magento\Framework\Api\SearchCriteriaBuilder::class
-        );
-        $this->filterBuilder = $this->objectManager->create(
-            \Magento\Framework\Api\FilterBuilder::class
-        );
-    }
-
-    protected function getQuoteMaskedId($quoteId)
-    {
-        /** @var \Magento\Quote\Model\QuoteIdMask $quoteIdMask */
-        $quoteIdMask = $this->objectManager->create(\Magento\Quote\Model\QuoteIdMaskFactory::class)->create();
-        $quoteIdMask->load($quoteId, 'quote_id');
-        return $quoteIdMask->getMaskedId();
-    }
-
     /**
      * @magentoApiDataFixture Magento/Checkout/_files/quote_with_shipping_method.php
      */
     public function testGetTotals()
     {
-        /** @var \Magento\Quote\Model\Quote $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_1', 'reserved_order_id');
         $cartId = $this->getQuoteMaskedId($quote->getId());
 
-        /** @var \Magento\Quote\Model\Quote\Address $shippingAddress */
+        /** @var Address $shippingAddress */
         $shippingAddress = $quote->getShippingAddress();
 
         $data = [
@@ -107,68 +96,21 @@ class GuestCartTotalRepositoryTest extends WebapiAbstract
         $this->assertEquals($data, $actual);
     }
 
-    /**
-     */
-    public function testGetTotalsWithAbsentQuote()
+    protected function getQuoteMaskedId($quoteId)
     {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('No such entity');
-
-        $cartId = 'unknownCart';
-        $requestData = ['cartId' => $cartId];
-        $this->_webApiCall($this->getServiceInfoForTotalsService($cartId), $requestData);
-    }
-
-    /**
-     * Get service info for totals service
-     *
-     * @param string $cartId
-     * @return array
-     */
-    protected function getServiceInfoForTotalsService($cartId)
-    {
-        return [
-            'soap' => [
-                'service' => 'quoteGuestCartTotalRepositoryV1',
-                'serviceVersion' => 'V1',
-                'operation' => 'quoteGuestCartTotalRepositoryV1get',
-            ],
-            'rest' => [
-                'resourcePath' => '/V1/guest-carts/' . $cartId . '/totals',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
-            ],
-        ];
-    }
-
-    /**
-     * Adjust response details for SOAP protocol
-     *
-     * @param array $data
-     * @return array
-     */
-    protected function formatTotalsData($data)
-    {
-        foreach ($data as $key => $field) {
-            if (is_numeric($field)) {
-                $data[$key] = round($field, 1);
-                if ($data[$key] === null) {
-                    $data[$key] = 0.0;
-                }
-            }
-        }
-
-        unset($data[Totals::KEY_BASE_SUBTOTAL_INCL_TAX]);
-
-        return $data;
+        /** @var QuoteIdMask $quoteIdMask */
+        $quoteIdMask = $this->objectManager->create(QuoteIdMaskFactory::class)->create();
+        $quoteIdMask->load($quoteId, 'quote_id');
+        return $quoteIdMask->getMaskedId();
     }
 
     /**
      * Fetch quote item totals data from quote
      *
-     * @param \Magento\Quote\Model\Quote $quote
+     * @param Quote $quote
      * @return array
      */
-    protected function getQuoteItemTotalsData(\Magento\Quote\Model\Quote $quote)
+    protected function getQuoteItemTotalsData(Quote $quote)
     {
         $items = $quote->getAllItems();
         $item = array_shift($items);
@@ -195,5 +137,71 @@ class GuestCartTotalRepositoryTest extends WebapiAbstract
             ItemTotals::KEY_WEEE_TAX_APPLIED => $item->getWeeeTaxApplied(),
             ItemTotals::KEY_NAME => $item->getName(),
         ];
+    }
+
+    /**
+     * Adjust response details for SOAP protocol
+     *
+     * @param array $data
+     * @return array
+     */
+    protected function formatTotalsData($data)
+    {
+        foreach ($data as $key => $field) {
+            if (is_numeric($field)) {
+                $data[$key] = round($field, 1);
+                if ($data[$key] === null) {
+                    $data[$key] = 0.0;
+                }
+            }
+        }
+
+        unset($data[Totals::KEY_BASE_SUBTOTAL_INCL_TAX]);
+
+        return $data;
+    }
+
+    /**
+     * Get service info for totals service
+     *
+     * @param string $cartId
+     * @return array
+     */
+    protected function getServiceInfoForTotalsService($cartId)
+    {
+        return [
+            'soap' => [
+                'service' => 'quoteGuestCartTotalRepositoryV1',
+                'serviceVersion' => 'V1',
+                'operation' => 'quoteGuestCartTotalRepositoryV1get',
+            ],
+            'rest' => [
+                'resourcePath' => '/V1/guest-carts/' . $cartId . '/totals',
+                'httpMethod' => Request::HTTP_METHOD_GET,
+            ],
+        ];
+    }
+
+    /**
+     */
+    public function testGetTotalsWithAbsentQuote()
+    {
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('No such entity');
+
+        $cartId = 'unknownCart';
+        $requestData = ['cartId' => $cartId];
+        $this->_webApiCall($this->getServiceInfoForTotalsService($cartId), $requestData);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->searchCriteriaBuilder = $this->objectManager->create(
+            SearchCriteriaBuilder::class
+        );
+        $this->filterBuilder = $this->objectManager->create(
+            FilterBuilder::class
+        );
     }
 }

@@ -13,11 +13,13 @@ use Magento\Quote\Model\Quote;
 use Magento\Sales\Api\PaymentFailuresInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 /**
  * Tests \Magento\Sales\Api\PaymentFailuresInterface.
  */
-class PaymentFailuresServiceTest extends \PHPUnit\Framework\TestCase
+class PaymentFailuresServiceTest extends TestCase
 {
     /**
      * @var PaymentFailuresInterface
@@ -38,29 +40,6 @@ class PaymentFailuresServiceTest extends \PHPUnit\Framework\TestCase
      * @var TimezoneInterface|MockObject
      */
     private $localeDateMock;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->quote = Bootstrap::getObjectManager()->create(Quote::class);
-        $this->cartRepositoryMock = $this->getMockBuilder(CartRepositoryInterface::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['get'])
-            ->getMockForAbstractClass();
-        $this->localeDateMock = $this->getMockBuilder(TimezoneInterface::class)
-            ->setMethods(['formatDateTime'])
-            ->getMockForAbstractClass();
-
-        $this->paymentFailures = Bootstrap::getObjectManager()->create(
-            PaymentFailuresInterface::class,
-            [
-                'cartRepository' => $this->cartRepositoryMock,
-                'localeDate' => $this->localeDateMock,
-            ]
-        );
-    }
 
     /**
      * @magentoDataFixture Magento/Sales/_files/quote_with_two_products_and_customer.php
@@ -84,7 +63,7 @@ class PaymentFailuresServiceTest extends \PHPUnit\Framework\TestCase
         $this->localeDateMock->expects($this->atLeastOnce())->method('formatDateTime')->willReturn($dateAndTime);
         $this->paymentFailures->handle((int)$this->quote->getId(), $errorMessage->render());
 
-        $paymentReflection = new \ReflectionClass($this->paymentFailures);
+        $paymentReflection = new ReflectionClass($this->paymentFailures);
         $templateVarsMethod = $paymentReflection->getMethod('getTemplateVars');
         $templateVarsMethod->setAccessible(true);
 
@@ -106,5 +85,28 @@ class PaymentFailuresServiceTest extends \PHPUnit\Framework\TestCase
         ];
 
         $this->assertEquals($expectedVars, $templateVars);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->quote = Bootstrap::getObjectManager()->create(Quote::class);
+        $this->cartRepositoryMock = $this->getMockBuilder(CartRepositoryInterface::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['get'])
+            ->getMockForAbstractClass();
+        $this->localeDateMock = $this->getMockBuilder(TimezoneInterface::class)
+            ->setMethods(['formatDateTime'])
+            ->getMockForAbstractClass();
+
+        $this->paymentFailures = Bootstrap::getObjectManager()->create(
+            PaymentFailuresInterface::class,
+            [
+                'cartRepository' => $this->cartRepositoryMock,
+                'localeDate' => $this->localeDateMock,
+            ]
+        );
     }
 }

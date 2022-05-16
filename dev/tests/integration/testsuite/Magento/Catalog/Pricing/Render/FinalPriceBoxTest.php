@@ -6,22 +6,24 @@
 
 namespace Magento\Catalog\Pricing\Render;
 
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Framework\ObjectManagerInterface;
-use Magento\Catalog\Pricing\Price\FinalPrice;
-use Magento\Framework\Pricing\Render\RendererPool;
+use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\Framework\Pricing\Render\Amount;
-use Magento\Framework\App\State;
+use Magento\Catalog\Pricing\Price\FinalPrice;
 use Magento\Framework\App\Area;
+use Magento\Framework\App\State;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Pricing\Render\Amount;
+use Magento\Framework\Pricing\Render\RendererPool;
 use Magento\Framework\View\TemplateEngine\Php;
 use Magento\Framework\View\TemplateEnginePool;
-use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class FinalPriceBoxTest extends \PHPUnit\Framework\TestCase
+class FinalPriceBoxTest extends TestCase
 {
     /**
      * @var ProductInterface
@@ -69,6 +71,28 @@ class FinalPriceBoxTest extends \PHPUnit\Framework\TestCase
     private $templateEnginePool;
 
     /**
+     * @magentoDataFixture Magento/Catalog/_files/product_has_tier_price_show_as_low_as.php
+     * @magentoDbIsolation disabled
+     * @magentoAppIsolation enabled
+     */
+    public function testRenderAmountMinimalProductWithTierPricesShouldShowMinTierPrice()
+    {
+        $result = $this->finalPriceBox->renderAmountMinimal();
+        $this->assertStringContainsString('$5.00', $result);
+    }
+
+    /**
+     * @magentoDataFixture Magento/Catalog/_files/product_different_store_prices.php
+     * @magentoDbIsolation disabled
+     * @magentoAppIsolation enabled
+     * @magentoConfigFixture current_store catalog/frontend/flat_catalog_product 1
+     */
+    public function testProductSetDifferentStorePricesWithoutTierPriceShouldNotShowAsLowAs()
+    {
+        $this->assertEmpty($this->finalPriceBox->renderAmountMinimal());
+    }
+
+    /**
      * Set up
      */
     protected function setUp(): void
@@ -84,7 +108,7 @@ class FinalPriceBoxTest extends \PHPUnit\Framework\TestCase
 
         $this->templateEnginePool = $this->objectManager->get(TemplateEnginePool::class);
 
-        $enginesReflection = new \ReflectionProperty(
+        $enginesReflection = new ReflectionProperty(
             $this->templateEnginePool,
             'engines'
         );
@@ -124,27 +148,5 @@ class FinalPriceBoxTest extends \PHPUnit\Framework\TestCase
         );
 
         $this->finalPriceBox->setData('price_id', 'test_price_id');
-    }
-
-    /**
-     * @magentoDataFixture Magento/Catalog/_files/product_has_tier_price_show_as_low_as.php
-     * @magentoDbIsolation disabled
-     * @magentoAppIsolation enabled
-     */
-    public function testRenderAmountMinimalProductWithTierPricesShouldShowMinTierPrice()
-    {
-        $result = $this->finalPriceBox->renderAmountMinimal();
-        $this->assertStringContainsString('$5.00', $result);
-    }
-
-    /**
-     * @magentoDataFixture Magento/Catalog/_files/product_different_store_prices.php
-     * @magentoDbIsolation disabled
-     * @magentoAppIsolation enabled
-     * @magentoConfigFixture current_store catalog/frontend/flat_catalog_product 1
-     */
-    public function testProductSetDifferentStorePricesWithoutTierPriceShouldNotShowAsLowAs()
-    {
-        $this->assertEmpty($this->finalPriceBox->renderAmountMinimal());
     }
 }

@@ -41,31 +41,6 @@ class FieldsetTest extends TestCase
     private $fieldsetXpath = "//fieldset[@id='product_composite_configure_fields_%s']";
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->page = $this->objectManager->get(PageFactory::class)->create();
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->registry->unregister('current_product');
-        $this->registry->unregister('product');
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/product_simple_with_options.php
      * @return void
      */
@@ -91,6 +66,20 @@ class FieldsetTest extends TestCase
     }
 
     /**
+     * Register the product
+     *
+     * @param ProductInterface $product
+     * @return void
+     */
+    private function registerProduct(ProductInterface $product): void
+    {
+        $this->registry->unregister('current_product');
+        $this->registry->unregister('product');
+        $this->registry->register('current_product', $product);
+        $this->registry->register('product', $product);
+    }
+
+    /**
      * Prepare page layout
      *
      * @return void
@@ -106,16 +95,27 @@ class FieldsetTest extends TestCase
     }
 
     /**
-     * Register the product
-     *
-     * @param ProductInterface $product
-     * @return void
+     * @inheritdoc
      */
-    private function registerProduct(ProductInterface $product): void
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->page = $this->objectManager->get(PageFactory::class)->create();
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
     {
         $this->registry->unregister('current_product');
         $this->registry->unregister('product');
-        $this->registry->register('current_product', $product);
-        $this->registry->register('product', $product);
+
+        parent::tearDown();
     }
 }

@@ -8,12 +8,12 @@ declare(strict_types=1);
 
 namespace Magento\MediaContent\Model;
 
-use Magento\MediaContentApi\Api\SaveContentAssetLinksInterface;
-use Magento\MediaContentApi\Api\Data\ContentIdentityInterface;
 use Magento\MediaContentApi\Api\Data\ContentAssetLinkInterface;
+use Magento\MediaContentApi\Api\Data\ContentIdentityInterface;
+use Magento\MediaContentApi\Api\DeleteContentAssetLinksInterface;
 use Magento\MediaContentApi\Api\GetAssetIdsByContentIdentityInterface;
 use Magento\MediaContentApi\Api\GetContentByAssetIdsInterface;
-use Magento\MediaContentApi\Api\DeleteContentAssetLinksInterface;
+use Magento\MediaContentApi\Api\SaveContentAssetLinksInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
 
@@ -41,18 +41,6 @@ class SaveDeleteContentAssetLinksTest extends TestCase
      * @var DeleteContentAssetLinksInterface
      */
     private $deleteContentAssetLinks;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->saveContentAssetLinks = Bootstrap::getObjectManager()->get(SaveContentAssetLinksInterface::class);
-        $this->getAssetIdsByContentIdentity = Bootstrap::getObjectManager()
-            ->get(GetAssetIdsByContentIdentityInterface::class);
-        $this->getContentByAssetIds = Bootstrap::getObjectManager()->get(GetContentByAssetIdsInterface::class);
-        $this->deleteContentAssetLinks = Bootstrap::getObjectManager()->get(DeleteContentAssetLinksInterface::class);
-    }
 
     /**
      * Save asset to content links, retrieve the data, delete assets to content links
@@ -101,5 +89,17 @@ class SaveDeleteContentAssetLinksTest extends TestCase
 
         $this->assertEmpty($this->getContentByAssetIds->execute($assetIds));
         $this->assertEmpty($this->getAssetIdsByContentIdentity->execute($contentIdentity));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->saveContentAssetLinks = Bootstrap::getObjectManager()->get(SaveContentAssetLinksInterface::class);
+        $this->getAssetIdsByContentIdentity = Bootstrap::getObjectManager()
+            ->get(GetAssetIdsByContentIdentityInterface::class);
+        $this->getContentByAssetIds = Bootstrap::getObjectManager()->get(GetContentByAssetIdsInterface::class);
+        $this->deleteContentAssetLinks = Bootstrap::getObjectManager()->get(DeleteContentAssetLinksInterface::class);
     }
 }

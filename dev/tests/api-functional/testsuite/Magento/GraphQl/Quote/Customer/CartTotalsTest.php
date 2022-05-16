@@ -27,13 +27,6 @@ class CartTotalsTest extends GraphQlAbstract
      */
     private $getMaskedQuoteIdByReservedOrderId;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-    }
-
     /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      * @magentoApiDataFixture Magento/GraphQl/Tax/_files/tax_rule_for_region_1.php
@@ -67,6 +60,75 @@ class CartTotalsTest extends GraphQlAbstract
         self::assertEquals('US-TEST-*-Rate-1', $appliedTaxesResponse[0]['label']);
         self::assertEquals(1.5, $appliedTaxesResponse[0]['amount']['value']);
         self::assertEquals('USD', $appliedTaxesResponse[0]['amount']['currency']);
+    }
+
+    /**
+     * Generates GraphQl query for retrieving cart totals
+     *
+     * @param string $maskedQuoteId
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId): string
+    {
+        return <<<QUERY
+{
+  cart(cart_id: "$maskedQuoteId") {
+    items {
+      prices {
+        price {
+          value
+          currency
+        }
+        row_total {
+          value
+          currency
+        }
+        row_total_including_tax {
+          value
+          currency
+        }
+      }
+    }
+    prices {
+      grand_total {
+        value
+        currency
+      }
+      subtotal_including_tax {
+        value
+        currency
+      }
+      subtotal_excluding_tax {
+        value
+        currency
+      }
+      subtotal_with_discount_excluding_tax {
+        value
+        currency
+      }
+      applied_taxes {
+        label
+        amount {
+          value
+          currency
+        }
+      }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
+     * @param string $username
+     * @param string $password
+     * @return array
+     */
+    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
+        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
+        return $headerMap;
     }
 
     /**
@@ -195,72 +257,10 @@ class CartTotalsTest extends GraphQlAbstract
         $this->graphQlQuery($query, [], '', $this->getHeaderMap('customer3@search.example.com'));
     }
 
-    /**
-     * Generates GraphQl query for retrieving cart totals
-     *
-     * @param string $maskedQuoteId
-     * @return string
-     */
-    private function getQuery(string $maskedQuoteId): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-{
-  cart(cart_id: "$maskedQuoteId") {
-    items {
-      prices {
-        price {
-          value
-          currency
-        }
-        row_total {
-          value
-          currency
-        }
-        row_total_including_tax {
-          value
-          currency
-        }
-      }
-    }
-    prices {
-      grand_total {
-        value
-        currency
-      }
-      subtotal_including_tax {
-        value
-        currency
-      }
-      subtotal_excluding_tax {
-        value
-        currency
-      }
-      subtotal_with_discount_excluding_tax {
-        value
-        currency
-      }
-      applied_taxes {
-        label
-        amount {
-          value
-          currency
-        }
-      }
-    }
-  }
-}
-QUERY;
-    }
-
-    /**
-     * @param string $username
-     * @param string $password
-     * @return array
-     */
-    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
-    {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
-        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
-        return $headerMap;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
     }
 }

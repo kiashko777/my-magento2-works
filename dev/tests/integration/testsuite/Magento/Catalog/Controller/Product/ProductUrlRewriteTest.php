@@ -46,24 +46,6 @@ class ProductUrlRewriteTest extends AbstractController
     private $urlSuffix;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->config = $this->_objectManager->get(ScopeConfigInterface::class);
-        $this->productRepository = $this->_objectManager->create(ProductRepositoryInterface::class);
-        $this->registry = $this->_objectManager->get(Registry::class);
-        $this->categoryRepository = $this->_objectManager->create(CategoryRepositoryInterface::class);
-        $this->storeManager = $this->_objectManager->get(StoreManagerInterface::class);
-        $this->urlSuffix = $this->config->getValue(
-            ProductUrlPathGenerator::XML_PATH_PRODUCT_URL_SUFFIX,
-            ScopeInterface::SCOPE_STORE
-        );
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/second_product_simple.php
      * @return void
      */
@@ -74,6 +56,42 @@ class ProductUrlRewriteTest extends AbstractController
         $this->dispatch($url);
 
         $this->assertProductIsVisible($product);
+    }
+
+    /**
+     * Prepare url to dispatch
+     *
+     * @param string $urlKey
+     * @param bool $addSuffix
+     * @return string
+     */
+    private function prepareUrl(string $urlKey, bool $addSuffix = true): string
+    {
+        $url = $addSuffix ? '/' . $urlKey . $this->urlSuffix : '/' . $urlKey;
+
+        return $url;
+    }
+
+    /**
+     * Assert that product is available in storefront
+     *
+     * @param ProductInterface $product
+     * @return void
+     */
+    private function assertProductIsVisible(ProductInterface $product): void
+    {
+        $this->assertEquals(
+            Response::STATUS_CODE_200,
+            $this->getResponse()->getHttpResponseCode(),
+            'Wrong response code is returned'
+        );
+        $currentProduct = $this->registry->registry('current_product');
+        $this->assertNotNull($currentProduct);
+        $this->assertEquals(
+            $product->getSku(),
+            $currentProduct->getSku(),
+            'Wrong product is registered'
+        );
     }
 
     /**
@@ -110,6 +128,20 @@ class ProductUrlRewriteTest extends AbstractController
     }
 
     /**
+     * Update product
+     *
+     * @param ProductInterface $product
+     * @param array $data
+     * @return ProductInterface
+     */
+    private function updateProduct(ProductInterface $product, array $data): ProductInterface
+    {
+        $product->addData($data);
+
+        return $this->productRepository->save($product);
+    }
+
+    /**
      * @magentoDbIsolation disabled
      * @magentoDataFixture Magento/Store/_files/core_fixturestore.php
      * @magentoDataFixture Magento/Catalog/_files/second_product_simple.php
@@ -140,20 +172,6 @@ class ProductUrlRewriteTest extends AbstractController
     }
 
     /**
-     * Update product
-     *
-     * @param ProductInterface $product
-     * @param array $data
-     * @return ProductInterface
-     */
-    private function updateProduct(ProductInterface $product, array $data): ProductInterface
-    {
-        $product->addData($data);
-
-        return $this->productRepository->save($product);
-    }
-
-    /**
      * Clean up cached objects
      *
      * @return void
@@ -169,38 +187,20 @@ class ProductUrlRewriteTest extends AbstractController
     }
 
     /**
-     * Prepare url to dispatch
-     *
-     * @param string $urlKey
-     * @param bool $addSuffix
-     * @return string
+     * @inheritdoc
      */
-    private function prepareUrl(string $urlKey, bool $addSuffix = true): string
+    protected function setUp(): void
     {
-        $url = $addSuffix ? '/' . $urlKey . $this->urlSuffix : '/' . $urlKey;
+        parent::setUp();
 
-        return $url;
-    }
-
-    /**
-     * Assert that product is available in storefront
-     *
-     * @param ProductInterface $product
-     * @return void
-     */
-    private function assertProductIsVisible(ProductInterface $product): void
-    {
-        $this->assertEquals(
-            Response::STATUS_CODE_200,
-            $this->getResponse()->getHttpResponseCode(),
-            'Wrong response code is returned'
-        );
-        $currentProduct = $this->registry->registry('current_product');
-        $this->assertNotNull($currentProduct);
-        $this->assertEquals(
-            $product->getSku(),
-            $currentProduct->getSku(),
-            'Wrong product is registered'
+        $this->config = $this->_objectManager->get(ScopeConfigInterface::class);
+        $this->productRepository = $this->_objectManager->create(ProductRepositoryInterface::class);
+        $this->registry = $this->_objectManager->get(Registry::class);
+        $this->categoryRepository = $this->_objectManager->create(CategoryRepositoryInterface::class);
+        $this->storeManager = $this->_objectManager->get(StoreManagerInterface::class);
+        $this->urlSuffix = $this->config->getValue(
+            ProductUrlPathGenerator::XML_PATH_PRODUCT_URL_SUFFIX,
+            ScopeInterface::SCOPE_STORE
         );
     }
 }

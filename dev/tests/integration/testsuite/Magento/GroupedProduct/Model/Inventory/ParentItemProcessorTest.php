@@ -11,9 +11,9 @@ use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product;
 use Magento\CatalogInventory\Api\StockRegistryInterface;
 use Magento\CatalogInventory\Model\Stock\StockItemRepository;
-use PHPUnit\Framework\TestCase;
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test stock status parent product
@@ -24,14 +24,6 @@ class ParentItemProcessorTest extends TestCase
      * @var ObjectManagerInterface
      */
     protected $objectManager;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
 
     /**
      * Test stock status parent product if children are out of stock
@@ -55,5 +47,13 @@ class ParentItemProcessorTest extends TestCase
         $stockItem = $stockItemRepository->get($stockItem->getItemId());
 
         $this->assertEquals(false, $stockItem->getIsInStock());
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

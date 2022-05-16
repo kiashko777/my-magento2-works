@@ -6,12 +6,14 @@
 
 namespace Magento\Config\Console\Command;
 
+use DOMDocument;
 use Magento\Config\Model\Config\Backend\Admin\Custom;
 use Magento\Config\Model\Config\PathValidator;
 use Magento\Config\Model\Config\Structure\Converter;
 use Magento\Config\Model\Config\Structure\Data as StructureData;
 use Magento\Directory\Model\Currency;
 use Magento\Framework\App\Config\ConfigPathResolver;
+use Magento\Framework\App\Config\ReinitableConfigInterface;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\DeploymentConfig\FileReader;
 use Magento\Framework\App\DeploymentConfig\Writer;
@@ -23,8 +25,8 @@ use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Stdlib\ArrayManager;
 use Magento\Store\Model\ScopeInterface;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Framework\App\Config\ReinitableConfigInterface;
 use PHPUnit\Framework\MockObject\MockObject as Mock;
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -35,7 +37,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @magentoDbIsolation enabled
  */
-class ConfigSetCommandTest extends \PHPUnit\Framework\TestCase
+class ConfigSetCommandTest extends TestCase
 {
     /**
      * @var ObjectManagerInterface
@@ -88,70 +90,6 @@ class ConfigSetCommandTest extends \PHPUnit\Framework\TestCase
     private $appConfig;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        Bootstrap::getInstance()->reinitialize();
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->extendSystemStructure();
-
-        $this->scopeConfig = $this->objectManager->get(ScopeConfigInterface::class);
-        $this->reader = $this->objectManager->get(FileReader::class);
-        $this->filesystem = $this->objectManager->get(Filesystem::class);
-        $this->configFilePool = $this->objectManager->get(ConfigFilePool::class);
-        $this->arrayManager = $this->objectManager->get(ArrayManager::class);
-        $this->appConfig = $this->objectManager->get(ReinitableConfigInterface::class);
-
-        // Snapshot of configuration.
-        $this->config = $this->loadConfig();
-
-        // Mocks for objects.
-        $this->inputMock = $this->getMockBuilder(InputInterface::class)
-            ->getMockForAbstractClass();
-        $this->outputMock = $this->getMockBuilder(OutputInterface::class)
-            ->getMockForAbstractClass();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->filesystem->getDirectoryWrite(DirectoryList::CONFIG)->writeFile(
-            $this->configFilePool->getPath(ConfigFilePool::APP_ENV),
-            "<?php\n return array();\n"
-        );
-        /** @var Writer $writer */
-        $writer = $this->objectManager->get(Writer::class);
-        $writer->saveConfig([ConfigFilePool::APP_ENV => $this->config]);
-        $this->appConfig->reinit();
-    }
-
-    /**
-     * Add test system structure to main system structure
-     *
-     * @return void
-     */
-    private function extendSystemStructure()
-    {
-        $document = new \DOMDocument();
-        $document->load(__DIR__ . '/../../_files/system.xml');
-        $converter = $this->objectManager->get(Converter::class);
-        $systemConfig = $converter->convert($document);
-        $structureData = $this->objectManager->get(StructureData::class);
-        $structureData->merge($systemConfig);
-    }
-
-    /**
-     * @return array
-     */
-    private function loadConfig()
-    {
-        return $this->reader->load(ConfigFilePool::APP_ENV);
-    }
-
-    /**
      * Tests lockable flow.
      * Expects to save value and then error on saving duplicate value.
      *
@@ -201,22 +139,6 @@ class ConfigSetCommandTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Retrieves variations with path, value, scope and scope code.
-     *
-     * @return array
-     */
-    public function runLockDataProvider()
-    {
-        return [
-            ['general/region/display_all', '1'],
-            ['general/region/state_required', 'BR,FR', ScopeInterface::SCOPE_WEBSITE, 'base'],
-            ['admin/security/use_form_key', '0'],
-            ['general/group/subgroup/field', 'default_value'],
-            ['general/group/subgroup/field', 'website_value', ScopeInterface::SCOPE_WEBSITE, 'base'],
-        ];
-    }
-
-    /**
      * Tests the extended flow.
      *
      * @param string $path
@@ -231,7 +153,8 @@ class ConfigSetCommandTest extends \PHPUnit\Framework\TestCase
         $value,
         $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
         $scopeCode = null
-    ) {
+    )
+    {
         $arguments = [
             [ConfigSetCommand::ARG_PATH, $path],
             [ConfigSetCommand::ARG_VALUE, $value]
@@ -273,9 +196,10 @@ class ConfigSetCommandTest extends \PHPUnit\Framework\TestCase
     private function runCommand(
         array $arguments,
         array $options,
-        $expectedMessage = '',
-        $expectedCode = Cli::RETURN_SUCCESS
-    ) {
+              $expectedMessage = '',
+              $expectedCode = Cli::RETURN_SUCCESS
+    )
+    {
         $input = clone $this->inputMock;
         $output = clone $this->outputMock;
 
@@ -308,6 +232,22 @@ class ConfigSetCommandTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Retrieves variations with path, value, scope and scope code.
+     *
+     * @return array
+     */
+    public function runLockDataProvider()
+    {
+        return [
+            ['general/region/display_all', '1'],
+            ['general/region/state_required', 'BR,FR', ScopeInterface::SCOPE_WEBSITE, 'base'],
+            ['admin/security/use_form_key', '0'],
+            ['general/group/subgroup/field', 'default_value'],
+            ['general/group/subgroup/field', 'website_value', ScopeInterface::SCOPE_WEBSITE, 'base'],
+        ];
+    }
+
+    /**
      * @param string $path Config path
      * @param string $value Value of config is tried to be set
      * @param string $message Message command output
@@ -322,8 +262,70 @@ class ConfigSetCommandTest extends \PHPUnit\Framework\TestCase
         $message,
         $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
         $scopeCode = null
-    ) {
+    )
+    {
         $this->setConfigFailure($path, $value, $message, $scope, $scopeCode);
+    }
+
+    /**
+     * Set configuration value with some error
+     * and check that this value was not saved to DB and appropriate error message was displayed
+     *
+     * @param string $path Config path
+     * @param string $value Value of config is tried to be set
+     * @param string $message Message command output
+     * @param string $scope
+     * @param string|null $scopeCode
+     */
+    private function setConfigFailure(
+        $path,
+        $value,
+        $message,
+        $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
+        $scopeCode = null
+    )
+    {
+        $status = $this->setConfig($path, $value, '<error>' . $message . '</error>', $scope, $scopeCode);
+        $this->assertSame(Cli::RETURN_FAILURE, $status);
+        $this->assertNotSame(
+            $value,
+            $this->scopeConfig->getValue($path),
+            "Values are the same '$value' and '{$this->scopeConfig->getValue($path)}' for $path"
+        );
+    }
+
+    /**
+     * @param string $path Config path
+     * @param string $value Value of config is tried to be set
+     * @param string $message Message command output
+     * @param string $scope
+     * @param string|null $scopeCode
+     * @return int Status that command returned
+     */
+    private function setConfig($path, $value, $message, $scope, $scopeCode)
+    {
+        $input = clone $this->inputMock;
+        $output = clone $this->outputMock;
+        $input->expects($this->any())
+            ->method('getArgument')
+            ->willReturnMap([
+                [ConfigSetCommand::ARG_PATH, $path],
+                [ConfigSetCommand::ARG_VALUE, $value]
+            ]);
+        $input->expects($this->any())
+            ->method('getOption')
+            ->willReturnMap([
+                [ConfigSetCommand::OPTION_SCOPE, $scope],
+                [ConfigSetCommand::OPTION_SCOPE_CODE, $scopeCode]
+            ]);
+        $output->expects($this->once())
+            ->method('writeln')
+            ->with($message);
+
+        /** @var ConfigSetCommand $command */
+        $command = $this->objectManager->create(ConfigSetCommand::class);
+        $status = $command->run($input, $output);
+        return $status;
     }
 
     /**
@@ -418,6 +420,29 @@ class ConfigSetCommandTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Set configuration and check this value from DB with success message this command should display
+     *
+     * @param string $path Config path
+     * @param string $value Value of config is tried to be set
+     * @param string $scope
+     * @param string|null $scopeCode
+     */
+    private function setConfigSuccess(
+        $path,
+        $value,
+        $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
+        $scopeCode = null
+    )
+    {
+        $status = $this->setConfig($path, $value, '<info>Value was saved.</info>', $scope, $scopeCode);
+        $this->assertSame(Cli::RETURN_SUCCESS, $status);
+        $this->assertSame(
+            $value,
+            $this->scopeConfig->getValue($path, $scope, $scopeCode)
+        );
+    }
+
+    /**
      * Saving values with successful validation
      *
      * @dataProvider configSetValidDataProvider
@@ -455,84 +480,66 @@ class ConfigSetCommandTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Set configuration and check this value from DB with success message this command should display
-     *
-     * @param string $path Config path
-     * @param string $value Value of config is tried to be set
-     * @param string $scope
-     * @param string|null $scopeCode
+     * @inheritdoc
      */
-    private function setConfigSuccess(
-        $path,
-        $value,
-        $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
-        $scopeCode = null
-    ) {
-        $status = $this->setConfig($path, $value, '<info>Value was saved.</info>', $scope, $scopeCode);
-        $this->assertSame(Cli::RETURN_SUCCESS, $status);
-        $this->assertSame(
-            $value,
-            $this->scopeConfig->getValue($path, $scope, $scopeCode)
-        );
-    }
-
-    /**
-     * Set configuration value with some error
-     * and check that this value was not saved to DB and appropriate error message was displayed
-     *
-     * @param string $path Config path
-     * @param string $value Value of config is tried to be set
-     * @param string $message Message command output
-     * @param string $scope
-     * @param string|null $scopeCode
-     */
-    private function setConfigFailure(
-        $path,
-        $value,
-        $message,
-        $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
-        $scopeCode = null
-    ) {
-        $status = $this->setConfig($path, $value, '<error>' . $message . '</error>', $scope, $scopeCode);
-        $this->assertSame(Cli::RETURN_FAILURE, $status);
-        $this->assertNotSame(
-            $value,
-            $this->scopeConfig->getValue($path),
-            "Values are the same '$value' and '{$this->scopeConfig->getValue($path)}' for $path"
-        );
-    }
-
-    /**
-     * @param string $path Config path
-     * @param string $value Value of config is tried to be set
-     * @param string $message Message command output
-     * @param string $scope
-     * @param string|null $scopeCode
-     * @return int Status that command returned
-     */
-    private function setConfig($path, $value, $message, $scope, $scopeCode)
+    protected function setUp(): void
     {
-        $input = clone $this->inputMock;
-        $output = clone $this->outputMock;
-        $input->expects($this->any())
-            ->method('getArgument')
-            ->willReturnMap([
-                [ConfigSetCommand::ARG_PATH, $path],
-                [ConfigSetCommand::ARG_VALUE, $value]
-            ]);
-        $input->expects($this->any())
-            ->method('getOption')
-            ->willReturnMap([
-                [ConfigSetCommand::OPTION_SCOPE, $scope],
-                [ConfigSetCommand::OPTION_SCOPE_CODE, $scopeCode]
-            ]);
-        $output->expects($this->once())
-            ->method('writeln')
-            ->with($message);
+        Bootstrap::getInstance()->reinitialize();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->extendSystemStructure();
 
-        /** @var ConfigSetCommand $command */
-        $command = $this->objectManager->create(ConfigSetCommand::class);
-        $status = $command->run($input, $output);
-        return $status;
+        $this->scopeConfig = $this->objectManager->get(ScopeConfigInterface::class);
+        $this->reader = $this->objectManager->get(FileReader::class);
+        $this->filesystem = $this->objectManager->get(Filesystem::class);
+        $this->configFilePool = $this->objectManager->get(ConfigFilePool::class);
+        $this->arrayManager = $this->objectManager->get(ArrayManager::class);
+        $this->appConfig = $this->objectManager->get(ReinitableConfigInterface::class);
+
+        // Snapshot of configuration.
+        $this->config = $this->loadConfig();
+
+        // Mocks for objects.
+        $this->inputMock = $this->getMockBuilder(InputInterface::class)
+            ->getMockForAbstractClass();
+        $this->outputMock = $this->getMockBuilder(OutputInterface::class)
+            ->getMockForAbstractClass();
+    }
+
+    /**
+     * Add test system structure to main system structure
+     *
+     * @return void
+     */
+    private function extendSystemStructure()
+    {
+        $document = new DOMDocument();
+        $document->load(__DIR__ . '/../../_files/system.xml');
+        $converter = $this->objectManager->get(Converter::class);
+        $systemConfig = $converter->convert($document);
+        $structureData = $this->objectManager->get(StructureData::class);
+        $structureData->merge($systemConfig);
+    }
+
+    /**
+     * @return array
+     */
+    private function loadConfig()
+    {
+        return $this->reader->load(ConfigFilePool::APP_ENV);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->filesystem->getDirectoryWrite(DirectoryList::CONFIG)->writeFile(
+            $this->configFilePool->getPath(ConfigFilePool::APP_ENV),
+            "<?php\n return array();\n"
+        );
+        /** @var Writer $writer */
+        $writer = $this->objectManager->get(Writer::class);
+        $writer->saveConfig([ConfigFilePool::APP_ENV => $this->config]);
+        $this->appConfig->reinit();
     }
 }

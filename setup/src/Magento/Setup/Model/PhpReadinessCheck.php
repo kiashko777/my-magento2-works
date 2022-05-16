@@ -3,12 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Model;
 
 use Composer\Package\Version\VersionParser;
+use Exception;
 use Magento\Framework\Composer\ComposerInformation;
 use Magento\Framework\Convert\DataSize;
 use Magento\Setup\Controller\ResponseTypeInterface;
+use UnexpectedValueException;
 
 /**
  * Checks for PHP readiness. It is used by both Cron and Setup wizard.
@@ -16,26 +19,23 @@ use Magento\Setup\Controller\ResponseTypeInterface;
 class PhpReadinessCheck
 {
     /**
-     * @var ComposerInformation
-     */
-    private $composerInformation;
-
-    /**
-     * @var PhpInformation
-     */
-    private $phpInformation;
-
-    /**
-     * @var VersionParser
-     */
-    private $versionParser;
-
-    /**
      * Data size converter
      *
      * @var DataSize
      */
     protected $dataSize;
+    /**
+     * @var ComposerInformation
+     */
+    private $composerInformation;
+    /**
+     * @var PhpInformation
+     */
+    private $phpInformation;
+    /**
+     * @var VersionParser
+     */
+    private $versionParser;
 
     /**
      * Constructor
@@ -47,10 +47,11 @@ class PhpReadinessCheck
      */
     public function __construct(
         ComposerInformation $composerInformation,
-        PhpInformation $phpInformation,
-        VersionParser $versionParser,
-        DataSize $dataSize
-    ) {
+        PhpInformation      $phpInformation,
+        VersionParser       $versionParser,
+        DataSize            $dataSize
+    )
+    {
         $this->composerInformation = $composerInformation;
         $this->phpInformation = $phpInformation;
         $this->versionParser = $versionParser;
@@ -66,7 +67,7 @@ class PhpReadinessCheck
     {
         try {
             $requiredVersion = $this->composerInformation->getRequiredPhpVersion();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return [
                 'responseType' => ResponseTypeInterface::RESPONSE_TYPE_ERROR,
                 'data' => [
@@ -89,6 +90,23 @@ class PhpReadinessCheck
                 'current' => PHP_VERSION,
             ],
         ];
+    }
+
+    /**
+     * Normalize PHP Version
+     *
+     * @param string $version
+     * @return string
+     */
+    private function getNormalizedCurrentPhpVersion($version)
+    {
+        try {
+            $normalizedPhpVersion = $this->versionParser->normalize($version);
+        } catch (UnexpectedValueException $e) {
+            $prettyVersion = preg_replace('#^([^~+-]+).*$#', '$1', $version);
+            $normalizedPhpVersion = $this->versionParser->normalize($prettyVersion);
+        }
+        return $normalizedPhpVersion;
     }
 
     /**
@@ -116,122 +134,6 @@ class PhpReadinessCheck
             'responseType' => $responseType,
             'data' => $settings
         ];
-    }
-
-    /**
-     * Checks PHP settings for cron
-     *
-     * @return array
-     */
-    public function checkPhpCronSettings()
-    {
-        $responseType = ResponseTypeInterface::RESPONSE_TYPE_SUCCESS;
-
-        $settings = array_merge(
-            $this->checkXDebugNestedLevel(),
-            $this->checkMemoryLimit()
-        );
-
-        foreach ($settings as $setting) {
-            if ($setting['error']) {
-                $responseType = ResponseTypeInterface::RESPONSE_TYPE_ERROR;
-            }
-        }
-
-        return [
-            'responseType' => $responseType,
-            'data' => $settings
-        ];
-    }
-
-    /**
-     * Checks PHP extensions
-     *
-     * @return array
-     */
-    public function checkPhpExtensions()
-    {
-        try {
-            $required = $this->composerInformation->getRequiredExtensions();
-            $current = $this->phpInformation->getCurrent();
-        } catch (\Exception $e) {
-            return [
-                'responseType' => ResponseTypeInterface::RESPONSE_TYPE_ERROR,
-                'data' => [
-                    'error' => 'phpExtensionError',
-                    'message' => 'Cannot determine required PHP extensions: ' . $e->getMessage()
-                ],
-            ];
-        }
-        $responseType = ResponseTypeInterface::RESPONSE_TYPE_SUCCESS;
-        $missing = array_values(array_diff($required, $current));
-        if ($missing) {
-            $responseType = ResponseTypeInterface::RESPONSE_TYPE_ERROR;
-        }
-        return [
-            'responseType' => $responseType,
-            'data' => [
-                'required' => $required,
-                'missing' => $missing,
-            ],
-        ];
-    }
-
-    /**
-     * Checks php memory limit
-     *
-     * @return array
-     */
-    public function checkMemoryLimit()
-    {
-        $data = [];
-        $warning = false;
-        $error = false;
-        $message = '';
-        $minimumRequiredMemoryLimit = '756M';
-        $recommendedForUpgradeMemoryLimit = '2G';
-
-        $currentMemoryLimit = ini_get('memory_limit');
-
-        $currentMemoryInteger = (int)$currentMemoryLimit;
-
-        if ($currentMemoryInteger > 0
-            && $this->dataSize->convertSizeToBytes($currentMemoryLimit)
-            < $this->dataSize->convertSizeToBytes($minimumRequiredMemoryLimit)
-        ) {
-            $error = true;
-            $message = sprintf(
-                'Your current PHP memory limit is %s.
-                 Magento 2 requires it to be set to %s or more.
-                 As a user with root privileges, edit your php.ini file to increase memory_limit.
-                 (The command php --ini tells you where it is located.)
-                 After that, restart your web server and try again.',
-                $currentMemoryLimit,
-                $minimumRequiredMemoryLimit
-            );
-        } elseif ($currentMemoryInteger > 0
-            && $this->dataSize->convertSizeToBytes($currentMemoryLimit)
-            < $this->dataSize->convertSizeToBytes($recommendedForUpgradeMemoryLimit)
-        ) {
-            $warning = true;
-            $message = sprintf(
-                'Your current PHP memory limit is %s.
-                 We recommend it to be set to %s or more to use Setup Wizard.
-                 As a user with root privileges, edit your php.ini file to increase memory_limit.
-                 (The command php --ini tells you where it is located.)
-                 After that, restart your web server and try again.',
-                $currentMemoryLimit,
-                $recommendedForUpgradeMemoryLimit
-            );
-        }
-
-        $data['memory_limit'] = [
-            'message' => $message,
-            'error' => $error,
-            'warning' => $warning,
-        ];
-
-        return $data;
     }
 
     /**
@@ -344,19 +246,118 @@ class PhpReadinessCheck
     }
 
     /**
-     * Normalize PHP Version
+     * Checks PHP settings for cron
      *
-     * @param string $version
-     * @return string
+     * @return array
      */
-    private function getNormalizedCurrentPhpVersion($version)
+    public function checkPhpCronSettings()
+    {
+        $responseType = ResponseTypeInterface::RESPONSE_TYPE_SUCCESS;
+
+        $settings = array_merge(
+            $this->checkXDebugNestedLevel(),
+            $this->checkMemoryLimit()
+        );
+
+        foreach ($settings as $setting) {
+            if ($setting['error']) {
+                $responseType = ResponseTypeInterface::RESPONSE_TYPE_ERROR;
+            }
+        }
+
+        return [
+            'responseType' => $responseType,
+            'data' => $settings
+        ];
+    }
+
+    /**
+     * Checks php memory limit
+     *
+     * @return array
+     */
+    public function checkMemoryLimit()
+    {
+        $data = [];
+        $warning = false;
+        $error = false;
+        $message = '';
+        $minimumRequiredMemoryLimit = '756M';
+        $recommendedForUpgradeMemoryLimit = '2G';
+
+        $currentMemoryLimit = ini_get('memory_limit');
+
+        $currentMemoryInteger = (int)$currentMemoryLimit;
+
+        if ($currentMemoryInteger > 0
+            && $this->dataSize->convertSizeToBytes($currentMemoryLimit)
+            < $this->dataSize->convertSizeToBytes($minimumRequiredMemoryLimit)
+        ) {
+            $error = true;
+            $message = sprintf(
+                'Your current PHP memory limit is %s.
+                 Magento 2 requires it to be set to %s or more.
+                 As a user with root privileges, edit your php.ini file to increase memory_limit.
+                 (The command php --ini tells you where it is located.)
+                 After that, restart your web server and try again.',
+                $currentMemoryLimit,
+                $minimumRequiredMemoryLimit
+            );
+        } elseif ($currentMemoryInteger > 0
+            && $this->dataSize->convertSizeToBytes($currentMemoryLimit)
+            < $this->dataSize->convertSizeToBytes($recommendedForUpgradeMemoryLimit)
+        ) {
+            $warning = true;
+            $message = sprintf(
+                'Your current PHP memory limit is %s.
+                 We recommend it to be set to %s or more to use Setup Wizard.
+                 As a user with root privileges, edit your php.ini file to increase memory_limit.
+                 (The command php --ini tells you where it is located.)
+                 After that, restart your web server and try again.',
+                $currentMemoryLimit,
+                $recommendedForUpgradeMemoryLimit
+            );
+        }
+
+        $data['memory_limit'] = [
+            'message' => $message,
+            'error' => $error,
+            'warning' => $warning,
+        ];
+
+        return $data;
+    }
+
+    /**
+     * Checks PHP extensions
+     *
+     * @return array
+     */
+    public function checkPhpExtensions()
     {
         try {
-            $normalizedPhpVersion = $this->versionParser->normalize($version);
-        } catch (\UnexpectedValueException $e) {
-            $prettyVersion = preg_replace('#^([^~+-]+).*$#', '$1', $version);
-            $normalizedPhpVersion = $this->versionParser->normalize($prettyVersion);
+            $required = $this->composerInformation->getRequiredExtensions();
+            $current = $this->phpInformation->getCurrent();
+        } catch (Exception $e) {
+            return [
+                'responseType' => ResponseTypeInterface::RESPONSE_TYPE_ERROR,
+                'data' => [
+                    'error' => 'phpExtensionError',
+                    'message' => 'Cannot determine required PHP extensions: ' . $e->getMessage()
+                ],
+            ];
         }
-        return $normalizedPhpVersion;
+        $responseType = ResponseTypeInterface::RESPONSE_TYPE_SUCCESS;
+        $missing = array_values(array_diff($required, $current));
+        if ($missing) {
+            $responseType = ResponseTypeInterface::RESPONSE_TYPE_ERROR;
+        }
+        return [
+            'responseType' => $responseType,
+            'data' => [
+                'required' => $required,
+                'missing' => $missing,
+            ],
+        ];
     }
 }

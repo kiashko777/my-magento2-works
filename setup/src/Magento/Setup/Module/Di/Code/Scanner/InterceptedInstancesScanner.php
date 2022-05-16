@@ -6,6 +6,10 @@
 
 namespace Magento\Setup\Module\Di\Code\Scanner;
 
+use DOMDocument;
+use DOMNode;
+use DOMXPath;
+
 class InterceptedInstancesScanner implements ScannerInterface
 {
     /**
@@ -18,10 +22,10 @@ class InterceptedInstancesScanner implements ScannerInterface
     {
         $interceptedInstances = [];
         foreach ($files as $fileName) {
-            $dom = new \DOMDocument();
+            $dom = new DOMDocument();
             $dom->loadXML(file_get_contents($fileName));
-            $xpath = new \DOMXPath($dom);
-            /** @var $node \DOMNode */
+            $xpath = new DOMXPath($dom);
+            /** @var $node DOMNode */
             foreach ($xpath->query('//type/plugin|//virtualType/plugin') as $node) {
                 $parentTypeNode = $node->parentNode->attributes->getNamedItem('name');
                 if ($parentTypeNode === null) {

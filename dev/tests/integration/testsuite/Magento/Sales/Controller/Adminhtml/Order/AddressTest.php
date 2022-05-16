@@ -30,17 +30,6 @@ class AddressTest extends AbstractBackendController
     private $registry;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->orderFactory = $this->_objectManager->get(OrderInterfaceFactory::class);
-        $this->registry = $this->_objectManager->get(Registry::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Sales/_files/order.php
      *
      * @return void
@@ -50,15 +39,6 @@ class AddressTest extends AbstractBackendController
         $order = $this->orderFactory->create()->loadByIncrementId(100000001);
         $this->dispatchWithAddressId((int)$order->getBillingAddressId());
         $this->assertInstanceOf(OrderAddressInterface::class, $this->registry->registry('order_address'));
-    }
-
-    /**
-     * @return void
-     */
-    public function testWithNotExistingAddressId(): void
-    {
-        $this->dispatchWithAddressId(51728);
-        $this->assertRedirect($this->stringContains('backend/sales/order/index/'));
     }
 
     /**
@@ -72,5 +52,25 @@ class AddressTest extends AbstractBackendController
         $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
         $this->getRequest()->setParam('address_id', $addressId);
         $this->dispatch('backend/sales/order/address');
+    }
+
+    /**
+     * @return void
+     */
+    public function testWithNotExistingAddressId(): void
+    {
+        $this->dispatchWithAddressId(51728);
+        $this->assertRedirect($this->stringContains('backend/sales/order/index/'));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->orderFactory = $this->_objectManager->get(OrderInterfaceFactory::class);
+        $this->registry = $this->_objectManager->get(Registry::class);
     }
 }

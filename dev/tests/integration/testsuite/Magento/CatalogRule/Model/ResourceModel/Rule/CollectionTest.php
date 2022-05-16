@@ -3,22 +3,25 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogRule\Model\ResourceModel\Rule;
 
-use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Catalog\Model\ResourceModel\Eav\Attribute;
+use Magento\Catalog\Setup\CategorySetup;
 use Magento\CatalogRule\Model\Indexer\IndexBuilder;
 use Magento\CatalogRule\Model\ResourceModel\Rule;
 use Magento\CatalogRule\Model\ResourceModel\Rule\Collection as RuleCollection;
-use Magento\Catalog\Model\ResourceModel\Eav\Attribute;
-use Magento\Catalog\Setup\CategorySetup;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppIsolation enabled
  */
-class CollectionTest extends \PHPUnit\Framework\TestCase
+class CollectionTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
 
@@ -36,14 +39,6 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
      * @var Collection
      */
     protected $resourceRuleCollection;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->indexBuilder = $this->objectManager->get(IndexBuilder::class);
-        $this->resourceRule = $this->objectManager->get(Rule::class);
-        $this->resourceRuleCollection = $this->objectManager->get(Collection::class);
-    }
 
     /**
      * @magentoAppArea Adminhtml
@@ -78,5 +73,13 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
         $resourceRuleCollection->addFilter('is_active', 1);
         $resourceRuleCollection->addFilter('name', 'test_rule');
         $this->assertEquals(0, $resourceRuleCollection->count());
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->indexBuilder = $this->objectManager->get(IndexBuilder::class);
+        $this->resourceRule = $this->objectManager->get(Rule::class);
+        $this->resourceRuleCollection = $this->objectManager->get(Collection::class);
     }
 }

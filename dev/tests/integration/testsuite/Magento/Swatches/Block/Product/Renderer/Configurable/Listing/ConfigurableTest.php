@@ -70,22 +70,6 @@ class ConfigurableTest extends TestCase
     }
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->serializer = $this->objectManager->get(SerializerInterface::class);
-        $this->productAttributeRepository = $this->objectManager->get(ProductAttributeRepositoryInterface::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Configurable::class);
-        $this->request = $this->objectManager->get(RequestInterface::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Swatches/_files/configurable_product_with_images.php
      * @return void
      */
@@ -100,5 +84,21 @@ class ConfigurableTest extends TestCase
         $this->assertStringEndsWith('/m/a/magento_image.jpg', $jsonConfig['preSelectedGallery']['large']);
         $this->assertStringEndsWith('/m/a/magento_image.jpg', $jsonConfig['preSelectedGallery']['medium']);
         $this->assertStringEndsWith('/m/a/magento_image.jpg', $jsonConfig['preSelectedGallery']['small']);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->serializer = $this->objectManager->get(SerializerInterface::class);
+        $this->productAttributeRepository = $this->objectManager->get(ProductAttributeRepositoryInterface::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Configurable::class);
+        $this->request = $this->objectManager->get(RequestInterface::class);
     }
 }

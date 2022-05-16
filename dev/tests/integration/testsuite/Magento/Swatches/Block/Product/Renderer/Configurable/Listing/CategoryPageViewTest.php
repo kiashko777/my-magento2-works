@@ -19,17 +19,6 @@ use Magento\Swatches\Block\Product\Renderer\Listing\Configurable;
 class CategoryPageViewTest extends ProductPageViewTest
 {
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->block = $this->layout->createBlock(Configurable::class);
-        $this->template = 'Magento_Swatches::product/listing/renderer.phtml';
-    }
-
-    /**
      * @magentoDataFixture Magento/Swatches/_files/configurable_product_visual_swatch_attribute.php
      *
      * @dataProvider expectedVisualSwatchDataProvider
@@ -41,6 +30,39 @@ class CategoryPageViewTest extends ProductPageViewTest
     public function testCategoryPageVisualSwatchAttributeView(array $expectedConfig, array $expectedSwatchConfig): void
     {
         $this->checkProductViewCategoryPage($expectedConfig, $expectedSwatchConfig, ['visual_swatch_attribute']);
+    }
+
+    /**
+     * Check configurable product view on category view page
+     *
+     * @param array $expectedConfig
+     * @param array $expectedSwatchConfig
+     * @param array $attributes
+     * @return void
+     */
+    private function checkProductViewCategoryPage(
+        array $expectedConfig,
+        array $expectedSwatchConfig,
+        array $attributes
+    ): void
+    {
+        $this->setAttributeUsedInProductListing($attributes);
+        $this->checkProductView($expectedConfig, $expectedSwatchConfig);
+    }
+
+    /**
+     * Set used in product listing attributes value to true
+     *
+     * @param array $attributeCodes
+     * @return void
+     */
+    private function setAttributeUsedInProductListing(array $attributeCodes): void
+    {
+        foreach ($attributeCodes as $attributeCode) {
+            $attribute = $this->productAttributeRepository->get($attributeCode);
+            $attribute->setUsedInProductListing('1');
+            $this->productAttributeRepository->save($attribute);
+        }
     }
 
     /**
@@ -76,34 +98,13 @@ class CategoryPageViewTest extends ProductPageViewTest
     }
 
     /**
-     * Check configurable product view on category view page
-     *
-     * @param array $expectedConfig
-     * @param array $expectedSwatchConfig
-     * @param array $attributes
-     * @return void
+     * @inheritdoc
      */
-    private function checkProductViewCategoryPage(
-        array $expectedConfig,
-        array $expectedSwatchConfig,
-        array $attributes
-    ): void {
-        $this->setAttributeUsedInProductListing($attributes);
-        $this->checkProductView($expectedConfig, $expectedSwatchConfig);
-    }
-
-    /**
-     * Set used in product listing attributes value to true
-     *
-     * @param array $attributeCodes
-     * @return void
-     */
-    private function setAttributeUsedInProductListing(array $attributeCodes): void
+    protected function setUp(): void
     {
-        foreach ($attributeCodes as $attributeCode) {
-            $attribute = $this->productAttributeRepository->get($attributeCode);
-            $attribute->setUsedInProductListing('1');
-            $this->productAttributeRepository->save($attribute);
-        }
+        parent::setUp();
+
+        $this->block = $this->layout->createBlock(Configurable::class);
+        $this->template = 'Magento_Swatches::product/listing/renderer.phtml';
     }
 }

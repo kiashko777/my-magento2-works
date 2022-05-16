@@ -8,6 +8,8 @@ declare(strict_types=1);
 
 namespace Magento\Framework\HTTP;
 
+use DateTime;
+use Magento\Framework\Async\CancelingDeferredException;
 use Magento\Framework\HTTP\AsyncClient\Request;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
@@ -23,14 +25,6 @@ class AsyncClientInterfaceTest extends TestCase
     private $client;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->client = Bootstrap::getObjectManager()->get(AsyncClientInterface::class);
-    }
-
-    /**
      * Making a request.
      */
     public function testRequest(): void
@@ -42,8 +36,8 @@ class AsyncClientInterfaceTest extends TestCase
         $this->assertEquals(200, $response1->get()->getStatusCode());
         $this->assertStringContainsString('Magento Commerce', $response1->get()->getBody());
         $this->assertStringContainsString('Magento Commerce', $response2->get()->getBody());
-        $date1 = new \DateTime($response1->get()->getHeaders()['date']);
-        $date2 = new \DateTime($response2->get()->getHeaders()['date']);
+        $date1 = new DateTime($response1->get()->getHeaders()['date']);
+        $date2 = new DateTime($response2->get()->getHeaders()['date']);
         $this->assertLessThanOrEqual(1, abs((int)$date1->format('U') - (int)$date2->format('U')));
     }
 
@@ -53,7 +47,7 @@ class AsyncClientInterfaceTest extends TestCase
      */
     public function testCancel(): void
     {
-        $this->expectException(\Magento\Framework\Async\CancelingDeferredException::class);
+        $this->expectException(CancelingDeferredException::class);
         $this->expectExceptionMessage('Deferred is canceled');
 
         $request = new Request('https://magento.com/home-page', Request::METHOD_GET, [], null);
@@ -69,11 +63,19 @@ class AsyncClientInterfaceTest extends TestCase
      */
     public function testCancelFail(): void
     {
-        $this->expectException(\Magento\Framework\Async\CancelingDeferredException::class);
+        $this->expectException(CancelingDeferredException::class);
         $this->expectExceptionMessage('Failed to cancel HTTP request');
 
         $request = new Request('https://magento.com/home-page', Request::METHOD_GET, [], null);
         $response = $this->client->request($request);
         $response->cancel();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->client = Bootstrap::getObjectManager()->get(AsyncClientInterface::class);
     }
 }

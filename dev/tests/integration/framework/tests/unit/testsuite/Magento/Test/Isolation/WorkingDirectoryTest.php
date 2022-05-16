@@ -7,24 +7,18 @@
 /**
  * Test class for \Magento\TestFramework\Isolation\WorkingDirectory.
  */
+
 namespace Magento\Test\Isolation;
 
-class WorkingDirectoryTest extends \PHPUnit\Framework\TestCase
+use Magento\TestFramework\Isolation\WorkingDirectory;
+use PHPUnit\Framework\TestCase;
+
+class WorkingDirectoryTest extends TestCase
 {
     /**
-     * @var \Magento\TestFramework\Isolation\WorkingDirectory
+     * @var WorkingDirectory
      */
     protected $_object;
-
-    protected function setUp(): void
-    {
-        $this->_object = new \Magento\TestFramework\Isolation\WorkingDirectory();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->_object = null;
-    }
 
     public function testStartTestEndTest()
     {
@@ -38,5 +32,15 @@ class WorkingDirectoryTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($newWorkingDir, getcwd(), 'Unable to change the current working directory.');
         $this->_object->endTest($this);
         $this->assertEquals($oldWorkingDir, getcwd(), 'Current working directory was not restored.');
+    }
+
+    protected function setUp(): void
+    {
+        $this->_object = new WorkingDirectory();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->_object = null;
     }
 }

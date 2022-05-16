@@ -6,20 +6,20 @@
 
 namespace Magento\Setup\Console\Command;
 
-use Magento\Framework\Setup\ConsoleLogger;
 use Magento\Framework\App\DeploymentConfig;
-use Magento\Setup\Model\InstallerFactory;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
-use Magento\Setup\Model\StoreConfigurationDataMapper;
-use Magento\Setup\Model\ObjectManagerProvider;
+use Magento\Framework\Console\Cli;
 use Magento\Framework\ObjectManagerInterface;
-use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Setup\ConsoleLogger;
+use Magento\Framework\Validator\Currency as CurrencyValidator;
 use Magento\Framework\Validator\Locale as LocaleValidator;
 use Magento\Framework\Validator\Timezone as TimezoneValidator;
-use Magento\Framework\Validator\Currency as CurrencyValidator;
 use Magento\Framework\Validator\Url as UrlValidator;
+use Magento\Setup\Model\InstallerFactory;
+use Magento\Setup\Model\ObjectManagerProvider;
+use Magento\Setup\Model\StoreConfigurationDataMapper;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
@@ -72,20 +72,21 @@ class InstallStoreConfigurationCommand extends AbstractSetupCommand
      * @param InstallerFactory $installerFactory
      * @param DeploymentConfig $deploymentConfig
      * @param ObjectManagerProvider $objectManagerProvider
-     * @param LocaleValidator $localeValidator,
-     * @param TimezoneValidator $timezoneValidator,
-     * @param CurrencyValidator $currencyValidator,
+     * @param LocaleValidator $localeValidator ,
+     * @param TimezoneValidator $timezoneValidator ,
+     * @param CurrencyValidator $currencyValidator ,
      * @param UrlValidator $urlValidator
      */
     public function __construct(
-        InstallerFactory $installerFactory,
-        DeploymentConfig $deploymentConfig,
+        InstallerFactory      $installerFactory,
+        DeploymentConfig      $deploymentConfig,
         ObjectManagerProvider $objectManagerProvider,
-        LocaleValidator $localeValidator,
-        TimezoneValidator $timezoneValidator,
-        CurrencyValidator $currencyValidator,
-        UrlValidator $urlValidator
-    ) {
+        LocaleValidator       $localeValidator,
+        TimezoneValidator     $timezoneValidator,
+        CurrencyValidator     $currencyValidator,
+        UrlValidator          $urlValidator
+    )
+    {
         $this->installerFactory = $installerFactory;
         $this->deploymentConfig = $deploymentConfig;
         $this->objectManager = $objectManagerProvider->get();
@@ -105,29 +106,6 @@ class InstallStoreConfigurationCommand extends AbstractSetupCommand
             ->setDescription('Installs the store configuration. Deprecated since 2.2.0. Use config:set instead')
             ->setDefinition($this->getOptionsList());
         parent::configure();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function execute(InputInterface $input, OutputInterface $output)
-    {
-        if (!$this->deploymentConfig->isAvailable()) {
-            $output->writeln(
-                "<info>Store settings can't be saved because the Magento application is not installed.</info>"
-            );
-            // we must have an exit code higher than zero to indicate something was wrong
-            return \Magento\Framework\Console\Cli::RETURN_FAILURE;
-        }
-        $errors = $this->validate($input);
-        if ($errors) {
-            $output->writeln($errors);
-            // we must have an exit code higher than zero to indicate something was wrong
-            return \Magento\Framework\Console\Cli::RETURN_FAILURE;
-        }
-        $installer = $this->installerFactory->create(new ConsoleLogger($output));
-        $installer->installUserConfig($input->getOptions());
-        return \Magento\Framework\Console\Cli::RETURN_SUCCESS;
     }
 
     /**
@@ -203,6 +181,29 @@ class InstallStoreConfigurationCommand extends AbstractSetupCommand
                 . 'Deprecated, use config:set with path admin/security/use_form_key'
             ),
         ];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function execute(InputInterface $input, OutputInterface $output)
+    {
+        if (!$this->deploymentConfig->isAvailable()) {
+            $output->writeln(
+                "<info>Store settings can't be saved because the Magento application is not installed.</info>"
+            );
+            // we must have an exit code higher than zero to indicate something was wrong
+            return Cli::RETURN_FAILURE;
+        }
+        $errors = $this->validate($input);
+        if ($errors) {
+            $output->writeln($errors);
+            // we must have an exit code higher than zero to indicate something was wrong
+            return Cli::RETURN_FAILURE;
+        }
+        $installer = $this->installerFactory->create(new ConsoleLogger($output));
+        $installer->installUserConfig($input->getOptions());
+        return Cli::RETURN_SUCCESS;
     }
 
     /**
@@ -292,40 +293,6 @@ class InstallStoreConfigurationCommand extends AbstractSetupCommand
     }
 
     /**
-     * Validate binary value for a specified key
-     *
-     * @param string $value
-     * @param string $key
-     * @return string
-     */
-    private function validateBinaryValue($value, $key)
-    {
-        $errorMsg = '';
-        if ($value !== '0' && $value !== '1') {
-            $errorMsg = '<error>' . 'Command option \'' . $key . '\': Invalid value. Possible values (0|1).</error>';
-        }
-        return $errorMsg;
-    }
-
-    /**
-     * Validate codes for languages, currencies or timezones
-     *
-     * @param LocaleValidator|TimezoneValidator|CurrencyValidator  $lists
-     * @param string  $code
-     * @param string  $type
-     * @return string
-     */
-    private function validateCodes($lists, $code, $type)
-    {
-        $errorMsg = '';
-        if (!$lists->isValid($code)) {
-            $errorMsg = '<error>' . 'Command option \'' . $type . '\': Invalid value. To see possible values, '
-                . "run command 'bin/magento info:" . $type . ':list\'.</error>';
-        }
-        return $errorMsg;
-    }
-
-    /**
      * Validate URL
      *
      * @param string $url
@@ -349,6 +316,40 @@ class InstallStoreConfigurationCommand extends AbstractSetupCommand
             );
         }
 
+        return $errorMsg;
+    }
+
+    /**
+     * Validate codes for languages, currencies or timezones
+     *
+     * @param LocaleValidator|TimezoneValidator|CurrencyValidator $lists
+     * @param string $code
+     * @param string $type
+     * @return string
+     */
+    private function validateCodes($lists, $code, $type)
+    {
+        $errorMsg = '';
+        if (!$lists->isValid($code)) {
+            $errorMsg = '<error>' . 'Command option \'' . $type . '\': Invalid value. To see possible values, '
+                . "run command 'bin/magento info:" . $type . ':list\'.</error>';
+        }
+        return $errorMsg;
+    }
+
+    /**
+     * Validate binary value for a specified key
+     *
+     * @param string $value
+     * @param string $key
+     * @return string
+     */
+    private function validateBinaryValue($value, $key)
+    {
+        $errorMsg = '';
+        if ($value !== '0' && $value !== '1') {
+            $errorMsg = '<error>' . 'Command option \'' . $key . '\': Invalid value. Possible values (0|1).</error>';
+        }
         return $errorMsg;
     }
 }

@@ -6,10 +6,8 @@
 
 namespace Magento\Test\Html;
 
-use Magento\Framework\App\Utility;
-use Magento\TestFramework\CodingStandard\Tool\CodeSniffer;
-use Magento\Framework\App\Utility\Files;
 use Magento\Test\Php\LiveCodeTest as PHPCodeTest;
+use Magento\TestFramework\CodingStandard\Tool\CodeSniffer;
 use PHPUnit\Framework\TestCase;
 
 /**

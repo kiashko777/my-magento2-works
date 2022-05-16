@@ -3,15 +3,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer;
 
 use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer\PhraseCollector
  */
-class PhraseCollectorTest extends \PHPUnit\Framework\TestCase
+class PhraseCollectorTest extends TestCase
 {
     /**
      * @var PhraseCollector
@@ -23,20 +25,12 @@ class PhraseCollectorTest extends \PHPUnit\Framework\TestCase
      */
     protected $objectManager;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->phraseCollector = $this->objectManager->create(
-            \Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer\PhraseCollector::class
-        );
-    }
-
     /**
      * @covers \Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer\PhraseCollector::parse
      */
     public function testParse()
     {
-        $file = __DIR__.'/_files/objectsCode.php.txt';
+        $file = __DIR__ . '/_files/objectsCode.php.txt';
         $this->phraseCollector->setIncludeObjects();
         $this->phraseCollector->parse($file);
         $expectation = [
@@ -54,5 +48,13 @@ class PhraseCollectorTest extends \PHPUnit\Framework\TestCase
             ]
         ];
         $this->assertEquals($expectation, $this->phraseCollector->getPhrases());
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->phraseCollector = $this->objectManager->create(
+            PhraseCollector::class
+        );
     }
 }

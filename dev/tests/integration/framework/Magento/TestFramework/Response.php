@@ -7,12 +7,15 @@
 /**
  * HTTP response implementation that is used instead core one for testing
  */
+
 namespace Magento\TestFramework;
+
+use Magento\Framework\App\Response\Http;
 
 /**
  * @SuppressWarnings(PHPMD.LongVariable)
  */
-class Response extends \Magento\Framework\App\Response\Http
+class Response extends Http
 {
     public function sendResponse()
     {

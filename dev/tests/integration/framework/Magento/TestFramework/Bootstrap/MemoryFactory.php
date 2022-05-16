@@ -6,17 +6,20 @@
 
 namespace Magento\TestFramework\Bootstrap;
 
+use Magento\Framework\Shell;
+use Magento\TestFramework\MemoryLimit;
+
 class MemoryFactory
 {
     /**
-     * @var \Magento\Framework\Shell
+     * @var Shell
      */
     private $shell;
 
     /**
-     * @param \Magento\Framework\Shell $shell
+     * @param Shell $shell
      */
-    public function __construct(\Magento\Framework\Shell $shell)
+    public function __construct(Shell $shell)
     {
         $this->shell = $shell;
     }
@@ -28,8 +31,8 @@ class MemoryFactory
      */
     public function create($memUsageLimit, $memLeakLimit)
     {
-        return new \Magento\TestFramework\Bootstrap\Memory(
-            new \Magento\TestFramework\MemoryLimit(
+        return new Memory(
+            new MemoryLimit(
                 $memUsageLimit,
                 $memLeakLimit,
                 new \Magento\TestFramework\Helper\Memory($this->shell)

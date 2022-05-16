@@ -1,13 +1,17 @@
 <?php
 
 namespace Pixelpro\Helloworld\Block;
-class Views extends \Magento\Framework\View\Element\Template
+use Magento\Framework\View\Element\Template;
+use Magento\Framework\View\Element\Template\Context;
+use Pixelpro\Helloworld\Model\PostFactory;
+
+class Views extends Template
 {
     protected $_postFactory;
 
     public function __construct(
-        \Magento\Framework\View\Element\Template\Context $context,
-        \Pixelpro\Helloworld\Model\PostFactory           $postFactory
+        Context $context,
+        PostFactory           $postFactory
     )
     {
         $this->_postFactory = $postFactory;

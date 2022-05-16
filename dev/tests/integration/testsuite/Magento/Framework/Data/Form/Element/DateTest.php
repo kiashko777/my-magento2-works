@@ -6,27 +6,20 @@
 
 namespace Magento\Framework\Data\Form\Element;
 
+use DateTime;
 use Magento\Framework\Data\Form\ElementFactory;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Tests for \Magento\Framework\Data\Form\Element\Date
  */
-class DateTest extends \PHPUnit\Framework\TestCase
+class DateTest extends TestCase
 {
     /**
      * @var ElementFactory
      */
     private $elementFactory;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->elementFactory = $objectManager->create(ElementFactory::class);
-    }
 
     /**
      * Test get value
@@ -51,7 +44,7 @@ class DateTest extends \PHPUnit\Framework\TestCase
     public function getValueDataProvider(): array
     {
         $testTimestamp = strtotime('2014-05-18 12:08:16');
-        $date = new \DateTime('@' . $testTimestamp);
+        $date = new DateTime('@' . $testTimestamp);
         return [
             [
                 [
@@ -83,5 +76,14 @@ class DateTest extends \PHPUnit\Framework\TestCase
                 $date->format('d-m-Y'),
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->elementFactory = $objectManager->create(ElementFactory::class);
     }
 }

@@ -3,9 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\EncryptionKey\Controller\Adminhtml\Crypt\Key;
 
-class IndexTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+use Magento\TestFramework\TestCase\AbstractBackendController;
+
+class IndexTest extends AbstractBackendController
 {
     /**
      * Test index action

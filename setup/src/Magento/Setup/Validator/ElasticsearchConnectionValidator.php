@@ -6,6 +6,8 @@
 
 namespace Magento\Setup\Validator;
 
+use Elasticsearch\ClientBuilder;
+use Exception;
 use Magento\Setup\Exception as SetupException;
 
 /**
@@ -20,13 +22,13 @@ class ElasticsearchConnectionValidator
      *
      * @param array $options
      * @return bool
-     * @throws \Exception
+     * @throws Exception
      */
     public function isValidConnection(array $options)
     {
         $config = $this->buildConfig($options);
 
-        $elasticsearchClient = \Elasticsearch\ClientBuilder::fromConfig($config, true);
+        $elasticsearchClient = ClientBuilder::fromConfig($config, true);
         $elasticsearchClient->ping();
 
         return true;

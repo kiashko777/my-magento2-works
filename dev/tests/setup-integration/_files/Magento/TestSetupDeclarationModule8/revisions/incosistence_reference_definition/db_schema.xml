@@ -15,7 +15,8 @@
     </table>
     <table name="dependent" resource="default" comment="Lol">
         <column xsi:type="int" name="page_id_on" nullable="true" unsigned="true"/>
-        <constraint xsi:type="foreign" referenceId="FOREIGN" table="dependent" column="page_id_on" referenceColumn="page_id"
+        <constraint xsi:type="foreign" referenceId="FOREIGN" table="dependent" column="page_id_on"
+                    referenceColumn="page_id"
                     referenceTable="test_table"/>
     </table>
 </schema>

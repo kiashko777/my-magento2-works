@@ -7,9 +7,14 @@
 /**
  * Class that used for output Magento Profiler results in format compatible with Bamboo Jmeter plugin
  */
+
 namespace Magento\TestFramework\Profiler;
 
-class OutputBamboo extends \Magento\Framework\Profiler\Driver\Standard\Output\Csvfile
+use Magento\Framework\Profiler;
+use Magento\Framework\Profiler\Driver\Standard\Output\Csvfile;
+use Magento\Framework\Profiler\Driver\Standard\Stat;
+
+class OutputBamboo extends Csvfile
 {
     /**
      * @var array
@@ -28,20 +33,38 @@ class OutputBamboo extends \Magento\Framework\Profiler\Driver\Standard\Output\Cs
     }
 
     /**
+     * Write content into an opened file handle
+     *
+     * @param resource $fileHandle
+     * @param Stat $stat
+     */
+    protected function _writeFileContent($fileHandle, Stat $stat)
+    {
+        /* First column must be a timestamp */
+        $result = ['Timestamp' => time()];
+        foreach ($this->_metrics as $metricName => $timerNames) {
+            $result[$metricName] = $this->_aggregateTimerValues($stat, $timerNames);
+        }
+        fputcsv($fileHandle, array_keys($result), $this->_delimiter, $this->_enclosure);
+        fputcsv($fileHandle, array_values($result), $this->_delimiter, $this->_enclosure);
+    }
+
+    /**
      * Calculate metric value from set of timer names
      *
-     * @param \Magento\Framework\Profiler\Driver\Standard\Stat $stat
+     * @param Stat $stat
      * @param array $timerNames
      * @param string $fetchKey
      * @return int
      */
     protected function _aggregateTimerValues(
-        \Magento\Framework\Profiler\Driver\Standard\Stat $stat,
-        array $timerNames,
-        $fetchKey = \Magento\Framework\Profiler\Driver\Standard\Stat::AVG
-    ) {
+        Stat $stat,
+        array                                            $timerNames,
+                                                         $fetchKey = Stat::AVG
+    )
+    {
         /* Prepare pattern that matches timers with deepest nesting level only */
-        $nestingSep = preg_quote(\Magento\Framework\Profiler::NESTING_SEPARATOR, '/');
+        $nestingSep = preg_quote(Profiler::NESTING_SEPARATOR, '/');
         array_map('preg_quote', $timerNames, ['/']);
         $pattern = '/(?<=' . $nestingSep . '|^)(?:' . implode('|', $timerNames) . ')$/';
 
@@ -57,22 +80,5 @@ class OutputBamboo extends \Magento\Framework\Profiler\Driver\Standard\Output\Cs
         $result = round($result * 1000);
 
         return $result;
-    }
-
-    /**
-     * Write content into an opened file handle
-     *
-     * @param resource $fileHandle
-     * @param \Magento\Framework\Profiler\Driver\Standard\Stat $stat
-     */
-    protected function _writeFileContent($fileHandle, \Magento\Framework\Profiler\Driver\Standard\Stat $stat)
-    {
-        /* First column must be a timestamp */
-        $result = ['Timestamp' => time()];
-        foreach ($this->_metrics as $metricName => $timerNames) {
-            $result[$metricName] = $this->_aggregateTimerValues($stat, $timerNames);
-        }
-        fputcsv($fileHandle, array_keys($result), $this->_delimiter, $this->_enclosure);
-        fputcsv($fileHandle, array_values($result), $this->_delimiter, $this->_enclosure);
     }
 }

@@ -35,18 +35,6 @@ class ValidateTest extends TestCase
     private $dataObjectHelper;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->accountManagement = $this->objectManager->get(AccountManagementInterface::class);
-        $this->customerFactory = $this->objectManager->get(CustomerInterfaceFactory::class);
-        $this->dataObjectHelper = $this->objectManager->get(DataObjectHelper::class);
-        parent::setUp();
-    }
-
-    /**
      * Validate customer fields.
      *
      * @dataProvider validateFieldsProvider
@@ -58,7 +46,8 @@ class ValidateTest extends TestCase
     public function testValidateFields(
         array $customerData,
         array $expectedResults
-    ): void {
+    ): void
+    {
         $customerEntity = $this->customerFactory->create();
         $this->dataObjectHelper->populateWithArray(
             $customerEntity,
@@ -109,5 +98,17 @@ class ValidateTest extends TestCase
                 ],
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->accountManagement = $this->objectManager->get(AccountManagementInterface::class);
+        $this->customerFactory = $this->objectManager->get(CustomerInterfaceFactory::class);
+        $this->dataObjectHelper = $this->objectManager->get(DataObjectHelper::class);
+        parent::setUp();
     }
 }

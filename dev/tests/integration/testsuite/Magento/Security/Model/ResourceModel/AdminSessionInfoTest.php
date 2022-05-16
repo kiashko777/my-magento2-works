@@ -3,59 +3,25 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Security\Model\ResourceModel;
 
-class AdminSessionInfoTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\Model\AbstractModel;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class AdminSessionInfoTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Model\AbstractModel
+     * @var AbstractModel
      */
     protected $model;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->model = $this->objectManager->create(\Magento\Security\Model\AdminSessionInfo::class);
-    }
-
-    protected function tearDown(): void
-    {
-        $this->objectManager = null;
-        parent::tearDown();
-    }
-
-    /**
-     * Test data for saving
-     * @return array
-     */
-    public function getTestData()
-    {
-        return [
-            'session_id'    => '569e273d752e9',
-            'user_id'       => 1,
-            'status'        => 1,
-            'created_at'    => '2016-01-21 15:00:00',
-            'updated_at'    => '2016-01-21 18:00:00'
-        ];
-    }
-
-    /**
-     * @return mixed
-     */
-    protected function saveTestData()
-    {
-        foreach ($this->getTestData() as $key => $value) {
-            $this->model->setData($key, $value);
-        }
-        $this->model->save();
-        return $this->model->getId();
-    }
 
     /**
      * Check that model is saving data to database
@@ -72,6 +38,33 @@ class AdminSessionInfoTest extends \PHPUnit\Framework\TestCase
             $newModelData[$key] = $newModel->getData($key);
         }
         $this->assertEquals($testData, $newModelData);
+    }
+
+    /**
+     * @return mixed
+     */
+    protected function saveTestData()
+    {
+        foreach ($this->getTestData() as $key => $value) {
+            $this->model->setData($key, $value);
+        }
+        $this->model->save();
+        return $this->model->getId();
+    }
+
+    /**
+     * Test data for saving
+     * @return array
+     */
+    public function getTestData()
+    {
+        return [
+            'session_id' => '569e273d752e9',
+            'user_id' => 1,
+            'status' => 1,
+            'created_at' => '2016-01-21 15:00:00',
+            'updated_at' => '2016-01-21 18:00:00'
+        ];
     }
 
     /**
@@ -113,5 +106,18 @@ class AdminSessionInfoTest extends \PHPUnit\Framework\TestCase
             ->load();
         $count = $collection->count();
         $this->assertGreaterThanOrEqual(1, $count);
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->model = $this->objectManager->create(\Magento\Security\Model\AdminSessionInfo::class);
+    }
+
+    protected function tearDown(): void
+    {
+        $this->objectManager = null;
+        parent::tearDown();
     }
 }

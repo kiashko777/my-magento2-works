@@ -9,11 +9,11 @@ declare(strict_types=1);
 namespace Magento\GraphQl\ConfigurableProduct;
 
 use Magento\ConfigurableProductGraphQl\Model\Options\SelectionUidFormatter;
-use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Eav\Api\Data\AttributeInterface;
 use Magento\Eav\Model\AttributeRepository;
-use Magento\TestFramework\TestCase\GraphQlAbstract;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\GraphQlAbstract;
 
 /**
  * Test configurable product option selection.
@@ -33,15 +33,6 @@ class ConfigurableOptionsSelectionMetadataTest extends GraphQlAbstract
     private $firstConfigurableAttribute = null;
 
     private $secondConfigurableAttribute = null;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->attributeRepository = Bootstrap::getObjectManager()->create(AttributeRepository::class);
-        $this->selectionUidFormatter = Bootstrap::getObjectManager()->create(SelectionUidFormatter::class);
-    }
 
     /**
      * @magentoApiDataFixture Magento/ConfigurableProduct/_files/configurable_products_with_two_attributes_combination.php
@@ -79,11 +70,11 @@ QUERY;
         $response = $this->graphQlQuery($query);
         $this->assertEquals(1, count($response['products']['items']));
         $this->assertEquals(2, count($response['products']['items'][0]['configurable_product_options_selection']
-            ['options_available_for_selection']));
+        ['options_available_for_selection']));
         $this->assertEquals(4, count($response['products']['items'][0]['configurable_product_options_selection']
-            ['options_available_for_selection'][0]['option_value_uids']));
+        ['options_available_for_selection'][0]['option_value_uids']));
         $this->assertEquals(4, count($response['products']['items'][0]['configurable_product_options_selection']
-            ['options_available_for_selection'][1]['option_value_uids']));
+        ['options_available_for_selection'][1]['option_value_uids']));
     }
 
     /**
@@ -129,21 +120,71 @@ QUERY;
         $response = $this->graphQlQuery($query);
         $this->assertEquals(1, count($response['products']['items']));
         $this->assertEquals(2, count($response['products']['items'][0]['configurable_product_options_selection']
-            ['options_available_for_selection']));
+        ['options_available_for_selection']));
         $this->assertEquals(1, count($response['products']['items'][0]['configurable_product_options_selection']
-            ['options_available_for_selection'][0]['option_value_uids']));
+        ['options_available_for_selection'][0]['option_value_uids']));
         $this->assertEquals($firstOptionUid, $response['products']['items'][0]
-            ['configurable_product_options_selection']['options_available_for_selection'][0]['option_value_uids'][0]);
+        ['configurable_product_options_selection']['options_available_for_selection'][0]['option_value_uids'][0]);
         $this->assertEquals(4, count($response['products']['items'][0]['configurable_product_options_selection']
-            ['options_available_for_selection'][1]['option_value_uids']));
+        ['options_available_for_selection'][1]['option_value_uids']));
 
         $secondAttributeOptions = $this->getSecondConfigurableAttribute()->getOptions();
         $this->assertAvailableOptionUids(
             $this->getSecondConfigurableAttribute()->getAttributeId(),
             $secondAttributeOptions,
             $response['products']['items'][0]['configurable_product_options_selection']
-                ['options_available_for_selection'][1]['option_value_uids']
+            ['options_available_for_selection'][1]['option_value_uids']
         );
+    }
+
+    /**
+     * Get first configurable attribute.
+     *
+     * @return AttributeInterface
+     * @throws NoSuchEntityException
+     */
+    private function getFirstConfigurableAttribute()
+    {
+        if (!$this->firstConfigurableAttribute) {
+            $attributeCode = 'test_configurable_first';
+            $this->firstConfigurableAttribute = $this->attributeRepository->get('catalog_product', $attributeCode);
+        }
+
+        return $this->firstConfigurableAttribute;
+    }
+
+    /**
+     * Get second configurable attribute.
+     *
+     * @return AttributeInterface
+     * @throws NoSuchEntityException
+     */
+    private function getSecondConfigurableAttribute()
+    {
+        if (!$this->secondConfigurableAttribute) {
+            $attributeCode = 'test_configurable_second';
+            $this->secondConfigurableAttribute = $this->attributeRepository->get('catalog_product', $attributeCode);
+        }
+
+        return $this->secondConfigurableAttribute;
+    }
+
+    /**
+     * Assert option uid.
+     *
+     * @param $attributeId
+     * @param $expectedOptions
+     * @param $selectedOptions
+     */
+    private function assertAvailableOptionUids($attributeId, $expectedOptions, $selectedOptions)
+    {
+        unset($expectedOptions[0]);
+        foreach ($expectedOptions as $option) {
+            $this->assertContains(
+                $this->selectionUidFormatter->encode((int)$attributeId, (int)$option->getValue()),
+                $selectedOptions
+            );
+        }
     }
 
     /**
@@ -260,7 +301,7 @@ QUERY;
         $response = $this->graphQlQuery($query);
         $this->assertEquals(1, count($response['products']['items']));
         $this->assertNotNull($response['products']['items'][0]['configurable_product_options_selection']
-            ['variant']);
+        ['variant']);
         $this->assertEquals(
             'simple_' . $firstOptions[1]->getValue() . '_' . $secondOptions[1]->getValue(),
             $response['products']['items'][0]['configurable_product_options_selection']
@@ -307,7 +348,7 @@ QUERY;
         $response = $this->graphQlQuery($query);
         $this->assertEquals(1, count($response['products']['items']));
         $this->assertEquals(14, count($response['products']['items'][0]['configurable_product_options_selection']
-            ['media_gallery']));
+        ['media_gallery']));
     }
 
     /**
@@ -355,56 +396,15 @@ QUERY;
         $response = $this->graphQlQuery($query);
         $this->assertEquals(1, count($response['products']['items']));
         $this->assertEquals(2, count($response['products']['items'][0]['configurable_product_options_selection']
-            ['media_gallery']));
+        ['media_gallery']));
     }
 
     /**
-     * Assert option uid.
-     *
-     * @param $attributeId
-     * @param $expectedOptions
-     * @param $selectedOptions
+     * @inheritdoc
      */
-    private function assertAvailableOptionUids($attributeId, $expectedOptions, $selectedOptions)
+    protected function setUp(): void
     {
-        unset($expectedOptions[0]);
-        foreach ($expectedOptions as $option) {
-            $this->assertContains(
-                $this->selectionUidFormatter->encode((int)$attributeId, (int)$option->getValue()),
-                $selectedOptions
-            );
-        }
-    }
-
-    /**
-     * Get first configurable attribute.
-     *
-     * @return AttributeInterface
-     * @throws NoSuchEntityException
-     */
-    private function getFirstConfigurableAttribute()
-    {
-        if (!$this->firstConfigurableAttribute) {
-            $attributeCode = 'test_configurable_first';
-            $this->firstConfigurableAttribute = $this->attributeRepository->get('catalog_product', $attributeCode);
-        }
-
-        return $this->firstConfigurableAttribute;
-    }
-
-    /**
-     * Get second configurable attribute.
-     *
-     * @return AttributeInterface
-     * @throws NoSuchEntityException
-     */
-    private function getSecondConfigurableAttribute()
-    {
-        if (!$this->secondConfigurableAttribute) {
-            $attributeCode = 'test_configurable_second';
-            $this->secondConfigurableAttribute = $this->attributeRepository->get('catalog_product', $attributeCode);
-        }
-
-        return $this->secondConfigurableAttribute;
+        $this->attributeRepository = Bootstrap::getObjectManager()->create(AttributeRepository::class);
+        $this->selectionUidFormatter = Bootstrap::getObjectManager()->create(SelectionUidFormatter::class);
     }
 }

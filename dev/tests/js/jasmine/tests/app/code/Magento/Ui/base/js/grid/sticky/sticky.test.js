@@ -14,7 +14,8 @@ define([
             data;
 
         /** Stub */
-        Sticky.prototype.initialize = function () {};
+        Sticky.prototype.initialize = function () {
+        };
 
         stickyObj = new Sticky({});
 

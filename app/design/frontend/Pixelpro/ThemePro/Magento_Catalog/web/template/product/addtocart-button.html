@@ -6,10 +6,10 @@
 -->
 <if args="isAllowed()">
     <if args="isSalable($row())">
-        <button class="action tocart primary"
-                attr="'data-mage-init': getDataMageInit($row()),
+        <button attr="'data-mage-init': getDataMageInit($row()),
                       'data-post': getDataPost($row()),
                        title: getLabel()"
+                class="action tocart primary"
                 type="button">
             <span text="getLabel()"/>
         </button>

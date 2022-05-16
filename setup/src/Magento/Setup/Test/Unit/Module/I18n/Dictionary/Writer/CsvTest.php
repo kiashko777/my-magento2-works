@@ -30,21 +30,6 @@ class CsvTest extends TestCase
      */
     protected $_phraseSecondMock;
 
-    protected function setUp(): void
-    {
-        $this->_testFile = str_replace('\\', '/', realpath(dirname(__FILE__))) . '/_files/test.csv';
-
-        $this->_phraseFirstMock = $this->createMock(Phrase::class);
-        $this->_phraseSecondMock = $this->createMock(Phrase::class);
-    }
-
-    protected function tearDown(): void
-    {
-        if (file_exists($this->_testFile)) {
-            unlink($this->_testFile);
-        }
-    }
-
     public function testWrongOutputFile()
     {
         $this->expectException('InvalidArgumentException');
@@ -168,5 +153,20 @@ EXPECTED;
 
         $expected = "phrase1,translation1\nphrase2,translation2\n";
         $this->assertEquals($expected, file_get_contents($this->_testFile));
+    }
+
+    protected function setUp(): void
+    {
+        $this->_testFile = str_replace('\\', '/', realpath(dirname(__FILE__))) . '/_files/test.csv';
+
+        $this->_phraseFirstMock = $this->createMock(Phrase::class);
+        $this->_phraseSecondMock = $this->createMock(Phrase::class);
+    }
+
+    protected function tearDown(): void
+    {
+        if (file_exists($this->_testFile)) {
+            unlink($this->_testFile);
+        }
     }
 }

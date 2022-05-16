@@ -6,7 +6,12 @@
  * See COPYING.txt for license details.
  */
 
-/** @var $objectManager \Magento\TestFramework\ObjectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-$quote = $objectManager->create(\Magento\Quote\Model\Quote::class);
+/** @var $objectManager ObjectManager */
+
+use Magento\Quote\Model\Quote;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+
+$objectManager = Bootstrap::getObjectManager();
+$quote = $objectManager->create(Quote::class);
 $quote->load('test_order_1', 'reserved_order_id')->delete();

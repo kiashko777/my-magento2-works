@@ -11,10 +11,10 @@ use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use Magento\Catalog\Model\ProductFactory;
 use Magento\Catalog\Model\ResourceModel\Category\CollectionFactory as CategoryCollectionFactory;
 use Magento\CatalogUrlRewrite\Model\ProductUrlPathGenerator;
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Store\Model\ResourceModel\Store\CollectionFactory as StoreCollectionFactory;
 use Magento\Store\Model\ScopeInterface;
-use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\UrlRewrite\Service\V1\Data\UrlRewriteFactory;
 
@@ -117,16 +117,17 @@ class ProductGenerator
      * @param array $customTableMap
      */
     public function __construct(
-        ProductFactory $productFactory,
-        CategoryCollectionFactory $categoryCollectionFactory,
-        UrlRewriteFactory $urlRewriteFactory,
-        StoreCollectionFactory $storeCollectionFactory,
-        EntityGeneratorFactory $entityGeneratorFactory,
-        StoreManagerInterface $storeManager,
+        ProductFactory                  $productFactory,
+        CategoryCollectionFactory       $categoryCollectionFactory,
+        UrlRewriteFactory               $urlRewriteFactory,
+        StoreCollectionFactory          $storeCollectionFactory,
+        EntityGeneratorFactory          $entityGeneratorFactory,
+        StoreManagerInterface           $storeManager,
         ProductTemplateGeneratorFactory $productTemplateGeneratorFactory,
-        ScopeConfigInterface $scopeConfig,
-        $customTableMap = []
-    ) {
+        ScopeConfigInterface            $scopeConfig,
+                                        $customTableMap = []
+    )
+    {
         $this->productFactory = $productFactory;
         $this->categoryCollectionFactory = $categoryCollectionFactory;
         $this->urlRewriteFactory = $urlRewriteFactory;
@@ -331,6 +332,16 @@ class ProductGenerator
     }
 
     /**
+     * Check config value of generate_category_product_rewrites
+     *
+     * @return bool
+     */
+    private function isCategoryProductUrlRewriteGenerationEnabled()
+    {
+        return (bool)$this->scopeConfig->getValue('catalog/seo/generate_category_product_rewrites');
+    }
+
+    /**
      * Get url suffix per store for product
      *
      * @param int $storeId
@@ -346,15 +357,5 @@ class ProductGenerator
             );
         }
         return $this->productUrlSuffix[$storeId];
-    }
-
-    /**
-     * Check config value of generate_category_product_rewrites
-     *
-     * @return bool
-     */
-    private function isCategoryProductUrlRewriteGenerationEnabled()
-    {
-        return (bool)$this->scopeConfig->getValue('catalog/seo/generate_category_product_rewrites');
     }
 }

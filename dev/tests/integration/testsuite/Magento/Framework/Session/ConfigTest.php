@@ -11,7 +11,14 @@ namespace {
 
 namespace Magento\Framework\Session {
 
+    use BadMethodCallException;
+    use Magento\Framework\App\DeploymentConfig;
     use Magento\Framework\App\Filesystem\DirectoryList;
+    use Magento\Framework\Filesystem;
+    use Magento\TestFramework\Helper\Bootstrap;
+    use Magento\TestFramework\ObjectManager;
+    use PHPUnit\Framework\MockObject\MockObject;
+    use PHPUnit\Framework\TestCase;
 
     /**
      * Mock ini_get global function
@@ -42,42 +49,19 @@ namespace Magento\Framework\Session {
     /**
      * @magentoAppIsolation enabled
      */
-    class ConfigTest extends \PHPUnit\Framework\TestCase
+    class ConfigTest extends TestCase
     {
         /** @var string */
         private $_cacheLimiter = 'private_no_expire';
 
-        /** @var \Magento\TestFramework\ObjectManager */
+        /** @var ObjectManager */
         private $_objectManager;
 
         /** @var string Default value for session.save_path setting */
         private $defaultSavePath;
 
-        /** @var \Magento\Framework\App\DeploymentConfig | \PHPUnit\Framework\MockObject\MockObject */
+        /** @var DeploymentConfig | MockObject */
         private $deploymentConfigMock;
-
-        protected function setUp(): void
-        {
-            $this->_objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-
-            $this->deploymentConfigMock = $this->createMock(\Magento\Framework\App\DeploymentConfig::class);
-            $this->deploymentConfigMock
-                ->method('get')
-                ->willReturnCallback(function ($configPath) {
-                    switch ($configPath) {
-                        case Config::PARAM_SESSION_SAVE_METHOD:
-                            return 'files';
-                        case Config::PARAM_SESSION_CACHE_LIMITER:
-                            return $this->_cacheLimiter;
-                        default:
-                            return null;
-                    }
-                });
-
-            $this->defaultSavePath = $this->_objectManager
-                ->get(\Magento\Framework\Filesystem\DirectoryList::class)
-                ->getPath(DirectoryList::SESSION);
-        }
 
         /**
          * @magentoAppIsolation enabled
@@ -85,9 +69,9 @@ namespace Magento\Framework\Session {
         public function testDefaultConfiguration()
         {
             $model = $this->getModel();
-            /** @var \Magento\Framework\Filesystem $filesystem */
-            $filesystem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-                \Magento\Framework\Filesystem::class
+            /** @var Filesystem $filesystem */
+            $filesystem = Bootstrap::getObjectManager()->get(
+                Filesystem::class
             );
             $path = ini_get('session.save_path') ?:
                 $filesystem->getDirectoryRead(DirectoryList::SESSION)->getAbsolutePath();
@@ -97,7 +81,7 @@ namespace Magento\Framework\Session {
                 $model->getSavePath()
             );
             $this->assertEquals(
-                \Magento\Framework\Session\Config::COOKIE_LIFETIME_DEFAULT,
+                Config::COOKIE_LIFETIME_DEFAULT,
                 $model->getCookieLifetime()
             );
             $this->assertEquals($this->_cacheLimiter, $model->getCacheLimiter());
@@ -106,6 +90,14 @@ namespace Magento\Framework\Session {
             $this->assertFalse($model->getCookieSecure());
             $this->assertTrue($model->getCookieHttpOnly());
             $this->assertEquals($model->getSavePath(), $model->getOption('save_path'));
+        }
+
+        private function getModel(): Config
+        {
+            return $this->_objectManager->create(
+                Config::class,
+                ['deploymentConfig' => $this->deploymentConfigMock]
+            );
         }
 
         public function testSetOptionsInvalidValue()
@@ -195,7 +187,7 @@ namespace Magento\Framework\Session {
         public function testWrongMethodCall()
         {
             $model = $this->getModel();
-            $this->expectException(\BadMethodCallException::class);
+            $this->expectException(BadMethodCallException::class);
             $this->expectExceptionMessage(
                 'Method "methodThatNotExist" does not exist in Magento\Framework\Session\Config'
             );
@@ -319,7 +311,8 @@ namespace Magento\Framework\Session {
             $expectedSavePath,
             $givenSaveHandler,
             $expectedSaveHandler
-        ) {
+        )
+        {
             global $mockPHPFunctions;
             $mockPHPFunctions = $mockPHPFunctionNum;
 
@@ -331,7 +324,7 @@ namespace Magento\Framework\Session {
                 $expectedSaveHandler = $sessionSaveHandler;
             }
 
-            $deploymentConfigMock = $this->createMock(\Magento\Framework\App\DeploymentConfig::class);
+            $deploymentConfigMock = $this->createMock(DeploymentConfig::class);
             $deploymentConfigMock
                 ->method('get')
                 ->willReturnCallback(function ($configPath) use ($givenSavePath, $givenSaveHandler) {
@@ -348,7 +341,7 @@ namespace Magento\Framework\Session {
                 });
 
             $model = $this->_objectManager->create(
-                \Magento\Framework\Session\Config::class,
+                Config::class,
                 ['deploymentConfig' => $deploymentConfigMock]
             );
             $this->assertEquals($expectedSavePath, $model->getOption('save_path'));
@@ -370,14 +363,6 @@ namespace Magento\Framework\Session {
             ];
         }
 
-        private function getModel(): \Magento\Framework\Session\Config
-        {
-            return $this->_objectManager->create(
-                \Magento\Framework\Session\Config::class,
-                ['deploymentConfig' => $this->deploymentConfigMock]
-            );
-        }
-
         /**
          * Test Set SameSite Attribute
          *
@@ -389,6 +374,29 @@ namespace Magento\Framework\Session {
             $this->expectException('InvalidArgumentException');
             $this->expectExceptionMessage('Invalid Samesite attribute.');
             $model->setCookieSameSite('foobar');
+        }
+
+        protected function setUp(): void
+        {
+            $this->_objectManager = Bootstrap::getObjectManager();
+
+            $this->deploymentConfigMock = $this->createMock(DeploymentConfig::class);
+            $this->deploymentConfigMock
+                ->method('get')
+                ->willReturnCallback(function ($configPath) {
+                    switch ($configPath) {
+                        case Config::PARAM_SESSION_SAVE_METHOD:
+                            return 'files';
+                        case Config::PARAM_SESSION_CACHE_LIMITER:
+                            return $this->_cacheLimiter;
+                        default:
+                            return null;
+                    }
+                });
+
+            $this->defaultSavePath = $this->_objectManager
+                ->get(\Magento\Framework\Filesystem\DirectoryList::class)
+                ->getPath(DirectoryList::SESSION);
         }
     }
 }

@@ -6,29 +6,29 @@
 
 namespace Magento\Customer\Model;
 
+use Magento\Customer\Api\GroupManagementInterface;
+use Magento\Framework\App\MutableScopeConfig;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Store\Model\ScopeInterface;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for Magento\Customer\Model\GroupManagement
  */
-class GroupManagementTest extends \PHPUnit\Framework\TestCase
+class GroupManagementTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
 
     /**
-     * @var \Magento\Customer\Api\GroupManagementInterface
+     * @var GroupManagementInterface
      */
     protected $groupManagement;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->groupManagement = $this->objectManager->get(\Magento\Customer\Api\GroupManagementInterface::class);
-    }
 
     /**
      * @param $testGroup
@@ -42,18 +42,31 @@ class GroupManagementTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * @param $testGroup
+     * @param $storeId
+     */
+    private function assertDefaultGroupMatches($testGroup, $storeId)
+    {
+        $group = $this->groupManagement->getDefaultGroup($storeId);
+        $this->assertEquals($testGroup['id'], $group->getId());
+        $this->assertEquals($testGroup['code'], $group->getCode());
+        $this->assertEquals($testGroup['tax_class_id'], $group->getTaxClassId());
+        $this->assertEquals($testGroup['tax_class_name'], $group->getTaxClassName());
+    }
+
+    /**
      * @magentoDataFixture Magento/Store/_files/core_second_third_fixturestore.php
      */
     public function testGetDefaultGroupWithNonDefaultStoreId()
     {
-        /** @var \Magento\Store\Model\StoreManagerInterface  $storeManager */
-        $storeManager = Bootstrap::getObjectManager()->get(\Magento\Store\Model\StoreManagerInterface::class);
+        /** @var StoreManagerInterface $storeManager */
+        $storeManager = Bootstrap::getObjectManager()->get(StoreManagerInterface::class);
         $nonDefaultStore = $storeManager->getStore('secondstore');
         $nonDefaultStoreId = $nonDefaultStore->getId();
-        /** @var \Magento\Framework\App\MutableScopeConfig $scopeConfig */
-        $scopeConfig = $this->objectManager->get(\Magento\Framework\App\MutableScopeConfig::class);
+        /** @var MutableScopeConfig $scopeConfig */
+        $scopeConfig = $this->objectManager->get(MutableScopeConfig::class);
         $scopeConfig->setValue(
-            \Magento\Customer\Model\GroupManagement::XML_PATH_DEFAULT_ID,
+            GroupManagement::XML_PATH_DEFAULT_ID,
             2,
             ScopeInterface::SCOPE_STORE,
             'secondstore'
@@ -66,7 +79,7 @@ class GroupManagementTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetDefaultGroupWithInvalidStoreId()
     {
-        $this->expectException(\Magento\Framework\Exception\NoSuchEntityException::class);
+        $this->expectException(NoSuchEntityException::class);
 
         $storeId = 1234567;
         $this->groupManagement->getDefaultGroup($storeId);
@@ -82,7 +95,7 @@ class GroupManagementTest extends \PHPUnit\Framework\TestCase
      */
     public function testIsReadonlyWithInvalidGroupId()
     {
-        $this->expectException(\Magento\Framework\Exception\NoSuchEntityException::class);
+        $this->expectException(NoSuchEntityException::class);
 
         $testGroup = ['id' => 4, 'code' => 'General', 'tax_class_id' => 3, 'tax_class_name' => 'Retail Customer'];
         $this->groupManagement->isReadonly($testGroup['id']);
@@ -114,8 +127,8 @@ class GroupManagementTest extends \PHPUnit\Framework\TestCase
      */
     public function getDefaultGroupDataProvider()
     {
-        /** @var \Magento\Store\Model\StoreManagerInterface  $storeManager */
-        $storeManager = Bootstrap::getObjectManager()->get(\Magento\Store\Model\StoreManagerInterface::class);
+        /** @var StoreManagerInterface $storeManager */
+        $storeManager = Bootstrap::getObjectManager()->get(StoreManagerInterface::class);
         $defaultStoreId = $storeManager->getStore()->getId();
         return [
             'no store id' => [
@@ -129,16 +142,9 @@ class GroupManagementTest extends \PHPUnit\Framework\TestCase
         ];
     }
 
-    /**
-     * @param $testGroup
-     * @param $storeId
-     */
-    private function assertDefaultGroupMatches($testGroup, $storeId)
+    protected function setUp(): void
     {
-        $group = $this->groupManagement->getDefaultGroup($storeId);
-        $this->assertEquals($testGroup['id'], $group->getId());
-        $this->assertEquals($testGroup['code'], $group->getCode());
-        $this->assertEquals($testGroup['tax_class_id'], $group->getTaxClassId());
-        $this->assertEquals($testGroup['tax_class_name'], $group->getTaxClassName());
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->groupManagement = $this->objectManager->get(GroupManagementInterface::class);
     }
 }

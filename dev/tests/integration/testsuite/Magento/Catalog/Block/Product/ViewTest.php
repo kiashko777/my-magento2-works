@@ -27,30 +27,6 @@ use PHPUnit\Framework\TestCase;
  */
 class ViewTest extends TestCase
 {
-    /** @var ObjectManagerInterface */
-    private $objectManager;
-
-    /** @var View */
-    private $block;
-
-    /** @var ProductRepositoryInterface */
-    private $productRepository;
-
-    /** @var Registry */
-    private $registry;
-
-    /** @var LayoutInterface */
-    private $layout;
-
-    /** @var Json */
-    private $json;
-
-    /** @var StoreManagerInterface */
-    private $storeManager;
-
-    /** @var Description */
-    private $descriptionBlock;
-
     /** @var array */
     private const SHORT_DESCRIPTION_BLOCK_DATA = [
         'at_call' => 'getShortDescription',
@@ -60,21 +36,22 @@ class ViewTest extends TestCase
         'title' => 'Overview',
         'add_attribute' => 'description',
     ];
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->block = $this->layout->createBlock(View::class);
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->json = $this->objectManager->get(Json::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-        $this->descriptionBlock = $this->layout->createBlock(Description::class);
-    }
+    /** @var ObjectManagerInterface */
+    private $objectManager;
+    /** @var View */
+    private $block;
+    /** @var ProductRepositoryInterface */
+    private $productRepository;
+    /** @var Registry */
+    private $registry;
+    /** @var LayoutInterface */
+    private $layout;
+    /** @var Json */
+    private $json;
+    /** @var StoreManagerInterface */
+    private $storeManager;
+    /** @var Description */
+    private $descriptionBlock;
 
     /**
      * @return void
@@ -101,6 +78,18 @@ class ViewTest extends TestCase
         $this->block->setProductId($product->getId());
 
         $this->assertEquals($product->getId(), $this->block->getProduct()->getId());
+    }
+
+    /**
+     * Register the product
+     *
+     * @param ProductInterface $product
+     * @return void
+     */
+    private function registerProduct(ProductInterface $product): void
+    {
+        $this->registry->unregister('product');
+        $this->registry->register('product', $product);
     }
 
     /**
@@ -262,14 +251,17 @@ class ViewTest extends TestCase
     }
 
     /**
-     * Register the product
-     *
-     * @param ProductInterface $product
-     * @return void
+     * @inheritdoc
      */
-    private function registerProduct(ProductInterface $product): void
+    protected function setUp(): void
     {
-        $this->registry->unregister('product');
-        $this->registry->register('product', $product);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->block = $this->layout->createBlock(View::class);
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->json = $this->objectManager->get(Json::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
+        $this->descriptionBlock = $this->layout->createBlock(Description::class);
     }
 }

@@ -7,11 +7,11 @@ declare(strict_types=1);
 
 namespace Magento\PaypalGraphQl\Model\Resolver\Customer;
 
+use Magento\Framework\DataObject;
+use Magento\Framework\Serialize\SerializerInterface;
 use Magento\Integration\Model\Oauth\Token;
 use Magento\PaypalGraphQl\PaypalPayflowProAbstractTest;
-use Magento\Framework\Serialize\SerializerInterface;
 use Magento\Quote\Model\QuoteIdToMaskedQuoteId;
-use Magento\Framework\DataObject;
 use Magento\Vault\Api\Data\PaymentTokenInterface;
 use Magento\Vault\Model\PaymentTokenManagement;
 use Magento\Vault\Model\PaymentTokenRepository;
@@ -32,14 +32,6 @@ class SaveCartDataWithPayflowProTest extends PaypalPayflowProAbstractTest
      * @var QuoteIdToMaskedQuoteId
      */
     private $quoteIdToMaskedId;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->json = $this->objectManager->get(SerializerInterface::class);
-        $this->quoteIdToMaskedId = $this->objectManager->get(QuoteIdToMaskedQuoteId::class);
-    }
 
     /**
      * Place order use payflowpro method and save cart data to future
@@ -68,33 +60,6 @@ class SaveCartDataWithPayflowProTest extends PaypalPayflowProAbstractTest
         $this->assertNotEmpty($this->getVaultCartData()->getGatewayToken());
         $this->assertTrue($this->getVaultCartData()->getIsActive());
         $this->assertTrue($this->getVaultCartData()->getIsVisible());
-    }
-
-    /**
-     * Place order use payflowpro method and not save cart data to future
-     *
-     * @magentoDataFixture Magento/Sales/_files/default_rollback.php
-     * @magentoDataFixture Magento/Sales/_files/default_rollback.php
-     * @magentoDataFixture Magento/Customer/_files/customer.php
-     * @magentoDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
-     * @magentoDataFixture Magento/GraphQl/Quote/_files/customer/create_empty_cart.php
-     * @magentoDataFixture Magento/GraphQl/Quote/_files/add_simple_product.php
-     * @magentoDataFixture Magento/GraphQl/Quote/_files/set_new_shipping_address.php
-     * @magentoDataFixture Magento/GraphQl/Quote/_files/set_new_billing_address.php
-     * @magentoDataFixture Magento/GraphQl/Quote/_files/set_flatrate_shipping_method.php
-     *
-     * @return void
-     */
-    public function testPlaceOrderAndNotSaveDataForFuturePayflowPro(): void
-    {
-        $responseData = $this->placeOrderPayflowPro('is_active_payment_token_enabler: false');
-        $this->assertArrayHasKey('data', $responseData);
-        $this->assertArrayHasKey('createPayflowProToken', $responseData['data']);
-        $this->assertNotEmpty($this->getVaultCartData()->getPublicHash());
-        $this->assertNotEmpty($this->getVaultCartData()->getTokenDetails());
-        $this->assertNotEmpty($this->getVaultCartData()->getGatewayToken());
-        $this->assertTrue($this->getVaultCartData()->getIsActive());
-        $this->assertFalse($this->getVaultCartData()->getIsVisible());
     }
 
     /**
@@ -254,5 +219,40 @@ QUERY;
         /** @var PaymentTokenRepository $tokenRepository */
         $tokenRepository = $this->objectManager->get(PaymentTokenRepository::class);
         return $tokenRepository->getById($token->getEntityId());
+    }
+
+    /**
+     * Place order use payflowpro method and not save cart data to future
+     *
+     * @magentoDataFixture Magento/Sales/_files/default_rollback.php
+     * @magentoDataFixture Magento/Sales/_files/default_rollback.php
+     * @magentoDataFixture Magento/Customer/_files/customer.php
+     * @magentoDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
+     * @magentoDataFixture Magento/GraphQl/Quote/_files/customer/create_empty_cart.php
+     * @magentoDataFixture Magento/GraphQl/Quote/_files/add_simple_product.php
+     * @magentoDataFixture Magento/GraphQl/Quote/_files/set_new_shipping_address.php
+     * @magentoDataFixture Magento/GraphQl/Quote/_files/set_new_billing_address.php
+     * @magentoDataFixture Magento/GraphQl/Quote/_files/set_flatrate_shipping_method.php
+     *
+     * @return void
+     */
+    public function testPlaceOrderAndNotSaveDataForFuturePayflowPro(): void
+    {
+        $responseData = $this->placeOrderPayflowPro('is_active_payment_token_enabler: false');
+        $this->assertArrayHasKey('data', $responseData);
+        $this->assertArrayHasKey('createPayflowProToken', $responseData['data']);
+        $this->assertNotEmpty($this->getVaultCartData()->getPublicHash());
+        $this->assertNotEmpty($this->getVaultCartData()->getTokenDetails());
+        $this->assertNotEmpty($this->getVaultCartData()->getGatewayToken());
+        $this->assertTrue($this->getVaultCartData()->getIsActive());
+        $this->assertFalse($this->getVaultCartData()->getIsVisible());
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->json = $this->objectManager->get(SerializerInterface::class);
+        $this->quoteIdToMaskedId = $this->objectManager->get(QuoteIdToMaskedQuoteId::class);
     }
 }

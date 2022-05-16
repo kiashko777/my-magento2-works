@@ -3,10 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
 
-/** @var $query \Magento\Search\Model\Query */
-$query = $objectManager->create(\Magento\Search\Model\Query::class);
+use Magento\Search\Model\Query;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
+
+/** @var $query Query */
+$query = $objectManager->create(Query::class);
 $query->setStoreId(1);
 $query->setQueryText(
     'popular_query_text'

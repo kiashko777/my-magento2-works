@@ -9,6 +9,7 @@ namespace Magento\Catalog\Model\Category;
 
 use Magento\Catalog\Api\CategoryRepositoryInterface;
 use Magento\Catalog\Api\Data\CategoryInterface;
+use Magento\Catalog\Model\Attribute\Backend\AbstractLayoutUpdate;
 use Magento\Catalog\Model\Category;
 use Magento\Catalog\Model\Category\Attribute\Backend\LayoutUpdate;
 use Magento\Catalog\Model\Category\Attribute\LayoutUpdateManager;
@@ -51,52 +52,6 @@ class DataProviderTest extends TestCase
 
     /** @var CategoryRepositoryInterface */
     private $categoryRepository;
-
-    /**
-     * Create subject instance.
-     *
-     * @return DataProvider
-     */
-    private function createDataProvider(): DataProvider
-    {
-        return Bootstrap::getObjectManager()->create(
-            DataProvider::class,
-            [
-                'name' => 'category_form_data_source',
-                'primaryFieldName' => 'entity_id',
-                'requestFieldName' => 'id'
-            ]
-        );
-    }
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $objectManager->configure([
-            'preferences' => [
-                LayoutUpdateManager::class => CategoryLayoutUpdateManager::class
-            ]
-        ]);
-        parent::setUp();
-        $this->dataProvider = $this->createDataProvider();
-        $this->registry = $objectManager->get(Registry::class);
-        $this->categoryFactory = $objectManager->get(CategoryFactory::class);
-        $this->fakeFiles = $objectManager->get(CategoryLayoutUpdateManager::class);
-        $this->scopeConfig = $objectManager->get(ScopeConfigInterface::class);
-        $this->storeManager = $objectManager->get(StoreManagerInterface::class);
-        $this->categoryRepository = $objectManager->get(CategoryRepositoryInterface::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->registry->unregister('category');
-    }
 
     /**
      * @return void
@@ -173,6 +128,59 @@ class DataProviderTest extends TestCase
     }
 
     /**
+     * Check that proper options are returned for a category.
+     *
+     * @return void
+     */
+    public function testCustomLayoutMeta(): void
+    {
+        //Testing a category without layout xml
+        /** @var Category $category */
+        $category = $this->categoryFactory->create();
+        $category->load(2);
+        $this->fakeFiles->setCategoryFakeFiles((int)$category->getId(), ['test1', 'test2']);
+        $this->registry->register('category', $category);
+
+        $meta = $this->dataProvider->getMeta();
+        $list = $this->extractCustomLayoutOptions($meta);
+        $expectedList = [
+            [
+                'label' => 'No update',
+                'value' => AbstractLayoutUpdate::VALUE_NO_UPDATE,
+                '__disableTmpl' => true
+            ],
+            ['label' => 'test1', 'value' => 'test1', '__disableTmpl' => true],
+            ['label' => 'test2', 'value' => 'test2', '__disableTmpl' => true]
+        ];
+        sort($expectedList);
+        sort($list);
+        $this->assertEquals($expectedList, $list);
+
+        //Products with old layout xml
+        $category->setCustomAttribute('custom_layout_update', 'test');
+        $this->fakeFiles->setCategoryFakeFiles((int)$category->getId(), ['test3']);
+
+        $meta = $this->dataProvider->getMeta();
+        $expectedList = [
+            [
+                'label' => 'No update',
+                'value' => AbstractLayoutUpdate::VALUE_NO_UPDATE,
+                '__disableTmpl' => true
+            ],
+            [
+                'label' => 'Use existing',
+                'value' => LayoutUpdate::VALUE_USE_UPDATE_XML,
+                '__disableTmpl' => true
+            ],
+            ['label' => 'test3', 'value' => 'test3', '__disableTmpl' => true],
+        ];
+        $list = $this->extractCustomLayoutOptions($meta);
+        sort($expectedList);
+        sort($list);
+        $this->assertEquals($expectedList, $list);
+    }
+
+    /**
      * Extract custom layout update file attribute's options from metadata.
      *
      * @param array $meta
@@ -195,59 +203,6 @@ class DataProviderTest extends TestCase
         );
 
         return $meta['design']['children']['custom_layout_update_file']['arguments']['data']['config']['options'];
-    }
-
-    /**
-     * Check that proper options are returned for a category.
-     *
-     * @return void
-     */
-    public function testCustomLayoutMeta(): void
-    {
-        //Testing a category without layout xml
-        /** @var Category $category */
-        $category = $this->categoryFactory->create();
-        $category->load(2);
-        $this->fakeFiles->setCategoryFakeFiles((int)$category->getId(), ['test1', 'test2']);
-        $this->registry->register('category', $category);
-
-        $meta = $this->dataProvider->getMeta();
-        $list = $this->extractCustomLayoutOptions($meta);
-        $expectedList = [
-            [
-                'label' => 'No update',
-                'value' => \Magento\Catalog\Model\Attribute\Backend\AbstractLayoutUpdate::VALUE_NO_UPDATE,
-                '__disableTmpl' => true
-            ],
-            ['label' => 'test1', 'value' => 'test1', '__disableTmpl' => true],
-            ['label' => 'test2', 'value' => 'test2', '__disableTmpl' => true]
-        ];
-        sort($expectedList);
-        sort($list);
-        $this->assertEquals($expectedList, $list);
-
-        //Products with old layout xml
-        $category->setCustomAttribute('custom_layout_update', 'test');
-        $this->fakeFiles->setCategoryFakeFiles((int)$category->getId(), ['test3']);
-
-        $meta = $this->dataProvider->getMeta();
-        $expectedList = [
-            [
-                'label' => 'No update',
-                'value' => \Magento\Catalog\Model\Attribute\Backend\AbstractLayoutUpdate::VALUE_NO_UPDATE,
-                '__disableTmpl' => true
-            ],
-            [
-                'label' => 'Use existing',
-                'value' => LayoutUpdate::VALUE_USE_UPDATE_XML,
-                '__disableTmpl' => true
-            ],
-            ['label' => 'test3', 'value' => 'test3', '__disableTmpl' => true],
-        ];
-        $list = $this->extractCustomLayoutOptions($meta);
-        sort($expectedList);
-        sort($list);
-        $this->assertEquals($expectedList, $list);
     }
 
     /**
@@ -320,5 +275,51 @@ class DataProviderTest extends TestCase
     {
         $this->registry->unregister('category');
         $this->registry->register('category', $category);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->configure([
+            'preferences' => [
+                LayoutUpdateManager::class => CategoryLayoutUpdateManager::class
+            ]
+        ]);
+        parent::setUp();
+        $this->dataProvider = $this->createDataProvider();
+        $this->registry = $objectManager->get(Registry::class);
+        $this->categoryFactory = $objectManager->get(CategoryFactory::class);
+        $this->fakeFiles = $objectManager->get(CategoryLayoutUpdateManager::class);
+        $this->scopeConfig = $objectManager->get(ScopeConfigInterface::class);
+        $this->storeManager = $objectManager->get(StoreManagerInterface::class);
+        $this->categoryRepository = $objectManager->get(CategoryRepositoryInterface::class);
+    }
+
+    /**
+     * Create subject instance.
+     *
+     * @return DataProvider
+     */
+    private function createDataProvider(): DataProvider
+    {
+        return Bootstrap::getObjectManager()->create(
+            DataProvider::class,
+            [
+                'name' => 'category_form_data_source',
+                'primaryFieldName' => 'entity_id',
+                'requestFieldName' => 'id'
+            ]
+        );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->registry->unregister('category');
     }
 }

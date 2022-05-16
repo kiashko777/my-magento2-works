@@ -11,25 +11,22 @@ use Magento\Captcha\Model\ResourceModel\Log as CaptchaLog;
 use Magento\Captcha\Model\ResourceModel\LogFactory;
 use Magento\Framework\Event\ManagerInterface;
 use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\User\Model\User;
 use Magento\User\Model\UserFactory;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class ResetAttemptForBackendObserverTest
  *
  * Test for checking that the admin login attempts are removed after a successful login
  */
-class ResetAttemptForBackendObserverTest extends \PHPUnit\Framework\TestCase
+class ResetAttemptForBackendObserverTest extends TestCase
 {
     /**
      * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoDataFixture Magento/Captcha/_files/failed_logins_backend.php
@@ -56,5 +53,10 @@ class ResetAttemptForBackendObserverTest extends \PHPUnit\Framework\TestCase
         $captchaLog = $captchaLogFactory->create();
 
         self::assertEquals(0, $captchaLog->countAttemptsByUserLogin($login));
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

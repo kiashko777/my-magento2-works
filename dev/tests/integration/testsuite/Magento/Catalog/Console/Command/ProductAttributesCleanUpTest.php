@@ -6,9 +6,17 @@
 
 namespace Magento\Catalog\Console\Command;
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\ResourceModel\Attribute;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Store\Model\Group;
+use Magento\Store\Model\Store;
+use Magento\Store\Model\Website;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 
-class ProductAttributesCleanUpTest extends \PHPUnit\Framework\TestCase
+class ProductAttributesCleanUpTest extends TestCase
 {
     /**
      * @var CommandTester
@@ -16,36 +24,19 @@ class ProductAttributesCleanUpTest extends \PHPUnit\Framework\TestCase
     private $tester;
 
     /**
-     * @var \Magento\Catalog\Console\Command\ProductAttributesCleanUp
+     * @var ProductAttributesCleanUp
      */
     private $command;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
     /**
-     * @var \Magento\Catalog\Model\ResourceModel\Attribute
+     * @var Attribute
      */
     private $attributeResource;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->command = $this->objectManager->create(\Magento\Catalog\Console\Command\ProductAttributesCleanUp::class);
-        $this->attributeResource = $this->objectManager->create(\Magento\Catalog\Model\ResourceModel\Attribute::class);
-        $this->tester = new CommandTester($this->command);
-
-        // Prepare data fixtures for test
-        $store = $this->prepareAdditionalStore();
-        /** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-        $productRepository = $this->objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
-        $product = $productRepository->get('simple');
-        $product->setName('Simple fixture store');
-        $product->setStoreId($store->getId());
-        $product->save();
-    }
 
     /**
      * @magentoDataFixture Magento/Store/_files/website.php
@@ -87,21 +78,38 @@ class ProductAttributesCleanUpTest extends \PHPUnit\Framework\TestCase
         return $connection->fetchRow($select);
     }
 
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->command = $this->objectManager->create(ProductAttributesCleanUp::class);
+        $this->attributeResource = $this->objectManager->create(Attribute::class);
+        $this->tester = new CommandTester($this->command);
+
+        // Prepare data fixtures for test
+        $store = $this->prepareAdditionalStore();
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+        $product = $productRepository->get('simple');
+        $product->setName('Simple fixture store');
+        $product->setStoreId($store->getId());
+        $product->save();
+    }
+
     /**
-     * @return \Magento\Store\Model\Store
+     * @return Store
      */
     private function prepareAdditionalStore()
     {
-        /** @var \Magento\Store\Model\Website $website */
-        $website = $this->objectManager->create(\Magento\Store\Model\Website::class);
+        /** @var Website $website */
+        $website = $this->objectManager->create(Website::class);
         $website->load('test');
 
-        /** @var \Magento\Store\Model\Store $store */
-        $store = $this->objectManager->create(\Magento\Store\Model\Store::class);
+        /** @var Store $store */
+        $store = $this->objectManager->create(Store::class);
         $store->load('fixturestore');
 
-        /** @var \Magento\Store\Model\Group $storeGroup */
-        $storeGroup = $this->objectManager->create(\Magento\Store\Model\Group::class);
+        /** @var Group $storeGroup */
+        $storeGroup = $this->objectManager->create(Group::class);
         $storeGroup->setWebsiteId($website->getId());
         $storeGroup->setName('Fixture Store Group');
         $storeGroup->setRootCategoryId(2);

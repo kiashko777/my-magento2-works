@@ -34,49 +34,6 @@ class OrderRepositoryInterfaceTest extends WebapiAbstract
     private $publisherConsumerController;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->objectManager = Bootstrap::getObjectManager();
-
-        $params = array_merge_recursive(
-            Bootstrap::getInstance()->getAppInitParams(),
-            ['MAGE_DIRS' => ['cache' => ['path' => TESTS_TEMP_DIR . '/cache']]]
-        );
-
-        /** @var PublisherConsumerController publisherConsumerController */
-        $this->publisherConsumerController = $this->objectManager->create(
-            PublisherConsumerController::class,
-            [
-                'consumers'     => ['async.operations.all'],
-                'logFilePath'   => TESTS_TEMP_DIR . "/MessageQueueTestLog.txt",
-                'appInitParams' => $params,
-            ]
-        );
-
-        try {
-            $this->publisherConsumerController->initialize();
-        } catch (EnvironmentPreconditionException $e) {
-            $this->markTestSkipped($e->getMessage());
-        } catch (PreconditionFailedException $e) {
-            $this->fail(
-                $e->getMessage()
-            );
-        }
-    }
-
-    /**
-     * @inheritDoc
-     */
-    protected function tearDown(): void
-    {
-        $this->publisherConsumerController->stopConsumers();
-        parent::tearDown();
-    }
-
-    /**
      * Check that order is updated successfuly via async webapi
      *
      * @magentoApiDataFixture Magento/Sales/_files/order.php
@@ -133,6 +90,23 @@ class OrderRepositoryInterfaceTest extends WebapiAbstract
     }
 
     /**
+     * Make async webapi request
+     *
+     * @param array $serviceInfo
+     * @param array $requestData
+     * @return void
+     */
+    private function makeAsyncRequest(array $serviceInfo, array $requestData): void
+    {
+        $response = $this->_webApiCall($serviceInfo, $requestData);
+        $this->assertNotEmpty($response['request_items']);
+        foreach ($response['request_items'] as $requestItem) {
+            $this->assertEquals('accepted', $requestItem['status']);
+        }
+        $this->assertFalse($response['errors']);
+    }
+
+    /**
      * Data provider for tesSave()
      *
      * @return array
@@ -156,19 +130,45 @@ class OrderRepositoryInterfaceTest extends WebapiAbstract
     }
 
     /**
-     * Make async webapi request
-     *
-     * @param array $serviceInfo
-     * @param array $requestData
-     * @return void
+     * @inheritDoc
      */
-    private function makeAsyncRequest(array $serviceInfo, array $requestData): void
+    protected function setUp(): void
     {
-        $response = $this->_webApiCall($serviceInfo, $requestData);
-        $this->assertNotEmpty($response['request_items']);
-        foreach ($response['request_items'] as $requestItem) {
-            $this->assertEquals('accepted', $requestItem['status']);
+        parent::setUp();
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $params = array_merge_recursive(
+            Bootstrap::getInstance()->getAppInitParams(),
+            ['MAGE_DIRS' => ['cache' => ['path' => TESTS_TEMP_DIR . '/cache']]]
+        );
+
+        /** @var PublisherConsumerController publisherConsumerController */
+        $this->publisherConsumerController = $this->objectManager->create(
+            PublisherConsumerController::class,
+            [
+                'consumers' => ['async.operations.all'],
+                'logFilePath' => TESTS_TEMP_DIR . "/MessageQueueTestLog.txt",
+                'appInitParams' => $params,
+            ]
+        );
+
+        try {
+            $this->publisherConsumerController->initialize();
+        } catch (EnvironmentPreconditionException $e) {
+            $this->markTestSkipped($e->getMessage());
+        } catch (PreconditionFailedException $e) {
+            $this->fail(
+                $e->getMessage()
+            );
         }
-        $this->assertFalse($response['errors']);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function tearDown(): void
+    {
+        $this->publisherConsumerController->stopConsumers();
+        parent::tearDown();
     }
 }

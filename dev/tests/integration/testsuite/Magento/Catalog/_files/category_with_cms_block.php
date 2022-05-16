@@ -7,12 +7,12 @@ declare(strict_types=1);
 
 use Magento\Catalog\Api\CategoryRepositoryInterface;
 use Magento\Catalog\Api\Data\CategoryInterfaceFactory;
+use Magento\Catalog\Helper\DefaultCategory;
 use Magento\Catalog\Model\Category;
 use Magento\Cms\Api\GetBlockByIdentifierInterface;
 use Magento\Store\Model\Store;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Catalog\Helper\DefaultCategory;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Cms/_files/block.php');

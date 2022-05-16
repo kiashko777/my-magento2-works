@@ -6,9 +6,12 @@
 
 namespace Magento\Webapi;
 
+use Magento\Framework\Webapi\Exception;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\TestCase\Webapi\Adapter\Rest\RestClient;
+use Magento\TestFramework\TestCase\WebapiAbstract;
 
-class DeserializationTest extends \Magento\TestFramework\TestCase\WebapiAbstract
+class DeserializationTest extends WebapiAbstract
 {
     /**
      * @var string
@@ -20,12 +23,6 @@ class DeserializationTest extends \Magento\TestFramework\TestCase\WebapiAbstract
      */
     protected $_restResourcePath;
 
-    protected function setUp(): void
-    {
-        $this->_version = 'V1';
-        $this->_restResourcePath = "/{$this->_version}/TestModule5/";
-    }
-
     /**
      *  Test POST request with empty body
      */
@@ -35,7 +32,7 @@ class DeserializationTest extends \Magento\TestFramework\TestCase\WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => $this->_restResourcePath,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
         ];
         $expectedMessage =
@@ -43,7 +40,7 @@ class DeserializationTest extends \Magento\TestFramework\TestCase\WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, RestClient::EMPTY_REQUEST_BODY);
         } catch (\Exception $e) {
-            $this->assertEquals(\Magento\Framework\Webapi\Exception::HTTP_BAD_REQUEST, $e->getCode());
+            $this->assertEquals(Exception::HTTP_BAD_REQUEST, $e->getCode());
             $this->assertStringContainsString(
                 $expectedMessage,
                 $e->getMessage(),
@@ -62,7 +59,7 @@ class DeserializationTest extends \Magento\TestFramework\TestCase\WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => $this->_restResourcePath . $itemId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
         ];
         $expectedMessage =
@@ -70,12 +67,18 @@ class DeserializationTest extends \Magento\TestFramework\TestCase\WebapiAbstract
         try {
             $this->_webApiCall($serviceInfo, RestClient::EMPTY_REQUEST_BODY);
         } catch (\Exception $e) {
-            $this->assertEquals(\Magento\Framework\Webapi\Exception::HTTP_BAD_REQUEST, $e->getCode());
+            $this->assertEquals(Exception::HTTP_BAD_REQUEST, $e->getCode());
             $this->assertStringContainsString(
                 $expectedMessage,
                 $e->getMessage(),
                 "Response does not contain expected message."
             );
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->_version = 'V1';
+        $this->_restResourcePath = "/{$this->_version}/TestModule5/";
     }
 }

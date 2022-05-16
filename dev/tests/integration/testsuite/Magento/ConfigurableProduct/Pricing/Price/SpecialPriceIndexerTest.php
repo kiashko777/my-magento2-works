@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\ConfigurableProduct\Pricing\Price;
 
 use Magento\Catalog\Api\Data\ProductInterface;
@@ -12,8 +13,9 @@ use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\ResourceModel\Product\Collection as ProductCollection;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class SpecialPriceIndexerTest extends \PHPUnit\Framework\TestCase
+class SpecialPriceIndexerTest extends TestCase
 {
     /**
      * @var ProductRepositoryInterface
@@ -29,13 +31,6 @@ class SpecialPriceIndexerTest extends \PHPUnit\Framework\TestCase
      * @var Processor
      */
     private $indexerProcessor;
-
-    protected function setUp(): void
-    {
-        $this->productRepository = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class);
-        $this->productCollectionFactory = Bootstrap::getObjectManager()->get(CollectionFactory::class);
-        $this->indexerProcessor = Bootstrap::getObjectManager()->get(Processor::class);
-    }
 
     /**
      * Use collection to check data in index
@@ -99,5 +94,12 @@ class SpecialPriceIndexerTest extends \PHPUnit\Framework\TestCase
         /** @var Product $item */
         $item = $collection->getFirstItem();
         self::assertEquals($specialPrice, $item->getData('min_price'));
+    }
+
+    protected function setUp(): void
+    {
+        $this->productRepository = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class);
+        $this->productCollectionFactory = Bootstrap::getObjectManager()->get(CollectionFactory::class);
+        $this->indexerProcessor = Bootstrap::getObjectManager()->get(Processor::class);
     }
 }

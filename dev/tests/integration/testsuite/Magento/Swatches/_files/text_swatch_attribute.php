@@ -13,7 +13,7 @@ use Magento\Swatches\Model\Swatch;
 use Magento\TestFramework\Helper\Bootstrap;
 
 /** @var $installer CategorySetup */
-$installer = Bootstrap::getObjectManager()->create(\Magento\Catalog\Setup\CategorySetup::class);
+$installer = Bootstrap::getObjectManager()->create(CategorySetup::class);
 /** @var AttributeRepositoryInterface $attributeRepository */
 $attributeRepository = Bootstrap::getObjectManager()->create(AttributeRepositoryInterface::class);
 

@@ -6,18 +6,20 @@
 
 namespace Magento\GroupedProduct\Model\ResourceModel\Product\Indexer\Price;
 
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Catalog\Api\Data\ProductInterface;
-use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Api\Data\ProductTierPriceInterfaceFactory;
+use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Indexer\Product\Price\Processor;
+use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\ResourceModel\Product\Collection as ProductCollection;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for Magento\GroupedProduct\Model\ResourceModel\Products\Indexer\Price\Grouped
  */
-class GroupedTest extends \PHPUnit\Framework\TestCase
+class GroupedTest extends TestCase
 {
     /**
      * @var ProductRepositoryInterface
@@ -39,14 +41,6 @@ class GroupedTest extends \PHPUnit\Framework\TestCase
      */
     private $tierPriceFactory;
 
-    protected function setUp(): void
-    {
-        $this->productRepository = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class);
-        $this->productCollectionFactory = Bootstrap::getObjectManager()->get(CollectionFactory::class);
-        $this->indexerProcessor = Bootstrap::getObjectManager()->get(Processor::class);
-        $this->tierPriceFactory = Bootstrap::getObjectManager()->get(ProductTierPriceInterfaceFactory::class);
-    }
-
     /**
      * @magentoDataFixture Magento/GroupedProduct/_files/product_grouped.php
      * @magentoAppIsolation enabled
@@ -56,9 +50,9 @@ class GroupedTest extends \PHPUnit\Framework\TestCase
     {
         $simpleProductPrice = 15;
         $virtualProductPrice = 5;
-        /** @var \Magento\Catalog\Model\Product $simpleProduct */
+        /** @var Product $simpleProduct */
         $simpleProduct = $this->productRepository->get('simple', true);
-        /** @var \Magento\Catalog\Model\Product $virtualProduct */
+        /** @var Product $virtualProduct */
         $virtualProduct = $this->productRepository->get('virtual-product', true);
         $simpleProduct->setData('price', $simpleProductPrice);
         $virtualProduct->setData('price', $virtualProductPrice);
@@ -68,9 +62,17 @@ class GroupedTest extends \PHPUnit\Framework\TestCase
         /** @var ProductCollection $collection */
         $collection = $this->productCollectionFactory->create();
         $collection->addPriceData()->addFieldToFilter(ProductInterface::SKU, 'grouped-product');
-        /** @var \Magento\Catalog\Model\Product $item */
+        /** @var Product $item */
         $item = $collection->getFirstItem();
         $this->assertEquals($virtualProductPrice, $item->getData('min_price'));
         $this->assertEquals($simpleProductPrice, $item->getData('max_price'));
+    }
+
+    protected function setUp(): void
+    {
+        $this->productRepository = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class);
+        $this->productCollectionFactory = Bootstrap::getObjectManager()->get(CollectionFactory::class);
+        $this->indexerProcessor = Bootstrap::getObjectManager()->get(Processor::class);
+        $this->tierPriceFactory = Bootstrap::getObjectManager()->get(ProductTierPriceInterfaceFactory::class);
     }
 }

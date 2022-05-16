@@ -49,6 +49,36 @@ QUERY;
     }
 
     /**
+     * @param array $relatedProducts
+     */
+    private function assertRelatedProducts(array $relatedProducts): void
+    {
+        $expectedData = [
+            'simple' => [
+                'name' => 'Simple Related Products',
+                'url_key' => 'simple-related-product',
+
+            ],
+            'simple_with_cross_two' => [
+                'name' => 'Simple Products With Related Products Two',
+                'url_key' => 'simple-product-with-related-product-two',
+            ]
+        ];
+
+        foreach ($relatedProducts as $product) {
+            self::assertArrayHasKey('sku', $product);
+            self::assertArrayHasKey('name', $product);
+            self::assertArrayHasKey('url_key', $product);
+
+            self::assertArrayHasKey($product['sku'], $expectedData);
+            $productExpectedData = $expectedData[$product['sku']];
+
+            self::assertEquals($product['name'], $productExpectedData['name']);
+            self::assertEquals($product['url_key'], $productExpectedData['url_key']);
+        }
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Catalog/_files/products_related_disabled.php
      */
     public function testQueryDisableRelatedProduct()
@@ -159,36 +189,6 @@ QUERY;
         self::assertEquals($upSellProduct['sku'], 'simple');
         self::assertEquals($upSellProduct['name'], 'Simple Up Sell');
         self::assertEquals($upSellProduct['url_key'], 'simple-up-sell');
-    }
-
-    /**
-     * @param array $relatedProducts
-     */
-    private function assertRelatedProducts(array $relatedProducts): void
-    {
-        $expectedData = [
-            'simple' => [
-                'name' => 'Simple Related Products',
-                'url_key' => 'simple-related-product',
-
-            ],
-            'simple_with_cross_two' => [
-                'name' => 'Simple Products With Related Products Two',
-                'url_key' => 'simple-product-with-related-product-two',
-            ]
-        ];
-
-        foreach ($relatedProducts as $product) {
-            self::assertArrayHasKey('sku', $product);
-            self::assertArrayHasKey('name', $product);
-            self::assertArrayHasKey('url_key', $product);
-
-            self::assertArrayHasKey($product['sku'], $expectedData);
-            $productExpectedData = $expectedData[$product['sku']];
-
-            self::assertEquals($product['name'], $productExpectedData['name']);
-            self::assertEquals($product['url_key'], $productExpectedData['url_key']);
-        }
     }
 
     /**

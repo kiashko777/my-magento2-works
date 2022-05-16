@@ -93,7 +93,8 @@ define([
             try {
                 injector.clean();
                 injector.remove();
-            } catch (e) {}
+            } catch (e) {
+            }
         });
 
         it('showAcceptanceWindow is invoked when the anchor element of help link is clicked', function (done) {

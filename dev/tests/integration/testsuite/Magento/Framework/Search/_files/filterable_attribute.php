@@ -5,13 +5,22 @@
  */
 
 /* Create attribute */
-/** @var $installer \Magento\Catalog\Setup\CategorySetup */
-$installer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Catalog\Setup\CategorySetup::class,
+/** @var $installer CategorySetup */
+
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Action;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Catalog\Setup\CategorySetup;
+use Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$installer = Bootstrap::getObjectManager()->create(
+    CategorySetup::class,
     ['resourceName' => 'catalog_setup']
 );
 /** @var $selectAttribute \Magento\Catalog\Model\ResourceModel\Eav\Attribute */
-$selectAttribute = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+$selectAttribute = Bootstrap::getObjectManager()->create(
     \Magento\Catalog\Model\ResourceModel\Eav\Attribute::class
 );
 $selectAttribute->setData(
@@ -33,13 +42,13 @@ $selectAttribute->save();
 /* Assign attribute to attribute set */
 $installer->addAttributeToGroup('catalog_product', 'Default', 'General', $selectAttribute->getId());
 
-/** @var $selectOptions \Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection */
-$selectOptions = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection::class
+/** @var $selectOptions Collection */
+$selectOptions = Bootstrap::getObjectManager()->create(
+    Collection::class
 );
 $selectOptions->setAttributeFilter($selectAttribute->getId());
 
-$multiselectAttribute = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+$multiselectAttribute = Bootstrap::getObjectManager()->create(
     \Magento\Catalog\Model\ResourceModel\Eav\Attribute::class
 );
 $multiselectAttribute->setData(
@@ -61,17 +70,17 @@ $multiselectAttribute->save();
 /* Assign attribute to attribute set */
 $installer->addAttributeToGroup('catalog_product', 'Default', 'General', $multiselectAttribute->getId());
 
-/** @var $multiselectOptions \Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection */
-$multiselectOptions = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection::class
+/** @var $multiselectOptions Collection */
+$multiselectOptions = Bootstrap::getObjectManager()->create(
+    Collection::class
 );
 $multiselectOptions->setAttributeFilter($multiselectAttribute->getId());
 
 /* Create simple products per each select(dropdown) option */
 foreach ($selectOptions as $option) {
-    /** @var $product \Magento\Catalog\Model\Product */
-    $product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-        \Magento\Catalog\Model\Product::class
+    /** @var $product Product */
+    $product = Bootstrap::getObjectManager()->create(
+        Product::class
     );
     $product->setTypeId(
         \Magento\Catalog\Model\Product\Type::TYPE_SIMPLE
@@ -88,15 +97,15 @@ foreach ($selectOptions as $option) {
     )->setCategoryIds(
         [2]
     )->setVisibility(
-        \Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH
+        Visibility::VISIBILITY_BOTH
     )->setStatus(
-        \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED
+        Status::STATUS_ENABLED
     )->setStockData(
         ['use_config_manage_stock' => 1, 'qty' => 5, 'is_in_stock' => 1]
     )->save();
 
-    \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-        \Magento\Catalog\Model\Product\Action::class
+    Bootstrap::getObjectManager()->get(
+        Action::class
     )->updateAttributes(
         [$product->getId()],
         [

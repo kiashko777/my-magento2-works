@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 use Magento\Catalog\Api\Data\ProductInterfaceFactory;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use Magento\Catalog\Model\Product\Visibility;
 use Magento\TestFramework\Helper\Bootstrap;
@@ -17,7 +18,7 @@ $productFactory = $objectManager->get(ProductInterfaceFactory::class);
 /** @var ProductRepositoryInterface $productRepository */
 $productRepository = $objectManager->get(ProductRepositoryInterface::class);
 
-/** @var $product \Magento\Catalog\Model\Product */
+/** @var $product Product */
 $product = $productFactory->create();
 $product->setTypeId('simple')
     ->setAttributeSetId($product->getDefaultAttributeSetId())

@@ -3,13 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\UrlRewrite\Block;
+
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Helper\Xpath;
+use Magento\UrlRewrite\Block\Edit\Form;
+use Magento\UrlRewrite\Model\UrlRewrite;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for \Magento\UrlRewrite\Block\Edit
  * @magentoAppArea Adminhtml
  */
-class EditTest extends \PHPUnit\Framework\TestCase
+class EditTest extends TestCase
 {
     /**
      * Test prepare layout
@@ -23,13 +31,13 @@ class EditTest extends \PHPUnit\Framework\TestCase
      */
     public function testPrepareLayout($blockAttributes, $expected)
     {
-        /** @var $layout \Magento\Framework\View\LayoutInterface */
-        $layout = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
+        /** @var $layout LayoutInterface */
+        $layout = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
         );
 
-        /** @var $block \Magento\UrlRewrite\Block\Edit */
-        $block = $layout->createBlock(\Magento\UrlRewrite\Block\Edit::class, '', ['data' => $blockAttributes]);
+        /** @var $block Edit */
+        $block = $layout->createBlock(Edit::class, '', ['data' => $blockAttributes]);
 
         $this->_checkSelector($block, $expected);
         $this->_checkButtons($block, $expected);
@@ -39,19 +47,19 @@ class EditTest extends \PHPUnit\Framework\TestCase
     /**
      * Check entity selector
      *
-     * @param \Magento\UrlRewrite\Block\Edit $block
+     * @param Edit $block
      * @param array $expected
      */
     private function _checkSelector($block, $expected)
     {
         $layout = $block->getLayout();
 
-        /** @var $selectorBlock \Magento\UrlRewrite\Block\Selector|bool */
+        /** @var $selectorBlock Selector|bool */
         $selectorBlock = $layout->getChildBlock($block->getNameInLayout(), 'selector');
 
         if ($expected['selector']) {
             $this->assertInstanceOf(
-                \Magento\UrlRewrite\Block\Selector::class,
+                Selector::class,
                 $selectorBlock,
                 'Child block with entity selector is invalid'
             );
@@ -61,9 +69,100 @@ class EditTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Check buttons
+     *
+     * @param Edit $block
+     * @param array $expected
+     */
+    private function _checkButtons($block, $expected)
+    {
+        $buttonsHtml = $block->getButtonsHtml();
+
+        if ($expected['back_button']) {
+            $this->assertEquals(
+                1,
+                Xpath::getElementsCountForXpath(
+                    '//button[contains(@class,"back")]',
+                    $buttonsHtml
+                ),
+                'Back button is not present in block'
+            );
+        } else {
+            $this->assertEquals(
+                0,
+                Xpath::getElementsCountForXpath(
+                    '//button[contains(@class,"back")]',
+                    $buttonsHtml
+                ),
+                'Back button should not present in block'
+            );
+        }
+
+        if ($expected['save_button']) {
+            $this->assertEquals(
+                1,
+                Xpath::getElementsCountForXpath(
+                    '//button[contains(@class,"save")]',
+                    $buttonsHtml
+                ),
+                'Save button is not present in block'
+            );
+        } else {
+            $this->assertEquals(
+                0,
+                Xpath::getElementsCountForXpath(
+                    '//button[contains(@class,"save")]',
+                    $buttonsHtml
+                ),
+                'Save button should not present in block'
+            );
+        }
+
+        if ($expected['reset_button']) {
+            $this->assertEquals(
+                1,
+                Xpath::getElementsCountForXpath(
+                    '//button[@title="Reset"]',
+                    $buttonsHtml
+                ),
+                'Reset button is not present in block'
+            );
+        } else {
+            $this->assertEquals(
+                0,
+                Xpath::getElementsCountForXpath(
+                    '//button[@title="Reset"]',
+                    $buttonsHtml
+                ),
+                'Reset button should not present in block'
+            );
+        }
+
+        if ($expected['delete_button']) {
+            $this->assertEquals(
+                1,
+                Xpath::getElementsCountForXpath(
+                    '//button[contains(@class,"delete")]',
+                    $buttonsHtml
+                ),
+                'Delete button is not present in block'
+            );
+        } else {
+            $this->assertEquals(
+                0,
+                Xpath::getElementsCountForXpath(
+                    '//button[contains(@class,"delete")]',
+                    $buttonsHtml
+                ),
+                'Delete button should not present in block'
+            );
+        }
+    }
+
+    /**
      * Check form
      *
-     * @param \Magento\UrlRewrite\Block\Edit $block
+     * @param Edit $block
      * @param array $expected
      */
     private function _checkForm($block, $expected)
@@ -71,12 +170,12 @@ class EditTest extends \PHPUnit\Framework\TestCase
         $layout = $block->getLayout();
         $blockName = $block->getNameInLayout();
 
-        /** @var $formBlock \Magento\UrlRewrite\Block\Edit\Form|bool */
+        /** @var $formBlock Form|bool */
         $formBlock = $layout->getChildBlock($blockName, 'form');
 
         if ($expected['form']) {
             $this->assertInstanceOf(
-                \Magento\UrlRewrite\Block\Edit\Form::class,
+                Form::class,
                 $formBlock,
                 'Child block with form is invalid'
             );
@@ -92,110 +191,19 @@ class EditTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Check buttons
-     *
-     * @param \Magento\UrlRewrite\Block\Edit $block
-     * @param array $expected
-     */
-    private function _checkButtons($block, $expected)
-    {
-        $buttonsHtml = $block->getButtonsHtml();
-
-        if ($expected['back_button']) {
-            $this->assertEquals(
-                1,
-                \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
-                    '//button[contains(@class,"back")]',
-                    $buttonsHtml
-                ),
-                'Back button is not present in block'
-            );
-        } else {
-            $this->assertEquals(
-                0,
-                \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
-                    '//button[contains(@class,"back")]',
-                    $buttonsHtml
-                ),
-                'Back button should not present in block'
-            );
-        }
-
-        if ($expected['save_button']) {
-            $this->assertEquals(
-                1,
-                \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
-                    '//button[contains(@class,"save")]',
-                    $buttonsHtml
-                ),
-                'Save button is not present in block'
-            );
-        } else {
-            $this->assertEquals(
-                0,
-                \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
-                    '//button[contains(@class,"save")]',
-                    $buttonsHtml
-                ),
-                'Save button should not present in block'
-            );
-        }
-
-        if ($expected['reset_button']) {
-            $this->assertEquals(
-                1,
-                \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
-                    '//button[@title="Reset"]',
-                    $buttonsHtml
-                ),
-                'Reset button is not present in block'
-            );
-        } else {
-            $this->assertEquals(
-                0,
-                \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
-                    '//button[@title="Reset"]',
-                    $buttonsHtml
-                ),
-                'Reset button should not present in block'
-            );
-        }
-
-        if ($expected['delete_button']) {
-            $this->assertEquals(
-                1,
-                \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
-                    '//button[contains(@class,"delete")]',
-                    $buttonsHtml
-                ),
-                'Delete button is not present in block'
-            );
-        } else {
-            $this->assertEquals(
-                0,
-                \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
-                    '//button[contains(@class,"delete")]',
-                    $buttonsHtml
-                ),
-                'Delete button should not present in block'
-            );
-        }
-    }
-
-    /**
      * Data provider
      *
      * @return array
      */
     public function prepareLayoutDataProvider()
     {
-        /** @var $urlRewrite \Magento\UrlRewrite\Model\UrlRewrite */
-        $urlRewrite = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\UrlRewrite\Model\UrlRewrite::class
+        /** @var $urlRewrite UrlRewrite */
+        $urlRewrite = Bootstrap::getObjectManager()->create(
+            UrlRewrite::class
         );
-        /** @var $existingUrlRewrite \Magento\UrlRewrite\Model\UrlRewrite */
-        $existingUrlRewrite = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\UrlRewrite\Model\UrlRewrite::class,
+        /** @var $existingUrlRewrite UrlRewrite */
+        $existingUrlRewrite = Bootstrap::getObjectManager()->create(
+            UrlRewrite::class,
             ['data' => ['url_rewrite_id' => 1]]
         );
 

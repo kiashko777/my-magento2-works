@@ -5,7 +5,24 @@
  */
 
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\App\Utility\Files;
 use Magento\Framework\Autoload\AutoloaderRegistry;
+use Magento\Framework\Component\ComponentRegistrar;
+use Magento\Framework\Component\DirSearch;
+use Magento\Framework\Logger\Handler\Debug;
+use Magento\Framework\Logger\Handler\System;
+use Magento\Framework\Profiler\Driver\Standard;
+use Magento\Framework\Shell;
+use Magento\Framework\Shell\CommandRenderer;
+use Magento\Framework\View\Design\Theme\ThemePackageList;
+use Magento\TestFramework\Bootstrap\Environment;
+use Magento\TestFramework\Bootstrap\MemoryFactory;
+use Magento\TestFramework\Bootstrap\Settings;
+use Magento\TestFramework\Bootstrap\WebapiDocBlock;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\WebApiApplication;
+use Magento\TestFramework\Workaround\Override\Config;
+use Monolog\Logger;
 
 require_once __DIR__ . '/../../../../app/bootstrap.php';
 require_once __DIR__ . '/autoload.php';
@@ -26,21 +43,21 @@ try {
     setCustomErrorHandler();
 
     /* Bootstrap the application */
-    $settings = new \Magento\TestFramework\Bootstrap\Settings($testsBaseDir, get_defined_constants());
+    $settings = new Settings($testsBaseDir, get_defined_constants());
 
     if ($settings->get('TESTS_EXTRA_VERBOSE_LOG')) {
         $filesystem = new \Magento\Framework\Filesystem\Driver\File();
         $exceptionHandler = new \Magento\Framework\Logger\Handler\Exception($filesystem);
         $loggerHandlers = [
-            'system'    => new \Magento\Framework\Logger\Handler\System($filesystem, $exceptionHandler),
-            'debug'     => new \Magento\Framework\Logger\Handler\Debug($filesystem)
+            'system' => new System($filesystem, $exceptionHandler),
+            'debug' => new Debug($filesystem)
         ];
-        $shell = new \Magento\Framework\Shell(
-            new \Magento\Framework\Shell\CommandRenderer(),
-            new \Monolog\Logger('main', $loggerHandlers)
+        $shell = new Shell(
+            new CommandRenderer(),
+            new Logger('main', $loggerHandlers)
         );
     } else {
-        $shell = new \Magento\Framework\Shell(new \Magento\Framework\Shell\CommandRenderer());
+        $shell = new Shell(new CommandRenderer());
     }
 
     $testFrameworkDir = __DIR__;
@@ -54,8 +71,8 @@ try {
     if (!file_exists($installConfigFile)) {
         $installConfigFile = $installConfigFile . '.dist';
     }
-    $dirList     = new \Magento\Framework\App\Filesystem\DirectoryList(BP);
-    $application = new \Magento\TestFramework\WebApiApplication(
+    $dirList = new DirectoryList(BP);
+    $application = new WebApiApplication(
         $shell,
         $dirList->getPath(DirectoryList::VAR_DIR),
         $installConfigFile,
@@ -72,38 +89,38 @@ try {
 
     $bootstrap = new \Magento\TestFramework\Bootstrap(
         $settings,
-        new \Magento\TestFramework\Bootstrap\Environment(),
-        new \Magento\TestFramework\Bootstrap\WebapiDocBlock("{$integrationTestsDir}/testsuite"),
-        new \Magento\TestFramework\Bootstrap\Profiler(new \Magento\Framework\Profiler\Driver\Standard()),
+        new Environment(),
+        new WebapiDocBlock("{$integrationTestsDir}/testsuite"),
+        new \Magento\TestFramework\Bootstrap\Profiler(new Standard()),
         $shell,
         $application,
-        new \Magento\TestFramework\Bootstrap\MemoryFactory($shell)
+        new MemoryFactory($shell)
     );
     $bootstrap->runBootstrap();
     $application->initialize();
 
-    \Magento\TestFramework\Helper\Bootstrap::setInstance(new \Magento\TestFramework\Helper\Bootstrap($bootstrap));
-    $dirSearch = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-       ->create(\Magento\Framework\Component\DirSearch::class);
-    $themePackageList = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-       ->create(\Magento\Framework\View\Design\Theme\ThemePackageList::class);
-    \Magento\Framework\App\Utility\Files::setInstance(
-        new \Magento\Framework\App\Utility\Files(
-            new \Magento\Framework\Component\ComponentRegistrar(),
+    Bootstrap::setInstance(new Bootstrap($bootstrap));
+    $dirSearch = Bootstrap::getObjectManager()
+        ->create(DirSearch::class);
+    $themePackageList = Bootstrap::getObjectManager()
+        ->create(ThemePackageList::class);
+    Files::setInstance(
+        new Files(
+            new ComponentRegistrar(),
             $dirSearch,
             $themePackageList
         )
     );
-    $overrideConfig = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+    $overrideConfig = Bootstrap::getObjectManager()->create(
         Magento\TestFramework\WebapiWorkaround\Override\Config::class
     );
     $overrideConfig->init();
     Magento\TestFramework\Workaround\Override\Fixture\Resolver::setInstance(
         new  \Magento\TestFramework\WebapiWorkaround\Override\Fixture\Resolver($overrideConfig)
     );
-    \Magento\TestFramework\Workaround\Override\Config::setInstance($overrideConfig);
+    Config::setInstance($overrideConfig);
     unset($bootstrap, $application, $settings, $shell, $overrideConfig);
-} catch (\Exception $e) {
+} catch (Exception $e) {
     // phpcs:ignore Magento2.Security.LanguageConstruct.DirectOutput
     echo $e . PHP_EOL;
     // phpcs:ignore Magento2.Security.LanguageConstruct.ExitUsage

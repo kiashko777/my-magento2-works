@@ -3,24 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\App\ObjectManager;
 
-use Magento\TestFramework\Helper\CacheCleaner;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class ConfigLoaderTest extends \PHPUnit\Framework\TestCase
+class ConfigLoaderTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\App\ObjectManager\ConfigLoader
+     * @var ConfigLoader
      */
     private $object;
-
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->object = $objectManager->create(
-            \Magento\Framework\App\ObjectManager\ConfigLoader::class
-        );
-    }
 
     public function testLoad()
     {
@@ -28,5 +22,13 @@ class ConfigLoaderTest extends \PHPUnit\Framework\TestCase
         $this->assertNotEmpty($data);
         $cachedData = $this->object->load('global');
         $this->assertEquals($data, $cachedData);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->object = $objectManager->create(
+            ConfigLoader::class
+        );
     }
 }

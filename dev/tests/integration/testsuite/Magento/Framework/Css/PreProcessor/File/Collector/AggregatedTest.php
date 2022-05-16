@@ -8,70 +8,30 @@ namespace Magento\Framework\Css\PreProcessor\File\Collector;
 
 use Magento\Framework\App\Bootstrap;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\App\State;
+use Magento\Framework\Filesystem;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\View\Design\Theme\FlyweightFactory;
+use Magento\Framework\View\File;
+use Magento\Framework\View\File\Collector\Override\Base;
+use Magento\Theme\Model\Theme\Registration;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoComponentsDir Magento/Framework/Css/PreProcessor/_files/code/Magento
  * @magentoDbIsolation enabled
  */
-class AggregatedTest extends \PHPUnit\Framework\TestCase
+class AggregatedTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Css\PreProcessor\File\Collector\Aggregated
+     * @var Aggregated
      */
     protected $model;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        \Magento\TestFramework\Helper\Bootstrap::getInstance()->reinitialize(
-            [
-                Bootstrap::INIT_PARAM_FILESYSTEM_DIR_PATHS => [
-                    DirectoryList::LIB_WEB => [
-                        DirectoryList::PATH => dirname(dirname(__DIR__)) . '/_files/lib/web',
-                    ],
-                ],
-            ]
-        );
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var \Magento\Theme\Model\Theme\Registration $registration */
-        $registration = $this->objectManager->get(
-            \Magento\Theme\Model\Theme\Registration::class
-        );
-        $registration->register();
-        $this->objectManager->get(\Magento\Framework\App\State::class)->setAreaCode('frontend');
-
-        /** @var \Magento\Framework\Filesystem $filesystem */
-        $filesystem = $this->objectManager->create(
-            \Magento\Framework\Filesystem::class,
-            [
-                'directoryList' => $this->objectManager->create(
-                    \Magento\Framework\App\Filesystem\DirectoryList::class,
-                    [
-                        'root' => BP,
-                    ]
-                )
-            ]
-        );
-
-        /** @var \Magento\Framework\View\File\Collector\Base $sourceBase */
-        $sourceBase = $this->objectManager->create(
-            \Magento\Framework\View\File\Collector\Base::class,
-            ['filesystem' => $filesystem, 'subDir' => 'web']
-        );
-        /** @var \Magento\Framework\View\File\Collector\Base $sourceBase */
-        $overriddenBaseFiles = $this->objectManager->create(
-            \Magento\Framework\View\File\Collector\Override\Base::class,
-            ['filesystem' => $filesystem, 'subDir' => 'web']
-        );
-        $this->model = $this->objectManager->create(
-            \Magento\Framework\Css\PreProcessor\File\Collector\Aggregated::class,
-            ['baseFiles' => $sourceBase, 'overriddenBaseFiles' => $overriddenBaseFiles]
-        );
-    }
 
     /**
      * @magentoAppIsolation enabled
@@ -84,8 +44,8 @@ class AggregatedTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetFiles($path, $themeName, array $expectedFiles)
     {
-        /** @var \Magento\Framework\View\Design\Theme\FlyweightFactory $themeFactory */
-        $themeFactory = $this->objectManager->get(\Magento\Framework\View\Design\Theme\FlyweightFactory::class);
+        /** @var FlyweightFactory $themeFactory */
+        $themeFactory = $this->objectManager->get(FlyweightFactory::class);
         $theme = $themeFactory->create($themeName);
         $files = $this->model->getFiles($theme, $path);
         $actualFiles = [];
@@ -94,7 +54,7 @@ class AggregatedTest extends \PHPUnit\Framework\TestCase
         }
         $this->assertEquals($expectedFiles, $actualFiles);
 
-        /** @var $file \Magento\Framework\View\File */
+        /** @var $file File */
         foreach ($files as $file) {
             if (!in_array($file->getFilename(), $expectedFiles)) {
                 $this->fail(sprintf('File "%s" is not expected but found', $file->getFilename()));
@@ -168,5 +128,53 @@ class AggregatedTest extends \PHPUnit\Framework\TestCase
                 ],
             ],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        \Magento\TestFramework\Helper\Bootstrap::getInstance()->reinitialize(
+            [
+                Bootstrap::INIT_PARAM_FILESYSTEM_DIR_PATHS => [
+                    DirectoryList::LIB_WEB => [
+                        DirectoryList::PATH => dirname(dirname(__DIR__)) . '/_files/lib/web',
+                    ],
+                ],
+            ]
+        );
+        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        /** @var Registration $registration */
+        $registration = $this->objectManager->get(
+            Registration::class
+        );
+        $registration->register();
+        $this->objectManager->get(State::class)->setAreaCode('frontend');
+
+        /** @var Filesystem $filesystem */
+        $filesystem = $this->objectManager->create(
+            Filesystem::class,
+            [
+                'directoryList' => $this->objectManager->create(
+                    DirectoryList::class,
+                    [
+                        'root' => BP,
+                    ]
+                )
+            ]
+        );
+
+        /** @var \Magento\Framework\View\File\Collector\Base $sourceBase */
+        $sourceBase = $this->objectManager->create(
+            \Magento\Framework\View\File\Collector\Base::class,
+            ['filesystem' => $filesystem, 'subDir' => 'web']
+        );
+        /** @var \Magento\Framework\View\File\Collector\Base $sourceBase */
+        $overriddenBaseFiles = $this->objectManager->create(
+            Base::class,
+            ['filesystem' => $filesystem, 'subDir' => 'web']
+        );
+        $this->model = $this->objectManager->create(
+            Aggregated::class,
+            ['baseFiles' => $sourceBase, 'overriddenBaseFiles' => $overriddenBaseFiles]
+        );
     }
 }

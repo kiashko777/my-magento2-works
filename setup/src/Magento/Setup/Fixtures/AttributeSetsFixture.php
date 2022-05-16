@@ -6,6 +6,8 @@
 
 namespace Magento\Setup\Fixtures;
 
+use Magento\Setup\Fixtures\AttributeSet\Pattern;
+
 /**
  * Fixture for Attribute Sets and Attributes based on the configuration
  *
@@ -47,10 +49,11 @@ class AttributeSetsFixture extends Fixture
      * @param AttributeSet\Pattern $pattern
      */
     public function __construct(
-        FixtureModel $fixtureModel,
-        AttributeSet\AttributeSetFixture $attributeSetsFixture,
-        \Magento\Setup\Fixtures\AttributeSet\Pattern $pattern
-    ) {
+        FixtureModel                                 $fixtureModel,
+        AttributeSet\AttributeSetFixture             $attributeSetsFixture,
+        Pattern $pattern
+    )
+    {
         parent::__construct($fixtureModel);
         $this->attributeSetsFixture = $attributeSetsFixture;
         $this->pattern = $pattern;

@@ -6,18 +6,29 @@
 
 namespace Magento\TestFramework\Event;
 
+use Exception;
+use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\DB\Adapter\AdapterInterface;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\TestFramework\Db\Adapter\TransactionInterface;
+use Magento\TestFramework\EventManager;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\AssertionFailedError;
+use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Warning;
+
 /**
  * Database transaction events manager
  */
 class Transaction
 {
     /**
-     * @var \Magento\TestFramework\EventManager
+     * @var EventManager
      */
     protected $_eventManager;
 
     /**
-     * @var \Magento\TestFramework\Event\Param\Transaction
+     * @var Param\Transaction
      */
     protected $_eventParam;
 
@@ -29,9 +40,9 @@ class Transaction
     /**
      * Constructor
      *
-     * @param \Magento\TestFramework\EventManager $eventManager
+     * @param EventManager $eventManager
      */
-    public function __construct(\Magento\TestFramework\EventManager $eventManager)
+    public function __construct(EventManager $eventManager)
     {
         $this->_eventManager = $eventManager;
     }
@@ -39,38 +50,20 @@ class Transaction
     /**
      * Handler for 'startTest' event
      *
-     * @param \PHPUnit\Framework\TestCase $test
+     * @param TestCase $test
      */
-    public function startTest(\PHPUnit\Framework\TestCase $test)
+    public function startTest(TestCase $test)
     {
         $this->_processTransactionRequests('startTest', $test);
-    }
-
-    /**
-     * Handler for 'endTest' event
-     *
-     * @param \PHPUnit\Framework\TestCase $test
-     */
-    public function endTest(\PHPUnit\Framework\TestCase $test)
-    {
-        $this->_processTransactionRequests('endTest', $test);
-    }
-
-    /**
-     * Handler for 'endTestSuite' event
-     */
-    public function endTestSuite()
-    {
-        $this->_rollbackTransaction();
     }
 
     /**
      * Query whether there are any requests for transaction operations and performs them
      *
      * @param string $eventName
-     * @param \PHPUnit\Framework\TestCase $test
+     * @param TestCase $test
      */
-    protected function _processTransactionRequests($eventName, \PHPUnit\Framework\TestCase $test)
+    protected function _processTransactionRequests($eventName, TestCase $test)
     {
         $param = $this->_getEventParam();
         $this->_eventManager->fireEvent($eventName . 'TransactionRequest', [$test, $param]);
@@ -83,40 +76,19 @@ class Transaction
     }
 
     /**
-     * Start transaction and fire 'startTransaction' event
+     * Retrieve clean instance of transaction event parameter
      *
-     * @param \PHPUnit\Framework\TestCase $test
-     * @SuppressWarnings(PHPMD.UnusedLocalVariable)
+     * @return Param\Transaction
      */
-    protected function _startTransaction(\PHPUnit\Framework\TestCase $test)
+    protected function _getEventParam()
     {
-        if (!$this->_isTransactionActive) {
-            $this->_getConnection()->beginTransparentTransaction();
-            $this->_isTransactionActive = true;
-            try {
-                /**
-                 * Add any warning during transaction execution as a failure.
-                 */
-                set_error_handler(
-                    function ($errNo, $errStr, $errFile, $errLine) use ($test) {
-                        $errMsg = sprintf("%s: %s in %s:%s.", "Warning", $errStr, $errFile, $errLine);
-                        $test->getTestResultObject()->addError($test, new \PHPUnit\Framework\Warning($errMsg), 0);
-
-                        // Allow error to be handled by next error handler
-                        return false;
-                    },
-                    E_WARNING
-                );
-                $this->_eventManager->fireEvent('startTransaction', [$test]);
-                restore_error_handler();
-            } catch (\Exception $e) {
-                $test->getTestResultObject()->addFailure(
-                    $test,
-                    new \PHPUnit\Framework\AssertionFailedError((string)$e),
-                    0
-                );
-            }
+        /* reset object state instead of instantiating new object over and over again */
+        if (!$this->_eventParam) {
+            $this->_eventParam = new Param\Transaction();
+        } else {
+            $this->_eventParam->__construct();
         }
+        return $this->_eventParam;
     }
 
     /**
@@ -136,30 +108,69 @@ class Transaction
      * Retrieve database adapter instance
      *
      * @param string $connectionName
-     * @return \Magento\Framework\DB\Adapter\AdapterInterface|\Magento\TestFramework\Db\Adapter\TransactionInterface
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @return AdapterInterface|TransactionInterface
+     * @throws LocalizedException
      */
-    protected function _getConnection($connectionName = \Magento\Framework\App\ResourceConnection::DEFAULT_CONNECTION)
+    protected function _getConnection($connectionName = ResourceConnection::DEFAULT_CONNECTION)
     {
-        /** @var $resource \Magento\Framework\App\ResourceConnection */
-        $resource = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\App\ResourceConnection::class);
+        /** @var $resource ResourceConnection */
+        $resource = Bootstrap::getObjectManager()
+            ->get(ResourceConnection::class);
         return $resource->getConnection($connectionName);
     }
 
     /**
-     * Retrieve clean instance of transaction event parameter
+     * Start transaction and fire 'startTransaction' event
      *
-     * @return \Magento\TestFramework\Event\Param\Transaction
+     * @param TestCase $test
+     * @SuppressWarnings(PHPMD.UnusedLocalVariable)
      */
-    protected function _getEventParam()
+    protected function _startTransaction(TestCase $test)
     {
-        /* reset object state instead of instantiating new object over and over again */
-        if (!$this->_eventParam) {
-            $this->_eventParam = new \Magento\TestFramework\Event\Param\Transaction();
-        } else {
-            $this->_eventParam->__construct();
+        if (!$this->_isTransactionActive) {
+            $this->_getConnection()->beginTransparentTransaction();
+            $this->_isTransactionActive = true;
+            try {
+                /**
+                 * Add any warning during transaction execution as a failure.
+                 */
+                set_error_handler(
+                    function ($errNo, $errStr, $errFile, $errLine) use ($test) {
+                        $errMsg = sprintf("%s: %s in %s:%s.", "Warning", $errStr, $errFile, $errLine);
+                        $test->getTestResultObject()->addError($test, new Warning($errMsg), 0);
+
+                        // Allow error to be handled by next error handler
+                        return false;
+                    },
+                    E_WARNING
+                );
+                $this->_eventManager->fireEvent('startTransaction', [$test]);
+                restore_error_handler();
+            } catch (Exception $e) {
+                $test->getTestResultObject()->addFailure(
+                    $test,
+                    new AssertionFailedError((string)$e),
+                    0
+                );
+            }
         }
-        return $this->_eventParam;
+    }
+
+    /**
+     * Handler for 'endTest' event
+     *
+     * @param TestCase $test
+     */
+    public function endTest(TestCase $test)
+    {
+        $this->_processTransactionRequests('endTest', $test);
+    }
+
+    /**
+     * Handler for 'endTestSuite' event
+     */
+    public function endTestSuite()
+    {
+        $this->_rollbackTransaction();
     }
 }

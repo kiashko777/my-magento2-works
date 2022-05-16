@@ -11,6 +11,7 @@ use Magento\Backend\Model\Session\Quote;
 use Magento\Catalog\Model\ProductRepository;
 use Magento\Framework\View\LayoutInterface;
 use Magento\Quote\Model\QuoteRepository;
+use Magento\Sales\Model\AdminOrder\Create;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 use PHPUnit\Framework\TestCase;
@@ -36,30 +37,6 @@ class CartTest extends TestCase
 
     /** @var ProductRepository */
     private $productRepository;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Cart::class);
-        $this->session = $this->objectManager->get(Quote::class);
-        $this->productRepository = $this->objectManager->get(ProductRepository::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->session->clearStorage();
-        $this->objectManager->removeSharedInstance(\Magento\Sales\Model\AdminOrder\Create::class, true);
-        $this->objectManager->removeSharedInstance(QuoteRepository::class);
-        parent::tearDown();
-    }
 
     /**
      * @magentoDataFixture Magento/Checkout/_files/quote_with_customer_without_address.php
@@ -100,5 +77,29 @@ class CartTest extends TestCase
         $this->assertStringContainsString('84.00', $customPrice);
         $price = $this->block->getItemPrice($this->productRepository->get('custom-design-simple-product'));
         $this->assertStringContainsString('70.00', $price);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Cart::class);
+        $this->session = $this->objectManager->get(Quote::class);
+        $this->productRepository = $this->objectManager->get(ProductRepository::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->session->clearStorage();
+        $this->objectManager->removeSharedInstance(Create::class, true);
+        $this->objectManager->removeSharedInstance(QuoteRepository::class);
+        parent::tearDown();
     }
 }

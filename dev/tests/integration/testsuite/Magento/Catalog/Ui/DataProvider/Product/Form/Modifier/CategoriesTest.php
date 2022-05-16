@@ -7,7 +7,10 @@
 namespace Magento\Catalog\Ui\DataProvider\Product\Form\Modifier;
 
 use Magento\Catalog\Model\Product;
-use Magento\TestFramework\Helper\CacheCleaner;
+use Magento\Framework\Registry;
+use Magento\Store\Model\Store;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
@@ -15,25 +18,12 @@ use Magento\TestFramework\Helper\CacheCleaner;
  * @magentoDbIsolation enabled
  * @magentoAppIsolation enabled
  */
-class CategoriesTest extends \PHPUnit\Framework\TestCase
+class CategoriesTest extends TestCase
 {
     /**
      * @var Categories
      */
     private $object;
-
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $registry = $objectManager->get(\Magento\Framework\Registry::class);
-        /** @var $store \Magento\Store\Model\Store */
-        $store = $objectManager->create(\Magento\Store\Model\Store::class);
-        $store->load('admin');
-        $registry->register('current_store', $store);
-        $product = $objectManager->create(Product::class);
-        $registry->register('current_product', $product);
-        $this->object = $objectManager->create(Categories::class);
-    }
 
     public function testModifyMeta()
     {
@@ -48,5 +38,18 @@ class CategoriesTest extends \PHPUnit\Framework\TestCase
     {
         $categoriesElement = $meta['product-details']['children']['container_category_ids']['children']['category_ids'];
         $this->assertEquals($expectedCategories, $categoriesElement['arguments']['data']['config']['options']);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $registry = $objectManager->get(Registry::class);
+        /** @var $store Store */
+        $store = $objectManager->create(Store::class);
+        $store->load('admin');
+        $registry->register('current_store', $store);
+        $product = $objectManager->create(Product::class);
+        $registry->register('current_product', $product);
+        $this->object = $objectManager->create(Categories::class);
     }
 }

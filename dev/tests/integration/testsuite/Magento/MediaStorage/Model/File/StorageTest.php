@@ -3,11 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\MediaStorage\Model\File;
 
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Filesystem;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class StorageTest extends \PHPUnit\Framework\TestCase
+class StorageTest extends TestCase
 {
     /**
      * test for \Magento\MediaStorage\Model\File\Storage::getScriptConfig()
@@ -16,16 +20,16 @@ class StorageTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetScriptConfig()
     {
-        $config = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\MediaStorage\Model\File\Storage::class
+        $config = Bootstrap::getObjectManager()->create(
+            Storage::class
         )->getScriptConfig();
         $this->assertIsArray($config);
         $this->assertArrayHasKey('media_directory', $config);
         $this->assertArrayHasKey('allowed_resources', $config);
         $this->assertArrayHasKey('update_time', $config);
-        /** @var \Magento\Framework\Filesystem $filesystem */
-        $filesystem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\Filesystem::class
+        /** @var Filesystem $filesystem */
+        $filesystem = Bootstrap::getObjectManager()->get(
+            Filesystem::class
         );
         $this->assertEquals(
             $filesystem->getDirectoryRead(DirectoryList::MEDIA)->getAbsolutePath(),

@@ -22,16 +22,6 @@ class RemoveFixtureTest extends AbstractOverridesTest
     private $config;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->config = $this->objectManager->get(ScopeConfigInterface::class);
-    }
-
-    /**
      * Checks that fixture can be removed in test class node
      *
      * @magentoConfigFixture current_store test_section/test_group/field_1 new_value
@@ -105,5 +95,15 @@ class RemoveFixtureTest extends AbstractOverridesTest
     {
         $value = $this->config->getValue('test_section/test_group/field_3', ScopeInterface::SCOPE_WEBSITES, 'base');
         $this->assertEquals('3rd field website scope default value', $value);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->config = $this->objectManager->get(ScopeConfigInterface::class);
     }
 }

@@ -23,8 +23,10 @@ define([
 
     function createLogger() {
         entryHandler = {
-            show: function () {},
-            dump: function () {}
+            show: function () {
+            },
+            dump: function () {
+            }
         };
 
         entryFactory = {

@@ -19,15 +19,15 @@ class FixtureModelTest extends TestCase
      */
     private $model;
 
-    protected function setUp(): void
-    {
-        $reindexCommandMock = $this->createMock(IndexerReindexCommand::class);
-        $this->model = new FixtureModel($reindexCommandMock);
-    }
-
     public function testReindex()
     {
         $outputMock = $this->getMockForAbstractClass(OutputInterface::class);
         $this->model->reindex($outputMock);
+    }
+
+    protected function setUp(): void
+    {
+        $reindexCommandMock = $this->createMock(IndexerReindexCommand::class);
+        $this->model = new FixtureModel($reindexCommandMock);
     }
 }

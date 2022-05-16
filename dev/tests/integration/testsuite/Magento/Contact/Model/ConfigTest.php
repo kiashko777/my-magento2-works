@@ -7,18 +7,14 @@
 namespace Magento\Contact\Model;
 
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class ConfigTest extends \PHPUnit\Framework\TestCase
+class ConfigTest extends TestCase
 {
     /**
      * @var ConfigInterface
      */
     private $configModel;
-
-    protected function setUp(): void
-    {
-        $this->configModel = Bootstrap::getObjectManager()->create(\Magento\Contact\Model\ConfigInterface::class);
-    }
 
     /**
      * @magentoAppArea frontend
@@ -38,5 +34,10 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
     public function testIsNotEnabled()
     {
         $this->assertFalse($this->configModel->isEnabled());
+    }
+
+    protected function setUp(): void
+    {
+        $this->configModel = Bootstrap::getObjectManager()->create(ConfigInterface::class);
     }
 }

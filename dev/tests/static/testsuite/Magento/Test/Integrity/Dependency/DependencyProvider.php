@@ -10,8 +10,8 @@ namespace Magento\Test\Integrity\Dependency;
 
 use Magento\Framework\App\Utility\Files;
 use Magento\Framework\Component\ComponentRegistrar;
-use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Config\Composer\Package;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\TestFramework\Inspection\Exception as InspectionException;
 
 class DependencyProvider
@@ -68,24 +68,6 @@ class DependencyProvider
     }
 
     /**
-     * Retrieve array of dependency items.
-     *
-     * @param $module
-     * @param $type
-     * @param $mapType
-     * @return array
-     * @throws LocalizedException
-     * @throws InspectionException
-     */
-    public function getDeclaredDependencies(string $module, string $type, string $mapType): array
-    {
-        if (!$this->isInited) {
-            $this->initDeclaredDependencies();
-        }
-        return $this->mapDependencies[$module][$type][$mapType] ?? [];
-    }
-
-    /**
      * Initialise map of dependencies.
      *
      * @throws InspectionException
@@ -106,31 +88,20 @@ class DependencyProvider
     }
 
     /**
-     * Add dependencies to dependency list.
+     * Read data from json file.
      *
-     * @param string $moduleName
-     * @param array $packageNames
-     * @param string $type
-     *
-     * @return void
+     * @param string $file
+     * @return mixed
      * @throws InspectionException
-     * @throws LocalizedException
      */
-    private function presetDependencies(string $moduleName, array $packageNames, string $type): void
+    private function readJsonFile(string $file, bool $asArray = false)
     {
-        $packageNames = array_filter($packageNames, function ($packageName) {
-            return $this->getModuleName($packageName) ||
-                0 === strpos($packageName, 'magento/') && 'magento/magento-composer-installer' != $packageName;
-        });
-
-        foreach ($packageNames as $packageName) {
-            $this->addDependencies(
-                $moduleName,
-                $type,
-                self::MAP_TYPE_DECLARED,
-                [$this->convertModuleName($packageName)]
-            );
+        $decodedJson = json_decode(file_get_contents($file), $asArray);
+        if (null == $decodedJson) {
+            throw new InspectionException("Invalid Json: $file");
         }
+
+        return $decodedJson;
     }
 
     /**
@@ -160,23 +131,6 @@ class DependencyProvider
         }
 
         return $moduleName;
-    }
-
-    /**
-     * Read data from json file.
-     *
-     * @param string $file
-     * @return mixed
-     * @throws InspectionException
-     */
-    private function readJsonFile(string $file, bool $asArray = false)
-    {
-        $decodedJson = json_decode(file_get_contents($file), $asArray);
-        if (null == $decodedJson) {
-            throw new InspectionException("Invalid Json: $file");
-        }
-
-        return $decodedJson;
     }
 
     /**
@@ -217,5 +171,51 @@ class DependencyProvider
         }
 
         return $this->packageModuleMapping;
+    }
+
+    /**
+     * Add dependencies to dependency list.
+     *
+     * @param string $moduleName
+     * @param array $packageNames
+     * @param string $type
+     *
+     * @return void
+     * @throws InspectionException
+     * @throws LocalizedException
+     */
+    private function presetDependencies(string $moduleName, array $packageNames, string $type): void
+    {
+        $packageNames = array_filter($packageNames, function ($packageName) {
+            return $this->getModuleName($packageName) ||
+                0 === strpos($packageName, 'magento/') && 'magento/magento-composer-installer' != $packageName;
+        });
+
+        foreach ($packageNames as $packageName) {
+            $this->addDependencies(
+                $moduleName,
+                $type,
+                self::MAP_TYPE_DECLARED,
+                [$this->convertModuleName($packageName)]
+            );
+        }
+    }
+
+    /**
+     * Retrieve array of dependency items.
+     *
+     * @param $module
+     * @param $type
+     * @param $mapType
+     * @return array
+     * @throws LocalizedException
+     * @throws InspectionException
+     */
+    public function getDeclaredDependencies(string $module, string $type, string $mapType): array
+    {
+        if (!$this->isInited) {
+            $this->initDeclaredDependencies();
+        }
+        return $this->mapDependencies[$module][$type][$mapType] ?? [];
     }
 }

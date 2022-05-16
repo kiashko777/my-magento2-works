@@ -3,33 +3,30 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\BundleImportExport\Model\Export;
+
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\ResourceModel\Product\Collection;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Store\Model\Store;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class RowCustomizerTest extends \PHPUnit\Framework\TestCase
+class RowCustomizerTest extends TestCase
 {
     /**
-     * @var \Magento\BundleImportExport\Model\Export\RowCustomizer
+     * @var RowCustomizer
      */
     private $model;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->model = $this->objectManager->create(
-            \Magento\BundleImportExport\Model\Export\RowCustomizer::class
-        );
-    }
 
     /**
      * @magentoDataFixture Magento/Bundle/_files/product.php
@@ -42,8 +39,8 @@ class RowCustomizerTest extends \PHPUnit\Framework\TestCase
         $parsedAdditionalAttributes = 'text_attribute=!@#$%^&*()_+1234567890-=|\\:;"\'<,>.?/'
             . ',text_attribute2=,';
         $allAdditionalAttributes = $parsedAdditionalAttributes . ',weight_type=0,price_type=1';
-        /** @var \Magento\Catalog\Model\ResourceModel\Product\Collection $collection */
-        $collection = $this->objectManager->get(\Magento\Catalog\Model\ResourceModel\Product\Collection::class);
+        /** @var Collection $collection */
+        $collection = $this->objectManager->get(Collection::class);
         $select = $collection->getConnection()->select()
             ->from(['p' => $collection->getTable('catalog_product_entity')], ['sku', 'entity_id'])
             ->where('sku IN(?)', ['simple', 'custom-design-simple-product', 'bundle-product']);
@@ -80,12 +77,12 @@ class RowCustomizerTest extends \PHPUnit\Framework\TestCase
         $parsedAdditionalAttributes = 'text_attribute=!@#$%^&*()_+1234567890-=|\\:;"\'<,>.?/'
             . ',text_attribute2=,';
         $allAdditionalAttributes = $parsedAdditionalAttributes . ',weight_type=0,price_type=1';
-        $collection = $this->objectManager->get(\Magento\Catalog\Model\ResourceModel\Product\Collection::class);
-        /** @var \Magento\Store\Model\Store $store */
-        $store = $this->objectManager->create(\Magento\Store\Model\Store::class);
+        $collection = $this->objectManager->get(Collection::class);
+        /** @var Store $store */
+        $store = $this->objectManager->create(Store::class);
         $store->load($storeCode, 'code');
-        /** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-        $productRepository = $this->objectManager->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
         $product = $productRepository->get('bundle-product', 1, $store->getId());
 
         $extension = $product->getExtensionAttributes();
@@ -113,5 +110,16 @@ class RowCustomizerTest extends \PHPUnit\Framework\TestCase
         ];
 
         self::assertSame($expectedNames, $actualNames);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->model = $this->objectManager->create(
+            RowCustomizer::class
+        );
     }
 }

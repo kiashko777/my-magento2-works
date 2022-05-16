@@ -7,7 +7,8 @@
  * See COPYING.txt for license details.
  */
 -->
-<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Indexer/etc/indexer_merged.xsd">
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Indexer/etc/indexer_merged.xsd">
     <indexer id="indexer_0" view_id="catalogsearch_fulltext" class="NotAClass">
         <title translate="true">Test Indexer Declaration</title>
         <description translate="true">Invalid provider attribute value</description>
@@ -29,14 +30,15 @@
         <title translate="true">Test Indexer Declaration</title>
         <description translate="true">Invalid handler attribute value</description>
         <fieldset source="Collection" provider="Magento\Framework\Search\Index\Fieldset\Default" name="default">
-            <field name="visibility" handler="Magento\Framework\Search\Index\Field\Handler\Class" xsi:type="filterable" dataType="int" />
+            <field name="visibility" handler="Magento\Framework\Search\Index\Field\Handler\Class" xsi:type="filterable"
+                   dataType="int"/>
         </fieldset>
     </indexer>
     <indexer id="indexer_2" view_id="catalogsearch_fulltext_2" class="Magento\CatalogSearch\Model\Indexer\Fulltext">
         <title translate="true">Test Indexer Declaration</title>
         <description translate="true">Duplicate field declaration</description>
         <fieldset source="Collection" provider="Magento\Framework\Search\Index\Fieldset\Default" name="default">
-            <field name="visibility" handler="defaultHandler" xsi:type="filterable" dataType="int" />
+            <field name="visibility" handler="defaultHandler" xsi:type="filterable" dataType="int"/>
             <field name="visibility" handler="defaultHandler">
                 <filter class="Magento\Framework\Search\Index\Filter\StopWordsFilter"/>
             </field>

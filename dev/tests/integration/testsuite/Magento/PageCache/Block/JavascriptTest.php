@@ -6,35 +6,39 @@
 
 namespace Magento\PageCache\Block;
 
+use Magento\Framework\App\RequestInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
 /**
  * Test for \Magento\PageCache\Block\Javascript
  */
-class JavascriptTest extends \PHPUnit\Framework\TestCase
+class JavascriptTest extends TestCase
 {
     /**
-     * @var \Magento\PageCache\Block\Javascript
+     * @var Javascript
      */
     protected $javascript;
 
     /**
-     * @var \Magento\Framework\App\RequestInterface
+     * @var RequestInterface
      */
     protected $request;
-
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-
-        $this->request = $objectManager->get(\Magento\Framework\App\RequestInterface::class);
-
-        $this->javascript = $objectManager->create(
-            \Magento\PageCache\Block\Javascript::class
-        );
-    }
 
     public function testGetScriptOptions()
     {
         $this->request->getQuery()->set('getparameter', 1);
         $this->assertStringContainsString('?getparameter=1', $this->javascript->getScriptOptions());
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+
+        $this->request = $objectManager->get(RequestInterface::class);
+
+        $this->javascript = $objectManager->create(
+            Javascript::class
+        );
     }
 }

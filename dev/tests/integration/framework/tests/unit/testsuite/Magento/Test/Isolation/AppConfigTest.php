@@ -7,42 +7,46 @@
 /**
  * Test class for \Magento\TestFramework\Isolation\WorkingDirectory.
  */
+
 namespace Magento\Test\Isolation;
 
-use Magento\Framework\ObjectManagerInterface;
-use Magento\TestFramework\ObjectManager;
+use Magento\TestFramework\App\Config;
+use Magento\TestFramework\Isolation\AppConfig;
+use Magento\TestFramework\Isolation\WorkingDirectory;
+use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
-class AppConfigTest extends \PHPUnit\Framework\TestCase
+class AppConfigTest extends TestCase
 {
     /**
-     * @var \Magento\TestFramework\Isolation\WorkingDirectory
+     * @var WorkingDirectory
      */
     private $model;
 
-    protected function setUp(): void
-    {
-        $this->model = new \Magento\TestFramework\Isolation\AppConfig();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->model = null;
-    }
-
     public function testStartTestEndTest()
     {
-        $test = $this->getMockBuilder(\PHPUnit\Framework\TestCase::class)
+        $test = $this->getMockBuilder(TestCase::class)
             ->disableOriginalConstructor()
             ->getMock();
-        $modelReflection = new \ReflectionClass($this->model);
+        $modelReflection = new ReflectionClass($this->model);
         $testAppConfigProperty = $modelReflection->getProperty('testAppConfig');
         $testAppConfigProperty->setAccessible(true);
-        $testAppConfigMock = $this->getMockBuilder(\Magento\TestFramework\App\Config::class)
+        $testAppConfigMock = $this->getMockBuilder(Config::class)
             ->disableOriginalConstructor()
             ->getMock();
         $testAppConfigProperty->setValue($this->model, $testAppConfigMock);
         $testAppConfigMock->expects($this->once())
             ->method('clean');
         $this->model->startTest($test);
+    }
+
+    protected function setUp(): void
+    {
+        $this->model = new AppConfig();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->model = null;
     }
 }

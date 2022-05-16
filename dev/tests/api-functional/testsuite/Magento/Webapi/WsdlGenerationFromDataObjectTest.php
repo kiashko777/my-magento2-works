@@ -6,12 +6,17 @@
 
 namespace Magento\Webapi;
 
+use DOMDocument;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Authentication\OauthHelper;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\Webapi\Adapter\Soap;
+use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
  * Test WSDL generation mechanisms.
  */
-class WsdlGenerationFromDataObjectTest extends \Magento\TestFramework\TestCase\WebapiAbstract
+class WsdlGenerationFromDataObjectTest extends WebapiAbstract
 {
     /** @var string */
     protected $_baseUrl = TESTS_BASE_URL;
@@ -24,14 +29,6 @@ class WsdlGenerationFromDataObjectTest extends \Magento\TestFramework\TestCase\W
 
     /** @var bool */
     protected $isSingleService;
-
-    protected function setUp(): void
-    {
-        $this->_markTestAsSoapOnly("WSDL generation tests are intended to be executed for SOAP adapter only.");
-        $this->_storeCode = Bootstrap::getObjectManager()->get(\Magento\Store\Model\StoreManagerInterface::class)
-            ->getStore()->getCode();
-        parent::setUp();
-    }
 
     public function testMultiServiceWsdl()
     {
@@ -49,42 +46,17 @@ class WsdlGenerationFromDataObjectTest extends \Magento\TestFramework\TestCase\W
         $this->_checkFaultsDeclaration($wsdlContent);
     }
 
-    public function testSingleServiceWsdl()
+    /**
+     * Generate base WSDL URL (without any services specified)
+     *
+     * @return string
+     */
+    protected function _getBaseWsdlUrl()
     {
-        $this->_soapUrl = "{$this->_baseUrl}/soap/{$this->_storeCode}?services=testModule5AllSoapAndRestV2";
-        $wsdlUrl = $this->_getBaseWsdlUrl() . 'testModule5AllSoapAndRestV2';
-        $wsdlContent = $this->_convertXmlToString($this->_getWsdlContent($wsdlUrl));
-        $this->isSingleService = true;
-
-        $this->_checkTypesDeclaration($wsdlContent);
-        $this->_checkPortTypeDeclaration($wsdlContent);
-        $this->_checkBindingDeclaration($wsdlContent);
-        $this->_checkServiceDeclaration($wsdlContent);
-        $this->_checkMessagesDeclaration($wsdlContent);
-        $this->_checkFaultsDeclaration($wsdlContent);
-    }
-
-    public function testNoAuthorizedServices()
-    {
-        $wsdlUrl = $this->_getBaseWsdlUrl() . 'testModule5AllSoapAndRestV2';
-        $connection = curl_init($wsdlUrl);
-        curl_setopt($connection, CURLOPT_RETURNTRANSFER, 1);
-        $responseContent = curl_exec($connection);
-        $this->assertEquals(curl_getinfo($connection, CURLINFO_HTTP_CODE), 401);
-        $this->assertStringContainsString("The consumer isn't authorized to access %resources.", $responseContent);
-    }
-
-    public function testInvalidWsdlUrlNoServices()
-    {
-        $responseContent = $this->_getWsdlContent($this->_getBaseWsdlUrl());
-        $this->assertStringContainsString("Requested services are missing.", $responseContent);
-    }
-
-    public function testInvalidWsdlUrlInvalidParameter()
-    {
-        $wsdlUrl = $this->_getBaseWsdlUrl() . '&invalid';
-        $responseContent = $this->_getWsdlContent($wsdlUrl);
-        $this->assertStringContainsString("Not allowed parameters", $responseContent);
+        /** @var Soap $soapAdapter */
+        $soapAdapter = $this->_getWebApiAdapter(self::ADAPTER_SOAP);
+        $wsdlUrl = $soapAdapter->generateWsdlUrl([]);
+        return $wsdlUrl;
     }
 
     /**
@@ -106,30 +78,17 @@ class WsdlGenerationFromDataObjectTest extends \Magento\TestFramework\TestCase\W
      */
     protected function _getWsdlContent($wsdlUrl)
     {
-        $accessCredentials = \Magento\TestFramework\Authentication\OauthHelper::getApiAccessCredentials()['key'];
+        $accessCredentials = OauthHelper::getApiAccessCredentials()['key'];
         $connection = curl_init($wsdlUrl);
         curl_setopt($connection, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($connection, CURLOPT_HTTPHEADER, ['header' => "Authorization: Bearer " . $accessCredentials]);
         $responseContent = curl_exec($connection);
-        $responseDom = new \DOMDocument();
+        $responseDom = new DOMDocument();
         $this->assertTrue(
             $responseDom->loadXML($responseContent),
             "Valid XML is always expected as a response for WSDL request."
         );
         return $responseDom->saveXML();
-    }
-
-    /**
-     * Generate base WSDL URL (without any services specified)
-     *
-     * @return string
-     */
-    protected function _getBaseWsdlUrl()
-    {
-        /** @var \Magento\TestFramework\TestCase\Webapi\Adapter\Soap $soapAdapter */
-        $soapAdapter = $this->_getWebApiAdapter(self::ADAPTER_SOAP);
-        $wsdlUrl = $soapAdapter->generateWsdlUrl([]);
-        return $wsdlUrl;
     }
 
     /**
@@ -979,5 +938,51 @@ WRAPPED_ERRORS_COMPLEX_TYPE;
             $wsdlContent,
             'Details wrapped errors (array of wrapped errors) complex types declaration is invalid.'
         );
+    }
+
+    public function testSingleServiceWsdl()
+    {
+        $this->_soapUrl = "{$this->_baseUrl}/soap/{$this->_storeCode}?services=testModule5AllSoapAndRestV2";
+        $wsdlUrl = $this->_getBaseWsdlUrl() . 'testModule5AllSoapAndRestV2';
+        $wsdlContent = $this->_convertXmlToString($this->_getWsdlContent($wsdlUrl));
+        $this->isSingleService = true;
+
+        $this->_checkTypesDeclaration($wsdlContent);
+        $this->_checkPortTypeDeclaration($wsdlContent);
+        $this->_checkBindingDeclaration($wsdlContent);
+        $this->_checkServiceDeclaration($wsdlContent);
+        $this->_checkMessagesDeclaration($wsdlContent);
+        $this->_checkFaultsDeclaration($wsdlContent);
+    }
+
+    public function testNoAuthorizedServices()
+    {
+        $wsdlUrl = $this->_getBaseWsdlUrl() . 'testModule5AllSoapAndRestV2';
+        $connection = curl_init($wsdlUrl);
+        curl_setopt($connection, CURLOPT_RETURNTRANSFER, 1);
+        $responseContent = curl_exec($connection);
+        $this->assertEquals(curl_getinfo($connection, CURLINFO_HTTP_CODE), 401);
+        $this->assertStringContainsString("The consumer isn't authorized to access %resources.", $responseContent);
+    }
+
+    public function testInvalidWsdlUrlNoServices()
+    {
+        $responseContent = $this->_getWsdlContent($this->_getBaseWsdlUrl());
+        $this->assertStringContainsString("Requested services are missing.", $responseContent);
+    }
+
+    public function testInvalidWsdlUrlInvalidParameter()
+    {
+        $wsdlUrl = $this->_getBaseWsdlUrl() . '&invalid';
+        $responseContent = $this->_getWsdlContent($wsdlUrl);
+        $this->assertStringContainsString("Not allowed parameters", $responseContent);
+    }
+
+    protected function setUp(): void
+    {
+        $this->_markTestAsSoapOnly("WSDL generation tests are intended to be executed for SOAP adapter only.");
+        $this->_storeCode = Bootstrap::getObjectManager()->get(StoreManagerInterface::class)
+            ->getStore()->getCode();
+        parent::setUp();
     }
 }

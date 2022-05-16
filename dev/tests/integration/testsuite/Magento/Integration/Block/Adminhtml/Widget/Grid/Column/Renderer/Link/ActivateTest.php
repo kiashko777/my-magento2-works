@@ -4,31 +4,24 @@
  * See COPYING.txt for license details.
  *
  */
+
 namespace Magento\Integration\Block\Adminhtml\Widget\Grid\Column\Renderer\Link;
 
+use Magento\Backend\Block\Widget\Grid\Column;
 use Magento\Integration\Model\Integration;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  * @magentoDataFixture Magento/Integration/_files/integration_all_permissions.php
  */
-class ActivateTest extends \PHPUnit\Framework\TestCase
+class ActivateTest extends TestCase
 {
     /**
-     * @var \Magento\Integration\Block\Adminhtml\Widget\Grid\Column\Renderer\Link\Activate
+     * @var Activate
      */
     protected $activateLinkBlock;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->activateLinkBlock = $objectManager->create(
-            \Magento\Integration\Block\Adminhtml\Widget\Grid\Column\Renderer\Link\Activate::class
-        );
-        $column = $objectManager->create(\Magento\Backend\Block\Widget\Grid\Column::class);
-        $this->activateLinkBlock->setColumn($column);
-    }
 
     public function testRenderActivate()
     {
@@ -42,6 +35,17 @@ class ActivateTest extends \PHPUnit\Framework\TestCase
         $this->assertStringContainsString('data-row-is-token-exchange="0"', $buttonHtml);
         $this->assertStringContainsString('onclick="integration.popup.show(this);', $buttonHtml);
         $this->assertStringContainsString('>Activate</a>', $buttonHtml);
+    }
+
+    /**
+     * @return Integration
+     */
+    protected function getFixtureIntegration()
+    {
+        /** @var $integration Integration */
+        $objectManager = Bootstrap::getObjectManager();
+        $integration = $objectManager->create(Integration::class);
+        return $integration->load('Fixture Integration', 'name');
     }
 
     public function testRenderReauthorize()
@@ -92,14 +96,14 @@ class ActivateTest extends \PHPUnit\Framework\TestCase
         ];
     }
 
-    /**
-     * @return Integration
-     */
-    protected function getFixtureIntegration()
+    protected function setUp(): void
     {
-        /** @var $integration Integration */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $integration = $objectManager->create(\Magento\Integration\Model\Integration::class);
-        return $integration->load('Fixture Integration', 'name');
+        parent::setUp();
+        $objectManager = Bootstrap::getObjectManager();
+        $this->activateLinkBlock = $objectManager->create(
+            Activate::class
+        );
+        $column = $objectManager->create(Column::class);
+        $this->activateLinkBlock->setColumn($column);
     }
 }

@@ -6,26 +6,28 @@
 
 namespace Magento\Setup\Console\Command;
 
+use Magento\Backend\Setup\ConfigOptionsList as BackendConfigOptionsList;
+use Magento\Framework\App\DeploymentConfig;
+use Magento\Framework\Console\Cli;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Command\Command;
-use \Magento\Backend\Setup\ConfigOptionsList as BackendConfigOptionsList;
 
 class InfoAdminUriCommand extends Command
 {
     /**
-     * @var \Magento\Framework\App\DeploymentConfig
+     * @var DeploymentConfig
      */
     private $deploymentConfig;
 
     /**
      * Constructor
      *
-     * @param \Magento\Framework\App\DeploymentConfig $deploymentConfig
+     * @param DeploymentConfig $deploymentConfig
      *
      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
      */
-    public function __construct(\Magento\Framework\App\DeploymentConfig $deploymentConfig)
+    public function __construct(DeploymentConfig $deploymentConfig)
     {
         $this->deploymentConfig = $deploymentConfig;
         parent::__construct();
@@ -53,6 +55,6 @@ class InfoAdminUriCommand extends Command
             . $this->deploymentConfig->get(BackendConfigOptionsList::CONFIG_PATH_BACKEND_FRONTNAME)
             . "\n"
         );
-        return \Magento\Framework\Console\Cli::RETURN_SUCCESS;
+        return Cli::RETURN_SUCCESS;
     }
 }

@@ -13,7 +13,9 @@ use Magento\Framework\App\Http\Context;
 use Magento\Framework\App\Response\RedirectInterface;
 use Magento\Framework\Encryption\UrlCoder;
 use Magento\Framework\Interception\InterceptorInterface;
+use Magento\Store\Api\Data\StoreInterfaceFactory;
 use Magento\Store\Api\StoreResolverInterface;
+use Magento\Store\Model\ResourceModel\Store as StoreResource;
 use Magento\Store\Model\Store;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\Store\Model\StoreSwitcher\ContextInterface;
@@ -24,8 +26,6 @@ use Magento\Store\Model\StoreSwitcher\RedirectDataPreprocessorInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\AbstractController;
 use PHPUnit\Framework\MockObject\MockObject;
-use Magento\Store\Api\Data\StoreInterfaceFactory;
-use Magento\Store\Model\ResourceModel\Store as StoreResource;
 
 /**
  * Test for store switch controller.
@@ -70,42 +70,6 @@ class SwitchActionTest extends AbstractController
 
     /** @var StoreInterfaceFactory */
     private $storeFactory;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->preprocessor = $this->_objectManager->get(RedirectDataPreprocessorInterface::class);
-        $this->preprocessorMock = $this->createMock(RedirectDataPreprocessorInterface::class);
-        $this->_objectManager->addSharedInstance($this->preprocessorMock, $this->getClassName($this->preprocessor));
-        $this->postprocessor = $this->_objectManager->get(RedirectDataPostprocessorInterface::class);
-        $this->postprocessorMock = $this->createMock(RedirectDataPostprocessorInterface::class);
-        $this->_objectManager->addSharedInstance($this->postprocessorMock, $this->getClassName($this->postprocessor));
-        $this->redirectDataGenerator = $this->_objectManager->get(RedirectDataGenerator::class);
-        $this->contextFactory = $this->_objectManager->get(ContextInterfaceFactory::class);
-        $this->storeManager = $this->_objectManager->get(StoreManagerInterface::class);
-        $this->urlEncoder = $this->_objectManager->get(UrlCoder::class);
-        $this->redirect = $this->_objectManager->get(RedirectInterface::class);
-        $this->categoryRepository = $this->_objectManager->get(CategoryRepositoryInterface::class);
-        $this->storeResource = $this->_objectManager->get(StoreResource::class);
-        $this->storeFactory = $this->_objectManager->get(StoreInterfaceFactory::class);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    protected function tearDown(): void
-    {
-        if ($this->preprocessor) {
-            $this->_objectManager->addSharedInstance($this->preprocessor, $this->getClassName($this->preprocessor));
-        }
-        if ($this->postprocessor) {
-            $this->_objectManager->addSharedInstance($this->postprocessor, $this->getClassName($this->postprocessor));
-        }
-        parent::tearDown();
-    }
 
     /**
      * @magentoDataFixture Magento/Store/_files/second_store.php
@@ -160,22 +124,6 @@ class SwitchActionTest extends AbstractController
         );
         $this->dispatch('stores/store/switch');
         $this->assertRedirect($this->equalTo('http://localhost/index.php/'));
-    }
-
-    /**
-     * Return class name of the given object
-     *
-     * @param mixed $instance
-     * @return string
-     */
-    private function getClassName($instance): string
-    {
-        if ($instance instanceof InterceptorInterface) {
-            $actionClass = get_parent_class($instance);
-        } else {
-            $actionClass = get_class($instance);
-        }
-        return $actionClass;
     }
 
     /**
@@ -258,5 +206,57 @@ class SwitchActionTest extends AbstractController
         $this->dispatch('stores/store/switch');
         $categorySecond = $this->categoryRepository->get($id, $targetStore->getId());
         $this->assertRedirect($this->stringContains($categorySecond->getUrlKey()));
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->preprocessor = $this->_objectManager->get(RedirectDataPreprocessorInterface::class);
+        $this->preprocessorMock = $this->createMock(RedirectDataPreprocessorInterface::class);
+        $this->_objectManager->addSharedInstance($this->preprocessorMock, $this->getClassName($this->preprocessor));
+        $this->postprocessor = $this->_objectManager->get(RedirectDataPostprocessorInterface::class);
+        $this->postprocessorMock = $this->createMock(RedirectDataPostprocessorInterface::class);
+        $this->_objectManager->addSharedInstance($this->postprocessorMock, $this->getClassName($this->postprocessor));
+        $this->redirectDataGenerator = $this->_objectManager->get(RedirectDataGenerator::class);
+        $this->contextFactory = $this->_objectManager->get(ContextInterfaceFactory::class);
+        $this->storeManager = $this->_objectManager->get(StoreManagerInterface::class);
+        $this->urlEncoder = $this->_objectManager->get(UrlCoder::class);
+        $this->redirect = $this->_objectManager->get(RedirectInterface::class);
+        $this->categoryRepository = $this->_objectManager->get(CategoryRepositoryInterface::class);
+        $this->storeResource = $this->_objectManager->get(StoreResource::class);
+        $this->storeFactory = $this->_objectManager->get(StoreInterfaceFactory::class);
+    }
+
+    /**
+     * Return class name of the given object
+     *
+     * @param mixed $instance
+     * @return string
+     */
+    private function getClassName($instance): string
+    {
+        if ($instance instanceof InterceptorInterface) {
+            $actionClass = get_parent_class($instance);
+        } else {
+            $actionClass = get_class($instance);
+        }
+        return $actionClass;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function tearDown(): void
+    {
+        if ($this->preprocessor) {
+            $this->_objectManager->addSharedInstance($this->preprocessor, $this->getClassName($this->preprocessor));
+        }
+        if ($this->postprocessor) {
+            $this->_objectManager->addSharedInstance($this->postprocessor, $this->getClassName($this->postprocessor));
+        }
+        parent::tearDown();
     }
 }

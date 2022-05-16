@@ -3,12 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\SalesRule\Model\Rule;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/SalesRule/_files/rules_rollback.php');
 
-/** @var \Magento\SalesRule\Model\Rule $rule */
-$rule = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\SalesRule\Model\Rule::class);
+/** @var Rule $rule */
+$rule = Bootstrap::getObjectManager()->create(Rule::class);
 $rule->setName(
     '#1'
 )->setIsActive(
@@ -24,15 +27,15 @@ $rule->setName(
 )->setWebsiteIds(
     '1'
 )
-->setUsesPerCoupon(2)
-->setIsRss(1)
-->setCustomerGroupIds(
-    '0'
-)->setDiscountStep(0)
+    ->setUsesPerCoupon(2)
+    ->setIsRss(1)
+    ->setCustomerGroupIds(
+        '0'
+    )->setDiscountStep(0)
     ->save();
 
-/** @var \Magento\SalesRule\Model\Rule $rule */
-$rule = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\SalesRule\Model\Rule::class);
+/** @var Rule $rule */
+$rule = Bootstrap::getObjectManager()->create(Rule::class);
 $rule->setName(
     '#2'
 )->setIsActive(
@@ -44,19 +47,19 @@ $rule->setName(
 )->setCouponType(
     Magento\SalesRule\Model\Rule::COUPON_TYPE_NO_COUPON
 )
-->setIsRss(1)
-->setUsesPerCoupon(2)
-->setUseAutoGeneration(
-    0
-)->setWebsiteIds(
-    '1'
-)->setCustomerGroupIds(
-    '0'
-)->setDiscountStep(0)
+    ->setIsRss(1)
+    ->setUsesPerCoupon(2)
+    ->setUseAutoGeneration(
+        0
+    )->setWebsiteIds(
+        '1'
+    )->setCustomerGroupIds(
+        '0'
+    )->setDiscountStep(0)
     ->save();
 
-/** @var \Magento\SalesRule\Model\Rule $rule */
-$rule = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\SalesRule\Model\Rule::class);
+/** @var Rule $rule */
+$rule = Bootstrap::getObjectManager()->create(Rule::class);
 $rule->setName(
     '#3'
 )->setIsActive(
@@ -66,19 +69,19 @@ $rule->setName(
 )->setIsAdvanced(
     1
 )
-->setCouponType(
-    Magento\SalesRule\Model\Rule::COUPON_TYPE_SPECIFIC
-)->setUseAutoGeneration(
-    1
-)->setWebsiteIds(
-    '1'
-)->setCustomerGroupIds(
-    '0'
-)->setDiscountStep(0)
+    ->setCouponType(
+        Magento\SalesRule\Model\Rule::COUPON_TYPE_SPECIFIC
+    )->setUseAutoGeneration(
+        1
+    )->setWebsiteIds(
+        '1'
+    )->setCustomerGroupIds(
+        '0'
+    )->setDiscountStep(0)
     ->save();
 
-/** @var \Magento\SalesRule\Model\Rule $rule */
-$rule = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\SalesRule\Model\Rule::class);
+/** @var Rule $rule */
+$rule = Bootstrap::getObjectManager()->create(Rule::class);
 $rule->setName(
     '#4'
 )->setIsActive(
@@ -98,8 +101,8 @@ $rule->setName(
 )->setDiscountStep(0)
     ->save();
 
-/** @var \Magento\SalesRule\Model\Rule $rule */
-$rule = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\SalesRule\Model\Rule::class);
+/** @var Rule $rule */
+$rule = Bootstrap::getObjectManager()->create(Rule::class);
 $rule->setName(
     '#5'
 )->setIsActive(

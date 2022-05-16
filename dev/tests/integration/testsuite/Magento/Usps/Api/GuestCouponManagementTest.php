@@ -45,16 +45,6 @@ class GuestCouponManagementTest extends TestCase
     private $httpClient;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->management = $this->objectManager->get(GuestCouponManagementInterface::class);
-        $this->httpClient = $this->objectManager->get(AsyncClientInterface::class);
-    }
-
-    /**
      * Checks a case when coupon is applied for a guest cart and USPS Priority Mail 1-Day configured as free method.
      *
      * @magentoConfigFixture default_store carriers/usps/active 1
@@ -147,5 +137,15 @@ class GuestCouponManagementTest extends TestCase
             }
         }
         return $result;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->management = $this->objectManager->get(GuestCouponManagementInterface::class);
+        $this->httpClient = $this->objectManager->get(AsyncClientInterface::class);
     }
 }

@@ -6,9 +6,10 @@
 
 namespace Magento\TestFramework\TestCase\GraphQl;
 
-use Magento\TestFramework\TestCase\HttpClient\CurlClient;
-use Magento\TestFramework\Helper\JsonSerializer;
+use Exception;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Helper\JsonSerializer;
+use Magento\TestFramework\TestCase\HttpClient\CurlClient;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -33,9 +34,10 @@ class Client
      * @param JsonSerializer|null $json
      */
     public function __construct(
-        \Magento\TestFramework\TestCase\HttpClient\CurlClient $curlClient = null,
-        \Magento\TestFramework\Helper\JsonSerializer $json = null
-    ) {
+        CurlClient     $curlClient = null,
+        JsonSerializer $json = null
+    )
+    {
         $objectManager = Bootstrap::getObjectManager();
         $this->curlClient = $curlClient ?: $objectManager->get(CurlClient::class);
         $this->json = $json ?: $objectManager->get(JsonSerializer::class);
@@ -49,7 +51,7 @@ class Client
      * @param string $operationName
      * @param array $headers
      * @return array|string|int|float|bool
-     * @throws \Exception
+     * @throws Exception
      */
     public function post(string $query, array $variables = [], string $operationName = '', array $headers = [])
     {
@@ -63,7 +65,7 @@ class Client
         $postData = $this->json->jsonEncode($requestArray);
         try {
             $responseBody = $this->curlClient->post($url, $postData, $headers);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // if response code > 400 then response is the exception message
             $responseBody = $e->getMessage();
         }
@@ -72,32 +74,14 @@ class Client
     }
 
     /**
-     * Perform HTTP GET request for query
+     * Get endpoint url
      *
-     * @param string $query
-     * @param array $variables
-     * @param string $operationName
-     * @param array $headers
-     * @return mixed
-     * @throws \Exception
+     * @return string resource URL
+     * @throws Exception
      */
-    public function get(string $query, array $variables = [], string $operationName = '', array $headers = [])
+    public function getEndpointUrl()
     {
-        $url = $this->getEndpointUrl();
-        $requestArray = [
-            'query' => $query,
-            'variables' => $variables ? $this->json->jsonEncode($variables) : null,
-            'operationName' => $operationName ?? null
-        ];
-        array_filter($requestArray);
-
-        try {
-            $responseBody = $this->curlClient->get($url, $requestArray, $headers);
-        } catch (\Exception $e) {
-            // if response code > 400 then response is the exception message
-            $responseBody = $e->getMessage();
-        }
-        return $this->processResponse($responseBody);
+        return rtrim(TESTS_BASE_URL, '/') . '/graphql';
     }
 
     /**
@@ -105,7 +89,7 @@ class Client
      *
      * @param string $response
      * @return mixed
-     * @throws \Exception
+     * @throws Exception
      */
     private function processResponse(string $response)
     {
@@ -113,54 +97,24 @@ class Client
 
         if (!is_array($responseArray)) {
             //phpcs:ignore Magento2.Exceptions.DirectThrow
-            throw new \Exception('Unknown GraphQL response body: ' . $response);
+            throw new Exception('Unknown GraphQL response body: ' . $response);
         }
 
         $this->processErrors($responseArray);
 
         if (!isset($responseArray['data'])) {
             //phpcs:ignore Magento2.Exceptions.DirectThrow
-            throw new \Exception('Unknown GraphQL response body: ' . $response);
+            throw new Exception('Unknown GraphQL response body: ' . $response);
         }
 
         return $responseArray['data'];
     }
 
     /**
-     * Perform HTTP GET request, return response data and headers
-     *
-     * @param string $query
-     * @param array $variables
-     * @param string $operationName
-     * @param array $headers
-     * @return array
-     */
-    public function getWithResponseHeaders(
-        string $query,
-        array $variables = [],
-        string $operationName = '',
-        array $headers = []
-    ): array {
-        $url = $this->getEndpointUrl();
-        $requestArray = [
-            'query' => $query,
-            'variables' => $variables ? $this->json->jsonEncode($variables) : null,
-            'operationName' => !empty($operationName) ? $operationName : null
-        ];
-        array_filter($requestArray);
-
-        $response = $this->curlClient->getWithFullResponse($url, $requestArray, $headers);
-        $responseBody = $this->processResponse($response['body']);
-        $responseHeaders = !empty($response['header']) ? $this->processResponseHeaders($response['header']) : [];
-
-        return ['headers' => $responseHeaders, 'body' => $responseBody];
-    }
-
-    /**
      * Process errors
      *
      * @param array $responseBodyArray
-     * @throws \Exception
+     * @throws Exception
      */
     private function processErrors($responseBodyArray)
     {
@@ -186,19 +140,68 @@ class Client
                 );
             }
             //phpcs:ignore Magento2.Exceptions.DirectThrow
-            throw new \Exception('GraphQL responded with an unknown error: ' . json_encode($responseBodyArray));
+            throw new Exception('GraphQL responded with an unknown error: ' . json_encode($responseBodyArray));
         }
     }
 
     /**
-     * Get endpoint url
+     * Perform HTTP GET request for query
      *
-     * @return string resource URL
-     * @throws \Exception
+     * @param string $query
+     * @param array $variables
+     * @param string $operationName
+     * @param array $headers
+     * @return mixed
+     * @throws Exception
      */
-    public function getEndpointUrl()
+    public function get(string $query, array $variables = [], string $operationName = '', array $headers = [])
     {
-        return rtrim(TESTS_BASE_URL, '/') . '/graphql';
+        $url = $this->getEndpointUrl();
+        $requestArray = [
+            'query' => $query,
+            'variables' => $variables ? $this->json->jsonEncode($variables) : null,
+            'operationName' => $operationName ?? null
+        ];
+        array_filter($requestArray);
+
+        try {
+            $responseBody = $this->curlClient->get($url, $requestArray, $headers);
+        } catch (Exception $e) {
+            // if response code > 400 then response is the exception message
+            $responseBody = $e->getMessage();
+        }
+        return $this->processResponse($responseBody);
+    }
+
+    /**
+     * Perform HTTP GET request, return response data and headers
+     *
+     * @param string $query
+     * @param array $variables
+     * @param string $operationName
+     * @param array $headers
+     * @return array
+     */
+    public function getWithResponseHeaders(
+        string $query,
+        array  $variables = [],
+        string $operationName = '',
+        array  $headers = []
+    ): array
+    {
+        $url = $this->getEndpointUrl();
+        $requestArray = [
+            'query' => $query,
+            'variables' => $variables ? $this->json->jsonEncode($variables) : null,
+            'operationName' => !empty($operationName) ? $operationName : null
+        ];
+        array_filter($requestArray);
+
+        $response = $this->curlClient->getWithFullResponse($url, $requestArray, $headers);
+        $responseBody = $this->processResponse($response['body']);
+        $responseHeaders = !empty($response['header']) ? $this->processResponseHeaders($response['header']) : [];
+
+        return ['headers' => $responseHeaders, 'body' => $responseBody];
     }
 
     /**

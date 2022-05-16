@@ -3,8 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Ui\Component;
 
+use DOMDocument;
+use DOMElement;
+use DOMNode;
+use DOMXPath;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Component\ComponentFile;
 use Magento\Framework\Component\ComponentRegistrar;
@@ -14,11 +19,12 @@ use Magento\Framework\Filesystem;
 use Magento\Framework\Filesystem\Directory\ReadInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Ui\Config\Reader\DefinitionMap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class ConfigurationTest extends \PHPUnit\Framework\TestCase
+class ConfigurationTest extends TestCase
 {
     /**
      * @var DirSearch
@@ -36,7 +42,7 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
     private $rootDir;
 
     /**
-     * @var \DOMDocument
+     * @var DOMDocument
      */
     private $dom;
 
@@ -64,20 +70,6 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
             '//*[substring(@component, string-length(@component) - string-length("ui-group") +1) = "ui-group"]'
         ]
     ];
-
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $mapReader = $objectManager->create(DefinitionMap::class);
-        $this->map = $mapReader->read();
-
-        $this->dirSearch = $objectManager->create(DirSearch::class);
-
-        /** @var Filesystem $filesystem */
-        $filesystem = $objectManager->create(Filesystem::class);
-        $this->appDir = $filesystem->getDirectoryRead(DirectoryList::APP);
-        $this->rootDir = $filesystem->getDirectoryRead(DirectoryList::ROOT);
-    }
 
     /**
      * @return void
@@ -124,58 +116,6 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
             }
             $this->map[$name]['xpaths'] = $xpaths;
         }
-    }
-
-    /**
-     * @param \DOMNode $node
-     * @param array $result
-     * @return void
-     */
-    private function assertConfigurationSemantic(\DOMNode $node, &$result = [])
-    {
-        foreach ($node->childNodes as $child) {
-            if ($child->nodeType === XML_ELEMENT_NODE) {
-                if (isset($this->map[$child->localName])) {
-                    $xpaths = [];
-                    $this->currentComponent = $child->localName;
-                    if (isset($this->map[$this->currentComponent]['xpaths'])) {
-                        $xpaths = $this->map[$this->currentComponent]['xpaths'];
-                    }
-
-                    $domXpath = new \DOMXPath($this->getDom());
-                    foreach ($xpaths as $xpathData) {
-                        if ($domXpath->query($xpathData['xpath'], $child)->length !== 0
-                            && !$this->isAvailable($xpathData['xpath'], $child)
-                        ) {
-                            $result[] = 'Xpath: "' . $xpathData['xpath'] . '" is a forbidden.' . "\n" .
-                                'This node should migrate to "' . trim($xpathData['target']) . "\"\n" .
-                                'File: ' . $this->currentFile->getFullPath() . "\n";
-                        }
-                    }
-                }
-                $this->assertConfigurationSemantic($child, $result);
-            }
-        }
-    }
-
-    /**
-     * @param string $targetXpath
-     * @param \DOMElement $node
-     * @return bool
-     */
-    private function isAvailable($targetXpath, \DOMElement $node)
-    {
-        $domXpath = new \DOMXPath($this->getDom());
-        if (isset($this->whiteList[$targetXpath])) {
-            $availableForXpath = $this->whiteList[$targetXpath];
-            foreach ($availableForXpath as $xpath) {
-                $result = $domXpath->query($xpath, $node);
-                if ($result->length != 0) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     /**
@@ -255,15 +195,81 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * @param DOMNode $node
+     * @param array $result
+     * @return void
+     */
+    private function assertConfigurationSemantic(DOMNode $node, &$result = [])
+    {
+        foreach ($node->childNodes as $child) {
+            if ($child->nodeType === XML_ELEMENT_NODE) {
+                if (isset($this->map[$child->localName])) {
+                    $xpaths = [];
+                    $this->currentComponent = $child->localName;
+                    if (isset($this->map[$this->currentComponent]['xpaths'])) {
+                        $xpaths = $this->map[$this->currentComponent]['xpaths'];
+                    }
+
+                    $domXpath = new DOMXPath($this->getDom());
+                    foreach ($xpaths as $xpathData) {
+                        if ($domXpath->query($xpathData['xpath'], $child)->length !== 0
+                            && !$this->isAvailable($xpathData['xpath'], $child)
+                        ) {
+                            $result[] = 'Xpath: "' . $xpathData['xpath'] . '" is a forbidden.' . "\n" .
+                                'This node should migrate to "' . trim($xpathData['target']) . "\"\n" .
+                                'File: ' . $this->currentFile->getFullPath() . "\n";
+                        }
+                    }
+                }
+                $this->assertConfigurationSemantic($child, $result);
+            }
+        }
+    }
+
+    /**
      * @param string|null $content
-     * @return \DOMDocument
+     * @return DOMDocument
      */
     private function getDom($content = null)
     {
         if ($content) {
-            $this->dom = new \DOMDocument();
+            $this->dom = new DOMDocument();
             $this->dom->loadXML($content);
         }
         return $this->dom;
+    }
+
+    /**
+     * @param string $targetXpath
+     * @param DOMElement $node
+     * @return bool
+     */
+    private function isAvailable($targetXpath, DOMElement $node)
+    {
+        $domXpath = new DOMXPath($this->getDom());
+        if (isset($this->whiteList[$targetXpath])) {
+            $availableForXpath = $this->whiteList[$targetXpath];
+            foreach ($availableForXpath as $xpath) {
+                $result = $domXpath->query($xpath, $node);
+                if ($result->length != 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $mapReader = $objectManager->create(DefinitionMap::class);
+        $this->map = $mapReader->read();
+
+        $this->dirSearch = $objectManager->create(DirSearch::class);
+
+        /** @var Filesystem $filesystem */
+        $filesystem = $objectManager->create(Filesystem::class);
+        $this->appDir = $filesystem->getDirectoryRead(DirectoryList::APP);
+        $this->rootDir = $filesystem->getDirectoryRead(DirectoryList::ROOT);
     }
 }

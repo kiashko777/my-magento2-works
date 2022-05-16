@@ -16,5 +16,5 @@ $objectManager = Bootstrap::getObjectManager();
 $setup = $objectManager->get(ModuleDataSetupInterface::class);
 /** @var EavSetup $eavSetup */
 $eavSetup = $objectManager->get(EavSetupFactory::class)
-                          ->create(['setup' => $setup]);
+    ->create(['setup' => $setup]);
 $eavSetup->removeAttribute(Product::ENTITY, 'zzz');

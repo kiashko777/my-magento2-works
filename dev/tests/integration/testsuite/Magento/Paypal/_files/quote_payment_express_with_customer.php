@@ -4,10 +4,11 @@
  * See COPYING.txt for license details.
  */
 
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
+use Magento\Quote\Api\CartManagementInterface;
 use Magento\Quote\Model\QuoteFactory;
 use Magento\Quote\Model\ResourceModel\Quote as QuoteResource;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Paypal/_files/quote_express_with_customer.php');
 
@@ -19,6 +20,6 @@ $quote = $quoteFactory->create();
 $quoteResource->load($quote, 'test02', 'reserved_order_id');
 
 $objectManager = Bootstrap::getObjectManager();
-/** @var $service \Magento\Quote\Api\CartManagementInterface */
-$service = $objectManager->create(\Magento\Quote\Api\CartManagementInterface::class);
+/** @var $service CartManagementInterface */
+$service = $objectManager->create(CartManagementInterface::class);
 $order = $service->submit($quote, ['increment_id' => '100000002']);

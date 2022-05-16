@@ -36,29 +36,6 @@ class HistoryTest extends TestCase
     private $orderFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->customerSession = $this->objectManager->get(Session::class);
-        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(History::class);
-        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->customerSession->logout();
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
      *
      * @return void
@@ -81,19 +58,6 @@ class HistoryTest extends TestCase
     {
         $this->customerSession->loginById(1);
         $this->assertCustomerOrderGrid(['100000001'], $this->block->toHtml());
-    }
-
-    /**
-     * @magentoDataFixture Magento/Customer/_files/customer.php
-     * @magentoDataFixture Magento/Sales/_files/orders_with_customer.php
-     *
-     * @return void
-     */
-    public function testCustomerOrderGridWithSomeOrders(): void
-    {
-        $this->customerSession->loginById(1);
-        $ordersToCheck = ['100000002', '100000003', '100000004', '100000005', '100000006'];
-        $this->assertCustomerOrderGrid($ordersToCheck, $this->block->toHtml());
     }
 
     /**
@@ -176,5 +140,41 @@ class HistoryTest extends TestCase
                 sprintf('Reorder button for order #%s wasn\'t found.', $orderIncrementId)
             );
         }
+    }
+
+    /**
+     * @magentoDataFixture Magento/Customer/_files/customer.php
+     * @magentoDataFixture Magento/Sales/_files/orders_with_customer.php
+     *
+     * @return void
+     */
+    public function testCustomerOrderGridWithSomeOrders(): void
+    {
+        $this->customerSession->loginById(1);
+        $ordersToCheck = ['100000002', '100000003', '100000004', '100000005', '100000006'];
+        $this->assertCustomerOrderGrid($ordersToCheck, $this->block->toHtml());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->customerSession = $this->objectManager->get(Session::class);
+        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(History::class);
+        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->customerSession->logout();
+
+        parent::tearDown();
     }
 }

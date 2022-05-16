@@ -7,9 +7,12 @@
 /**
  * Class to test routing based on a Service that exposes subset of operations
  */
+
 namespace Magento\Webapi\Routing;
 
-class SubsetTest extends \Magento\Webapi\Routing\BaseService
+use Magento\Framework\Webapi\Rest\Request;
+
+class SubsetTest extends BaseService
 {
     /**
      * @var string
@@ -28,16 +31,6 @@ class SubsetTest extends \Magento\Webapi\Routing\BaseService
 
     /**
      * @Override
-     */
-    protected function setUp(): void
-    {
-        $this->_version = 'V1';
-        $this->_restResourcePath = "/{$this->_version}/testModule2SubsetRest/";
-        $this->_soapService = 'testModule2SubsetRestV1';
-    }
-
-    /**
-     * @Override
      * Test get item
      */
     public function testItem()
@@ -46,7 +39,7 @@ class SubsetTest extends \Magento\Webapi\Routing\BaseService
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => $this->_restResourcePath . $itemId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => ['service' => $this->_soapService, 'operation' => $this->_soapService . 'Item'],
         ];
@@ -65,12 +58,22 @@ class SubsetTest extends \Magento\Webapi\Routing\BaseService
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => $this->_restResourcePath,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => ['service' => $this->_soapService, 'operation' => $this->_soapService . 'Items'],
         ];
 
         $item = $this->_webApiCall($serviceInfo);
         $this->assertEquals($itemArr, $item, 'Items were not retrieved');
+    }
+
+    /**
+     * @Override
+     */
+    protected function setUp(): void
+    {
+        $this->_version = 'V1';
+        $this->_restResourcePath = "/{$this->_version}/testModule2SubsetRest/";
+        $this->_soapService = 'testModule2SubsetRestV1';
     }
 }

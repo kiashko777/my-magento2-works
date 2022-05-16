@@ -3,9 +3,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Developer\Console\Command;
 
+use FilesystemIterator;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use RegexIterator;
+use SplFileInfo;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -14,7 +22,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  *
  * @see \Magento\Developer\Console\Command\SourceThemeDeployCommand
  */
-class SourceThemeDeployCommandTest extends \PHPUnit\Framework\TestCase
+class SourceThemeDeployCommandTest extends TestCase
 {
     const PUB_STATIC_DIRECTORY = 'pub/static';
 
@@ -42,24 +50,13 @@ class SourceThemeDeployCommandTest extends \PHPUnit\Framework\TestCase
     private $compiledFiles = ['css/styles-m', 'css/styles-l'];
 
     /**
-     * Set up
-     */
-    protected function setUp(): void
-    {
-        global $installDir;
-
-        $this->pubStatic = $installDir . DIRECTORY_SEPARATOR . self::PUB_STATIC_DIRECTORY;
-        $this->command = Bootstrap::getObjectManager()->get(SourceThemeDeployCommand::class);
-    }
-
-    /**
      * Run test for execute method
      */
     public function testExecute()
     {
         $error = [];
 
-        /** @var OutputInterface|\PHPUnit\Framework\MockObject\MockObject $outputMock */
+        /** @var OutputInterface|MockObject $outputMock */
         $outputMock = $this->getMockBuilder(OutputInterface::class)
             ->getMockForAbstractClass();
 
@@ -67,7 +64,7 @@ class SourceThemeDeployCommandTest extends \PHPUnit\Framework\TestCase
 
         $this->command->run($this->getInputMock(), $outputMock);
 
-        /** @var \SplFileInfo $file */
+        /** @var SplFileInfo $file */
         foreach ($this->collectFiles($this->pubStatic) as $file) {
             $fileInfo = pathinfo($file->getFilename());
             if (!in_array('css/' . $fileInfo['filename'], $this->compiledFiles, true)
@@ -88,7 +85,7 @@ class SourceThemeDeployCommandTest extends \PHPUnit\Framework\TestCase
     private function clearStaticDirectory()
     {
         if (is_dir($this->pubStatic)) {
-            /** @var \SplFileInfo $file */
+            /** @var SplFileInfo $file */
             foreach ($this->collectFiles($this->pubStatic) as $file) {
                 @unlink($file->getPathname());
             }
@@ -97,24 +94,24 @@ class SourceThemeDeployCommandTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @param string $path
-     * @return \RegexIterator|array
+     * @return RegexIterator|array
      */
     private function collectFiles($path)
     {
-        $flags = \FilesystemIterator::CURRENT_AS_FILEINFO
-            | \FilesystemIterator::SKIP_DOTS;
-        $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path, $flags));
+        $flags = FilesystemIterator::CURRENT_AS_FILEINFO
+            | FilesystemIterator::SKIP_DOTS;
+        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path, $flags));
 
-        return new \RegexIterator(
+        return new RegexIterator(
             $iterator,
             '#\.less$#',
-            \RegexIterator::MATCH,
-            \RegexIterator::USE_KEY
+            RegexIterator::MATCH,
+            RegexIterator::USE_KEY
         );
     }
 
     /**
-     * @return InputInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @return InputInterface|MockObject
      */
     private function getInputMock()
     {
@@ -137,5 +134,16 @@ class SourceThemeDeployCommandTest extends \PHPUnit\Framework\TestCase
             ->willReturn($this->compiledFiles);
 
         return $inputMock;
+    }
+
+    /**
+     * Set up
+     */
+    protected function setUp(): void
+    {
+        global $installDir;
+
+        $this->pubStatic = $installDir . DIRECTORY_SEPARATOR . self::PUB_STATIC_DIRECTORY;
+        $this->command = Bootstrap::getObjectManager()->get(SourceThemeDeployCommand::class);
     }
 }

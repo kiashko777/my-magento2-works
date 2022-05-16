@@ -25,12 +25,6 @@ class GenerateFixturesCommandTest extends TestCase
      */
     private $command;
 
-    protected function setUp(): void
-    {
-        $this->fixtureModel = $this->createMock(FixtureModel::class);
-        $this->command = new GenerateFixturesCommand($this->fixtureModel);
-    }
-
     public function testExecute()
     {
         $this->fixtureModel->expects($this->once())->method('loadConfig')->with('path_to_profile.xml');
@@ -55,5 +49,11 @@ class GenerateFixturesCommandTest extends TestCase
 
         $commandTester = new CommandTester($this->command);
         $commandTester->execute(['profile' => 'path_to_profile.xml', '--skip-reindex' => true]);
+    }
+
+    protected function setUp(): void
+    {
+        $this->fixtureModel = $this->createMock(FixtureModel::class);
+        $this->command = new GenerateFixturesCommand($this->fixtureModel);
     }
 }

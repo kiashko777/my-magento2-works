@@ -3,21 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Config\Model\ResourceModel;
 
-class ConfigTest extends \PHPUnit\Framework\TestCase
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class ConfigTest extends TestCase
 {
     /**
-     * @var \Magento\Config\Model\ResourceModel\Config
+     * @var Config
      */
     protected $_model;
-
-    protected function setUp(): void
-    {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Config\Model\ResourceModel\Config::class
-        );
-    }
 
     public function testSaveDeleteConfig()
     {
@@ -28,5 +25,12 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
 
         $this->_model->deleteConfig('test/config', 'default', 0);
         $this->assertEmpty($connection->fetchRow($select));
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Config::class
+        );
     }
 }

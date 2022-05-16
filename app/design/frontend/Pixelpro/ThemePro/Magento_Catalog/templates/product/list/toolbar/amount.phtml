@@ -3,16 +3,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Catalog\Block\Product\ProductList\Toolbar;
+
 ?>
 <?php
 /**
  * Products list toolbar
  *
- * @var $block \Magento\Catalog\Block\Product\ProductList\Toolbar
+ * @var $block Toolbar
  */
 ?>
 <p class="toolbar-amount" id="toolbar-amount">
-    <?php if ($block->getLastPageNum() > 1) :?>
+    <?php if ($block->getLastPageNum() > 1) : ?>
         <?= $block->escapeHtml(
             __(
                 'Items %1-%2 of %3',
@@ -22,12 +25,12 @@
             ),
             ['span']
         ) ?>
-    <?php elseif ($block->getTotalNum() == 1) :?>
+    <?php elseif ($block->getTotalNum() == 1) : ?>
         <?= $block->escapeHtml(
             __('%1 Item', '<span class="toolbar-number">' . $block->getTotalNum() . '</span>'),
             ['span']
         ) ?>
-    <?php else :?>
+    <?php else : ?>
         <?= $block->escapeHtml(
             __('%1 Items', '<span class="toolbar-number">' . $block->getTotalNum() . '</span>'),
             ['span']

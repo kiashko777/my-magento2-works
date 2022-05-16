@@ -5,11 +5,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Filesystem;
 
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class FileResolverTest extends \PHPUnit\Framework\TestCase
+class FileResolverTest extends TestCase
 {
     /**
      * Path to add to include path
@@ -22,7 +24,7 @@ class FileResolverTest extends \PHPUnit\Framework\TestCase
     const SECOND_PATH = '/path/to/code/2/';
 
     /**
-     * @var \Magento\Framework\Filesystem\FileResolver
+     * @var FileResolver
      */
     protected $model;
 
@@ -30,18 +32,6 @@ class FileResolverTest extends \PHPUnit\Framework\TestCase
      * @var string original include-path variable
      */
     protected $originalPath;
-
-    protected function setUp(): void
-    {
-        $this->model = Bootstrap::getObjectManager()->create(\Magento\Framework\Filesystem\FileResolver::class);
-        $this->originalPath = get_include_path();
-        set_include_path('/pre/existing/paths/');
-    }
-
-    protected function tearDown(): void
-    {
-        set_include_path($this->originalPath);
-    }
 
     public function testAddIncludePathPrepend()
     {
@@ -74,5 +64,17 @@ class FileResolverTest extends \PHPUnit\Framework\TestCase
 
         $this->model->addIncludePath($includePath);
         $this->assertFileExists($this->model->getFile($className));
+    }
+
+    protected function setUp(): void
+    {
+        $this->model = Bootstrap::getObjectManager()->create(FileResolver::class);
+        $this->originalPath = get_include_path();
+        set_include_path('/pre/existing/paths/');
+    }
+
+    protected function tearDown(): void
+    {
+        set_include_path($this->originalPath);
     }
 }

@@ -3,36 +3,24 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\PageCache\Model\System\Config\Backend;
 
-class VarnishTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\App\Config\MutableScopeConfigInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class VarnishTest extends TestCase
 {
     /**
-     * @var \Magento\PageCache\Model\System\Config\Backend\Varnish
+     * @var Varnish
      */
     protected $_model;
 
     /**
-     * @var \Magento\Framework\App\Config\MutableScopeConfigInterface
+     * @var MutableScopeConfigInterface
      */
     protected $_config;
-
-    protected function setUp(): void
-    {
-        $this->_config = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\App\Config\MutableScopeConfigInterface::class
-        );
-        $data = [
-            'access_list' => 'localhost',
-            'backend_host' => 'localhost',
-            'backend_port' => 8080,
-            'ttl' => 120,
-        ];
-        $this->_config->setValue('system/full_page_cache/default', $data);
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\PageCache\Model\System\Config\Backend\Varnish::class
-        );
-    }
 
     /**
      * @dataProvider beforeSaveDataProvider
@@ -100,5 +88,22 @@ class VarnishTest extends \PHPUnit\Framework\TestCase
             ['backend_port', 8080, true],
             ['ttl', 120, true]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->_config = Bootstrap::getObjectManager()->create(
+            MutableScopeConfigInterface::class
+        );
+        $data = [
+            'access_list' => 'localhost',
+            'backend_host' => 'localhost',
+            'backend_port' => 8080,
+            'ttl' => 120,
+        ];
+        $this->_config->setValue('system/full_page_cache/default', $data);
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Varnish::class
+        );
     }
 }

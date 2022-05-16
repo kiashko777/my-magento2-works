@@ -30,18 +30,6 @@ class OperationFactoryTest extends TestCase
      */
     private $objectManagerMock;
 
-    protected function setUp(): void
-    {
-        $this->objectManagerMock = $this->getMockBuilder(ObjectManagerInterface::class)
-            ->setMethods([])
-            ->getMockForAbstractClass();
-        $objectManagerProviderMock = $this->createMock(ObjectManagerProvider::class);
-        $objectManagerProviderMock->expects($this->once())->method('get')->willReturn($this->objectManagerMock);
-        $this->factory = new OperationFactory(
-            $objectManagerProviderMock
-        );
-    }
-
     /**
      * @param string $alias
      * @param mixed $arguments
@@ -75,7 +63,7 @@ class OperationFactoryTest extends TestCase
      */
     public function aliasesDataProvider()
     {
-        return  [
+        return [
             [OperationFactory::AREA_CONFIG_GENERATOR, [], Area::class],
             [OperationFactory::INTERCEPTION, null, Interception::class],
             [
@@ -84,5 +72,17 @@ class OperationFactoryTest extends TestCase
                 InterceptionCache::class
             ],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManagerMock = $this->getMockBuilder(ObjectManagerInterface::class)
+            ->setMethods([])
+            ->getMockForAbstractClass();
+        $objectManagerProviderMock = $this->createMock(ObjectManagerProvider::class);
+        $objectManagerProviderMock->expects($this->once())->method('get')->willReturn($this->objectManagerMock);
+        $this->factory = new OperationFactory(
+            $objectManagerProviderMock
+        );
     }
 }

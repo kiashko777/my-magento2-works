@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Setup\Test\Unit\Module\Di\Code\Scanner;
 
+use Magento\Framework\App\Action\Context\Interceptor;
 use Magento\Setup\Module\Di\Code\Scanner\XmlInterceptorScanner;
 use PHPUnit\Framework\TestCase;
 
@@ -27,6 +28,16 @@ class XmlInterceptorScannerTest extends TestCase
      */
     protected $_testFiles = [];
 
+    public function testCollectEntities()
+    {
+        $actual = $this->_model->collectEntities($this->_testFiles);
+        $expected = [
+            \Magento\Framework\App\Cache\Interceptor::class,
+            Interceptor::class,
+        ];
+        $this->assertEquals($expected, $actual);
+    }
+
     protected function setUp(): void
     {
         $this->_model = new XmlInterceptorScanner();
@@ -35,15 +46,5 @@ class XmlInterceptorScannerTest extends TestCase
             $this->_testDir . '/app/code/Magento/SomeModule/etc/di.xml',
             $this->_testDir . '/app/etc/di/config.xml',
         ];
-    }
-
-    public function testCollectEntities()
-    {
-        $actual = $this->_model->collectEntities($this->_testFiles);
-        $expected = [
-            \Magento\Framework\App\Cache\Interceptor::class,
-            \Magento\Framework\App\Action\Context\Interceptor::class,
-        ];
-        $this->assertEquals($expected, $actual);
     }
 }

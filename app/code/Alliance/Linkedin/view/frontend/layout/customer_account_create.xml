@@ -5,7 +5,7 @@
     <body>
         <referenceContainer name="form.additional.info">
             <block class="Magento\Framework\View\Element\Template" name="form_additional_info_customer"
-                   template="Alliance_Linkedin::additional.phtml" />
+                   template="Alliance_Linkedin::additional.phtml"/>
         </referenceContainer>
     </body>
 </page>

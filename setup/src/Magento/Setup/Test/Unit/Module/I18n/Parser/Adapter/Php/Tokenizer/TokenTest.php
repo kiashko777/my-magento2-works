@@ -21,13 +21,8 @@ class TokenTest extends TestCase
      */
     protected $objectManager;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = new ObjectManager($this);
-    }
-
     /**
-     * @covers \Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer\Token::isNew
+     * @covers       \Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer\Token::isNew
      *
      * @param int $name
      * @param string $value
@@ -41,7 +36,25 @@ class TokenTest extends TestCase
     }
 
     /**
-     * @covers \Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer\Token::isNamespaceSeparator
+     * @param int $name
+     * @param string $value
+     * @return Token
+     */
+    protected function createToken($name, $value)
+    {
+        $line = 110;
+        return $this->objectManager->getObject(
+            Token::class,
+            [
+                'name' => $name,
+                'value' => $value,
+                'line' => $line
+            ]
+        );
+    }
+
+    /**
+     * @covers       \Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer\Token::isNamespaceSeparator
      *
      * @param int $name
      * @param string $value
@@ -55,7 +68,7 @@ class TokenTest extends TestCase
     }
 
     /**
-     * @covers \Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer\Token::isIdentifier
+     * @covers       \Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer\Token::isIdentifier
      *
      * @param int $name
      * @param string $value
@@ -104,24 +117,6 @@ class TokenTest extends TestCase
         ];
     }
 
-    /**
-     * @param int $name
-     * @param string $value
-     * @return Token
-     */
-    protected function createToken($name, $value)
-    {
-        $line = 110;
-        return $this->objectManager->getObject(
-            Token::class,
-            [
-                'name' => $name,
-                'value' => $value,
-                'line' => $line
-            ]
-        );
-    }
-
     public function testIsConcatenateOperatorTrue()
     {
         $token = new Token('.', '.');
@@ -132,5 +127,10 @@ class TokenTest extends TestCase
     {
         $token = new Token(',', ',');
         $this->assertFalse($token->isConcatenateOperator());
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = new ObjectManager($this);
     }
 }

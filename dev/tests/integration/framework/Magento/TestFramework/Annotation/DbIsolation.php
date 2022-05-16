@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Annotation;
 
 use Magento\Framework\Exception\LocalizedException;
@@ -37,39 +38,6 @@ class DbIsolation
         } elseif ($methodIsolation || ($methodIsolation === null && $this->_getIsolation($test))) {
             $param->requestTransactionStart();
         }
-    }
-
-    /**
-     * Handler for 'endTestTransactionRequest' event
-     *
-     * @param TestCase $test
-     * @param Transaction $param
-     */
-    public function endTestTransactionRequest(TestCase $test, Transaction $param)
-    {
-        if ($this->_isIsolationActive && $this->_getIsolation($test)) {
-            $param->requestTransactionRollback();
-        }
-    }
-
-    /**
-     * Handler for 'startTransaction' event
-     *
-     * @param TestCase $test
-     *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-     */
-    public function startTransaction(TestCase $test)
-    {
-        $this->_isIsolationActive = true;
-    }
-
-    /**
-     * Handler for 'rollbackTransaction' event
-     */
-    public function rollbackTransaction()
-    {
-        $this->_isIsolationActive = false;
     }
 
     /**
@@ -110,5 +78,38 @@ class DbIsolation
     {
         $annotations = $test->getAnnotations();
         return array_replace((array)$annotations['class'], (array)$annotations['method']);
+    }
+
+    /**
+     * Handler for 'endTestTransactionRequest' event
+     *
+     * @param TestCase $test
+     * @param Transaction $param
+     */
+    public function endTestTransactionRequest(TestCase $test, Transaction $param)
+    {
+        if ($this->_isIsolationActive && $this->_getIsolation($test)) {
+            $param->requestTransactionRollback();
+        }
+    }
+
+    /**
+     * Handler for 'startTransaction' event
+     *
+     * @param TestCase $test
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
+    public function startTransaction(TestCase $test)
+    {
+        $this->_isIsolationActive = true;
+    }
+
+    /**
+     * Handler for 'rollbackTransaction' event
+     */
+    public function rollbackTransaction()
+    {
+        $this->_isIsolationActive = false;
     }
 }

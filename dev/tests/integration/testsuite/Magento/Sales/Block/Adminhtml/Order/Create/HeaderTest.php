@@ -3,25 +3,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Block\Adminhtml\Order\Create;
 
+use Magento\Backend\Model\Session\Quote;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class HeaderTest extends \PHPUnit\Framework\TestCase
+class HeaderTest extends TestCase
 {
-    /** @var \Magento\Sales\Block\Adminhtml\Order\Create\Header */
+    /** @var Header */
     protected $_block;
-
-    protected function setUp(): void
-    {
-        $this->_block = Bootstrap::getObjectManager()->create(
-            \Magento\Sales\Block\Adminhtml\Order\Create\Header::class
-        );
-        parent::setUp();
-    }
 
     /**
      * @param int|null $customerId
@@ -32,8 +27,8 @@ class HeaderTest extends \PHPUnit\Framework\TestCase
      */
     public function testToHtml($customerId, $storeId, $expectedResult)
     {
-        /** @var \Magento\Backend\Model\Session\Quote $session */
-        $session = Bootstrap::getObjectManager()->get(\Magento\Backend\Model\Session\Quote::class);
+        /** @var Quote $session */
+        $session = Bootstrap::getObjectManager()->get(Quote::class);
         $session->setCustomerId($customerId);
         $session->setStoreId($storeId);
         $this->assertEquals($expectedResult, $this->_block->toHtml());
@@ -53,5 +48,13 @@ class HeaderTest extends \PHPUnit\Framework\TestCase
             'No customer' => [null, $defaultStoreView, 'Create New Order in Default Store View'],
             'No customer, no store' => [null, null, 'Create New Order for New Customer']
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->_block = Bootstrap::getObjectManager()->create(
+            Header::class
+        );
+        parent::setUp();
     }
 }

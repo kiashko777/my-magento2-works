@@ -6,31 +6,18 @@
 
 namespace Magento\Widget\Controller\Adminhtml\Widget;
 
+use Magento\Backend\App\Area\FrontNameResolver;
+use Magento\Cms\Block\Widget\Page\Link;
+use Magento\Framework\App\Area;
+use Magento\Framework\View\DesignInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractBackendController;
+
 /**
  * @magentoAppArea Adminhtml
  */
-class InstanceTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class InstanceTest extends AbstractBackendController
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        \Magento\TestFramework\Helper\Bootstrap::getInstance()
-            ->loadArea(\Magento\Backend\App\Area\FrontNameResolver::AREA_CODE);
-
-        $theme = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\DesignInterface::class
-        )->setDefaultDesignTheme()->getDesignTheme();
-        $type = \Magento\Cms\Block\Widget\Page\Link::class;
-        /** @var $model \Magento\Widget\Model\Widget\Instance */
-        $model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Widget\Model\Widget\Instance::class
-        );
-        $code = $model->setType($type)->getWidgetReference('type', $type, 'code');
-        $this->getRequest()->setParam('code', $code);
-        $this->getRequest()->setParam('theme_id', $theme->getId());
-    }
-
     public function testEditAction()
     {
         $this->dispatch('backend/admin/widget_instance/edit');
@@ -42,10 +29,10 @@ class InstanceTest extends \Magento\TestFramework\TestCase\AbstractBackendContro
 
     public function testBlocksAction()
     {
-        \Magento\TestFramework\Helper\Bootstrap::getInstance()
-            ->loadArea(\Magento\Framework\App\Area::AREA_FRONTEND);
-        $theme = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\DesignInterface::class
+        Bootstrap::getInstance()
+            ->loadArea(Area::AREA_FRONTEND);
+        $theme = Bootstrap::getObjectManager()->get(
+            DesignInterface::class
         )->setDefaultDesignTheme()->getDesignTheme();
         $this->getRequest()->setParam('theme_id', $theme->getId());
         $this->dispatch('backend/admin/widget_instance/blocks');
@@ -57,5 +44,25 @@ class InstanceTest extends \Magento\TestFramework\TestCase\AbstractBackendContro
         $this->getRequest()->setMethod('POST');
         $this->dispatch('backend/admin/widget_instance/template');
         $this->assertStringStartsWith('<select name="template" id=""', $this->getResponse()->getBody());
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Bootstrap::getInstance()
+            ->loadArea(FrontNameResolver::AREA_CODE);
+
+        $theme = Bootstrap::getObjectManager()->get(
+            DesignInterface::class
+        )->setDefaultDesignTheme()->getDesignTheme();
+        $type = Link::class;
+        /** @var $model \Magento\Widget\Model\Widget\Instance */
+        $model = Bootstrap::getObjectManager()->create(
+            \Magento\Widget\Model\Widget\Instance::class
+        );
+        $code = $model->setType($type)->getWidgetReference('type', $type, 'code');
+        $this->getRequest()->setParam('code', $code);
+        $this->getRequest()->setParam('theme_id', $theme->getId());
     }
 }

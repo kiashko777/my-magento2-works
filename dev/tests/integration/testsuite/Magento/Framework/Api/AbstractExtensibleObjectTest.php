@@ -3,33 +3,27 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Api;
 
-use Magento\TestModuleExtensionAttributes\Model\Data\FakeRegionFactory;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestModuleExtensionAttributes\Api\Data\FakeAddressInterface;
 use Magento\TestModuleExtensionAttributes\Api\Data\FakeRegionExtension;
+use Magento\TestModuleExtensionAttributes\Api\Data\FakeRegionInterface;
+use Magento\TestModuleExtensionAttributes\Model\Data\FakeRegionExtensionInterface;
+use Magento\TestModuleExtensionAttributes\Model\Data\FakeRegionFactory;
+use Magento\TestModuleExtensionAttributes\Model\FakeAddress;
+use Magento\TestModuleExtensionAttributes\Model\FakeRegion;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for \Magento\Framework\Api\AbstractExtensibleObject
  */
-class AbstractExtensibleObjectTest extends \PHPUnit\Framework\TestCase
+class AbstractExtensibleObjectTest extends TestCase
 {
-    /** @var \Magento\Framework\ObjectManagerInterface */
+    /** @var ObjectManagerInterface */
     private $_objectManager;
-
-    protected function setUp(): void
-    {
-        $this->_objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->_objectManager->configure(
-            [
-                'preferences' => [
-                    \Magento\TestModuleExtensionAttributes\Api\Data\FakeAddressInterface::class =>
-                        \Magento\TestModuleExtensionAttributes\Model\FakeAddress::class,
-                    \Magento\TestModuleExtensionAttributes\Api\Data\FakeRegionInterface::class =>
-                        \Magento\TestModuleExtensionAttributes\Model\FakeRegion::class,
-                ],
-            ]
-        );
-    }
 
     /**
      * Test setExtensionAttributes and getExtensionAttributes for \Magento\Framework\Api\AbstractExtensibleObject
@@ -40,8 +34,8 @@ class AbstractExtensibleObjectTest extends \PHPUnit\Framework\TestCase
      */
     public function testExtensionAttributes($expectedDataBefore, $expectedDataAfter)
     {
-        /** @var \Magento\Framework\Api\ExtensionAttributesFactory $regionExtensionFactory */
-        $regionExtensionFactory = $this->_objectManager->get(\Magento\Framework\Api\ExtensionAttributesFactory::class);
+        /** @var ExtensionAttributesFactory $regionExtensionFactory */
+        $regionExtensionFactory = $this->_objectManager->get(ExtensionAttributesFactory::class);
         /** @var FakeRegionFactory $regionFactory */
         $regionFactory = $this->_objectManager->get(FakeRegionFactory::class);
 
@@ -49,7 +43,7 @@ class AbstractExtensibleObjectTest extends \PHPUnit\Framework\TestCase
         $region = $regionFactory->create();
 
         $regionCode = 'test_code';
-        /** @var \Magento\TestModuleExtensionAttributes\Model\Data\FakeRegionExtensionInterface $regionExtension */
+        /** @var FakeRegionExtensionInterface $regionExtension */
         $regionExtension = $regionExtensionFactory->create(
             \Magento\TestModuleExtensionAttributes\Model\Data\FakeRegion::class,
             ['data' => $expectedDataBefore]
@@ -94,5 +88,20 @@ class AbstractExtensibleObjectTest extends \PHPUnit\Framework\TestCase
                 [[1, 2]]
             ]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->_objectManager = Bootstrap::getObjectManager();
+        $this->_objectManager->configure(
+            [
+                'preferences' => [
+                    FakeAddressInterface::class =>
+                        FakeAddress::class,
+                    FakeRegionInterface::class =>
+                        FakeRegion::class,
+                ],
+            ]
+        );
     }
 }

@@ -7,8 +7,8 @@ declare(strict_types=1);
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Sales\Api\Data\OrderInterfaceFactory;
-use Magento\Sales\Model\Order;
 use Magento\Sales\Api\OrderRepositoryInterface;
+use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Address as OrderAddress;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
@@ -27,10 +27,10 @@ $addressData = include __DIR__ . '/address_data.php';
 $orders = [
     [
         'increment_id' => '100000002',
-        'state' => \Magento\Sales\Model\Order::STATE_NEW,
+        'state' => Order::STATE_NEW,
         'status' => 'processing',
-        'order_currency_code' =>'USD',
-        'base_currency_code' =>'USD',
+        'order_currency_code' => 'USD',
+        'base_currency_code' => 'USD',
         'grand_total' => 120.00,
         'subtotal' => 120.00,
         'base_grand_total' => 120.00,
@@ -39,10 +39,10 @@ $orders = [
     ],
     [
         'increment_id' => '100000003',
-        'state' => \Magento\Sales\Model\Order::STATE_PROCESSING,
+        'state' => Order::STATE_PROCESSING,
         'status' => 'processing',
-        'order_currency_code' =>'USD',
-        'base_currency_code' =>'USD',
+        'order_currency_code' => 'USD',
+        'base_currency_code' => 'USD',
         'grand_total' => 130.00,
         'base_grand_total' => 130.00,
         'subtotal' => 130.00,
@@ -52,10 +52,10 @@ $orders = [
     ],
     [
         'increment_id' => '100000004',
-        'state' => \Magento\Sales\Model\Order::STATE_PROCESSING,
+        'state' => Order::STATE_PROCESSING,
         'status' => 'closed',
-        'order_currency_code' =>'USD',
-        'base_currency_code' =>'USD',
+        'order_currency_code' => 'USD',
+        'base_currency_code' => 'USD',
         'grand_total' => 140.00,
         'base_grand_total' => 140.00,
         'subtotal' => 140.00,
@@ -64,10 +64,10 @@ $orders = [
     ],
     [
         'increment_id' => '100000005',
-        'state' => \Magento\Sales\Model\Order::STATE_COMPLETE,
+        'state' => Order::STATE_COMPLETE,
         'status' => 'complete',
-        'order_currency_code' =>'USD',
-        'base_currency_code' =>'USD',
+        'order_currency_code' => 'USD',
+        'base_currency_code' => 'USD',
         'grand_total' => 150.00,
         'base_grand_total' => 150.00,
         'subtotal' => 150.00,
@@ -77,10 +77,10 @@ $orders = [
     ],
     [
         'increment_id' => '100000006',
-        'state' => \Magento\Sales\Model\Order::STATE_PROCESSING,
+        'state' => Order::STATE_PROCESSING,
         'status' => 'Processing',
-        'order_currency_code' =>'USD',
-        'base_currency_code' =>'USD',
+        'order_currency_code' => 'USD',
+        'base_currency_code' => 'USD',
         'grand_total' => 160.00,
         'base_grand_total' => 160.00,
         'subtotal' => 160.00,
@@ -90,31 +90,31 @@ $orders = [
     ],
     [
         'increment_id' => '100000007',
-        'state' => \Magento\Sales\Model\Order::STATE_PROCESSING,
+        'state' => Order::STATE_PROCESSING,
         'status' => 'Processing',
-        'order_currency_code' =>'USD',
-        'base_currency_code' =>'USD',
+        'order_currency_code' => 'USD',
+        'base_currency_code' => 'USD',
         'grand_total' => 180.00,
         'base_grand_total' => 180.00,
         'subtotal' => 170.00,
         'tax_amount' => 5.00,
-        'shipping_amount'=> 5.00,
-        'base_shipping_amount'=> 4.00,
+        'shipping_amount' => 5.00,
+        'base_shipping_amount' => 4.00,
         'store_id' => 1,
         'website_id' => 1,
     ],
     [
         'increment_id' => '100000008',
-        'state' => \Magento\Sales\Model\Order::STATE_PROCESSING,
+        'state' => Order::STATE_PROCESSING,
         'status' => 'Processing',
-        'order_currency_code' =>'USD',
-        'base_currency_code' =>'USD',
+        'order_currency_code' => 'USD',
+        'base_currency_code' => 'USD',
         'grand_total' => 190.00,
         'base_grand_total' => 190.00,
         'subtotal' => 180.00,
         'tax_amount' => 5.00,
-        'shipping_amount'=> 5.00,
-        'base_shipping_amount'=> 4.00,
+        'shipping_amount' => 5.00,
+        'base_shipping_amount' => 4.00,
         'store_id' => 1,
         'website_id' => 1,
     ]
@@ -126,9 +126,9 @@ $orderRepository = $objectManager->create(OrderRepositoryInterface::class);
 foreach ($orders as $orderData) {
     $newPayment = clone $payment;
     $newPayment->setId(null);
-    /** @var $order \Magento\Sales\Model\Order */
+    /** @var $order Order */
     $order = $objectManager->create(
-        \Magento\Sales\Model\Order::class
+        Order::class
     );
 
     // Reset addresses

@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Model\FixtureGenerator;
 
 use Magento\Framework\App\ObjectManager;
@@ -43,12 +44,13 @@ class BundleProductGenerator
 
     /**
      * @param ProductGeneratorFactory $productGeneratorFactory
-     * @param ResourceConnection $resource|null
+     * @param ResourceConnection $resource |null
      */
     public function __construct(
         ProductGeneratorFactory $productGeneratorFactory,
-        ResourceConnection $resource = null
-    ) {
+        ResourceConnection      $resource = null
+    )
+    {
         $this->productGeneratorFactory = $productGeneratorFactory;
 
         $this->resource = $resource ?: ObjectManager::getInstance()->get(
@@ -194,26 +196,6 @@ class BundleProductGenerator
     }
 
     /**
-     * Generates a selection Id.
-     *
-     * @param int $entityNumber
-     * @param int $originalSelectionId
-     * @param array $fixture
-     *
-     * @return int|null
-     */
-    private function generateSelectionId($entityNumber, $originalSelectionId, array $fixture)
-    {
-        if ($originalSelectionId) {
-            $selectionsPerProduct = $fixture['_bundle_products_per_option'] * $fixture['_bundle_options'];
-
-            return $selectionsPerProduct * ($entityNumber + 1) + $originalSelectionId;
-        }
-
-        return $originalSelectionId;
-    }
-
-    /**
      * Generates an Id for the given sequence table.
      *
      * @param string $tableName
@@ -234,6 +216,26 @@ class BundleProductGenerator
         }
 
         return ++$this->sequenceValues[$tableName];
+    }
+
+    /**
+     * Generates a selection Id.
+     *
+     * @param int $entityNumber
+     * @param int $originalSelectionId
+     * @param array $fixture
+     *
+     * @return int|null
+     */
+    private function generateSelectionId($entityNumber, $originalSelectionId, array $fixture)
+    {
+        if ($originalSelectionId) {
+            $selectionsPerProduct = $fixture['_bundle_products_per_option'] * $fixture['_bundle_options'];
+
+            return $selectionsPerProduct * ($entityNumber + 1) + $originalSelectionId;
+        }
+
+        return $originalSelectionId;
     }
 
     /**

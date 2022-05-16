@@ -21,15 +21,6 @@ class StatusTest extends AbstractController
     private $json;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->json = $this->_objectManager->get(SerializerInterface::class);
-    }
-
-    /**
      * Check newsletter subscription status verification
      *
      * @magentoDataFixture Magento/Newsletter/_files/subscribers.php
@@ -63,5 +54,14 @@ class StatusTest extends AbstractController
             'subscribed_guest_email' => [true, 'customer_two@example.com'],
             'subscribed_registered_customer_email' => [false, 'customer@example.com'],
         ];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->json = $this->_objectManager->get(SerializerInterface::class);
     }
 }

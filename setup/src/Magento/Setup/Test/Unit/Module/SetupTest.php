@@ -32,21 +32,6 @@ class SetupTest extends TestCase
      */
     private $resourceModelMock;
 
-    protected function setUp(): void
-    {
-        $this->resourceModelMock = $this->createMock(ResourceConnection::class);
-        $this->connection = $this->getMockForAbstractClass(AdapterInterface::class);
-        $this->resourceModelMock->expects($this->any())
-            ->method('getConnection')
-            ->with(self::CONNECTION_NAME)
-            ->willReturn($this->connection);
-        $this->resourceModelMock->expects($this->any())
-            ->method('getConnectionByName')
-            ->with(ResourceConnection::DEFAULT_CONNECTION)
-            ->willReturn($this->connection);
-        $this->setup = new Setup($this->resourceModelMock, self::CONNECTION_NAME);
-    }
-
     public function testGetIdxName()
     {
         $tableName = 'table';
@@ -85,5 +70,20 @@ class SetupTest extends TestCase
             ->willReturn('fkName');
 
         $this->assertEquals('fkName', $this->setup->getFkName($tableName, $columnName, $refTable, $refColumnName));
+    }
+
+    protected function setUp(): void
+    {
+        $this->resourceModelMock = $this->createMock(ResourceConnection::class);
+        $this->connection = $this->getMockForAbstractClass(AdapterInterface::class);
+        $this->resourceModelMock->expects($this->any())
+            ->method('getConnection')
+            ->with(self::CONNECTION_NAME)
+            ->willReturn($this->connection);
+        $this->resourceModelMock->expects($this->any())
+            ->method('getConnectionByName')
+            ->with(ResourceConnection::DEFAULT_CONNECTION)
+            ->willReturn($this->connection);
+        $this->setup = new Setup($this->resourceModelMock, self::CONNECTION_NAME);
     }
 }

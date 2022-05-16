@@ -4,13 +4,17 @@
  * See COPYING.txt for license details.
  */
 
-use \Magento\Framework\App\ObjectManager;
-use \Magento\Store\Api\StoreRepositoryInterface;
-use \Magento\Framework\App\ResourceConnection;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\CatalogSearch\Model\Indexer\Fulltext\Processor;
+use Magento\Framework\App\ObjectManager;
+use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\DB\Adapter\AdapterInterface;
-use \Magento\Framework\Registry;
-use \Magento\TestFramework\Helper\Bootstrap;
-use \Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Registry;
+use Magento\Store\Api\StoreRepositoryInterface;
+use Magento\Store\Model\Store;
+use Magento\Store\Model\Website;
+use Magento\TestFramework\Helper\Bootstrap;
 
 /**
  * Roll back fixtures
@@ -39,7 +43,7 @@ $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
 /**
- * @var \Magento\Store\Model\Store $store
+ * @var Store $store
  */
 $store = $storeRepository->get('customstoreview1');
 $storeGroupId = $store->getStoreGroupId();
@@ -50,7 +54,7 @@ try {
     if ($product->getId()) {
         $productRepository->delete($product);
     }
-} catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+} catch (NoSuchEntityException $e) {
     //Products already removed
 }
 
@@ -82,8 +86,8 @@ $connection->delete(
 /**
  * remove website by id
  */
-/** @var \Magento\Store\Model\Website $website */
-$website = Bootstrap::getObjectManager()->create(\Magento\Store\Model\Website::class);
+/** @var Website $website */
+$website = Bootstrap::getObjectManager()->create(Website::class);
 $website->load((int)$websiteId);
 $website->delete();
 
@@ -91,7 +95,7 @@ $website->delete();
  * reIndex all
  */
 ObjectManager::getInstance()
-    ->create(\Magento\CatalogSearch\Model\Indexer\Fulltext\Processor::class)
+    ->create(Processor::class)
     ->reindexAll();
 
 /**

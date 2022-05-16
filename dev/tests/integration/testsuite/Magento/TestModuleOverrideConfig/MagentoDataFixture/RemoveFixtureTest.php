@@ -21,16 +21,6 @@ class RemoveFixtureTest extends AbstractOverridesTest
     private $fixtureCallStorage;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->fixtureCallStorage = $this->objectManager->get(FixtureCallStorage::class);
-    }
-
-    /**
      * Checks that fixture can be removed in test class node
      *
      * @magentoDataFixture Magento/TestModuleOverrideConfig/_files/fixture1_first_module.php
@@ -80,5 +70,15 @@ class RemoveFixtureTest extends AbstractOverridesTest
     public function testRemoveSameFixtures(): void
     {
         $this->assertEmpty($this->fixtureCallStorage->getFixturesCount('fixture3_first_module.php'));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->fixtureCallStorage = $this->objectManager->get(FixtureCallStorage::class);
     }
 }

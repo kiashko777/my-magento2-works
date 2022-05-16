@@ -8,10 +8,13 @@ declare(strict_types=1);
 
 namespace Magento\ConfigurableProduct\Api;
 
+use Exception;
 use Magento\Catalog\Model\ResourceModel\Eav\Attribute;
 use Magento\Eav\Model\AttributeRepository;
 use Magento\Eav\Model\Entity\Attribute\Option;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Webapi\Rest\Request;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
@@ -25,7 +28,7 @@ class LinkManagementTest extends WebapiAbstract
     const RESOURCE_PATH = '/V1/configurable-products';
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
 
@@ -33,15 +36,6 @@ class LinkManagementTest extends WebapiAbstract
      * @var AttributeRepository
      */
     protected $attributeRepository;
-
-    /**
-     * Execute per test initialization
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->attributeRepository = $this->objectManager->get(\Magento\Eav\Model\AttributeRepository::class);
-    }
 
     /**
      * @magentoApiDataFixture Magento/ConfigurableProduct/_files/product_configurable.php
@@ -73,6 +67,28 @@ class LinkManagementTest extends WebapiAbstract
     }
 
     /**
+     * Get child products
+     *
+     * @param string $productSku
+     * @return string[]
+     */
+    protected function getChildren(string $productSku)
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH . '/' . $productSku . '/children',
+                'httpMethod' => Request::HTTP_METHOD_GET
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'GetChildren'
+            ]
+        ];
+        return $this->_webApiCall($serviceInfo, ['sku' => $productSku]);
+    }
+
+    /**
      * @magentoApiDataFixture Magento/ConfigurableProduct/_files/product_configurable.php
      * @magentoApiDataFixture Magento/ConfigurableProduct/_files/product_simple_77.php
      * @magentoApiDataFixture Magento/ConfigurableProduct/_files/delete_association.php
@@ -85,6 +101,29 @@ class LinkManagementTest extends WebapiAbstract
         $childSku = 'simple_77';
         $res = $this->addChild($productSku, $childSku);
         $this->assertTrue($res);
+    }
+
+    /**
+     * Perform add child product Api call
+     *
+     * @param string $productSku
+     * @param string $childSku
+     * @return array|int|string|float|bool
+     */
+    private function addChild(string $productSku, string $childSku)
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH . '/' . $productSku . '/child',
+                'httpMethod' => Request::HTTP_METHOD_POST
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'AddChild'
+            ]
+        ];
+        return $this->_webApiCall($serviceInfo, ['sku' => $productSku, 'childSku' => $childSku]);
     }
 
     /**
@@ -140,6 +179,127 @@ class LinkManagementTest extends WebapiAbstract
 
         $this->deleteProduct($productSku);
         $this->deleteProduct($childSku);
+    }
+
+    /**
+     * Perform create configurable product api call
+     *
+     * @param string $productSku
+     * @return array|bool|float|int|string
+     */
+    protected function createConfigurableProduct(string $productSku)
+    {
+        $requestData = [
+            'product' => [
+                'sku' => $productSku,
+                'name' => 'configurable-product-' . $productSku,
+                'type_id' => 'configurable',
+                'price' => 50,
+                'attribute_set_id' => 4
+            ]
+        ];
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => '/V1/products',
+                'httpMethod' => Request::HTTP_METHOD_POST
+            ],
+            'soap' => [
+                'service' => 'catalogProductRepositoryV1',
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => 'catalogProductRepositoryV1Save',
+            ],
+        ];
+        return $this->_webApiCall($serviceInfo, $requestData);
+    }
+
+    /**
+     * Add option to configurable product
+     *
+     * @param string $productSku
+     * @param int $attributeId
+     * @param array $attributeValues
+     * @param int $position
+     * @return array|bool|float|int|string
+     */
+    protected function addOptionToConfigurableProduct(
+        string $productSku,
+        int    $attributeId,
+        array  $attributeValues,
+        int    $position = 0
+    )
+    {
+        $requestData = [
+            'sku' => $productSku,
+            'option' => [
+                'attribute_id' => $attributeId,
+                'label' => 'test_configurable',
+                'position' => $position,
+                'is_use_default' => true,
+                'values' => $attributeValues
+            ]
+        ];
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => '/V1/configurable-products/' . $productSku . '/options',
+                'httpMethod' => Request::HTTP_METHOD_POST,
+            ],
+            'soap' => [
+                'service' => 'configurableProductOptionRepositoryV1',
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => 'configurableProductOptionRepositoryV1Save',
+            ],
+        ];
+        return $this->_webApiCall($serviceInfo, $requestData);
+    }
+
+    protected function createSimpleProduct($sku, $customAttributes)
+    {
+        $requestData = [
+            'product' => [
+                'sku' => $sku,
+                'name' => 'simple-product-' . $sku,
+                'type_id' => 'simple',
+                'attribute_set_id' => 4,
+                'price' => 3.62,
+                'status' => 1,
+                'visibility' => 4,
+                'custom_attributes' => $customAttributes
+            ]
+        ];
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => '/V1/products',
+                'httpMethod' => Request::HTTP_METHOD_POST,
+            ],
+            'soap' => [
+                'service' => 'catalogProductRepositoryV1',
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => 'catalogProductRepositoryV1Save',
+            ],
+        ];
+        return $this->_webApiCall($serviceInfo, $requestData);
+    }
+
+    /**
+     * Delete product by SKU
+     *
+     * @param string $sku
+     * @return bool
+     */
+    private function deleteProduct(string $sku): bool
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => '/V1/products/' . $sku,
+                'httpMethod' => Request::HTTP_METHOD_DELETE
+            ],
+            'soap' => [
+                'service' => 'catalogProductRepositoryV1',
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => 'catalogProductRepositoryV1DeleteById',
+            ],
+        ];
+        return $this->_webApiCall($serviceInfo, ['sku' => $sku]);
     }
 
     /**
@@ -251,28 +411,6 @@ class LinkManagementTest extends WebapiAbstract
     }
 
     /**
-     * Delete product by SKU
-     *
-     * @param string $sku
-     * @return bool
-     */
-    private function deleteProduct(string $sku): bool
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => '/V1/products/' . $sku,
-                'httpMethod' => Request::HTTP_METHOD_DELETE
-            ],
-            'soap' => [
-                'service' => 'catalogProductRepositoryV1',
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => 'catalogProductRepositoryV1DeleteById',
-            ],
-        ];
-        return $this->_webApiCall($serviceInfo, ['sku' => $sku]);
-    }
-
-    /**
      * Get configurable product attributes
      *
      * @param string $productSku
@@ -295,127 +433,6 @@ class LinkManagementTest extends WebapiAbstract
     }
 
     /**
-     * Perform add child product Api call
-     *
-     * @param string $productSku
-     * @param string $childSku
-     * @return array|int|string|float|bool
-     */
-    private function addChild(string $productSku, string $childSku)
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . '/' . $productSku . '/child',
-                'httpMethod' => Request::HTTP_METHOD_POST
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'AddChild'
-            ]
-        ];
-        return $this->_webApiCall($serviceInfo, ['sku' => $productSku, 'childSku' => $childSku]);
-    }
-
-    /**
-     * Perform create configurable product api call
-     *
-     * @param string $productSku
-     * @return array|bool|float|int|string
-     */
-    protected function createConfigurableProduct(string $productSku)
-    {
-        $requestData = [
-            'product' => [
-                'sku' => $productSku,
-                'name' => 'configurable-product-' . $productSku,
-                'type_id' => 'configurable',
-                'price' => 50,
-                'attribute_set_id' => 4
-            ]
-        ];
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => '/V1/products',
-                'httpMethod' => Request::HTTP_METHOD_POST
-            ],
-            'soap' => [
-                'service' => 'catalogProductRepositoryV1',
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => 'catalogProductRepositoryV1Save',
-            ],
-        ];
-        return $this->_webApiCall($serviceInfo, $requestData);
-    }
-
-    /**
-     * Add option to configurable product
-     *
-     * @param string $productSku
-     * @param int $attributeId
-     * @param array $attributeValues
-     * @param int $position
-     * @return array|bool|float|int|string
-     */
-    protected function addOptionToConfigurableProduct(
-        string $productSku,
-        int $attributeId,
-        array $attributeValues,
-        int $position = 0
-    ) {
-        $requestData = [
-            'sku' => $productSku,
-            'option' => [
-                'attribute_id' => $attributeId,
-                'label' => 'test_configurable',
-                'position' => $position,
-                'is_use_default' => true,
-                'values' => $attributeValues
-            ]
-        ];
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => '/V1/configurable-products/' . $productSku . '/options',
-                'httpMethod' => Request::HTTP_METHOD_POST,
-            ],
-            'soap' => [
-                'service' => 'configurableProductOptionRepositoryV1',
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => 'configurableProductOptionRepositoryV1Save',
-            ],
-        ];
-        return $this->_webApiCall($serviceInfo, $requestData);
-    }
-
-    protected function createSimpleProduct($sku, $customAttributes)
-    {
-        $requestData = [
-            'product' => [
-                'sku' => $sku,
-                'name' => 'simple-product-' . $sku,
-                'type_id' => 'simple',
-                'attribute_set_id' => 4,
-                'price' => 3.62,
-                'status' => 1,
-                'visibility' => 4,
-                'custom_attributes' => $customAttributes
-            ]
-        ];
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => '/V1/products',
-                'httpMethod' => Request::HTTP_METHOD_POST,
-            ],
-            'soap' => [
-                'service' => 'catalogProductRepositoryV1',
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => 'catalogProductRepositoryV1Save',
-            ],
-        ];
-        return $this->_webApiCall($serviceInfo, $requestData);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/ConfigurableProduct/_files/product_configurable.php
      *
      * @return void
@@ -425,6 +442,31 @@ class LinkManagementTest extends WebapiAbstract
         $productSku = 'configurable';
         $childSku = 'simple_10';
         $this->assertTrue($this->removeChild($productSku, $childSku));
+    }
+
+    /**
+     * Remove child product
+     *
+     * @param string $productSku
+     * @param string $childSku
+     * @return array|bool|float|int|string
+     */
+    protected function removeChild(string $productSku, string $childSku)
+    {
+        $resourcePath = self::RESOURCE_PATH . '/%s/children/%s';
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => sprintf($resourcePath, $productSku, $childSku),
+                'httpMethod' => Request::HTTP_METHOD_DELETE
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'RemoveChild'
+            ]
+        ];
+        $requestData = ['sku' => $productSku, 'childSku' => $childSku];
+        return $this->_webApiCall($serviceInfo, $requestData);
     }
 
     /**
@@ -440,7 +482,7 @@ class LinkManagementTest extends WebapiAbstract
      */
     public function testAddChildWithError(string $parentSku, string $childSku, string $errorMessage): void
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage($errorMessage);
         $this->addChild($parentSku, $childSku);
     }
@@ -471,49 +513,11 @@ class LinkManagementTest extends WebapiAbstract
     }
 
     /**
-     * Remove child product
-     *
-     * @param string $productSku
-     * @param string $childSku
-     * @return array|bool|float|int|string
+     * Execute per test initialization
      */
-    protected function removeChild(string $productSku, string $childSku)
+    protected function setUp(): void
     {
-        $resourcePath = self::RESOURCE_PATH . '/%s/children/%s';
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => sprintf($resourcePath, $productSku, $childSku),
-                'httpMethod' => Request::HTTP_METHOD_DELETE
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'RemoveChild'
-            ]
-        ];
-        $requestData = ['sku' => $productSku, 'childSku' => $childSku];
-        return $this->_webApiCall($serviceInfo, $requestData);
-    }
-
-    /**
-     * Get child products
-     *
-     * @param string $productSku
-     * @return string[]
-     */
-    protected function getChildren(string $productSku)
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . '/' . $productSku . '/children',
-                'httpMethod' => Request::HTTP_METHOD_GET
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'GetChildren'
-            ]
-        ];
-        return $this->_webApiCall($serviceInfo, ['sku' => $productSku]);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->attributeRepository = $this->objectManager->get(AttributeRepository::class);
     }
 }

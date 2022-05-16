@@ -7,10 +7,14 @@ declare(strict_types=1);
 
 namespace Magento\MediaStorage\Model\File\Storage;
 
+use Magento\Framework\App\Response\Http;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
 /**
  * Tests for \Magento\MediaStorage\Model\File\Storage\Response class
  */
-class ResponseTest extends \PHPUnit\Framework\TestCase
+class ResponseTest extends TestCase
 {
     /**
      * test for \Magento\MediaStorage\Model\File\Storage\Response::sendResponse()
@@ -34,16 +38,16 @@ class ResponseTest extends \PHPUnit\Framework\TestCase
             ],
         ];
         $filePath = realpath(__DIR__ . '/../../../_files/test_file.html');
-        /** @var \Magento\MediaStorage\Model\File\Storage\Response $response */
-        $mediaStorageResponse = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\MediaStorage\Model\File\Storage\Response::class
+        /** @var Response $response */
+        $mediaStorageResponse = Bootstrap::getObjectManager()->create(
+            Response::class
         );
         $mediaStorageResponse->setFilePath($filePath);
         ob_start();
         $mediaStorageResponse->sendResponse();
         ob_end_clean();
-        /** @var \Magento\Framework\App\Response\Http $frameworkResponse */
-        $frameworkResponse = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
+        /** @var Http $frameworkResponse */
+        $frameworkResponse = Bootstrap::getObjectManager()->get(
             \Magento\Framework\HTTP\PhpEnvironment\Response::class
         );
         $actualHeaders = [];

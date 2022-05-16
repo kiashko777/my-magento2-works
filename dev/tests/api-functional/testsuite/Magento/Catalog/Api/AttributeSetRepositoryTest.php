@@ -3,8 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Api;
 
+use Exception;
+use Magento\Eav\Model\Entity\Attribute\Set;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 class AttributeSetRepositoryTest extends WebapiAbstract
@@ -21,7 +26,7 @@ class AttributeSetRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/products/attribute-sets/' . $attributeSetId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => 'catalogAttributeSetRepositoryV1',
@@ -41,17 +46,36 @@ class AttributeSetRepositoryTest extends WebapiAbstract
     }
 
     /**
+     * Retrieve attribute set based on given name.
+     * This utility methods assumes that there is only one attribute set with given name,
+     *
+     * @param string $attributeSetName
+     * @return Set|null
+     */
+    protected function getAttributeSetByName($attributeSetName)
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var Set $attributeSet */
+        $attributeSet = $objectManager->create(Set::class)
+            ->load($attributeSetName, 'attribute_set_name');
+        if ($attributeSet->getId() === null) {
+            return null;
+        }
+        return $attributeSet;
+    }
+
+    /**
      */
     public function testGetThrowsExceptionIfRequestedAttributeSetDoesNotExist()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
 
         $attributeSetId = 9999;
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/products/attribute-sets/' . $attributeSetId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => 'catalogAttributeSetRepositoryV1',
@@ -75,7 +99,7 @@ class AttributeSetRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/products/attribute-sets/' . $attributeSet->getId(),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => 'catalogAttributeSetRepositoryV1',
@@ -118,7 +142,7 @@ class AttributeSetRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/products/attribute-sets/' . $attributeSetId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
             ],
             'soap' => [
                 'service' => 'catalogAttributeSetRepositoryV1',
@@ -138,14 +162,14 @@ class AttributeSetRepositoryTest extends WebapiAbstract
      */
     public function testDeleteByIdThrowsExceptionIfRequestedAttributeSetDoesNotExist()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
 
         $attributeSetId = 9999;
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/products/attribute-sets/' . $attributeSetId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
             ],
             'soap' => [
                 'service' => 'catalogAttributeSetRepositoryV1',
@@ -176,7 +200,7 @@ class AttributeSetRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/products/attribute-sets/sets/list' . '?' . http_build_query($searchCriteria),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => 'catalogAttributeSetRepositoryV1',
@@ -197,24 +221,5 @@ class AttributeSetRepositoryTest extends WebapiAbstract
 
         $this->assertNotNull($response['items'][0]['attribute_set_id']);
         $this->assertNotNull($response['items'][0]['attribute_set_name']);
-    }
-
-    /**
-     * Retrieve attribute set based on given name.
-     * This utility methods assumes that there is only one attribute set with given name,
-     *
-     * @param string $attributeSetName
-     * @return \Magento\Eav\Model\Entity\Attribute\Set|null
-     */
-    protected function getAttributeSetByName($attributeSetName)
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var \Magento\Eav\Model\Entity\Attribute\Set $attributeSet */
-        $attributeSet = $objectManager->create(\Magento\Eav\Model\Entity\Attribute\Set::class)
-            ->load($attributeSetName, 'attribute_set_name');
-        if ($attributeSet->getId() === null) {
-            return null;
-        }
-        return $attributeSet;
     }
 }

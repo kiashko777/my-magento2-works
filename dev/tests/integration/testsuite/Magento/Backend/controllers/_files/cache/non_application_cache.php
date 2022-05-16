@@ -5,9 +5,13 @@
  */
 
 /** @var $cachePool \Magento\Framework\App\Cache\Frontend\Pool */
-$cachePool = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
+
+use Magento\Framework\Cache\FrontendInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$cachePool = Bootstrap::getObjectManager()
     ->create(\Magento\Framework\App\Cache\Frontend\Pool::class);
-/** @var $cacheFrontend \Magento\Framework\Cache\FrontendInterface */
+/** @var $cacheFrontend FrontendInterface */
 foreach ($cachePool as $cacheFrontend) {
     $cacheFrontend->getBackend()->save('non-application cache data', 'NON_APPLICATION_FIXTURE', ['SOME_TAG']);
 }

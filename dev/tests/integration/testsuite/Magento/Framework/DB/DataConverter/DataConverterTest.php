@@ -3,22 +3,26 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\DB\DataConverter;
 
 use Magento\Framework\DB\Adapter\Pdo\Mysql;
+use Magento\Framework\DB\FieldDataConversionException;
 use Magento\Framework\DB\FieldDataConverter;
-use Magento\Framework\DB\Select;
-use Magento\Framework\DB\Select\QueryModifierInterface;
-use Magento\Framework\DB\Select\InQueryModifier;
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Framework\DB\Query\Generator;
 use Magento\Framework\DB\Query\BatchIterator;
+use Magento\Framework\DB\Query\Generator;
+use Magento\Framework\DB\Select;
+use Magento\Framework\DB\Select\InQueryModifier;
+use Magento\Framework\DB\Select\QueryModifierInterface;
 use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
-class DataConverterTest extends \PHPUnit\Framework\TestCase
+class DataConverterTest extends TestCase
 {
     /**
-     * @var InQueryModifier|\PHPUnit\Framework\MockObject\MockObject
+     * @var InQueryModifier|MockObject
      */
     private $queryModifierMock;
 
@@ -28,22 +32,22 @@ class DataConverterTest extends \PHPUnit\Framework\TestCase
     private $dataConverter;
 
     /**
-     * @var BatchIterator|\PHPUnit\Framework\MockObject\MockObject
+     * @var BatchIterator|MockObject
      */
     private $iteratorMock;
 
     /**
-     * @var Generator|\PHPUnit\Framework\MockObject\MockObject
+     * @var Generator|MockObject
      */
     private $queryGeneratorMock;
 
     /**
-     * @var Select|\PHPUnit\Framework\MockObject\MockObject
+     * @var Select|MockObject
      */
     private $selectByRangeMock;
 
     /**
-     * @var Mysql|\PHPUnit\Framework\MockObject\MockObject
+     * @var Mysql|MockObject
      */
     private $adapterMock;
 
@@ -56,6 +60,56 @@ class DataConverterTest extends \PHPUnit\Framework\TestCase
      * @var ObjectManagerInterface
      */
     private $objectManager;
+
+    /**
+     * Test that exception with valid text is thrown when data is corrupted
+     *
+     */
+    public function testDataConvertErrorReporting()
+    {
+        $this->expectException(FieldDataConversionException::class);
+        $this->expectExceptionMessage('Error converting field `value` in table `table` where `id`=2 using');
+
+        $rows = [
+            1 => 'N;',
+            2 => 'a:2:{s:3:"foo";s:3:"bar";s:3:"bar";s:',
+        ];
+
+        $this->adapterMock->expects($this->any())
+            ->method('fetchPairs')
+            ->with($this->selectByRangeMock)
+            ->willReturn($rows);
+
+        $this->adapterMock->expects($this->once())
+            ->method('update')
+            ->with('table', ['value' => 'null'], ['id IN (?)' => [1]]);
+
+        $this->fieldDataConverter->convert($this->adapterMock, 'table', 'id', 'value', $this->queryModifierMock);
+    }
+
+    public function testAlreadyConvertedDataSkipped()
+    {
+        $rows = [
+            2 => '[]',
+            3 => '{}',
+            4 => 'null',
+            5 => '""',
+            6 => '0',
+            7 => 'N;',
+            8 => '{"valid": "json value"}',
+        ];
+
+        $this->adapterMock->expects($this->any())
+            ->method('fetchPairs')
+            ->with($this->selectByRangeMock)
+            ->willReturn($rows);
+
+        $this->adapterMock->expects($this->once())
+            ->method('update')
+            ->with('table', ['value' => 'null'], ['id IN (?)' => [7]]);
+
+        $this->fieldDataConverter->convert($this->adapterMock, 'table', 'id', 'value', $this->queryModifierMock);
+    }
 
     /**
      * Set up before test
@@ -128,55 +182,5 @@ class DataConverterTest extends \PHPUnit\Framework\TestCase
                 'dataConverter' => $this->dataConverter
             ]
         );
-    }
-
-    /**
-     * Test that exception with valid text is thrown when data is corrupted
-     *
-     */
-    public function testDataConvertErrorReporting()
-    {
-        $this->expectException(\Magento\Framework\DB\FieldDataConversionException::class);
-        $this->expectExceptionMessage('Error converting field `value` in table `table` where `id`=2 using');
-
-        $rows = [
-            1 => 'N;',
-            2 => 'a:2:{s:3:"foo";s:3:"bar";s:3:"bar";s:',
-        ];
-
-        $this->adapterMock->expects($this->any())
-            ->method('fetchPairs')
-            ->with($this->selectByRangeMock)
-            ->willReturn($rows);
-
-        $this->adapterMock->expects($this->once())
-            ->method('update')
-            ->with('table', ['value' => 'null'], ['id IN (?)' => [1]]);
-
-        $this->fieldDataConverter->convert($this->adapterMock, 'table', 'id', 'value', $this->queryModifierMock);
-    }
-
-    public function testAlreadyConvertedDataSkipped()
-    {
-        $rows = [
-            2 => '[]',
-            3 => '{}',
-            4 => 'null',
-            5 => '""',
-            6 => '0',
-            7 => 'N;',
-            8 => '{"valid": "json value"}',
-        ];
-
-        $this->adapterMock->expects($this->any())
-            ->method('fetchPairs')
-            ->with($this->selectByRangeMock)
-            ->willReturn($rows);
-
-        $this->adapterMock->expects($this->once())
-            ->method('update')
-            ->with('table', ['value' => 'null'], ['id IN (?)' => [7]]);
-
-        $this->fieldDataConverter->convert($this->adapterMock, 'table', 'id', 'value', $this->queryModifierMock);
     }
 }

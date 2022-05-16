@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\WebapiAsync\Model\Rest\Swagger;
 
 use Magento\Framework\Webapi\Authorization;
@@ -12,8 +13,9 @@ use Magento\Webapi\Model\ServiceMetadata;
 use Magento\WebapiAsync\Controller\Rest\AsynchronousSchemaRequestProcessor;
 use Magento\WebapiAsync\Controller\Rest\AsynchronousSchemaRequestProcessorMock;
 use Magento\WebapiAsync\Model\AuthorizationMock;
+use PHPUnit\Framework\TestCase;
 
-class GeneratorTest extends \PHPUnit\Framework\TestCase
+class GeneratorTest extends TestCase
 {
     /**
      * @var Generator
@@ -24,20 +26,6 @@ class GeneratorTest extends \PHPUnit\Framework\TestCase
      * @var ServiceMetadata
      */
     private $serviceMetadata;
-
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $objectManager->configure([
-            'preferences' => [
-                Authorization::class => AuthorizationMock::class,
-                AsynchronousSchemaRequestProcessor::class => AsynchronousSchemaRequestProcessorMock::class
-            ]
-        ]);
-
-        $this->generator = $objectManager->create(Generator::class);
-        $this->serviceMetadata = $objectManager->create(ServiceMetadata::class);
-    }
 
     public function testGenerateAsync()
     {
@@ -76,5 +64,19 @@ class GeneratorTest extends \PHPUnit\Framework\TestCase
 
         // Ensure that the base path output correctly
         $this->assertEquals('/async', $schema['basePath']);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->configure([
+            'preferences' => [
+                Authorization::class => AuthorizationMock::class,
+                AsynchronousSchemaRequestProcessor::class => AsynchronousSchemaRequestProcessorMock::class
+            ]
+        ]);
+
+        $this->generator = $objectManager->create(Generator::class);
+        $this->serviceMetadata = $objectManager->create(ServiceMetadata::class);
     }
 }

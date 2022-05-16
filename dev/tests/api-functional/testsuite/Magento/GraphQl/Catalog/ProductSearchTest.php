@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Catalog;
 
+use Exception;
+use Magento\Catalog\Api\CategoryLinkManagementInterface;
 use Magento\Catalog\Api\CategoryRepositoryInterface;
 use Magento\Catalog\Api\Data\CategoryInterface;
 use Magento\Catalog\Api\Data\ProductInterface;
@@ -15,9 +17,12 @@ use Magento\Catalog\Model\Category;
 use Magento\Catalog\Model\CategoryLinkManagement;
 use Magento\Catalog\Model\Indexer\Product\Category\Processor;
 use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use Magento\Catalog\Model\ResourceModel\Category\Collection;
+use Magento\CatalogInventory\Model\Configuration;
 use Magento\Eav\Api\Data\AttributeOptionInterface;
 use Magento\Eav\Model\Config;
+use Magento\Framework\App\Cache;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\DataObject;
 use Magento\TestFramework\Catalog\Model\GetCategoryByName;
@@ -37,7 +42,7 @@ class ProductSearchTest extends GraphQlAbstract
     /**
      * Verify that filters for non-existing category are empty
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function testFilterForNonExistingCategory()
     {
@@ -70,7 +75,7 @@ QUERY;
      */
     public function testUidAndIdUsageErrorOnProductFilteringCategory()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('`category_id` and `category_uid` can\'t be used at the same time');
         $query = <<<QUERY
 {
@@ -152,15 +157,88 @@ QUERY;
     }
 
     /**
-     * Compare arrays by value in 'name' field.
+     * Get array with expected data for layered navigation filters
      *
-     * @param array $a
-     * @param array $b
-     * @return int
+     * @return array
      */
-    private function compareFilterNames(array $a, array $b)
+    private function getExpectedFiltersDataSet()
     {
-        return strcmp($a['name'], $b['name']);
+        /** @var Config $eavConfig */
+        $eavConfig = Bootstrap::getObjectManager()->get(Config::class);
+        $attribute = $eavConfig->getAttribute('catalog_product', 'test_configurable');
+        /** @var AttributeOptionInterface[] $options */
+        $options = $attribute->getOptions();
+        // Fetching option ID is required for continuous debug as of autoincrement IDs.
+        return [
+            [
+                'name' => 'Category',
+                'filter_items_count' => 1,
+                'request_var' => 'cat',
+                'filter_items' => [
+                    [
+                        'label' => 'Category 1',
+                        'value_string' => '333',
+                        'items_count' => 3,
+                    ],
+                ],
+            ],
+            [
+                'name' => 'Test Configurable',
+                'filter_items_count' => 1,
+                'request_var' => 'test_configurable',
+                'filter_items' => [
+                    [
+                        'label' => 'Option 1',
+                        'value_string' => $options[1]->getValue(),
+                        'items_count' => 1,
+                    ],
+                ],
+            ],
+            [
+                'name' => 'Price',
+                'filter_items_count' => 2,
+                'request_var' => 'price',
+                'filter_items' => [
+                    [
+                        'label' => '<span class="price">$0.00</span> - <span class="price">$9.99</span>',
+                        'value_string' => '-10',
+                        'items_count' => 1,
+                    ],
+                    [
+                        'label' => '<span class="price">$10.00</span> and above',
+                        'value_string' => '10-',
+                        'items_count' => 1,
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Assert filters data.
+     *
+     * @param array $response
+     * @param array $expectedFilters
+     * @param string $message
+     */
+    private function assertFilters($response, $expectedFilters, $message = '')
+    {
+        $this->assertArrayHasKey('filters', $response['products'], 'Products has filters');
+        $this->assertIsArray(($response['products']['filters']), 'Products filters is not array');
+        $this->assertTrue(count($response['products']['filters']) > 0, 'Products filters is empty');
+        foreach ($expectedFilters as $expectedFilter) {
+            $found = false;
+            foreach ($response['products']['filters'] as $responseFilter) {
+                if ($responseFilter['name'] == $expectedFilter['name']
+                    && $responseFilter['request_var'] == $expectedFilter['request_var']) {
+                    $found = true;
+                    break;
+                }
+            }
+            if (!$found) {
+                $this->fail($message);
+            }
+        }
     }
 
     /**
@@ -176,7 +254,7 @@ QUERY;
         $attributeCode = 'test_configurable';
 
         /** @var Config $eavConfig */
-        $eavConfig = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(Config::class);
+        $eavConfig = Bootstrap::getObjectManager()->get(Config::class);
         $attribute = $eavConfig->getAttribute('catalog_product', $attributeCode);
         /** @var AttributeOptionInterface[] $options */
         $options = $attribute->getOptions();
@@ -377,6 +455,24 @@ QUERY;
     }
 
     /**
+     * Get the option value for the custom attribute to be used in the graphql query
+     *
+     * @param string $attributeCode
+     * @return string
+     */
+    private function getDefaultAttributeOptionValue(string $attributeCode): string
+    {
+        /** @var Config $eavConfig */
+        $eavConfig = Bootstrap::getObjectManager()->get(Config::class);
+        $attribute = $eavConfig->getAttribute('catalog_product', $attributeCode);
+        /** @var AttributeOptionInterface[] $options */
+        $options = $attribute->getOptions();
+        array_shift($options);
+        $defaultOptionValue = $options[0]->getValue();
+        return $defaultOptionValue;
+    }
+
+    /**
      * Filter products using an array of  multi select custom attributes
      *
      * @magentoApiDataFixture Magento/Catalog/_files/products_with_layered_navigation_with_multiselect_attribute.php
@@ -450,24 +546,6 @@ QUERY;
         $this->assertNotEmpty($response['products']['filters']);
         $this->assertNotEmpty($response['products']['aggregations']);
         $this->assertCount(2, $response['products']['aggregations']);
-    }
-
-    /**
-     * Get the option value for the custom attribute to be used in the graphql query
-     *
-     * @param string $attributeCode
-     * @return string
-     */
-    private function getDefaultAttributeOptionValue(string $attributeCode): string
-    {
-        /** @var Config $eavConfig */
-        $eavConfig = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(Config::class);
-        $attribute = $eavConfig->getAttribute('catalog_product', $attributeCode);
-        /** @var AttributeOptionInterface[] $options */
-        $options = $attribute->getOptions();
-        array_shift($options);
-        $defaultOptionValue = $options[0]->getValue();
-        return $defaultOptionValue;
     }
 
     /**
@@ -768,18 +846,6 @@ QUERY;
     }
 
     /**
-     * Compare arrays by value in 'label' field.
-     *
-     * @param array $a
-     * @param array $b
-     * @return int
-     */
-    private function compareLabels(array $a, array $b)
-    {
-        return strcmp($a['label'], $b['label']);
-    }
-
-    /**
      *  Filter by exact match of product url key
      *
      * @magentoApiDataFixture Magento/Catalog/_files/categories.php
@@ -854,7 +920,7 @@ QUERY;
         $this->assertEquals('Price', $response['products']['aggregations'][0]['label']);
         $this->assertEquals('Category', $response['products']['aggregations'][1]['label']);
         //Disable the product
-        $product->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_DISABLED);
+        $product->setStatus(Status::STATUS_DISABLED);
         $productRepository->save($product);
         $query2 = <<<QUERY
 {
@@ -981,91 +1047,6 @@ QUERY;
     }
 
     /**
-     * Get array with expected data for layered navigation filters
-     *
-     * @return array
-     */
-    private function getExpectedFiltersDataSet()
-    {
-        /** @var Config $eavConfig */
-        $eavConfig = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(Config::class);
-        $attribute = $eavConfig->getAttribute('catalog_product', 'test_configurable');
-        /** @var \Magento\Eav\Api\Data\AttributeOptionInterface[] $options */
-        $options = $attribute->getOptions();
-        // Fetching option ID is required for continuous debug as of autoincrement IDs.
-        return [
-            [
-                'name' => 'Category',
-                'filter_items_count' => 1,
-                'request_var' => 'cat',
-                'filter_items' => [
-                    [
-                        'label' => 'Category 1',
-                        'value_string' => '333',
-                        'items_count' => 3,
-                    ],
-                ],
-            ],
-            [
-                'name' => 'Test Configurable',
-                'filter_items_count' => 1,
-                'request_var' => 'test_configurable',
-                'filter_items' => [
-                    [
-                        'label' => 'Option 1',
-                        'value_string' => $options[1]->getValue(),
-                        'items_count' => 1,
-                    ],
-                ],
-            ],
-            [
-                'name' => 'Price',
-                'filter_items_count' => 2,
-                'request_var' => 'price',
-                'filter_items' => [
-                    [
-                        'label' => '<span class="price">$0.00</span> - <span class="price">$9.99</span>',
-                        'value_string' => '-10',
-                        'items_count' => 1,
-                    ],
-                    [
-                        'label' => '<span class="price">$10.00</span> and above',
-                        'value_string' => '10-',
-                        'items_count' => 1,
-                    ],
-                ],
-            ],
-        ];
-    }
-
-    /**
-     * Assert filters data.
-     *
-     * @param array $response
-     * @param array $expectedFilters
-     * @param string $message
-     */
-    private function assertFilters($response, $expectedFilters, $message = '')
-    {
-        $this->assertArrayHasKey('filters', $response['products'], 'Products has filters');
-        $this->assertIsArray(($response['products']['filters']), 'Products filters is not array');
-        $this->assertTrue(count($response['products']['filters']) > 0, 'Products filters is empty');
-        foreach ($expectedFilters as $expectedFilter) {
-            $found = false;
-            foreach ($response['products']['filters'] as $responseFilter) {
-                if ($responseFilter['name'] == $expectedFilter['name']
-                    && $responseFilter['request_var'] == $expectedFilter['request_var']) {
-                    $found = true;
-                    break;
-                }
-            }
-            if (!$found) {
-                $this->fail($message);
-            }
-        }
-    }
-
-    /**
      * Verify product filtering using price range AND matching skus AND name sorted in DESC order
      *
      * @magentoApiDataFixture Magento/Catalog/_files/category.php
@@ -1131,6 +1112,38 @@ QUERY;
         $this->assertArrayHasKey('total_count', $response['products']);
         $this->assertProductItems($filteredProducts, $response);
         $this->assertEquals(4, $response['products']['page_info']['page_size']);
+    }
+
+    /**
+     * Asserts the different fields of items returned after search query is executed
+     *
+     * @param Product[] $filteredProducts
+     * @param array $actualResponse
+     */
+    private function assertProductItems(array $filteredProducts, array $actualResponse)
+    {
+        $productItemsInResponse = array_map(null, $actualResponse['products']['items'], $filteredProducts);
+        $count = count($filteredProducts);
+        for ($itemIndex = 0; $itemIndex < $count; $itemIndex++) {
+            $this->assertNotEmpty($productItemsInResponse[$itemIndex]);
+            $this->assertResponseFields(
+                $productItemsInResponse[$itemIndex][0],
+                [
+                    'sku' => $filteredProducts[$itemIndex]->getSku(),
+                    'name' => $filteredProducts[$itemIndex]->getName(),
+                    'price' => [
+                        'minimalPrice' => [
+                            'amount' => [
+                                'value' => $filteredProducts[$itemIndex]->getFinalPrice(),
+                                'currency' => 'USD'
+                            ]
+                        ]
+                    ],
+                    'type_id' => $filteredProducts[$itemIndex]->getTypeId(),
+                    'weight' => $filteredProducts[$itemIndex]->getWeight()
+                ]
+            );
+        }
     }
 
     /**
@@ -1270,7 +1283,7 @@ QUERY;
     }
 }
 QUERY;
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage(
             'GraphQL response contains errors: currentPage value 2 specified is greater ' .
             'than the 1 page(s) available'
@@ -1472,7 +1485,7 @@ QUERY;
      */
     public function testFilteringForProductsFromMultipleCategories()
     {
-        $categoriesIds = ["4","5","12"];
+        $categoriesIds = ["4", "5", "12"];
         $query
             = <<<QUERY
 {
@@ -1530,7 +1543,7 @@ QUERY;
     public function testFilterProductsBySingleCategoryId(string $fieldName, string $queryCategoryId)
     {
         if (is_numeric($queryCategoryId)) {
-            $queryCategoryId = (int) $queryCategoryId;
+            $queryCategoryId = (int)$queryCategoryId;
         }
         $query
             = <<<QUERY
@@ -2119,9 +2132,9 @@ QUERY;
         $prod1 = $productRepository->get('simple1');
         $prod2 = $productRepository->get('simple2');
         $filteredProducts = [$prod1, $prod2];
-        /** @var \Magento\Catalog\Api\CategoryLinkManagementInterface $categoryLinkManagement */
-        $categoryLinkManagement = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Catalog\Api\CategoryLinkManagementInterface::class);
+        /** @var CategoryLinkManagementInterface $categoryLinkManagement */
+        $categoryLinkManagement = Bootstrap::getObjectManager()
+            ->create(CategoryLinkManagementInterface::class);
         foreach ($filteredProducts as $product) {
             $categoryLinkManagement->assignProductToCategories(
                 $product->getSku(),
@@ -2200,6 +2213,45 @@ QUERY;
         $productCount = count($response['products']['filters']);
         for ($i = 0; $i < $productCount; $i++) {
             $this->assertEquals($filterNames[$i], $response['products']['filters'][$i]['name']);
+        }
+    }
+
+    private function assertProductItemsWithPriceCheck(array $filteredProducts, array $actualResponse)
+    {
+        $productItemsInResponse = array_map(null, $actualResponse['products']['items'], $filteredProducts);
+
+        foreach ($productItemsInResponse as $itemIndex => $itemArray) {
+            $this->assertNotEmpty($itemArray);
+            $this->assertResponseFields(
+                $productItemsInResponse[$itemIndex][0],
+                [
+                    'sku' => $filteredProducts[$itemIndex]->getSku(),
+                    'name' => $filteredProducts[$itemIndex]->getName(),
+                    'price' => [
+                        'minimalPrice' => [
+                            'amount' => [
+                                'value' => $filteredProducts[$itemIndex]->getSpecialPrice(),
+                                'currency' => 'USD'
+                            ]
+                        ],
+                        'maximalPrice' => [
+                            'amount' => [
+                                'value' => $filteredProducts[$itemIndex]->getSpecialPrice(),
+                                'currency' => 'USD'
+                            ]
+                        ],
+                        'regularPrice' => [
+                            'amount' => [
+                                'value' => $filteredProducts[$itemIndex]->getPrice(),
+                                'currency' => 'USD'
+                            ]
+                        ]
+
+                    ],
+                    'type_id' => $filteredProducts[$itemIndex]->getTypeId(),
+                    'weight' => $filteredProducts[$itemIndex]->getWeight()
+                ]
+            );
         }
     }
 
@@ -2314,7 +2366,7 @@ QUERY;
 }
 QUERY;
 
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage(
             'GraphQL response contains errors: currentPage value 2 specified is greater ' .
             'than the 1 page(s) available.'
@@ -2346,7 +2398,7 @@ QUERY;
 }
 QUERY;
 
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage(
             'GraphQL response contains errors: \'search\' or \'filter\' input argument is ' .
             'required.'
@@ -2385,12 +2437,12 @@ QUERY;
         /** @var \Magento\Config\Model\ResourceModel\Config $config */
         $config = ObjectManager::getInstance()->get(\Magento\Config\Model\ResourceModel\Config::class);
         $config->saveConfig(
-            \Magento\CatalogInventory\Model\Configuration::XML_PATH_SHOW_OUT_OF_STOCK,
+            Configuration::XML_PATH_SHOW_OUT_OF_STOCK,
             0,
             ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
             0
         );
-        ObjectManager::getInstance()->get(\Magento\Framework\App\Cache::class)
+        ObjectManager::getInstance()->get(Cache::class)
             ->clean(\Magento\Framework\App\Config::CACHE_TAG);
         $response = $this->graphQlQuery($query);
         $responseObject = new DataObject($response);
@@ -2412,7 +2464,7 @@ QUERY;
      */
     public function testInvalidCurrentPage()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('currentPage value must be greater than 0');
 
         $query = <<<QUERY
@@ -2442,7 +2494,7 @@ QUERY;
      */
     public function testInvalidPageSize()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('pageSize value must be greater than 0');
 
         $query = <<<QUERY
@@ -2466,77 +2518,6 @@ QUERY;
     }
 
     /**
-     * Asserts the different fields of items returned after search query is executed
-     *
-     * @param Product[] $filteredProducts
-     * @param array $actualResponse
-     */
-    private function assertProductItems(array $filteredProducts, array $actualResponse)
-    {
-        $productItemsInResponse = array_map(null, $actualResponse['products']['items'], $filteredProducts);
-        $count = count($filteredProducts);
-        for ($itemIndex = 0; $itemIndex < $count; $itemIndex++) {
-            $this->assertNotEmpty($productItemsInResponse[$itemIndex]);
-            $this->assertResponseFields(
-                $productItemsInResponse[$itemIndex][0],
-                [
-                    'sku' => $filteredProducts[$itemIndex]->getSku(),
-                    'name' => $filteredProducts[$itemIndex]->getName(),
-                    'price' => [
-                        'minimalPrice' => [
-                            'amount' => [
-                                'value' => $filteredProducts[$itemIndex]->getFinalPrice(),
-                                'currency' => 'USD'
-                            ]
-                        ]
-                    ],
-                    'type_id' => $filteredProducts[$itemIndex]->getTypeId(),
-                    'weight' => $filteredProducts[$itemIndex]->getWeight()
-                ]
-            );
-        }
-    }
-
-    private function assertProductItemsWithPriceCheck(array $filteredProducts, array $actualResponse)
-    {
-        $productItemsInResponse = array_map(null, $actualResponse['products']['items'], $filteredProducts);
-
-        foreach ($productItemsInResponse as $itemIndex => $itemArray) {
-            $this->assertNotEmpty($itemArray);
-            $this->assertResponseFields(
-                $productItemsInResponse[$itemIndex][0],
-                [
-                    'sku' => $filteredProducts[$itemIndex]->getSku(),
-                    'name' => $filteredProducts[$itemIndex]->getName(),
-                    'price' => [
-                        'minimalPrice' => [
-                            'amount' => [
-                                'value' => $filteredProducts[$itemIndex]->getSpecialPrice(),
-                                'currency' => 'USD'
-                            ]
-                        ],
-                        'maximalPrice' => [
-                            'amount' => [
-                                'value' => $filteredProducts[$itemIndex]->getSpecialPrice(),
-                                'currency' => 'USD'
-                            ]
-                        ],
-                        'regularPrice' => [
-                            'amount' => [
-                                'value' => $filteredProducts[$itemIndex]->getPrice(),
-                                'currency' => 'USD'
-                            ]
-                        ]
-
-                    ],
-                    'type_id' => $filteredProducts[$itemIndex]->getTypeId(),
-                    'weight' => $filteredProducts[$itemIndex]->getWeight()
-                ]
-            );
-        }
-    }
-
-    /**
      * Data provider for product single category filtering
      *
      * @return array[][]
@@ -2553,5 +2534,29 @@ QUERY;
                 'categoryId' => base64_encode('333'),
             ],
         ];
+    }
+
+    /**
+     * Compare arrays by value in 'name' field.
+     *
+     * @param array $a
+     * @param array $b
+     * @return int
+     */
+    private function compareFilterNames(array $a, array $b)
+    {
+        return strcmp($a['name'], $b['name']);
+    }
+
+    /**
+     * Compare arrays by value in 'label' field.
+     *
+     * @param array $a
+     * @param array $b
+     * @return int
+     */
+    private function compareLabels(array $a, array $b)
+    {
+        return strcmp($a['label'], $b['label']);
     }
 }

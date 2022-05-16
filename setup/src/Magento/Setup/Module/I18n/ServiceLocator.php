@@ -3,9 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\I18n;
 
 use Magento\Framework\Component\ComponentRegistrar;
+use Magento\Setup\Module\I18n\Pack\Generator;
 
 /**
  *  Service Locator (instead DI container)
@@ -16,14 +18,14 @@ class ServiceLocator
     /**
      * Domain abstract factory
      *
-     * @var \Magento\Setup\Module\I18n\Factory
+     * @var Factory
      */
     private static $_factory;
 
     /**
      * Context manager
      *
-     * @var \Magento\Setup\Module\I18n\Factory
+     * @var Factory
      */
     private static $_context;
 
@@ -37,7 +39,7 @@ class ServiceLocator
     /**
      * Pack generator
      *
-     * @var \Magento\Setup\Module\I18n\Pack\Generator
+     * @var Generator
      */
     private static $_packGenerator;
 
@@ -77,9 +79,35 @@ class ServiceLocator
     }
 
     /**
+     * Get factory
+     *
+     * @return Factory
+     */
+    private static function _getFactory()
+    {
+        if (null === self::$_factory) {
+            self::$_factory = new Factory();
+        }
+        return self::$_factory;
+    }
+
+    /**
+     * Get context
+     *
+     * @return Context
+     */
+    private static function _getContext()
+    {
+        if (null === self::$_context) {
+            self::$_context = new Context(new ComponentRegistrar());
+        }
+        return self::$_context;
+    }
+
+    /**
      * Get pack generator
      *
-     * @return \Magento\Setup\Module\I18n\Pack\Generator
+     * @return Generator
      */
     public static function getPackGenerator()
     {
@@ -90,31 +118,5 @@ class ServiceLocator
             self::$_packGenerator = new Pack\Generator($dictionaryLoader, $packWriter, self::_getFactory());
         }
         return self::$_packGenerator;
-    }
-
-    /**
-     * Get factory
-     *
-     * @return \Magento\Setup\Module\I18n\Factory
-     */
-    private static function _getFactory()
-    {
-        if (null === self::$_factory) {
-            self::$_factory = new \Magento\Setup\Module\I18n\Factory();
-        }
-        return self::$_factory;
-    }
-
-    /**
-     * Get context
-     *
-     * @return \Magento\Setup\Module\I18n\Context
-     */
-    private static function _getContext()
-    {
-        if (null === self::$_context) {
-            self::$_context = new Context(new ComponentRegistrar());
-        }
-        return self::$_context;
     }
 }

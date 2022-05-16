@@ -3,10 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Api;
 
 use Magento\Eav\Api\Data\AttributeOptionInterface;
 use Magento\Eav\Api\Data\AttributeOptionLabelInterface;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 class ProductSwatchAttributeOptionManagementInterfaceTest extends WebapiAbstract
@@ -25,7 +27,7 @@ class ProductSwatchAttributeOptionManagementInterfaceTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/' . $testAttributeCode . '/options',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -52,6 +54,26 @@ class ProductSwatchAttributeOptionManagementInterfaceTest extends WebapiAbstract
             $optionData[AttributeOptionInterface::STORE_LABELS][0][AttributeOptionLabelInterface::LABEL],
             $lastOption['label']
         );
+    }
+
+    /**
+     * @param $testAttributeCode
+     * @return array|bool|float|int|string
+     */
+    private function getAttributeOptions($testAttributeCode)
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH . '/' . $testAttributeCode . '/options',
+                'httpMethod' => Request::HTTP_METHOD_GET,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'getItems',
+            ],
+        ];
+        return $this->_webApiCall($serviceInfo, ['attributeCode' => $testAttributeCode]);
     }
 
     /**
@@ -84,25 +106,5 @@ class ProductSwatchAttributeOptionManagementInterfaceTest extends WebapiAbstract
             ],
 
         ];
-    }
-
-    /**
-     * @param $testAttributeCode
-     * @return array|bool|float|int|string
-     */
-    private function getAttributeOptions($testAttributeCode)
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . '/' . $testAttributeCode . '/options',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'getItems',
-            ],
-        ];
-        return $this->_webApiCall($serviceInfo, ['attributeCode' => $testAttributeCode]);
     }
 }

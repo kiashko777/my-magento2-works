@@ -48,7 +48,8 @@ define([
         try {
             injector.clean();
             injector.remove();
-        } catch (e) {}
+        } catch (e) {
+        }
         window.localStorage.clear();
     });
 
@@ -232,7 +233,7 @@ define([
             });
 
             it('check calls "hasInCache" with ids that exists in data', function () {
-                var ids  = {
+                var ids = {
                         '1': {
                             id: '1',
                             'currency_code': currency,
@@ -250,7 +251,7 @@ define([
                 expect(result).toBe(true);
             });
             it('check calls "hasInCache" with ids that does not exists in data', function () {
-                var ids  = {
+                var ids = {
                         '5': {
                             id: '5',
                             'currency_code': currency,
@@ -271,7 +272,7 @@ define([
         describe('"loadDataFromServer" method', function () {
             var currency = 'currency',
                 store = '1',
-                ids  = {
+                ids = {
                     '1': {
                         id: '1'
                     },
@@ -316,14 +317,14 @@ define([
             });
         });
         describe('"hasIdsInSentRequest" method', function () {
-            var ids  = {
-                    '1': {
-                        id: '1'
-                    },
-                    '2': {
-                        id: '2'
-                    }
-                };
+            var ids = {
+                '1': {
+                    id: '1'
+                },
+                '2': {
+                    id: '2'
+                }
+            };
 
             beforeEach(function () {
                 obj.request = {

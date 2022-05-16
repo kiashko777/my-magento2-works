@@ -13,6 +13,8 @@ use Magento\Framework\Data\Form\FormKey;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Api\Data\ShipmentInterface;
 use Magento\Sales\Model\OrderRepository;
+use Magento\Sales\Model\ResourceModel\Order\Shipment\Collection;
+use Magento\Sales\Model\ResourceModel\Order\Shipment\CollectionFactory;
 use Magento\TestFramework\Mail\Template\TransportBuilderMock;
 use Magento\TestFramework\TestCase\AbstractBackendController;
 
@@ -76,9 +78,9 @@ class AbstractShipmentControllerTest extends AbstractBackendController
      */
     protected function getShipment(OrderInterface $order): ShipmentInterface
     {
-        /** @var \Magento\Sales\Model\ResourceModel\Order\Shipment\Collection $shipmentCollection */
+        /** @var Collection $shipmentCollection */
         $shipmentCollection = $this->_objectManager->create(
-            \Magento\Sales\Model\ResourceModel\Order\Shipment\CollectionFactory::class
+            CollectionFactory::class
         )->create();
 
         /** @var ShipmentInterface $shipment */

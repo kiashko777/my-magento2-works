@@ -25,18 +25,6 @@ class SearchTest extends WebapiAbstract
     private $product;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $productSku = 'simple';
-
-        $objectManager = Bootstrap::getObjectManager();
-        $productRepository = $objectManager->get(ProductRepositoryInterface::class);
-        $this->product = $productRepository->get($productSku);
-    }
-
-    /**
      * Tests that webapi call returns response when search criteria is valid.
      *
      * @magentoApiDataFixture Magento/Catalog/_files/products.php
@@ -54,23 +42,6 @@ class SearchTest extends WebapiAbstract
         self::assertArrayHasKey('items', $response);
         self::assertGreaterThan(1, count($response['items']));
         self::assertGreaterThan(0, $response['items'][0]['id']);
-    }
-
-    /**
-     * Tests that response is empty if invalid data is provided.
-     *
-     * @magentoApiDataFixture Magento/Catalog/_files/products.php
-     */
-    public function testNonExistentProductSearch(): void
-    {
-        $searchCriteria = $this->buildSearchCriteria('nonExistentProduct');
-        $serviceInfo = $this->buildServiceInfo($searchCriteria);
-
-        $response = $this->_webApiCall($serviceInfo, $searchCriteria);
-
-        self::assertArrayHasKey('search_criteria', $response);
-        self::assertArrayHasKey('items', $response);
-        self::assertCount(0, $response['items']);
     }
 
     /**
@@ -113,5 +84,34 @@ class SearchTest extends WebapiAbstract
                 'operation' => self::SERVICE_NAME . 'Search'
             ]
         ];
+    }
+
+    /**
+     * Tests that response is empty if invalid data is provided.
+     *
+     * @magentoApiDataFixture Magento/Catalog/_files/products.php
+     */
+    public function testNonExistentProductSearch(): void
+    {
+        $searchCriteria = $this->buildSearchCriteria('nonExistentProduct');
+        $serviceInfo = $this->buildServiceInfo($searchCriteria);
+
+        $response = $this->_webApiCall($serviceInfo, $searchCriteria);
+
+        self::assertArrayHasKey('search_criteria', $response);
+        self::assertArrayHasKey('items', $response);
+        self::assertCount(0, $response['items']);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $productSku = 'simple';
+
+        $objectManager = Bootstrap::getObjectManager();
+        $productRepository = $objectManager->get(ProductRepositoryInterface::class);
+        $this->product = $productRepository->get($productSku);
     }
 }

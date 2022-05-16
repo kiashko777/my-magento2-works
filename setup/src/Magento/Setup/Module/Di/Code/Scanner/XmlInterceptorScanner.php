@@ -3,7 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Di\Code\Scanner;
+
+use DOMDocument;
+use DOMNode;
+use DOMXPath;
 
 class XmlInterceptorScanner implements ScannerInterface
 {
@@ -34,10 +39,10 @@ class XmlInterceptorScanner implements ScannerInterface
     protected function _collectEntitiesFromString($content)
     {
         $output = [];
-        $dom = new \DOMDocument();
+        $dom = new DOMDocument();
         $dom->loadXML($content);
-        $xpath = new \DOMXPath($dom);
-        /** @var $entityNode \DOMNode */
+        $xpath = new DOMXPath($dom);
+        /** @var $entityNode DOMNode */
         foreach ($xpath->query('//type[plugin]|//virtualType[plugin]') as $entityNode) {
             $attributes = $entityNode->attributes;
             $type = $attributes->getNamedItem('type');
@@ -64,18 +69,18 @@ class XmlInterceptorScanner implements ScannerInterface
             $controllerSuffix = 'Controller';
             $pathParts = explode('_', $entityName);
             if (strrpos(
-                $entityName,
-                $controllerSuffix
-            ) === strlen(
-                $entityName
-            ) - strlen(
-                $controllerSuffix
-            ) && isset(
-                $pathParts[2]
-            ) && !in_array(
-                $pathParts[2],
-                ['Block', 'Helper', 'Model']
-            )
+                    $entityName,
+                    $controllerSuffix
+                ) === strlen(
+                    $entityName
+                ) - strlen(
+                    $controllerSuffix
+                ) && isset(
+                    $pathParts[2]
+                ) && !in_array(
+                    $pathParts[2],
+                    ['Block', 'Helper', 'Model']
+                )
             ) {
                 $this->_handleControllerClassName($entityName);
             }

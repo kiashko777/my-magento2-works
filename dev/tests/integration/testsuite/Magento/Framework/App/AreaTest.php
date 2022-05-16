@@ -3,32 +3,25 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\App;
 
 use Laminas\Stdlib\Parameters;
+use Magento\TestFramework\Request;
+use Magento\Theme\Model\Design;
+use PHPUnit\Framework\TestCase;
 
-class AreaTest extends \PHPUnit\Framework\TestCase
+class AreaTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\App\Area
+     * @var Area
      */
     protected $_model;
 
     public static function tearDownAfterClass(): void
     {
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\App\CacheInterface::class)
-            ->clean([\Magento\Theme\Model\Design::CACHE_TAG]);
-    }
-
-    protected function setUp(): void
-    {
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\App\State::class)
-            ->setAreaCode('frontend');
-        /** @var $_model \Magento\Framework\App\Area */
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\App\Area::class,
-            ['areaCode' => 'frontend']
-        );
+        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(CacheInterface::class)
+            ->clean([Design::CACHE_TAG]);
     }
 
     /**
@@ -39,7 +32,7 @@ class AreaTest extends \PHPUnit\Framework\TestCase
         $defaultTheme = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
             \Magento\Framework\View\DesignInterface::class
         )->setDefaultDesignTheme()->getDesignTheme();
-        $this->_model->load(\Magento\Framework\App\Area::PART_DESIGN);
+        $this->_model->load(Area::PART_DESIGN);
         $design = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
             \Magento\Framework\View\DesignInterface::class
         )->setDefaultDesignTheme();
@@ -48,7 +41,7 @@ class AreaTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('frontend', $design->getArea());
 
         // try second time and make sure it won't load second time
-        $this->_model->load(\Magento\Framework\App\Area::PART_DESIGN);
+        $this->_model->load(Area::PART_DESIGN);
         $designArea = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
             \Magento\Framework\View\DesignInterface::class
         )->getArea();
@@ -60,17 +53,12 @@ class AreaTest extends \PHPUnit\Framework\TestCase
         $this->assertSame($design, $sameDesign);
     }
 
-    // @codingStandardsIgnoreStart
-    /**
-     * @magentoConfigFixture current_store design/theme/ua_regexp {"_":{"regexp":"\/firefox\/i","value":"Magento\/blank"}}
-     * @magentoAppIsolation enabled
-     */
-    // @codingStandardsIgnoreEnd
+
     public function testDetectDesignUserAgent()
     {
         $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var $request \Magento\TestFramework\Request */
-        $request = $objectManager->create(\Magento\TestFramework\Request::class);
+        /** @var $request Request */
+        $request = $objectManager->create(Request::class);
         $request->setServer(new Parameters(['HTTP_USER_AGENT' => 'Mozilla Firefox']));
         $this->_model->detectDesign($request);
         $design = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
@@ -82,10 +70,10 @@ class AreaTest extends \PHPUnit\Framework\TestCase
     // @codingStandardsIgnoreStart
     /**
      * @magentoConfigFixture current_store design/theme/ua_regexp {"_":{"regexp":"\/firefox\/i","value":"Magento\/blank"}}
-     * @magentoDataFixture Magento/Theme/_files/design_change.php
      * @magentoAppIsolation enabled
      */
     // @codingStandardsIgnoreEnd
+
     public function testDetectDesignDesignChange()
     {
         $this->_model->detectDesign();
@@ -97,6 +85,26 @@ class AreaTest extends \PHPUnit\Framework\TestCase
 
     // @codingStandardsIgnoreStart
     /**
+     * @magentoConfigFixture current_store design/theme/ua_regexp {"_":{"regexp":"\/firefox\/i","value":"Magento\/blank"}}
+     * @magentoDataFixture Magento/Theme/_files/design_change.php
+     * @magentoAppIsolation enabled
+     */
+    // @codingStandardsIgnoreEnd
+
+    public function testDetectDesignNonFrontend()
+    {
+        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $model = $objectManager->create(Area::class, ['areaCode' => 'Adminhtml']);
+        /** @var $request Request */
+        $request = $objectManager->create(Request::class);
+        $request->setServer(new Parameters(['HTTP_USER_AGENT' => 'Mozilla Firefox']));
+        $model->detectDesign($request);
+        $design = $objectManager->get(\Magento\Framework\View\DesignInterface::class);
+        $this->assertNotEquals('Magento/blank', $design->getDesignTheme()->getThemePath());
+    }
+
+    // @codingStandardsIgnoreStart
+    /**
      * Test that non-frontend areas are not affected neither by user-agent reg expressions, nor by the "design change"
      *
      * @magentoConfigFixture current_store design/theme/ua_regexp {"_":{"regexp":"\/firefox\/i","value":"Magento\/blank"}}
@@ -104,15 +112,14 @@ class AreaTest extends \PHPUnit\Framework\TestCase
      * @magentoAppIsolation enabled
      */
     // @codingStandardsIgnoreEnd
-    public function testDetectDesignNonFrontend()
+    protected function setUp(): void
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $model = $objectManager->create(\Magento\Framework\App\Area::class, ['areaCode' => 'Adminhtml']);
-        /** @var $request \Magento\TestFramework\Request */
-        $request = $objectManager->create(\Magento\TestFramework\Request::class);
-        $request->setServer(new Parameters(['HTTP_USER_AGENT' => 'Mozilla Firefox']));
-        $model->detectDesign($request);
-        $design = $objectManager->get(\Magento\Framework\View\DesignInterface::class);
-        $this->assertNotEquals('Magento/blank', $design->getDesignTheme()->getThemePath());
+        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(State::class)
+            ->setAreaCode('frontend');
+        /** @var $_model Area */
+        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+            Area::class,
+            ['areaCode' => 'frontend']
+        );
     }
 }

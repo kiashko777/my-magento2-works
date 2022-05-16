@@ -6,6 +6,8 @@
 
 namespace Magento\Setup\Module\Di\Compiler\Config;
 
+use InvalidArgumentException;
+
 class ModificationChain implements ModificationInterface
 {
     /**
@@ -22,7 +24,7 @@ class ModificationChain implements ModificationInterface
             $modificationsList,
             function ($modification) {
                 if (!$modification instanceof ModificationInterface) {
-                    throw new \InvalidArgumentException('Wrong modifier provided');
+                    throw new InvalidArgumentException('Wrong modifier provided');
                 }
             }
         );

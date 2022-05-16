@@ -33,19 +33,6 @@ class SidebarTest extends TestCase
     private $page;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $productMetadataInterface = $this->objectManager->get(ProductMetadataInterface::class);
-        if ($productMetadataInterface->getEdition() !== ProductMetadata::EDITION_NAME) {
-            $this->markTestSkipped('Skipped, because this logic is rewritten on EE.');
-        }
-        $this->page = $this->objectManager->create(Page::class);
-    }
-
-    /**
      * @magentoConfigFixture current_store wishlist/general/show_in_sidebar 1
      *
      * @return void
@@ -65,6 +52,20 @@ class SidebarTest extends TestCase
     }
 
     /**
+     * Prepare category page.
+     *
+     * @return void
+     */
+    private function preparePageLayout(): void
+    {
+        $this->page->addHandle([
+            'default',
+            'catalog_category_view',
+        ]);
+        $this->page->getLayout()->generateXml();
+    }
+
+    /**
      * @magentoConfigFixture current_store wishlist/general/show_in_sidebar 0
      *
      * @return void
@@ -79,16 +80,15 @@ class SidebarTest extends TestCase
     }
 
     /**
-     * Prepare category page.
-     *
-     * @return void
+     * @inheritdoc
      */
-    private function preparePageLayout(): void
+    protected function setUp(): void
     {
-        $this->page->addHandle([
-            'default',
-            'catalog_category_view',
-        ]);
-        $this->page->getLayout()->generateXml();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $productMetadataInterface = $this->objectManager->get(ProductMetadataInterface::class);
+        if ($productMetadataInterface->getEdition() !== ProductMetadata::EDITION_NAME) {
+            $this->markTestSkipped('Skipped, because this logic is rewritten on EE.');
+        }
+        $this->page = $this->objectManager->create(Page::class);
     }
 }

@@ -7,10 +7,12 @@ declare(strict_types=1);
 
 namespace Magento\Quote\Model;
 
-use Magento\TestFramework\Helper\Bootstrap as BootstrapHelper;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Quote\Api\GuestCartManagementInterface;
+use Magento\TestFramework\Helper\Bootstrap as BootstrapHelper;
+use PHPUnit\Framework\TestCase;
 
-class MaskedQuoteIdToQuoteIdTest extends \PHPUnit\Framework\TestCase
+class MaskedQuoteIdToQuoteIdTest extends TestCase
 {
     /**
      * @var MaskedQuoteIdToQuoteIdInterface
@@ -22,13 +24,6 @@ class MaskedQuoteIdToQuoteIdTest extends \PHPUnit\Framework\TestCase
      */
     private $guestCartManagement;
 
-    protected function setUp(): void
-    {
-        $objectManager = BootstrapHelper::getObjectManager();
-        $this->maskedQuoteIdToQuoteId = $objectManager->create(MaskedQuoteIdToQuoteIdInterface::class);
-        $this->guestCartManagement = $objectManager->create(GuestCartManagementInterface::class);
-    }
-
     public function testMaskedIdToQuoteId()
     {
         $maskedQuoteId = $this->guestCartManagement->createEmptyCart();
@@ -39,8 +34,15 @@ class MaskedQuoteIdToQuoteIdTest extends \PHPUnit\Framework\TestCase
 
     public function testMaskedQuoteIdToQuoteIdForNonExistentQuote()
     {
-        self::expectException(\Magento\Framework\Exception\NoSuchEntityException::class);
+        self::expectException(NoSuchEntityException::class);
 
         $this->maskedQuoteIdToQuoteId->execute('test');
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = BootstrapHelper::getObjectManager();
+        $this->maskedQuoteIdToQuoteId = $objectManager->create(MaskedQuoteIdToQuoteIdInterface::class);
+        $this->guestCartManagement = $objectManager->create(GuestCartManagementInterface::class);
     }
 }

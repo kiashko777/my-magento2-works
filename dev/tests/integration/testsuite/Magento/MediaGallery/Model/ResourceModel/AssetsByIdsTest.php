@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\MediaGallery\Model\ResourceModel;
 
+use Magento\Framework\Exception\LocalizedException;
 use Magento\MediaGalleryApi\Api\GetAssetsByIdsInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
@@ -25,17 +26,9 @@ class AssetsByIdsTest extends TestCase
     private $getAssetsByIds;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->getAssetsByIds = Bootstrap::getObjectManager()->get(GetAssetsByIdsInterface::class);
-    }
-
-    /**
      * Testing assets keywords save and get
      *
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @throws LocalizedException
      *
      * @magentoDataFixture Magento/MediaGallery/_files/media_asset.php
      */
@@ -44,5 +37,13 @@ class AssetsByIdsTest extends TestCase
         $assets = $this->getAssetsByIds->execute([self::FIXTURE_ASSET_ID]);
         $this->assertCount(1, $assets);
         $this->assertEquals($assets[0]->getPath(), self::FIXTURE_ASSET_PATH);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->getAssetsByIds = Bootstrap::getObjectManager()->get(GetAssetsByIdsInterface::class);
     }
 }

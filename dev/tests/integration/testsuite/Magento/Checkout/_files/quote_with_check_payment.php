@@ -4,7 +4,10 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Quote\Model\Quote\Address\Rate;
 use Magento\Quote\Model\QuoteFactory;
+use Magento\Quote\Model\QuoteIdMask;
+use Magento\Quote\Model\QuoteIdMaskFactory;
 use Magento\Quote\Model\ResourceModel\Quote as QuoteResource;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
@@ -17,9 +20,9 @@ $quoteResource = Bootstrap::getObjectManager()->get(QuoteResource::class);
 $quote = $quoteFactory->create();
 $quoteResource->load($quote, 'test_order_1', 'reserved_order_id');
 
-/** @var $rate \Magento\Quote\Model\Quote\Address\Rate */
-$rate = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Quote\Model\Quote\Address\Rate::class
+/** @var $rate Rate */
+$rate = Bootstrap::getObjectManager()->create(
+    Rate::class
 );
 $rate->setCode('freeshipping_freeshipping');
 $rate->getPrice(1);
@@ -32,9 +35,9 @@ $quote->collectTotals();
 $quote->save();
 $quote->getPayment()->setMethod('checkmo');
 
-/** @var \Magento\Quote\Model\QuoteIdMask $quoteIdMask */
-$quoteIdMask = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->create(\Magento\Quote\Model\QuoteIdMaskFactory::class)
+/** @var QuoteIdMask $quoteIdMask */
+$quoteIdMask = Bootstrap::getObjectManager()
+    ->create(QuoteIdMaskFactory::class)
     ->create();
 $quoteIdMask->setQuoteId($quote->getId());
 $quoteIdMask->setDataChanges(true);

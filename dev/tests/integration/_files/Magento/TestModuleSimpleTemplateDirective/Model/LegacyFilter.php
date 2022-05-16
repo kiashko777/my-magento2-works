@@ -21,9 +21,9 @@ class LegacyFilter extends Template
      * @param $construction
      * @return string
      */
-    protected function coolDirective($construction)
+    public function coolerDirective($construction)
     {
-        return 'value1: ' . $construction[1] . ':' . $construction[2];
+        return 'value2: ' . $construction[1] . ':' . $construction[2];
     }
 
     /**
@@ -32,8 +32,8 @@ class LegacyFilter extends Template
      * @param $construction
      * @return string
      */
-    public function coolerDirective($construction)
+    protected function coolDirective($construction)
     {
-        return 'value2: ' . $construction[1] . ':' . $construction[2];
+        return 'value1: ' . $construction[1] . ':' . $construction[2];
     }
 }

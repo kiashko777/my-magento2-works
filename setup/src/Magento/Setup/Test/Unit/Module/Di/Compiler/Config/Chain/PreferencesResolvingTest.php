@@ -109,6 +109,23 @@ class PreferencesResolvingTest extends TestCase
     /**
      * @return array
      */
+    private function getPreferences()
+    {
+        return [
+            'Type\DependencyInterface' => 'Type\Dependency',
+            'Type\Dependency\SharedInterface' => 'Type\Dependency\Shared',
+            'Type\Dependency\ConfiguredInterface' => 'Type\Dependency\Configured',
+            'Type\Dependency\Shared\ConfiguredInterface' => 'Type\Dependency\Shared\ConfiguredPreference',
+            'Type\Dependency\Shared\Configured' => 'Type\Dependency\Shared\ConfiguredPreference',
+            'Type\DependencyInterface2' => 'Type\DependencyVirtual',
+            'Type\DependencyVirtual' => 'Type\DependencyVirtual2',
+            'Type\DependencyVirtual2' => 'Type\DependencyVirtual3'
+        ];
+    }
+
+    /**
+     * @return array
+     */
     private function getOutputArguments()
     {
         return [
@@ -172,23 +189,6 @@ class PreferencesResolvingTest extends TestCase
                     '_vn_' => true,
                 ],
             ]
-        ];
-    }
-
-    /**
-     * @return array
-     */
-    private function getPreferences()
-    {
-        return [
-            'Type\DependencyInterface' => 'Type\Dependency',
-            'Type\Dependency\SharedInterface' => 'Type\Dependency\Shared',
-            'Type\Dependency\ConfiguredInterface' => 'Type\Dependency\Configured',
-            'Type\Dependency\Shared\ConfiguredInterface' => 'Type\Dependency\Shared\ConfiguredPreference',
-            'Type\Dependency\Shared\Configured' => 'Type\Dependency\Shared\ConfiguredPreference',
-            'Type\DependencyInterface2' => 'Type\DependencyVirtual',
-            'Type\DependencyVirtual' => 'Type\DependencyVirtual2',
-            'Type\DependencyVirtual2' => 'Type\DependencyVirtual3'
         ];
     }
 }

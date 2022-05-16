@@ -3,24 +3,27 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Model\Indexer\Product\Eav\Action;
+
+use Magento\Catalog\Block\Product\ListProduct;
+use Magento\Catalog\Model\CategoryFactory;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Action;
+use Magento\Catalog\Model\ResourceModel\Eav\Attribute;
+use Magento\Eav\Model\Config;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Rows reindex Test
  */
-class RowsTest extends \PHPUnit\Framework\TestCase
+class RowsTest extends TestCase
 {
     /**
-     * @var \Magento\Catalog\Model\Product\Action
+     * @var Action
      */
     protected $_productAction;
-
-    protected function setUp(): void
-    {
-        $this->_productAction = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Catalog\Model\Product\Action::class
-        );
-    }
 
     /**
      * @magentoDbIsolation disabled
@@ -29,8 +32,8 @@ class RowsTest extends \PHPUnit\Framework\TestCase
      */
     public function testUpdateAttributes()
     {
-        /** @var \Magento\Catalog\Model\ResourceModel\Eav\Attribute $attr **/
-        $attr = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Eav\Model\Config::class)
+        /** @var Attribute $attr * */
+        $attr = Bootstrap::getObjectManager()->get(Config::class)
             ->getAttribute('catalog_product', 'weight');
         $attr->setIsFilterable(1)->save();
 
@@ -42,12 +45,12 @@ class RowsTest extends \PHPUnit\Framework\TestCase
             1
         );
 
-        $categoryFactory = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Catalog\Model\CategoryFactory::class
+        $categoryFactory = Bootstrap::getObjectManager()->get(
+            CategoryFactory::class
         );
-        /** @var \Magento\Catalog\Block\Product\ListProduct $listProduct */
-        $listProduct = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Catalog\Block\Product\ListProduct::class
+        /** @var ListProduct $listProduct */
+        $listProduct = Bootstrap::getObjectManager()->get(
+            ListProduct::class
         );
 
         $category = $categoryFactory->create()->load(2);
@@ -58,11 +61,18 @@ class RowsTest extends \PHPUnit\Framework\TestCase
 
         $this->assertCount(1, $productCollection);
 
-        /** @var $product \Magento\Catalog\Model\Product */
+        /** @var $product Product */
         foreach ($productCollection as $product) {
             $this->assertEquals('Simple Products', $product->getName());
             $this->assertEquals('Short description', $product->getShortDescription());
             $this->assertEquals(11, $product->getWeight());
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->_productAction = Bootstrap::getObjectManager()->get(
+            Action::class
+        );
     }
 }

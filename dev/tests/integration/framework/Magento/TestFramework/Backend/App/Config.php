@@ -9,6 +9,7 @@
 namespace Magento\TestFramework\Backend\App;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\TestFramework\App\MutableScopeConfig;
 
 /**
  * Backend config accessor.
@@ -16,19 +17,20 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 class Config extends \Magento\Backend\App\Config
 {
     /**
-     * @var \Magento\TestFramework\App\MutableScopeConfig
+     * @var MutableScopeConfig
      */
     private $mutableScopeConfig;
 
     /**
      * Config constructor.
      * @param \Magento\TestFramework\App\Config $appConfig
-     * @param \Magento\TestFramework\App\MutableScopeConfig $mutableScopeConfig
+     * @param MutableScopeConfig $mutableScopeConfig
      */
     public function __construct(
-        \Magento\TestFramework\App\Config $appConfig,
-        \Magento\TestFramework\App\MutableScopeConfig $mutableScopeConfig
-    ) {
+        \Magento\TestFramework\App\Config             $appConfig,
+        MutableScopeConfig $mutableScopeConfig
+    )
+    {
         parent::__construct($appConfig);
         $this->mutableScopeConfig = $mutableScopeConfig;
     }
@@ -41,7 +43,8 @@ class Config extends \Magento\Backend\App\Config
         $value,
         $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
         $scopeCode = null
-    ) {
+    )
+    {
         $this->mutableScopeConfig->setValue($path, $value, $scope, $scopeCode);
     }
 }

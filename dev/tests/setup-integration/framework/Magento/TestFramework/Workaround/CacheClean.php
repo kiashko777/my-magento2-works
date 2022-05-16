@@ -6,6 +6,7 @@
 
 namespace Magento\TestFramework\Workaround;
 
+use Magento\Framework\App\Cache\Manager;
 use Magento\TestFramework\Helper\Bootstrap;
 
 /**
@@ -22,8 +23,8 @@ class CacheClean
      */
     public function endTest()
     {
-        /** @var \Magento\Framework\App\Cache\Manager $cacheManager */
-        $cacheManager = Bootstrap::getObjectManager()->get(\Magento\Framework\App\Cache\Manager::class);
+        /** @var Manager $cacheManager */
+        $cacheManager = Bootstrap::getObjectManager()->get(Manager::class);
         $types = $cacheManager->getAvailableTypes();
         $cacheManager->clean($types);
     }

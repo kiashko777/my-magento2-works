@@ -7,15 +7,20 @@
 namespace Magento\Customer\Block\Adminhtml\Edit\Tab\View;
 
 use Magento\Customer\Controller\RegistryConstants;
+use Magento\Framework\App\State;
+use Magento\Framework\DataObject;
 use Magento\Framework\Escaper;
+use Magento\Framework\Registry;
+use Magento\Framework\View\LayoutInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for \Magento\Customer\Block\Adminhtml\Edit\Tab\View\Cart
  *
  * @magentoAppArea Adminhtml
  */
-class CartTest extends \PHPUnit\Framework\TestCase
+class CartTest extends TestCase
 {
     /**
      * Shopping cart.
@@ -27,7 +32,7 @@ class CartTest extends \PHPUnit\Framework\TestCase
     /**
      * Core registry.
      *
-     * @var \Magento\Framework\Registry
+     * @var Registry
      */
     private $coreRegistry;
 
@@ -37,41 +42,11 @@ class CartTest extends \PHPUnit\Framework\TestCase
     private $escaper;
 
     /**
-     * Execute per test initialization.
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $objectManager->get(\Magento\Framework\App\State::class)->setAreaCode('Adminhtml');
-
-        $this->coreRegistry = $objectManager->get(\Magento\Framework\Registry::class);
-        $this->coreRegistry->register(RegistryConstants::CURRENT_CUSTOMER_ID, 1);
-
-        $this->block = $objectManager->get(
-            \Magento\Framework\View\LayoutInterface::class
-        )->createBlock(
-            \Magento\Customer\Block\Adminhtml\Edit\Tab\View\Cart::class,
-            '',
-            ['coreRegistry' => $this->coreRegistry, 'data' => ['website_id' => 1]]
-        );
-        $this->block->getPreparedCollection();
-        $this->escaper = $objectManager->get(Escaper::class);
-    }
-
-    /**
-     * Execute per test cleanup.
-     */
-    protected function tearDown(): void
-    {
-        $this->coreRegistry->unregister(RegistryConstants::CURRENT_CUSTOMER_ID);
-    }
-
-    /**
      * Verify that the Url for a product row in the cart grid is correct.
      */
     public function testGetRowUrl()
     {
-        $row = new \Magento\Framework\DataObject(['product_id' => 1]);
+        $row = new DataObject(['product_id' => 1]);
         $this->assertStringContainsString('catalog/product/edit/id/1', $this->block->getRowUrl($row));
     }
 
@@ -110,5 +85,35 @@ class CartTest extends \PHPUnit\Framework\TestCase
         $this->assertStringContainsString('simple', $html);
         $this->assertStringContainsString('$10.00', $html);
         $this->assertStringContainsString($this->escaper->escapeHtmlAttr('catalog/product/edit/id/1'), $html);
+    }
+
+    /**
+     * Execute per test initialization.
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->get(State::class)->setAreaCode('Adminhtml');
+
+        $this->coreRegistry = $objectManager->get(Registry::class);
+        $this->coreRegistry->register(RegistryConstants::CURRENT_CUSTOMER_ID, 1);
+
+        $this->block = $objectManager->get(
+            LayoutInterface::class
+        )->createBlock(
+            Cart::class,
+            '',
+            ['coreRegistry' => $this->coreRegistry, 'data' => ['website_id' => 1]]
+        );
+        $this->block->getPreparedCollection();
+        $this->escaper = $objectManager->get(Escaper::class);
+    }
+
+    /**
+     * Execute per test cleanup.
+     */
+    protected function tearDown(): void
+    {
+        $this->coreRegistry->unregister(RegistryConstants::CURRENT_CUSTOMER_ID);
     }
 }

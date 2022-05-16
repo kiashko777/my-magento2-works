@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Deploy\Console\Command\App;
 
 use Magento\Config\Model\Config\Export\ExcludeList;
@@ -14,13 +15,14 @@ use Magento\Framework\Config\File\ConfigFilePool;
 use Magento\Framework\Filesystem;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class ApplicationDumpCommandTest extends \PHPUnit\Framework\TestCase
+class ApplicationDumpCommandTest extends TestCase
 {
     /**
      * @var ObjectManagerInterface
@@ -61,67 +63,6 @@ class ApplicationDumpCommandTest extends \PHPUnit\Framework\TestCase
      * @var Hash
      */
     private $hash;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->reader = $this->objectManager->get(DeploymentConfig\FileReader::class);
-        $this->filesystem = $this->objectManager->get(Filesystem::class);
-        $this->configFilePool = $this->objectManager->get(ConfigFilePool::class);
-        $this->reader = $this->objectManager->get(DeploymentConfig\Reader::class);
-        $this->writer = $this->objectManager->get(DeploymentConfig\Writer::class);
-        $this->configFilePool = $this->objectManager->get(ConfigFilePool::class);
-        $this->hash = $this->objectManager->get(Hash::class);
-
-        // Snapshot of configuration.
-        $this->config = $this->loadConfig();
-        $this->envConfig = $this->loadEnvConfig();
-
-        $this->writer->saveConfig(
-            [
-                ConfigFilePool::APP_CONFIG => [
-                    'system' => [
-                        'default' => [
-                            'web' => [
-                                'test' => [
-                                    'test_value_3' => 'value from the file'
-                                ]
-                            ]
-                        ]
-                    ]
-                ]
-            ],
-            true
-        );
-    }
-
-    /**
-     * @return array
-     */
-    private function loadConfig()
-    {
-        return $this->reader->load(ConfigFilePool::APP_CONFIG);
-    }
-
-    /**
-     * @return array
-     */
-    private function loadEnvConfig()
-    {
-        return $this->reader->load(ConfigFilePool::APP_ENV);
-    }
-
-    /**
-     * @return string
-     */
-    private function loadRawConfig()
-    {
-        return $this->filesystem->getDirectoryRead(DirectoryList::CONFIG)
-            ->readFile($this->configFilePool->getPath(ConfigFilePool::APP_CONFIG));
-    }
 
     /**
      * @magentoDbIsolation enabled
@@ -237,28 +178,6 @@ class ApplicationDumpCommandTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Validates 'system' section in environment configuration data.
-     *
-     * @param array $config The configuration array
-     * @return void
-     */
-    private function validateSystemEnvSection(array $config)
-    {
-        $envTestKeys = [
-            'test_sensitive',
-            'test_sensitive3',
-            'test_sensitive_environment4',
-            'test_sensitive_environment5',
-            'test_sensitive_environment6',
-            'test_environment9'
-        ];
-
-        $this->assertEmpty(
-            array_diff($envTestKeys, array_keys($config['system']['default']['web']['test']))
-        );
-    }
-
-    /**
      * Validates 'themes' section in configuration data.
      *
      * @param array $config The configuration array
@@ -302,6 +221,89 @@ class ApplicationDumpCommandTest extends \PHPUnit\Framework\TestCase
             ],
             $config['themes']['frontend/Magento/luma']
         );
+    }
+
+    /**
+     * Validates 'system' section in environment configuration data.
+     *
+     * @param array $config The configuration array
+     * @return void
+     */
+    private function validateSystemEnvSection(array $config)
+    {
+        $envTestKeys = [
+            'test_sensitive',
+            'test_sensitive3',
+            'test_sensitive_environment4',
+            'test_sensitive_environment5',
+            'test_sensitive_environment6',
+            'test_environment9'
+        ];
+
+        $this->assertEmpty(
+            array_diff($envTestKeys, array_keys($config['system']['default']['web']['test']))
+        );
+    }
+
+    /**
+     * @return string
+     */
+    private function loadRawConfig()
+    {
+        return $this->filesystem->getDirectoryRead(DirectoryList::CONFIG)
+            ->readFile($this->configFilePool->getPath(ConfigFilePool::APP_CONFIG));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->reader = $this->objectManager->get(DeploymentConfig\FileReader::class);
+        $this->filesystem = $this->objectManager->get(Filesystem::class);
+        $this->configFilePool = $this->objectManager->get(ConfigFilePool::class);
+        $this->reader = $this->objectManager->get(DeploymentConfig\Reader::class);
+        $this->writer = $this->objectManager->get(DeploymentConfig\Writer::class);
+        $this->configFilePool = $this->objectManager->get(ConfigFilePool::class);
+        $this->hash = $this->objectManager->get(Hash::class);
+
+        // Snapshot of configuration.
+        $this->config = $this->loadConfig();
+        $this->envConfig = $this->loadEnvConfig();
+
+        $this->writer->saveConfig(
+            [
+                ConfigFilePool::APP_CONFIG => [
+                    'system' => [
+                        'default' => [
+                            'web' => [
+                                'test' => [
+                                    'test_value_3' => 'value from the file'
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+            true
+        );
+    }
+
+    /**
+     * @return array
+     */
+    private function loadConfig()
+    {
+        return $this->reader->load(ConfigFilePool::APP_CONFIG);
+    }
+
+    /**
+     * @return array
+     */
+    private function loadEnvConfig()
+    {
+        return $this->reader->load(ConfigFilePool::APP_ENV);
     }
 
     /**

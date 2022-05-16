@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Model;
 
 use Magento\Framework\Api\SearchCriteria;
@@ -12,14 +13,14 @@ use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\ResourceModel\Grid as AbstractGrid;
-use Magento\Sales\Model\ResourceModel\Order\Grid;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class for testing asynchronous inserts into grid.
  */
-class GridAsyncInsertTest extends \PHPUnit\Framework\TestCase
+class GridAsyncInsertTest extends TestCase
 {
     /**
      * @var ObjectManager
@@ -45,24 +46,6 @@ class GridAsyncInsertTest extends \PHPUnit\Framework\TestCase
      * @var AbstractGrid
      */
     private $grid;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-
-        /** @var ResourceConnection $resourceConnection */
-        $resourceConnection = $this->objectManager->get(ResourceConnection::class);
-        $this->connection = $resourceConnection->getConnection('sales');
-        $this->orderRepository = $this->objectManager->get(OrderRepositoryInterface::class);
-        $this->grid = $this->objectManager->get(Grid::class);
-
-        $this->gridAsyncInsert = $this->objectManager->create(
-            GridAsyncInsert::class,
-            [
-                'entityGrid' => $this->grid,
-            ]
-        );
-    }
 
     /**
      * Checks a case when order's grid should be updated asynchronously.
@@ -94,7 +77,7 @@ class GridAsyncInsertTest extends \PHPUnit\Framework\TestCase
      * @param string $incrementId
      * @return OrderInterface
      */
-    private function getOrder(string $incrementId) : OrderInterface
+    private function getOrder(string $incrementId): OrderInterface
     {
         /** @var SearchCriteria $searchCriteria */
         $searchCriteria = $this->objectManager->get(SearchCriteriaBuilder::class)
@@ -105,22 +88,6 @@ class GridAsyncInsertTest extends \PHPUnit\Framework\TestCase
             ->getItems();
 
         return array_pop($items);
-    }
-
-    /**
-     * Gets row from `sales_order_grid` table by order's ID.
-     *
-     * @param int $entityId
-     * @return array
-     */
-    private function getGridRow(int $entityId) : array
-    {
-        $tableName = $this->grid->getGridTable();
-        $select = $this->connection->select()
-            ->from($tableName)
-            ->where($tableName . '.entity_id = ?', $entityId);
-
-        return $this->connection->fetchRow($select);
     }
 
     /**
@@ -135,5 +102,39 @@ class GridAsyncInsertTest extends \PHPUnit\Framework\TestCase
 
         self::assertEquals($order->getStatus(), $gridRow['status']);
         self::assertEquals($order->getUpdatedAt(), $gridRow['updated_at']);
+    }
+
+    /**
+     * Gets row from `sales_order_grid` table by order's ID.
+     *
+     * @param int $entityId
+     * @return array
+     */
+    private function getGridRow(int $entityId): array
+    {
+        $tableName = $this->grid->getGridTable();
+        $select = $this->connection->select()
+            ->from($tableName)
+            ->where($tableName . '.entity_id = ?', $entityId);
+
+        return $this->connection->fetchRow($select);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        /** @var ResourceConnection $resourceConnection */
+        $resourceConnection = $this->objectManager->get(ResourceConnection::class);
+        $this->connection = $resourceConnection->getConnection('sales');
+        $this->orderRepository = $this->objectManager->get(OrderRepositoryInterface::class);
+        $this->grid = $this->objectManager->get(Grid::class);
+
+        $this->gridAsyncInsert = $this->objectManager->create(
+            GridAsyncInsert::class,
+            [
+                'entityGrid' => $this->grid,
+            ]
+        );
     }
 }

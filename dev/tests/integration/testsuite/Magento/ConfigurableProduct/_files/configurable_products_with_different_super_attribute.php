@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
@@ -12,6 +13,7 @@ use Magento\Catalog\Setup\CategorySetup;
 use Magento\ConfigurableProduct\Helper\Product\Options\Factory;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 use Magento\Eav\Api\Data\AttributeOptionInterface;
+use Magento\Eav\Model\Config;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
@@ -24,8 +26,8 @@ $productRepository = $objectManager->get(ProductRepositoryInterface::class);
 
 /** @var $installer CategorySetup */
 $installer = $objectManager->create(CategorySetup::class);
-/** @var \Magento\Eav\Model\Config $eavConfig */
-$eavConfig = $objectManager->get(\Magento\Eav\Model\Config::class);
+/** @var Config $eavConfig */
+$eavConfig = $objectManager->get(Config::class);
 $attribute = $eavConfig->getAttribute(Product::ENTITY, 'test_configurable');
 $attribute2 = $eavConfig->getAttribute(Product::ENTITY, 'test_configurable_2');
 /* Create simple products per each option value*/

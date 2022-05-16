@@ -16,6 +16,7 @@ use Magento\Eav\Model\ResourceModel\Entity\Attribute\CollectionFactory;
 use Magento\Eav\Model\ResourceModel\Entity\Attribute\Set\Collection as AttributeSetCollection;
 use Magento\Eav\Model\ResourceModel\Entity\Attribute\Set\CollectionFactory as AttributeSetCollectionFactory;
 use Magento\Setup\Model\FixtureGenerator\ProductGenerator;
+use Magento\Setup\Model\SearchTermDescriptionGenerator;
 use Magento\Setup\Model\SearchTermDescriptionGeneratorFactory;
 
 /**
@@ -119,16 +120,17 @@ class SimpleProductsFixture extends Fixture
      * @internal param FixtureConfig $fixtureConfig
      */
     public function __construct(
-        FixtureModel $fixtureModel,
-        ProductFactory $productFactory,
-        ProductGenerator $productGenerator,
-        CollectionFactory $attributeCollectionFactory,
-        AttributeSetCollectionFactory $attributeSetCollectionFactory,
+        FixtureModel                          $fixtureModel,
+        ProductFactory                        $productFactory,
+        ProductGenerator                      $productGenerator,
+        CollectionFactory                     $attributeCollectionFactory,
+        AttributeSetCollectionFactory         $attributeSetCollectionFactory,
         SearchTermDescriptionGeneratorFactory $descriptionGeneratorFactory,
-        WebsiteCategoryProvider $websiteCategoryProvider,
-        ProductsAmountProvider $productsAmountProvider,
-        PriceProvider $priceProvider
-    ) {
+        WebsiteCategoryProvider               $websiteCategoryProvider,
+        ProductsAmountProvider                $productsAmountProvider,
+        PriceProvider                         $priceProvider
+    )
+    {
         parent::__construct($fixtureModel);
         $this->productFactory = $productFactory;
         $this->productGenerator = $productGenerator;
@@ -177,7 +179,7 @@ class SimpleProductsFixture extends Fixture
         $defaultAttributeSets = $this->getDefaultAttributeSets();
         $searchTermsConfig = $this->getSearchTerms();
 
-        /** @var \Magento\Setup\Model\SearchTermDescriptionGenerator $descriptionGenerator */
+        /** @var SearchTermDescriptionGenerator $descriptionGenerator */
         $descriptionGenerator = $this->descriptionGeneratorFactory->create(
             $this->getDescriptionConfig(),
             $searchTermsConfig,
@@ -185,7 +187,7 @@ class SimpleProductsFixture extends Fixture
             'Full simple product Description %s'
         );
 
-        /** @var \Magento\Setup\Model\SearchTermDescriptionGenerator $shortDescriptionGenerator */
+        /** @var SearchTermDescriptionGenerator $shortDescriptionGenerator */
         $shortDescriptionGenerator = $this->descriptionGeneratorFactory->create(
             $this->getShortDescriptionConfig(),
             $searchTermsConfig,
@@ -277,20 +279,6 @@ class SimpleProductsFixture extends Fixture
     }
 
     /**
-     * Get default attribute set id
-     *
-     * @return int
-     */
-    private function getDefaultAttributeSetId()
-    {
-        if (null === $this->defaultAttributeSetId) {
-            $this->defaultAttributeSetId = (int)$this->productFactory->create()->getDefaultAttributeSetId();
-        }
-
-        return $this->defaultAttributeSetId;
-    }
-
-    /**
      * Get default attribute sets with attributes.
      *
      * @return array
@@ -319,6 +307,48 @@ class SimpleProductsFixture extends Fixture
         $attributes[$this->getDefaultAttributeSetId()] = [];
 
         return $attributes;
+    }
+
+    /**
+     * Maps attribute values by attribute set and attribute code.
+     *
+     * @param Collection $attributeCollection
+     * @param array $attributes
+     * @return array
+     */
+    private function processAttributeValues(
+        Collection $attributeCollection,
+        array      $attributes = []
+    ): array
+    {
+        /** @var Attribute $attribute */
+        foreach ($attributeCollection as $attribute) {
+            $values = [];
+            $options = $attribute->getOptions() ?? [];
+            $attributeSetId = $attribute->getAttributeSetId() ?? $this->getDefaultAttributeSetId();
+            foreach ($options as $option) {
+                if ($option->getValue()) {
+                    $values[] = $option->getValue();
+                }
+            }
+            $attributes[$attributeSetId][$attribute->getAttributeCode()] = $values;
+        }
+
+        return $attributes;
+    }
+
+    /**
+     * Get default attribute set id
+     *
+     * @return int
+     */
+    private function getDefaultAttributeSetId()
+    {
+        if (null === $this->defaultAttributeSetId) {
+            $this->defaultAttributeSetId = (int)$this->productFactory->create()->getDefaultAttributeSetId();
+        }
+
+        return $this->defaultAttributeSetId;
     }
 
     /**
@@ -352,20 +382,6 @@ class SimpleProductsFixture extends Fixture
     }
 
     /**
-     * Get short description config
-     *
-     * @return array
-     */
-    private function getShortDescriptionConfig()
-    {
-        if (null === $this->shortDescriptionConfig) {
-            $this->shortDescriptionConfig = $this->readDescriptionConfig('short-description');
-        }
-
-        return $this->shortDescriptionConfig;
-    }
-
-    /**
      * Get description config from fixture
      *
      * @param string $configSrc
@@ -380,6 +396,20 @@ class SimpleProductsFixture extends Fixture
         }
 
         return $configData;
+    }
+
+    /**
+     * Get short description config
+     *
+     * @return array
+     */
+    private function getShortDescriptionConfig()
+    {
+        if (null === $this->shortDescriptionConfig) {
+            $this->shortDescriptionConfig = $this->readDescriptionConfig('short-description');
+        }
+
+        return $this->shortDescriptionConfig;
     }
 
     /**
@@ -415,32 +445,5 @@ class SimpleProductsFixture extends Fixture
         $attributeCollection->getSelect()->columns(['entity_attribute.attribute_set_id']);
 
         return $this->processAttributeValues($attributeCollection);
-    }
-
-    /**
-     * Maps attribute values by attribute set and attribute code.
-     *
-     * @param Collection $attributeCollection
-     * @param array $attributes
-     * @return array
-     */
-    private function processAttributeValues(
-        Collection $attributeCollection,
-        array $attributes = []
-    ): array {
-        /** @var Attribute $attribute */
-        foreach ($attributeCollection as $attribute) {
-            $values = [];
-            $options = $attribute->getOptions() ?? [];
-            $attributeSetId = $attribute->getAttributeSetId() ?? $this->getDefaultAttributeSetId();
-            foreach ($options as $option) {
-                if ($option->getValue()) {
-                    $values[] = $option->getValue();
-                }
-            }
-            $attributes[$attributeSetId][$attribute->getAttributeCode()] = $values;
-        }
-
-        return $attributes;
     }
 }

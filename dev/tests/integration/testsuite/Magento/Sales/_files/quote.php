@@ -4,11 +4,23 @@
  * See COPYING.txt for license details.
  */
 
-\Magento\TestFramework\Helper\Bootstrap::getInstance()->loadArea('frontend');
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Quote\Api\CartRepositoryInterface;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\Quote\Address;
+use Magento\Quote\Model\QuoteIdMask;
+use Magento\Quote\Model\QuoteIdMaskFactory;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+
+Bootstrap::getInstance()->loadArea('frontend');
 
 $storeManager = Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->get(\Magento\Store\Model\StoreManagerInterface::class);
-$product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Product::class);
+    ->get(StoreManagerInterface::class);
+$product = Bootstrap::getObjectManager()->create(Product::class);
 $product->setTypeId('simple')
     ->setId(1)
     ->setAttributeSetId(4)
@@ -19,8 +31,8 @@ $product->setTypeId('simple')
     ->setMetaTitle('meta title')
     ->setMetaKeyword('meta keyword')
     ->setMetaDescription('meta description')
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setStockData(
         [
             'qty' => 100,
@@ -31,13 +43,13 @@ $product->setTypeId('simple')
     ->setWebsiteIds([$storeManager->getStore()->getWebsiteId()])
     ->save();
 
-$productRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+$productRepository = Bootstrap::getObjectManager()
+    ->create(ProductRepositoryInterface::class);
 $product = $productRepository->get('simple');
 
 $addressData = include __DIR__ . '/address_data.php';
-$billingAddress = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Quote\Model\Quote\Address::class,
+$billingAddress = Bootstrap::getObjectManager()->create(
+    Address::class,
     ['data' => $addressData]
 );
 $billingAddress->setAddressType('billing');
@@ -47,8 +59,8 @@ $shippingAddress->setId(null)->setAddressType('shipping');
 
 $store = $storeManager->getStore();
 
-/** @var \Magento\Quote\Model\Quote $quote */
-$quote = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Quote\Model\Quote::class);
+/** @var Quote $quote */
+$quote = Bootstrap::getObjectManager()->create(Quote::class);
 $quote->setCustomerIsGuest(true)
     ->setStoreId($store->getId())
     ->setReservedOrderId('test01')
@@ -59,13 +71,13 @@ $quote->getPayment()->setMethod('checkmo');
 $quote->setIsMultiShipping('1');
 $quote->collectTotals();
 
-$quoteRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->get(\Magento\Quote\Api\CartRepositoryInterface::class);
+$quoteRepository = Bootstrap::getObjectManager()
+    ->get(CartRepositoryInterface::class);
 $quoteRepository->save($quote);
 
-/** @var \Magento\Quote\Model\QuoteIdMask $quoteIdMask */
-$quoteIdMask = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->create(\Magento\Quote\Model\QuoteIdMaskFactory::class)
+/** @var QuoteIdMask $quoteIdMask */
+$quoteIdMask = Bootstrap::getObjectManager()
+    ->create(QuoteIdMaskFactory::class)
     ->create();
 $quoteIdMask->setQuoteId($quote->getId());
 $quoteIdMask->setDataChanges(true);

@@ -6,15 +6,43 @@
 
 namespace Magento\TestFramework\Mail\Template;
 
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Mail\Message;
+use Magento\Framework\Mail\Template\TransportBuilder;
+use Magento\TestFramework\Mail\TransportInterfaceMock;
+
 /**
  * Class TransportBuilderMock
  */
-class TransportBuilderMock extends \Magento\Framework\Mail\Template\TransportBuilder
+class TransportBuilderMock extends TransportBuilder
 {
     /**
-     * @var \Magento\Framework\Mail\Message
+     * @var Message
      */
     protected $_sentMessage;
+
+    /**
+     * Return message object with prepared data
+     *
+     * @return Message|null
+     */
+    public function getSentMessage()
+    {
+        return $this->_sentMessage;
+    }
+
+    /**
+     * Return transport mock.
+     *
+     * @return TransportInterfaceMock
+     * @throws LocalizedException
+     */
+    public function getTransport()
+    {
+        $this->prepareMessage();
+        $this->reset();
+        return new TransportInterfaceMock($this->message);
+    }
 
     /**
      * Reset object state
@@ -25,28 +53,5 @@ class TransportBuilderMock extends \Magento\Framework\Mail\Template\TransportBui
     {
         $this->_sentMessage = $this->message;
         parent::reset();
-    }
-
-    /**
-     * Return message object with prepared data
-     *
-     * @return \Magento\Framework\Mail\Message|null
-     */
-    public function getSentMessage()
-    {
-        return $this->_sentMessage;
-    }
-
-    /**
-     * Return transport mock.
-     *
-     * @return \Magento\TestFramework\Mail\TransportInterfaceMock
-     * @throws \Magento\Framework\Exception\LocalizedException
-     */
-    public function getTransport()
-    {
-        $this->prepareMessage();
-        $this->reset();
-        return new \Magento\TestFramework\Mail\TransportInterfaceMock($this->message);
     }
 }

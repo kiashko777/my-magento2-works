@@ -5,16 +5,21 @@
  */
 declare(strict_types=1);
 
+use Magento\Catalog\Model\Product\Media\Config;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Filesystem;
+use Magento\Framework\Filesystem\Directory\WriteInterface;
+use Magento\MediaStorage\Helper\File\Storage\Database;
+use Magento\TestFramework\Helper\Bootstrap;
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-/** @var $mediaConfig \Magento\Catalog\Model\Product\Media\Config */
-$mediaConfig = $objectManager->get(\Magento\Catalog\Model\Product\Media\Config::class);
-/** @var $database \Magento\MediaStorage\Helper\File\Storage\Database */
-$database = $objectManager->get(\Magento\MediaStorage\Helper\File\Storage\Database::class);
+$objectManager = Bootstrap::getObjectManager();
+/** @var $mediaConfig Config */
+$mediaConfig = $objectManager->get(Config::class);
+/** @var $database Database */
+$database = $objectManager->get(Database::class);
 
-/** @var $mediaDirectory \Magento\Framework\Filesystem\Directory\WriteInterface */
-$mediaDirectory = $objectManager->get(\Magento\Framework\Filesystem::class)
+/** @var $mediaDirectory WriteInterface */
+$mediaDirectory = $objectManager->get(Filesystem::class)
     ->getDirectoryWrite(DirectoryList::MEDIA);
 $targetDirPath = $mediaConfig->getBaseMediaPath() . str_replace('/', DIRECTORY_SEPARATOR, '/m/a/');
 $targetTmpDirPath = $mediaConfig->getBaseTmpMediaPath() . str_replace('/', DIRECTORY_SEPARATOR, '/m/a/');

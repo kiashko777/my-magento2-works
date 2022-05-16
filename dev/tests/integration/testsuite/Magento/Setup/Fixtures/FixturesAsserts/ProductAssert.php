@@ -3,7 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Fixtures\FixturesAsserts;
+
+use AssertionError;
+use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Model\ResourceModel\Product\;
+use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
+use Magento\Framework\DB\Sql\ColumnValueExpressionFactory;
 
 /**
  * Class ProductAssert
@@ -14,23 +21,24 @@ namespace Magento\Setup\Fixtures\FixturesAsserts;
 class ProductAssert
 {
     /**
-     * @var \Magento\Catalog\Model\ResourceModel\Product\
+     * @var
      */
     protected $productCollectionFactory;
 
     /**
-     * @var \Magento\Framework\DB\Sql\ColumnValueExpressionFactory
+     * @var ColumnValueExpressionFactory
      */
     protected $expressionFactory;
 
     /**
-     * @param \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory $productCollectionFactory
-     * @param \Magento\Framework\DB\Sql\ColumnValueExpressionFactory $expressionFactory
+     * @param CollectionFactory $productCollectionFactory
+     * @param ColumnValueExpressionFactory $expressionFactory
      */
     public function __construct(
-        \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory $productCollectionFactory,
-        \Magento\Framework\DB\Sql\ColumnValueExpressionFactory $expressionFactory
-    ) {
+        CollectionFactory $productCollectionFactory,
+        ColumnValueExpressionFactory         $expressionFactory
+    )
+    {
         $this->productCollectionFactory = $productCollectionFactory;
         $this->expressionFactory = $expressionFactory;
     }
@@ -42,7 +50,7 @@ class ProductAssert
      * @param string $skuPattern
      * @param int $expectedCount
      * @return void
-     * @throws \AssertionError
+     * @throws AssertionError
      */
     public function assertProductsCount($skuPattern, $expectedCount)
     {
@@ -55,7 +63,7 @@ class ProductAssert
             ]));
 
         if ($expectedCount !== count($productCollection)) {
-            throw new \AssertionError(
+            throw new AssertionError(
                 sprintf(
                     'Expected amount of products with sku pattern "%s" not equals actual amount',
                     $skuPattern
@@ -68,13 +76,13 @@ class ProductAssert
      * Performs assertion that product has expected product type
      *
      * @param string $expectedProductType
-     * @param \Magento\Catalog\Api\Data\ProductInterface $product
-     * @throws \AssertionError
+     * @param ProductInterface $product
+     * @throws AssertionError
      */
     public function assertProductType($expectedProductType, $product)
     {
         if ($expectedProductType !== $product->getTypeId()) {
-            throw new \AssertionError('Products type is wrong');
+            throw new AssertionError('Products type is wrong');
         }
     }
 }

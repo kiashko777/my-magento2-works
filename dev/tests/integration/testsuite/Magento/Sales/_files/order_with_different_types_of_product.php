@@ -4,11 +4,21 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Bundle\Model\Option;
+use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\Sales\Api\OrderRepositoryInterface;
-use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 use Magento\Customer\Model\CustomerRegistry;
+use Magento\Downloadable\Model\Link;
+use Magento\Downloadable\Model\ResourceModel\Link\Collection;
+use Magento\Eav\Model\Config;
+use Magento\Sales\Api\OrderRepositoryInterface;
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Address;
+use Magento\Sales\Model\Order\Item;
+use Magento\Sales\Model\Order\Payment;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 $objectManager = Bootstrap::getObjectManager();
 /** @var CustomerRegistry $customerRegistry */
@@ -36,19 +46,19 @@ $downloadableProduct = $productRepository->get('downloadable-product');
 
 /** \Magento\Customer\Model\Customer $customer */
 $addressData = include __DIR__ . '/../../../Magento/Sales/_files/address_data.php';
-$billingAddress = $objectManager->create(\Magento\Sales\Model\Order\Address::class, ['data' => $addressData]);
+$billingAddress = $objectManager->create(Address::class, ['data' => $addressData]);
 $billingAddress->setAddressType('billing');
 $shippingAddress = clone $billingAddress;
 $shippingAddress->setId(null)->setAddressType('shipping');
 
-$payment = $objectManager->create(\Magento\Sales\Model\Order\Payment::class);
+$payment = $objectManager->create(Payment::class);
 $payment->setMethod('checkmo');
 $customerIdFromFixture = 1;
 
 /**
  * simple product
  */
-$simpleProductItem = $objectManager->create(\Magento\Sales\Model\Order\Item::class);
+$simpleProductItem = $objectManager->create(Item::class);
 $requestInfo = [
     'qty' => 1
 ];
@@ -66,8 +76,8 @@ $simpleProductItem->setProductId($simpleProduct->getId())
 /**
  * configurable product
  */
-/** @var \Magento\Eav\Model\Config $eavConfig */
-$eavConfig = $objectManager->get(\Magento\Eav\Model\Config::class);
+/** @var Config $eavConfig */
+$eavConfig = $objectManager->get(Config::class);
 /** @var $attribute \Magento\Catalog\Model\ResourceModel\Eav\Attribute */
 $attribute = $eavConfig->getAttribute('catalog_product', 'test_configurable');
 
@@ -84,8 +94,8 @@ $requestInfo = [
 ];
 
 $qtyOrdered = 1;
-/** @var \Magento\Sales\Model\Order\Item $orderItem */
-$orderConfigurableItem = $objectManager->create(\Magento\Sales\Model\Order\Item::class);
+/** @var Item $orderItem */
+$orderConfigurableItem = $objectManager->create(Item::class);
 $orderConfigurableItem->setProductId($configurableProduct->getId())->setQtyOrdered($qtyOrdered);
 $orderConfigurableItem->setSku($configurableProduct->getSku());
 $orderConfigurableItem->setName($configurableProduct->getName());
@@ -99,7 +109,7 @@ if ($configurableProduct->getExtensionAttributes()
     && (array)$configurableProduct->getExtensionAttributes()->getConfigurableProductLinks()
 ) {
     $simpleProductId = current($configurableProduct->getExtensionAttributes()->getConfigurableProductLinks());
-    /** @var \Magento\Catalog\Api\Data\ProductInterface $simpleProduct */
+    /** @var ProductInterface $simpleProduct */
     $simpleProduct = $productRepository->getById($simpleProductId);
     $requestInfo['product'] = $simpleProductId;
     $requestInfo['item'] = $simpleProduct;
@@ -109,7 +119,7 @@ if ($configurableProduct->getExtensionAttributes()
 /**
  * virtual product
  */
-$virtualProductItem = $objectManager->create(\Magento\Sales\Model\Order\Item::class);
+$virtualProductItem = $objectManager->create(Item::class);
 $requestInfo = [
     'qty' => 1
 ];
@@ -126,9 +136,9 @@ $virtualProductItem->setProductId($virtualProduct->getId())
 /**
  * downloadable product
  */
-/** @var $linkCollection \Magento\Downloadable\Model\ResourceModel\Link\Collection */
+/** @var $linkCollection Collection */
 $linkCollection = Bootstrap::getObjectManager()->create(
-    \Magento\Downloadable\Model\Link::class
+    Link::class
 )->getCollection()->addProductToFilter(
     $downloadableProduct->getId()
 )->addTitleToResult(
@@ -137,14 +147,14 @@ $linkCollection = Bootstrap::getObjectManager()->create(
     $downloadableProduct->getStore()->getWebsiteId()
 );
 
-/** @var $link \Magento\Downloadable\Model\Link */
+/** @var $link Link */
 $links = $linkCollection->getItems();
 $requestInfo = [
     'qty' => 1,
     'links' => array_keys($links)
 ];
 
-$downloadableProductItem = $objectManager->create(\Magento\Sales\Model\Order\Item::class);
+$downloadableProductItem = $objectManager->create(Item::class);
 $downloadableProductItem->setProductId($downloadableProduct->getId())
     ->setQtyOrdered(1)
     ->setBasePrice($downloadableProduct->getPrice())
@@ -167,7 +177,7 @@ $optionCollection = $typeInstance->getOptionsCollection($bundleProduct);
 $bundleOptions = [];
 $bundleOptionsQty = [];
 foreach ($optionCollection as $option) {
-    /** @var $option \Magento\Bundle\Model\Option */
+    /** @var $option Option */
     $selectionsCollection = $typeInstance->getSelectionsCollection([$option->getId()], $bundleProduct);
     if ($option->isMultiSelection()) {
         $bundleOptions[$option->getId()] = array_column($selectionsCollection->toArray(), 'selection_id');
@@ -183,8 +193,8 @@ $requestInfo = [
     'bundle_option_qty' => $bundleOptionsQty,
     'qty' => 1,
 ];
-/** @var \Magento\Sales\Model\Order\Item $orderItem */
-$orderBundleItem = $objectManager->create(\Magento\Sales\Model\Order\Item::class);
+/** @var Item $orderItem */
+$orderBundleItem = $objectManager->create(Item::class);
 $orderBundleItem->setProductId($bundleProduct->getId());
 $orderBundleItem->setSku($bundleProduct->getSku());
 $orderBundleItem->setName($bundleProduct->getName());
@@ -195,11 +205,11 @@ $orderBundleItem->setRowTotal($bundleProduct->getPrice());
 $orderBundleItem->setProductType($bundleProduct->getTypeId());
 $orderBundleItem->setProductOptions(['info_buyRequest' => $requestInfo]);
 
-/** @var \Magento\Sales\Model\Order $order */
-$order = $objectManager->create(\Magento\Sales\Model\Order::class);
+/** @var Order $order */
+$order = $objectManager->create(Order::class);
 $order->setIncrementId('100000001');
-$order->setState(\Magento\Sales\Model\Order::STATE_NEW);
-$order->setStatus($order->getConfig()->getStateDefaultStatus(\Magento\Sales\Model\Order::STATE_NEW));
+$order->setState(Order::STATE_NEW);
+$order->setStatus($order->getConfig()->getStateDefaultStatus(Order::STATE_NEW));
 $order->setCustomerIsGuest(false);
 $order->setCustomerId($customer->getId());
 $order->setCustomerEmail($customer->getEmail());
@@ -214,7 +224,7 @@ $order->addItem($orderConfigurableItem);
 $order->addItem($virtualProductItem);
 $order->addItem($orderBundleItem);
 $order->addItem($downloadableProductItem);
-$order->setStoreId($objectManager->get(\Magento\Store\Model\StoreManagerInterface::class)->getStore()->getId());
+$order->setStoreId($objectManager->get(StoreManagerInterface::class)->getStore()->getId());
 $order->setSubtotal(100);
 $order->setBaseSubtotal(100);
 $order->setBaseGrandTotal(100);

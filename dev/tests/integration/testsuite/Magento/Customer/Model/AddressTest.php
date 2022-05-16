@@ -6,27 +6,21 @@
 
 namespace Magento\Customer\Model;
 
-class AddressTest extends \PHPUnit\Framework\TestCase
+use Magento\Customer\Api\Data\AddressInterfaceFactory;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class AddressTest extends TestCase
 {
     /**
-     * @var \Magento\Customer\Model\Address
+     * @var Address
      */
     protected $addressModel;
 
     /**
-     * @var \Magento\Customer\Api\Data\AddressInterfaceFactory
+     * @var AddressInterfaceFactory
      */
     protected $addressFactory;
-
-    protected function setUp(): void
-    {
-        $this->addressModel = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Model\Address::class
-        );
-        $this->addressFactory = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Api\Data\AddressInterfaceFactory::class
-        );
-    }
 
     public function testUpdateDataSetDataOnEmptyModel()
     {
@@ -73,8 +67,8 @@ class AddressTest extends \PHPUnit\Framework\TestCase
      */
     public function testUpdateDataForExistingCustomer()
     {
-        /** @var \Magento\Customer\Model\CustomerRegistry $customerRegistry */
-        $customerRegistry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(CustomerRegistry::class);
+        /** @var CustomerRegistry $customerRegistry */
+        $customerRegistry = Bootstrap::getObjectManager()->get(CustomerRegistry::class);
         /** @var \Magento\Customer\Model\Data\Address $addressData */
         $updatedAddressData = $this->addressFactory->create()
             ->setId(1)
@@ -90,5 +84,15 @@ class AddressTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('99999', $updatedAddressData->getPostcode());
         $this->assertTrue($updatedAddressData->isDefaultBilling());
         $this->assertTrue($updatedAddressData->isDefaultShipping());
+    }
+
+    protected function setUp(): void
+    {
+        $this->addressModel = Bootstrap::getObjectManager()->create(
+            Address::class
+        );
+        $this->addressFactory = Bootstrap::getObjectManager()->create(
+            AddressInterfaceFactory::class
+        );
     }
 }

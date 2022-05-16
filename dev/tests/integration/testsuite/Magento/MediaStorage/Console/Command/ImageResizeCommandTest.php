@@ -14,12 +14,13 @@ use Magento\Framework\Filesystem;
 use Magento\Framework\Filesystem\Directory\WriteInterface;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
  * Test for \Magento\MediaStorage\Console\Command\ImagesResizeCommand.
  */
-class ImageResizeCommandTest extends \PHPUnit\Framework\TestCase
+class ImageResizeCommandTest extends TestCase
 {
     /**
      * @var CommandTester
@@ -50,21 +51,6 @@ class ImageResizeCommandTest extends \PHPUnit\Framework\TestCase
      * @var string
      */
     private $fileName;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->fileName = 'image.jpg';
-        $this->command = $this->objectManager->get(ImagesResizeCommand::class);
-        $this->tester = new CommandTester($this->command);
-        $this->filesystem = $this->objectManager->get(Filesystem::class);
-        $this->mediaDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::MEDIA);
-    }
 
     /**
      * Test that catalog:image:resize command executed successfully with missing image file
@@ -98,7 +84,7 @@ class ImageResizeCommandTest extends \PHPUnit\Framework\TestCase
         $mediaGalleryProcessor->addImage(
             $product,
             $this->mediaDirectory->getAbsolutePath($this->fileName),
-            ['image','thumbnail','small_image'],
+            ['image', 'thumbnail', 'small_image'],
             false,
             false
         );
@@ -122,5 +108,20 @@ class ImageResizeCommandTest extends \PHPUnit\Framework\TestCase
     {
         $this->tester->execute([]);
         $this->assertStringContainsString('Products images resized successfully', $this->tester->getDisplay());
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->fileName = 'image.jpg';
+        $this->command = $this->objectManager->get(ImagesResizeCommand::class);
+        $this->tester = new CommandTester($this->command);
+        $this->filesystem = $this->objectManager->get(Filesystem::class);
+        $this->mediaDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::MEDIA);
     }
 }

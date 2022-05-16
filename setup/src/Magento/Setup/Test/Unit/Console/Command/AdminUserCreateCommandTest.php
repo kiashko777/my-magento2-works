@@ -17,6 +17,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Helper\QuestionHelper;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -40,16 +41,6 @@ class AdminUserCreateCommandTest extends TestCase
      * @var MockObject|AdminUserCreateCommand
      */
     private $command;
-
-    protected function setUp(): void
-    {
-        $this->installerFactoryMock = $this->createMock(InstallerFactory::class);
-        $this->command = new AdminUserCreateCommand($this->installerFactoryMock, new UserValidationRules());
-
-        $this->questionHelperMock = $this->getMockBuilder(QuestionHelper::class)
-            ->setMethods(['ask'])
-            ->getMock();
-    }
 
     public function testExecute()
     {
@@ -143,7 +134,7 @@ class AdminUserCreateCommandTest extends TestCase
      */
     public function testGetOptionsList($mode, $description)
     {
-        /* @var $argsList \Symfony\Component\Console\Input\InputArgument[] */
+        /* @var $argsList InputArgument[] */
         $argsList = $this->command->getOptionsList($mode);
         $this->assertEquals(AdminAccount::KEY_EMAIL, $argsList[2]->getName());
         $this->assertEquals($description, $argsList[2]->getDescription());
@@ -226,5 +217,15 @@ class AdminUserCreateCommandTest extends TestCase
             ],
             [['John', 'Doe', 'admin', 'test@test.com', '123123q', '123123q'], []],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->installerFactoryMock = $this->createMock(InstallerFactory::class);
+        $this->command = new AdminUserCreateCommand($this->installerFactoryMock, new UserValidationRules());
+
+        $this->questionHelperMock = $this->getMockBuilder(QuestionHelper::class)
+            ->setMethods(['ask'])
+            ->getMock();
     }
 }

@@ -31,18 +31,6 @@ class AuthenticateTest extends TestCase
     private $customerRegistry;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->accountManagement = $this->objectManager->get(AccountManagementInterface::class);
-        $this->customerRegistry = $this->objectManager->get(CustomerRegistry::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Customer/_files/locked_customer.php
      *
      * @return void
@@ -67,5 +55,17 @@ class AuthenticateTest extends TestCase
         $this->assertEquals(0, $customerSecure->getFailuresNum());
         $this->assertNull($customerSecure->getFirstFailure());
         $this->assertNull($customerSecure->getLockExpires());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->accountManagement = $this->objectManager->get(AccountManagementInterface::class);
+        $this->customerRegistry = $this->objectManager->get(CustomerRegistry::class);
     }
 }

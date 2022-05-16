@@ -13,6 +13,7 @@ use Magento\Framework\HTTP\AsyncClient\HttpResponseDeferredInterface;
 use Magento\Framework\HTTP\AsyncClient\Request;
 use Magento\Framework\HTTP\AsyncClient\Response;
 use Magento\Framework\HTTP\AsyncClientInterface;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Registry;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Api\Data\AddressInterface;
@@ -38,6 +39,7 @@ use Magento\TestFramework\HTTP\AsyncClientInterfaceMock;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\Quote\Model\GetQuoteByReservedOrderId;
 use PHPUnit\Framework\TestCase;
+use SimpleXMLElement;
 
 /**
  * Test for USPS integration.
@@ -52,7 +54,7 @@ class CarrierTest extends TestCase
     private const PRODUCT_2 = 'simple-156';
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
@@ -82,16 +84,114 @@ class CarrierTest extends TestCase
     private $getMaskedIdByQuoteId;
 
     /**
-     * @inheritDoc
+     * Create empty cart fixture
      */
-    protected function setUp(): void
+    public static function createEmptyCart(): void
     {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->carrier = $this->objectManager->get(Carrier::class);
-        $this->httpClient = $this->objectManager->get(AsyncClientInterface::class);
-        $this->management = $this->objectManager->get(GuestCouponManagementInterface::class);
-        $this->getQuoteByReservedOrderId = $this->objectManager->get(GetQuoteByReservedOrderId::class);
-        $this->getMaskedIdByQuoteId = $this->objectManager->get(QuoteIdToMaskedQuoteIdInterface::class);
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var GuestCartManagementInterface $guestCartManagement */
+        $guestCartManagement = $objectManager->get(GuestCartManagementInterface::class);
+        /** @var CartRepositoryInterface $cartRepository */
+        $cartRepository = $objectManager->get(CartRepositoryInterface::class);
+        /** @var MaskedQuoteIdToQuoteIdInterface $maskedQuoteIdToQuoteId */
+        $maskedQuoteIdToQuoteId = $objectManager->get(MaskedQuoteIdToQuoteIdInterface::class);
+        $cartHash = $guestCartManagement->createEmptyCart();
+        $cartId = $maskedQuoteIdToQuoteId->execute($cartHash);
+        $cart = $cartRepository->get($cartId);
+        $cart->setReservedOrderId(self::RESERVED_ORDER_ID);
+        $cartRepository->save($cart);
+    }
+
+    /**
+     * Create empty cart fixture rollback
+     */
+    public static function createEmptyCartRollback(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var QuoteFactory $quoteFactory */
+        $quoteFactory = Bootstrap::getObjectManager()->get(QuoteFactory::class);
+        /** @var QuoteResource $quoteResource */
+        $quoteResource = $objectManager->get(QuoteResource::class);
+        /** @var QuoteIdMaskFactory $quoteIdMaskFactory */
+        $quoteIdMaskFactory = $objectManager->get(QuoteIdMaskFactory::class);
+        $quote = $quoteFactory->create();
+        $quoteResource->load($quote, self::RESERVED_ORDER_ID, 'reserved_order_id');
+        $quoteResource->delete($quote);
+        /** @var QuoteIdMask $quoteIdMask */
+        $quoteIdMask = $quoteIdMaskFactory->create();
+        $quoteIdMask->setQuoteId($quote->getId())
+            ->delete();
+    }
+
+    /**
+     * Set free shipping for product 2 fixture
+     */
+    public static function setFreeShippingForProduct1(): void
+    {
+        /** @var ObjectManager $objectManager */
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var Registry $registry */
+        $registry = $objectManager->get(Registry::class);
+        $salesRule = $registry->registry('cart_rule_free_shipping');
+        $data = [
+            'actions' => [
+                1 => [
+                    'type' => Combine::class,
+                    'attribute' => null,
+                    'operator' => null,
+                    'value' => '1',
+                    'is_value_processed' => null,
+                    'aggregator' => 'all',
+                    'actions' => [
+                        1 => [
+                            'type' => Product::class,
+                            'attribute' => 'sku',
+                            'operator' => '==',
+                            'value' => self::PRODUCT_1,
+                            'is_value_processed' => false,
+                        ]
+                    ]
+                ]
+            ],
+        ];
+        $salesRule->loadPost($data);
+        $salesRule->save();
+    }
+
+    /**
+     * Add product 2 to cart fixture
+     */
+    public static function addProduct1ToCart(): void
+    {
+        static::addToCart(self::PRODUCT_1);
+    }
+
+    /**
+     * Add product to cart fixture helper
+     *
+     * @param string $sku
+     */
+    private static function addToCart(string $sku): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = $objectManager->get(ProductRepositoryInterface::class);
+        /** @var GetQuoteByReservedOrderId $getQuoteByReservedOrderId */
+        $getQuoteByReservedOrderId = $objectManager->get(GetQuoteByReservedOrderId::class);
+        /** @var CartRepositoryInterface $cartRepository */
+        $cartRepository = $objectManager->get(CartRepositoryInterface::class);
+        $product = $productRepository->get($sku);
+        $quote = $getQuoteByReservedOrderId->execute(self::RESERVED_ORDER_ID);
+        $quote->addProduct($product, 1);
+        $cartRepository->save($quote);
+    }
+
+    /**
+     * Add product 3 to cart fixture
+     */
+    public static function addProduct2ToCart(): void
+    {
+        static::addToCart(self::PRODUCT_2);
     }
 
     /**
@@ -110,13 +210,13 @@ class CarrierTest extends TestCase
     public function testCollectRates(): void
     {
         $requestXml = '<?xml version="1.0" encoding="UTF-8"?><RateV4Request USERID="213MAGEN6752">'
-            .'<Revision>2</Revision><Package ID="0"><Service>ALL</Service><ZipOrigination>90034</ZipOrigination>'
-            .'<ZipDestination>90032</ZipDestination><Pounds>4</Pounds><Ounces>4.2512000000</Ounces>'
-            .'<Container>VARIABLE</Container><Size>REGULAR</Size><Machinable>true</Machinable></Package>'
-            .'</RateV4Request>';
-        $requestXml = (new \SimpleXMLElement($requestXml))->asXml();
+            . '<Revision>2</Revision><Package ID="0"><Service>ALL</Service><ZipOrigination>90034</ZipOrigination>'
+            . '<ZipDestination>90032</ZipDestination><Pounds>4</Pounds><Ounces>4.2512000000</Ounces>'
+            . '<Container>VARIABLE</Container><Size>REGULAR</Size><Machinable>true</Machinable></Package>'
+            . '</RateV4Request>';
+        $requestXml = (new SimpleXMLElement($requestXml))->asXml();
         //phpcs:ignore Magento2.Functions.DiscouragedFunction
-        $responseBody = file_get_contents(__DIR__ .'/../Fixtures/success_usps_response_rates.xml');
+        $responseBody = file_get_contents(__DIR__ . '/../Fixtures/success_usps_response_rates.xml');
         $this->httpClient->nextResponses([new Response(200, [], $responseBody)]);
         /** @var RateRequest $request */
         $request = Bootstrap::getObjectManager()->create(
@@ -192,7 +292,7 @@ class CarrierTest extends TestCase
     public function testCollectUnavailableRates(): void
     {
         //phpcs:ignore Magento2.Functions.DiscouragedFunction
-        $responseBody = file_get_contents(__DIR__ .'/../Fixtures/response_rates.xml');
+        $responseBody = file_get_contents(__DIR__ . '/../Fixtures/response_rates.xml');
         $this->httpClient->nextResponses([new Response(200, [], $responseBody)]);
         /** @var RateRequest $request */
         $request = Bootstrap::getObjectManager()->create(
@@ -346,56 +446,6 @@ class CarrierTest extends TestCase
     }
 
     /**
-     * Get XML request body
-     *
-     * @param Request $request
-     * @return string
-     */
-    private function getRequestBody(Request $request): string
-    {
-        //phpcs:disable
-        $url = $request->getUrl();
-        $query = parse_url($url, PHP_URL_QUERY);
-        parse_str($query, $params);
-        //phpcs:enable
-        return urldecode($params['XML']);
-    }
-
-    /**
-     * Create XML object for provided string
-     *
-     * @param string $xmlString
-     * @return Element
-     */
-    private function getXmlElement(string $xmlString): Element
-    {
-        $xmlElementFactory = $this->objectManager->get(ElementFactory::class);
-
-        return $xmlElementFactory->create(
-            ['data' => $xmlString]
-        );
-    }
-
-    /**
-     * Get shipping method amount by carrier code and method code
-     *
-     * @param array $methods
-     * @param string $carrierCode
-     * @param string $methodCode
-     * @return float|null
-     */
-    private function getShippingMethodAmount(array $methods, string $carrierCode, string $methodCode): ?float
-    {
-        /** @var ShippingMethodInterface $method */
-        foreach ($methods as $method) {
-            if ($method->getCarrierCode() === $carrierCode && (string)$method->getMethodCode() === $methodCode) {
-                return $method->getAmount();
-            }
-        }
-        return null;
-    }
-
-    /**
      * Estimates shipment for guest cart.
      *
      * @param string $cartId
@@ -434,113 +484,65 @@ class CarrierTest extends TestCase
     }
 
     /**
-     * Add product to cart fixture helper
+     * Create XML object for provided string
      *
-     * @param string $sku
+     * @param string $xmlString
+     * @return Element
      */
-    private static function addToCart(string $sku): void
+    private function getXmlElement(string $xmlString): Element
     {
-        $objectManager = Bootstrap::getObjectManager();
-        /** @var ProductRepositoryInterface $productRepository */
-        $productRepository = $objectManager->get(ProductRepositoryInterface::class);
-        /** @var GetQuoteByReservedOrderId $getQuoteByReservedOrderId */
-        $getQuoteByReservedOrderId = $objectManager->get(GetQuoteByReservedOrderId::class);
-        /** @var CartRepositoryInterface $cartRepository */
-        $cartRepository = $objectManager->get(CartRepositoryInterface::class);
-        $product = $productRepository->get($sku);
-        $quote = $getQuoteByReservedOrderId->execute(self::RESERVED_ORDER_ID);
-        $quote->addProduct($product, 1);
-        $cartRepository->save($quote);
+        $xmlElementFactory = $this->objectManager->get(ElementFactory::class);
+
+        return $xmlElementFactory->create(
+            ['data' => $xmlString]
+        );
     }
 
     /**
-     * Create empty cart fixture
+     * Get XML request body
+     *
+     * @param Request $request
+     * @return string
      */
-    public static function createEmptyCart(): void
+    private function getRequestBody(Request $request): string
     {
-        $objectManager = Bootstrap::getObjectManager();
-        /** @var GuestCartManagementInterface $guestCartManagement */
-        $guestCartManagement = $objectManager->get(GuestCartManagementInterface::class);
-        /** @var CartRepositoryInterface $cartRepository */
-        $cartRepository = $objectManager->get(CartRepositoryInterface::class);
-        /** @var MaskedQuoteIdToQuoteIdInterface $maskedQuoteIdToQuoteId */
-        $maskedQuoteIdToQuoteId = $objectManager->get(MaskedQuoteIdToQuoteIdInterface::class);
-        $cartHash = $guestCartManagement->createEmptyCart();
-        $cartId = $maskedQuoteIdToQuoteId->execute($cartHash);
-        $cart = $cartRepository->get($cartId);
-        $cart->setReservedOrderId(self::RESERVED_ORDER_ID);
-        $cartRepository->save($cart);
+        //phpcs:disable
+        $url = $request->getUrl();
+        $query = parse_url($url, PHP_URL_QUERY);
+        parse_str($query, $params);
+        //phpcs:enable
+        return urldecode($params['XML']);
     }
 
     /**
-     * Create empty cart fixture rollback
+     * Get shipping method amount by carrier code and method code
+     *
+     * @param array $methods
+     * @param string $carrierCode
+     * @param string $methodCode
+     * @return float|null
      */
-    public static function createEmptyCartRollback(): void
+    private function getShippingMethodAmount(array $methods, string $carrierCode, string $methodCode): ?float
     {
-        $objectManager = Bootstrap::getObjectManager();
-        /** @var QuoteFactory $quoteFactory */
-        $quoteFactory = Bootstrap::getObjectManager()->get(QuoteFactory::class);
-        /** @var QuoteResource $quoteResource */
-        $quoteResource = $objectManager->get(QuoteResource::class);
-        /** @var QuoteIdMaskFactory $quoteIdMaskFactory */
-        $quoteIdMaskFactory = $objectManager->get(QuoteIdMaskFactory::class);
-        $quote = $quoteFactory->create();
-        $quoteResource->load($quote, self::RESERVED_ORDER_ID, 'reserved_order_id');
-        $quoteResource->delete($quote);
-        /** @var QuoteIdMask $quoteIdMask */
-        $quoteIdMask = $quoteIdMaskFactory->create();
-        $quoteIdMask->setQuoteId($quote->getId())
-            ->delete();
+        /** @var ShippingMethodInterface $method */
+        foreach ($methods as $method) {
+            if ($method->getCarrierCode() === $carrierCode && (string)$method->getMethodCode() === $methodCode) {
+                return $method->getAmount();
+            }
+        }
+        return null;
     }
 
     /**
-     * Set free shipping for product 2 fixture
+     * @inheritDoc
      */
-    public static function setFreeShippingForProduct1(): void
+    protected function setUp(): void
     {
-        /** @var ObjectManager $objectManager */
-        $objectManager = Bootstrap::getObjectManager();
-        /** @var Registry $registry */
-        $registry = $objectManager->get(Registry::class);
-        $salesRule = $registry->registry('cart_rule_free_shipping');
-        $data = [
-            'actions' => [
-                1 => [
-                    'type' => Combine::class,
-                    'attribute' => null,
-                    'operator' => null,
-                    'value' => '1',
-                    'is_value_processed' => null,
-                    'aggregator' => 'all',
-                    'actions' => [
-                        1 => [
-                            'type' => Product::class,
-                            'attribute' => 'sku',
-                            'operator' => '==',
-                            'value' => self::PRODUCT_1,
-                            'is_value_processed' => false,
-                        ]
-                    ]
-                ]
-            ],
-        ];
-        $salesRule->loadPost($data);
-        $salesRule->save();
-    }
-
-    /**
-     * Add product 2 to cart fixture
-     */
-    public static function addProduct1ToCart(): void
-    {
-        static::addToCart(self::PRODUCT_1);
-    }
-
-    /**
-     * Add product 3 to cart fixture
-     */
-    public static function addProduct2ToCart(): void
-    {
-        static::addToCart(self::PRODUCT_2);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->carrier = $this->objectManager->get(Carrier::class);
+        $this->httpClient = $this->objectManager->get(AsyncClientInterface::class);
+        $this->management = $this->objectManager->get(GuestCouponManagementInterface::class);
+        $this->getQuoteByReservedOrderId = $this->objectManager->get(GetQuoteByReservedOrderId::class);
+        $this->getMaskedIdByQuoteId = $this->objectManager->get(QuoteIdToMaskedQuoteIdInterface::class);
     }
 }

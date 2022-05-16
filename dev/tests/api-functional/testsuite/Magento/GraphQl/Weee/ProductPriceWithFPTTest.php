@@ -9,13 +9,14 @@ namespace Magento\GraphQl\Weee;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product;
+use Magento\Framework\App\Config\ReinitableConfigInterface;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Config\Storage\WriterInterface;
 use Magento\Framework\ObjectManager\ObjectManager;
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\TestFramework\TestCase\GraphQlAbstract;
 use Magento\Tax\Model\ClassModel as TaxClassModel;
 use Magento\Tax\Model\ResourceModel\TaxClass\CollectionFactory as TaxClassCollectionFactory;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\GraphQlAbstract;
 
 /**
  * Test for Products Price With FPT
@@ -32,60 +33,6 @@ class ProductPriceWithFPTTest extends GraphQlAbstract
 
     /** @var ScopeConfigInterface */
     private $scopeConfig;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-
-        /** @var ScopeConfigInterface $scopeConfig */
-        $this->scopeConfig = $this->objectManager->get(ScopeConfigInterface::class);
-
-        $currentSettingsArray = [
-            'tax/display/type',
-            'tax/weee/enable',
-            'tax/weee/display',
-            'tax/defaults/region',
-            'tax/weee/apply_vat',
-            'tax/calculation/price_includes_tax'
-        ];
-
-        foreach ($currentSettingsArray as $configPath) {
-            $this->initialConfig[$configPath] = $this->scopeConfig->getValue(
-                $configPath
-            );
-        }
-        /** @var \Magento\Framework\App\Config\ReinitableConfigInterface $config */
-        $config = $this->objectManager->get(\Magento\Framework\App\Config\ReinitableConfigInterface::class);
-        $config->reinit();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->writeConfig($this->initialConfig);
-    }
-
-    /**
-     * Write configuration for weee
-     *
-     * @param array $weeTaxSettings
-     * @return void
-     */
-    private function writeConfig(array $weeTaxSettings): void
-    {
-        /** @var WriterInterface $configWriter */
-        $configWriter = $this->objectManager->get(WriterInterface::class);
-
-        foreach ($weeTaxSettings as $path => $value) {
-            $configWriter->save($path, $value);
-        }
-        $this->scopeConfig->clean();
-    }
 
     /**
      * Catalog Prices : Excluding Tax
@@ -122,6 +69,66 @@ class ProductPriceWithFPTTest extends GraphQlAbstract
         $fixedProductTax = $product['price_range']['minimum_price']['fixed_product_taxes'][0];
         $this->assertEquals(12.7, $fixedProductTax['amount']['value']);
         $this->assertEquals('fpt_for_all_front_label', $fixedProductTax['label']);
+    }
+
+    /**
+     * Get GraphQl query to fetch products by sku
+     *
+     * @param array $skus
+     * @return string
+     */
+    private function getProductQuery(array $skus): string
+    {
+        $stringSkus = '"' . implode('","', $skus) . '"';
+        return <<<QUERY
+{
+  products(filter: {sku: {in: [$stringSkus]}}, sort: {name: ASC}) {
+    items {
+      name
+      sku
+      price_range {
+        minimum_price {
+          regular_price {
+            value
+            currency
+          }
+          final_price {
+            value
+            currency
+          }
+          discount {
+            amount_off
+            percent_off
+          }
+          fixed_product_taxes{
+            amount{value}
+            label
+          }
+        }
+        maximum_price {
+          regular_price {
+            value
+           currency
+          }
+          final_price {
+            value
+            currency
+          }
+          discount {
+            amount_off
+            percent_off
+          }
+          fixed_product_taxes
+          {
+            amount{value}
+            label
+          }
+        }
+      }
+    }
+  }
+}
+QUERY;
     }
 
     /**
@@ -466,7 +473,8 @@ class ProductPriceWithFPTTest extends GraphQlAbstract
      */
     public function testCatalogPriceIncTaxCatalogDisplayInclTaxInclFPTWithDescrWithTaxAppliedOnFPT(
         array $weeTaxSettings
-    ) {
+    )
+    {
         $this->writeConfig($weeTaxSettings);
 
         /** @var TaxClassCollectionFactory $taxClassCollectionFactory */
@@ -558,7 +566,7 @@ class ProductPriceWithFPTTest extends GraphQlAbstract
         $product1->setFixedProductAttribute(
             [['website_id' => 0, 'country' => 'US', 'state' => 0, 'price' => 10, 'delete' => '']]
         );
-            $productRepository->save($product1);
+        $productRepository->save($product1);
 
         $skus = ['simple-with-ftp'];
         $query = $this->getProductQuery($skus);
@@ -672,62 +680,56 @@ class ProductPriceWithFPTTest extends GraphQlAbstract
     }
 
     /**
-     * Get GraphQl query to fetch products by sku
-     *
-     * @param array $skus
-     * @return string
+     * @inheritdoc
      */
-    private function getProductQuery(array $skus): string
+    protected function setUp(): void
     {
-        $stringSkus = '"' . implode('","', $skus) . '"';
-        return <<<QUERY
-{
-  products(filter: {sku: {in: [$stringSkus]}}, sort: {name: ASC}) {
-    items {
-      name
-      sku
-      price_range {
-        minimum_price {
-          regular_price {
-            value
-            currency
-          }
-          final_price {
-            value
-            currency
-          }
-          discount {
-            amount_off
-            percent_off
-          }
-          fixed_product_taxes{
-            amount{value}
-            label
-          }
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        /** @var ScopeConfigInterface $scopeConfig */
+        $this->scopeConfig = $this->objectManager->get(ScopeConfigInterface::class);
+
+        $currentSettingsArray = [
+            'tax/display/type',
+            'tax/weee/enable',
+            'tax/weee/display',
+            'tax/defaults/region',
+            'tax/weee/apply_vat',
+            'tax/calculation/price_includes_tax'
+        ];
+
+        foreach ($currentSettingsArray as $configPath) {
+            $this->initialConfig[$configPath] = $this->scopeConfig->getValue(
+                $configPath
+            );
         }
-        maximum_price {
-          regular_price {
-            value
-           currency
-          }
-          final_price {
-            value
-            currency
-          }
-          discount {
-            amount_off
-            percent_off
-          }
-          fixed_product_taxes
-          {
-            amount{value}
-            label
-          }
-        }
-      }
+        /** @var ReinitableConfigInterface $config */
+        $config = $this->objectManager->get(ReinitableConfigInterface::class);
+        $config->reinit();
     }
-  }
-}
-QUERY;
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->writeConfig($this->initialConfig);
+    }
+
+    /**
+     * Write configuration for weee
+     *
+     * @param array $weeTaxSettings
+     * @return void
+     */
+    private function writeConfig(array $weeTaxSettings): void
+    {
+        /** @var WriterInterface $configWriter */
+        $configWriter = $this->objectManager->get(WriterInterface::class);
+
+        foreach ($weeTaxSettings as $path => $value) {
+            $configWriter->save($path, $value);
+        }
+        $this->scopeConfig->clean();
     }
 }

@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Quote\Customer;
 
+use Exception;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Integration\Api\CustomerTokenServiceInterface;
 use Magento\Quote\Model\QuoteFactory;
@@ -45,16 +46,6 @@ class UpdateCartItemsTest extends GraphQlAbstract
      */
     private $productRepository;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->quoteResource = $objectManager->get(QuoteResource::class);
-        $this->quoteFactory = $objectManager->get(QuoteFactory::class);
-        $this->quoteIdToMaskedId = $objectManager->get(QuoteIdToMaskedQuoteIdInterface::class);
-        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
-    }
-
     /**
      * @magentoApiDataFixture Magento/Checkout/_files/quote_with_address_saved.php
      */
@@ -77,6 +68,48 @@ class UpdateCartItemsTest extends GraphQlAbstract
 
         $this->assertEquals($itemId, $item['id']);
         $this->assertEquals($quantity, $item['quantity']);
+    }
+
+    /**
+     * @param string $maskedQuoteId
+     * @param int $itemId
+     * @param float $quantity
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId, int $itemId, float $quantity): string
+    {
+        return <<<QUERY
+mutation {
+  updateCartItems(input: {
+    cart_id: "{$maskedQuoteId}"
+    cart_items:[
+      {
+        cart_item_id: {$itemId}
+        quantity: {$quantity}
+      }
+    ]
+  }) {
+    cart {
+      items {
+        id
+        quantity
+      }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
+     * @param string $username
+     * @param string $password
+     * @return array
+     */
+    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
+        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
+        return $headerMap;
     }
 
     /**
@@ -105,7 +138,7 @@ class UpdateCartItemsTest extends GraphQlAbstract
      */
     public function testUpdateItemInNonExistentCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Could not find a cart with ID "non_existent_masked_id"');
 
         $query = $this->getQuery('non_existent_masked_id', 1, 2);
@@ -254,45 +287,13 @@ QUERY;
         ];
     }
 
-    /**
-     * @param string $maskedQuoteId
-     * @param int $itemId
-     * @param float $quantity
-     * @return string
-     */
-    private function getQuery(string $maskedQuoteId, int $itemId, float $quantity): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-mutation {
-  updateCartItems(input: {
-    cart_id: "{$maskedQuoteId}"
-    cart_items:[
-      {
-        cart_item_id: {$itemId}
-        quantity: {$quantity}
-      }
-    ]
-  }) {
-    cart {
-      items {
-        id
-        quantity
-      }
-    }
-  }
-}
-QUERY;
-    }
-
-    /**
-     * @param string $username
-     * @param string $password
-     * @return array
-     */
-    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
-    {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
-        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
-        return $headerMap;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->quoteResource = $objectManager->get(QuoteResource::class);
+        $this->quoteFactory = $objectManager->get(QuoteFactory::class);
+        $this->quoteIdToMaskedId = $objectManager->get(QuoteIdToMaskedQuoteIdInterface::class);
+        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
+        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
     }
 }

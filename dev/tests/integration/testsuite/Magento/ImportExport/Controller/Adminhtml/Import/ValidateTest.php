@@ -6,15 +6,19 @@
 
 namespace Magento\ImportExport\Controller\Adminhtml\Import;
 
+use Magento\Framework\Data\Form\FormKey;
+use Magento\Framework\Exception\FileSystemException;
+use Magento\Framework\Filesystem;
 use Magento\Framework\Filesystem\DirectoryList;
 use Magento\Framework\HTTP\Adapter\FileTransferFactory;
 use Magento\ImportExport\Model\Import;
 use Magento\ImportExport\Model\Import\ErrorProcessing\ProcessingErrorAggregatorInterface;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class ValidateTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class ValidateTest extends AbstractBackendController
 {
     /**
      * @dataProvider validationDataProvider
@@ -22,7 +26,7 @@ class ValidateTest extends \Magento\TestFramework\TestCase\AbstractBackendContro
      * @param string $mimeType
      * @param string $message
      * @param string $delimiter
-     * @throws \Magento\Framework\Exception\FileSystemException
+     * @throws FileSystemException
      * @backupGlobals enabled
      * @magentoDbIsolation enabled
      * @SuppressWarnings(PHPMD.Superglobals)
@@ -35,8 +39,8 @@ class ValidateTest extends \Magento\TestFramework\TestCase\AbstractBackendContro
         $this->getRequest()->setMethod('POST');
         $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
 
-        /** @var $formKey \Magento\Framework\Data\Form\FormKey */
-        $formKey = $this->_objectManager->get(\Magento\Framework\Data\Form\FormKey::class);
+        /** @var $formKey FormKey */
+        $formKey = $this->_objectManager->get(FormKey::class);
         $this->getRequest()->setPostValue('form_key', $formKey->getFormKey());
         $this->getRequest()->setPostValue('entity', 'catalog_product');
         $this->getRequest()->setPostValue('behavior', 'append');
@@ -45,7 +49,7 @@ class ValidateTest extends \Magento\TestFramework\TestCase\AbstractBackendContro
         $this->getRequest()->setPostValue('_import_field_separator', $delimiter);
 
         /** @var \Magento\TestFramework\App\Filesystem $filesystem */
-        $filesystem = $this->_objectManager->get(\Magento\Framework\Filesystem::class);
+        $filesystem = $this->_objectManager->get(Filesystem::class);
         $tmpDir = $filesystem->getDirectoryWrite(DirectoryList::SYS_TMP);
         $subDir = str_replace('\\', '_', __CLASS__);
         $tmpDir->create($subDir);

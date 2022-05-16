@@ -3,14 +3,29 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Security\Model\Plugin;
+
+use Magento\Backend\App\Area\FrontNameResolver;
+use Magento\Backend\Model\Auth\Session;
+use Magento\Framework\Config\ScopeInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Stdlib\DateTime;
+use Magento\Security\Api\Data\UserExpirationInterface;
+use Magento\Security\Api\Data\UserExpirationInterfaceFactory;
+use Magento\Security\Model\AdminSessionInfo;
+use Magento\Security\Model\AdminSessionsManager;
+use Magento\Security\Model\ConfigInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\User\Model\User;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  * @magentoAppIsolation enabled
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class AuthSessionTest extends \PHPUnit\Framework\TestCase
+class AuthSessionTest extends TestCase
 {
     /**
      * @var \Magento\Backend\Model\Auth
@@ -18,66 +33,34 @@ class AuthSessionTest extends \PHPUnit\Framework\TestCase
     protected $auth;
 
     /**
-     * @var \Magento\Backend\Model\Auth\Session
+     * @var Session
      */
     protected $authSession;
 
     /**
-     * @var \Magento\Security\Model\AdminSessionInfo
+     * @var AdminSessionInfo
      */
     protected $adminSessionInfo;
 
     /**
-     * @var \Magento\Security\Model\AdminSessionsManager
+     * @var AdminSessionsManager
      */
     protected $adminSessionsManager;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
 
     /**
-     * @var \Magento\Framework\Stdlib\DateTime
+     * @var DateTime
      */
     protected $dateTime;
 
     /**
-     * @var \Magento\Security\Model\ConfigInterface
+     * @var ConfigInterface
      */
     protected $securityConfig;
-
-    /**
-     * Set up
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->objectManager->get(\Magento\Framework\Config\ScopeInterface::class)
-            ->setCurrentScope(\Magento\Backend\App\Area\FrontNameResolver::AREA_CODE);
-        $this->auth = $this->objectManager->create(\Magento\Backend\Model\Auth::class);
-        $this->authSession = $this->objectManager->create(\Magento\Backend\Model\Auth\Session::class);
-        $this->adminSessionInfo = $this->objectManager->create(\Magento\Security\Model\AdminSessionInfo::class);
-        $this->auth->setAuthStorage($this->authSession);
-        $this->adminSessionsManager = $this->objectManager->get(\Magento\Security\Model\AdminSessionsManager::class);
-        $this->dateTime = $this->objectManager->create(\Magento\Framework\Stdlib\DateTime::class);
-        $this->securityConfig = $this->objectManager->create(\Magento\Security\Model\ConfigInterface::class);
-    }
-
-    /**
-     * Tear down
-     */
-    protected function tearDown(): void
-    {
-        $this->auth = null;
-        $this->authSession  = null;
-        $this->adminSessionInfo  = null;
-        $this->adminSessionsManager = null;
-        $this->objectManager = null;
-        parent::tearDown();
-    }
 
     /**
      * Test of prolong user action
@@ -157,12 +140,12 @@ class AuthSessionTest extends \PHPUnit\Framework\TestCase
 
         $expireDate = new \DateTime();
         $expireDate->modify('-10 days');
-        /** @var \Magento\User\Model\User $user */
-        $user = $this->objectManager->create(\Magento\User\Model\User::class);
+        /** @var User $user */
+        $user = $this->objectManager->create(User::class);
         $user->loadByUsername(\Magento\TestFramework\Bootstrap::ADMIN_NAME);
         $userExpirationFactory =
-            $this->objectManager->create(\Magento\Security\Api\Data\UserExpirationInterfaceFactory::class);
-        /** @var \Magento\Security\Api\Data\UserExpirationInterface $userExpiration */
+            $this->objectManager->create(UserExpirationInterfaceFactory::class);
+        /** @var UserExpirationInterface $userExpiration */
         $userExpiration = $userExpirationFactory->create();
         $userExpiration->setId($user->getId())
             ->setExpiresAt($expireDate->format('Y-m-d H:i:s'))
@@ -183,5 +166,37 @@ class AuthSessionTest extends \PHPUnit\Framework\TestCase
         static::assertFalse($this->auth->isLoggedIn());
         $user->reload();
         static::assertFalse((bool)$user->getIsActive());
+    }
+
+    /**
+     * Set up
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->objectManager->get(ScopeInterface::class)
+            ->setCurrentScope(FrontNameResolver::AREA_CODE);
+        $this->auth = $this->objectManager->create(\Magento\Backend\Model\Auth::class);
+        $this->authSession = $this->objectManager->create(Session::class);
+        $this->adminSessionInfo = $this->objectManager->create(AdminSessionInfo::class);
+        $this->auth->setAuthStorage($this->authSession);
+        $this->adminSessionsManager = $this->objectManager->get(AdminSessionsManager::class);
+        $this->dateTime = $this->objectManager->create(DateTime::class);
+        $this->securityConfig = $this->objectManager->create(ConfigInterface::class);
+    }
+
+    /**
+     * Tear down
+     */
+    protected function tearDown(): void
+    {
+        $this->auth = null;
+        $this->authSession = null;
+        $this->adminSessionInfo = null;
+        $this->adminSessionsManager = null;
+        $this->objectManager = null;
+        parent::tearDown();
     }
 }

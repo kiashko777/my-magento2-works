@@ -8,6 +8,9 @@ namespace Magento\Setup;
 
 use Laminas\EventManager\EventInterface;
 use Laminas\EventManager\EventManager;
+use Laminas\EventManager\SharedEventManager;
+use Laminas\Http\Header\UserAgent;
+use Laminas\Http\Response;
 use Laminas\ModuleManager\Feature\BootstrapListenerInterface;
 use Laminas\ModuleManager\Feature\ConfigProviderInterface;
 use Laminas\Mvc\ModuleRouteListener;
@@ -33,7 +36,7 @@ class Module implements
         $application = $e->getApplication();
         /** @var EventManager $events */
         $events = $application->getEventManager();
-        /** @var \Laminas\EventManager\SharedEventManager $sharedEvents */
+        /** @var SharedEventManager $sharedEvents */
         $sharedEvents = $events->getSharedManager();
 
         $moduleRouteListener = new ModuleRouteListener();
@@ -49,7 +52,7 @@ class Module implements
             -89
         );
         $response = $e->getResponse();
-        if ($response instanceof \Laminas\Http\Response) {
+        if ($response instanceof Response) {
             $headers = $response->getHeaders();
             if ($headers) {
                 $headers->addHeaderLine('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -57,10 +60,10 @@ class Module implements
                 $headers->addHeaderLine('Expires', '1970-01-01');
                 $headers->addHeaderLine('X-Frame-Options: SAMEORIGIN');
                 $headers->addHeaderLine('X-Content-Type-Options: nosniff');
-                /** @var \Laminas\Http\Header\UserAgent $userAgentHeader */
+                /** @var UserAgent $userAgentHeader */
                 $userAgentHeader = $e->getRequest()->getHeader('User-Agent');
                 $xssHeaderValue = $userAgentHeader && $userAgentHeader->getFieldValue()
-                    && strpos($userAgentHeader->getFieldValue(), XssProtection::IE_8_USER_AGENT) === false
+                && strpos($userAgentHeader->getFieldValue(), XssProtection::IE_8_USER_AGENT) === false
                     ? XssProtection::HEADER_ENABLED : XssProtection::HEADER_DISABLED;
                 $headers->addHeaderLine('X-XSS-Protection: ' . $xssHeaderValue);
             }

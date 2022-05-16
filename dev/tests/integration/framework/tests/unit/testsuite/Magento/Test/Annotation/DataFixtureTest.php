@@ -10,10 +10,14 @@ namespace Magento\Test\Annotation;
 use Magento\Framework\Component\ComponentRegistrar;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Annotation\DataFixture;
-use Magento\TestFramework\Event\Param\Transaction;
-use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
-use PHPUnit\Framework\TestCase;
 use Magento\TestFramework\Annotation\TestsIsolation;
+use Magento\TestFramework\Event\Param\Transaction;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use ReflectionClass;
+use ReflectionException;
 
 /**
  * Test class for \Magento\TestFramework\Annotation\DataFixture.
@@ -23,40 +27,14 @@ use Magento\TestFramework\Annotation\TestsIsolation;
 class DataFixtureTest extends TestCase
 {
     /**
-     * @var DataFixture|\PHPUnit\Framework\MockObject\MockObject
+     * @var DataFixture|MockObject
      */
     protected $object;
 
     /**
-     * @var TestsIsolation|\PHPUnit\Framework\MockObject\MockObject
+     * @var TestsIsolation|MockObject
      */
     protected $testsIsolationMock;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->object = $this->getMockBuilder(DataFixture::class)
-            ->setMethods(['_applyOneFixture', 'getComponentRegistrar', 'getTestKey'])
-            ->getMock();
-        $this->testsIsolationMock = $this->getMockBuilder(TestsIsolation::class)
-            ->setMethods(['createDbSnapshot', 'checkTestIsolation'])
-            ->getMock();
-        /** @var ObjectManagerInterface|\PHPUnit\Framework\MockObject\MockObject $objectManager */
-        $objectManager = $this->getMockBuilder(ObjectManagerInterface::class)
-            ->setMethods(['get'])
-            ->disableOriginalConstructor()
-            ->getMockForAbstractClass();
-        $objectManager->expects($this->atLeastOnce())->method('get')->with(TestsIsolation::class)
-            ->willReturn($this->testsIsolationMock);
-        \Magento\TestFramework\Helper\Bootstrap::setObjectManager($objectManager);
-
-        $directory = __DIR__;
-        if (!defined('INTEGRATION_TESTS_DIR')) {
-            define('INTEGRATION_TESTS_DIR', dirname($directory, 4));
-        }
-    }
 
     /**
      * Dummy fixture
@@ -100,6 +78,49 @@ class DataFixtureTest extends TestCase
         $this->object->startTransaction($this);
         $this->object->startTestTransactionRequest($this, $eventParam);
         $this->assertTrue($eventParam->isTransactionStartRequested());
+    }
+
+    /**
+     * Create mock for Resolver object
+     *
+     * @return void
+     * @throws ReflectionException
+     */
+    private function createResolverMock(): void
+    {
+        $mock = $this->getMockBuilder(Resolver::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['applyDataFixtures', 'getComponentRegistrar'])
+            ->getMock();
+        $mock->expects($this->any())->method('getComponentRegistrar')
+            ->willReturn(new ComponentRegistrar());
+        $reflection = new ReflectionClass(Resolver::class);
+        $reflectionProperty = $reflection->getProperty('instance');
+        $reflectionProperty->setAccessible(true);
+        $reflectionProperty->setValue(Resolver::class, $mock);
+        $reflectionMethod = $reflection->getMethod('processFixturePath');
+        $reflectionMethod->setAccessible(true);
+        $annotatedFixtures = $this->getFixturesAnnotations();
+        $resolvedFixtures = [];
+        foreach ($annotatedFixtures as $fixture) {
+            $resolvedFixtures[] = $reflectionMethod->invoke($mock, $this, $fixture);
+        }
+        $mock->method('applyDataFixtures')
+            ->willReturn($resolvedFixtures);
+    }
+
+    /**
+     * Prepare mock method return value
+     *
+     * @return array
+     */
+    private function getFixturesAnnotations(): array
+    {
+        $reflection = new ReflectionClass(DataFixture::class);
+        $reflectionMethod = $reflection->getMethod('getAnnotations');
+        $reflectionMethod->setAccessible(true);
+
+        return $reflectionMethod->invoke($this->object, $this)['magentoDataFixture'];
     }
 
     /**
@@ -260,45 +281,28 @@ class DataFixtureTest extends TestCase
     }
 
     /**
-     * Create mock for Resolver object
-     *
-     * @return void
-     * @throws \ReflectionException
+     * @inheritdoc
      */
-    private function createResolverMock(): void
+    protected function setUp(): void
     {
-        $mock = $this->getMockBuilder(Resolver::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['applyDataFixtures', 'getComponentRegistrar'])
+        $this->object = $this->getMockBuilder(DataFixture::class)
+            ->setMethods(['_applyOneFixture', 'getComponentRegistrar', 'getTestKey'])
             ->getMock();
-        $mock->expects($this->any())->method('getComponentRegistrar')
-            ->willReturn(new ComponentRegistrar());
-        $reflection = new \ReflectionClass(Resolver::class);
-        $reflectionProperty = $reflection->getProperty('instance');
-        $reflectionProperty->setAccessible(true);
-        $reflectionProperty->setValue(Resolver::class, $mock);
-        $reflectionMethod = $reflection->getMethod('processFixturePath');
-        $reflectionMethod->setAccessible(true);
-        $annotatedFixtures = $this->getFixturesAnnotations();
-        $resolvedFixtures = [];
-        foreach ($annotatedFixtures as $fixture) {
-            $resolvedFixtures[] = $reflectionMethod->invoke($mock, $this, $fixture);
+        $this->testsIsolationMock = $this->getMockBuilder(TestsIsolation::class)
+            ->setMethods(['createDbSnapshot', 'checkTestIsolation'])
+            ->getMock();
+        /** @var ObjectManagerInterface|MockObject $objectManager */
+        $objectManager = $this->getMockBuilder(ObjectManagerInterface::class)
+            ->setMethods(['get'])
+            ->disableOriginalConstructor()
+            ->getMockForAbstractClass();
+        $objectManager->expects($this->atLeastOnce())->method('get')->with(TestsIsolation::class)
+            ->willReturn($this->testsIsolationMock);
+        Bootstrap::setObjectManager($objectManager);
+
+        $directory = __DIR__;
+        if (!defined('INTEGRATION_TESTS_DIR')) {
+            define('INTEGRATION_TESTS_DIR', dirname($directory, 4));
         }
-        $mock->method('applyDataFixtures')
-            ->willReturn($resolvedFixtures);
-    }
-
-    /**
-     * Prepare mock method return value
-     *
-     * @return array
-     */
-    private function getFixturesAnnotations(): array
-    {
-        $reflection = new \ReflectionClass(DataFixture::class);
-        $reflectionMethod = $reflection->getMethod('getAnnotations');
-        $reflectionMethod->setAccessible(true);
-
-        return $reflectionMethod->invoke($this->object, $this)['magentoDataFixture'];
     }
 }

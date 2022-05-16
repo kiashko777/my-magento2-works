@@ -6,16 +6,20 @@
 
 declare(strict_types=1);
 
+use Magento\Catalog\Model\Product;
+use Magento\Eav\Model\Entity\Attribute\Set;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
+
 Resolver::getInstance()->requireDataFixture('Magento/Weee/_files/fixed_product_attribute_rollback.php');
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 
-/** @var \Magento\Eav\Model\Entity\Attribute\Set $attributeSet */
-$attributeSet = $objectManager->create(\Magento\Eav\Model\Entity\Attribute\Set::class);
+/** @var Set $attributeSet */
+$attributeSet = $objectManager->create(Set::class);
 
 $entityType = $objectManager->create(\Magento\Eav\Model\Entity\Type::class)->loadByCode('catalog_product');
-$defaultSetId = $objectManager->create(\Magento\Catalog\Model\Product::class)->getDefaultAttributeSetid();
+$defaultSetId = $objectManager->create(Product::class)->getDefaultAttributeSetid();
 
 $attributeGroupId = $attributeSet->getDefaultGroupId($entityType->getDefaultAttributeSetId());
 

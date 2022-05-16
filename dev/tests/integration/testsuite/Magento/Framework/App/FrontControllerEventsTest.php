@@ -34,17 +34,6 @@ class FrontControllerEventsTest extends TestCase
     private $request;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = ObjectManager::getInstance();
-        $this->setupEventManagerSpy();
-        $this->eventManager = $this->objectManager->get(ManagerInterface::class);
-        $this->request = $this->objectManager->get(TestHttpRequest::class);
-    }
-
-    /**
      * Test if frontend controller dispatches events
      *
      * @magentoAppArea frontend
@@ -61,6 +50,55 @@ class FrontControllerEventsTest extends TestCase
         $frontController->dispatch($this->request);
 
         $this->assertPreAndPostDispatchEventsAreDispatched();
+    }
+
+    /**
+     * Prepare request for test action
+     *
+     * @param string $route
+     * @param string $actionPath
+     * @param string $actionName
+     *
+     * @return void
+     */
+    private function configureRequestForAction(string $route, string $actionPath, string $actionName): void
+    {
+        $request = $this->request;
+
+        $request->setRouteName($route);
+        $request->setControllerName($actionPath);
+        $request->setActionName($actionName);
+        $request->setDispatched();
+        $request->setRequestUri("$route/$actionPath/$actionName");
+    }
+
+    /**
+     * Check events dispatched before and after execute
+     *
+     * @return void
+     */
+    private function assertPreAndPostDispatchEventsAreDispatched(): void
+    {
+        $this->assertEventDispatchCount('controller_action_predispatch', 1);
+        $this->assertEventDispatchCount('controller_action_predispatch_cms', 1);
+        $this->assertEventDispatchCount('controller_action_predispatch_cms_index_index', 1);
+        $this->assertEventDispatchCount('controller_action_postdispatch_cms_index_index', 1);
+        $this->assertEventDispatchCount('controller_action_postdispatch_cms', 1);
+        $this->assertEventDispatchCount('controller_action_postdispatch', 1);
+    }
+
+    /**
+     * Check if event was dispatched exactly as many times as expected
+     *
+     * @param string $eventName
+     * @param int $expectedCount
+     *
+     * @return void
+     */
+    private function assertEventDispatchCount(string $eventName, int $expectedCount): void
+    {
+        $message = sprintf('Event %s was expected to be dispatched %d time(s).', $eventName, $expectedCount);
+        $this->assertCount($expectedCount, $this->eventManager->spyOnDispatchedEvent($eventName), $message);
     }
 
     /**
@@ -85,6 +123,32 @@ class FrontControllerEventsTest extends TestCase
         $result1 = $frontController->dispatch($this->request);
         $this->assertTrue($result1 instanceof Response, 'Action was dispatched!');
         $this->assertPreDispatchEventsAreDispatched();
+    }
+
+    /**
+     * Check events are dispatched only before execute
+     *
+     * @return void
+     */
+    private function assertPreDispatchEventsAreDispatched(): void
+    {
+        $this->assertEventDispatchCount('controller_action_predispatch', 1);
+        $this->assertEventDispatchCount('controller_action_predispatch_cms', 1);
+        $this->assertEventDispatchCount('controller_action_predispatch_cms_index_index', 1);
+        $this->assertEventDispatchCount('controller_action_postdispatch_cms_index_index', 0);
+        $this->assertEventDispatchCount('controller_action_postdispatch_cms', 0);
+        $this->assertEventDispatchCount('controller_action_postdispatch', 0);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = ObjectManager::getInstance();
+        $this->setupEventManagerSpy();
+        $this->eventManager = $this->objectManager->get(ManagerInterface::class);
+        $this->request = $this->objectManager->get(TestHttpRequest::class);
     }
 
     /**
@@ -127,69 +191,5 @@ class FrontControllerEventsTest extends TestCase
         };
 
         $this->objectManager->addSharedInstance($eventManagerSpy, get_class($eventManager));
-    }
-
-    /**
-     * Check if event was dispatched exactly as many times as expected
-     *
-     * @param string $eventName
-     * @param int $expectedCount
-     *
-     * @return void
-     */
-    private function assertEventDispatchCount(string $eventName, int $expectedCount): void
-    {
-        $message = sprintf('Event %s was expected to be dispatched %d time(s).', $eventName, $expectedCount);
-        $this->assertCount($expectedCount, $this->eventManager->spyOnDispatchedEvent($eventName), $message);
-    }
-
-    /**
-     * Prepare request for test action
-     *
-     * @param string $route
-     * @param string $actionPath
-     * @param string $actionName
-     *
-     * @return void
-     */
-    private function configureRequestForAction(string $route, string $actionPath, string $actionName): void
-    {
-        $request = $this->request;
-
-        $request->setRouteName($route);
-        $request->setControllerName($actionPath);
-        $request->setActionName($actionName);
-        $request->setDispatched();
-        $request->setRequestUri("$route/$actionPath/$actionName");
-    }
-
-    /**
-     * Check events dispatched before and after execute
-     *
-     * @return void
-     */
-    private function assertPreAndPostDispatchEventsAreDispatched(): void
-    {
-        $this->assertEventDispatchCount('controller_action_predispatch', 1);
-        $this->assertEventDispatchCount('controller_action_predispatch_cms', 1);
-        $this->assertEventDispatchCount('controller_action_predispatch_cms_index_index', 1);
-        $this->assertEventDispatchCount('controller_action_postdispatch_cms_index_index', 1);
-        $this->assertEventDispatchCount('controller_action_postdispatch_cms', 1);
-        $this->assertEventDispatchCount('controller_action_postdispatch', 1);
-    }
-
-    /**
-     * Check events are dispatched only before execute
-     *
-     * @return void
-     */
-    private function assertPreDispatchEventsAreDispatched(): void
-    {
-        $this->assertEventDispatchCount('controller_action_predispatch', 1);
-        $this->assertEventDispatchCount('controller_action_predispatch_cms', 1);
-        $this->assertEventDispatchCount('controller_action_predispatch_cms_index_index', 1);
-        $this->assertEventDispatchCount('controller_action_postdispatch_cms_index_index', 0);
-        $this->assertEventDispatchCount('controller_action_postdispatch_cms', 0);
-        $this->assertEventDispatchCount('controller_action_postdispatch', 0);
     }
 }

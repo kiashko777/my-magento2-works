@@ -8,15 +8,19 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Controller\Adminhtml\Product;
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractBackendController;
+
 /**
  * @magentoAppArea Adminhtml
  */
-class SearchTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class SearchTest extends AbstractBackendController
 {
     /**
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
      */
-    public function testExecute() : void
+    public function testExecute(): void
     {
         $this->getRequest()
             ->setPostValue('searchKey', 'simple')
@@ -30,7 +34,7 @@ class SearchTest extends \Magento\TestFramework\TestCase\AbstractBackendControll
         );
     }
 
-    public function testExecuteNonExistingSearchKey() : void
+    public function testExecuteNonExistingSearchKey(): void
     {
         $this->getRequest()
             ->setPostValue('searchKey', '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
@@ -45,10 +49,10 @@ class SearchTest extends \Magento\TestFramework\TestCase\AbstractBackendControll
     /**
      * @magentoDataFixture Magento/Catalog/_files/categories.php
      */
-    public function testExecuteNotVisibleIndividuallyProducts() : void
+    public function testExecuteNotVisibleIndividuallyProducts(): void
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $productRepository = $objectManager->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+        $objectManager = Bootstrap::getObjectManager();
+        $productRepository = $objectManager->get(ProductRepositoryInterface::class);
 
         $product = $productRepository->get('simple-3');
         $this->assertEquals('simple-3', $product->getSku());
@@ -66,7 +70,7 @@ class SearchTest extends \Magento\TestFramework\TestCase\AbstractBackendControll
     /**
      * @magentoDataFixture Magento/Catalog/_files/multiple_mixed_products.php
      */
-    public function testExecuteEnabledAndDisabledProducts() : void
+    public function testExecuteEnabledAndDisabledProducts(): void
     {
         $this->getRequest()
             ->setPostValue('searchKey', 'simple')

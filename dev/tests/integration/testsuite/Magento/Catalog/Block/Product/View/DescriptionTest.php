@@ -10,6 +10,7 @@ namespace Magento\Catalog\Block\Product\View;
 use Magento\Framework\Registry;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 
 /**
  * @magentoAppArea frontend
@@ -26,6 +27,19 @@ class DescriptionTest extends TestCase
      */
     private $registry;
 
+    public function testGetProductWhenNoProductIsRegistered()
+    {
+        $html = $this->block->toHtml();
+        $this->assertEmpty($html);
+    }
+
+    public function testGetProductWhenInvalidProductIsRegistered()
+    {
+        $this->registry->register('product', new stdClass());
+        $html = $this->block->toHtml();
+        $this->assertEmpty($html);
+    }
+
     protected function setUp(): void
     {
         $objectManager = Bootstrap::getObjectManager();
@@ -37,18 +51,5 @@ class DescriptionTest extends TestCase
 
         $this->registry = $objectManager->get(Registry::class);
         $this->registry->unregister('product');
-    }
-
-    public function testGetProductWhenNoProductIsRegistered()
-    {
-        $html = $this->block->toHtml();
-        $this->assertEmpty($html);
-    }
-
-    public function testGetProductWhenInvalidProductIsRegistered()
-    {
-        $this->registry->register('product', new \stdClass());
-        $html = $this->block->toHtml();
-        $this->assertEmpty($html);
     }
 }

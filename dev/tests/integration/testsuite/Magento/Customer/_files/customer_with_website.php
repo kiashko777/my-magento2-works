@@ -4,15 +4,21 @@
  * See COPYING.txt for license details.
  */
 
-/** @var \Magento\Framework\ObjectManagerInterface  $objectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+/** @var ObjectManagerInterface $objectManager */
 
-/** @var \Magento\Store\Model\StoreManager $store */
-$store = $objectManager->get(\Magento\Store\Model\StoreManager::class);
+use Magento\Customer\Model\Customer;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Store\Model\StoreManager;
+use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var \Magento\Customer\Model\Customer $customer */
+$objectManager = Bootstrap::getObjectManager();
+
+/** @var StoreManager $store */
+$store = $objectManager->get(StoreManager::class);
+
+/** @var Customer $customer */
 $customer = $objectManager->create(
-    \Magento\Customer\Model\Customer::class,
+    Customer::class,
     [
         'data' => [
             'website_id' => $store->getDefaultStoreView()->getWebsiteId(),

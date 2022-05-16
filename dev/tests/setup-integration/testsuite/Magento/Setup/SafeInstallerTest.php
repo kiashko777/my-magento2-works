@@ -39,18 +39,6 @@ class SafeInstallerTest extends SetupTestCase
     private $dbSchemaReader;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->moduleManager = $objectManager->get(TestModuleManager::class);
-        $this->cliCommand = $objectManager->get(CliCommand::class);
-        $this->resourceConnection = $objectManager->get(ResourceConnection::class);
-        $this->dbSchemaReader = $objectManager->get(DbSchemaReaderInterface::class);
-    }
-
-    /**
      * @moduleName Magento_TestSetupDeclarationModule4
      * @dataProviderFromFile Magento/TestSetupDeclarationModule4/fixture/safe_data_provider.php
      */
@@ -146,5 +134,17 @@ class SafeInstallerTest extends SetupTestCase
         } else {
             $this->assertArrayNotHasKey($foreignKeyName, $foreignKeys);
         }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->moduleManager = $objectManager->get(TestModuleManager::class);
+        $this->cliCommand = $objectManager->get(CliCommand::class);
+        $this->resourceConnection = $objectManager->get(ResourceConnection::class);
+        $this->dbSchemaReader = $objectManager->get(DbSchemaReaderInterface::class);
     }
 }

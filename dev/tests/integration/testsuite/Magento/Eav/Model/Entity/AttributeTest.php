@@ -7,10 +7,12 @@ declare(strict_types=1);
 
 namespace Magento\Eav\Model\Entity;
 
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Locale\ResolverInterface;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
+use ReflectionObject;
 
 /**
  * Class to test EAV Entity attribute model
@@ -33,34 +35,6 @@ class AttributeTest extends TestCase
     private $localeResolver;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->attribute = $this->objectManager->get(Attribute::class);
-        $this->localeResolver = $this->objectManager->get(ResolverInterface::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->attribute = null;
-        $this->objectManager = null;
-        $this->localeResolver = null;
-
-        $reflection = new \ReflectionObject($this);
-        foreach ($reflection->getProperties() as $property) {
-            if (!$property->isStatic() && 0 !== strpos($property->getDeclaringClass()->getName(), 'PHPUnit')) {
-                $property->setAccessible(true);
-                $property->setValue($this, null);
-            }
-        }
-    }
-
-    /**
      * @param string $defaultValue
      * @param string $backendType
      * @param string $locale
@@ -74,7 +48,8 @@ class AttributeTest extends TestCase
         string $frontendInput,
         string $locale,
         string $expected
-    ) {
+    )
+    {
         $this->attribute->setDefaultValue($defaultValue);
         $this->attribute->setBackendType($backendType);
         $this->attribute->setFrontendInput($frontendInput);
@@ -113,7 +88,7 @@ class AttributeTest extends TestCase
      */
     public function testBeforeSaveErrorData($defaultValue, $backendType, $locale, $expected)
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
 
         $this->attribute->setDefaultValue($defaultValue);
         $this->attribute->setBackendType($backendType);
@@ -136,5 +111,33 @@ class AttributeTest extends TestCase
             'wrong decimal separator for US' => ['100,50', 'decimal', 'en_US', 'Invalid default decimal value'],
             'wrong decimal separator for UA' => ['100.50', 'decimal', 'uk_UA', 'Invalid default decimal value'],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->attribute = $this->objectManager->get(Attribute::class);
+        $this->localeResolver = $this->objectManager->get(ResolverInterface::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->attribute = null;
+        $this->objectManager = null;
+        $this->localeResolver = null;
+
+        $reflection = new ReflectionObject($this);
+        foreach ($reflection->getProperties() as $property) {
+            if (!$property->isStatic() && 0 !== strpos($property->getDeclaringClass()->getName(), 'PHPUnit')) {
+                $property->setAccessible(true);
+                $property->setValue($this, null);
+            }
+        }
     }
 }

@@ -6,10 +6,10 @@
 declare(strict_types=1);
 
 use Magento\Catalog\Api\CategoryLinkManagementInterface;
+use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use Magento\Catalog\Model\Product\Visibility;
-use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\CatalogSearch\Model\Indexer\Fulltext;
 use Magento\Framework\Indexer\IndexerRegistry;
 use Magento\TestFramework\Helper\Bootstrap;
@@ -34,7 +34,7 @@ $categoryLinkManagement = $objectManager->get(CategoryLinkManagementInterface::c
 $productRepository = $objectManager->get(ProductRepositoryInterface::class);
 foreach ($productPrices as $price) {
 
-    $sku =  $productTemplate['sku'] . $price;
+    $sku = $productTemplate['sku'] . $price;
     $name = $productTemplate['name'] . $price;
 
     /** @var $product Product */

@@ -3,10 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestModuleDefaultHydrator\Model\Data;
 
-class ExtensionAttribute extends \Magento\Framework\Api\AbstractSimpleObject implements
-    \Magento\TestModuleDefaultHydrator\Api\Data\ExtensionAttributeInterface
+use Magento\Framework\Api\AbstractSimpleObject;
+use Magento\TestModuleDefaultHydrator\Api\Data\ExtensionAttributeInterface;
+
+class ExtensionAttribute extends AbstractSimpleObject implements
+    ExtensionAttributeInterface
 {
     /**
      * Get id

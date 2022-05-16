@@ -9,7 +9,11 @@ namespace Magento\Customer\Model;
 
 use Magento\Customer\Api\CustomerMetadataInterface;
 use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Api\Data\CustomerInterface;
+use Magento\Customer\Model\Data\AttributeMetadata;
 use Magento\Framework\Api\ExtensibleDataObjectConverter;
+use Magento\Framework\Api\ExtensionAttribute\Config\Reader;
+use Magento\Framework\Config\CacheInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
@@ -32,31 +36,6 @@ class CustomerMetadataTest extends TestCase
 
     /** @var ExtensibleDataObjectConverter */
     private $extensibleDataObjectConverter;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $objectManager->configure(
-            [
-                \Magento\Framework\Api\ExtensionAttribute\Config\Reader::class => [
-                    'arguments' => [
-                        'fileResolver' => ['instance' => \Magento\Customer\Model\FileResolverStub::class],
-                    ],
-                ],
-            ]
-        );
-        $this->customerRepository = $objectManager->create(
-            \Magento\Customer\Api\CustomerRepositoryInterface::class
-        );
-        $this->service = $objectManager->create(\Magento\Customer\Api\CustomerMetadataInterface::class);
-        $this->serviceTwo = $objectManager->create(\Magento\Customer\Api\CustomerMetadataInterface::class);
-        $this->extensibleDataObjectConverter = $objectManager->get(
-            ExtensibleDataObjectConverter::class
-        );
-    }
 
     /**
      * @magentoDataFixture Magento/Customer/_files/attribute_user_defined_custom_attribute.php
@@ -257,7 +236,7 @@ class CustomerMetadataTest extends TestCase
         $attributes = $this->extensibleDataObjectConverter->toFlatArray(
             $customer,
             [],
-            \Magento\Customer\Api\Data\CustomerInterface::class
+            CustomerInterface::class
         );
         $this->assertNotEmpty($attributes);
 
@@ -381,7 +360,7 @@ class CustomerMetadataTest extends TestCase
 
         /** Check some fields of one attribute metadata */
         $attributeMetadata = $formAttributesMetadata['firstname'];
-        $this->assertInstanceOf(\Magento\Customer\Model\Data\AttributeMetadata::class, $attributeMetadata);
+        $this->assertInstanceOf(AttributeMetadata::class, $attributeMetadata);
         $this->assertEquals('firstname', $attributeMetadata->getAttributeCode(), 'Attribute code is invalid');
         $this->assertNotEmpty($attributeMetadata->getValidationRules(), 'Validation rules are not set');
         $this->assertEquals('1', $attributeMetadata->isSystem(), '"Is system" field value is invalid');
@@ -413,12 +392,37 @@ class CustomerMetadataTest extends TestCase
     /**
      * @inheritdoc
      */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->configure(
+            [
+                Reader::class => [
+                    'arguments' => [
+                        'fileResolver' => ['instance' => FileResolverStub::class],
+                    ],
+                ],
+            ]
+        );
+        $this->customerRepository = $objectManager->create(
+            CustomerRepositoryInterface::class
+        );
+        $this->service = $objectManager->create(CustomerMetadataInterface::class);
+        $this->serviceTwo = $objectManager->create(CustomerMetadataInterface::class);
+        $this->extensibleDataObjectConverter = $objectManager->get(
+            ExtensibleDataObjectConverter::class
+        );
+    }
+
+    /**
+     * @inheritdoc
+     */
     protected function tearDown(): void
     {
         $objectManager = Bootstrap::getObjectManager();
 
-        /* @var \Magento\Framework\Config\CacheInterface $cache */
-        $cache = $objectManager->create(\Magento\Framework\Config\CacheInterface::class);
+        /* @var CacheInterface $cache */
+        $cache = $objectManager->create(CacheInterface::class);
         $cache->remove('extension_attributes_config');
     }
 }

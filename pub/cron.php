@@ -6,6 +6,8 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Framework\App\Bootstrap;
+use Magento\Framework\App\Cron;
 use Magento\Store\Model\Store;
 use Magento\Store\Model\StoreManager;
 
@@ -27,11 +29,11 @@ try {
     $params = $_SERVER;
     $params[StoreManager::PARAM_RUN_CODE] = 'admin';
     $params[Store::CUSTOM_ENTRY_POINT_PARAM] = true;
-    $bootstrap = \Magento\Framework\App\Bootstrap::create(BP, $params);
-    /** @var \Magento\Framework\App\Cron $app */
-    $app = $bootstrap->createApplication(\Magento\Framework\App\Cron::class, ['parameters' => $opt]);
+    $bootstrap = Bootstrap::create(BP, $params);
+    /** @var Cron $app */
+    $app = $bootstrap->createApplication(Cron::class, ['parameters' => $opt]);
     $bootstrap->run($app);
-} catch (\Exception $e) {
+} catch (Exception $e) {
     echo $e;
     exit(1);
 }

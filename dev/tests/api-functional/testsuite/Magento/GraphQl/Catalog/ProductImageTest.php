@@ -7,19 +7,16 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Catalog;
 
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
 
 class ProductImageTest extends GraphQlAbstract
 {
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoApiDataFixture Magento/Catalog/_files/product_with_image.php
@@ -44,6 +41,22 @@ QUERY;
         self::assertStringContainsString('magento_image.jpg', $response['products']['items'][0]['image']['url']);
         self::assertTrue($this->checkImageExists($response['products']['items'][0]['image']['url']));
         self::assertEquals('Image Alt Text', $response['products']['items'][0]['image']['label']);
+    }
+
+    /**
+     * @param string $url
+     * @return bool
+     */
+    private function checkImageExists(string $url): bool
+    {
+        $connection = curl_init($url);
+        curl_setopt($connection, CURLOPT_HEADER, true);
+        curl_setopt($connection, CURLOPT_NOBODY, true);
+        curl_setopt($connection, CURLOPT_RETURNTRANSFER, 1);
+        curl_exec($connection);
+        $responseStatus = curl_getinfo($connection, CURLINFO_HTTP_CODE);
+
+        return $responseStatus === 200;
     }
 
     /**
@@ -131,19 +144,8 @@ QUERY;
         self::assertEquals('Image Alt Text', $response['products']['items'][0]['thumbnail']['label']);
     }
 
-    /**
-     * @param string $url
-     * @return bool
-     */
-    private function checkImageExists(string $url): bool
+    protected function setUp(): void
     {
-        $connection = curl_init($url);
-        curl_setopt($connection, CURLOPT_HEADER, true);
-        curl_setopt($connection, CURLOPT_NOBODY, true);
-        curl_setopt($connection, CURLOPT_RETURNTRANSFER, 1);
-        curl_exec($connection);
-        $responseStatus = curl_getinfo($connection, CURLINFO_HTTP_CODE);
-
-        return $responseStatus === 200;
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

@@ -30,18 +30,6 @@ class BoldMixinTest extends TestCase
      */
     private $wordWrapperMock;
 
-    protected function setUp(): void
-    {
-        $this->randomWordSelectorMock =
-            $this->createMock(RandomWordSelector::class);
-        $this->wordWrapperMock = $this->createMock(WordWrapper::class);
-
-        $this->mixin = new BoldMixin(
-            $this->randomWordSelectorMock,
-            $this->wordWrapperMock
-        );
-    }
-
     public function testEmptyApply()
     {
         $this->assertEquals('', $this->mixin->apply(''));
@@ -66,5 +54,17 @@ class BoldMixinTest extends TestCase
             ->willReturn($fixtureStringResult);
 
         $this->assertEquals($fixtureStringResult, $this->mixin->apply($fixtureString));
+    }
+
+    protected function setUp(): void
+    {
+        $this->randomWordSelectorMock =
+            $this->createMock(RandomWordSelector::class);
+        $this->wordWrapperMock = $this->createMock(WordWrapper::class);
+
+        $this->mixin = new BoldMixin(
+            $this->randomWordSelectorMock,
+            $this->wordWrapperMock
+        );
     }
 }

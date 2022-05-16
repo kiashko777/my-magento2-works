@@ -32,16 +32,6 @@ class SetPaymentMethodOnCartTest extends GraphQlAbstract
     private $customerTokenService;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
      * @magentoApiDataFixture Magento/GraphQl/Quote/_files/customer/create_empty_cart.php
@@ -63,6 +53,46 @@ class SetPaymentMethodOnCartTest extends GraphQlAbstract
     }
 
     /**
+     * @param string $maskedQuoteId
+     * @param string $methodCode
+     * @return string
+     */
+    private function getQuery(
+        string $maskedQuoteId,
+        string $methodCode
+    ): string
+    {
+        return <<<QUERY
+mutation {
+  setPaymentMethodOnCart(input: {
+      cart_id: "$maskedQuoteId"
+      payment_method: {
+          code: "$methodCode"
+      }
+  }) {
+    cart {
+      selected_payment_method {
+        code
+      }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
+     * @param string $username
+     * @param string $password
+     * @return array
+     */
+    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
+        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
+        return $headerMap;
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
      * @magentoApiDataFixture Magento/GraphQl/Quote/_files/customer/create_empty_cart.php
@@ -71,7 +101,7 @@ class SetPaymentMethodOnCartTest extends GraphQlAbstract
      */
     public function testSetPaymentOnCartWithSimpleProductAndWithoutAddress()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The shipping address is missing. Set the address and try again.');
 
         $methodCode = Checkmo::PAYMENT_METHOD_CHECKMO_CODE;
@@ -111,7 +141,7 @@ class SetPaymentMethodOnCartTest extends GraphQlAbstract
      */
     public function testSetNonExistentPaymentMethod()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The requested Payment Method is not available.');
 
         $methodCode = 'noway';
@@ -127,7 +157,7 @@ class SetPaymentMethodOnCartTest extends GraphQlAbstract
      */
     public function testSetPaymentOnNonExistentCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Could not find a cart with ID "non_existent_masked_id"');
 
         $maskedQuoteId = 'non_existent_masked_id';
@@ -221,7 +251,7 @@ QUERY;
      */
     public function testSetDisabledPaymentOnCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The requested Payment Method is not available.');
 
         $methodCode = Purchaseorder::PAYMENT_METHOD_PURCHASEORDER_CODE;
@@ -276,41 +306,12 @@ QUERY;
     }
 
     /**
-     * @param string $maskedQuoteId
-     * @param string $methodCode
-     * @return string
+     * @inheritdoc
      */
-    private function getQuery(
-        string $maskedQuoteId,
-        string $methodCode
-    ) : string {
-        return <<<QUERY
-mutation {
-  setPaymentMethodOnCart(input: {
-      cart_id: "$maskedQuoteId"
-      payment_method: {
-          code: "$methodCode"
-      }
-  }) {
-    cart {
-      selected_payment_method {
-        code
-      }
-    }
-  }
-}
-QUERY;
-    }
-
-    /**
-     * @param string $username
-     * @param string $password
-     * @return array
-     */
-    private function getHeaderMap(string $username = 'customer@example.com', string $password = 'password'): array
+    protected function setUp(): void
     {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
-        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
-        return $headerMap;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
     }
 }

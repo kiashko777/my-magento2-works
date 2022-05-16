@@ -3,9 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\ConfigurableImportExport\Model;
 
+use Magento\Catalog\Model\Product;
 use Magento\CatalogImportExport\Model\AbstractProductExportImportTestCase;
+use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 
 class ConfigurableTest extends AbstractProductExportImportTestCase
 {
@@ -40,10 +43,11 @@ class ConfigurableTest extends AbstractProductExportImportTestCase
      * @inheritdoc
      */
     protected function assertEqualsSpecificAttributes(
-        \Magento\Catalog\Model\Product $expectedProduct,
-        \Magento\Catalog\Model\Product $actualProduct
-    ): void {
-        /** @var \Magento\ConfigurableProduct\Model\Product\Type\Configurable $productType */
+        Product $expectedProduct,
+        Product $actualProduct
+    ): void
+    {
+        /** @var Configurable $productType */
         $productType = $expectedProduct->getTypeInstance();
         $expectedAssociatedProducts = $productType->getUsedProductCollection($expectedProduct);
         $actualAssociatedProducts = iterator_to_array($productType->getUsedProductCollection($actualProduct));
@@ -107,7 +111,8 @@ class ConfigurableTest extends AbstractProductExportImportTestCase
         $skippedAttributes,
         $usePagination = false,
         string $csvfile = null
-    ) {
+    )
+    {
         $skippedAttributes = array_merge($skippedAttributes, ['_cache_instance_product_set_attributes']);
         parent::executeImportReplaceTest($skus, $skippedAttributes, $usePagination, $csvfile);
     }

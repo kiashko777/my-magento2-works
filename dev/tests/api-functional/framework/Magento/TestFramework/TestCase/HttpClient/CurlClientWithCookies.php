@@ -6,8 +6,10 @@
 
 namespace Magento\TestFramework\TestCase\HttpClient;
 
-use Magento\TestFramework\Helper\JsonSerializer;
+use Exception;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Helper\JsonSerializer;
 
 /**
  * A Curl client that can be called independently, outside of any Web API controller used by CookieManager tests.
@@ -24,27 +26,16 @@ class CurlClientWithCookies
 
     /**
      * @param CurlClient $curlClient
-     * @param \Magento\TestFramework\Helper\JsonSerializer $jsonSerializer
+     * @param JsonSerializer $jsonSerializer
      */
     public function __construct(
-        CurlClient $curlClient,
-        \Magento\TestFramework\Helper\JsonSerializer $jsonSerializer
-    ) {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->curlClient = $curlClient ? : $objectManager->get(CurlClient::class);
-        $this->jsonSerializer = $jsonSerializer ? : $objectManager->get(JsonSerializer::class);
-    }
-
-    /**
-     * Compose the resource url
-     *
-     * @param string $resourcePath Resource URL like /V1/Resource1/123
-     * @return string resource URL
-     * @throws \Exception
-     */
-    public function constructResourceUrl($resourcePath)
+        CurlClient                                   $curlClient,
+        JsonSerializer $jsonSerializer
+    )
     {
-        return rtrim(TESTS_BASE_URL, '/') . '/' . ltrim($resourcePath, '/');
+        $objectManager = Bootstrap::getObjectManager();
+        $this->curlClient = $curlClient ?: $objectManager->get(CurlClient::class);
+        $this->jsonSerializer = $jsonSerializer ?: $objectManager->get(JsonSerializer::class);
     }
 
     /**
@@ -63,11 +54,23 @@ class CurlClientWithCookies
         }
 
         $curlOpts = [];
-        $curlOpts[CURLOPT_CUSTOMREQUEST] = \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET;
+        $curlOpts[CURLOPT_CUSTOMREQUEST] = Request::HTTP_METHOD_GET;
         $curlOpts[CURLOPT_SSLVERSION] = 3;
         $response = $this->curlClient->invokeApi($url, $curlOpts, $headers);
         $response['cookies'] = $this->cookieParse($response['header']);
         return $response;
+    }
+
+    /**
+     * Compose the resource url
+     *
+     * @param string $resourcePath Resource URL like /V1/Resource1/123
+     * @return string resource URL
+     * @throws Exception
+     */
+    public function constructResourceUrl($resourcePath)
+    {
+        return rtrim(TESTS_BASE_URL, '/') . '/' . ltrim($resourcePath, '/');
     }
 
     /**

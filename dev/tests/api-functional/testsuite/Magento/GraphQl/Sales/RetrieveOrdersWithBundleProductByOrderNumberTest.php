@@ -10,9 +10,11 @@ namespace Magento\GraphQl\Sales;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Exception\AuthenticationException;
+use Magento\Framework\Registry;
 use Magento\GraphQl\GetCustomerAuthenticationHeader;
 use Magento\GraphQl\Sales\Fixtures\CustomerPlaceOrder;
 use Magento\Sales\Api\OrderRepositoryInterface;
+use Magento\Sales\Model\Order;
 use Magento\Sales\Model\ResourceModel\Order\Collection;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
@@ -33,21 +35,6 @@ class RetrieveOrdersWithBundleProductByOrderNumberTest extends GraphQlAbstract
 
     /** @var ProductRepositoryInterface */
     private $productRepository;
-
-    protected function setUp():void
-    {
-        parent::setUp();
-        $objectManager = Bootstrap::getObjectManager();
-        $this->customerAuthenticationHeader = $objectManager->get(GetCustomerAuthenticationHeader::class);
-        $this->orderRepository = $objectManager->get(OrderRepositoryInterface::class);
-        $this->searchCriteriaBuilder = $objectManager->get(SearchCriteriaBuilder::class);
-        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
-    }
-
-    protected function tearDown(): void
-    {
-        $this->deleteOrder();
-    }
 
     /**
      * Test customer order details with bundle product with child items
@@ -85,27 +72,27 @@ class RetrieveOrdersWithBundleProductByOrderNumberTest extends GraphQlAbstract
         $this->assertEquals(2, count($bundleOptionsFromResponse));
         $expectedBundleOptions =
             [
-              [  '__typename' => 'ItemSelectedBundleOption',
-                  'label' => 'Drop Down Option 1',
-                  'values' => [
-                      [
-                        'product_sku' => 'simple1',
-                        'product_name' => 'Simple Product1',
-                        'quantity'=> 1,
-                          'price' => [
-                            'value' => 1,
-                            'currency' => 'USD'
-                          ]
-                      ]
-                ]
-              ],
-                [  '__typename' => 'ItemSelectedBundleOption',
+                ['__typename' => 'ItemSelectedBundleOption',
+                    'label' => 'Drop Down Option 1',
+                    'values' => [
+                        [
+                            'product_sku' => 'simple1',
+                            'product_name' => 'Simple Product1',
+                            'quantity' => 1,
+                            'price' => [
+                                'value' => 1,
+                                'currency' => 'USD'
+                            ]
+                        ]
+                    ]
+                ],
+                ['__typename' => 'ItemSelectedBundleOption',
                     'label' => 'Drop Down Option 2',
                     'values' => [
                         [
                             'product_sku' => 'simple2',
                             'product_name' => 'Simple Product2',
-                            'quantity'=> 2,
+                            'quantity' => 2,
                             'price' => [
                                 'value' => 2,
                                 'currency' => 'USD'
@@ -115,97 +102,6 @@ class RetrieveOrdersWithBundleProductByOrderNumberTest extends GraphQlAbstract
                 ],
             ];
         $this->assertEquals($expectedBundleOptions, $bundleOptionsFromResponse);
-    }
-
-    /**
-     * Test customer order details with bundle products
-     * @magentoApiDataFixture Magento/Customer/_files/customer.php
-     * @magentoApiDataFixture Magento/Bundle/_files/bundle_product_two_dropdown_options.php
-     * @magentoApiDataFixture Magento/GraphQl/Tax/_files/tax_rule_for_region_1.php
-     * @magentoApiDataFixture Magento/SalesRule/_files/cart_rule_10_percent_off_with_discount_on_shipping.php
-     * @magentoApiDataFixture Magento/GraphQl/Tax/_files/tax_calculation_shipping_excludeTax_order_display_settings.php
-     */
-    public function testGetCustomerOrderBundleProductWithTaxesAndDiscounts()
-    {
-        //Place order with bundled product
-        $qty = 4;
-        $bundleSku = 'bundle-product-two-dropdown-options';
-        /** @var CustomerPlaceOrder $bundleProductOrderFixture */
-        $bundleProductOrderFixture = Bootstrap::getObjectManager()->create(CustomerPlaceOrder::class);
-        $orderResponse = $bundleProductOrderFixture->placeOrderWithBundleProduct(
-            ['email' => 'customer@example.com', 'password' => 'password'],
-            ['sku' => $bundleSku, 'quantity' => $qty]
-        );
-        $orderNumber = $orderResponse['placeOrder']['order']['order_number'];
-        //End place order with bundled product
-
-        $customerOrderResponse = $this->getCustomerOrderQueryBundleProduct($orderNumber);
-        $customerOrderItems = $customerOrderResponse[0];
-        $this->assertEquals("Pending", $customerOrderItems['status']);
-
-        $bundledItemInTheOrder = $customerOrderItems['items'][0];
-        $this->assertEquals(
-            'bundle-product-two-dropdown-options-simple1-simple2',
-            $bundledItemInTheOrder['product_sku']
-        );
-        $this->assertEquals(6, $bundledItemInTheOrder['discounts'][0]['amount']['value']);
-        $this->assertEquals(
-            'Discount Label for 10% off',
-            $bundledItemInTheOrder["discounts"][0]['label']
-        );
-        $this->assertArrayHasKey('bundle_options', $bundledItemInTheOrder);
-        $childItemsInTheOrder = $bundledItemInTheOrder['bundle_options'];
-        $this->assertNotEmpty($childItemsInTheOrder);
-        $this->assertCount(2, $childItemsInTheOrder);
-        $this->assertEquals('Drop Down Option 1', $childItemsInTheOrder[0]['label']);
-        $this->assertEquals('Drop Down Option 2', $childItemsInTheOrder[1]['label']);
-
-        $this->assertEquals('simple1', $childItemsInTheOrder[0]['values'][0]['product_sku']);
-        $this->assertEquals('simple2', $childItemsInTheOrder[1]['values'][0]['product_sku']);
-        $this->assertTotalsOnBundleProductWithTaxesAndDiscounts($customerOrderItems['total']);
-    }
-
-    /**
-     * @param array $customerOrderItemTotal
-     */
-    private function assertTotalsOnBundleProductWithTaxesAndDiscounts(array $customerOrderItemTotal): void
-    {
-        $this->assertCount(1, $customerOrderItemTotal['taxes']);
-        $taxData = $customerOrderItemTotal['taxes'][0];
-        $this->assertEquals('USD', $taxData['amount']['currency']);
-        $this->assertEquals(5.4, $taxData['amount']['value']);
-        $this->assertEquals('US-TEST-*-Rate-1', $taxData['title']);
-        $this->assertEquals(7.5, $taxData['rate']);
-
-        unset($customerOrderItemTotal['taxes']);
-        $assertionMap = [
-            'base_grand_total' => ['value' => 77.4, 'currency' =>'USD'],
-            'grand_total' => ['value' => 77.4, 'currency' =>'USD'],
-            'subtotal' => ['value' => 60, 'currency' =>'USD'],
-            'total_tax' => ['value' => 5.4, 'currency' =>'USD'],
-            'total_shipping' => ['value' => 20, 'currency' =>'USD'],
-            'shipping_handling' => [
-                'amount_including_tax' => ['value' => 21.5],
-                'amount_excluding_tax' => ['value' => 20],
-                'total_amount' => ['value' => 20],
-                'discounts' => [
-                    0 => ['amount'=>['value'=> 2]]
-                ],
-                'taxes'=> [
-                    0 => [
-                        'amount'=>['value' => 1.35],
-                        'title' => 'US-TEST-*-Rate-1',
-                        'rate' => 7.5
-                    ]
-                ]
-            ],
-            'discounts' => [
-                0 => ['amount' => [ 'value' => 8, 'currency' =>'USD'],
-                    'label' => 'Discount Label for 10% off'
-                ]
-            ]
-        ];
-        $this->assertResponseFields($customerOrderItemTotal, $assertionMap);
     }
 
     /**
@@ -290,16 +186,122 @@ QUERY;
     }
 
     /**
+     * Test customer order details with bundle products
+     * @magentoApiDataFixture Magento/Customer/_files/customer.php
+     * @magentoApiDataFixture Magento/Bundle/_files/bundle_product_two_dropdown_options.php
+     * @magentoApiDataFixture Magento/GraphQl/Tax/_files/tax_rule_for_region_1.php
+     * @magentoApiDataFixture Magento/SalesRule/_files/cart_rule_10_percent_off_with_discount_on_shipping.php
+     * @magentoApiDataFixture Magento/GraphQl/Tax/_files/tax_calculation_shipping_excludeTax_order_display_settings.php
+     */
+    public function testGetCustomerOrderBundleProductWithTaxesAndDiscounts()
+    {
+        //Place order with bundled product
+        $qty = 4;
+        $bundleSku = 'bundle-product-two-dropdown-options';
+        /** @var CustomerPlaceOrder $bundleProductOrderFixture */
+        $bundleProductOrderFixture = Bootstrap::getObjectManager()->create(CustomerPlaceOrder::class);
+        $orderResponse = $bundleProductOrderFixture->placeOrderWithBundleProduct(
+            ['email' => 'customer@example.com', 'password' => 'password'],
+            ['sku' => $bundleSku, 'quantity' => $qty]
+        );
+        $orderNumber = $orderResponse['placeOrder']['order']['order_number'];
+        //End place order with bundled product
+
+        $customerOrderResponse = $this->getCustomerOrderQueryBundleProduct($orderNumber);
+        $customerOrderItems = $customerOrderResponse[0];
+        $this->assertEquals("Pending", $customerOrderItems['status']);
+
+        $bundledItemInTheOrder = $customerOrderItems['items'][0];
+        $this->assertEquals(
+            'bundle-product-two-dropdown-options-simple1-simple2',
+            $bundledItemInTheOrder['product_sku']
+        );
+        $this->assertEquals(6, $bundledItemInTheOrder['discounts'][0]['amount']['value']);
+        $this->assertEquals(
+            'Discount Label for 10% off',
+            $bundledItemInTheOrder["discounts"][0]['label']
+        );
+        $this->assertArrayHasKey('bundle_options', $bundledItemInTheOrder);
+        $childItemsInTheOrder = $bundledItemInTheOrder['bundle_options'];
+        $this->assertNotEmpty($childItemsInTheOrder);
+        $this->assertCount(2, $childItemsInTheOrder);
+        $this->assertEquals('Drop Down Option 1', $childItemsInTheOrder[0]['label']);
+        $this->assertEquals('Drop Down Option 2', $childItemsInTheOrder[1]['label']);
+
+        $this->assertEquals('simple1', $childItemsInTheOrder[0]['values'][0]['product_sku']);
+        $this->assertEquals('simple2', $childItemsInTheOrder[1]['values'][0]['product_sku']);
+        $this->assertTotalsOnBundleProductWithTaxesAndDiscounts($customerOrderItems['total']);
+    }
+
+    /**
+     * @param array $customerOrderItemTotal
+     */
+    private function assertTotalsOnBundleProductWithTaxesAndDiscounts(array $customerOrderItemTotal): void
+    {
+        $this->assertCount(1, $customerOrderItemTotal['taxes']);
+        $taxData = $customerOrderItemTotal['taxes'][0];
+        $this->assertEquals('USD', $taxData['amount']['currency']);
+        $this->assertEquals(5.4, $taxData['amount']['value']);
+        $this->assertEquals('US-TEST-*-Rate-1', $taxData['title']);
+        $this->assertEquals(7.5, $taxData['rate']);
+
+        unset($customerOrderItemTotal['taxes']);
+        $assertionMap = [
+            'base_grand_total' => ['value' => 77.4, 'currency' => 'USD'],
+            'grand_total' => ['value' => 77.4, 'currency' => 'USD'],
+            'subtotal' => ['value' => 60, 'currency' => 'USD'],
+            'total_tax' => ['value' => 5.4, 'currency' => 'USD'],
+            'total_shipping' => ['value' => 20, 'currency' => 'USD'],
+            'shipping_handling' => [
+                'amount_including_tax' => ['value' => 21.5],
+                'amount_excluding_tax' => ['value' => 20],
+                'total_amount' => ['value' => 20],
+                'discounts' => [
+                    0 => ['amount' => ['value' => 2]]
+                ],
+                'taxes' => [
+                    0 => [
+                        'amount' => ['value' => 1.35],
+                        'title' => 'US-TEST-*-Rate-1',
+                        'rate' => 7.5
+                    ]
+                ]
+            ],
+            'discounts' => [
+                0 => ['amount' => ['value' => 8, 'currency' => 'USD'],
+                    'label' => 'Discount Label for 10% off'
+                ]
+            ]
+        ];
+        $this->assertResponseFields($customerOrderItemTotal, $assertionMap);
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $objectManager = Bootstrap::getObjectManager();
+        $this->customerAuthenticationHeader = $objectManager->get(GetCustomerAuthenticationHeader::class);
+        $this->orderRepository = $objectManager->get(OrderRepositoryInterface::class);
+        $this->searchCriteriaBuilder = $objectManager->get(SearchCriteriaBuilder::class);
+        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
+    }
+
+    protected function tearDown(): void
+    {
+        $this->deleteOrder();
+    }
+
+    /**
      * @return void
      */
     private function deleteOrder(): void
     {
-        /** @var \Magento\Framework\Registry $registry */
-        $registry = Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
+        /** @var Registry $registry */
+        $registry = Bootstrap::getObjectManager()->get(Registry::class);
         $registry->unregister('isSecureArea');
         $registry->register('isSecureArea', true);
 
-        /** @var $order \Magento\Sales\Model\Order */
+        /** @var $order Order */
         $orderCollection = Bootstrap::getObjectManager()->create(Collection::class);
         foreach ($orderCollection as $order) {
             $this->orderRepository->delete($order);

@@ -37,30 +37,6 @@ class ListCustomerTest extends TestCase
     private $collectionFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->customerSession = $this->objectManager->get(Session::class);
-        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(ListCustomer::class)
-            ->setTemplate('Magento_Review::customer/list.phtml');
-        $this->collectionFactory = $this->objectManager->get(CollectionFactory::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->customerSession->setCustomerId(null);
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Review/_files/customer_review_with_rating.php
      *
      * @return void
@@ -131,5 +107,29 @@ class ListCustomerTest extends TestCase
             (string)__('You have submitted no reviews.'),
             strip_tags($this->block->toHtml())
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->customerSession = $this->objectManager->get(Session::class);
+        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(ListCustomer::class)
+            ->setTemplate('Magento_Review::customer/list.phtml');
+        $this->collectionFactory = $this->objectManager->get(CollectionFactory::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->customerSession->setCustomerId(null);
+
+        parent::tearDown();
     }
 }

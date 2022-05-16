@@ -7,12 +7,16 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\CmsUrlRewrite;
 
+use Magento\Cms\Api\Data\PageInterface;
+use Magento\Cms\Helper\Page as PageHelper;
+use Magento\Cms\Model\Page;
+use Magento\CmsUrlRewrite\Model\CmsPageUrlPathGenerator;
 use Magento\CmsUrlRewrite\Model\CmsPageUrlRewriteGenerator;
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Store\Model\ScopeInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
-use Magento\Cms\Helper\Page as PageHelper;
-use Magento\Store\Model\ScopeInterface;
-use Magento\Framework\App\Config\ScopeConfigInterface;
 
 /**
  * Test the GraphQL endpoint's URLResolver query to verify canonical URL's are correctly returned.
@@ -22,26 +26,21 @@ class UrlResolverTest extends GraphQlAbstract
     /** @var ObjectManager */
     private $objectManager;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
-
     /**
      * @magentoApiDataFixture Magento/Cms/_files/pages.php
      */
     public function testCMSPageUrlResolver()
     {
-        /** @var \Magento\Cms\Model\Page $page */
-        $page = $this->objectManager->get(\Magento\Cms\Model\Page::class);
+        /** @var Page $page */
+        $page = $this->objectManager->get(Page::class);
         $page->load('page100');
         $cmsPageId = $page->getId();
         $requestPath = $page->getIdentifier();
 
-        /** @var \Magento\CmsUrlRewrite\Model\CmsPageUrlPathGenerator $urlPathGenerator */
-        $urlPathGenerator = $this->objectManager->get(\Magento\CmsUrlRewrite\Model\CmsPageUrlPathGenerator::class);
+        /** @var CmsPageUrlPathGenerator $urlPathGenerator */
+        $urlPathGenerator = $this->objectManager->get(CmsPageUrlPathGenerator::class);
 
-        /** @param \Magento\Cms\Api\Data\PageInterface $page */
+        /** @param PageInterface $page */
         $targetPath = $urlPathGenerator->getCanonicalUrlPath($page);
         $expectedEntityType = CmsPageUrlRewriteGenerator::ENTITY_TYPE;
 
@@ -62,11 +61,30 @@ class UrlResolverTest extends GraphQlAbstract
     }
 
     /**
+     * @param string $path
+     * @return string
+     */
+    private function createQuery(string $path): string
+    {
+        return <<<QUERY
+{
+  urlResolver(url:"{$path}")
+  {
+   id
+   relative_url
+   type
+   redirectCode
+  }
+}
+QUERY;
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Cms/_files/pages.php
      */
     public function testResolveCMSPageWithQueryParameters()
     {
-        $page = $this->objectManager->create(\Magento\Cms\Model\Page::class);
+        $page = $this->objectManager->create(Page::class);
         $page->load('page100');
         $cmsPageId = $page->getId();
         $requestPath = $page->getIdentifier();
@@ -84,14 +102,14 @@ class UrlResolverTest extends GraphQlAbstract
      */
     public function testResolveSlash()
     {
-        /** @var \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfigInterface */
+        /** @var ScopeConfigInterface $scopeConfigInterface */
         $scopeConfigInterface = $this->objectManager->get(ScopeConfigInterface::class);
         $homePageIdentifier = $scopeConfigInterface->getValue(
             PageHelper::XML_PATH_HOME_PAGE,
             ScopeInterface::SCOPE_STORE
         );
-        /** @var \Magento\Cms\Model\Page $page */
-        $page = $this->objectManager->get(\Magento\Cms\Model\Page::class);
+        /** @var Page $page */
+        $page = $this->objectManager->get(Page::class);
         $page->load($homePageIdentifier);
         $homePageId = $page->getId();
         $query = $this->createQuery('/');
@@ -103,22 +121,8 @@ class UrlResolverTest extends GraphQlAbstract
         $this->assertEquals(0, $response['urlResolver']['redirectCode']);
     }
 
-    /**
-     * @param string $path
-     * @return string
-     */
-    private function createQuery(string $path): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-{
-  urlResolver(url:"{$path}")
-  {
-   id
-   relative_url
-   type
-   redirectCode
-  }
-}
-QUERY;
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

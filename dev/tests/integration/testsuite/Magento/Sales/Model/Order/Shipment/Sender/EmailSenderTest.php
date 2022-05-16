@@ -23,14 +23,6 @@ class EmailSenderTest extends TestCase
     private $emailSender;
 
     /**
-     * @inheirtDoc
-     */
-    protected function setUp(): void
-    {
-        $this->emailSender = Bootstrap::getObjectManager()->create(EmailSender::class);
-    }
-
-    /**
      * Verify shipment will be marked send email on non default store in case default store order email sent is disabled
      *
      * @magentoDataFixture Magento/Sales/_files/order_fixture_store.php
@@ -50,5 +42,13 @@ class EmailSenderTest extends TestCase
         $result = $this->emailSender->send($order, $shipment);
         $this->assertFalse($result);
         $this->assertTrue($shipment->getSendEmail());
+    }
+
+    /**
+     * @inheirtDoc
+     */
+    protected function setUp(): void
+    {
+        $this->emailSender = Bootstrap::getObjectManager()->create(EmailSender::class);
     }
 }

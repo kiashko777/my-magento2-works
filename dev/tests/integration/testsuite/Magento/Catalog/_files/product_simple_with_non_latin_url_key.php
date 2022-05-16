@@ -4,8 +4,8 @@
  * See COPYING.txt for license details.
  */
 
-use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use Magento\Catalog\Model\Product\Type;
 use Magento\Catalog\Model\Product\Visibility;
@@ -39,7 +39,7 @@ $product->setTypeId(Type::TYPE_SIMPLE)
     ->setStockData($stockDataConfig);
 try {
     $productRepository->save($product);
-} catch (\Exception $e) {
+} catch (Exception $e) {
     // problems during save
 }
 
@@ -58,6 +58,6 @@ $product->setTypeId(Type::TYPE_SIMPLE)
     ->setUrlKey('надзвичайний продукт на кожен день');
 try {
     $productRepository->save($product);
-} catch (\Exception $e) {
+} catch (Exception $e) {
     // problems during save
 }

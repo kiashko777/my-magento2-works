@@ -6,16 +6,24 @@
 
 declare(strict_types=1);
 
-\Magento\TestFramework\Helper\Bootstrap::getInstance()->reinitialize();
+use Magento\Catalog\Api\CategoryLinkManagementInterface;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 
-/** @var \Magento\TestFramework\ObjectManager $objectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+Bootstrap::getInstance()->reinitialize();
 
-/** @var \Magento\Catalog\Api\CategoryLinkManagementInterface $categoryLinkManagement */
-$categoryLinkManagement = $objectManager->get(\Magento\Catalog\Api\CategoryLinkManagementInterface::class);
+/** @var ObjectManager $objectManager */
+$objectManager = Bootstrap::getObjectManager();
 
-/** @var $product \Magento\Catalog\Model\Product */
-$product = $objectManager->create(\Magento\Catalog\Model\Product::class);
+/** @var CategoryLinkManagementInterface $categoryLinkManagement */
+$categoryLinkManagement = $objectManager->get(CategoryLinkManagementInterface::class);
+
+/** @var $product Product */
+$product = $objectManager->create(Product::class);
 $product->isObjectNew(true);
 $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setAttributeSetId($product->getDefaultAttributeSetId())
@@ -30,21 +38,21 @@ $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setMetaTitle('meta title')
     ->setMetaKeyword('meta keyword')
     ->setMetaDescription('meta description')
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setStockData(
         [
-            'use_config_manage_stock'   => 1,
-            'qty'                       => 0,
-            'is_qty_decimal'            => 0,
-            'is_in_stock'               => 0,
+            'use_config_manage_stock' => 1,
+            'qty' => 0,
+            'is_qty_decimal' => 0,
+            'is_in_stock' => 0,
         ]
     )
     ->setCanSaveCustomOptions(true)
     ->setHasOptions(true);
 
-/** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepositoryFactory */
-$productRepository = $objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+/** @var ProductRepositoryInterface $productRepositoryFactory */
+$productRepository = $objectManager->create(ProductRepositoryInterface::class);
 $productRepository->save($product);
 
 $categoryLinkManagement->assignProductToCategories(

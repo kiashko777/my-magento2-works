@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Cms;
 
+use Exception;
 use Magento\Cms\Model\GetPageByIdentifier;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
@@ -96,7 +97,7 @@ QUERY;
 }
 QUERY;
 
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Page id/identifier should be specified');
         $this->graphQlQuery($query);
     }
@@ -122,7 +123,7 @@ QUERY;
 }
 QUERY;
 
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The CMS page with the "0" ID doesn\'t exist.');
         $this->graphQlQuery($query);
     }
@@ -133,7 +134,7 @@ QUERY;
      */
     public function testGetCmsPageByNonExistentIdentifier()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The CMS page with the "" ID doesn\'t exist.');
 
         $query =
@@ -178,7 +179,7 @@ QUERY;
 }
 QUERY;
 
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('No such entity.');
         $this->graphQlQuery($query);
     }
@@ -190,7 +191,7 @@ QUERY;
      */
     public function testGetDisabledCmsPageByIdentifier()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The CMS page with the "no-route" ID doesn\'t exist.');
 
         $cmsPageIdentifier = 'no-route';

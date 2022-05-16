@@ -3,8 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Dependency\Report\Writer\Csv;
 
+use InvalidArgumentException;
+use Magento\Framework\File\Csv;
 use Magento\Setup\Module\Dependency\Report\Data\ConfigInterface;
 use Magento\Setup\Module\Dependency\Report\WriterInterface;
 
@@ -16,14 +19,14 @@ abstract class AbstractWriter implements WriterInterface
     /**
      * Csv write object
      *
-     * @var \Magento\Framework\File\Csv
+     * @var Csv
      */
     protected $writer;
 
     /**
      * Writer constructor
      *
-     * @param \Magento\Framework\File\Csv $writer
+     * @param Csv $writer
      */
     public function __construct($writer)
     {
@@ -47,22 +50,14 @@ abstract class AbstractWriter implements WriterInterface
      *
      * @param array $options
      * @return void
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     protected function checkOptions($options)
     {
         if (!isset($options['report_filename']) || empty($options['report_filename'])) {
-            throw new \InvalidArgumentException('Writing error: Passed option "report_filename" is wrong.');
+            throw new InvalidArgumentException('Writing error: Passed option "report_filename" is wrong.');
         }
     }
-
-    /**
-     * Template method. Prepare data step
-     *
-     * @param \Magento\Setup\Module\Dependency\Report\Data\ConfigInterface $config
-     * @return array
-     */
-    abstract protected function prepareData($config);
 
     /**
      * Template method. Write to file step
@@ -75,4 +70,12 @@ abstract class AbstractWriter implements WriterInterface
     {
         $this->writer->saveData($filename, $data);
     }
+
+    /**
+     * Template method. Prepare data step
+     *
+     * @param ConfigInterface $config
+     * @return array
+     */
+    abstract protected function prepareData($config);
 }

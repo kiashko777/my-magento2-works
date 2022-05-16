@@ -3,8 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Console\Command;
 
+use Magento\Deploy\Console\ConsoleLogger;
+use Magento\Deploy\Console\ConsoleLoggerFactory;
 use Magento\Deploy\Console\DeployStaticOptions;
 use Magento\Framework\App\DeploymentConfig\FileReader;
 use Magento\Framework\App\DeploymentConfig\Writer;
@@ -13,17 +16,16 @@ use Magento\Framework\Config\File\ConfigFilePool;
 use Magento\Framework\Console\Cli;
 use Magento\Framework\Filesystem;
 use Magento\Framework\ObjectManagerInterface;
+use Magento\Setup\Model\ObjectManagerProvider;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
-use Magento\Deploy\Console\ConsoleLoggerFactory;
-use Magento\Setup\Model\ObjectManagerProvider;
-use Magento\Deploy\Console\ConsoleLogger;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class DeployStaticContentCommandTest extends \PHPUnit\Framework\TestCase
+class DeployStaticContentCommandTest extends TestCase
 {
     /**
      * @var ObjectManagerInterface
@@ -70,56 +72,6 @@ class DeployStaticContentCommandTest extends \PHPUnit\Framework\TestCase
      */
     private $storeManager;
 
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->reader = $this->objectManager->get(FileReader::class);
-        $this->writer = $this->objectManager->get(Writer::class);
-        $this->filesystem = $this->objectManager->get(Filesystem::class);
-        $this->configFilePool = $this->objectManager->get(ConfigFilePool::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-
-        $this->config = $this->loadConfig();
-        $this->envConfig = $this->loadEnvConfig();
-
-        $this->clearStaticFiles();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->filesystem->getDirectoryWrite(DirectoryList::CONFIG)->writeFile(
-            $this->configFilePool->getPath(ConfigFilePool::APP_CONFIG),
-            "<?php\n return [];\n"
-        );
-        $this->filesystem->getDirectoryWrite(DirectoryList::CONFIG)->writeFile(
-            $this->configFilePool->getPath(ConfigFilePool::APP_ENV),
-            "<?php\n return [];\n"
-        );
-
-        $this->writer->saveConfig([ConfigFilePool::APP_CONFIG => $this->config]);
-        $this->writer->saveConfig([ConfigFilePool::APP_ENV => $this->envConfig]);
-
-        $this->clearStaticFiles();
-        $this->storeManager->reinitStores();
-    }
-
-    /**
-     * Clear pub/static and var/view_preprocessed directories
-     *
-     * @return void
-     */
-    private function clearStaticFiles()
-    {
-        $this->filesystem->getDirectoryWrite(DirectoryList::PUB)->delete(DirectoryList::STATIC_VIEW);
-        $this->filesystem->getDirectoryWrite(DirectoryList::VAR_DIR)->delete(DirectoryList::TMP_MATERIALIZATION_DIR);
-    }
-
     public function testDeployStaticWithoutDbConnection()
     {
         // emulate app:config:dump command
@@ -150,29 +102,13 @@ class DeployStaticContentCommandTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @return array
-     */
-    private function loadConfig()
-    {
-        return $this->reader->load(ConfigFilePool::APP_CONFIG);
-    }
-
-    /**
-     * @return array
-     */
-    private function loadEnvConfig()
-    {
-        return $this->reader->load(ConfigFilePool::APP_ENV);
-    }
-
-    /**
      * Create DeployStaticContentCommand instance with mocked loggers
      *
      * @return DeployStaticContentCommand
      */
     private function getStaticContentDeployCommand()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
         $consoleLoggerFactoryMock = $this->getMockBuilder(ConsoleLoggerFactory::class)
             ->setMethods(['getLogger'])
             ->disableOriginalConstructor()
@@ -190,7 +126,7 @@ class DeployStaticContentCommandTest extends \PHPUnit\Framework\TestCase
             ->getMock();
         $objectManagerProviderMock
             ->method('get')
-            ->willReturn(\Magento\TestFramework\Helper\Bootstrap::getObjectManager());
+            ->willReturn(Bootstrap::getObjectManager());
         $deployStaticContentCommand = $objectManager->create(
             DeployStaticContentCommand::class,
             [
@@ -200,5 +136,71 @@ class DeployStaticContentCommandTest extends \PHPUnit\Framework\TestCase
         );
 
         return $deployStaticContentCommand;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->reader = $this->objectManager->get(FileReader::class);
+        $this->writer = $this->objectManager->get(Writer::class);
+        $this->filesystem = $this->objectManager->get(Filesystem::class);
+        $this->configFilePool = $this->objectManager->get(ConfigFilePool::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
+
+        $this->config = $this->loadConfig();
+        $this->envConfig = $this->loadEnvConfig();
+
+        $this->clearStaticFiles();
+    }
+
+    /**
+     * @return array
+     */
+    private function loadConfig()
+    {
+        return $this->reader->load(ConfigFilePool::APP_CONFIG);
+    }
+
+    /**
+     * @return array
+     */
+    private function loadEnvConfig()
+    {
+        return $this->reader->load(ConfigFilePool::APP_ENV);
+    }
+
+    /**
+     * Clear pub/static and var/view_preprocessed directories
+     *
+     * @return void
+     */
+    private function clearStaticFiles()
+    {
+        $this->filesystem->getDirectoryWrite(DirectoryList::PUB)->delete(DirectoryList::STATIC_VIEW);
+        $this->filesystem->getDirectoryWrite(DirectoryList::VAR_DIR)->delete(DirectoryList::TMP_MATERIALIZATION_DIR);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->filesystem->getDirectoryWrite(DirectoryList::CONFIG)->writeFile(
+            $this->configFilePool->getPath(ConfigFilePool::APP_CONFIG),
+            "<?php\n return [];\n"
+        );
+        $this->filesystem->getDirectoryWrite(DirectoryList::CONFIG)->writeFile(
+            $this->configFilePool->getPath(ConfigFilePool::APP_ENV),
+            "<?php\n return [];\n"
+        );
+
+        $this->writer->saveConfig([ConfigFilePool::APP_CONFIG => $this->config]);
+        $this->writer->saveConfig([ConfigFilePool::APP_ENV => $this->envConfig]);
+
+        $this->clearStaticFiles();
+        $this->storeManager->reinitStores();
     }
 }

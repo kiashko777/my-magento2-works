@@ -4,13 +4,17 @@
  * See COPYING.txt for license details.
  */
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\UrlRewrite\Model\ResourceModel\UrlRewriteCollection;
 
-$registry = $objectManager->get(\Magento\Framework\Registry::class);
+$objectManager = Bootstrap::getObjectManager();
+
+$registry = $objectManager->get(Registry::class);
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
-$urlRewriteCollection = $objectManager->create(\Magento\UrlRewrite\Model\ResourceModel\UrlRewriteCollection::class);
+$urlRewriteCollection = $objectManager->create(UrlRewriteCollection::class);
 $collection = $urlRewriteCollection
     ->addFieldToFilter('target_path', ['test_page1', 'test_page2'])
     ->load()

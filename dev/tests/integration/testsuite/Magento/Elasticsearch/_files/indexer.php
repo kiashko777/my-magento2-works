@@ -10,6 +10,7 @@ use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use Magento\Catalog\Model\Product\Visibility;
 use Magento\Framework\App\MutableScopeConfig;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\Store;
 use Magento\Store\Model\StoreManagerInterface;
@@ -18,7 +19,7 @@ use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/product_boolean_attribute.php');
 
-/** @var $objectManager \Magento\Framework\ObjectManagerInterface */
+/** @var $objectManager ObjectManagerInterface */
 $objectManager = Bootstrap::getObjectManager();
 
 /** @var StoreManagerInterface $storeManager */

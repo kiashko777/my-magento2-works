@@ -6,24 +6,13 @@
 
 namespace Magento\Customer\Controller;
 
+use Magento\Customer\Model\Session;
+use Magento\Framework\Json\Helper\Data;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractController;
 
-class AjaxLoginTest extends \Magento\TestFramework\TestCase\AbstractController
+class AjaxLoginTest extends AbstractController
 {
-    /**
-     * Login the user
-     *
-     * @param string $customerId Customer to mark as logged in for the session
-     * @return void
-     */
-    protected function login($customerId)
-    {
-        /** @var \Magento\Customer\Model\Session $session */
-        $session = Bootstrap::getObjectManager()
-            ->get(\Magento\Customer\Model\Session::class);
-        $session->loginById($customerId);
-    }
-
     /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
      */
@@ -33,8 +22,22 @@ class AjaxLoginTest extends \Magento\TestFramework\TestCase\AbstractController
         $this->dispatch('customer/ajax/logout');
         $body = $this->getResponse()->getBody();
         $logoutMessage = Bootstrap::getObjectManager()->get(
-            \Magento\Framework\Json\Helper\Data::class
+            Data::class
         )->jsonDecode($body);
         $this->assertStringContainsString('Logout Successful', $logoutMessage['message']);
+    }
+
+    /**
+     * Login the user
+     *
+     * @param string $customerId Customer to mark as logged in for the session
+     * @return void
+     */
+    protected function login($customerId)
+    {
+        /** @var Session $session */
+        $session = Bootstrap::getObjectManager()
+            ->get(Session::class);
+        $session->loginById($customerId);
     }
 }

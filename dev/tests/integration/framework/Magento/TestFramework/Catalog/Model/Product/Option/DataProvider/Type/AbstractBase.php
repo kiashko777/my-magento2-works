@@ -17,6 +17,55 @@ abstract class AbstractBase
      *
      * @return array
      */
+    public function getDataForUpdateOptions(): array
+    {
+        return array_merge_recursive(
+            $this->getDataForCreateOptions(),
+            [
+                "type_{$this->getType()}_title" => [
+                    [
+                        'title' => 'Test updated option title',
+                    ]
+                ],
+                "type_{$this->getType()}_required_options" => [
+                    [
+                        'is_require' => 0,
+                    ],
+                ],
+                "type_{$this->getType()}_not_required_options" => [
+                    [
+                        'is_require' => 1,
+                    ],
+                ],
+                "type_{$this->getType()}_options_with_fixed_price" => [
+                    [
+                        'price_type' => 'percent',
+                    ],
+                ],
+                "type_{$this->getType()}_options_with_percent_price" => [
+                    [
+                        'price_type' => 'fixed',
+                    ],
+                ],
+                "type_{$this->getType()}_price" => [
+                    [
+                        'price' => 60,
+                    ],
+                ],
+                "type_{$this->getType()}_sku" => [
+                    [
+                        'sku' => 'Updated option sku',
+                    ],
+                ],
+            ]
+        );
+    }
+
+    /**
+     * Return data for create options for all cases.
+     *
+     * @return array
+     */
     public function getDataForCreateOptions(): array
     {
         return [
@@ -112,55 +161,6 @@ abstract class AbstractBase
                 ],
             ],
         ];
-    }
-
-    /**
-     * Return data for create options for all cases.
-     *
-     * @return array
-     */
-    public function getDataForUpdateOptions(): array
-    {
-        return array_merge_recursive(
-            $this->getDataForCreateOptions(),
-            [
-                "type_{$this->getType()}_title" => [
-                    [
-                        'title' => 'Test updated option title',
-                    ]
-                ],
-                "type_{$this->getType()}_required_options" => [
-                    [
-                        'is_require' => 0,
-                    ],
-                ],
-                "type_{$this->getType()}_not_required_options" => [
-                    [
-                        'is_require' => 1,
-                    ],
-                ],
-                "type_{$this->getType()}_options_with_fixed_price" => [
-                    [
-                        'price_type' => 'percent',
-                    ],
-                ],
-                "type_{$this->getType()}_options_with_percent_price" => [
-                    [
-                        'price_type' => 'fixed',
-                    ],
-                ],
-                "type_{$this->getType()}_price" => [
-                    [
-                        'price' => 60,
-                    ],
-                ],
-                "type_{$this->getType()}_sku" => [
-                    [
-                        'sku' => 'Updated option sku',
-                    ],
-                ],
-            ]
-        );
     }
 
     /**

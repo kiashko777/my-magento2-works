@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Quote\Observer\Frontend\Quote\Address;
 
 use Magento\Customer\Api\CustomerRepositoryInterface;
@@ -34,15 +35,6 @@ class CollectTotalsObserverTest extends TestCase
      * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    /**
-     * @inheridoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->model = $this->objectManager->create(CollectTotalsObserver::class);
-    }
 
     /**
      * @magentoConfigFixture current_store customer/create_account/auto_group_assign 1
@@ -178,5 +170,14 @@ class CollectTotalsObserverTest extends TestCase
         $this->model->execute($eventObserver);
 
         $this->assertEquals(self::STUB_CUSTOMER_EMAIL, $quote->getCustomerEmail());
+    }
+
+    /**
+     * @inheridoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->model = $this->objectManager->create(CollectTotalsObserver::class);
     }
 }

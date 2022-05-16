@@ -3,7 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Model\Layer\Filter;
+
+use Magento\Customer\Api\GroupManagementInterface;
+use Magento\Framework\View\Element\Text;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use Magento\TestFramework\Request;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\Catalog\Model\Layer\Filter\Price.
@@ -12,46 +21,31 @@ namespace Magento\Catalog\Model\Layer\Filter;
  * @magentoDbIsolation enabled
  * @magentoAppIsolation enabled
  */
-class PriceTest extends \PHPUnit\Framework\TestCase
+class PriceTest extends TestCase
 {
     /**
-     * @var \Magento\Catalog\Model\Layer\Filter\Price
+     * @var Price
      */
     protected $_model;
 
     /**
-     * @var \Magento\Customer\Api\GroupManagementInterface
+     * @var GroupManagementInterface
      */
     protected $groupManagement;
-
-    protected function setUp(): void
-    {
-        $category = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\Category::class
-        );
-        $category->load(4);
-        $layer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Catalog\Model\Layer\Category::class);
-        $layer->setCurrentCategory($category);
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Catalog\Model\Layer\Filter\Price::class, ['layer' => $layer]);
-        $this->groupManagement = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Customer\Api\GroupManagementInterface::class);
-    }
 
     public function testApplyNothing()
     {
         $this->assertEmpty($this->_model->getData('price_range'));
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var $request \Magento\TestFramework\Request */
-        $request = $objectManager->get(\Magento\TestFramework\Request::class);
+        /** @var $objectManager ObjectManager */
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var $request Request */
+        $request = $objectManager->get(Request::class);
         $this->_model->apply(
             $request,
-            \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-                \Magento\Framework\View\LayoutInterface::class
+            Bootstrap::getObjectManager()->get(
+                LayoutInterface::class
             )->createBlock(
-                \Magento\Framework\View\Element\Text::class
+                Text::class
             )
         );
 
@@ -61,17 +55,17 @@ class PriceTest extends \PHPUnit\Framework\TestCase
     public function testApplyInvalid()
     {
         $this->assertEmpty($this->_model->getData('price_range'));
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var $request \Magento\TestFramework\Request */
-        $request = $objectManager->get(\Magento\TestFramework\Request::class);
+        /** @var $objectManager ObjectManager */
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var $request Request */
+        $request = $objectManager->get(Request::class);
         $request->setParam('price', 'non-numeric');
         $this->_model->apply(
             $request,
-            \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-                \Magento\Framework\View\LayoutInterface::class
+            Bootstrap::getObjectManager()->get(
+                LayoutInterface::class
             )->createBlock(
-                \Magento\Framework\View\Element\Text::class
+                Text::class
             )
         );
 
@@ -83,17 +77,17 @@ class PriceTest extends \PHPUnit\Framework\TestCase
      */
     public function testApplyManual()
     {
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var $request \Magento\TestFramework\Request */
-        $request = $objectManager->get(\Magento\TestFramework\Request::class);
+        /** @var $objectManager ObjectManager */
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var $request Request */
+        $request = $objectManager->get(Request::class);
         $request->setParam('price', '10-20');
         $this->_model->apply(
             $request,
-            \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-                \Magento\Framework\View\LayoutInterface::class
+            Bootstrap::getObjectManager()->get(
+                LayoutInterface::class
             )->createBlock(
-                \Magento\Framework\View\Element\Text::class
+                Text::class
             )
         );
     }
@@ -119,5 +113,20 @@ class PriceTest extends \PHPUnit\Framework\TestCase
         $this->_model->setCurrencyRate($currencyRate);
 
         $this->assertEquals($currencyRate, $this->_model->getData('currency_rate'));
+    }
+
+    protected function setUp(): void
+    {
+        $category = Bootstrap::getObjectManager()->create(
+            \Magento\Catalog\Model\Category::class
+        );
+        $category->load(4);
+        $layer = Bootstrap::getObjectManager()
+            ->get(\Magento\Catalog\Model\Layer\Category::class);
+        $layer->setCurrentCategory($category);
+        $this->_model = Bootstrap::getObjectManager()
+            ->create(Price::class, ['layer' => $layer]);
+        $this->groupManagement = Bootstrap::getObjectManager()
+            ->get(GroupManagementInterface::class);
     }
 }

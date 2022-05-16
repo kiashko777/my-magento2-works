@@ -10,11 +10,12 @@ use Magento\Analytics\Model\Config\Backend\Baseurl\SubscriptionUpdateHandler;
 use Magento\Analytics\Model\Exception\State\SubscriptionUpdateException;
 use Magento\Framework\FlagManager;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class ReportUrlProviderTest extends \PHPUnit\Framework\TestCase
+class ReportUrlProviderTest extends TestCase
 {
     /**
      * @var ReportUrlProvider
@@ -25,16 +26,6 @@ class ReportUrlProviderTest extends \PHPUnit\Framework\TestCase
      * @var FlagManager
      */
     private $flagManager;
-
-    /**
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->reportUrlProvider = $objectManager->get(ReportUrlProvider::class);
-        $this->flagManager = $objectManager->get(FlagManager::class);
-    }
 
     /**
      * @magentoDbIsolation enabled
@@ -48,5 +39,15 @@ class ReportUrlProviderTest extends \PHPUnit\Framework\TestCase
             );
         $this->expectException(SubscriptionUpdateException::class);
         $this->reportUrlProvider->getUrl();
+    }
+
+    /**
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->reportUrlProvider = $objectManager->get(ReportUrlProvider::class);
+        $this->flagManager = $objectManager->get(FlagManager::class);
     }
 }

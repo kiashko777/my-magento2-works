@@ -7,7 +7,13 @@
 namespace Magento\Paypal\Model\Express;
 
 use Magento\Checkout\Model\Type\Onepage;
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Model\Customer;
+use Magento\Customer\Model\GroupManagement;
+use Magento\Customer\Model\Session;
 use Magento\Directory\Model\CountryFactory;
+use Magento\Framework\DataObject;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Paypal\Model\Api\Nvp;
 use Magento\Paypal\Model\Api\Type\Factory;
@@ -19,6 +25,8 @@ use Magento\Quote\Model\ResourceModel\Quote\Collection;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
+use ReflectionException;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
@@ -54,41 +62,6 @@ class CheckoutTest extends TestCase
      * @var Checkout
      */
     private $checkoutModel;
-
-    /**
-     * Set up
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-
-        $this->paypalInfo = $this->getMockBuilder(Info::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $this->paypalConfig = $this->getMockBuilder(Config::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $this->api = $this->getMockBuilder(Nvp::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['call', 'getExportedShippingAddress', 'getExportedBillingAddress', 'getShippingRateCode'])
-            ->getMock();
-
-        $this->api->expects($this->any())
-            ->method('call')
-            ->willReturn([]);
-
-        $this->apiTypeFactory = $this->getMockBuilder(Factory::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $this->apiTypeFactory->expects($this->any())
-            ->method('create')
-            ->willReturn($this->api);
-    }
 
     /**
      * Verify that api has set customer email.
@@ -145,6 +118,19 @@ class CheckoutTest extends TestCase
     }
 
     /**
+     * Gets quote.
+     *
+     * @return Quote
+     */
+    private function getFixtureQuote(): Quote
+    {
+        /** @var Collection $quoteCollection */
+        $quoteCollection = $this->objectManager->create(Collection::class);
+
+        return $quoteCollection->getLastItem();
+    }
+
+    /**
      * Verify that an order placed with an existing customer can re-use the customer addresses.
      *
      * @magentoDataFixture Magento/Paypal/_files/quote_express_with_customer.php
@@ -158,19 +144,19 @@ class CheckoutTest extends TestCase
         $quote->setCheckoutMethod(Onepage::METHOD_CUSTOMER); // to dive into _prepareCustomerQuote() on switch
         $quote->getShippingAddress()->setSameAsBilling(0);
         $quote->setReservedOrderId(null);
-        $customer = $this->objectManager->create(\Magento\Customer\Model\Customer::class)->load(1);
+        $customer = $this->objectManager->create(Customer::class)->load(1);
         $customer->setDefaultBilling(false)
             ->setDefaultShipping(false)
             ->save();
 
-        /** @var \Magento\Customer\Model\Session $customerSession */
-        $customerSession = $this->objectManager->get(\Magento\Customer\Model\Session::class);
+        /** @var Session $customerSession */
+        $customerSession = $this->objectManager->get(Session::class);
         $customerSession->loginById(1);
         $checkout = $this->getCheckout($quote);
         $checkout->place('token');
 
-        /** @var \Magento\Customer\Api\CustomerRepositoryInterface $customerService */
-        $customerService = $this->objectManager->get(\Magento\Customer\Api\CustomerRepositoryInterface::class);
+        /** @var CustomerRepositoryInterface $customerService */
+        $customerService = $this->objectManager->get(CustomerRepositoryInterface::class);
         $customer = $customerService->getById($quote->getCustomerId());
 
         $this->assertEquals(1, $quote->getCustomerId());
@@ -182,6 +168,25 @@ class CheckoutTest extends TestCase
         $order = $checkout->getOrder();
         $this->assertEquals(1, $order->getBillingAddress()->getCustomerAddressId());
         $this->assertEquals(2, $order->getShippingAddress()->getCustomerAddressId());
+    }
+
+    /**
+     * @param Quote $quote
+     * @return Checkout
+     */
+    protected function getCheckout(Quote $quote)
+    {
+        return $this->objectManager->create(
+            Checkout::class,
+            [
+                'params' => [
+                    'config' => $this->getMockBuilder(Config::class)
+                        ->disableOriginalConstructor()
+                        ->getMock(),
+                    'quote' => $quote,
+                ]
+            ]
+        );
     }
 
     /**
@@ -213,7 +218,7 @@ class CheckoutTest extends TestCase
         $this->assertNull($quote->getCustomerId());
         $this->assertTrue($quote->getCustomerIsGuest());
         $this->assertEquals(
-            \Magento\Customer\Model\GroupManagement::NOT_LOGGED_IN_ID,
+            GroupManagement::NOT_LOGGED_IN_ID,
             $quote->getCustomerGroupId()
         );
 
@@ -257,25 +262,6 @@ class CheckoutTest extends TestCase
 
         $order = $checkout->getOrder();
         $this->assertNotEmpty($order->getRealOrderId());
-    }
-
-    /**
-     * @param Quote $quote
-     * @return Checkout
-     */
-    protected function getCheckout(Quote $quote)
-    {
-        return $this->objectManager->create(
-            Checkout::class,
-            [
-                'params' => [
-                    'config' => $this->getMockBuilder(Config::class)
-                        ->disableOriginalConstructor()
-                        ->getMock(),
-                    'quote' => $quote,
-                ]
-            ]
-        );
     }
 
     /**
@@ -334,6 +320,41 @@ class CheckoutTest extends TestCase
     }
 
     /**
+     * Prepare fixture for exported address.
+     *
+     * @param array $addressData
+     * @param string $prefix
+     * @return DataObject
+     */
+    private function getExportedAddressFixture(array $addressData, string $prefix = ''): DataObject
+    {
+        $addressDataKeys = [
+            'country',
+            'firstname',
+            'lastname',
+            'street',
+            'city',
+            'telephone',
+            'postcode',
+            'region',
+            'region_id',
+            'email',
+        ];
+        $result = [];
+        foreach ($addressDataKeys as $key) {
+            if (isset($addressData[$key])) {
+                $result[$key] = $prefix . $addressData[$key];
+            }
+        }
+
+        $fixture = new DataObject($result);
+        $fixture->setExportedKeys($addressDataKeys);
+        $fixture->setData('note', 'note');
+
+        return $fixture;
+    }
+
+    /**
      * The case when handling address data from Paypal button.
      * System's address fields are replacing from export Paypal data.
      * Billing and Shipping address are the same
@@ -369,6 +390,72 @@ class CheckoutTest extends TestCase
         $this->assertEquals($exportedShippingData['city'], $billingAddress->getCity());
         $this->assertEquals($exportedShippingData['telephone'], $billingAddress->getTelephone());
         $this->assertEquals($exportedShippingData['email'], $billingAddress->getEmail());
+    }
+
+    /**
+     * Initialize a checkout model mock.
+     *
+     * @param Quote $quote
+     */
+    private function prepareCheckoutModel(Quote $quote, $prefix = '')
+    {
+        $this->checkoutModel = $this->objectManager->create(
+            Checkout::class,
+            [
+                'params' => ['quote' => $quote, 'config' => $this->paypalConfig],
+                'apiTypeFactory' => $this->apiTypeFactory,
+                'paypalInfo' => $this->paypalInfo
+            ]
+        );
+
+        $exportedBillingAddress = $this->getExportedAddressFixture($this->getExportedData()['billing'], $prefix);
+        $this->api->method('getExportedBillingAddress')
+            ->willReturn($exportedBillingAddress);
+
+        $exportedShippingAddress = $this->getExportedAddressFixture($this->getExportedData()['shipping'], $prefix);
+        $this->api->method('getExportedShippingAddress')
+            ->willReturn($exportedShippingAddress);
+
+        $this->api->method('getShippingRateCode')
+            ->willReturn('flatrate_flatrate Flat Rate - Fixed');
+
+        $this->paypalInfo->method('importToPayment')
+            ->with($this->api, $quote->getPayment());
+    }
+
+    /**
+     * A Paypal response stub.
+     *
+     * @return array
+     */
+    private function getExportedData(): array
+    {
+        return [
+            'shipping' => [
+                'email' => 'customer@example.com',
+                'firstname' => 'John',
+                'lastname' => 'Doe',
+                'country' => 'US',
+                'region' => 'Colorado',
+                'region_id' => '13',
+                'city' => 'Denver',
+                'street' => '66 Pearl St',
+                'postcode' => '80203',
+                'telephone' => '555-555-555',
+            ],
+            'billing' => [
+                'email' => 'customer@example.com',
+                'firstname' => 'Jane',
+                'lastname' => 'Doe',
+                'country' => 'US',
+                'region' => 'Texas',
+                'region_id' => '13',
+                'city' => 'Austin',
+                'street' => '1100 Congress Ave',
+                'postcode' => '78701',
+                'telephone' => '555-555-555'
+            ]
+        ];
     }
 
     /**
@@ -509,6 +596,25 @@ class CheckoutTest extends TestCase
     }
 
     /**
+     * Performs quote address assertions.
+     *
+     * @param Address $address
+     * @param array $expected
+     * @return void
+     */
+    private function performQuoteAddressAssertions(Address $address, array $expected): void
+    {
+        foreach ($expected as $key => $item) {
+            $methodName = 'get' . ucfirst($key);
+            if ($key === 'street') {
+                $item = [$item];
+            }
+
+            $this->assertEquals($item, $address->$methodName(), 'The "' . $key . '" does not match.');
+        }
+    }
+
+    /**
      * Test case when customer doesn't have either billing or shipping addresses.
      * Customer add virtual product to quote and place order using PayPal Express method.
      * Default store country is in PayPal Express allowed specific country list.
@@ -548,7 +654,7 @@ class CheckoutTest extends TestCase
      */
     public function testPaymentValidationWithAllowedSpecificCountryNegative(): void
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage(
             'You can\'t use the payment type you selected to make payments to the billing country.'
         );
@@ -556,91 +662,6 @@ class CheckoutTest extends TestCase
         $quote = $this->getFixtureQuote();
         $this->prepareCheckoutModel($quote);
         $quote->getPayment()->getMethodInstance()->validate();
-    }
-
-    /**
-     * Performs quote address assertions.
-     *
-     * @param Address $address
-     * @param array $expected
-     * @return void
-     */
-    private function performQuoteAddressAssertions(Address $address, array $expected): void
-    {
-        foreach ($expected as $key => $item) {
-            $methodName = 'get' . ucfirst($key);
-            if ($key === 'street') {
-                $item = [$item];
-            }
-
-            $this->assertEquals($item, $address->$methodName(), 'The "' . $key . '" does not match.');
-        }
-    }
-
-    /**
-     * Initialize a checkout model mock.
-     *
-     * @param Quote $quote
-     */
-    private function prepareCheckoutModel(Quote $quote, $prefix = '')
-    {
-        $this->checkoutModel = $this->objectManager->create(
-            Checkout::class,
-            [
-                'params' => ['quote' => $quote, 'config' => $this->paypalConfig],
-                'apiTypeFactory' => $this->apiTypeFactory,
-                'paypalInfo' => $this->paypalInfo
-            ]
-        );
-
-        $exportedBillingAddress = $this->getExportedAddressFixture($this->getExportedData()['billing'], $prefix);
-        $this->api->method('getExportedBillingAddress')
-            ->willReturn($exportedBillingAddress);
-
-        $exportedShippingAddress = $this->getExportedAddressFixture($this->getExportedData()['shipping'], $prefix);
-        $this->api->method('getExportedShippingAddress')
-            ->willReturn($exportedShippingAddress);
-
-        $this->api->method('getShippingRateCode')
-            ->willReturn('flatrate_flatrate Flat Rate - Fixed');
-
-        $this->paypalInfo->method('importToPayment')
-            ->with($this->api, $quote->getPayment());
-    }
-
-    /**
-     * A Paypal response stub.
-     *
-     * @return array
-     */
-    private function getExportedData(): array
-    {
-        return [
-            'shipping' => [
-                'email' => 'customer@example.com',
-                'firstname' => 'John',
-                'lastname' => 'Doe',
-                'country' => 'US',
-                'region' => 'Colorado',
-                'region_id' => '13',
-                'city' => 'Denver',
-                'street' => '66 Pearl St',
-                'postcode' => '80203',
-                'telephone' => '555-555-555',
-            ],
-            'billing' => [
-                'email' => 'customer@example.com',
-                'firstname' => 'Jane',
-                'lastname' => 'Doe',
-                'country' => 'US',
-                'region' => 'Texas',
-                'region_id' => '13',
-                'city' => 'Austin',
-                'street' => '1100 Congress Ave',
-                'postcode' => '78701',
-                'telephone' => '555-555-555'
-            ]
-        ];
     }
 
     /**
@@ -715,65 +736,52 @@ class CheckoutTest extends TestCase
     }
 
     /**
-     * Prepare fixture for exported address.
-     *
-     * @param array $addressData
-     * @param string $prefix
-     * @return \Magento\Framework\DataObject
-     */
-    private function getExportedAddressFixture(array $addressData, string $prefix = ''): \Magento\Framework\DataObject
-    {
-        $addressDataKeys = [
-            'country',
-            'firstname',
-            'lastname',
-            'street',
-            'city',
-            'telephone',
-            'postcode',
-            'region',
-            'region_id',
-            'email',
-        ];
-        $result = [];
-        foreach ($addressDataKeys as $key) {
-            if (isset($addressData[$key])) {
-                $result[$key] = $prefix . $addressData[$key];
-            }
-        }
-
-        $fixture = new \Magento\Framework\DataObject($result);
-        $fixture->setExportedKeys($addressDataKeys);
-        $fixture->setData('note', 'note');
-
-        return $fixture;
-    }
-
-    /**
-     * Gets quote.
-     *
-     * @return Quote
-     */
-    private function getFixtureQuote(): Quote
-    {
-        /** @var Collection $quoteCollection */
-        $quoteCollection = $this->objectManager->create(Collection::class);
-
-        return $quoteCollection->getLastItem();
-    }
-
-    /**
      * Adds countryFactory to a mock.
      *
      * @param MockObject $api
      * @return void
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     private function addCountryFactory(MockObject $api): void
     {
-        $reflection = new \ReflectionClass($api);
+        $reflection = new ReflectionClass($api);
         $property = $reflection->getProperty('_countryFactory');
         $property->setAccessible(true);
         $property->setValue($api, $this->objectManager->get(CountryFactory::class));
+    }
+
+    /**
+     * Set up
+     *
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->paypalInfo = $this->getMockBuilder(Info::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->paypalConfig = $this->getMockBuilder(Config::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->api = $this->getMockBuilder(Nvp::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['call', 'getExportedShippingAddress', 'getExportedBillingAddress', 'getShippingRateCode'])
+            ->getMock();
+
+        $this->api->expects($this->any())
+            ->method('call')
+            ->willReturn([]);
+
+        $this->apiTypeFactory = $this->getMockBuilder(Factory::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->apiTypeFactory->expects($this->any())
+            ->method('create')
+            ->willReturn($this->api);
     }
 }

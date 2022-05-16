@@ -7,7 +7,11 @@ declare(strict_types=1);
 
 namespace Magento\CatalogSearch\Model\Layer\Filter;
 
+use Magento\Customer\Model\GroupManagement;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Request;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\CatalogSearch\Model\Layer\Filter\Price.
@@ -16,38 +20,23 @@ use Magento\TestFramework\Helper\Bootstrap;
  * @magentoDbIsolation enabled
  * @magentoAppIsolation enabled
  */
-class PriceTest extends \PHPUnit\Framework\TestCase
+class PriceTest extends TestCase
 {
     /**
-     * @var \Magento\CatalogSearch\Model\Layer\Filter\Price
+     * @var Price
      */
     protected $_model;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $category = $this->objectManager->create(
-            \Magento\Catalog\Model\Category::class
-        );
-        $category->load(4);
-        $layer = $this->objectManager->get(\Magento\Catalog\Model\Layer\Category::class);
-        $layer->setCurrentCategory($category);
-        $this->_model = $this->objectManager->create(
-            \Magento\CatalogSearch\Model\Layer\Filter\Price::class,
-            ['layer' => $layer]
-        );
-    }
 
     public function testApplyNothing()
     {
         $this->assertEmpty($this->_model->getData('price_range'));
-        /** @var $request \Magento\TestFramework\Request */
-        $request = $this->objectManager->get(\Magento\TestFramework\Request::class);
+        /** @var $request Request */
+        $request = $this->objectManager->get(Request::class);
         $this->_model->apply($request);
 
         $this->assertEmpty($this->_model->getData('price_range'));
@@ -56,8 +45,8 @@ class PriceTest extends \PHPUnit\Framework\TestCase
     public function testApplyInvalid()
     {
         $this->assertEmpty($this->_model->getData('price_range'));
-        /** @var $request \Magento\TestFramework\Request */
-        $request = $this->objectManager->get(\Magento\TestFramework\Request::class);
+        /** @var $request Request */
+        $request = $this->objectManager->get(Request::class);
         $request->setParam('price', 'non-numeric');
         $this->_model->apply($request);
 
@@ -69,8 +58,8 @@ class PriceTest extends \PHPUnit\Framework\TestCase
      */
     public function testApplyManual()
     {
-        /** @var $request \Magento\TestFramework\Request */
-        $request = $this->objectManager->get(\Magento\TestFramework\Request::class);
+        /** @var $request Request */
+        $request = $this->objectManager->get(Request::class);
         $request->setParam('price', '10-20');
         $this->_model->apply($request);
     }
@@ -80,8 +69,8 @@ class PriceTest extends \PHPUnit\Framework\TestCase
      */
     public function testApplyWithCustomCurrencyRate()
     {
-        /** @var $request \Magento\TestFramework\Request */
-        $request = $this->objectManager->get(\Magento\TestFramework\Request::class);
+        /** @var $request Request */
+        $request = $this->objectManager->get(Request::class);
 
         $request->setParam('price', '10-20');
         $this->_model->setCurrencyRate(10);
@@ -99,7 +88,7 @@ class PriceTest extends \PHPUnit\Framework\TestCase
     public function testGetSetCustomerGroupId()
     {
         $this->assertEquals(
-            \Magento\Customer\Model\GroupManagement::NOT_LOGGED_IN_ID,
+            GroupManagement::NOT_LOGGED_IN_ID,
             $this->_model->getCustomerGroupId()
         );
 
@@ -117,5 +106,20 @@ class PriceTest extends \PHPUnit\Framework\TestCase
         $this->_model->setCurrencyRate($currencyRate);
 
         $this->assertEquals($currencyRate, $this->_model->getCurrencyRate());
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $category = $this->objectManager->create(
+            \Magento\Catalog\Model\Category::class
+        );
+        $category->load(4);
+        $layer = $this->objectManager->get(\Magento\Catalog\Model\Layer\Category::class);
+        $layer->setCurrentCategory($category);
+        $this->_model = $this->objectManager->create(
+            Price::class,
+            ['layer' => $layer]
+        );
     }
 }

@@ -43,6 +43,44 @@ class DbStatusCommandTest extends TestCase
      */
     private $validators;
 
+    public function testExecute()
+    {
+        $this->validators['old_validator']->expects(self::once())
+            ->method('isUpToDate')
+            ->willReturn(true);
+        $this->validators['up_to_date_schema']->expects(self::once())
+            ->method('isUpToDate')
+            ->willReturn(true);
+        $this->validators['up_to_date_data']->expects(self::once())
+            ->method('isUpToDate')
+            ->willReturn(true);
+        $this->validators['declarative_schema']->expects(self::once())
+            ->method('isUpToDate')
+            ->willReturn(true);
+        $this->deploymentConfig->expects($this->once())
+            ->method('isAvailable')
+            ->willReturn(true);
+        $tester = new CommandTester($this->command);
+        $tester->execute([]);
+        $this->assertStringMatchesFormat('All modules are up to date.', $tester->getDisplay());
+        $this->assertSame(0, $tester->getStatusCode());
+    }
+
+    public function testExecuteNotInstalled()
+    {
+        $this->deploymentConfig->expects($this->once())
+            ->method('isAvailable')
+            ->willReturn(false);
+        $tester = new CommandTester($this->command);
+        $tester->execute([]);
+
+        $this->assertStringMatchesFormat(
+            'No information is available: the Magento application is not installed.%w',
+            $tester->getDisplay()
+        );
+        $this->assertSame(Cli::RETURN_FAILURE, $tester->getStatusCode());
+    }
+
     /**
      * @inheritdoc
      */
@@ -83,43 +121,5 @@ class DbStatusCommandTest extends TestCase
                 $this->validators['old_validator']
             );
         $this->command = new DbStatusCommand($objectManagerProvider, $this->deploymentConfig);
-    }
-
-    public function testExecute()
-    {
-        $this->validators['old_validator']->expects(self::once())
-            ->method('isUpToDate')
-            ->willReturn(true);
-        $this->validators['up_to_date_schema']->expects(self::once())
-            ->method('isUpToDate')
-            ->willReturn(true);
-        $this->validators['up_to_date_data']->expects(self::once())
-            ->method('isUpToDate')
-            ->willReturn(true);
-        $this->validators['declarative_schema']->expects(self::once())
-            ->method('isUpToDate')
-            ->willReturn(true);
-        $this->deploymentConfig->expects($this->once())
-            ->method('isAvailable')
-            ->willReturn(true);
-        $tester = new CommandTester($this->command);
-        $tester->execute([]);
-        $this->assertStringMatchesFormat('All modules are up to date.', $tester->getDisplay());
-        $this->assertSame(0, $tester->getStatusCode());
-    }
-
-    public function testExecuteNotInstalled()
-    {
-        $this->deploymentConfig->expects($this->once())
-            ->method('isAvailable')
-            ->willReturn(false);
-        $tester = new CommandTester($this->command);
-        $tester->execute([]);
-
-        $this->assertStringMatchesFormat(
-            'No information is available: the Magento application is not installed.%w',
-            $tester->getDisplay()
-        );
-        $this->assertSame(Cli::RETURN_FAILURE, $tester->getStatusCode());
     }
 }

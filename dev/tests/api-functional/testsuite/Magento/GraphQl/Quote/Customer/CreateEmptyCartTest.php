@@ -7,13 +7,14 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Quote\Customer;
 
+use Exception;
 use Magento\Integration\Api\CustomerTokenServiceInterface;
+use Magento\Quote\Api\GuestCartRepositoryInterface;
 use Magento\Quote\Model\QuoteIdMaskFactory;
-use Magento\Quote\Model\ResourceModel\Quote\CollectionFactory as QuoteCollectionFactory;
 use Magento\Quote\Model\ResourceModel\Quote as QuoteResource;
+use Magento\Quote\Model\ResourceModel\Quote\CollectionFactory as QuoteCollectionFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
-use Magento\Quote\Api\GuestCartRepositoryInterface;
 
 /**
  * Test for empty cart creation mutation for customer
@@ -45,16 +46,6 @@ class CreateEmptyCartTest extends GraphQlAbstract
      */
     private $quoteIdMaskFactory;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->quoteCollectionFactory = $objectManager->get(QuoteCollectionFactory::class);
-        $this->guestCartRepository = $objectManager->get(GuestCartRepositoryInterface::class);
-        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-        $this->quoteResource = $objectManager->get(QuoteResource::class);
-        $this->quoteIdMaskFactory = $objectManager->get(QuoteIdMaskFactory::class);
-    }
-
     /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      */
@@ -71,6 +62,33 @@ class CreateEmptyCartTest extends GraphQlAbstract
         self::assertNotNull($guestCart->getId());
         self::assertEquals(1, $guestCart->getCustomer()->getId());
         self::assertEquals('default', $guestCart->getStore()->getCode());
+    }
+
+    /**
+     * @return string
+     */
+    private function getQuery(): string
+    {
+        return <<<QUERY
+mutation {
+  createEmptyCart
+}
+QUERY;
+    }
+
+    /**
+     * @param string $username
+     * @param string $password
+     * @return array
+     */
+    private function getHeaderMapWithCustomerToken(
+        string $username = 'customer@example.com',
+        string $password = 'password'
+    ): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
+        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
+        return $headerMap;
     }
 
     /**
@@ -143,7 +161,7 @@ QUERY;
      */
     public function testCreateEmptyCartIfPredefinedCartIdAlreadyExists()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Cart with ID "572cda51902b5b517c0e1a2b2fd004b4" already exists.');
 
         $predefinedCartId = '572cda51902b5b517c0e1a2b2fd004b4';
@@ -163,7 +181,7 @@ QUERY;
      */
     public function testCreateEmptyCartWithWrongPredefinedCartId()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Cart ID length should to be 32 symbols.');
 
         $predefinedCartId = '572';
@@ -176,30 +194,14 @@ QUERY;
         $this->graphQlMutation($query, [], '', $this->getHeaderMapWithCustomerToken());
     }
 
-    /**
-     * @return string
-     */
-    private function getQuery(): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-mutation {
-  createEmptyCart
-}
-QUERY;
-    }
-
-    /**
-     * @param string $username
-     * @param string $password
-     * @return array
-     */
-    private function getHeaderMapWithCustomerToken(
-        string $username = 'customer@example.com',
-        string $password = 'password'
-    ): array {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
-        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
-        return $headerMap;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->quoteCollectionFactory = $objectManager->get(QuoteCollectionFactory::class);
+        $this->guestCartRepository = $objectManager->get(GuestCartRepositoryInterface::class);
+        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
+        $this->quoteResource = $objectManager->get(QuoteResource::class);
+        $this->quoteIdMaskFactory = $objectManager->get(QuoteIdMaskFactory::class);
     }
 
     protected function tearDown(): void

@@ -3,6 +3,9 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Catalog\Api\Data\ProductLinkInterface;
+use Magento\Catalog\Api\Data\ProductLinkInterfaceFactory;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
@@ -16,7 +19,7 @@ $productRepository = Bootstrap::getObjectManager()
     ->get(ProductRepositoryInterface::class);
 
 $productLinkFactory = Bootstrap::getObjectManager()
-    ->get(\Magento\Catalog\Api\Data\ProductLinkInterfaceFactory::class);
+    ->get(ProductLinkInterfaceFactory::class);
 $productIds = ['11', '22'];
 
 foreach ($productIds as $productId) {
@@ -50,7 +53,7 @@ $product->setTypeId(Grouped::TYPE_CODE)
     ->setStockData(['use_config_manage_stock' => 1, 'is_in_stock' => 1]);
 
 foreach ($linkedProducts as $linkedProduct) {
-    /** @var \Magento\Catalog\Api\Data\ProductLinkInterface $productLink */
+    /** @var ProductLinkInterface $productLink */
     $productLink = $productLinkFactory->create();
     $productLink->setSku($product->getSku())
         ->setLinkType('associated')

@@ -14,7 +14,7 @@ use Magento\Eav\Model\AttributeRepository;
 use Magento\Eav\Model\ResourceModel\Entity\Attribute as AttributeResource;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\TestFramework\Helper\CacheCleaner;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test Eav Resource Entity Attribute functionality
@@ -25,18 +25,16 @@ use Magento\TestFramework\Helper\CacheCleaner;
  * @magentoDataFixture Magento/Catalog/_files/product_without_options.php
  * @magentoDbIsolation enabled
  */
-class AttributeTest extends \PHPUnit\Framework\TestCase
+class AttributeTest extends TestCase
 {
-    /**
-     * @var ObjectManagerInterface
-     */
-    private $objectManager;
-
     /**
      * @var AttributeRepository
      */
     protected $attributeRepository;
-
+    /**
+     * @var ObjectManagerInterface
+     */
+    private $objectManager;
     /**
      * @var ProductRepositoryInterface
      */
@@ -46,17 +44,6 @@ class AttributeTest extends \PHPUnit\Framework\TestCase
      * @var AttributeResource
      */
     private $model;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->attributeRepository = $this->objectManager->get(AttributeRepository::class);
-        $this->model = $this->objectManager->get(Attribute::class);
-    }
 
     /**
      * Test to Clear selected option in entities after remove
@@ -99,6 +86,32 @@ class AttributeTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Load attrubute by code
+     *
+     * @param string $attributeCode
+     * @return Attribute
+     */
+    private function loadAttribute(string $attributeCode): Attribute
+    {
+        /** @var Attribute $attribute */
+        $attribute = $this->objectManager->create(Attribute::class);
+        $attribute->loadByCode(4, $attributeCode);
+
+        return $attribute;
+    }
+
+    /**
+     * Load product by sku
+     *
+     * @param string $sku
+     * @return Product
+     */
+    private function loadProduct(string $sku): Product
+    {
+        return $this->productRepository->get($sku, true, null, true);
+    }
+
+    /**
      * Remove option from attribute
      *
      * @param Attribute $attribute
@@ -117,28 +130,13 @@ class AttributeTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Load product by sku
-     *
-     * @param string $sku
-     * @return Product
+     * @inheritdoc
      */
-    private function loadProduct(string $sku): Product
+    protected function setUp(): void
     {
-        return $this->productRepository->get($sku, true, null, true);
-    }
-
-    /**
-     * Load attrubute by code
-     *
-     * @param string $attributeCode
-     * @return Attribute
-     */
-    private function loadAttribute(string $attributeCode): Attribute
-    {
-        /** @var Attribute $attribute */
-        $attribute = $this->objectManager->create(Attribute::class);
-        $attribute->loadByCode(4, $attributeCode);
-
-        return $attribute;
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->attributeRepository = $this->objectManager->get(AttributeRepository::class);
+        $this->model = $this->objectManager->get(Attribute::class);
     }
 }

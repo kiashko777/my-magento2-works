@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer;
 
 /**
@@ -46,26 +47,6 @@ class Token
     }
 
     /**
-     * Get token name
-     *
-     * @return int|string
-     */
-    public function getName()
-    {
-        return $this->_name;
-    }
-
-    /**
-     * Get token value
-     *
-     * @return int|string
-     */
-    public function getValue()
-    {
-        return $this->_value;
-    }
-
-    /**
      * Get line of token beginning
      *
      * @return int
@@ -86,6 +67,16 @@ class Token
     }
 
     /**
+     * Get token name
+     *
+     * @return int|string
+     */
+    public function getName()
+    {
+        return $this->_name;
+    }
+
+    /**
      * Whenever token is equal function
      *
      * @param string $functionName
@@ -94,6 +85,16 @@ class Token
     public function isEqualFunction($functionName)
     {
         return $this->getName() == T_STRING && $this->getValue() == $functionName;
+    }
+
+    /**
+     * Get token value
+     *
+     * @return int|string
+     */
+    public function getValue()
+    {
+        return $this->_value;
     }
 
     /**

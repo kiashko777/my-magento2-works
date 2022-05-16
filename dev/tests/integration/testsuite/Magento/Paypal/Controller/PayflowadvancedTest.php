@@ -3,21 +3,25 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Paypal\Controller;
 
 use Magento\Checkout\Model\Session;
-use Magento\Paypal\Model\Config;
-use Magento\Quote\Model\Quote;
-use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Framework\Api\FilterBuilder;
 use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Paypal\Helper\Checkout;
+use Magento\Paypal\Model\Config;
+use Magento\Quote\Api\CartRepositoryInterface;
+use Magento\Quote\Model\Quote;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
+use Magento\Sales\Model\Order;
+use Magento\TestFramework\TestCase\AbstractController;
 
 /**
  * @magentoDataFixture Magento/Sales/_files/order.php
  */
-class PayflowadvancedTest extends \Magento\TestFramework\TestCase\AbstractController
+class PayflowadvancedTest extends AbstractController
 {
     /**
      * @var OrderRepositoryInterface
@@ -33,6 +37,53 @@ class PayflowadvancedTest extends \Magento\TestFramework\TestCase\AbstractContro
      * @var OrderInterface
      */
     private $order;
+
+    public function testCancelPaymentActionIsContentGenerated()
+    {
+        $this->dispatch('paypal/payflowadvanced/cancelpayment');
+        $this->assertStringContainsString("goToSuccessPage = ''", $this->getResponse()->getBody());
+    }
+
+    public function testReturnurlActionIsContentGenerated()
+    {
+        $checkoutHelper = $this->_objectManager->create(Checkout::class);
+        $checkoutHelper->cancelCurrentOrder('test');
+        $this->dispatch('paypal/payflowadvanced/returnurl');
+        $this->assertStringContainsString("goToSuccessPage = ''", $this->getResponse()->getBody());
+    }
+
+    public function testFormActionIsContentGenerated()
+    {
+        $this->dispatch('paypal/payflowadvanced/form');
+        $this->assertStringContainsString(
+            '<form id="token_form" method="GET" action="https://payflowlink.paypal.com">',
+            $this->getResponse()->getBody()
+        );
+    }
+
+    /**
+     * @magentoConfigFixture current_store payment/paypal_payflow/active 1
+     * @magentoConfigFixture current_store paypal/general/business_account merchant_2012050718_biz@example.com
+     * @return void
+     */
+    public function testCancelAction(): void
+    {
+        $orderId = $this->order->getEntityId();
+        /** @var Order $order */
+        $order = $this->orderRepository->get($orderId);
+        /** @var $quote Quote */
+        $quote = $this->quoteRepository->get($order->getQuoteId());
+
+        $session = $this->_objectManager->get(Session::class);
+        $session->setQuoteId($quote->getId());
+        $session->setPaypalStandardQuoteId($quote->getId())->setLastRealOrderId('100000001');
+        $this->dispatch('paypal/payflowadvanced/cancelpayment');
+
+        $order = $this->_objectManager->create(OrderRepositoryInterface::class)->get($orderId);
+        $this->assertEquals('canceled', $order->getState());
+        $this->assertEquals($session->getQuote()->getGrandTotal(), $quote->getGrandTotal());
+        $this->assertEquals($session->getQuote()->getItemsCount(), $quote->getItemsCount());
+    }
 
     /**
      * @inheritdoc
@@ -62,7 +113,7 @@ class PayflowadvancedTest extends \Magento\TestFramework\TestCase\AbstractContro
         $this->order = array_pop($orders);
         $this->order->getPayment()->setMethod(Config::METHOD_PAYFLOWADVANCED);
 
-        /** @var $quote \Magento\Quote\Model\Quote */
+        /** @var $quote Quote */
         $quote = $this->_objectManager->create(Quote::class)
             ->setStoreid($this->order->getStoreId());
 
@@ -74,52 +125,5 @@ class PayflowadvancedTest extends \Magento\TestFramework\TestCase\AbstractContro
 
         $session = $this->_objectManager->get(Session::class);
         $session->setLastRealOrderId($this->order->getRealOrderId())->setLastQuoteId($this->order->getQuoteId());
-    }
-
-    public function testCancelPaymentActionIsContentGenerated()
-    {
-        $this->dispatch('paypal/payflowadvanced/cancelpayment');
-        $this->assertStringContainsString("goToSuccessPage = ''", $this->getResponse()->getBody());
-    }
-
-    public function testReturnurlActionIsContentGenerated()
-    {
-        $checkoutHelper = $this->_objectManager->create(\Magento\Paypal\Helper\Checkout::class);
-        $checkoutHelper->cancelCurrentOrder('test');
-        $this->dispatch('paypal/payflowadvanced/returnurl');
-        $this->assertStringContainsString("goToSuccessPage = ''", $this->getResponse()->getBody());
-    }
-
-    public function testFormActionIsContentGenerated()
-    {
-        $this->dispatch('paypal/payflowadvanced/form');
-        $this->assertStringContainsString(
-            '<form id="token_form" method="GET" action="https://payflowlink.paypal.com">',
-            $this->getResponse()->getBody()
-        );
-    }
-
-    /**
-     * @magentoConfigFixture current_store payment/paypal_payflow/active 1
-     * @magentoConfigFixture current_store paypal/general/business_account merchant_2012050718_biz@example.com
-     * @return void
-     */
-    public function testCancelAction(): void
-    {
-        $orderId = $this->order->getEntityId();
-        /** @var \Magento\Sales\Model\Order $order */
-        $order = $this->orderRepository->get($orderId);
-        /** @var $quote \Magento\Quote\Model\Quote */
-        $quote = $this->quoteRepository->get($order->getQuoteId());
-
-        $session = $this->_objectManager->get(Session::class);
-        $session->setQuoteId($quote->getId());
-        $session->setPaypalStandardQuoteId($quote->getId())->setLastRealOrderId('100000001');
-        $this->dispatch('paypal/payflowadvanced/cancelpayment');
-
-        $order = $this->_objectManager->create(OrderRepositoryInterface::class)->get($orderId);
-        $this->assertEquals('canceled', $order->getState());
-        $this->assertEquals($session->getQuote()->getGrandTotal(), $quote->getGrandTotal());
-        $this->assertEquals($session->getQuote()->getItemsCount(), $quote->getItemsCount());
     }
 }

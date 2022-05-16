@@ -5,13 +5,19 @@
  */
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Checkout\Model\Session;
+use Magento\Eav\Model\Config;
+use Magento\Framework\DataObject;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\QuoteRepository;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/ConfigurableProduct/_files/configurable_products.php');
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-/** @var \Magento\Quote\Model\Quote $quote */
-$quote = $objectManager->create(\Magento\Quote\Model\Quote::class);
+$objectManager = Bootstrap::getObjectManager();
+/** @var Quote $quote */
+$quote = $objectManager->create(Quote::class);
 /** @var ProductRepositoryInterface $productRepository */
 $productRepository = $objectManager->create(ProductRepositoryInterface::class);
 $product = $productRepository->get('simple_10');
@@ -22,12 +28,12 @@ $product = $productRepository->get('simple_20');
 $product->setStockData(['use_config_manage_stock' => 1, 'qty' => 0, 'is_qty_decimal' => 0, 'is_in_stock' => 0]);
 $productRepository->save($product);
 
-/** @var \Magento\Quote\Model\Quote $quote */
-$quote = $objectManager->create(\Magento\Quote\Model\Quote::class);
-$request = $objectManager->create(\Magento\Framework\DataObject::class);
+/** @var Quote $quote */
+$quote = $objectManager->create(Quote::class);
+$request = $objectManager->create(DataObject::class);
 
-/** @var \Magento\Eav\Model\Config $eavConfig */
-$eavConfig = $objectManager->get(\Magento\Eav\Model\Config::class);
+/** @var Config $eavConfig */
+$eavConfig = $objectManager->get(Config::class);
 /** @var  $attribute */
 $attribute = $eavConfig->getAttribute('catalog_product', 'test_configurable');
 
@@ -56,15 +62,15 @@ $quote->setStoreId(1)
         $request
     );
 
-/** @var \Magento\Quote\Model\QuoteRepository $quoteRepository */
+/** @var QuoteRepository $quoteRepository */
 $quoteRepository = $objectManager->create(
-    \Magento\Quote\Model\QuoteRepository::class
+    QuoteRepository::class
 );
 $quote->collectTotals();
 $quoteRepository->save($quote);
 
-/** @var \Magento\Checkout\Model\Session $session */
+/** @var Session $session */
 $session = $objectManager->create(
-    \Magento\Checkout\Model\Session::class
+    Session::class
 );
 $session->setQuoteId($quote->getId());

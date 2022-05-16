@@ -20,31 +20,13 @@ use PHPUnit\Framework\TestCase;
 class ImportExportTest extends TestCase
 {
     /**
-     * @var ObjectManagerInterface
-     */
-    private $objectManager;
-
-    /**
      * @var ImportExport
      */
     protected $block = null;
-
     /**
-     * @inheritdoc
+     * @var ObjectManagerInterface
      */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(ImportExport::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->block = null;
-    }
+    private $objectManager;
 
     /**
      * @return void
@@ -72,5 +54,22 @@ class ImportExportTest extends TestCase
         $html = $this->block->toHtml();
         $this->assertStringContainsString('<form id="export_form"', $html);
         $this->assertStringContainsString('export_form.submit();', $html);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(ImportExport::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->block = null;
     }
 }

@@ -82,11 +82,12 @@ class SwatchTextFilterTest extends AbstractFiltersTest
      * @return void
      */
     public function testGetActiveFiltersWithCustomAttribute(
-        array $products,
-        array $expectation,
+        array  $products,
+        array  $expectation,
         string $filterValue,
-        int $productsCount
-    ): void {
+        int    $productsCount
+    ): void
+    {
         $this->getCategoryActiveFiltersAndAssert($products, $expectation, 'Category 999', $filterValue, $productsCount);
     }
 
@@ -98,14 +99,14 @@ class SwatchTextFilterTest extends AbstractFiltersTest
         return [
             'filter_by_first_option_in_products_with_first_option' => [
                 'products_data' => ['simple1000' => 'Option 1', 'simple1001' => 'Option 1'],
-                'expectation' => ['label' =>  'Option 1', 'count' => 0],
-                'filter_value' =>  'Option 1',
+                'expectation' => ['label' => 'Option 1', 'count' => 0],
+                'filter_value' => 'Option 1',
                 'products_count' => 2,
             ],
             'filter_by_first_option_in_products_with_different_options' => [
                 'products_data' => ['simple1000' => 'Option 1', 'simple1001' => 'Option 2'],
-                'expectation' => ['label' =>  'Option 1', 'count' => 0],
-                'filter_value' =>  'Option 1',
+                'expectation' => ['label' => 'Option 1', 'count' => 0],
+                'filter_value' => 'Option 1',
                 'products_count' => 1,
             ],
             'filter_by_second_option_in_products_with_different_options' => [

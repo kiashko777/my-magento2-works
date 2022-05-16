@@ -25,26 +25,6 @@ class SendTest extends AbstractController
     private $customerSession;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->customerSession = $this->_objectManager->get(Session::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        parent::tearDown();
-
-        $this->customerSession->logout();
-    }
-
-    /**
      * @magentoConfigFixture current_store sendfriend/email/enabled 0
      *
      * @magentoDataFixture Magento/Catalog/_files/second_product_simple.php
@@ -55,6 +35,18 @@ class SendTest extends AbstractController
     {
         $this->dispatchWithProductIdParam(6);
         $this->assert404NotFound();
+    }
+
+    /**
+     * Set product id parameter and dispatch controller
+     *
+     * @param int $productId
+     * @return void
+     */
+    private function dispatchWithProductIdParam(int $productId): void
+    {
+        $this->getRequest()->setParam('id', $productId);
+        $this->dispatch('sendfriend/product/send/');
     }
 
     /**
@@ -135,18 +127,6 @@ class SendTest extends AbstractController
     }
 
     /**
-     * Set product id parameter and dispatch controller
-     *
-     * @param int $productId
-     * @return void
-     */
-    private function dispatchWithProductIdParam(int $productId): void
-    {
-        $this->getRequest()->setParam('id', $productId);
-        $this->dispatch('sendfriend/product/send/');
-    }
-
-    /**
      * Create mock to imitate to mach send requests
      *
      * @return void
@@ -157,5 +137,25 @@ class SendTest extends AbstractController
         $mock->method('isExceedLimit')->willReturn(true);
         $mock->method('getMaxSendsToFriend')->willReturn(5);
         $this->_objectManager->addSharedInstance($mock, SendFriend::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->customerSession = $this->_objectManager->get(Session::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+
+        $this->customerSession->logout();
     }
 }

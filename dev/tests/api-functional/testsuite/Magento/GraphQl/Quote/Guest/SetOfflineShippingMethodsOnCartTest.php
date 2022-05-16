@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Quote\Guest;
 
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\GraphQl\Quote\GetMaskedQuoteIdByReservedOrderId;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
@@ -20,15 +21,6 @@ class SetOfflineShippingMethodsOnCartTest extends GraphQlAbstract
      * @var GetMaskedQuoteIdByReservedOrderId
      */
     private $getMaskedQuoteIdByReservedOrderId;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-    }
 
     /**
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
@@ -45,7 +37,7 @@ class SetOfflineShippingMethodsOnCartTest extends GraphQlAbstract
      * @param string $carrierTitle
      * @param string $methodTitle
      * @param array $amount
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @throws NoSuchEntityException
      * @dataProvider offlineShippingMethodDataProvider
      */
     public function testSetOfflineShippingMethod(
@@ -53,8 +45,9 @@ class SetOfflineShippingMethodsOnCartTest extends GraphQlAbstract
         string $methodCode,
         string $carrierTitle,
         string $methodTitle,
-        array $amount
-    ) {
+        array  $amount
+    )
+    {
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
 
         $query = $this->getQuery(
@@ -89,6 +82,47 @@ class SetOfflineShippingMethodsOnCartTest extends GraphQlAbstract
     }
 
     /**
+     * @param string $maskedQuoteId
+     * @param string $shippingMethodCode
+     * @param string $shippingCarrierCode
+     * @return string
+     */
+    private function getQuery(
+        string $maskedQuoteId,
+        string $shippingMethodCode,
+        string $shippingCarrierCode
+    ): string
+    {
+        return <<<QUERY
+mutation {
+  setShippingMethodsOnCart(input:
+    {
+      cart_id: "$maskedQuoteId",
+      shipping_methods: [{
+        carrier_code: "$shippingCarrierCode"
+        method_code: "$shippingMethodCode"
+      }]
+    }) {
+    cart {
+      shipping_addresses {
+        selected_shipping_method {
+          carrier_code
+          method_code
+          carrier_title
+          method_title
+          amount {
+            value
+            currency
+          }
+        }
+      }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
      * @return array
      */
     public function offlineShippingMethodDataProvider(): array
@@ -119,42 +153,11 @@ class SetOfflineShippingMethodsOnCartTest extends GraphQlAbstract
     }
 
     /**
-     * @param string $maskedQuoteId
-     * @param string $shippingMethodCode
-     * @param string $shippingCarrierCode
-     * @return string
+     * @inheritdoc
      */
-    private function getQuery(
-        string $maskedQuoteId,
-        string $shippingMethodCode,
-        string $shippingCarrierCode
-    ): string {
-        return <<<QUERY
-mutation {
-  setShippingMethodsOnCart(input: 
+    protected function setUp(): void
     {
-      cart_id: "$maskedQuoteId", 
-      shipping_methods: [{
-        carrier_code: "$shippingCarrierCode"
-        method_code: "$shippingMethodCode"
-      }]
-    }) {
-    cart {
-      shipping_addresses {
-        selected_shipping_method {
-          carrier_code
-          method_code
-          carrier_title
-          method_title
-          amount {
-            value
-            currency
-          }
-        }
-      }
-    }
-  }
-}
-QUERY;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
     }
 }

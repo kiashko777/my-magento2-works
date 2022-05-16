@@ -28,31 +28,6 @@ class BackslashTrimTest extends TestCase
     }
 
     /**
-     * Input config
-     *
-     * @return array
-     */
-    private function getInputConfig()
-    {
-        return [
-            'arguments' => [
-                '\\Class' => [
-                    'argument_type' => ['_i_' => '\\Class\\Dependency'],
-                    'argument_not_shared' => ['_ins_' => '\\Class\\Dependency'],
-                    'array' => [
-                        'argument_type' => ['_i_' => '\\Class\\Dependency'],
-                        'argument_not_shared' => ['_ins_' => '\\Class\\Dependency'],
-                        'array' => [
-                            'argument_type' => ['_i_' => '\\Class\\Dependency'],
-                            'argument_not_shared' => ['_ins_' => '\\Class\\Dependency'],
-                        ]
-                    ]
-                ]
-            ]
-        ];
-    }
-
-    /**
      * Output config
      *
      * @return array
@@ -70,6 +45,31 @@ class BackslashTrimTest extends TestCase
                         'array' => [
                             'argument_type' => ['_i_' => 'Class\\Dependency'],
                             'argument_not_shared' => ['_ins_' => 'Class\\Dependency'],
+                        ]
+                    ]
+                ]
+            ]
+        ];
+    }
+
+    /**
+     * Input config
+     *
+     * @return array
+     */
+    private function getInputConfig()
+    {
+        return [
+            'arguments' => [
+                '\\Class' => [
+                    'argument_type' => ['_i_' => '\\Class\\Dependency'],
+                    'argument_not_shared' => ['_ins_' => '\\Class\\Dependency'],
+                    'array' => [
+                        'argument_type' => ['_i_' => '\\Class\\Dependency'],
+                        'argument_not_shared' => ['_ins_' => '\\Class\\Dependency'],
+                        'array' => [
+                            'argument_type' => ['_i_' => '\\Class\\Dependency'],
+                            'argument_not_shared' => ['_ins_' => '\\Class\\Dependency'],
                         ]
                     ]
                 ]

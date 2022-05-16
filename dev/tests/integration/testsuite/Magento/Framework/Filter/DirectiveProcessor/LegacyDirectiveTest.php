@@ -24,18 +24,18 @@ class LegacyDirectiveTest extends TestCase
      */
     private $filter;
 
-    protected function setUp(): void
-    {
-        $objectManager = ObjectManager::getInstance();
-        $this->filter = $objectManager->create(LegacyFilter::class);
-        $this->processor = $objectManager->create(LegacyDirective::class);
-    }
-
     public function testFallbackWithNoVariables()
     {
         $template = 'blah {{unknown foobar}} blah';
         $result = $this->processor->process($this->createConstruction($this->processor, $template), $this->filter, []);
         self::assertEquals('{{unknown foobar}}', $result);
+    }
+
+    private function createConstruction(LegacyDirective $directive, string $value): array
+    {
+        preg_match($directive->getRegularExpression(), $value, $construction);
+
+        return $construction;
     }
 
     /**
@@ -60,10 +60,10 @@ class LegacyDirectiveTest extends TestCase
         ];
     }
 
-    private function createConstruction(LegacyDirective $directive, string $value): array
+    protected function setUp(): void
     {
-        preg_match($directive->getRegularExpression(), $value, $construction);
-
-        return $construction;
+        $objectManager = ObjectManager::getInstance();
+        $this->filter = $objectManager->create(LegacyFilter::class);
+        $this->processor = $objectManager->create(LegacyDirective::class);
     }
 }

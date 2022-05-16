@@ -18,9 +18,9 @@ use Magento\Framework\Phrase\RendererInterface;
 use Magento\Framework\Translate;
 use Magento\Store\Model\StoreRepository;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\TestFramework\Helper\CacheCleaner;
 use Magento\TestFramework\Mail\Template\TransportBuilderMock;
 use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for Magento\ProductAlert\Model\Observer
@@ -28,7 +28,7 @@ use Magento\TestFramework\ObjectManager;
  * @magentoAppIsolation enabled
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class ObserverTest extends \PHPUnit\Framework\TestCase
+class ObserverTest extends TestCase
 {
     /**
      * @var ObjectManager
@@ -44,21 +44,6 @@ class ObserverTest extends \PHPUnit\Framework\TestCase
      * @var TransportBuilderMock
      */
     private $transportBuilder;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        Bootstrap::getInstance()->loadArea(Area::AREA_FRONTEND);
-        $this->_objectManager = Bootstrap::getObjectManager();
-        $this->observer =  $this->_objectManager->get(Observer::class);
-        $this->transportBuilder =  $this->_objectManager->get(TransportBuilderMock::class);
-        $service = $this->_objectManager->create(AccountManagementInterface::class);
-        $customer = $service->authenticate('customer@example.com', 'password');
-        $customerSession = $this->_objectManager->get(Session::class);
-        $customerSession->setCustomerDataAsLoggedIn($customer);
-    }
 
     /**
      * Test process() method
@@ -121,5 +106,20 @@ class ObserverTest extends \PHPUnit\Framework\TestCase
         $expectedText = array_shift($translation);
         $this->assertStringContainsString('/frontend/Magento/luma/pt_BR/', $messageContent);
         $this->assertStringContainsString(substr($expectedText, 0, 50), $messageContent);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        Bootstrap::getInstance()->loadArea(Area::AREA_FRONTEND);
+        $this->_objectManager = Bootstrap::getObjectManager();
+        $this->observer = $this->_objectManager->get(Observer::class);
+        $this->transportBuilder = $this->_objectManager->get(TransportBuilderMock::class);
+        $service = $this->_objectManager->create(AccountManagementInterface::class);
+        $customer = $service->authenticate('customer@example.com', 'password');
+        $customerSession = $this->_objectManager->get(Session::class);
+        $customerSession->setCustomerDataAsLoggedIn($customer);
     }
 }

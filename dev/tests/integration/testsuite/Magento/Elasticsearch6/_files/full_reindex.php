@@ -5,10 +5,12 @@
  */
 declare(strict_types=1);
 
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
+use Magento\TestModuleCatalogSearch\Model\ElasticsearchVersionChecker;
 
-$checker = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-    \Magento\TestModuleCatalogSearch\Model\ElasticsearchVersionChecker::class
+$checker = Bootstrap::getObjectManager()->get(
+    ElasticsearchVersionChecker::class
 );
 if ($checker->getVersion() === 6) {
     Resolver::getInstance()->requireDataFixture('Magento/CatalogSearch/_files/full_reindex.php');

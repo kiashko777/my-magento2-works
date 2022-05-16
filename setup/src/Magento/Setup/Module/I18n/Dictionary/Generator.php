@@ -3,10 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\I18n\Dictionary;
 
 use Magento\Setup\Module\I18n\Factory;
 use Magento\Setup\Module\I18n\ParserInterface;
+use UnexpectedValueException;
 
 /**
  * Dictionary generator
@@ -16,21 +18,21 @@ class Generator
     /**
      * Parser
      *
-     * @var \Magento\Setup\Module\I18n\ParserInterface
+     * @var ParserInterface
      */
     protected $parser;
 
     /**
      * Contextual parser
      *
-     * @var \Magento\Setup\Module\I18n\ParserInterface
+     * @var ParserInterface
      */
     protected $contextualParser;
 
     /**
      * Domain abstract factory
      *
-     * @var \Magento\Setup\Module\I18n\Factory
+     * @var Factory
      */
     protected $factory;
 
@@ -55,11 +57,12 @@ class Generator
      * @param Options\ResolverFactory $optionsResolver
      */
     public function __construct(
-        ParserInterface $parser,
-        ParserInterface $contextualParser,
-        Factory $factory,
+        ParserInterface         $parser,
+        ParserInterface         $contextualParser,
+        Factory                 $factory,
         Options\ResolverFactory $optionsResolver
-    ) {
+    )
+    {
         $this->parser = $parser;
         $this->contextualParser = $contextualParser;
         $this->factory = $factory;
@@ -72,8 +75,8 @@ class Generator
      * @param string $directory
      * @param string $outputFilename
      * @param bool $withContext
-     * @throws \UnexpectedValueException
      * @return void
+     * @throws UnexpectedValueException
      */
     public function generate($directory, $outputFilename, $withContext = false)
     {
@@ -84,12 +87,23 @@ class Generator
 
         $phraseList = $parser->getPhrases();
         if (!count($phraseList)) {
-            throw new \UnexpectedValueException('No phrases found in the specified dictionary file.');
+            throw new UnexpectedValueException('No phrases found in the specified dictionary file.');
         }
         foreach ($phraseList as $phrase) {
             $this->getDictionaryWriter($outputFilename)->write($phrase);
         }
         $this->writer = null;
+    }
+
+    /**
+     * Get actual parser
+     *
+     * @param bool $withContext
+     * @return ParserInterface
+     */
+    protected function getActualParser($withContext)
+    {
+        return $withContext ? $this->contextualParser : $this->parser;
     }
 
     /**
@@ -102,16 +116,5 @@ class Generator
             $this->writer = $this->factory->createDictionaryWriter($outputFilename);
         }
         return $this->writer;
-    }
-
-    /**
-     * Get actual parser
-     *
-     * @param bool $withContext
-     * @return \Magento\Setup\Module\I18n\ParserInterface
-     */
-    protected function getActualParser($withContext)
-    {
-        return $withContext ? $this->contextualParser : $this->parser;
     }
 }

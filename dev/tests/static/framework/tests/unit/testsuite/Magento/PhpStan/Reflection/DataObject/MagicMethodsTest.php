@@ -14,11 +14,13 @@ use PHPStan\Testing\RuleTestCase;
 class MagicMethodsTest extends RuleTestCase
 {
     /**
-     * @inheritdoc
+     * Add config files.
+     *
+     * @return string[]
      */
-    protected function getRule(): Rule
+    public static function getAdditionalConfigFiles(): array
     {
-        return $this->getContainer()->getByType(CallMethodsRule::class);
+        return [self::getFixturesDir() . 'config.neon'];
     }
 
     /**
@@ -29,16 +31,6 @@ class MagicMethodsTest extends RuleTestCase
     private static function getFixturesDir(): string
     {
         return __DIR__ . DIRECTORY_SEPARATOR . 'Fixtures' . DIRECTORY_SEPARATOR;
-    }
-
-    /**
-     * Add config files.
-     *
-     * @return string[]
-     */
-    public static function getAdditionalConfigFiles(): array
-    {
-        return [self::getFixturesDir() . 'config.neon'];
     }
 
     /**
@@ -105,5 +97,13 @@ class MagicMethodsTest extends RuleTestCase
                 // phpcs:enable Generic.Files.LineLength.TooLong
             ]
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function getRule(): Rule
+    {
+        return $this->getContainer()->getByType(CallMethodsRule::class);
     }
 }

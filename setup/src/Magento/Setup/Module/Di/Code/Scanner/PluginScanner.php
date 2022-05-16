@@ -3,7 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Di\Code\Scanner;
+
+use DOMDocument;
+use DOMNode;
+use DOMXPath;
 
 class PluginScanner implements ScannerInterface
 {
@@ -17,10 +22,10 @@ class PluginScanner implements ScannerInterface
     {
         $pluginClassNames = [];
         foreach ($files as $fileName) {
-            $dom = new \DOMDocument();
+            $dom = new DOMDocument();
             $dom->loadXML(file_get_contents($fileName));
-            $xpath = new \DOMXPath($dom);
-            /** @var $node \DOMNode */
+            $xpath = new DOMXPath($dom);
+            /** @var $node DOMNode */
             foreach ($xpath->query('//type/plugin|//virtualType/plugin') as $node) {
                 $pluginTypeNode = $node->attributes->getNamedItem('type');
                 if ($pluginTypeNode !== null) {

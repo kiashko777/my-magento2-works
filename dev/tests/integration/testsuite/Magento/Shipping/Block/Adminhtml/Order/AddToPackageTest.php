@@ -14,9 +14,9 @@ use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Registry;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Api\Data\ShipmentTrackInterface;
+use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
-use Magento\Sales\Api\OrderRepositoryInterface;
 
 /**
  * Class verifies packaging popup.
@@ -41,16 +41,6 @@ class AddToPackageTest extends TestCase
     private $registry;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->orderRepository = $this->objectManager->get(OrderRepositoryInterface::class);
-    }
-
-    /**
      * Test that Packaging popup renders
      *
      * @magentoDataFixture Magento/Shipping/_files/shipping_with_carrier_data.php
@@ -68,20 +58,6 @@ class AddToPackageTest extends TestCase
             }
         });";
         $this->assertStringContainsString($expectedNeedle, $this->getHtml());
-    }
-
-    /**
-     * Verify currency code on custom value field
-     *
-     * @magentoDataFixture Magento/Shipping/_files/shipping_with_carrier_data_different_currency_code.php
-     */
-    public function testGetCurrencyCodeCustomValue ()
-    {
-        $template = '/<span class="customs-value-currency">\s*?(?<currency>[A-Za-z]+)\s*?<\/span>/';
-        $matches = [];
-        preg_match($template, $this->getHtml(), $matches);
-        $currency = $matches['currency'] ?? null;
-        $this->assertEquals('FR',$currency );
     }
 
     /**
@@ -112,7 +88,7 @@ class AddToPackageTest extends TestCase
      * @param string $incrementId
      * @return OrderInterface
      */
-    private function getOrderByIncrementId(string $incrementId) : OrderInterface
+    private function getOrderByIncrementId(string $incrementId): OrderInterface
     {
         /** @var SearchCriteria $searchCriteria */
         $searchCriteria = $this->objectManager->get(SearchCriteriaBuilder::class)
@@ -123,5 +99,29 @@ class AddToPackageTest extends TestCase
             ->getItems();
 
         return array_pop($items);
+    }
+
+    /**
+     * Verify currency code on custom value field
+     *
+     * @magentoDataFixture Magento/Shipping/_files/shipping_with_carrier_data_different_currency_code.php
+     */
+    public function testGetCurrencyCodeCustomValue()
+    {
+        $template = '/<span class="customs-value-currency">\s*?(?<currency>[A-Za-z]+)\s*?<\/span>/';
+        $matches = [];
+        preg_match($template, $this->getHtml(), $matches);
+        $currency = $matches['currency'] ?? null;
+        $this->assertEquals('FR', $currency);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->orderRepository = $this->objectManager->get(OrderRepositoryInterface::class);
     }
 }

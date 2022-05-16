@@ -25,12 +25,6 @@ class ArgumentsResolverTest extends TestCase
      */
     protected $diContainerConfig;
 
-    protected function setUp(): void
-    {
-        $this->diContainerConfig = $this->getMockForAbstractClass(ConfigInterface::class);
-        $this->model = new ArgumentsResolver($this->diContainerConfig);
-    }
-
     public function testGetResolvedArgumentsConstructorFormat()
     {
         $expectedResultDefault = $this->getResolvedSimpleConfigExpectation();
@@ -61,6 +55,32 @@ class ArgumentsResolverTest extends TestCase
             $expectedResultDefault,
             $this->model->getResolvedConstructorArguments($type, $constructor)
         );
+    }
+
+    /**
+     * Returns resolved simple config expectation
+     *
+     * @return array
+     */
+    private function getResolvedSimpleConfigExpectation()
+    {
+        return [
+            'type_dependency' => [
+                '_ins_' => 'Type\Dependency',
+            ],
+            'type_dependency_shared' => [
+                '_i_' => 'Type\Dependency\Shared',
+            ],
+            'value' => [
+                '_v_' => 'value',
+            ],
+            'value_array' => [
+                '_v_' => ['default_value1', 'default_value2'],
+            ],
+            'value_null' => [
+                '_vn_' => true,
+            ],
+        ];
     }
 
     public function testGetResolvedArgumentsConstructorConfiguredFormat()
@@ -100,61 +120,6 @@ class ArgumentsResolverTest extends TestCase
             $expectedResultConfigured,
             $this->model->getResolvedConstructorArguments($type, $constructor)
         );
-    }
-
-    /**
-     * Returns resolved simple config expectation
-     *
-     * @return array
-     */
-    private function getResolvedSimpleConfigExpectation()
-    {
-        return [
-            'type_dependency' => [
-                '_ins_' => 'Type\Dependency',
-            ],
-            'type_dependency_shared' => [
-                '_i_' => 'Type\Dependency\Shared',
-            ],
-            'value' => [
-                '_v_' => 'value',
-            ],
-            'value_array' => [
-                '_v_' => ['default_value1', 'default_value2'],
-            ],
-            'value_null' => [
-                '_vn_' => true,
-            ],
-        ];
-    }
-
-    /**
-     * Returns configured arguments expectation
-     *
-     * @return array
-     */
-    private function getConfiguredArguments()
-    {
-        return [
-            'type_dependency_configured' => ['instance' => 'Type\Dependency\Configured'],
-            'type_dependency_shared_configured' => ['instance' => 'Type\Dependency\Shared\Configured'],
-            'global_argument' => ['argument' => 'global_argument_configured'],
-            'global_argument_def' => ['argument' => 'global_argument_configured'],
-            'value_configured' => 'value_configured',
-            'value_array_configured' => [
-                'array_value' => 'value',
-                'array_configured_instance' => ['instance' => 'Type\Dependency\Shared\Configured'],
-                'array_configured_array' => [
-                    'array_array_value' => 'value',
-                    'array_array_configured_instance' => [
-                        'instance' => 'Type\Dependency\Shared\Configured',
-                        'shared' => false
-                    ]
-                ],
-                'array_global_argument' => ['argument' => 'global_argument_configured']
-            ],
-            'value_null' => null,
-        ];
     }
 
     /**
@@ -204,5 +169,40 @@ class ArgumentsResolverTest extends TestCase
                 '_vn_' => true,
             ],
         ];
+    }
+
+    /**
+     * Returns configured arguments expectation
+     *
+     * @return array
+     */
+    private function getConfiguredArguments()
+    {
+        return [
+            'type_dependency_configured' => ['instance' => 'Type\Dependency\Configured'],
+            'type_dependency_shared_configured' => ['instance' => 'Type\Dependency\Shared\Configured'],
+            'global_argument' => ['argument' => 'global_argument_configured'],
+            'global_argument_def' => ['argument' => 'global_argument_configured'],
+            'value_configured' => 'value_configured',
+            'value_array_configured' => [
+                'array_value' => 'value',
+                'array_configured_instance' => ['instance' => 'Type\Dependency\Shared\Configured'],
+                'array_configured_array' => [
+                    'array_array_value' => 'value',
+                    'array_array_configured_instance' => [
+                        'instance' => 'Type\Dependency\Shared\Configured',
+                        'shared' => false
+                    ]
+                ],
+                'array_global_argument' => ['argument' => 'global_argument_configured']
+            ],
+            'value_null' => null,
+        ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->diContainerConfig = $this->getMockForAbstractClass(ConfigInterface::class);
+        $this->model = new ArgumentsResolver($this->diContainerConfig);
     }
 }

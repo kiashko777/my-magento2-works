@@ -9,6 +9,7 @@ namespace Magento\CatalogWidget\Block\Product;
 use Magento\Catalog\Model\Indexer\Product\Eav\Processor;
 use Magento\Catalog\Model\ResourceModel\Category\Collection as CategoryCollection;
 use Magento\Catalog\Model\ResourceModel\Eav\Attribute;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
@@ -22,24 +23,14 @@ class ProductListTest extends TestCase
      * @var ProductsList
      */
     protected $block;
-
-    /**
-     * @var CategoryCollection;
-
-     */
-    private $categoryCollection;
-
     /**
      * @var ObjectManagerInterface
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->block = $this->objectManager->create(ProductsList::class);
-        $this->categoryCollection = $this->objectManager->create(CategoryCollection::class);
-    }
+    /**
+     * @var CategoryCollection;
+     */
+    private $categoryCollection;
 
     /**
      * Make sure that widget conditions are applied to product collection correctly
@@ -131,7 +122,7 @@ class ProductListTest extends TestCase
      *
      * @param int $count
      * @return void
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @throws LocalizedException
      */
     private function performAssertions(int $count)
     {
@@ -155,7 +146,7 @@ class ProductListTest extends TestCase
      * @param string $encodedConditions
      * @param string $sku
      * @return void
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @throws LocalizedException
      */
     public function testCreateCollectionForSku($encodedConditions, $sku)
     {
@@ -179,7 +170,7 @@ class ProductListTest extends TestCase
             'contains' => ['^[`1`:^[`type`:`Magento||CatalogWidget||Model||Rule||Condition||Combine`,'
                 . '`aggregator`:`all`,`value`:`1`,`new_child`:``^],'
                 . '`1--1`:^[`type`:`Magento||CatalogWidget||Model||Rule||Condition||Products`,'
-                . '`attribute`:`sku`,`operator`:`^[^]`,`value`:`virtual`^]^]' , 'virtual-product'],
+                . '`attribute`:`sku`,`operator`:`^[^]`,`value`:`virtual`^]^]', 'virtual-product'],
             'not contains' => ['^[`1`:^[`type`:`Magento||CatalogWidget||Model||Rule||Condition||Combine`,'
                 . '`aggregator`:`all`,`value`:`1`,`new_child`:``^],'
                 . '`1--1`:^[`type`:`Magento||CatalogWidget||Model||Rule||Condition||Products`,'
@@ -193,7 +184,7 @@ class ProductListTest extends TestCase
      * @magentoDbIsolation disabled
      * @magentoDataFixture Magento/Catalog/_files/product_simple_with_date_attribute.php
      * @return void
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @throws LocalizedException
      */
     public function testProductListWithDateAttribute()
     {
@@ -234,7 +225,7 @@ class ProductListTest extends TestCase
         $eavIndexerProcessor->reindexAll();
 
         $this->categoryCollection->addNameToResult()->load();
-        $rootCategoryId =  $this
+        $rootCategoryId = $this
             ->categoryCollection
             ->getItemByColumnValue('name', 'Default Category')
             ->getId();
@@ -331,5 +322,12 @@ class ProductListTest extends TestCase
                 ]
             ],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->block = $this->objectManager->create(ProductsList::class);
+        $this->categoryCollection = $this->objectManager->create(CategoryCollection::class);
     }
 }

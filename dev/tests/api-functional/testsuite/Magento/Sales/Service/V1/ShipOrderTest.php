@@ -7,17 +7,23 @@ declare(strict_types=1);
 
 namespace Magento\Sales\Service\V1;
 
+use Exception;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product\Type;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\Sales\Api\Data\OrderItemInterface;
 use Magento\Sales\Api\ShipmentRepositoryInterface;
 use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Item;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
  * API test for creation of Shipment for certain Order.
  */
-class ShipOrderTest extends \Magento\TestFramework\TestCase\WebapiAbstract
+class ShipOrderTest extends WebapiAbstract
 {
     const SERVICE_READ_NAME = 'salesShipOrderV1';
     const SERVICE_VERSION = 'V1';
@@ -36,16 +42,6 @@ class ShipOrderTest extends \Magento\TestFramework\TestCase\WebapiAbstract
      * @var ProductRepositoryInterface
      */
     private $productRepository;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->shipmentRepository = $this->objectManager->get(ShipmentRepositoryInterface::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-    }
 
     /**
      * @magentoApiDataFixture Magento/Sales/_files/order_configurable_product.php
@@ -68,12 +64,12 @@ class ShipOrderTest extends \Magento\TestFramework\TestCase\WebapiAbstract
         $shipment = null;
         try {
             $shipment = $this->shipmentRepository->get($shipmentId);
-        } catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+        } catch (NoSuchEntityException $e) {
             $this->fail('Failed asserting that Shipment was created');
         }
 
         $orderedQty = 0;
-        /** @var \Magento\Sales\Model\Order\Item $item */
+        /** @var Item $item */
         foreach ($existingOrder->getItems() as $item) {
             if ($item->isDummy(true)) {
                 continue;
@@ -91,6 +87,38 @@ class ShipOrderTest extends \Magento\TestFramework\TestCase\WebapiAbstract
             count($shipment->getItems()),
             'Failed asserting that quantity of products and sales shipment items is equal'
         );
+    }
+
+    /**
+     * Returns order by increment id.
+     *
+     * @param string $incrementId
+     * @return Order
+     */
+    private function getOrder(string $incrementId): Order
+    {
+        return $this->objectManager->create(Order::class)->loadByIncrementId($incrementId);
+    }
+
+    /**
+     * @param Order $order
+     * @return array
+     */
+    private function getServiceInfo(Order $order): array
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => '/V1/order/' . $order->getId() . '/ship',
+                'httpMethod' => Request::HTTP_METHOD_POST,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_READ_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_READ_NAME . 'execute',
+            ],
+        ];
+
+        return $serviceInfo;
     }
 
     /**
@@ -167,7 +195,7 @@ class ShipOrderTest extends \Magento\TestFramework\TestCase\WebapiAbstract
 
         try {
             $this->shipmentRepository->get($result);
-        } catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+        } catch (NoSuchEntityException $e) {
             $this->fail('Failed asserting that Shipment was created');
         }
 
@@ -189,7 +217,7 @@ class ShipOrderTest extends \Magento\TestFramework\TestCase\WebapiAbstract
      */
     public function testShipOrderWithoutTrackingNumberReturnsError()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessageMatches(
             '/Shipment Document Validation Error\\(s\\):(?:\\n|\\\\n)Please enter a tracking number./'
         );
@@ -257,7 +285,7 @@ class ShipOrderTest extends \Magento\TestFramework\TestCase\WebapiAbstract
         $shipment = null;
         try {
             $shipment = $this->shipmentRepository->get($shipmentId);
-        } catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+        } catch (NoSuchEntityException $e) {
             $this->fail('Failed asserting that Shipment was created');
         }
 
@@ -313,7 +341,7 @@ class ShipOrderTest extends \Magento\TestFramework\TestCase\WebapiAbstract
         $shipment = null;
         try {
             $shipment = $this->shipmentRepository->get($shipmentId);
-        } catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+        } catch (NoSuchEntityException $e) {
             $this->fail('Failed asserting that Shipment was created');
         }
 
@@ -332,12 +360,35 @@ class ShipOrderTest extends \Magento\TestFramework\TestCase\WebapiAbstract
         try {
             $this->_webApiCall($this->getServiceInfo($order), $requestData);
             $this->fail('Expected exception was not raised');
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             $this->assertExceptionMessage(
                 $exception,
                 'Shipment Document Validation Error(s): You can\'t create a shipment without products.'
             );
         }
+    }
+
+    /**
+     * Assert correct exception message.
+     *
+     * @param Exception $exception
+     * @param string $expectedMessage
+     * @return void
+     */
+    private function assertExceptionMessage(Exception $exception, string $expectedMessage): void
+    {
+        $actualMessage = '';
+        switch (TESTS_WEB_API_ADAPTER) {
+            case self::ADAPTER_SOAP:
+                $actualMessage = trim(preg_replace('/\s+/', ' ', $exception->getMessage()));
+                break;
+            case self::ADAPTER_REST:
+                $error = $this->processRestExceptionResult($exception);
+                $actualMessage = $error['message'];
+                break;
+        }
+
+        $this->assertEquals($expectedMessage, $actualMessage);
     }
 
     /**
@@ -370,7 +421,7 @@ class ShipOrderTest extends \Magento\TestFramework\TestCase\WebapiAbstract
         try {
             $this->_webApiCall($this->getServiceInfo($order), $requestData);
             $this->fail('Expected exception was not raised');
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             $this->assertExceptionMessage(
                 $exception,
                 'Shipment Document Validation Error(s): '
@@ -425,7 +476,7 @@ class ShipOrderTest extends \Magento\TestFramework\TestCase\WebapiAbstract
         try {
             $this->_webApiCall($this->getServiceInfo($order), $requestData);
             $this->fail('Expected exception was not raised');
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             $this->assertExceptionMessage(
                 $exception,
                 'Shipment Document Validation Error(s): '
@@ -451,57 +502,12 @@ class ShipOrderTest extends \Magento\TestFramework\TestCase\WebapiAbstract
     }
 
     /**
-     * @param Order $order
-     * @return array
+     * @inheritdoc
      */
-    private function getServiceInfo(Order $order): array
+    protected function setUp(): void
     {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => '/V1/order/' . $order->getId() . '/ship',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_READ_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_READ_NAME . 'execute',
-            ],
-        ];
-
-        return $serviceInfo;
-    }
-
-    /**
-     * Returns order by increment id.
-     *
-     * @param string $incrementId
-     * @return Order
-     */
-    private function getOrder(string $incrementId): Order
-    {
-        return $this->objectManager->create(Order::class)->loadByIncrementId($incrementId);
-    }
-
-    /**
-     * Assert correct exception message.
-     *
-     * @param \Exception $exception
-     * @param string $expectedMessage
-     * @return void
-     */
-    private function assertExceptionMessage(\Exception $exception, string $expectedMessage): void
-    {
-        $actualMessage = '';
-        switch (TESTS_WEB_API_ADAPTER) {
-            case self::ADAPTER_SOAP:
-                $actualMessage = trim(preg_replace('/\s+/', ' ', $exception->getMessage()));
-                break;
-            case self::ADAPTER_REST:
-                $error = $this->processRestExceptionResult($exception);
-                $actualMessage = $error['message'];
-                break;
-        }
-
-        $this->assertEquals($expectedMessage, $actualMessage);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->shipmentRepository = $this->objectManager->get(ShipmentRepositoryInterface::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
     }
 }

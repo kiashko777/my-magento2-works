@@ -8,8 +8,8 @@ declare(strict_types=1);
 namespace Magento\TestFramework\Weee\Model\Attribute\DataProvider;
 
 use Magento\Eav\Model\Entity\Attribute\ScopedAttributeInterface;
-use Magento\TestFramework\Eav\Model\Attribute\DataProvider\AbstractBaseAttributeData;
 use Magento\Store\Model\Store;
+use Magento\TestFramework\Eav\Model\Attribute\DataProvider\AbstractBaseAttributeData;
 use Magento\Weee\Model\Attribute\Backend\Weee\Tax;
 
 /**
@@ -36,6 +36,14 @@ class FixedProductTax extends AbstractBaseAttributeData
         unset($result["{$this->getFrontendInput()}_without_default_value"]);
 
         return $result;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function getFrontendInput(): string
+    {
+        return 'weee';
     }
 
     /**
@@ -74,30 +82,6 @@ class FixedProductTax extends AbstractBaseAttributeData
     /**
      * @inheritdoc
      */
-    protected function getFrontendInput(): string
-    {
-        return 'weee';
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function getUpdatePostData(): array
-    {
-        return [
-            'frontend_label' => [
-                Store::DEFAULT_STORE_ID => 'Fixed product tax Update',
-            ],
-            'frontend_input' => 'weee',
-            'is_used_in_grid' => '1',
-            'is_visible_in_grid' => '1',
-            'is_filterable_in_grid' => '1',
-        ];
-    }
-
-    /**
-     * @inheritdoc
-     */
     protected function getUpdateExpectedData(): array
     {
         $updatePostData = $this->getUpdatePostData();
@@ -128,5 +112,21 @@ class FixedProductTax extends AbstractBaseAttributeData
                 'backend_model' => Tax::class,
             ]
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function getUpdatePostData(): array
+    {
+        return [
+            'frontend_label' => [
+                Store::DEFAULT_STORE_ID => 'Fixed product tax Update',
+            ],
+            'frontend_input' => 'weee',
+            'is_used_in_grid' => '1',
+            'is_visible_in_grid' => '1',
+            'is_filterable_in_grid' => '1',
+        ];
     }
 }

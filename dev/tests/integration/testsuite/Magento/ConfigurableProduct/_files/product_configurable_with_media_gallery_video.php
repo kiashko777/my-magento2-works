@@ -3,29 +3,37 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Catalog\Api\Data\ProductAttributeMediaGalleryEntryExtensionFactory;
+use Magento\Catalog\Api\Data\ProductAttributeMediaGalleryEntryInterfaceFactory;
+use Magento\Catalog\Api\ProductAttributeMediaGalleryManagementInterface;
+use Magento\Framework\Api\Data\ImageContentInterfaceFactory;
+use Magento\Framework\Api\Data\VideoContentInterfaceFactory;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/ConfigurableProduct/_files/product_configurable.php');
 
 /**
- * @var \Magento\TestFramework\ObjectManager $objectManager
+ * @var ObjectManager $objectManager
  */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 
 /**
- * @var \Magento\Catalog\Api\Data\ProductAttributeMediaGalleryEntryInterfaceFactory $mediaGalleryEntryFactory
+ * @var ProductAttributeMediaGalleryEntryInterfaceFactory $mediaGalleryEntryFactory
  */
 
 $mediaGalleryEntryFactory = $objectManager->get(
-    \Magento\Catalog\Api\Data\ProductAttributeMediaGalleryEntryInterfaceFactory::class
+    ProductAttributeMediaGalleryEntryInterfaceFactory::class
 );
 
 /**
- * @var \Magento\Framework\Api\Data\ImageContentInterfaceFactory $imageContentFactory
+ * @var ImageContentInterfaceFactory $imageContentFactory
  */
-$imageContentFactory = $objectManager->get(\Magento\Framework\Api\Data\ImageContentInterfaceFactory::class);
+$imageContentFactory = $objectManager->get(ImageContentInterfaceFactory::class);
 $imageContent = $imageContentFactory->create();
-$testImagePath = __DIR__ .'/magento_image.jpg';
+$testImagePath = __DIR__ . '/magento_image.jpg';
 $imageContent->setBase64EncodedData(base64_encode(file_get_contents($testImagePath)));
 $imageContent->setType("image/jpeg");
 $imageContent->setName("1.jpg");
@@ -40,18 +48,18 @@ $video->setPosition(2);
 $video->setContent($imageContent);
 
 /**
- * @var \Magento\Catalog\Api\Data\ProductAttributeMediaGalleryEntryExtensionFactory $mediaGalleryEntryExtensionFactory
+ * @var ProductAttributeMediaGalleryEntryExtensionFactory $mediaGalleryEntryExtensionFactory
  */
 $mediaGalleryEntryExtensionFactory = $objectManager->get(
-    \Magento\Catalog\Api\Data\ProductAttributeMediaGalleryEntryExtensionFactory::class
+    ProductAttributeMediaGalleryEntryExtensionFactory::class
 );
 $mediaGalleryEntryExtension = $mediaGalleryEntryExtensionFactory->create();
 
 /**
- * @var \Magento\Framework\Api\Data\VideoContentInterfaceFactory $videoContentFactory
+ * @var VideoContentInterfaceFactory $videoContentFactory
  */
 $videoContentFactory = $objectManager->get(
-    \Magento\Framework\Api\Data\VideoContentInterfaceFactory::class
+    VideoContentInterfaceFactory::class
 );
 $videoContent = $videoContentFactory->create();
 $videoContent->setMediaType('external-video');
@@ -65,9 +73,9 @@ $mediaGalleryEntryExtension->setVideoContent($videoContent);
 $video->setExtensionAttributes($mediaGalleryEntryExtension);
 
 /**
- * @var \Magento\Catalog\Api\ProductAttributeMediaGalleryManagementInterface $mediaGalleryManagement
+ * @var ProductAttributeMediaGalleryManagementInterface $mediaGalleryManagement
  */
 $mediaGalleryManagement = $objectManager->get(
-    \Magento\Catalog\Api\ProductAttributeMediaGalleryManagementInterface::class
+    ProductAttributeMediaGalleryManagementInterface::class
 );
 $mediaGalleryManagement->create('configurable', $video);

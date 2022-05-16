@@ -19,6 +19,7 @@ use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Catalog\Model\GetCategoryByName;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Indexer\TestCase;
+use Zend_Db_Expr;
 
 /**
  * Checks category products indexing
@@ -61,25 +62,6 @@ class CategoryIndexTest extends TestCase
     private $defaultCategoryHelper;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productResource = $this->objectManager->get(ProductResource::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-        $this->connection = $this->productResource->getConnection();
-        $this->tableMaintainer = $this->objectManager->get(TableMaintainer::class);
-        $this->categoryRepository = $this->objectManager->get(CategoryRepositoryInterface::class);
-        $this->categoryResource = $this->objectManager->get(CategoryResource::class);
-        $this->getCategoryByName = $this->objectManager->create(GetCategoryByName::class);
-        $this->defaultCategoryHelper = $this->objectManager->get(DefaultCategory::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/category_with_parent_anchor.php
      * @magentoDataFixture Magento/Catalog/_files/second_product_simple.php
      *
@@ -97,6 +79,23 @@ class CategoryIndexTest extends TestCase
         $this->productResource->save($product);
         $result = $this->getIndexRecordsByProductId((int)$product->getId());
         $this->assertEquals($expectedItemsCount, $result);
+    }
+
+    /**
+     * Fetch data from category product index table
+     *
+     * @param int $productId
+     * @return int
+     */
+    private function getIndexRecordsByProductId(int $productId): int
+    {
+        $tableName = $this->tableMaintainer->getMainTable((int)$this->storeManager->getStore()->getId());
+        $select = $this->connection->select();
+        $select->from(['index_table' => $tableName], new Zend_Db_Expr('COUNT(*)'))
+            ->where('index_table.product_id = ?', $productId)
+            ->where('index_table.category_id != ?', $this->defaultCategoryHelper->getId());
+
+        return (int)$this->connection->fetchOne($select);
     }
 
     /**
@@ -185,19 +184,21 @@ class CategoryIndexTest extends TestCase
     }
 
     /**
-     * Fetch data from category product index table
-     *
-     * @param int $productId
-     * @return int
+     * @inheritdoc
      */
-    private function getIndexRecordsByProductId(int $productId): int
+    protected function setUp(): void
     {
-        $tableName = $this->tableMaintainer->getMainTable((int)$this->storeManager->getStore()->getId());
-        $select = $this->connection->select();
-        $select->from(['index_table' => $tableName], new \Zend_Db_Expr('COUNT(*)'))
-            ->where('index_table.product_id = ?', $productId)
-            ->where('index_table.category_id != ?', $this->defaultCategoryHelper->getId());
+        parent::setUp();
 
-        return (int)$this->connection->fetchOne($select);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productResource = $this->objectManager->get(ProductResource::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
+        $this->connection = $this->productResource->getConnection();
+        $this->tableMaintainer = $this->objectManager->get(TableMaintainer::class);
+        $this->categoryRepository = $this->objectManager->get(CategoryRepositoryInterface::class);
+        $this->categoryResource = $this->objectManager->get(CategoryResource::class);
+        $this->getCategoryByName = $this->objectManager->create(GetCategoryByName::class);
+        $this->defaultCategoryHelper = $this->objectManager->get(DefaultCategory::class);
     }
 }

@@ -45,6 +45,14 @@ class TextAttributeTest extends AbstractAttributeTest
     }
 
     /**
+     * @inheritdoc
+     */
+    protected function getDefaultAttributeValue(): string
+    {
+        return 'Default value for text attribute';
+    }
+
+    /**
      * @dataProvider attributeWithTagsProvider
      * @magentoAppArea frontend
      * @param bool $allowHtmlTags
@@ -53,10 +61,11 @@ class TextAttributeTest extends AbstractAttributeTest
      * @return void
      */
     public function testAttributeWithHtmlTags(
-        bool $allowHtmlTags,
+        bool   $allowHtmlTags,
         string $attributeValue,
         string $expectedAttributeValue
-    ): void {
+    ): void
+    {
         $this->processAttributeHtmlOutput('simple2', $allowHtmlTags, $attributeValue, $expectedAttributeValue);
     }
 
@@ -122,13 +131,5 @@ class TextAttributeTest extends AbstractAttributeTest
     protected function getAttributeCode(): string
     {
         return 'varchar_attribute';
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function getDefaultAttributeValue(): string
-    {
-        return 'Default value for text attribute';
     }
 }

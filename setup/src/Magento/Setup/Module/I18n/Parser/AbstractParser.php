@@ -3,9 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\I18n\Parser;
 
+use InvalidArgumentException;
 use Magento\Setup\Module\I18n;
+use Magento\Setup\Module\I18n\Factory;
+use Magento\Setup\Module\I18n\FilesCollector;
 
 /**
  * Abstract parser
@@ -15,21 +19,21 @@ abstract class AbstractParser implements I18n\ParserInterface
     /**
      * Files collector
      *
-     * @var \Magento\Setup\Module\I18n\FilesCollector
+     * @var FilesCollector
      */
     protected $_filesCollector = [];
 
     /**
      * Domain abstract factory
      *
-     * @var \Magento\Setup\Module\I18n\Factory
+     * @var Factory
      */
     protected $_factory;
 
     /**
      * Adapters
      *
-     * @var \Magento\Setup\Module\I18n\Parser\AdapterInterface[]
+     * @var AdapterInterface[]
      */
     protected $_adapters = [];
 
@@ -43,10 +47,10 @@ abstract class AbstractParser implements I18n\ParserInterface
     /**
      * Parser construct
      *
-     * @param I18n\FilesCollector $filesCollector
-     * @param I18n\Factory $factory
+     * @param FilesCollector $filesCollector
+     * @param Factory $factory
      */
-    public function __construct(I18n\FilesCollector $filesCollector, I18n\Factory $factory)
+    public function __construct(FilesCollector $filesCollector, Factory $factory)
     {
         $this->_filesCollector = $filesCollector;
         $this->_factory = $factory;
@@ -78,6 +82,30 @@ abstract class AbstractParser implements I18n\ParserInterface
     }
 
     /**
+     * Validate options
+     *
+     * @param array $parseOptions
+     * @return void
+     * @throws InvalidArgumentException
+     */
+    protected function _validateOptions($parseOptions)
+    {
+        foreach ($parseOptions as $parserOptions) {
+            if (empty($parserOptions['type'])) {
+                throw new InvalidArgumentException('Missed "type" in parser options.');
+            }
+            if (!isset($this->_adapters[$parserOptions['type']])) {
+                throw new InvalidArgumentException(
+                    sprintf('Adapter is not set for type "%s".', $parserOptions['type'])
+                );
+            }
+            if (!isset($parserOptions['paths']) || !is_array($parserOptions['paths'])) {
+                throw new InvalidArgumentException('"paths" in parser options must be array.');
+            }
+        }
+    }
+
+    /**
      * Parse one type
      *
      * @param array $options
@@ -86,27 +114,11 @@ abstract class AbstractParser implements I18n\ParserInterface
     abstract protected function _parseByTypeOptions($options);
 
     /**
-     * Validate options
-     *
-     * @param array $parseOptions
-     * @return void
-     * @throws \InvalidArgumentException
+     * {@inheritdoc}
      */
-    protected function _validateOptions($parseOptions)
+    public function getPhrases()
     {
-        foreach ($parseOptions as $parserOptions) {
-            if (empty($parserOptions['type'])) {
-                throw new \InvalidArgumentException('Missed "type" in parser options.');
-            }
-            if (!isset($this->_adapters[$parserOptions['type']])) {
-                throw new \InvalidArgumentException(
-                    sprintf('Adapter is not set for type "%s".', $parserOptions['type'])
-                );
-            }
-            if (!isset($parserOptions['paths']) || !is_array($parserOptions['paths'])) {
-                throw new \InvalidArgumentException('"paths" in parser options must be array.');
-            }
-        }
+        return $this->_phrases;
     }
 
     /**
@@ -120,13 +132,5 @@ abstract class AbstractParser implements I18n\ParserInterface
         $fileMask = isset($options['fileMask']) ? $options['fileMask'] : '';
 
         return $this->_filesCollector->getFiles($options['paths'], $fileMask);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getPhrases()
-    {
-        return $this->_phrases;
     }
 }

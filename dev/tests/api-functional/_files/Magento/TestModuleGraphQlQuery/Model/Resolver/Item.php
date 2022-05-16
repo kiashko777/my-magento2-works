@@ -7,9 +7,9 @@ declare(strict_types=1);
 
 namespace Magento\TestModuleGraphQlQuery\Model\Resolver;
 
-use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
 use Magento\Framework\GraphQl\Config\Element\Field;
 use Magento\Framework\GraphQl\Query\ResolverInterface;
+use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
 
 /**
  * Resolver for Item
@@ -20,12 +20,13 @@ class Item implements ResolverInterface
      * @inheritdoc
      */
     public function resolve(
-        Field $field,
-        $context,
+        Field       $field,
+                    $context,
         ResolveInfo $info,
-        array $value = null,
-        array $args = null
-    ) {
+        array       $value = null,
+        array       $args = null
+    )
+    {
         $id = 0;
         foreach ($args as $key => $argValue) {
             if ($key === "id") {

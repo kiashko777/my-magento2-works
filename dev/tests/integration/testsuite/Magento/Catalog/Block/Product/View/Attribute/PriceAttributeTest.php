@@ -22,16 +22,6 @@ class PriceAttributeTest extends AbstractAttributeTest
     private $priceCurrency;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->priceCurrency = $this->objectManager->create(PriceCurrency::class);
-    }
-
-    /**
      * @dataProvider pricesDataProvider
      * @param string $price
      * @return void
@@ -54,6 +44,16 @@ class PriceAttributeTest extends AbstractAttributeTest
                 'price' => '150',
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->priceCurrency = $this->objectManager->create(PriceCurrency::class);
     }
 
     /**

@@ -3,27 +3,33 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Customer\Block\Widget;
+
+use Magento\Customer\Model\Attribute;
+use Magento\Eav\Model\Config;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\Customer\Block\Widget\Taxvat
  *
  * @magentoAppArea frontend
  */
-class TaxvatTest extends \PHPUnit\Framework\TestCase
+class TaxvatTest extends TestCase
 {
     /**
      * @magentoAppIsolation enabled
      */
     public function testToHtml()
     {
-        /** @var \Magento\Customer\Block\Widget\Taxvat $block */
-        $block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Block\Widget\Taxvat::class
+        /** @var Taxvat $block */
+        $block = Bootstrap::getObjectManager()->create(
+            Taxvat::class
         );
 
-        $model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Model\Attribute::class
+        $model = Bootstrap::getObjectManager()->create(
+            Attribute::class
         );
         $model->loadByCode('customer', 'taxvat');
         $attributeLabel = $model->getStoreLabel();
@@ -38,17 +44,17 @@ class TaxvatTest extends \PHPUnit\Framework\TestCase
      */
     public function testToHtmlRequired()
     {
-        /** @var \Magento\Customer\Model\Attribute $model */
-        $model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Model\Attribute::class
+        /** @var Attribute $model */
+        $model = Bootstrap::getObjectManager()->create(
+            Attribute::class
         );
         $model->loadByCode('customer', 'taxvat')->setIsRequired(true);
         $model->save();
         $attributeLabel = $model->getStoreLabel();
 
-        /** @var \Magento\Customer\Block\Widget\Taxvat $block */
-        $block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Block\Widget\Taxvat::class
+        /** @var Taxvat $block */
+        $block = Bootstrap::getObjectManager()->create(
+            Taxvat::class
         );
 
         $this->assertStringContainsString('title="' . $block->escapeHtmlAttr($attributeLabel) . '"', $block->toHtml());
@@ -57,8 +63,8 @@ class TaxvatTest extends \PHPUnit\Framework\TestCase
 
     protected function tearDown(): void
     {
-        /** @var \Magento\Eav\Model\Config $eavConfig */
-        $eavConfig = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Eav\Model\Config::class);
+        /** @var Config $eavConfig */
+        $eavConfig = Bootstrap::getObjectManager()->get(Config::class);
         $eavConfig->clear();
     }
 }

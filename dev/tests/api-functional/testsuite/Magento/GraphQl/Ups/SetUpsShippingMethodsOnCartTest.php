@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Ups;
 
+use Magento\Framework\Exception\AuthenticationException;
 use Magento\GraphQl\Quote\GetMaskedQuoteIdByReservedOrderId;
 use Magento\Integration\Api\CustomerTokenServiceInterface;
 use Magento\TestFramework\Helper\Bootstrap;
@@ -68,16 +69,6 @@ class SetUpsShippingMethodsOnCartTest extends GraphQlAbstract
     private $getMaskedQuoteIdByReservedOrderId;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
      * @magentoApiDataFixture Magento/GraphQl/Quote/_files/customer/create_empty_cart.php
@@ -118,6 +109,61 @@ class SetUpsShippingMethodsOnCartTest extends GraphQlAbstract
 
         self::assertArrayHasKey('method_title', $shippingAddress['selected_shipping_method']);
         self::assertEquals($methodTitle, $shippingAddress['selected_shipping_method']['method_title']);
+    }
+
+    /**
+     * Generates query for setting the specified shipping method on cart
+     *
+     * @param string $maskedQuoteId
+     * @param string $carrierCode
+     * @param string $methodCode
+     * @return string
+     */
+    private function getQuery(
+        string $maskedQuoteId,
+        string $carrierCode,
+        string $methodCode
+    ): string
+    {
+        return <<<QUERY
+mutation {
+  setShippingMethodsOnCart(input: {
+    cart_id: "$maskedQuoteId"
+    shipping_methods: [
+      {
+        carrier_code: "$carrierCode"
+        method_code: "$methodCode"
+      }
+    ]
+  }) {
+    cart {
+      shipping_addresses {
+        selected_shipping_method {
+          carrier_code
+          method_code
+          carrier_title
+          method_title
+        }
+      }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
+     * Sends a GraphQL request with using a bearer token
+     *
+     * @param string $query
+     * @return array
+     * @throws AuthenticationException
+     */
+    private function sendRequestWithToken(string $query): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken('customer@example.com', 'password');
+        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
+
+        return $this->graphQlMutation($query, [], '', $headerMap);
     }
 
     /**
@@ -192,56 +238,12 @@ class SetUpsShippingMethodsOnCartTest extends GraphQlAbstract
     }
 
     /**
-     * Generates query for setting the specified shipping method on cart
-     *
-     * @param string $maskedQuoteId
-     * @param string $carrierCode
-     * @param string $methodCode
-     * @return string
+     * @inheritdoc
      */
-    private function getQuery(
-        string $maskedQuoteId,
-        string $carrierCode,
-        string $methodCode
-    ): string {
-        return <<<QUERY
-mutation {
-  setShippingMethodsOnCart(input: {
-    cart_id: "$maskedQuoteId"
-    shipping_methods: [
-      {
-        carrier_code: "$carrierCode"
-        method_code: "$methodCode"
-      }
-    ]
-  }) {
-    cart {
-      shipping_addresses {
-        selected_shipping_method {
-          carrier_code
-          method_code
-          carrier_title
-          method_title
-        }
-      }
-    } 
-  }
-}        
-QUERY;
-    }
-
-    /**
-     * Sends a GraphQL request with using a bearer token
-     *
-     * @param string $query
-     * @return array
-     * @throws \Magento\Framework\Exception\AuthenticationException
-     */
-    private function sendRequestWithToken(string $query): array
+    protected function setUp(): void
     {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken('customer@example.com', 'password');
-        $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
-
-        return $this->graphQlMutation($query, [], '', $headerMap);
+        $objectManager = Bootstrap::getObjectManager();
+        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
     }
 }

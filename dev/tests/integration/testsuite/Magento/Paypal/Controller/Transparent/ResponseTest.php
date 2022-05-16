@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace Magento\Paypal\Controller\Transparent;
 
+use DateTime;
+use DateTimeZone;
 use Magento\Checkout\Model\Session;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Exception\NoSuchEntityException;
@@ -15,11 +17,12 @@ use Magento\Framework\Session\Generic as GenericSession;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Api\Data\CartInterface;
 use Magento\Quote\Api\PaymentMethodManagementInterface;
+use Magento\TestFramework\TestCase\AbstractController;
 
 /**
  * Tests PayPal transparent response controller.
  */
-class ResponseTest extends \Magento\TestFramework\TestCase\AbstractController
+class ResponseTest extends AbstractController
 {
     /**
      * Tests setting credit card expiration month and year to payment from PayPal response.
@@ -37,9 +40,10 @@ class ResponseTest extends \Magento\TestFramework\TestCase\AbstractController
     public function testPaymentCcExpirationDate(
         string $currentDateTime,
         string $paypalExpDate,
-        int $expectedCcMonth,
-        int $expectedCcYear
-    ) {
+        int    $expectedCcMonth,
+        int    $expectedCcYear
+    )
+    {
         $reservedOrderId = 'test01';
         $postData = [
             'EXPDATE' => $paypalExpDate,
@@ -74,6 +78,44 @@ class ResponseTest extends \Magento\TestFramework\TestCase\AbstractController
     }
 
     /**
+     * Gets quote by reserved order ID.
+     *
+     * @param string $reservedOrderId
+     * @return CartInterface
+     */
+    private function getQuote(string $reservedOrderId): CartInterface
+    {
+        $searchCriteria = $this->_objectManager->get(SearchCriteriaBuilder::class)
+            ->addFilter('reserved_order_id', $reservedOrderId)
+            ->create();
+
+        /** @var CartRepositoryInterface $quoteRepository */
+        $quoteRepository = $this->_objectManager->get(CartRepositoryInterface::class);
+        $items = $quoteRepository->getList($searchCriteria)
+            ->getItems();
+
+        return array_pop($items);
+    }
+
+    /**
+     * Sets current date and time.
+     *
+     * @param string $date
+     */
+    private function setCurrentDateTime(string $dateTime): void
+    {
+        $dateTime = new DateTime($dateTime, new DateTimeZone('UTC'));
+        $dateTimeFactory = $this->getMockBuilder(DateTimeFactory::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $dateTimeFactory->method('create')
+            ->willReturn($dateTime);
+
+        $this->_objectManager->addSharedInstance($dateTimeFactory, DateTimeFactory::class);
+    }
+
+    /**
      * @return array
      */
     public function paymentCcExpirationDateDataProvider(): array
@@ -92,43 +134,5 @@ class ResponseTest extends \Magento\TestFramework\TestCase\AbstractController
                 'expectedCcYear' => 2102
             ]
         ];
-    }
-
-    /**
-     * Sets current date and time.
-     *
-     * @param string $date
-     */
-    private function setCurrentDateTime(string $dateTime): void
-    {
-        $dateTime = new \DateTime($dateTime, new \DateTimeZone('UTC'));
-        $dateTimeFactory = $this->getMockBuilder(DateTimeFactory::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $dateTimeFactory->method('create')
-            ->willReturn($dateTime);
-
-        $this->_objectManager->addSharedInstance($dateTimeFactory, DateTimeFactory::class);
-    }
-
-    /**
-     * Gets quote by reserved order ID.
-     *
-     * @param string $reservedOrderId
-     * @return CartInterface
-     */
-    private function getQuote(string $reservedOrderId): CartInterface
-    {
-        $searchCriteria = $this->_objectManager->get(SearchCriteriaBuilder::class)
-            ->addFilter('reserved_order_id', $reservedOrderId)
-            ->create();
-
-        /** @var CartRepositoryInterface $quoteRepository */
-        $quoteRepository = $this->_objectManager->get(CartRepositoryInterface::class);
-        $items = $quoteRepository->getList($searchCriteria)
-            ->getItems();
-
-        return array_pop($items);
     }
 }

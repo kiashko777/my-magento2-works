@@ -23,16 +23,6 @@ class DeleteTest extends AbstractBackendController
     private $formKey;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->formKey = $this->_objectManager->get(FormKey::class);
-    }
-
-    /**
      * Delete customer
      *
      * @dataProvider deleteCustomerProvider
@@ -51,6 +41,20 @@ class DeleteTest extends AbstractBackendController
             $this->equalTo([(string)__(...$expected['message'])]),
             $expected['message_type']
         );
+    }
+
+    /**
+     * Delete customer using backend/customer/index/delete action.
+     *
+     * @param array $params
+     * @return void
+     */
+    private function dispatchCustomerDelete(array $params): void
+    {
+        $params['form_key'] = $this->formKey->getFormKey();
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
+        $this->getRequest()->setParams($params);
+        $this->dispatch('backend/customer/index/delete');
     }
 
     /**
@@ -89,16 +93,12 @@ class DeleteTest extends AbstractBackendController
     }
 
     /**
-     * Delete customer using backend/customer/index/delete action.
-     *
-     * @param array $params
-     * @return void
+     * @inheritdoc
      */
-    private function dispatchCustomerDelete(array $params): void
+    protected function setUp(): void
     {
-        $params['form_key'] = $this->formKey->getFormKey();
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
-        $this->getRequest()->setParams($params);
-        $this->dispatch('backend/customer/index/delete');
+        parent::setUp();
+
+        $this->formKey = $this->_objectManager->get(FormKey::class);
     }
 }

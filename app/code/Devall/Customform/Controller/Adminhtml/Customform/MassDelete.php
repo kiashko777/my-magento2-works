@@ -3,18 +3,20 @@ declare(strict_types=1);
 
 namespace Devall\Customform\Controller\Adminhtml\Customform;
 
+use Devall\Customform\Model\ResourceModel\Customform\CollectionFactory;
+use Exception;
+use Magento\Backend\App\Action;
+use Magento\Backend\App\Action\Context;
 use Magento\Backend\Model\View\Result\Redirect;
 use Magento\Framework\Controller\ResultFactory;
-use Magento\Backend\App\Action\Context;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Ui\Component\MassAction\Filter;
-use Devall\Customform\Model\ResourceModel\Customform\CollectionFactory;
 
 /**
  * Class MassDelete
  * @package Devall\Customform\Controller\Adminhtml\Customform
  */
-class MassDelete extends \Magento\Backend\App\Action
+class MassDelete extends Action
 {
     /**
      * @var Filter
@@ -41,7 +43,7 @@ class MassDelete extends \Magento\Backend\App\Action
      * Execute action
      *
      * @return Redirect
-     * @throws LocalizedException|\Exception
+     * @throws LocalizedException|Exception
      */
     public function execute()
     {

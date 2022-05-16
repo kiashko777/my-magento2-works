@@ -6,29 +6,23 @@
 
 namespace Magento\Security\Model\ResourceModel\PasswordResetRequestEvent;
 
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Stdlib\DateTime\DateTime;
+use Magento\Security\Model\PasswordResetRequestEvent;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class CollectionTest extends \PHPUnit\Framework\TestCase
+class CollectionTest extends TestCase
 {
     /**
-     * @var \Magento\Security\Model\ResourceModel\PasswordResetRequestEvent\Collection
+     * @var Collection
      */
     protected $collectionModel;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
-
-    /**
-     * Set up
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->collectionModel = $this->objectManager
-            ->create(\Magento\Security\Model\ResourceModel\PasswordResetRequestEvent\Collection::class);
-    }
 
     /**
      * filterByAccountReference() test
@@ -64,7 +58,7 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
     public function testFilterByRequestType()
     {
         $this->collectionModel
-            ->filterByRequestType(\Magento\Security\Model\PasswordResetRequestEvent::ADMIN_PASSWORD_RESET_REQUEST)
+            ->filterByRequestType(PasswordResetRequestEvent::ADMIN_PASSWORD_RESET_REQUEST)
             ->load();
 
         $this->assertGreaterThanOrEqual(3, $this->collectionModel->getSize());
@@ -124,5 +118,15 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
         $this->collectionModel->deleteRecordsOlderThen($startTime)
             ->load();
         $this->assertGreaterThanOrEqual(1, $this->collectionModel->getSize());
+    }
+
+    /**
+     * Set up
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->collectionModel = $this->objectManager
+            ->create(Collection::class);
     }
 }

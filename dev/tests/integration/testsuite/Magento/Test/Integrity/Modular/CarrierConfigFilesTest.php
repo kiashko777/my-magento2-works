@@ -5,26 +5,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Modular;
 
-use Magento\Framework\Module\Dir;
+use Magento\Config\Model\Config\Structure\Reader;
+use Magento\Framework\Config\Dom\UrnResolver;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class CarrierConfigFilesTest extends \PHPUnit\Framework\TestCase
+class CarrierConfigFilesTest extends TestCase
 {
     /**
-     * @var \Magento\Config\Model\Config\Structure\Reader
+     * @var Reader
      */
     protected $_reader;
-
-    protected function setUp(): void
-    {
-        $urnResolver = new \Magento\Framework\Config\Dom\UrnResolver();
-        $schemaFile = $urnResolver->getRealPath('urn:magento:module:Magento_Config:etc/system.xsd');
-        $this->_reader = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Config\Model\Config\Structure\Reader::class,
-            ['perFileSchema' => $schemaFile, 'isValidated' => true]
-        );
-    }
 
     /**
      * Tests that all source_models used in shipping are valid
@@ -38,9 +32,19 @@ class CarrierConfigFilesTest extends \PHPUnit\Framework\TestCase
             foreach ($carrier['children'] as $field) {
                 if (isset($field['source_model'])) {
                     $model = $field['source_model'];
-                    \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create($model);
+                    Bootstrap::getObjectManager()->create($model);
                 }
             }
         }
+    }
+
+    protected function setUp(): void
+    {
+        $urnResolver = new UrnResolver();
+        $schemaFile = $urnResolver->getRealPath('urn:magento:module:Magento_Config:etc/system.xsd');
+        $this->_reader = Bootstrap::getObjectManager()->create(
+            Reader::class,
+            ['perFileSchema' => $schemaFile, 'isValidated' => true]
+        );
     }
 }

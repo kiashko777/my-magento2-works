@@ -4,9 +4,15 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Paypal\Model\Config;
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Address;
+use Magento\Sales\Model\Order\Payment;
+use Magento\TestFramework\Helper\Bootstrap;
+
 $addressData = include __DIR__ . '/address_data.php';
-$billingAddress = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Sales\Model\Order\Address::class,
+$billingAddress = Bootstrap::getObjectManager()->create(
+    Address::class,
     ['data' => $addressData]
 );
 $billingAddress->setAddressType('billing');
@@ -14,12 +20,12 @@ $billingAddress->setAddressType('billing');
 $shippingAddress = clone $billingAddress;
 $shippingAddress->setId(null)->setAddressType('shipping');
 
-$payment = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Sales\Model\Order\Payment::class
+$payment = Bootstrap::getObjectManager()->create(
+    Payment::class
 );
-$payment->setMethod(\Magento\Paypal\Model\Config::METHOD_PAYFLOWPRO);
+$payment->setMethod(Config::METHOD_PAYFLOWPRO);
 
-$order = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Sales\Model\Order::class);
+$order = Bootstrap::getObjectManager()->create(Order::class);
 $order->setCustomerEmail('co@co.co')
     ->setIncrementId('100000001')
     ->setSubtotal(100)

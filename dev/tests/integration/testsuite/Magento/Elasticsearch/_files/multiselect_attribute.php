@@ -3,12 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Catalog\Setup\CategorySetup;
+use Magento\Eav\Model\Entity\Attribute\Backend\ArrayBackend;
 use Magento\TestFramework\Helper\Bootstrap;
 
 $objectManager = Bootstrap::getObjectManager();
 
-/** @var \Magento\Catalog\Setup\CategorySetup $installer */
-$installer = Bootstrap::getObjectManager()->create(\Magento\Catalog\Setup\CategorySetup::class);
+/** @var CategorySetup $installer */
+$installer = Bootstrap::getObjectManager()->create(CategorySetup::class);
 
 /** @var \Magento\Catalog\Model\ResourceModel\Eav\Attribute $attribute */
 $multiselectAttribute = $objectManager->create(
@@ -35,7 +38,7 @@ $multiselectAttribute->setData(
         'used_for_sort_by' => 0,
         'frontend_label' => ['Multiselect Attribute'],
         'backend_type' => 'varchar',
-        'backend_model' => \Magento\Eav\Model\Entity\Attribute\Backend\ArrayBackend::class,
+        'backend_model' => ArrayBackend::class,
         'option' => [
             'value' => [
                 'dog' => ['Dog'],

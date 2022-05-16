@@ -23,16 +23,6 @@ class ValidateTest extends AbstractBackendController
     private $jsonSerializer;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->jsonSerializer = $this->_objectManager->get(SerializerInterface::class);
-    }
-
-    /**
      * Validate customer with exception
      *
      * @magentoDbIsolation enabled
@@ -56,6 +46,19 @@ class ValidateTest extends AbstractBackendController
         $this->dispatchCustomerValidate($postData);
         $errors = $this->jsonSerializer->unserialize($this->getResponse()->getBody());
         $this->assertEquals($expectedErrors, $errors);
+    }
+
+    /**
+     * Validate customer using backend/customer/index/validate action.
+     *
+     * @param array $postData
+     * @return void
+     */
+    private function dispatchCustomerValidate(array $postData): void
+    {
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
+        $this->getRequest()->setPostValue($postData);
+        $this->dispatch('backend/customer/index/validate');
     }
 
     /**
@@ -109,15 +112,12 @@ class ValidateTest extends AbstractBackendController
     }
 
     /**
-     * Validate customer using backend/customer/index/validate action.
-     *
-     * @param array $postData
-     * @return void
+     * @inheritdoc
      */
-    private function dispatchCustomerValidate(array $postData): void
+    protected function setUp(): void
     {
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
-        $this->getRequest()->setPostValue($postData);
-        $this->dispatch('backend/customer/index/validate');
+        parent::setUp();
+
+        $this->jsonSerializer = $this->_objectManager->get(SerializerInterface::class);
     }
 }

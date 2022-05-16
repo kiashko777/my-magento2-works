@@ -14,6 +14,7 @@ use Magento\Catalog\Helper\Product\Flat\Indexer as IndexerHelper;
 use Magento\Catalog\Model\CategoryFactory;
 use Magento\Catalog\Model\Indexer\Product\Flat\Processor;
 use Magento\Catalog\Model\Indexer\Product\Flat\State;
+use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory as ProductCollectionFactory;
 use Magento\Catalog\Model\ResourceModel\Product\Flat as FlatResource;
 use Magento\CatalogSearch\Model\Indexer\Fulltext;
@@ -71,23 +72,6 @@ class FullTest extends TestCase
     }
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->state = $this->objectManager->get(State::class);
-        $this->processor = $this->objectManager->get(Processor::class);
-        $this->flatResource = $this->objectManager->get(FlatResource::class);
-        $this->optionManagement = $this->objectManager->get(AttributeOptionManagementInterface::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->action = $this->objectManager->get(Full::class);
-        $this->productIndexerHelper = $this->objectManager->get(IndexerHelper::class);
-    }
-
-    /**
      * @magentoDbIsolation disabled
      * @magentoAppIsolation enabled
      * @magentoConfigFixture current_store catalog/frontend/flat_catalog_product 1
@@ -110,7 +94,7 @@ class FullTest extends TestCase
 
         $this->assertCount(1, $productCollection);
 
-        /** @var $product \Magento\Catalog\Model\Product */
+        /** @var $product Product */
         foreach ($productCollection as $product) {
             $this->assertEquals('Simple Products', $product->getName());
             $this->assertEquals('Short description', $product->getShortDescription());
@@ -187,6 +171,37 @@ class FullTest extends TestCase
     }
 
     /**
+     * Update product
+     *
+     * @param string $sku
+     * @param string $attributeCode
+     * @param string $value
+     * @return void
+     */
+    private function updateProduct(string $sku, string $attributeCode, string $value): void
+    {
+        $product = $this->productRepository->get($sku);
+        $product->setData($attributeCode, $value);
+        $this->productRepository->save($product);
+    }
+
+    /**
+     * Assert if column exist and column value in flat table
+     *
+     * @param string $attributeCode
+     * @param string $value
+     * @return void
+     */
+    private function assertFlatColumnValue(string $attributeCode, string $value): void
+    {
+        $connect = $this->flatResource->getConnection();
+        $tableName = $this->flatResource->getFlatTableName();
+        $this->assertTrue($connect->tableColumnExists($tableName, $attributeCode));
+        $select = $connect->select()->from($tableName, $attributeCode);
+        $this->assertEquals($value, $connect->fetchOne($select));
+    }
+
+    /**
      * @magentoDbIsolation disabled
      *
      * @magentoConfigFixture default/catalog/product/flat/max_index_count 1
@@ -209,33 +224,19 @@ class FullTest extends TestCase
     }
 
     /**
-     * Assert if column exist and column value in flat table
-     *
-     * @param string $attributeCode
-     * @param string $value
-     * @return void
+     * @inheritdoc
      */
-    private function assertFlatColumnValue(string $attributeCode, string $value): void
+    protected function setUp(): void
     {
-        $connect = $this->flatResource->getConnection();
-        $tableName = $this->flatResource->getFlatTableName();
-        $this->assertTrue($connect->tableColumnExists($tableName, $attributeCode));
-        $select = $connect->select()->from($tableName, $attributeCode);
-        $this->assertEquals($value, $connect->fetchOne($select));
-    }
+        parent::setUp();
 
-    /**
-     * Update product
-     *
-     * @param string $sku
-     * @param string $attributeCode
-     * @param string $value
-     * @return void
-     */
-    private function updateProduct(string $sku, string $attributeCode, string $value): void
-    {
-        $product = $this->productRepository->get($sku);
-        $product->setData($attributeCode, $value);
-        $this->productRepository->save($product);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->state = $this->objectManager->get(State::class);
+        $this->processor = $this->objectManager->get(Processor::class);
+        $this->flatResource = $this->objectManager->get(FlatResource::class);
+        $this->optionManagement = $this->objectManager->get(AttributeOptionManagementInterface::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->action = $this->objectManager->get(Full::class);
+        $this->productIndexerHelper = $this->objectManager->get(IndexerHelper::class);
     }
 }

@@ -7,19 +7,18 @@
 /**
  * Test class for \Magento\TestFramework\Event\Param\Transaction.
  */
+
 namespace Magento\Test\Event\Param;
 
-class TransactionTest extends \PHPUnit\Framework\TestCase
+use Magento\TestFramework\Event\Param\Transaction;
+use PHPUnit\Framework\TestCase;
+
+class TransactionTest extends TestCase
 {
     /**
-     * @var \Magento\TestFramework\Event\Param\Transaction
+     * @var Transaction
      */
     protected $_object;
-
-    protected function setUp(): void
-    {
-        $this->_object = new \Magento\TestFramework\Event\Param\Transaction();
-    }
 
     public function testConstructor()
     {
@@ -42,5 +41,10 @@ class TransactionTest extends \PHPUnit\Framework\TestCase
         $this->assertFalse($this->_object->isTransactionRollbackRequested());
         $this->_object->requestTransactionRollback();
         $this->assertTrue($this->_object->isTransactionRollbackRequested());
+    }
+
+    protected function setUp(): void
+    {
+        $this->_object = new Transaction();
     }
 }

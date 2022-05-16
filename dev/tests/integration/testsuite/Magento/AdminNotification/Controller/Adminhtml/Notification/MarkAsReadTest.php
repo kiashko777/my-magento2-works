@@ -3,14 +3,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\AdminNotification\Controller\Adminhtml\Notification;
+
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * Testing markAsRead controller.
  *
  * @magentoAppArea Adminhtml
  */
-class MarkAsReadTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class MarkAsReadTest extends AbstractBackendController
 {
     /**
      * @inheritdoc

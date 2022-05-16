@@ -6,6 +6,11 @@
 declare(strict_types=1);
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Address;
+use Magento\Sales\Model\Order\Item;
+use Magento\Sales\Model\Order\Payment;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
@@ -19,19 +24,19 @@ $product = $productRepository->get('simple');
 
 $addressData = include __DIR__ . '/address_data.php';
 
-/** @var \Magento\Sales\Model\Order\Address $billingAddress */
-$billingAddress = $objectManager->create(\Magento\Sales\Model\Order\Address::class, ['data' => $addressData]);
+/** @var Address $billingAddress */
+$billingAddress = $objectManager->create(Address::class, ['data' => $addressData]);
 $billingAddress->setAddressType('billing');
 
-/** @var \Magento\Sales\Model\Order\Address $shippingAddress */
+/** @var Address $shippingAddress */
 $shippingAddress = clone $billingAddress;
 $shippingAddress
     ->setId(null)
     ->setAddressType('shipping')
     ->setCity('San Francisco');
 
-/** @var \Magento\Sales\Model\Order\Payment $payment */
-$payment = $objectManager->create(\Magento\Sales\Model\Order\Payment::class);
+/** @var Payment $payment */
+$payment = $objectManager->create(Payment::class);
 $payment->setMethod('checkmo');
 $payment->setAdditionalInformation('last_trans_id', '11122');
 $payment->setAdditionalInformation('metadata', [
@@ -39,19 +44,19 @@ $payment->setAdditionalInformation('metadata', [
     'fraudulent' => false,
 ]);
 
-/** @var \Magento\Sales\Model\Order\Item $orderItem */
-$orderItem = $objectManager->create(\Magento\Sales\Model\Order\Item::class);
+/** @var Item $orderItem */
+$orderItem = $objectManager->create(Item::class);
 $orderItem->setProductId($product->getId())->setQtyOrdered(2);
 $orderItem->setBasePrice($product->getPrice());
 $orderItem->setPrice($product->getPrice());
 $orderItem->setRowTotal($product->getPrice());
 $orderItem->setProductType('simple');
 
-/** @var \Magento\Sales\Model\Order $order */
-$order = $objectManager->create(\Magento\Sales\Model\Order::class);
+/** @var Order $order */
+$order = $objectManager->create(Order::class);
 $order->setIncrementId('100000001')
-    ->setState(\Magento\Sales\Model\Order::STATE_PROCESSING)
-    ->setStatus($order->getConfig()->getStateDefaultStatus(\Magento\Sales\Model\Order::STATE_PROCESSING))
+    ->setState(Order::STATE_PROCESSING)
+    ->setStatus($order->getConfig()->getStateDefaultStatus(Order::STATE_PROCESSING))
     ->setSubtotal(100)
     ->setGrandTotal(100)
     ->setBaseSubtotal(100)
@@ -60,7 +65,7 @@ $order->setIncrementId('100000001')
     ->setCustomerEmail('customer@null.com')
     ->setBillingAddress($billingAddress)
     ->setShippingAddress($shippingAddress)
-    ->setStoreId($objectManager->get(\Magento\Store\Model\StoreManagerInterface::class)->getStore()->getId())
+    ->setStoreId($objectManager->get(StoreManagerInterface::class)->getStore()->getId())
     ->addItem($orderItem)
     ->setPayment($payment);
 

@@ -5,11 +5,16 @@
  */
 declare(strict_types=1);
 
-/** @var $objectManager \Magento\TestFramework\ObjectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+/** @var $objectManager ObjectManager */
 
-/** @var $database \Magento\MediaStorage\Helper\File\Storage\Database */
-$database = $objectManager->get(\Magento\MediaStorage\Helper\File\Storage\Database::class);
+use Magento\MediaStorage\Helper\File\Storage\Database;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+
+$objectManager = Bootstrap::getObjectManager();
+
+/** @var $database Database */
+$database = $objectManager->get(Database::class);
 $database->getStorageDatabaseModel()->init();
 
 /** @var Magento\Framework\App\Config\ConfigResource\ConfigInterface $config */

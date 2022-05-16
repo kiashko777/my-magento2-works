@@ -3,7 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\I18n\Parser;
+
+use DomainException;
 
 /**
  * Parser
@@ -43,8 +46,8 @@ class Parser extends AbstractParser
                 'quote' => $phraseData['quote'],
             ]);
             $this->_phrases[$phrase->getCompiledPhrase()] = $phrase;
-        } catch (\DomainException $e) {
-            throw new \DomainException(
+        } catch (DomainException $e) {
+            throw new DomainException(
                 "{$e->getMessage()} in {$phraseData['file']}:{$phraseData['line']}",
                 $e->getCode(),
                 $e

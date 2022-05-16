@@ -3,22 +3,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\App\Language;
 
 use Magento\Framework\Component\ComponentRegistrar;
+use Magento\Framework\File\Csv;
 use Magento\Framework\Filesystem\Driver\File;
+use PHPUnit\Framework\TestCase;
 
-class TranslationFiles extends \PHPUnit\Framework\TestCase
+class TranslationFiles extends TestCase
 {
     /**
-     * @var \Magento\Framework\File\Csv
+     * @var Csv
      */
     protected $csvParser;
-
-    protected function setUp(): void
-    {
-        $this->csvParser = new \Magento\Framework\File\Csv(new File());
-    }
 
     /**
      * @return array
@@ -37,6 +35,11 @@ class TranslationFiles extends \PHPUnit\Framework\TestCase
         }
         $places['lib_web'] = ['placePath' => "{$pathToSource}/lib/web"];
         return $places;
+    }
+
+    protected function setUp(): void
+    {
+        $this->csvParser = new Csv(new File());
     }
 
     /**
@@ -68,7 +71,7 @@ class TranslationFiles extends \PHPUnit\Framework\TestCase
             $failures['missing'] = array_keys($missing);
         }
         if (!empty($extra)) {
-            $failures['extra'] =  array_keys($extra);
+            $failures['extra'] = array_keys($extra);
         }
         return $failures;
     }

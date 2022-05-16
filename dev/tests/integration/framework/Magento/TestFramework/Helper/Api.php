@@ -5,7 +5,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Helper;
+
+use Magento\Framework\Registry;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
+use SimpleXMLObject;
+use SoapFault;
+use stdClass;
 
 class Api
 {
@@ -17,16 +25,45 @@ class Api
     protected static $_previousHandler = null;
 
     /**
+     * Call API method via API handler that raises SoapFault exception
+     *
+     * @param TestCase $testCase Active test case
+     * @param string $path
+     * @param array $params Order of items matters as they are passed to call_user_func_array
+     * @param string $expectedMessage exception message
+     * @return SoapFault
+     */
+    public static function callWithException(
+        TestCase $testCase,
+                                    $path,
+                                    $params = [],
+                                    $expectedMessage = ''
+    )
+    {
+        try {
+            self::call($testCase, $path, $params);
+            self::restoreErrorHandler();
+            $testCase->fail('Expected error exception was not raised.');
+        } catch (SoapFault $exception) {
+            self::restoreErrorHandler();
+            if ($expectedMessage) {
+                $testCase->assertEquals($expectedMessage, $exception->getMessage());
+            }
+            return $exception;
+        }
+    }
+
+    /**
      * Call API method via API handler.
      *
-     * @param \PHPUnit\Framework\TestCase $testCase Active test case
+     * @param TestCase $testCase Active test case
      * @param string $path
      * @param array $params Order of items matters as they are passed to call_user_func_array
      * @return mixed
      */
-    public static function call(\PHPUnit\Framework\TestCase $testCase, $path, $params = [])
+    public static function call(TestCase $testCase, $path, $params = [])
     {
-        $soapAdapterMock = $testCase->getMock(\stdClass::class, ['fault']);
+        $soapAdapterMock = $testCase->getMock(stdClass::class, ['fault']);
         $soapAdapterMock->expects(
             $testCase->any()
         )->method(
@@ -35,59 +72,31 @@ class Api
             $testCase->returnCallback([__CLASS__, 'soapAdapterFaultCallback'])
         );
 
-        $serverMock = $testCase->getMock(\stdClass::class, ['getAdapter']);
+        $serverMock = $testCase->getMock(stdClass::class, ['getAdapter']);
         $serverMock->expects($testCase->any())->method('getAdapter')->will($testCase->returnValue($soapAdapterMock));
 
-        $apiSessionMock = $testCase->createPartialMock(\stdClass::class, ['isAllowed', 'isLoggedIn']);
+        $apiSessionMock = $testCase->createPartialMock(stdClass::class, ['isAllowed', 'isLoggedIn']);
         $apiSessionMock->expects($testCase->any())->method('isAllowed')->will($testCase->returnValue(true));
         $apiSessionMock->expects($testCase->any())->method('isLoggedIn')->will($testCase->returnValue(true));
 
-        $handlerMock = $testCase->createPartialMock(\stdClass::class, ['_getServer', '_getSession']);
+        $handlerMock = $testCase->createPartialMock(stdClass::class, ['_getServer', '_getSession']);
         self::$_previousHandler = set_error_handler([$handlerMock, 'handlePhpError']);
 
         $handlerMock->expects($testCase->any())->method('_getServer')->will($testCase->returnValue($serverMock));
         $handlerMock->expects($testCase->any())->method('_getSession')->will($testCase->returnValue($apiSessionMock));
 
         array_unshift($params, 'sessionId');
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        /** @var $objectManager ObjectManager */
+        $objectManager = Bootstrap::getObjectManager();
 
-        $objectManager->get(\Magento\Framework\Registry::class)->unregister('isSecureArea');
-        $objectManager->get(\Magento\Framework\Registry::class)->register('isSecureArea', true);
+        $objectManager->get(Registry::class)->unregister('isSecureArea');
+        $objectManager->get(Registry::class)->register('isSecureArea', true);
         $result = call_user_func_array([$handlerMock, $path], $params);
-        $objectManager->get(\Magento\Framework\Registry::class)->unregister('isSecureArea');
-        $objectManager->get(\Magento\Framework\Registry::class)->register('isSecureArea', false);
+        $objectManager->get(Registry::class)->unregister('isSecureArea');
+        $objectManager->get(Registry::class)->register('isSecureArea', false);
 
         self::restoreErrorHandler();
         return $result;
-    }
-
-    /**
-     * Call API method via API handler that raises SoapFault exception
-     *
-     * @param \PHPUnit\Framework\TestCase $testCase Active test case
-     * @param string $path
-     * @param array $params Order of items matters as they are passed to call_user_func_array
-     * @param string $expectedMessage exception message
-     * @return \SoapFault
-     */
-    public static function callWithException(
-        \PHPUnit\Framework\TestCase $testCase,
-        $path,
-        $params = [],
-        $expectedMessage = ''
-    ) {
-        try {
-            self::call($testCase, $path, $params);
-            self::restoreErrorHandler();
-            $testCase->fail('Expected error exception was not raised.');
-        } catch (\SoapFault $exception) {
-            self::restoreErrorHandler();
-            if ($expectedMessage) {
-                $testCase->assertEquals($expectedMessage, $exception->getMessage());
-            }
-            return $exception;
-        }
     }
 
     /**
@@ -103,17 +112,17 @@ class Api
      *
      * @param string $exceptionCode
      * @param string $exceptionMessage
-     * @throws \SoapFault
+     * @throws SoapFault
      */
     public static function soapAdapterFaultCallback($exceptionCode, $exceptionMessage)
     {
-        throw new \SoapFault($exceptionCode, $exceptionMessage);
+        throw new SoapFault($exceptionCode, $exceptionMessage);
     }
 
     /**
      * Convert Simple XML to array
      *
-     * @param \SimpleXMLObject $xml
+     * @param SimpleXMLObject $xml
      * @param String $keyTrimmer
      * @return object
      *
@@ -170,7 +179,7 @@ class Api
     /**
      * Check specific fields value in some entity data.
      *
-     * @param \PHPUnit\Framework\TestCase $testCase
+     * @param TestCase $testCase
      * @param array $expectedData
      * @param array $actualData
      * @param array $fieldsToCompare To be able to compare fields from loaded model with fields from API response
@@ -188,11 +197,12 @@ class Api
      *     );
      */
     public static function checkEntityFields(
-        \PHPUnit\Framework\TestCase $testCase,
-        array $expectedData,
-        array $actualData,
-        array $fieldsToCompare = []
-    ) {
+        TestCase $testCase,
+        array                       $expectedData,
+        array                       $actualData,
+        array                       $fieldsToCompare = []
+    )
+    {
         $fieldsToCompare = !empty($fieldsToCompare) ? $fieldsToCompare : array_keys($expectedData);
         foreach ($fieldsToCompare as $entityField => $field) {
             $testCase->assertEquals(

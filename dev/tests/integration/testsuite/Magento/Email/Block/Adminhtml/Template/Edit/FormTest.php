@@ -3,66 +3,37 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Email\Block\Adminhtml\Template\Edit;
 
-use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Email\Model\Template;
 use Magento\Framework\App\TemplateTypesInterface;
+use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 
 /**
  * Test class for \Magento\Email\Block\Adminhtml\Template\Edit\Form
  * @magentoAppArea Adminhtml
  * @magentoAppIsolation enabled
  */
-class FormTest extends \PHPUnit\Framework\TestCase
+class FormTest extends TestCase
 {
     /** @var string[] */
     protected $expectedFields;
 
-    /** @var \Magento\Email\Model\Template */
+    /** @var Template */
     protected $template;
 
-    /** @var \Magento\Framework\TestFramework\Unit\Helper\ObjectManager */
+    /** @var ObjectManager */
     protected $objectManager;
 
-    /** @var \Magento\Email\Block\Adminhtml\Template\Edit\Form */
+    /** @var Form */
     protected $block;
 
-    /** @var \ReflectionMethod */
+    /** @var ReflectionMethod */
     protected $prepareFormMethod;
-
-    protected function setUp(): void
-    {
-        $this->expectedFields = [
-            'base_fieldset',
-            'template_code',
-            'template_subject',
-            'orig_template_variables',
-            'variables',
-            'template_variables',
-            'insert_variable',
-            'template_text',
-            'template_styles'
-        ];
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->template = $this->objectManager->get(\Magento\Email\Model\Template::class)
-            ->setId(1)
-            ->setTemplateType(TemplateTypesInterface::TYPE_HTML);
-
-        $this->block = $this->objectManager->create(
-            \Magento\Email\Block\Adminhtml\Template\Edit\Form::class,
-            [
-                'data' => [
-                    'email_template' => $this->template
-                ]
-            ]
-        );
-        $this->prepareFormMethod = new \ReflectionMethod(
-            \Magento\Email\Block\Adminhtml\Template\Edit\Form::class,
-            '_prepareForm'
-        );
-        $this->prepareFormMethod->setAccessible(true);
-    }
 
     /**
      * @covers \Magento\Email\Block\Adminhtml\Template\Edit\Form::_prepareForm
@@ -81,5 +52,39 @@ class FormTest extends \PHPUnit\Framework\TestCase
             $this->assertNotNull($form->getElement($key));
         }
         $this->assertGreaterThan(0, strpos($form->getElement('insert_variable')->getData('text'), 'Insert Variable'));
+    }
+
+    protected function setUp(): void
+    {
+        $this->expectedFields = [
+            'base_fieldset',
+            'template_code',
+            'template_subject',
+            'orig_template_variables',
+            'variables',
+            'template_variables',
+            'insert_variable',
+            'template_text',
+            'template_styles'
+        ];
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->template = $this->objectManager->get(Template::class)
+            ->setId(1)
+            ->setTemplateType(TemplateTypesInterface::TYPE_HTML);
+
+        $this->block = $this->objectManager->create(
+            Form::class,
+            [
+                'data' => [
+                    'email_template' => $this->template
+                ]
+            ]
+        );
+        $this->prepareFormMethod = new ReflectionMethod(
+            Form::class,
+            '_prepareForm'
+        );
+        $this->prepareFormMethod->setAccessible(true);
     }
 }

@@ -7,10 +7,10 @@ declare(strict_types=1);
 
 namespace Magento\TestFramework\Catalog\Model\Product\Attribute\DataProvider;
 
-use Magento\Eav\Model\Entity\Attribute\ScopedAttributeInterface;
-use Magento\TestFramework\Eav\Model\Attribute\DataProvider\AbstractBaseAttributeData;
-use Magento\Store\Model\Store;
 use Magento\Catalog\Model\Product\Attribute\Backend\Price as BackendPrice;
+use Magento\Eav\Model\Entity\Attribute\ScopedAttributeInterface;
+use Magento\Store\Model\Store;
+use Magento\TestFramework\Eav\Model\Attribute\DataProvider\AbstractBaseAttributeData;
 
 /**
  * Products attribute data for attribute with input type weee.
@@ -38,6 +38,14 @@ class Decimal extends AbstractBaseAttributeData
         unset($result["{$this->getFrontendInput()}_without_default_value"]);
 
         return $result;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function getFrontendInput(): string
+    {
+        return 'price';
     }
 
     /**
@@ -76,9 +84,22 @@ class Decimal extends AbstractBaseAttributeData
     /**
      * @inheritdoc
      */
-    protected function getFrontendInput(): string
+    protected function getUpdateExpectedData(): array
     {
-        return 'price';
+        $updatePostData = $this->getUpdatePostData();
+        return array_merge(
+            $updatePostData,
+            [
+                'frontend_label' => 'Decimal Attribute Update',
+                'attribute_code' => 'decimal_attribute',
+                'is_global' => ScopedAttributeInterface::SCOPE_GLOBAL,
+                'default_value' => null,
+                'frontend_class' => null,
+                'is_user_defined' => '1',
+                'backend_type' => 'decimal',
+                'backend_model' => BackendPrice::class,
+            ]
+        );
     }
 
     /**
@@ -109,26 +130,5 @@ class Decimal extends AbstractBaseAttributeData
             'used_in_product_listing' => '0',
             'used_for_sort_by' => '1',
         ];
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function getUpdateExpectedData(): array
-    {
-        $updatePostData = $this->getUpdatePostData();
-        return array_merge(
-            $updatePostData,
-            [
-                'frontend_label' => 'Decimal Attribute Update',
-                'attribute_code' => 'decimal_attribute',
-                'is_global' => ScopedAttributeInterface::SCOPE_GLOBAL,
-                'default_value' => null,
-                'frontend_class' => null,
-                'is_user_defined' => '1',
-                'backend_type' => 'decimal',
-                'backend_model' => BackendPrice::class,
-            ]
-        );
     }
 }

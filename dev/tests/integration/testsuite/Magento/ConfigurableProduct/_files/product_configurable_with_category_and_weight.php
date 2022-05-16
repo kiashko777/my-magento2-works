@@ -4,6 +4,10 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Catalog\Api\CategoryLinkManagementInterface;
+use Magento\Catalog\Api\Data\ProductAttributeMediaGalleryEntryExtensionFactory;
+use Magento\Catalog\Api\Data\ProductAttributeMediaGalleryEntryInterfaceFactory;
+use Magento\Catalog\Api\ProductAttributeMediaGalleryManagementInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
@@ -14,11 +18,15 @@ use Magento\ConfigurableProduct\Helper\Product\Options\Factory;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 use Magento\Eav\Api\Data\AttributeOptionInterface;
 use Magento\Eav\Model\Config;
+use Magento\Framework\Api\Data\ImageContentInterfaceFactory;
+use Magento\Framework\Api\Data\VideoContentInterfaceFactory;
+use Magento\Framework\Registry;
+use Magento\Quote\Model\ResourceModel\Quote\Item;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Catalog\Api\Data\ProductAttributeMediaGalleryEntryExtensionFactory;
+use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
-\Magento\TestFramework\Helper\Bootstrap::getInstance()->reinitialize();
+Bootstrap::getInstance()->reinitialize();
 
 Resolver::getInstance()->requireDataFixture('Magento/ConfigurableProduct/_files/configurable_attribute_first.php');
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/category.php');
@@ -74,24 +82,24 @@ foreach ($options as $option) {
         $product = $productRepository->save($product);
 
         /**
-         * @var \Magento\TestFramework\ObjectManager $objectManager
+         * @var ObjectManager $objectManager
          */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
 
         /**
-         * @var \Magento\Catalog\Api\Data\ProductAttributeMediaGalleryEntryInterfaceFactory $mediaGalleryEntryFactory
+         * @var ProductAttributeMediaGalleryEntryInterfaceFactory $mediaGalleryEntryFactory
          */
 
         $mediaGalleryEntryFactory = $objectManager->get(
-            \Magento\Catalog\Api\Data\ProductAttributeMediaGalleryEntryInterfaceFactory::class
+            ProductAttributeMediaGalleryEntryInterfaceFactory::class
         );
 
         /**
-         * @var \Magento\Framework\Api\Data\ImageContentInterfaceFactory $imageContentFactory
+         * @var ImageContentInterfaceFactory $imageContentFactory
          */
-        $imageContentFactory = $objectManager->get(\Magento\Framework\Api\Data\ImageContentInterfaceFactory::class);
+        $imageContentFactory = $objectManager->get(ImageContentInterfaceFactory::class);
         $imageContent = $imageContentFactory->create();
-        $testImagePath = __DIR__ .'/magento_image.jpg';
+        $testImagePath = __DIR__ . '/magento_image.jpg';
         $imageContent->setBase64EncodedData(base64_encode(file_get_contents($testImagePath)));
         $imageContent->setType("image/jpeg");
         $imageContent->setName("1.jpg");
@@ -108,15 +116,15 @@ foreach ($options as $option) {
          * @var ProductAttributeMediaGalleryEntryExtensionFactory $mediaGalleryEntryExtensionFactory
          */
         $mediaGalleryEntryExtensionFactory = $objectManager->get(
-            \Magento\Catalog\Api\Data\ProductAttributeMediaGalleryEntryExtensionFactory::class
+            ProductAttributeMediaGalleryEntryExtensionFactory::class
         );
         $mediaGalleryEntryExtension = $mediaGalleryEntryExtensionFactory->create();
 
         /**
-         * @var \Magento\Framework\Api\Data\VideoContentInterfaceFactory $videoContentFactory
+         * @var VideoContentInterfaceFactory $videoContentFactory
          */
         $videoContentFactory = $objectManager->get(
-            \Magento\Framework\Api\Data\VideoContentInterfaceFactory::class
+            VideoContentInterfaceFactory::class
         );
         $videoContent = $videoContentFactory->create();
         $videoContent->setMediaType('external-video');
@@ -130,10 +138,10 @@ foreach ($options as $option) {
         $video->setExtensionAttributes($mediaGalleryEntryExtension);
 
         /**
-         * @var \Magento\Catalog\Api\ProductAttributeMediaGalleryManagementInterface $mediaGalleryManagement
+         * @var ProductAttributeMediaGalleryManagementInterface $mediaGalleryManagement
          */
         $mediaGalleryManagement = $objectManager->get(
-            \Magento\Catalog\Api\ProductAttributeMediaGalleryManagementInterface::class
+            ProductAttributeMediaGalleryManagementInterface::class
         );
         $mediaGalleryManagement->create('simple_' . $productId, $video);
 
@@ -185,21 +193,21 @@ $extensionConfigurableAttributes->setConfigurableProductLinks($associatedProduct
 $product->setExtensionAttributes($extensionConfigurableAttributes);
 
 // Remove any previously created product with the same id.
-/** @var \Magento\Framework\Registry $registry */
-$registry = Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
+/** @var Registry $registry */
+$registry = Bootstrap::getObjectManager()->get(Registry::class);
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 try {
     $productToDelete = $productRepository->getById(1);
     $productRepository->delete($productToDelete);
 
-    /** @var \Magento\Quote\Model\ResourceModel\Quote\Item $itemResource */
-    $itemResource = Bootstrap::getObjectManager()->get(\Magento\Quote\Model\ResourceModel\Quote\Item::class);
+    /** @var Item $itemResource */
+    $itemResource = Bootstrap::getObjectManager()->get(Item::class);
     $itemResource->getConnection()->delete(
         $itemResource->getMainTable(),
         'product_id = ' . $productToDelete->getId()
     );
-} catch (\Exception $e) {
+} catch (Exception $e) {
     // Nothing to remove
 }
 $registry->unregister('isSecureArea');
@@ -218,9 +226,9 @@ $product->setTypeId(Configurable::TYPE_CODE)
 
 $productRepository->save($product);
 
-/** @var \Magento\Catalog\Api\CategoryLinkManagementInterface $categoryLinkManagement */
-$categoryLinkManagement = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->create(\Magento\Catalog\Api\CategoryLinkManagementInterface::class);
+/** @var CategoryLinkManagementInterface $categoryLinkManagement */
+$categoryLinkManagement = Bootstrap::getObjectManager()
+    ->create(CategoryLinkManagementInterface::class);
 
 $categoryLinkManagement->assignProductToCategories(
     $product->getSku(),

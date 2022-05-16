@@ -46,37 +46,6 @@ class CreateAccountWithAddressTest extends TestCase
     private $registry;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->accountManagement = $this->objectManager->get(AccountManagementInterface::class);
-        $this->customerFactory = $this->objectManager->get(CustomerInterfaceFactory::class);
-        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
-        $this->addressFactory = $this->objectManager->get(AddressInterfaceFactory::class);
-        $this->registry = $this->objectManager->get(Registry::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        if ($this->customer instanceof CustomerInterface) {
-            $this->registry->unregister('isSecureArea');
-            $this->registry->register('isSecureArea', true);
-            $this->customerRepository->delete($this->customer);
-            $this->registry->unregister('isSecureArea');
-            $this->registry->register('isSecureArea', false);
-        }
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Store/_files/second_website_with_store_group_and_store.php
      * @magentoConfigFixture default_store general/country/allow BD,BB,AF
      * @magentoConfigFixture fixture_second_store_store general/country/allow AS,BM
@@ -109,5 +78,36 @@ class CreateAccountWithAddressTest extends TestCase
             $this->customer->getAddresses()[0]->getCountryId(),
             'The address was saved with disallowed country.'
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->accountManagement = $this->objectManager->get(AccountManagementInterface::class);
+        $this->customerFactory = $this->objectManager->get(CustomerInterfaceFactory::class);
+        $this->customerRepository = $this->objectManager->get(CustomerRepositoryInterface::class);
+        $this->addressFactory = $this->objectManager->get(AddressInterfaceFactory::class);
+        $this->registry = $this->objectManager->get(Registry::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        if ($this->customer instanceof CustomerInterface) {
+            $this->registry->unregister('isSecureArea');
+            $this->registry->register('isSecureArea', true);
+            $this->customerRepository->delete($this->customer);
+            $this->registry->unregister('isSecureArea');
+            $this->registry->register('isSecureArea', false);
+        }
+
+        parent::tearDown();
     }
 }

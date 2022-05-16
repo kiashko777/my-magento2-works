@@ -6,10 +6,15 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Framework\App\Bootstrap;
 use Magento\Framework\App\Cache\Frontend\Factory;
 use Magento\Framework\App\ObjectManagerFactory;
+use Magento\Framework\File\Mime;
+use Magento\Framework\File\Transfer\Adapter\Http;
 use Magento\Framework\HTTP\PhpEnvironment\Request;
+use Magento\Framework\HTTP\PhpEnvironment\Response;
 use Magento\Framework\Stdlib\Cookie\PhpCookieReader;
+use Magento\MediaStorage\App\Media;
 
 require dirname(__DIR__) . '/app/bootstrap.php';
 
@@ -56,9 +61,9 @@ if (file_exists($configCacheFile) && is_readable($configCacheFile)) {
                     require_once 'errors/404.php';
                     exit;
                 }
-                $transfer = new \Magento\Framework\File\Transfer\Adapter\Http(
-                    new \Magento\Framework\HTTP\PhpEnvironment\Response(),
-                    new \Magento\Framework\File\Mime()
+                $transfer = new Http(
+                    new Response(),
+                    new Mime()
                 );
                 $transfer->send($fileAbsolutePath);
                 exit;
@@ -73,10 +78,10 @@ if (empty($mediaDirectory)) {
     $params[ObjectManagerFactory::INIT_PARAM_DEPLOYMENT_CONFIG] = [];
     $params[Factory::PARAM_CACHE_FORCED_OPTIONS] = ['frontend_options' => ['disable_save' => true]];
 }
-$bootstrap = \Magento\Framework\App\Bootstrap::create(BP, $params);
-/** @var \Magento\MediaStorage\App\Media $app */
+$bootstrap = Bootstrap::create(BP, $params);
+/** @var Media $app */
 $app = $bootstrap->createApplication(
-    \Magento\MediaStorage\App\Media::class,
+    Media::class,
     [
         'mediaDirectory' => $mediaDirectory,
         'configCacheFile' => $configCacheFile,

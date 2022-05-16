@@ -3,31 +3,31 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\MysqlMq\Model;
 
-class ObserverTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\ObjectManagerInterface;
+use Magento\MysqlMq\Model\ResourceModel\MessageCollectionFactory;
+use Magento\MysqlMq\Model\ResourceModel\MessageStatusCollectionFactory;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class ObserverTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
 
     /**
-     * @var \Magento\MysqlMq\Model\Observer
+     * @var Observer
      */
     private $observer;
 
     /**
-     * @var \Magento\MysqlMq\Model\QueueManagement
+     * @var QueueManagement
      */
     private $queueManagement;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->observer = $this->objectManager->get(\Magento\MysqlMq\Model\Observer::class);
-        $this->queueManagement = $this->objectManager->get(\Magento\MysqlMq\Model\QueueManagement::class);
-    }
 
     /**
      * @magentoDataFixture Magento/MysqlMq/_files/queues.php
@@ -36,13 +36,13 @@ class ObserverTest extends \PHPUnit\Framework\TestCase
      */
     public function testCleanUpOld()
     {
-        /** @var \Magento\MysqlMq\Model\ResourceModel\MessageStatusCollectionFactory $messageStatusCollectionFactory */
+        /** @var MessageStatusCollectionFactory $messageStatusCollectionFactory */
         $messageStatusCollectionFactory = $this->objectManager
-            ->create(\Magento\MysqlMq\Model\ResourceModel\MessageStatusCollectionFactory::class);
+            ->create(MessageStatusCollectionFactory::class);
 
-        /** @var \Magento\MysqlMq\Model\ResourceModel\MessageCollectionFactory $messageStatusCollectionFactory */
+        /** @var MessageCollectionFactory $messageStatusCollectionFactory */
         $messageCollectionFactory = $this->objectManager
-            ->create(\Magento\MysqlMq\Model\ResourceModel\MessageCollectionFactory::class);
+            ->create(MessageCollectionFactory::class);
 
         //Check how many messages in collection by the beginning of tests
         $messageCollection = $messageCollectionFactory->create()
@@ -73,13 +73,13 @@ class ObserverTest extends \PHPUnit\Framework\TestCase
      */
     public function testCleanupMessages()
     {
-        /** @var \Magento\MysqlMq\Model\ResourceModel\MessageStatusCollectionFactory $messageStatusCollectionFactory */
+        /** @var MessageStatusCollectionFactory $messageStatusCollectionFactory */
         $messageStatusCollectionFactory = $this->objectManager
-            ->create(\Magento\MysqlMq\Model\ResourceModel\MessageStatusCollectionFactory::class);
+            ->create(MessageStatusCollectionFactory::class);
 
-        /** @var \Magento\MysqlMq\Model\ResourceModel\MessageCollectionFactory $messageStatusCollectionFactory */
+        /** @var MessageCollectionFactory $messageStatusCollectionFactory */
         $messageCollectionFactory = $this->objectManager
-            ->create(\Magento\MysqlMq\Model\ResourceModel\MessageCollectionFactory::class);
+            ->create(MessageCollectionFactory::class);
 
         //Check how many messages in collection by the beginning of tests
         $messageCollection = $messageCollectionFactory->create()
@@ -100,14 +100,14 @@ class ObserverTest extends \PHPUnit\Framework\TestCase
 
         $messageStatusCollection = $messageStatusCollectionFactory->create()
             ->addFieldToFilter('message_id', $messageId)
-            ->addFieldToFilter('status', \Magento\MysqlMq\Model\QueueManagement::MESSAGE_STATUS_TO_BE_DELETED);
+            ->addFieldToFilter('status', QueueManagement::MESSAGE_STATUS_TO_BE_DELETED);
 
         $this->assertEquals(3, $messageStatusCollection->getSize());
 
         // Change the Updated At in order to make job visible
         $lastMessageStatus = $messageStatusCollectionFactory->create()
             ->addFieldToFilter('message_id', $messageId)
-            ->addFieldToFilter('status', \Magento\MysqlMq\Model\QueueManagement::MESSAGE_STATUS_COMPLETE)
+            ->addFieldToFilter('status', QueueManagement::MESSAGE_STATUS_COMPLETE)
             ->getFirstItem();
         $lastMessageStatus->setUpdatedAt(time() - 1 - 24 * 7 * 60 * 60)
             ->save();
@@ -129,13 +129,13 @@ class ObserverTest extends \PHPUnit\Framework\TestCase
      */
     public function testCleanupInProgressMessages()
     {
-        /** @var \Magento\MysqlMq\Model\ResourceModel\MessageStatusCollectionFactory $messageStatusCollectionFactory */
+        /** @var MessageStatusCollectionFactory $messageStatusCollectionFactory */
         $messageStatusCollectionFactory = $this->objectManager
-            ->create(\Magento\MysqlMq\Model\ResourceModel\MessageStatusCollectionFactory::class);
+            ->create(MessageStatusCollectionFactory::class);
 
-        /** @var \Magento\MysqlMq\Model\ResourceModel\MessageCollectionFactory $messageStatusCollectionFactory */
+        /** @var MessageCollectionFactory $messageStatusCollectionFactory */
         $messageCollectionFactory = $this->objectManager
-            ->create(\Magento\MysqlMq\Model\ResourceModel\MessageCollectionFactory::class);
+            ->create(MessageCollectionFactory::class);
 
         //Check how many messages in collection by the beginning of tests
         $messageCollection = $messageCollectionFactory->create()
@@ -154,8 +154,15 @@ class ObserverTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(1, $messageCollection->getSize());
         $messageStatusCollection = $messageStatusCollectionFactory->create()
             ->addFieldToFilter('message_id', $messageId)
-            ->addFieldToFilter('status', \Magento\MysqlMq\Model\QueueManagement::MESSAGE_STATUS_RETRY_REQUIRED);
+            ->addFieldToFilter('status', QueueManagement::MESSAGE_STATUS_RETRY_REQUIRED);
         $this->assertEquals(1, $messageStatusCollection->getSize());
         $this->assertEquals(1, $messageStatusCollection->getFirstItem()->getNumberOfTrials());
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->observer = $this->objectManager->get(Observer::class);
+        $this->queueManagement = $this->objectManager->get(QueueManagement::class);
     }
 }

@@ -21,7 +21,8 @@ define([
                 createUrl: jasmine.createSpy().and.returnValue(serviceUrl)
             },
             'mage/storage': {
-                post: function () {} // jscs:ignore jsDoc
+                post: function () {
+                } // jscs:ignore jsDoc
             },
             'Magento_Customer/js/model/customer': {
                 isLoggedIn: jasmine.createSpy().and.returnValue(false)

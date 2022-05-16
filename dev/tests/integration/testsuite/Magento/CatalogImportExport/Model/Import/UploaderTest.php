@@ -8,77 +8,48 @@ declare(strict_types=1);
 
 namespace Magento\CatalogImportExport\Model\Import;
 
+use Exception;
 use Magento\Framework\App\Bootstrap;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Filesystem;
+use Magento\Framework\Filesystem\Directory\WriteInterface;
+use Magento\Framework\Filesystem\File\ReadFactory;
+use Magento\Framework\Filesystem\File\ReadInterface;
+use Magento\Framework\Math\Random;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Indexer\TestCase;
+use PHPUnit\Framework\MockObject\MockObject;
+use RuntimeException;
 
 /**
  * Tests for the \Magento\CatalogImportExport\Model\Import\Uploader class.
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class UploaderTest extends \Magento\TestFramework\Indexer\TestCase
+class UploaderTest extends TestCase
 {
     /**
      * Random string appended to downloaded image name
      */
     const RANDOM_STRING = 'BRV8TAuR2AT88OH0';
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
     /**
-     * @var \Magento\Framework\Filesystem\Directory\WriteInterface
+     * @var WriteInterface
      */
     private $directory;
 
     /**
-     * @var \Magento\CatalogImportExport\Model\Import\Uploader
+     * @var Uploader
      */
     private $uploader;
     /**
-     * @var \Magento\Framework\Filesystem\File\ReadInterface|\PHPUnit\Framework\MockObject\MockObject
+     * @var ReadInterface|MockObject
      */
     private $fileReader;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->fileReader = $this->getMockForAbstractClass(\Magento\Framework\Filesystem\File\ReadInterface::class);
-        $fileReadFactory = $this->createMock(\Magento\Framework\Filesystem\File\ReadFactory::class);
-        $fileReadFactory->method('create')->willReturn($this->fileReader);
-        $random = $this->createMock(\Magento\Framework\Math\Random::class);
-        $random->method('getRandomString')->willReturn(self::RANDOM_STRING);
-        $this->uploader = $this->objectManager->create(
-            \Magento\CatalogImportExport\Model\Import\Uploader::class,
-            [
-                'random' => $random,
-                'readFactory' => $fileReadFactory
-            ]
-        );
-
-        $filesystem = $this->objectManager->create(\Magento\Framework\Filesystem::class);
-
-        $appParams = \Magento\TestFramework\Helper\Bootstrap::getInstance()
-            ->getBootstrap()
-            ->getApplication()
-            ->getInitParams()[Bootstrap::INIT_PARAM_FILESYSTEM_DIR_PATHS];
-        $mediaPath = $appParams[DirectoryList::MEDIA][DirectoryList::PATH];
-        $this->directory = $filesystem->getDirectoryWrite(DirectoryList::ROOT);
-        $tmpDir = $this->directory->getRelativePath($mediaPath . '/import');
-        if (!$this->directory->create($tmpDir)) {
-            throw new \RuntimeException('Failed to create temporary directory');
-        }
-        if (!$this->uploader->setTmpDir($tmpDir)) {
-            throw new \RuntimeException(
-                'Failed to set temporary directory for files.'
-            );
-        }
-
-        parent::setUp();
-    }
 
     /**
      * Tests move with external url
@@ -92,6 +63,16 @@ class UploaderTest extends \Magento\TestFramework\Indexer\TestCase
         $this->uploader->move($fileName);
         $destFilePath = $this->uploader->getTmpDir() . '/' . 'random_image_' . self::RANDOM_STRING . '.jpg';
         $this->assertTrue($this->directory->isExist($destFilePath));
+    }
+
+    /**
+     * Get the full path to the test image
+     *
+     * @return string
+     */
+    private function getTestImagePath(): string
+    {
+        return __DIR__ . '/_files/magento_additional_image_one.jpg';
     }
 
     /**
@@ -115,12 +96,12 @@ class UploaderTest extends \Magento\TestFramework\Indexer\TestCase
      */
     public function testMoveWithFileOutsideTemp(): void
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
 
         $tmpDir = $this->uploader->getTmpDir();
         $newTmpDir = $tmpDir . '/test1';
         if (!$this->directory->create($newTmpDir)) {
-            throw new \RuntimeException('Failed to create temp dir');
+            throw new RuntimeException('Failed to create temp dir');
         }
         $this->uploader->setTmpDir($newTmpDir);
         $testImagePath = $this->getTestImagePath();
@@ -137,7 +118,7 @@ class UploaderTest extends \Magento\TestFramework\Indexer\TestCase
      */
     public function testMoveWithInvalidFile(): void
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Disallowed file type');
 
         $fileName = 'media_import_image.php';
@@ -149,12 +130,42 @@ class UploaderTest extends \Magento\TestFramework\Indexer\TestCase
     }
 
     /**
-     * Get the full path to the test image
-     *
-     * @return string
+     * @inheritdoc
      */
-    private function getTestImagePath(): string
+    protected function setUp(): void
     {
-        return __DIR__ . '/_files/magento_additional_image_one.jpg';
+        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $this->fileReader = $this->getMockForAbstractClass(ReadInterface::class);
+        $fileReadFactory = $this->createMock(ReadFactory::class);
+        $fileReadFactory->method('create')->willReturn($this->fileReader);
+        $random = $this->createMock(Random::class);
+        $random->method('getRandomString')->willReturn(self::RANDOM_STRING);
+        $this->uploader = $this->objectManager->create(
+            Uploader::class,
+            [
+                'random' => $random,
+                'readFactory' => $fileReadFactory
+            ]
+        );
+
+        $filesystem = $this->objectManager->create(Filesystem::class);
+
+        $appParams = \Magento\TestFramework\Helper\Bootstrap::getInstance()
+            ->getBootstrap()
+            ->getApplication()
+            ->getInitParams()[Bootstrap::INIT_PARAM_FILESYSTEM_DIR_PATHS];
+        $mediaPath = $appParams[DirectoryList::MEDIA][DirectoryList::PATH];
+        $this->directory = $filesystem->getDirectoryWrite(DirectoryList::ROOT);
+        $tmpDir = $this->directory->getRelativePath($mediaPath . '/import');
+        if (!$this->directory->create($tmpDir)) {
+            throw new RuntimeException('Failed to create temporary directory');
+        }
+        if (!$this->uploader->setTmpDir($tmpDir)) {
+            throw new RuntimeException(
+                'Failed to set temporary directory for files.'
+            );
+        }
+
+        parent::setUp();
     }
 }

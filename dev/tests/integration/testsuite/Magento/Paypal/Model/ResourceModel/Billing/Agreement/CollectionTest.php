@@ -3,11 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Paypal\Model\ResourceModel\Billing\Agreement;
 
+use Magento\Paypal\Model\Billing\Agreement;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class CollectionTest extends \PHPUnit\Framework\TestCase
+class CollectionTest extends TestCase
 {
     /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
@@ -15,15 +18,15 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
      */
     public function testAddCustomerDetails()
     {
-        /** @var \Magento\Paypal\Model\ResourceModel\Billing\Agreement\Collection $billingAgreementCollection */
+        /** @var Collection $billingAgreementCollection */
         $billingAgreementCollection = Bootstrap::getObjectManager()->create(
-            \Magento\Paypal\Model\ResourceModel\Billing\Agreement\Collection::class
+            Collection::class
         );
 
         $billingAgreementCollection->addCustomerDetails();
 
         $this->assertEquals(1, $billingAgreementCollection->count(), "Invalid collection items quantity.");
-        /** @var \Magento\Paypal\Model\Billing\Agreement $billingAgreement */
+        /** @var Agreement $billingAgreement */
         $billingAgreement = $billingAgreementCollection->getFirstItem();
 
         $expectedData = [

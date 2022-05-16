@@ -8,9 +8,9 @@ declare(strict_types=1);
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Api\Data\CustomerInterface;
 use Magento\Store\Api\WebsiteRepositoryInterface;
+use Magento\Store\Model\Store;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
-use Magento\Store\Model\Store;
 
 Resolver::getInstance()->requireDataFixture('Magento/Store/_files/websites_different_countries.php');
 

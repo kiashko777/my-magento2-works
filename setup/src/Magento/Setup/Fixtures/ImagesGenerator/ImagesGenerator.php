@@ -3,9 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Fixtures\ImagesGenerator;
 
+use Exception;
+use Magento\Catalog\Model\Product\Media\Config;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Filesystem;
 
 /**
  * Create image with passed config and put it to media tmp folder
@@ -13,23 +17,24 @@ use Magento\Framework\App\Filesystem\DirectoryList;
 class ImagesGenerator
 {
     /**
-     * @var \Magento\Framework\Filesystem
+     * @var Filesystem
      */
     private $filesystem;
 
     /**
-     * @var \Magento\Catalog\Model\Product\Media\Config
+     * @var Config
      */
     private $mediaConfig;
 
     /**
-     * @param \Magento\Framework\Filesystem $filesystem
-     * @param \Magento\Catalog\Model\Product\Media\Config $mediaConfig
+     * @param Filesystem $filesystem
+     * @param Config $mediaConfig
      */
     public function __construct(
-        \Magento\Framework\Filesystem $filesystem,
-        \Magento\Catalog\Model\Product\Media\Config $mediaConfig
-    ) {
+        Filesystem               $filesystem,
+        Config $mediaConfig
+    )
+    {
         $this->filesystem = $filesystem;
         $this->mediaConfig = $mediaConfig;
     }
@@ -38,7 +43,7 @@ class ImagesGenerator
      * Generates image from $data and puts its to /tmp folder
      * @param array $config
      * @return string $imagePath
-     * @throws \Exception
+     * @throws Exception
      */
     public function generate($config)
     {
@@ -75,8 +80,8 @@ class ImagesGenerator
         $imagePath = $relativePathToMedia . DIRECTORY_SEPARATOR . $config['image-name'];
         $imagePath = preg_replace('|/{2,}|', '/', $imagePath);
         $memory = fopen('php://memory', 'r+');
-        if(!imagejpeg($image, $memory)) {
-            throw new \Exception('Could not create picture ' . $imagePath);
+        if (!imagejpeg($image, $memory)) {
+            throw new Exception('Could not create picture ' . $imagePath);
         }
         $mediaDirectory->writeFile($imagePath, stream_get_contents($memory, -1, 0));
         fclose($memory);

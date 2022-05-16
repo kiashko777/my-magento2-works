@@ -32,18 +32,6 @@ class UpdateTest extends AbstractBackendController
     private $session;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->getWishlistByCustomerId = $this->_objectManager->get(GetWishlistByCustomerId::class);
-        $this->json = $this->_objectManager->get(SerializerInterface::class);
-        $this->session = $this->_objectManager->get(Session::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Wishlist/_files/wishlist_with_simple_product.php
      * @magentoDbIsolation disabled
      *
@@ -56,6 +44,19 @@ class UpdateTest extends AbstractBackendController
         $params = ['id' => $item->getId(), 'qty' => 5];
         $this->dispatchUpdateItemRequest($params);
         $this->assertEquals($params['qty'], $this->getWishlistByCustomerId->getItemBySku(1, 'simple-1')->getQty());
+    }
+
+    /**
+     * Dispatch update wish list item request.
+     *
+     * @param array $params
+     * @return void
+     */
+    private function dispatchUpdateItemRequest(array $params): void
+    {
+        $this->getRequest()->setParams($params)->setMethod(HttpRequest::METHOD_POST);
+        $this->dispatch('backend/customer/wishlist_product_composite_wishlist/update');
+        $this->assertRedirect($this->stringContains('backend/catalog/product/showUpdateResult/'));
     }
 
     /**
@@ -78,6 +79,37 @@ class UpdateTest extends AbstractBackendController
             $this->getWishlistByCustomerId->getItemBySku(1, 'Configurable product'),
             $params
         );
+    }
+
+    /**
+     * Perform configurable option to select.
+     *
+     * @param ProductInterface $product
+     * @return array
+     */
+    private function performConfigurableOption(ProductInterface $product): array
+    {
+        $configurableOptions = $product->getTypeInstance()->getConfigurableOptions($product);
+        $attributeId = key($configurableOptions);
+        $option = reset($configurableOptions[$attributeId]);
+
+        return [$attributeId => $option['value_index']];
+    }
+
+    /**
+     * Assert updated item in wish list.
+     *
+     * @param Item $item
+     * @param array $expectedData
+     * @return void
+     */
+    private function assertUpdatedItem(Item $item, array $expectedData): void
+    {
+        $this->assertEquals($expectedData['qty'], $item->getQty());
+        $buyRequestOption = $this->json->unserialize($item->getOptionByCode('info_buyRequest')->getValue());
+        foreach ($expectedData as $key => $value) {
+            $this->assertEquals($value, $buyRequestOption[$key]);
+        }
     }
 
     /**
@@ -105,47 +137,16 @@ class UpdateTest extends AbstractBackendController
             $this->session->getCompositeProductResult()->getMessage()
         );
     }
-    /**
-     * Assert updated item in wish list.
-     *
-     * @param Item $item
-     * @param array $expectedData
-     * @return void
-     */
-    private function assertUpdatedItem(Item $item, array $expectedData): void
-    {
-        $this->assertEquals($expectedData['qty'], $item->getQty());
-        $buyRequestOption = $this->json->unserialize($item->getOptionByCode('info_buyRequest')->getValue());
-        foreach ($expectedData as $key => $value) {
-            $this->assertEquals($value, $buyRequestOption[$key]);
-        }
-    }
 
     /**
-     * Perform configurable option to select.
-     *
-     * @param ProductInterface $product
-     * @return array
+     * @inheritdoc
      */
-    private function performConfigurableOption(ProductInterface $product): array
+    protected function setUp(): void
     {
-        $configurableOptions = $product->getTypeInstance()->getConfigurableOptions($product);
-        $attributeId = key($configurableOptions);
-        $option = reset($configurableOptions[$attributeId]);
+        parent::setUp();
 
-        return [$attributeId => $option['value_index']];
-    }
-
-    /**
-     * Dispatch update wish list item request.
-     *
-     * @param array $params
-     * @return void
-     */
-    private function dispatchUpdateItemRequest(array $params): void
-    {
-        $this->getRequest()->setParams($params)->setMethod(HttpRequest::METHOD_POST);
-        $this->dispatch('backend/customer/wishlist_product_composite_wishlist/update');
-        $this->assertRedirect($this->stringContains('backend/catalog/product/showUpdateResult/'));
+        $this->getWishlistByCustomerId = $this->_objectManager->get(GetWishlistByCustomerId::class);
+        $this->json = $this->_objectManager->get(SerializerInterface::class);
+        $this->session = $this->_objectManager->get(Session::class);
     }
 }

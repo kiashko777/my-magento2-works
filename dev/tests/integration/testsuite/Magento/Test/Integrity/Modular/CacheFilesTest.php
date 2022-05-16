@@ -3,9 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Modular;
 
-class CacheFilesTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\Cache\Config\Reader;
+use Magento\Framework\Config\ValidationStateInterface;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class CacheFilesTest extends TestCase
 {
     /**
      * @param string $area
@@ -13,19 +20,19 @@ class CacheFilesTest extends \PHPUnit\Framework\TestCase
      */
     public function testCacheConfig($area)
     {
-        $validationStateMock = $this->createMock(\Magento\Framework\Config\ValidationStateInterface::class);
+        $validationStateMock = $this->createMock(ValidationStateInterface::class);
         $validationStateMock->expects($this->any())->method('isValidationRequired')->willReturn(true);
 
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
 
-        /** @var \Magento\Framework\Cache\Config\Reader $reader */
+        /** @var Reader $reader */
         $reader = $objectManager->create(
-            \Magento\Framework\Cache\Config\Reader::class,
+            Reader::class,
             ['validationState' => $validationStateMock]
         );
         try {
             $reader->read($area);
-        } catch (\Magento\Framework\Exception\LocalizedException $exception) {
+        } catch (LocalizedException $exception) {
             $this->fail($exception->getMessage());
         }
     }

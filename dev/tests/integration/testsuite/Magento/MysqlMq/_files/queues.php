@@ -4,7 +4,10 @@
  * See COPYING.txt for license details.
  */
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\MysqlMq\Model\Queue;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
 $queues = [
     'queue1',
     'queue2',
@@ -21,8 +24,8 @@ $queues = [
     'demo-queue-9',
 ];
 foreach ($queues as $queueName) {
-    /** @var \Magento\MysqlMq\Model\Queue $queue */
-    $queue = $objectManager->create(\Magento\MysqlMq\Model\Queue::class);
+    /** @var Queue $queue */
+    $queue = $objectManager->create(Queue::class);
     $queue->load($queueName, 'name');
     if (!$queue->getId()) {
         $queue->setName($queueName)->save();

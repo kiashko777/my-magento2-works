@@ -4,31 +4,33 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Interception\Fixture\Intercepted;
 
+use Closure;
 use Magento\Framework\Interception\Fixture\InterceptedInterface;
 
 class InterfacePlugin
 {
     /**
      * @param InterceptedInterface $subject
-     * @param \Closure $next
+     * @param Closure $next
      * @param string $param1
      * @return string
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    public function aroundC(InterceptedInterface $subject, \Closure $next, $param1)
+    public function aroundC(InterceptedInterface $subject, Closure $next, $param1)
     {
         return '<IP:C>' . $next($param1) . '</IP:C>';
     }
 
     /**
      * @param InterceptedInterface $subject
-     * @param \Closure $next
+     * @param Closure $next
      * @param $param1
      * @return string
      */
-    public function aroundF(InterceptedInterface $subject, \Closure $next, $param1)
+    public function aroundF(InterceptedInterface $subject, Closure $next, $param1)
     {
         return '<IP:F>' . $subject->D($next($subject->C($param1))) . '</IP:F>';
     }
@@ -44,7 +46,7 @@ class InterfacePlugin
     /**
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    public function aroundG(InterceptedInterface $subject, \Closure $next, $param1)
+    public function aroundG(InterceptedInterface $subject, Closure $next, $param1)
     {
         return $next('<IP:G>' . $param1 . '</IP:G>');
     }

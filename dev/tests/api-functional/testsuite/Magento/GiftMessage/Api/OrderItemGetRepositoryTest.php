@@ -7,6 +7,10 @@ declare(strict_types=1);
 
 namespace Magento\GiftMessage\Api;
 
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Sales\Api\Data\OrderItemInterface;
+use Magento\Sales\Model\Order;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 class OrderItemGetRepositoryTest extends WebapiAbstract
@@ -23,17 +27,17 @@ class OrderItemGetRepositoryTest extends WebapiAbstract
      */
     public function testGet()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var \Magento\Sales\Model\Order $order */
-        $order = $objectManager->create(\Magento\Sales\Model\Order::class)->loadByIncrementId('100000001');
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var Order $order */
+        $order = $objectManager->create(Order::class)->loadByIncrementId('100000001');
         $items = $order->getItems();
-        /** @var \Magento\Sales\Api\Data\OrderItemInterface $orderItem */
+        /** @var OrderItemInterface $orderItem */
         $orderItem = array_shift($items);
         $itemId = $orderItem->getItemId();
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $itemId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,

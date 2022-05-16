@@ -6,9 +6,9 @@
 declare(strict_types=1);
 
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 use Magento\Widget\Model\ResourceModel\Widget\Instance;
 use Magento\Widget\Model\ResourceModel\Widget\Instance\CollectionFactory;
-use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 $objectManager = Bootstrap::getObjectManager();
 /** @var CollectionFactory $collectionFactory */

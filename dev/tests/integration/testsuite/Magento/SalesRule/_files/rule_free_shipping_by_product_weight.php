@@ -4,6 +4,8 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Framework\Registry;
+use Magento\SalesRule\Model\Rule\Condition\Combine;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
@@ -11,7 +13,7 @@ Resolver::getInstance()->requireDataFixture('Magento/SalesRule/_files/cart_rule_
 
 $objectManager = Bootstrap::getObjectManager();
 /** @var Magento\Framework\Registry $registry */
-$registry = $objectManager->get(\Magento\Framework\Registry::class);
+$registry = $objectManager->get(Registry::class);
 $salesRule = $registry->registry('cart_rule_free_shipping');
 $row =
     [
@@ -19,7 +21,7 @@ $row =
         'conditions' => [
             1 =>
                 [
-                    'type' => \Magento\SalesRule\Model\Rule\Condition\Combine::class,
+                    'type' => Combine::class,
                     'attribute' => null,
                     'operator' => null,
                     'value' => '1',

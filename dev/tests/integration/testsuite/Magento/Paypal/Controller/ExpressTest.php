@@ -3,22 +3,37 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Paypal\Controller;
 
 use Magento\Checkout\Model\Session;
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Framework\App\Request\Http;
+use Magento\Framework\App\State;
+use Magento\Framework\Session\Config\ConfigInterface;
 use Magento\Framework\Session\Generic as GenericSession;
+use Magento\Framework\Session\SaveHandlerInterface;
+use Magento\Framework\Session\SidResolverInterface;
+use Magento\Framework\Session\StorageInterface;
+use Magento\Framework\Session\ValidatorInterface;
+use Magento\Framework\Stdlib\Cookie\CookieMetadataFactory;
+use Magento\Framework\Stdlib\CookieManagerInterface;
 use Magento\Paypal\Model\Api\Nvp;
 use Magento\Paypal\Model\Api\Type\Factory as ApiFactory;
+use Magento\Paypal\Model\Config;
+use Magento\Paypal\Model\Express\Checkout;
 use Magento\Paypal\Model\Session as PaypalSession;
 use Magento\Quote\Model\Quote;
+use Magento\Sales\Model\Order;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractController;
 
 /**
  * Tests of Paypal Express actions
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class ExpressTest extends \Magento\TestFramework\TestCase\AbstractController
+class ExpressTest extends AbstractController
 {
     /**
      * @magentoDataFixture Magento/Sales/_files/quote.php
@@ -50,7 +65,7 @@ class ExpressTest extends \Magento\TestFramework\TestCase\AbstractController
     {
         $quote = $this->_objectManager->create(Quote::class);
         $quote->load('100000002', 'reserved_order_id');
-        $order = $this->_objectManager->create(\Magento\Sales\Model\Order::class);
+        $order = $this->_objectManager->create(Order::class);
         $order->load('100000002', 'increment_id');
         $session = $this->_objectManager->get(Session::class);
         $session->setLoadInactive(true);
@@ -93,8 +108,8 @@ class ExpressTest extends \Magento\TestFramework\TestCase\AbstractController
         /** Preconditions */
         /** @var \Magento\Customer\Model\Session $customerSession */
         $customerSession = $this->_objectManager->get(\Magento\Customer\Model\Session::class);
-        /** @var \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository */
-        $customerRepository = $this->_objectManager->get(\Magento\Customer\Api\CustomerRepositoryInterface::class);
+        /** @var CustomerRepositoryInterface $customerRepository */
+        $customerRepository = $this->_objectManager->get(CustomerRepositoryInterface::class);
         $customerData = $customerRepository->getById($fixtureCustomerId);
         $customerSession->setCustomerDataObject($customerData);
 
@@ -148,8 +163,8 @@ class ExpressTest extends \Magento\TestFramework\TestCase\AbstractController
         $quote->load('test_cart_with_configurable', 'reserved_order_id');
 
         $payment = $quote->getPayment();
-        $payment->setMethod(\Magento\Paypal\Model\Config::METHOD_WPP_EXPRESS)
-            ->setAdditionalInformation(\Magento\Paypal\Model\Express\Checkout::PAYMENT_INFO_TRANSPORT_PAYER_ID, 123);
+        $payment->setMethod(Config::METHOD_WPP_EXPRESS)
+            ->setAdditionalInformation(Checkout::PAYMENT_INFO_TRANSPORT_PAYER_ID, 123);
 
         $quote->save();
 
@@ -199,15 +214,15 @@ class ExpressTest extends \Magento\TestFramework\TestCase\AbstractController
             ->setMethods(['getExpressCheckoutToken'])
             ->setConstructorArgs(
                 [
-                    $this->_objectManager->get(\Magento\Framework\App\Request\Http::class),
-                    $this->_objectManager->get(\Magento\Framework\Session\SidResolverInterface::class),
-                    $this->_objectManager->get(\Magento\Framework\Session\Config\ConfigInterface::class),
-                    $this->_objectManager->get(\Magento\Framework\Session\SaveHandlerInterface::class),
-                    $this->_objectManager->get(\Magento\Framework\Session\ValidatorInterface::class),
-                    $this->_objectManager->get(\Magento\Framework\Session\StorageInterface::class),
-                    $this->_objectManager->get(\Magento\Framework\Stdlib\CookieManagerInterface::class),
-                    $this->_objectManager->get(\Magento\Framework\Stdlib\Cookie\CookieMetadataFactory::class),
-                    $this->_objectManager->get(\Magento\Framework\App\State::class),
+                    $this->_objectManager->get(Http::class),
+                    $this->_objectManager->get(SidResolverInterface::class),
+                    $this->_objectManager->get(ConfigInterface::class),
+                    $this->_objectManager->get(SaveHandlerInterface::class),
+                    $this->_objectManager->get(ValidatorInterface::class),
+                    $this->_objectManager->get(StorageInterface::class),
+                    $this->_objectManager->get(CookieManagerInterface::class),
+                    $this->_objectManager->get(CookieMetadataFactory::class),
+                    $this->_objectManager->get(State::class),
                 ]
             )
             ->getMock();

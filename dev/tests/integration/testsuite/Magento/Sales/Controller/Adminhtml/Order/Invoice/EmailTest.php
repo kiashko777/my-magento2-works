@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Sales\Controller\Adminhtml\Order\Invoice;
 
+use Magento\Framework\Message\MessageInterface;
 use PHPUnit\Framework\Constraint\StringContains;
 
 /**
@@ -36,7 +37,7 @@ class EmailTest extends AbstractInvoiceControllerTest
 
         $this->assertSessionMessages(
             $this->equalTo([(string)__('You sent the message.')]),
-            \Magento\Framework\Message\MessageInterface::TYPE_SUCCESS
+            MessageInterface::TYPE_SUCCESS
         );
 
         $redirectUrl = sprintf(

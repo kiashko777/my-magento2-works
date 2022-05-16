@@ -3,7 +3,22 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Model;
+
+use Exception;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product\Link;
+use Magento\Catalog\Model\Product\Option;
+use Magento\Catalog\Model\ResourceModel\Product\Link\Collection;
+use Magento\CatalogUrlRewrite\Model\ProductUrlPathGenerator;
+use Magento\Framework\DataObject;
+use Magento\Framework\Registry;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
+use StdClass;
 
 /**
  * Tests product model:
@@ -16,41 +31,28 @@ namespace Magento\Catalog\Model;
  * @magentoDbIsolation enabled
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class ProductExternalTest extends \PHPUnit\Framework\TestCase
+class ProductExternalTest extends TestCase
 {
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     protected $objectManager;
 
     /**
-     * @var \Magento\Catalog\Api\ProductRepositoryInterface
+     * @var ProductRepositoryInterface
      */
     protected $productRepository;
 
     /**
-     * @var \Magento\Catalog\Model\Product
+     * @var Product
      */
     protected $_model;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-
-        $this->productRepository = $this->objectManager->create(
-            \Magento\Catalog\Api\ProductRepositoryInterface::class
-        );
-
-        $this->_model = $this->objectManager->create(
-            \Magento\Catalog\Model\Product::class
-        );
-    }
 
     public function testGetStoreId()
     {
         $this->assertEquals(
             $this->objectManager->get(
-                \Magento\Store\Model\StoreManagerInterface::class
+                StoreManagerInterface::class
             )->getStore()->getId(),
             $this->_model->getStoreId()
         );
@@ -61,21 +63,21 @@ class ProductExternalTest extends \PHPUnit\Framework\TestCase
     public function testGetLinkInstance()
     {
         $model = $this->_model->getLinkInstance();
-        $this->assertInstanceOf(\Magento\Catalog\Model\Product\Link::class, $model);
+        $this->assertInstanceOf(Link::class, $model);
         $this->assertSame($model, $this->_model->getLinkInstance());
     }
 
     public function testGetCategoryId()
     {
         $this->assertFalse($this->_model->getCategoryId());
-        $category = new \Magento\Framework\DataObject(['id' => 5]);
+        $category = new DataObject(['id' => 5]);
         $this->_model->setCategoryIds([5]);
-        $this->objectManager->get(\Magento\Framework\Registry::class)->register('current_category', $category);
+        $this->objectManager->get(Registry::class)->register('current_category', $category);
         try {
             $this->assertEquals(5, $this->_model->getCategoryId());
-            $this->objectManager->get(\Magento\Framework\Registry::class)->unregister('current_category');
-        } catch (\Exception $e) {
-            $this->objectManager->get(\Magento\Framework\Registry::class)->unregister('current_category');
+            $this->objectManager->get(Registry::class)->unregister('current_category');
+        } catch (Exception $e) {
+            $this->objectManager->get(Registry::class)->unregister('current_category');
             throw $e;
         }
     }
@@ -85,20 +87,20 @@ class ProductExternalTest extends \PHPUnit\Framework\TestCase
         $this->assertEmpty($this->_model->getCategory());
         $this->_model->setCategoryIds([3]);
 
-        $this->objectManager->get(\Magento\Framework\Registry::class)
-            ->register('current_category', new \Magento\Framework\DataObject(['id' => 3]));
+        $this->objectManager->get(Registry::class)
+            ->register('current_category', new DataObject(['id' => 3]));
         // fixture
         try {
             $category = $this->_model->getCategory();
-            $this->assertInstanceOf(\Magento\Catalog\Model\Category::class, $category);
+            $this->assertInstanceOf(Category::class, $category);
             $this->assertEquals(3, $category->getId());
-            $this->objectManager->get(\Magento\Framework\Registry::class)->unregister('current_category');
-        } catch (\Exception $e) {
-            $this->objectManager->get(\Magento\Framework\Registry::class)->unregister('current_category');
+            $this->objectManager->get(Registry::class)->unregister('current_category');
+        } catch (Exception $e) {
+            $this->objectManager->get(Registry::class)->unregister('current_category');
             throw $e;
         }
 
-        $categoryTwo = new \StdClass();
+        $categoryTwo = new StdClass();
         $this->_model->setCategory($categoryTwo);
         $this->assertSame($categoryTwo, $this->_model->getCategory());
     }
@@ -106,8 +108,8 @@ class ProductExternalTest extends \PHPUnit\Framework\TestCase
     public function testGetCategoryIds()
     {
         // none
-        /** @var $model \Magento\Catalog\Model\Product */
-        $model = $this->objectManager->create(\Magento\Catalog\Model\Product::class);
+        /** @var $model Product */
+        $model = $this->objectManager->create(Product::class);
         $this->assertEquals([], $model->getCategoryIds());
 
         // fixture
@@ -140,9 +142,9 @@ class ProductExternalTest extends \PHPUnit\Framework\TestCase
     public function testGetWebsiteIds()
     {
         // set
-        /** @var $model \Magento\Catalog\Model\Product */
+        /** @var $model Product */
         $model = $this->objectManager->create(
-            \Magento\Catalog\Model\Product::class,
+            Product::class,
             ['data' => ['website_ids' => [1, 2]]]
         );
         $this->assertEquals([1, 2], $model->getWebsiteIds());
@@ -157,9 +159,9 @@ class ProductExternalTest extends \PHPUnit\Framework\TestCase
     public function testGetStoreIds()
     {
         // set
-        /** @var $model \Magento\Catalog\Model\Product */
+        /** @var $model Product */
         $model = $this->objectManager->create(
-            \Magento\Catalog\Model\Product::class,
+            Product::class,
             ['data' => ['store_ids' => [1, 2]]]
         );
         $this->assertEquals([1, 2], $model->getStoreIds());
@@ -187,7 +189,7 @@ class ProductExternalTest extends \PHPUnit\Framework\TestCase
         $this->assertSame($this->_model, $collection->getProduct());
 
         $linkCollection = $this->_model->getRelatedLinkCollection();
-        $this->assertInstanceOf(\Magento\Catalog\Model\ResourceModel\Product\Link\Collection::class, $linkCollection);
+        $this->assertInstanceOf(Collection::class, $linkCollection);
         $this->assertSame($this->_model, $linkCollection->getProduct());
     }
 
@@ -207,7 +209,7 @@ class ProductExternalTest extends \PHPUnit\Framework\TestCase
         $this->assertSame($this->_model, $collection->getProduct());
 
         $linkCollection = $this->_model->getUpSellLinkCollection();
-        $this->assertInstanceOf(\Magento\Catalog\Model\ResourceModel\Product\Link\Collection::class, $linkCollection);
+        $this->assertInstanceOf(Collection::class, $linkCollection);
         $this->assertSame($this->_model, $linkCollection->getProduct());
     }
 
@@ -227,7 +229,7 @@ class ProductExternalTest extends \PHPUnit\Framework\TestCase
         $this->assertSame($this->_model, $collection->getProduct());
 
         $linkCollection = $this->_model->getCrossSellLinkCollection();
-        $this->assertInstanceOf(\Magento\Catalog\Model\ResourceModel\Product\Link\Collection::class, $linkCollection);
+        $this->assertInstanceOf(Collection::class, $linkCollection);
         $this->assertSame($this->_model, $linkCollection->getProduct());
     }
 
@@ -261,12 +263,12 @@ class ProductExternalTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('test', $this->_model->getUrlPath());
 
         $urlPathGenerator = $this->objectManager->create(
-            \Magento\CatalogUrlRewrite\Model\ProductUrlPathGenerator::class
+            ProductUrlPathGenerator::class
         );
 
-        /** @var $category \Magento\Catalog\Model\Category */
+        /** @var $category Category */
         $category = $this->objectManager->create(
-            \Magento\Catalog\Model\Category::class,
+            Category::class,
             ['data' => ['url_path' => 'category', 'entity_id' => 5, 'path_ids' => [2, 3, 5]]]
         );
         $category->setOrigData();
@@ -284,7 +286,7 @@ class ProductExternalTest extends \PHPUnit\Framework\TestCase
 
         $optionId = uniqid();
         $option = $this->objectManager->create(
-            \Magento\Catalog\Model\Product\Option::class,
+            Option::class,
             ['data' => ['key' => 'value']]
         );
         $option->setId($optionId);
@@ -309,7 +311,7 @@ class ProductExternalTest extends \PHPUnit\Framework\TestCase
         $this->_model->setId(99);
         $this->_model->addCustomOption('one', 'value1');
         $option = $this->_model->getCustomOption('one');
-        $this->assertInstanceOf(\Magento\Framework\DataObject::class, $option);
+        $this->assertInstanceOf(DataObject::class, $option);
         $this->assertEquals($this->_model->getId(), $option->getProductId());
         $this->assertSame($option->getProduct(), $this->_model);
         $this->assertEquals('one', $option->getCode());
@@ -350,5 +352,18 @@ class ProductExternalTest extends \PHPUnit\Framework\TestCase
             $this->productRepository->get('simple-3')->getId()
         );
         $this->assertEmpty($this->_model->getAvailableInCategories());
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->productRepository = $this->objectManager->create(
+            ProductRepositoryInterface::class
+        );
+
+        $this->_model = $this->objectManager->create(
+            Product::class
+        );
     }
 }

@@ -4,15 +4,23 @@
  * See COPYING.txt for license details.
  */
 
-/** @var $category \Magento\Catalog\Model\Category */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+/** @var $category Category */
+
+use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Catalog\Model\ProductRepository;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
 
 $productRepository = $objectManager->get(
-    \Magento\Catalog\Model\ProductRepository::class
+    ProductRepository::class
 );
 
-/** @var $productFirst \Magento\Catalog\Model\Product */
-$productFirst = $objectManager->create(\Magento\Catalog\Model\Product::class);
+/** @var $productFirst Product */
+$productFirst = $objectManager->create(Product::class);
 $productFirst->setTypeId('simple')
     ->setId(1)
     ->setAttributeSetId(4)
@@ -23,13 +31,13 @@ $productFirst->setTypeId('simple')
     ->setMetaTitle('meta title')
     ->setMetaKeyword('meta keyword')
     ->setMetaDescription('meta description')
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setStockData(['use_config_manage_stock' => 0]);
 $productRepository->save($productFirst);
 
-/** @var $productSecond \Magento\Catalog\Model\Product */
-$productSecond = $objectManager->create(\Magento\Catalog\Model\Product::class);
+/** @var $productSecond Product */
+$productSecond = $objectManager->create(Product::class);
 $productSecond->setTypeId('simple')
     ->setId(2)
     ->setAttributeSetId(4)
@@ -40,13 +48,13 @@ $productSecond->setTypeId('simple')
     ->setMetaTitle('meta title')
     ->setMetaKeyword('meta keyword')
     ->setMetaDescription('meta description')
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setStockData(['use_config_manage_stock' => 0]);
 $productRepository->save($productSecond);
 
-/** @var $productThird \Magento\Catalog\Model\Product */
-$productThird = $objectManager->create(\Magento\Catalog\Model\Product::class);
+/** @var $productThird Product */
+$productThird = $objectManager->create(Product::class);
 $productThird->setTypeId('simple')
     ->setId(3)
     ->setAttributeSetId(4)
@@ -57,7 +65,7 @@ $productThird->setTypeId('simple')
     ->setMetaTitle('meta title')
     ->setMetaKeyword('meta keyword')
     ->setMetaDescription('meta description')
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setStockData(['use_config_manage_stock' => 0]);
 $productRepository->save($productThird);

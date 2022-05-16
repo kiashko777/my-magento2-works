@@ -41,6 +41,26 @@ class ItemsTest extends TestCase
     private $invoiceCollectionFactory;
 
     /**
+     * @magentoDataFixture Magento/Sales/_files/invoice.php
+     *
+     * @return void
+     */
+    public function testGetUpdateButtonHtml(): void
+    {
+        $order = $this->orderFactory->create()->loadByIncrementId('100000001');
+        $invoice = $this->invoiceCollectionFactory->create()->setOrderFilter($order)->setPageSize(1)->getFirstItem();
+        $this->registry->unregister('current_invoice');
+        $this->registry->register('current_invoice', $invoice);
+        $this->block->toHtml();
+        $button = $this->block->getChildBlock('update_button');
+        $this->assertEquals((string)__('Update Qty\'s'), (string)$button->getLabel());
+        $this->assertStringContainsString(
+            sprintf('sales/index/updateQty/order_id/%u/', (int)$order->getEntityId()),
+            $button->getOnClick()
+        );
+    }
+
+    /**
      * @inheritdoc
      */
     protected function setUp(): void
@@ -62,25 +82,5 @@ class ItemsTest extends TestCase
         $this->registry->unregister('current_invoice');
 
         parent::tearDown();
-    }
-
-    /**
-     * @magentoDataFixture Magento/Sales/_files/invoice.php
-     *
-     * @return void
-     */
-    public function testGetUpdateButtonHtml(): void
-    {
-        $order = $this->orderFactory->create()->loadByIncrementId('100000001');
-        $invoice = $this->invoiceCollectionFactory->create()->setOrderFilter($order)->setPageSize(1)->getFirstItem();
-        $this->registry->unregister('current_invoice');
-        $this->registry->register('current_invoice', $invoice);
-        $this->block->toHtml();
-        $button = $this->block->getChildBlock('update_button');
-        $this->assertEquals((string)__('Update Qty\'s'), (string)$button->getLabel());
-        $this->assertStringContainsString(
-            sprintf('sales/index/updateQty/order_id/%u/', (int)$order->getEntityId()),
-            $button->getOnClick()
-        );
     }
 }

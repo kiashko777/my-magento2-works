@@ -49,6 +49,13 @@ abstract class AbstractBundleProductSaveTest extends AbstractBackendController
     }
 
     /**
+     * Get main product data
+     *
+     * @return array
+     */
+    abstract protected function getStaticProductData(): array;
+
+    /**
      * @inheritdoc
      */
     protected function tearDown(): void
@@ -58,17 +65,6 @@ abstract class AbstractBundleProductSaveTest extends AbstractBackendController
         }
 
         parent::tearDown();
-    }
-
-    /**
-     * Retrieve default product attribute set id.
-     *
-     * @return int
-     */
-    protected function getDefaultAttributeSetId(): int
-    {
-        return (int)$this->eavConfig->getEntityType(ProductAttributeInterface::ENTITY_TYPE_CODE)
-            ->getDefaultAttributeSetId();
     }
 
     /**
@@ -84,21 +80,6 @@ abstract class AbstractBundleProductSaveTest extends AbstractBackendController
         $this->setRequestparams($post, $id);
 
         return $post;
-    }
-
-    /**
-     * Prepare and assert bundle options
-     *
-     * @param array $bundleOptions
-     * @return void
-     */
-    protected function assertBundleOptions(array $bundleOptions): void
-    {
-        $mainProduct = $this->productRepository->get($this->getStaticProductData()['sku'], false, null, true);
-        $optionsCollection = $mainProduct->getTypeInstance()->getOptionsCollection($mainProduct);
-        $selectionCollection = $mainProduct->getTypeInstance()
-            ->getSelectionsCollection($optionsCollection->getAllIds(), $mainProduct);
-        $this->assertOptionsData($bundleOptions, $optionsCollection, $selectionCollection);
     }
 
     /**
@@ -160,6 +141,51 @@ abstract class AbstractBundleProductSaveTest extends AbstractBackendController
     }
 
     /**
+     * Set request parameters
+     *
+     * @param array $post
+     * @param int|null $id
+     * @return void
+     */
+    private function setRequestParams(array $post, ?int $id): void
+    {
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
+        $params = ['type' => Type::TYPE_CODE, 'set' => $this->getDefaultAttributeSetId()];
+        if ($id) {
+            $params['id'] = $id;
+        }
+        $this->getRequest()->setParams($params);
+        $this->getRequest()->setPostValue('product', $post['product']);
+        $this->getRequest()->setPostValue('bundle_options', $post['bundle_options']);
+    }
+
+    /**
+     * Retrieve default product attribute set id.
+     *
+     * @return int
+     */
+    protected function getDefaultAttributeSetId(): int
+    {
+        return (int)$this->eavConfig->getEntityType(ProductAttributeInterface::ENTITY_TYPE_CODE)
+            ->getDefaultAttributeSetId();
+    }
+
+    /**
+     * Prepare and assert bundle options
+     *
+     * @param array $bundleOptions
+     * @return void
+     */
+    protected function assertBundleOptions(array $bundleOptions): void
+    {
+        $mainProduct = $this->productRepository->get($this->getStaticProductData()['sku'], false, null, true);
+        $optionsCollection = $mainProduct->getTypeInstance()->getOptionsCollection($mainProduct);
+        $selectionCollection = $mainProduct->getTypeInstance()
+            ->getSelectionsCollection($optionsCollection->getAllIds(), $mainProduct);
+        $this->assertOptionsData($bundleOptions, $optionsCollection, $selectionCollection);
+    }
+
+    /**
      * Assert bundle options data
      *
      * @param array $expectedOptions
@@ -168,10 +194,11 @@ abstract class AbstractBundleProductSaveTest extends AbstractBackendController
      * @return void
      */
     private function assertOptionsData(
-        array $expectedOptions,
-        OptionCollection $actualOptions,
+        array               $expectedOptions,
+        OptionCollection    $actualOptions,
         SelectionCollection $selectionCollection
-    ): void {
+    ): void
+    {
         $this->assertCount(count($expectedOptions['bundle_options']), $actualOptions);
         foreach ($expectedOptions['bundle_options'] as $expectedOption) {
             $optionToCheck = $actualOptions->getItemByColumnValue('title', $expectedOption['title']);
@@ -223,30 +250,4 @@ abstract class AbstractBundleProductSaveTest extends AbstractBackendController
 
         return $item;
     }
-
-    /**
-     * Set request parameters
-     *
-     * @param array $post
-     * @param int|null $id
-     * @return void
-     */
-    private function setRequestParams(array $post, ?int $id): void
-    {
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
-        $params = ['type' => Type::TYPE_CODE, 'set' => $this->getDefaultAttributeSetId()];
-        if ($id) {
-            $params['id'] = $id;
-        }
-        $this->getRequest()->setParams($params);
-        $this->getRequest()->setPostValue('product', $post['product']);
-        $this->getRequest()->setPostValue('bundle_options', $post['bundle_options']);
-    }
-
-    /**
-     * Get main product data
-     *
-     * @return array
-     */
-    abstract protected function getStaticProductData(): array;
 }

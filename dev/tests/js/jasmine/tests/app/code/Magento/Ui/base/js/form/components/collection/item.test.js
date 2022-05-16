@@ -155,9 +155,9 @@ define([
             });
             it('Check returned value type if method called with object argument', function () {
                 var arg = {
-                        items: [],
-                        prefix: 'magento'
-                    };
+                    items: [],
+                    prefix: 'magento'
+                };
 
                 obj.getPreview = jasmine.createSpy().and.callFake(function () {
                     return [];

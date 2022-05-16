@@ -7,23 +7,22 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl;
 
+use GraphQL\GraphQL;
+use GraphQL\Type\Definition\Type;
 use Magento\Framework\GraphQl\Schema\Type\InputObjectType;
 use Magento\Framework\GraphQl\Schema\Type\ObjectType;
+use Magento\Framework\GraphQl\SchemaFactory;
 use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class GraphQlIntrospectionTest extends \PHPUnit\Framework\TestCase
+class GraphQlIntrospectionTest extends TestCase
 {
-    /** @var \Magento\Framework\GraphQl\SchemaFactory */
+    /** @var SchemaFactory */
     private $schemaFactory;
 
     /** @var  ObjectManagerInterface */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->schemaFactory = $this->objectManager->get(\Magento\Framework\GraphQl\SchemaFactory::class);
-    }
 
     public function testIntrospectionQuery()
     {
@@ -32,8 +31,8 @@ class GraphQlIntrospectionTest extends \PHPUnit\Framework\TestCase
                 'query' => new ObjectType(
                     [
                         'name' => 'Query',
-                        'description' =>'Description at type level',
-                        'fields' => ['a' => \GraphQL\Type\Definition\Type::string()]
+                        'description' => 'Description at type level',
+                        'fields' => ['a' => Type::string()]
                     ]
                 )
             ]
@@ -75,7 +74,7 @@ type { ...TypeRef }
 defaultValue
 }
 QUERY;
-        $response = \GraphQL\GraphQL::executeQuery($emptySchema, $request);
+        $response = GraphQL::executeQuery($emptySchema, $request);
         $output = $response->toArray()['data']['__schema'];
         $this->assertEquals('Query', $output['queryType']['name']);
         $this->assertEquals($output['types'][0]['kind'], 'OBJECT');
@@ -105,19 +104,19 @@ QUERY;
                 'name' => 'ProductFilterInput',
                 'fields' => [
                     'attributeA' => [
-                        'type' => \GraphQL\Type\Definition\Type::nonNull(
-                            \GraphQL\Type\Definition\Type::string()
+                        'type' => Type::nonNull(
+                            Type::string()
                         ),
                         'description' => 'testDescriptionForA'
                     ],
                     'attributeB' => [
-                        'type' => \GraphQL\Type\Definition\Type::listOf(
-                            \GraphQL\Type\Definition\Type::string()
+                        'type' => Type::listOf(
+                            Type::string()
                         )
                     ],
-                    'attributeC' => ['type' => \GraphQL\Type\Definition\Type::string(), 'defaultValue' => null],
+                    'attributeC' => ['type' => Type::string(), 'defaultValue' => null],
                     'attributeD' => [
-                        'type' => \GraphQL\Type\Definition\Type::string(),
+                        'type' => Type::string(),
                         'defaultValue' => 'test',
                         'description' => 'testDescriptionForD'
                     ],
@@ -128,7 +127,7 @@ QUERY;
             'name' => 'Query',
             'fields' => [
                 'field' => [
-                    'type' => \GraphQL\Type\Definition\Type::string(),
+                    'type' => Type::string(),
                     'args' => ['complex' => ['type' => $testInputObject]],
                     'resolve' => function ($args) {
                         return json_encode($args['complex']);
@@ -173,59 +172,59 @@ QUERY;
         }
 }
 QUERY;
-        $response = \GraphQL\GraphQL::executeQuery($testSchema, $request);
+        $response = GraphQL::executeQuery($testSchema, $request);
         $expectedResult =
             [
-                'kind'=> 'INPUT_OBJECT',
-                'name'=> 'ProductFilterInput',
-                'inputFields'=> [
+                'kind' => 'INPUT_OBJECT',
+                'name' => 'ProductFilterInput',
+                'inputFields' => [
                     [
-                        'name'=> 'attributeA',
-                        'description'=> 'testDescriptionForA',
-                        'type'=> [
-                            'kind'=> 'NON_NULL',
-                            'name'=> null,
-                            'ofType'=> [
-                                'kind'=> 'SCALAR',
-                                'name'=> 'String',
-                                'ofType'=> null
+                        'name' => 'attributeA',
+                        'description' => 'testDescriptionForA',
+                        'type' => [
+                            'kind' => 'NON_NULL',
+                            'name' => null,
+                            'ofType' => [
+                                'kind' => 'SCALAR',
+                                'name' => 'String',
+                                'ofType' => null
                             ]
                         ],
-                        'defaultValue'=> null
+                        'defaultValue' => null
                     ],
                     [
-                        'name'=> 'attributeB',
-                        'description'=> null,
-                        'type'=> [
-                            'kind'=> 'LIST',
-                            'name'=> null,
-                            'ofType'=> [
-                                'kind'=> 'SCALAR',
-                                'name'=> 'String',
-                                'ofType'=> null
+                        'name' => 'attributeB',
+                        'description' => null,
+                        'type' => [
+                            'kind' => 'LIST',
+                            'name' => null,
+                            'ofType' => [
+                                'kind' => 'SCALAR',
+                                'name' => 'String',
+                                'ofType' => null
                             ]
                         ],
-                        'defaultValue'=> null
+                        'defaultValue' => null
                     ],
                     [
-                        'name'=> 'attributeC',
-                        'description'=> null,
-                        'type'=> [
-                            'kind'=> 'SCALAR',
-                            'name'=> 'String',
-                            'ofType'=> null
+                        'name' => 'attributeC',
+                        'description' => null,
+                        'type' => [
+                            'kind' => 'SCALAR',
+                            'name' => 'String',
+                            'ofType' => null
                         ],
-                        'defaultValue'=> 'null'
+                        'defaultValue' => 'null'
                     ],
                     [
-                        'name'=> 'attributeD',
-                        'description'=> 'testDescriptionForD',
-                        'type'=> [
-                            'kind'=> 'SCALAR',
-                            'name'=> 'String',
-                            'ofType'=> null
+                        'name' => 'attributeD',
+                        'description' => 'testDescriptionForD',
+                        'type' => [
+                            'kind' => 'SCALAR',
+                            'name' => 'String',
+                            'ofType' => null
                         ],
-                        'defaultValue'=> '"test"'
+                        'defaultValue' => '"test"'
                     ]
                 ]
             ];
@@ -242,19 +241,19 @@ QUERY;
             [
                 'query' => new ObjectType(
                     [
-                    'name' => 'Query',
-                    'fields' => [
-                       'deprecated' => [
-                         'type' => \GraphQL\Type\Definition\Type::string(),
-                         'deprecationReason' =>'Deprecated in an older version'
-                       ],
-                         'nonDeprecated' => [
-                            'type' => \GraphQL\Type\Definition\Type::string()
-                         ]
-                    ]
+                        'name' => 'Query',
+                        'fields' => [
+                            'deprecated' => [
+                                'type' => Type::string(),
+                                'deprecationReason' => 'Deprecated in an older version'
+                            ],
+                            'nonDeprecated' => [
+                                'type' => Type::string()
+                            ]
+                        ]
                     ]
                 )
-              ]
+            ]
         );
         $request =
             <<<QUERY
@@ -272,41 +271,47 @@ QUERY;
       description
       isDeprecated
       deprecationReason
-      
+
     }
   }
-}           
+}
 
 QUERY;
-        $response = \GraphQL\GraphQL::executeQuery($testSchema, $request);
+        $response = GraphQL::executeQuery($testSchema, $request);
         $output = $response->toArray()['data']['__type'];
         $expectedResult =
             [
-                "name" =>"Query",
-                "kind" =>"OBJECT",
+                "name" => "Query",
+                "kind" => "OBJECT",
                 "fields" => [
-           [
-            'name'=> 'deprecated',
-            'type'=> [
-                'kind'=> 'SCALAR',
-                'name'=> 'String'
-            ],
-            'description'=> null,
-            'isDeprecated'=> true,
-            'deprecationReason'=> 'Deprecated in an older version'
-           ],
-           [
-            'name'=> 'nonDeprecated',
-            'type'=> [
-                'kind'=> 'SCALAR',
-                'name'=> 'String'
-            ],
-            'description'=> null,
-            'isDeprecated'=> false,
-            'deprecationReason'=> null
-           ]
+                    [
+                        'name' => 'deprecated',
+                        'type' => [
+                            'kind' => 'SCALAR',
+                            'name' => 'String'
+                        ],
+                        'description' => null,
+                        'isDeprecated' => true,
+                        'deprecationReason' => 'Deprecated in an older version'
+                    ],
+                    [
+                        'name' => 'nonDeprecated',
+                        'type' => [
+                            'kind' => 'SCALAR',
+                            'name' => 'String'
+                        ],
+                        'description' => null,
+                        'isDeprecated' => false,
+                        'deprecationReason' => null
+                    ]
                 ]
-                ];
+            ];
         $this->assertEquals($expectedResult, $output);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->schemaFactory = $this->objectManager->get(SchemaFactory::class);
     }
 }

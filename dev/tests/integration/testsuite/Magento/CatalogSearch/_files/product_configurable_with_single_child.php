@@ -14,9 +14,9 @@ use Magento\Catalog\Setup\CategorySetup;
 use Magento\ConfigurableProduct\Helper\Product\Options\Factory;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 use Magento\Eav\Api\Data\AttributeOptionInterface;
+use Magento\Eav\Model\Config;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
-use Magento\Eav\Model\Config;
 
 Bootstrap::getInstance()->reinitialize();
 
@@ -52,10 +52,10 @@ $childProduct->setTypeId(Type::TYPE_SIMPLE)
     ->setStatus(Status::STATUS_ENABLED)
     ->setStockData(
         [
-            'use_config_manage_stock'   => 1,
-            'qty'                       => 100,
-            'is_qty_decimal'            => 0,
-            'is_in_stock'               => 1,
+            'use_config_manage_stock' => 1,
+            'qty' => 100,
+            'is_qty_decimal' => 0,
+            'is_in_stock' => 1,
         ]
     );
 $childProduct = $productRepository->save($childProduct);
@@ -98,8 +98,8 @@ $configurableProduct->setTypeId(Configurable::TYPE_CODE)
     ->setStatus(Status::STATUS_ENABLED)
     ->setStockData(
         [
-            'use_config_manage_stock'   => 1,
-            'is_in_stock'               => 1,
+            'use_config_manage_stock' => 1,
+            'is_in_stock' => 1,
         ]
     );
 $configurableProduct = $productRepository->save($configurableProduct);

@@ -6,6 +6,8 @@
 
 use Magento\Sales\Api\Data\OrderInterfaceFactory;
 use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Payment;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
@@ -21,16 +23,16 @@ $shippingAddress = $order->getShippingAddress();
 $billingAddress = $order->getBillingAddress();
 $orderItems = $order->getItems();
 $orderItem = reset($orderItems);
-$payment2 = $objectManager->create(\Magento\Sales\Model\Order\Payment::class);
+$payment2 = $objectManager->create(Payment::class);
 $payment2->setMethod('checkmo');
 
-/** @var \Magento\Sales\Model\Order $order */
-$order2 = $objectManager->create(\Magento\Sales\Model\Order::class);
+/** @var Order $order */
+$order2 = $objectManager->create(Order::class);
 $order2->setIncrementId('100000002')
     ->setState(
-        \Magento\Sales\Model\Order::STATE_PROCESSING
+        Order::STATE_PROCESSING
     )->setStatus(
-        $order->getConfig()->getStateDefaultStatus(\Magento\Sales\Model\Order::STATE_PROCESSING)
+        $order->getConfig()->getStateDefaultStatus(Order::STATE_PROCESSING)
     )->setSubtotal(
         100
     )->setBaseSubtotal(
@@ -46,7 +48,7 @@ $order2->setIncrementId('100000002')
     )->setShippingAddress(
         $shippingAddress
     )->setStoreId(
-        $objectManager->get(\Magento\Store\Model\StoreManagerInterface::class)->getStore()->getId()
+        $objectManager->get(StoreManagerInterface::class)->getStore()->getId()
     )->addItem(
         $orderItem
     )->setPayment(

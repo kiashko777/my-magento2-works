@@ -3,19 +3,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Dependency;
 
-class DbRuleTest extends \PHPUnit\Framework\TestCase
+use PHPUnit\Framework\TestCase;
+
+class DbRuleTest extends TestCase
 {
     /**
      * @var DbRule
      */
     protected $model;
-
-    protected function setUp(): void
-    {
-        $this->model = new DbRule(['some_table' => 'SomeModule']);
-    }
 
     /**
      * @param string $module
@@ -52,11 +50,16 @@ class DbRuleTest extends \PHPUnit\Framework\TestCase
                 [
                     [
                         'modules' => ['SomeModule'],
-                        'type' => \Magento\TestFramework\Dependency\RuleInterface::TYPE_HARD,
+                        'type' => RuleInterface::TYPE_HARD,
                         'source' => 'some_table',
                     ]
                 ]
             ]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->model = new DbRule(['some_table' => 'SomeModule']);
     }
 }

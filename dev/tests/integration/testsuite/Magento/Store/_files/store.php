@@ -6,8 +6,13 @@
  * See COPYING.txt for license details.
  */
 
-/** @var $store \Magento\Store\Model\Store */
-$store = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Store\Model\Store::class);
+/** @var $store Store */
+
+use Magento\Framework\Registry;
+use Magento\Store\Model\Store;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$store = Bootstrap::getObjectManager()->create(Store::class);
 if (!$store->load('test', 'code')->getId()) {
     $store->setData(
         [
@@ -22,9 +27,9 @@ if (!$store->load('test', 'code')->getId()) {
     $store->save();
 } else {
     if ($store->getId()) {
-        /** @var \Magento\TestFramework\Helper\Bootstrap $registry */
-        $registry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\Registry::class
+        /** @var Bootstrap $registry */
+        $registry = Bootstrap::getObjectManager()->get(
+            Registry::class
         );
         $registry->unregister('isSecureArea');
         $registry->register('isSecureArea', true);
@@ -34,7 +39,7 @@ if (!$store->load('test', 'code')->getId()) {
         $registry->unregister('isSecureArea');
         $registry->register('isSecureArea', false);
 
-        $store = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Store\Model\Store::class);
+        $store = Bootstrap::getObjectManager()->create(Store::class);
         $store->setData(
             [
                 'code' => 'test',

@@ -36,6 +36,14 @@ class TextArea extends AbstractBaseAttributeData
     /**
      * @inheritdoc
      */
+    protected function getFrontendInput(): string
+    {
+        return 'textarea';
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function getUpdateProvider(): array
     {
         $frontendInput = $this->getFrontendInput();
@@ -66,9 +74,26 @@ class TextArea extends AbstractBaseAttributeData
     /**
      * @inheritdoc
      */
-    protected function getFrontendInput(): string
+    protected function getUpdateExpectedData(): array
     {
-        return 'textarea';
+        $updatePostData = $this->getUpdatePostData();
+        unset($updatePostData['default_value_textarea']);
+        return array_merge(
+            $updatePostData,
+            [
+                'frontend_label' => 'Text Attribute Update',
+                'attribute_code' => 'text_attribute',
+                'default_value' => 'Text Attribute Default',
+                'frontend_class' => null,
+                'is_filterable' => '0',
+                'is_filterable_in_search' => '0',
+                'position' => '0',
+                'used_for_sort_by' => '0',
+                'is_user_defined' => '1',
+                'backend_type' => 'text',
+                'is_wysiwyg_enabled' => '0',
+            ]
+        );
     }
 
     /**
@@ -97,30 +122,5 @@ class TextArea extends AbstractBaseAttributeData
             'is_visible_on_front' => '1',
             'used_in_product_listing' => '1',
         ];
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function getUpdateExpectedData(): array
-    {
-        $updatePostData = $this->getUpdatePostData();
-        unset($updatePostData['default_value_textarea']);
-        return array_merge(
-            $updatePostData,
-            [
-                'frontend_label' => 'Text Attribute Update',
-                'attribute_code' => 'text_attribute',
-                'default_value' => 'Text Attribute Default',
-                'frontend_class' => null,
-                'is_filterable' => '0',
-                'is_filterable_in_search' => '0',
-                'position' => '0',
-                'used_for_sort_by' => '0',
-                'is_user_defined' => '1',
-                'backend_type' => 'text',
-                'is_wysiwyg_enabled' => '0',
-            ]
-        );
     }
 }

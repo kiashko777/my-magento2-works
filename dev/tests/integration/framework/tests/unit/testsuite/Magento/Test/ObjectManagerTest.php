@@ -3,33 +3,40 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test;
 
 use Magento\Framework\App\CacheInterface;
 use Magento\Framework\App\DeploymentConfig;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\App\ResourceConnection\ConfigInterface;
+use Magento\Framework\Config\Scope;
 use Magento\Framework\DataObject;
 use Magento\Framework\Model\ResourceModel\Type\Db\ConnectionFactoryInterface;
+use Magento\Framework\ObjectManager\Config\Mapper\Dom;
+use Magento\Framework\ObjectManager\DefinitionInterface;
 use Magento\Framework\ObjectManager\FactoryInterface;
+use Magento\Framework\ObjectManager\RelationsInterface;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\ObjectManager\Config;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
-class ObjectManagerTest extends \PHPUnit\Framework\TestCase
+class ObjectManagerTest extends TestCase
 {
     /**
      * @var array Instances that shouldn't be destroyed by clearing cache.
      */
     private static $persistedInstances = [
         ResourceConnection::class,
-        \Magento\Framework\Config\Scope::class,
-        \Magento\Framework\ObjectManager\RelationsInterface::class,
+        Scope::class,
+        RelationsInterface::class,
         \Magento\Framework\ObjectManager\ConfigInterface::class,
         \Magento\Framework\Interception\DefinitionInterface::class,
-        \Magento\Framework\ObjectManager\DefinitionInterface::class,
+        DefinitionInterface::class,
         \Magento\Framework\Session\Config::class,
-        \Magento\Framework\ObjectManager\Config\Mapper\Dom::class
+        Dom::class
     ];
 
     /**
@@ -71,6 +78,54 @@ class ObjectManagerTest extends \PHPUnit\Framework\TestCase
                 "Instance of {$className} should be the same after cache clearing."
             );
         }
+    }
+
+    /**
+     * Returns mock of instance.
+     *
+     * @param string $className
+     * @return MockObject
+     */
+    private function createInstanceMock($className)
+    {
+        return $this->getMockBuilder($className)->disableOriginalConstructor()->getMock();
+    }
+
+    /**
+     * @return Config|MockObject
+     */
+    private function getObjectManagerConfigMock()
+    {
+        $configMock = $this->getMockBuilder(Config::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $configMock->method('getPreference')
+            ->willReturnCallback(
+                function ($className) {
+                    return $className;
+                }
+            );
+
+        return $configMock;
+    }
+
+    /**
+     * @return FactoryInterface|MockObject
+     */
+    private function getObjectManagerFactoryMock()
+    {
+        $factory = $this->getMockForAbstractClass(FactoryInterface::class);
+        $factory->method('create')->willReturnCallback(
+            function ($className) {
+                if ($className === DataObject::class) {
+                    return $this->getMockBuilder(DataObject::class)
+                        ->disableOriginalConstructor()
+                        ->getMock();
+                }
+            }
+        );
+
+        return $factory;
     }
 
     /**
@@ -139,54 +194,6 @@ class ObjectManagerTest extends \PHPUnit\Framework\TestCase
             $objectManager->get(ResourceConnection::class)->getMappedTableName('tableName'),
             'Mapped table names list is not empty after Object Manager cache clearing.'
         );
-    }
-
-    /**
-     * @return Config|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private function getObjectManagerConfigMock()
-    {
-        $configMock = $this->getMockBuilder(Config::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $configMock->method('getPreference')
-            ->willReturnCallback(
-                function ($className) {
-                    return $className;
-                }
-            );
-
-        return $configMock;
-    }
-
-    /**
-     * @return FactoryInterface|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private function getObjectManagerFactoryMock()
-    {
-        $factory = $this->getMockForAbstractClass(FactoryInterface::class);
-        $factory->method('create')->willReturnCallback(
-            function ($className) {
-                if ($className === DataObject::class) {
-                    return $this->getMockBuilder(DataObject::class)
-                        ->disableOriginalConstructor()
-                        ->getMock();
-                }
-            }
-        );
-
-        return $factory;
-    }
-
-    /**
-     * Returns mock of instance.
-     *
-     * @param string $className
-     * @return \PHPUnit\Framework\MockObject\MockObject
-     */
-    private function createInstanceMock($className)
-    {
-        return $this->getMockBuilder($className)->disableOriginalConstructor()->getMock();
     }
 
     /**

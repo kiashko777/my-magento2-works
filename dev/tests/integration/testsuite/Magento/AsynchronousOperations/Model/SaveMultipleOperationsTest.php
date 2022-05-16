@@ -6,15 +6,15 @@
 
 namespace Magento\AsynchronousOperations\Model;
 
+use Magento\AsynchronousOperations\Api\Data\BulkSummaryInterfaceFactory;
 use Magento\AsynchronousOperations\Api\Data\OperationInterface;
 use Magento\AsynchronousOperations\Api\Data\OperationInterfaceFactory;
 use Magento\AsynchronousOperations\Api\SaveMultipleOperationsInterface;
-use Magento\AsynchronousOperations\Model\BulkStatus;
-use Magento\AsynchronousOperations\Api\Data\BulkSummaryInterface;
-use Magento\AsynchronousOperations\Api\Data\BulkSummaryInterfaceFactory;
 use Magento\Framework\EntityManager\EntityManager;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class SaveMultipleOperationsTest extends \PHPUnit\Framework\TestCase
+class SaveMultipleOperationsTest extends TestCase
 {
 
     private const BULK_UUID = "bulk-uuid-multiple-0";
@@ -45,28 +45,6 @@ class SaveMultipleOperationsTest extends \PHPUnit\Framework\TestCase
     private $bulkSummaryFactory;
 
     /**
-     * Set Up the test
-     */
-    protected function setUp(): void
-    {
-        $this->saveMultipleOperationsInterface = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            SaveMultipleOperationsInterface::class
-        );
-        $this->operationFactory = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            OperationInterfaceFactory::class
-        );
-        $this->bulkStatusManagement = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            BulkStatus::class
-        );
-        $this->bulkSummaryFactory = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            BulkSummaryInterfaceFactory::class
-        );
-        $this->entityManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            EntityManager::class
-        );
-    }
-
-    /**
      * Test execute() of SaveMultipleOperations
      */
     public function testExecute()
@@ -84,7 +62,7 @@ class SaveMultipleOperationsTest extends \PHPUnit\Framework\TestCase
         $this->entityManager->save($bulkSummary);
 
         $this->saveMultipleOperationsInterface->execute($operations);
-        $operationsCount =  $this->bulkStatusManagement
+        $operationsCount = $this->bulkStatusManagement
             ->getOperationsCountByBulkIdAndStatus(self::BULK_UUID, OperationInterface::STATUS_TYPE_OPEN);
         $this->assertEquals($operationsCount, 3);
     }
@@ -96,8 +74,8 @@ class SaveMultipleOperationsTest extends \PHPUnit\Framework\TestCase
     public function createOperation()
     {
         $serializedData = [
-            'entity_id'        => null,
-            'entity_link'      => '',
+            'entity_id' => null,
+            'entity_link' => '',
             'meta_information' => json_encode([
                 'entity_id' => 5,
                 'meta_information' => 'Test'
@@ -106,12 +84,34 @@ class SaveMultipleOperationsTest extends \PHPUnit\Framework\TestCase
 
         $data = [
             'data' => [
-                OperationInterface::BULK_ID         => self::BULK_UUID,
-                OperationInterface::TOPIC_NAME      => "topic-4",
+                OperationInterface::BULK_ID => self::BULK_UUID,
+                OperationInterface::TOPIC_NAME => "topic-4",
                 OperationInterface::SERIALIZED_DATA => json_encode($serializedData),
-                OperationInterface::STATUS          => OperationInterface::STATUS_TYPE_OPEN,
+                OperationInterface::STATUS => OperationInterface::STATUS_TYPE_OPEN,
             ],
         ];
         return $this->operationFactory->create($data);
+    }
+
+    /**
+     * Set Up the test
+     */
+    protected function setUp(): void
+    {
+        $this->saveMultipleOperationsInterface = Bootstrap::getObjectManager()->create(
+            SaveMultipleOperationsInterface::class
+        );
+        $this->operationFactory = Bootstrap::getObjectManager()->create(
+            OperationInterfaceFactory::class
+        );
+        $this->bulkStatusManagement = Bootstrap::getObjectManager()->create(
+            BulkStatus::class
+        );
+        $this->bulkSummaryFactory = Bootstrap::getObjectManager()->create(
+            BulkSummaryInterfaceFactory::class
+        );
+        $this->entityManager = Bootstrap::getObjectManager()->create(
+            EntityManager::class
+        );
     }
 }

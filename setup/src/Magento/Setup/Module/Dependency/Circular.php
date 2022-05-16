@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Dependency;
 
 use Magento\Framework\Data\Graph;
@@ -29,7 +30,7 @@ class Circular
     /**
      * Graph object
      *
-     * @var \Magento\Framework\Data\Graph
+     * @var Graph
      */
     protected $graph;
 

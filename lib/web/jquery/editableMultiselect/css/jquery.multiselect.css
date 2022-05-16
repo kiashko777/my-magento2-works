@@ -39,8 +39,9 @@
 
 .mselect-input {
     width: 99%;
-    margin:0;
+    margin: 0;
 }
+
 .mselect-list-item .mselect-checked + span {
     background: #cdecf6;
 }
@@ -162,7 +163,7 @@
 .mselect-save:before {
     font-size: 16px;
     color: #666;
-    color: rgba(20,20,20,0.3);
+    color: rgba(20, 20, 20, 0.3);
     vertical-align: baseline;
     font-family: 'MUI-Icons';
     font-style: normal;
@@ -183,7 +184,7 @@
 .mselect-delete:hover:before,
 .mselect-save:hover:before {
     color: #333;
-    color: rgba(20,20,20,0.6);
+    color: rgba(20, 20, 20, 0.6);
 }
 
 .mselect-cancel:before {
@@ -206,6 +207,7 @@
 .mselect-list-item:hover .mselect-edit {
     display: block;
 }
+
 .mselect-list-item-not-editable:hover .mselect-edit {
     display: none;
 }

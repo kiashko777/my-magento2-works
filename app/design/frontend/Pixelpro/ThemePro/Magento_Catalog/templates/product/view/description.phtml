@@ -9,10 +9,14 @@
 /**
  * Products description template
  *
- * @var $block \Magento\Catalog\Block\Product\View\Description
+ * @var $block Description
  */
+
+use Magento\Catalog\Block\Product\View\Description;
+
 ?>
-<?= /* @noEscape */ $this->helper(Magento\Catalog\Helper\Output::class)->productAttribute(
+<?= /* @noEscape */
+$this->helper(Magento\Catalog\Helper\Output::class)->productAttribute(
     $block->getProduct(),
     $block->getProduct()->getDescription(),
     'description'

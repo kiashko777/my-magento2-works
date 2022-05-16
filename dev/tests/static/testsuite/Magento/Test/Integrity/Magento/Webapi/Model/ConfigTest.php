@@ -3,8 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Magento\Webapi\Model;
 
+use Magento\Framework\Config\Dom\UrnResolver;
 use Magento\TestFramework\Integrity\AbstractConfig;
 
 /**
@@ -103,7 +105,7 @@ class ConfigTest extends AbstractConfig
      */
     protected function _getXsd()
     {
-        $urnResolver = new \Magento\Framework\Config\Dom\UrnResolver();
+        $urnResolver = new UrnResolver();
         return $urnResolver->getRealPath('urn:magento:module:Magento_Webapi:etc/webapi_merged.xsd');
     }
 
@@ -114,7 +116,7 @@ class ConfigTest extends AbstractConfig
      */
     protected function _getFileXsd()
     {
-        $urnResolver = new \Magento\Framework\Config\Dom\UrnResolver();
+        $urnResolver = new UrnResolver();
         return $urnResolver->getRealPath('urn:magento:module:Magento_Webapi:etc/webapi.xsd');
     }
 }

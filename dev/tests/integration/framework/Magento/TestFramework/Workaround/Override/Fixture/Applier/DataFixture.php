@@ -36,6 +36,24 @@ class DataFixture extends Base
     }
 
     /**
+     * Replace test fixtures according config
+     *
+     * @param array $fixtures
+     * @param array $replacedFixtures
+     * @return array
+     */
+    private function replaceFixtures(array $fixtures, array $replacedFixtures): array
+    {
+        foreach ($fixtures as $key => $fixture) {
+            if (!empty($replacedFixtures[$fixture])) {
+                $fixtures[$key] = $replacedFixtures[$fixture];
+            }
+        }
+
+        return $fixtures;
+    }
+
+    /**
      * @inheritdoc
      */
     public function apply(array $fixtures): array
@@ -55,41 +73,6 @@ class DataFixture extends Base
             }
         }
         $fixtures = $this->replaceFixtures($fixtures, $replacedFixtures);
-
-        return $fixtures;
-    }
-
-    /**
-     * Replace test fixtures according config
-     *
-     * @param array $fixtures
-     * @param array $replacedFixtures
-     * @return array
-     */
-    private function replaceFixtures(array $fixtures, array $replacedFixtures): array
-    {
-        foreach ($fixtures as $key => $fixture) {
-            if (!empty($replacedFixtures[$fixture])) {
-                $fixtures[$key] = $replacedFixtures[$fixture];
-            }
-        }
-
-        return $fixtures;
-    }
-
-    /**
-     * Remove fixtures according config
-     *
-     * @param array $fixtures
-     * @param array $attributes
-     * @return array
-     */
-    private function removeFixtures(array $fixtures, array $attributes): array
-    {
-        $key = array_search($attributes['path'], $fixtures);
-        if ($key || $key === 0) {
-            unset($fixtures[$key]);
-        }
 
         return $fixtures;
     }
@@ -163,5 +146,22 @@ class DataFixture extends Base
             [$fixture],
             array_slice($fixtures, $position)
         );
+    }
+
+    /**
+     * Remove fixtures according config
+     *
+     * @param array $fixtures
+     * @param array $attributes
+     * @return array
+     */
+    private function removeFixtures(array $fixtures, array $attributes): array
+    {
+        $key = array_search($attributes['path'], $fixtures);
+        if ($key || $key === 0) {
+            unset($fixtures[$key]);
+        }
+
+        return $fixtures;
     }
 }

@@ -3,14 +3,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Captcha\Observer;
+
+use Magento\Backend\Model\UrlInterface;
+use Magento\Framework\Message\MessageInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractController;
 
 /**
  * Test captcha observer behavior
  *
  * @magentoAppArea Adminhtml
  */
-class CaseCheckUnsuccessfulMessageWhenCaptchaFailedTest extends \Magento\TestFramework\TestCase\AbstractController
+class CaseCheckUnsuccessfulMessageWhenCaptchaFailedTest extends AbstractController
 {
     /**
      * @magentoDbIsolation enabled
@@ -21,14 +27,14 @@ class CaseCheckUnsuccessfulMessageWhenCaptchaFailedTest extends \Magento\TestFra
      */
     public function testCheckUnsuccessfulMessageWhenCaptchaFailed()
     {
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Backend\Model\UrlInterface::class
+        Bootstrap::getObjectManager()->get(
+            UrlInterface::class
         )->turnOffSecretKey();
         $this->getRequest()->setPostValue(['email' => 'dummy@dummy.com', 'captcha' => '1234']);
         $this->dispatch('backend/admin/auth/forgotpassword');
         $this->assertSessionMessages(
             $this->equalTo(['Incorrect CAPTCHA']),
-            \Magento\Framework\Message\MessageInterface::TYPE_ERROR
+            MessageInterface::TYPE_ERROR
         );
     }
 }

@@ -30,16 +30,6 @@ class UpdateContentAssetLinksTest extends TestCase
     private $getAssetIdsByContentIdentity;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->updateContentAssetLinks = Bootstrap::getObjectManager()->get(UpdateContentAssetLinksInterface::class);
-        $this->getAssetIdsByContentIdentity = Bootstrap::getObjectManager()
-            ->get(GetAssetIdsByContentIdentityInterface::class);
-    }
-
-    /**
      * Assing assets to content, retrieve the data, then unassign assets from content
      *
      * @magentoDataFixture Magento/MediaGallery/_files/media_asset.php
@@ -69,5 +59,15 @@ class UpdateContentAssetLinksTest extends TestCase
 
         $this->updateContentAssetLinks->execute($contentIdentity, $contentWithoutAsset);
         $this->assertEmpty($this->getAssetIdsByContentIdentity->execute($contentIdentity));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->updateContentAssetLinks = Bootstrap::getObjectManager()->get(UpdateContentAssetLinksInterface::class);
+        $this->getAssetIdsByContentIdentity = Bootstrap::getObjectManager()
+            ->get(GetAssetIdsByContentIdentityInterface::class);
     }
 }

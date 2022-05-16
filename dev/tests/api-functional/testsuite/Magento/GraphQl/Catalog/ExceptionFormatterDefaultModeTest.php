@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Catalog;
 
+use Exception;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
 
 class ExceptionFormatterDefaultModeTest extends GraphQlAbstract
@@ -23,15 +24,15 @@ class ExceptionFormatterDefaultModeTest extends GraphQlAbstract
     }
   ])
     {
-      items{        
+      items{
       attribute_code
       attribute_type
       entity_type
-    }      
-    }  
+    }
+    }
   }
 QUERY;
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('GraphQL response contains errors: There' . ' ' .
             'can be only one input field named "entity_type"');
         $this->graphQlQuery($query);
@@ -44,24 +45,25 @@ QUERY;
   {
   customAttributeMetadata(attributes:[
     {
-      
+
     }
   ])
     {
-      items{        
+      items{
       attribute_code
       attribute_type
       entity_type
-    }      
-    }  
+    }
+    }
   }
 QUERY;
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('GraphQL response contains errors: Missing attribute_code/entity_type for the ' .
             'input Empty AttributeInput.');
 
         $this->graphQlQuery($query);
     }
+
     public function testAttributeWithNoEntityTypeInputException()
     {
         $query
@@ -73,15 +75,15 @@ QUERY;
     }
   ])
     {
-      items{        
+      items{
       attribute_code
       attribute_type
       entity_type
-    }      
-    }  
+    }
+    }
   }
 QUERY;
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('GraphQL response contains errors: Missing entity_type for the input' .
             ' attribute_code: sku.');
 
@@ -99,15 +101,15 @@ QUERY;
     }
   ])
     {
-      items{        
+      items{
       attribute_code
       attribute_type
       entity_type
-    }      
-    }  
+    }
+    }
   }
 QUERY;
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('GraphQL response contains errors: Missing attribute_code for the input ' .
             'entity_type: catalog_category.');
 
@@ -126,15 +128,15 @@ QUERY;
     }
   ])
     {
-      items{        
+      items{
       attribute_code
       attribute_type
       entity_type
-    }      
-    }  
+    }
+    }
   }
 QUERY;
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
 
         $this->expectExceptionMessage('Invalid entity_type specified: invalid');
 

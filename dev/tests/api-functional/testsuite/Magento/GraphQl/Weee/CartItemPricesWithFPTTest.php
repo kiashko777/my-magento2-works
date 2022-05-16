@@ -10,6 +10,7 @@ namespace Magento\GraphQl\Weee;
 use Magento\Framework\App\Config\ReinitableConfigInterface;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Config\Storage\WriterInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\ObjectManager\ObjectManager;
 use Magento\GraphQl\Quote\GetMaskedQuoteIdByReservedOrderId;
 use Magento\TestFramework\Helper\Bootstrap;
@@ -43,64 +44,11 @@ class CartItemPricesWithFPTTest extends GraphQlAbstract
     private $getMaskedQuoteIdByReservedOrderId;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->scopeConfig = $this->objectManager->get(ScopeConfigInterface::class);
-        $this->getMaskedQuoteIdByReservedOrderId = $this->objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-
-        $currentSettingsArray = [
-            'tax/display/type',
-            'tax/weee/enable',
-            'tax/weee/display',
-            'tax/defaults/region',
-            'tax/weee/apply_vat',
-            'tax/calculation/price_includes_tax'
-        ];
-
-        foreach ($currentSettingsArray as $configPath) {
-            $this->initialConfig[$configPath] = $this->scopeConfig->getValue(
-                $configPath
-            );
-        }
-        /** @var ReinitableConfigInterface $config */
-        $config = $this->objectManager->get(ReinitableConfigInterface::class);
-        $config->reinit();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->writeConfig($this->initialConfig);
-    }
-
-    /**
-     * Write configuration for weee
-     *
-     * @param array $settings
-     * @return void
-     */
-    private function writeConfig(array $settings): void
-    {
-        /** @var WriterInterface $configWriter */
-        $configWriter = $this->objectManager->get(WriterInterface::class);
-
-        foreach ($settings as $path => $value) {
-            $configWriter->save($path, $value);
-        }
-        $this->scopeConfig->clean();
-    }
-
-    /**
      * @param array $taxSettings
      * @param array $expectedFtps
      * @return void
      *
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @throws NoSuchEntityException
      * @dataProvider cartItemFixedProductTaxDataProvider
      * @magentoApiDataFixture Magento/GraphQl/Tax/_files/tax_rule_for_region_1.php
      * @magentoApiDataFixture Magento/Weee/_files/product_with_two_fpt.php
@@ -120,6 +68,69 @@ class CartItemPricesWithFPTTest extends GraphQlAbstract
         $this->assertNotEmpty($result['cart']['items']);
         $actualFtps = $result['cart']['items'][0]['prices']['fixed_product_taxes'];
         $this->assertEqualsCanonicalizing($expectedFtps, $actualFtps);
+    }
+
+    /**
+     * Generates GraphQl query for retrieving cart totals
+     *
+     * @param string $maskedQuoteId
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId): string
+    {
+        return <<<QUERY
+{
+  cart(cart_id: "$maskedQuoteId") {
+    items {
+      prices {
+        price {
+          value
+          currency
+        }
+        row_total {
+          value
+          currency
+        }
+        row_total_including_tax {
+          value
+          currency
+        }
+        fixed_product_taxes {
+          label
+          amount {
+            value
+          }
+        }
+      }
+    }
+    prices {
+      grand_total {
+        value
+        currency
+      }
+      subtotal_including_tax {
+        value
+        currency
+      }
+      subtotal_excluding_tax {
+        value
+        currency
+      }
+      subtotal_with_discount_excluding_tax {
+        value
+        currency
+      }
+      applied_taxes {
+        label
+        amount {
+          value
+          currency
+        }
+      }
+    }
+  }
+}
+QUERY;
     }
 
     /**
@@ -310,65 +321,55 @@ class CartItemPricesWithFPTTest extends GraphQlAbstract
     }
 
     /**
-     * Generates GraphQl query for retrieving cart totals
-     *
-     * @param string $maskedQuoteId
-     * @return string
+     * @inheritdoc
      */
-    private function getQuery(string $maskedQuoteId): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-{
-  cart(cart_id: "$maskedQuoteId") {
-    items {
-      prices {
-        price {
-          value
-          currency
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->scopeConfig = $this->objectManager->get(ScopeConfigInterface::class);
+        $this->getMaskedQuoteIdByReservedOrderId = $this->objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+
+        $currentSettingsArray = [
+            'tax/display/type',
+            'tax/weee/enable',
+            'tax/weee/display',
+            'tax/defaults/region',
+            'tax/weee/apply_vat',
+            'tax/calculation/price_includes_tax'
+        ];
+
+        foreach ($currentSettingsArray as $configPath) {
+            $this->initialConfig[$configPath] = $this->scopeConfig->getValue(
+                $configPath
+            );
         }
-        row_total {
-          value
-          currency
-        }
-        row_total_including_tax {
-          value
-          currency
-        }
-        fixed_product_taxes {
-          label
-          amount {
-            value
-          }
-        }
-      }
+        /** @var ReinitableConfigInterface $config */
+        $config = $this->objectManager->get(ReinitableConfigInterface::class);
+        $config->reinit();
     }
-    prices {
-      grand_total {
-        value
-        currency
-      }
-      subtotal_including_tax {
-        value
-        currency
-      }
-      subtotal_excluding_tax {
-        value
-        currency
-      }
-      subtotal_with_discount_excluding_tax {
-        value
-        currency
-      }
-      applied_taxes {
-        label
-        amount {
-          value
-          currency
-        }
-      }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->writeConfig($this->initialConfig);
     }
-  }
-}
-QUERY;
+
+    /**
+     * Write configuration for weee
+     *
+     * @param array $settings
+     * @return void
+     */
+    private function writeConfig(array $settings): void
+    {
+        /** @var WriterInterface $configWriter */
+        $configWriter = $this->objectManager->get(WriterInterface::class);
+
+        foreach ($settings as $path => $value) {
+            $configWriter->save($path, $value);
+        }
+        $this->scopeConfig->clean();
     }
 }

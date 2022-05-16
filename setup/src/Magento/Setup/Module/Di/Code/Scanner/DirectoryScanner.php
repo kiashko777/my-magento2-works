@@ -3,7 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Di\Code\Scanner;
+
+use FilesystemIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
 
 class DirectoryScanner
 {
@@ -17,12 +23,12 @@ class DirectoryScanner
      */
     public function scan($dir, array $patterns = [], array $excludePatterns = [])
     {
-        $recursiveIterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($dir, \FilesystemIterator::FOLLOW_SYMLINKS)
+        $recursiveIterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($dir, FilesystemIterator::FOLLOW_SYMLINKS)
         );
         $output = [];
         foreach ($recursiveIterator as $file) {
-            /** @var $file \SplFileInfo */
+            /** @var $file SplFileInfo */
             if ($file->isDir()) {
                 continue;
             }

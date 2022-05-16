@@ -36,15 +36,6 @@ class OrderHoldTest extends WebapiAbstract
     private $orderRepository;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->orderRepository = $this->objectManager->get(OrderRepositoryInterface::class);
-    }
-
-    /**
      * Test hold order and check order items product options after.
      *
      * @magentoApiDataFixture Magento/Sales/_files/order_with_two_configurable_variations.php
@@ -93,5 +84,14 @@ class OrderHoldTest extends WebapiAbstract
         }
 
         return $result;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->orderRepository = $this->objectManager->get(OrderRepositoryInterface::class);
     }
 }

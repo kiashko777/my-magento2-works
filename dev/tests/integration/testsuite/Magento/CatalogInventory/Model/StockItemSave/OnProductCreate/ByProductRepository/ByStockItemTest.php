@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogInventory\Model\StockItemSave\OnProductCreate\ByProductRepository;
 
 use Magento\Catalog\Api\Data\ProductInterface;
@@ -16,11 +17,12 @@ use Magento\CatalogInventory\Api\StockItemRepositoryInterface;
 use Magento\CatalogInventory\Model\StockItemSave\StockItemDataChecker;
 use Magento\Framework\Api\DataObjectHelper;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoDbIsolation enabled
  */
-class ByStockItemTest extends \PHPUnit\Framework\TestCase
+class ByStockItemTest extends TestCase
 {
     /**
      * @var ProductInterfaceFactory
@@ -73,24 +75,6 @@ class ByStockItemTest extends \PHPUnit\Framework\TestCase
         StockItemInterface::IS_IN_STOCK => false,
     ];
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->productFactory = $objectManager->get(ProductInterfaceFactory::class);
-        $this->stockItemFactory = $objectManager->get(StockItemInterfaceFactory::class);
-        $this->stockItemRepository = $objectManager->get(StockItemRepositoryInterface::class);
-        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
-        // prevent internal caching in property
-        $this->productRepository->cleanCache();
-        $this->dataObjectHelper = $objectManager->get(DataObjectHelper::class);
-        $this->stockItemDataChecker = $objectManager->get(StockItemDataChecker::class);
-
-        /** @var CategorySetup $installer */
-        $installer = $objectManager->create(CategorySetup::class);
-        $attributeSetId = $installer->getAttributeSetId('catalog_product', 'Default');
-        $this->productData[ProductInterface::ATTRIBUTE_SET_ID] = $attributeSetId;
-    }
-
     /**
      * Test saving of stock item by product data via product repository
      */
@@ -140,5 +124,23 @@ class ByStockItemTest extends \PHPUnit\Framework\TestCase
         $this->stockItemRepository->save($stockItem);
 
         $this->stockItemDataChecker->checkStockItemData('simpleForByStockItemTest', $this->stockItemData);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->productFactory = $objectManager->get(ProductInterfaceFactory::class);
+        $this->stockItemFactory = $objectManager->get(StockItemInterfaceFactory::class);
+        $this->stockItemRepository = $objectManager->get(StockItemRepositoryInterface::class);
+        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
+        // prevent internal caching in property
+        $this->productRepository->cleanCache();
+        $this->dataObjectHelper = $objectManager->get(DataObjectHelper::class);
+        $this->stockItemDataChecker = $objectManager->get(StockItemDataChecker::class);
+
+        /** @var CategorySetup $installer */
+        $installer = $objectManager->create(CategorySetup::class);
+        $attributeSetId = $installer->getAttributeSetId('catalog_product', 'Default');
+        $this->productData[ProductInterface::ATTRIBUTE_SET_ID] = $attributeSetId;
     }
 }

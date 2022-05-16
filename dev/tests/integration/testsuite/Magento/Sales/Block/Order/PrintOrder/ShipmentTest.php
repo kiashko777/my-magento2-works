@@ -7,14 +7,15 @@ declare(strict_types=1);
 
 namespace Magento\Sales\Block\Order\PrintOrder;
 
+use IntlDateFormatter;
 use Magento\Directory\Model\CountryFactory;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Registry;
 use Magento\Framework\View\LayoutInterface;
 use Magento\Framework\View\Result\PageFactory;
-use Magento\Sales\Api\Data\ShipmentInterface;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Api\Data\OrderInterfaceFactory;
+use Magento\Sales\Api\Data\ShipmentInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Helper\Xpath;
 use PHPUnit\Framework\TestCase;
@@ -47,32 +48,6 @@ class ShipmentTest extends TestCase
     private $countryFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
-        $this->pageFactory = $this->objectManager->get(PageFactory::class);
-        $this->countryFactory = $this->objectManager->get(CountryFactory::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->registry->unregister('current_order');
-        $this->registry->unregister('current_shipment');
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Sales/_files/shipment_for_two_items.php
      *
      * @return void
@@ -101,33 +76,46 @@ class ShipmentTest extends TestCase
     }
 
     /**
-     * @magentoDataFixture Magento/Sales/_files/shipment_for_order_with_customer.php
+     * Register order in registry.
      *
+     * @param OrderInterface $order
      * @return void
      */
-    public function testOrderInformation(): void
+    private function registerOrder(OrderInterface $order): void
     {
-        $order = $this->orderFactory->create()->loadByIncrementId('100000001');
-        $this->registerOrder($order);
-        $block = $this->layout->createBlock(Shipment::class);
-        $orderDate = $block->formatDate($order->getCreatedAt(), \IntlDateFormatter::LONG);
-        $templates = [
-            'Order status' => [
-                'template' => 'Magento_Sales::order/order_status.phtml',
-                'expected_data' => (string)__($order->getStatusLabel()),
-            ],
-            'Order date' => [
-                'template' => 'Magento_Sales::order/order_date.phtml',
-                'expected_data' => (string)__('Order Date: %1', $orderDate),
-            ],
-        ];
-        foreach ($templates as $key => $data) {
-            $this->assertStringContainsString(
-                $data['expected_data'],
-                strip_tags($block->setTemplate($data['template'])->toHtml()),
-                sprintf('%s wasn\'t found.', $key)
-            );
-        }
+        $this->registry->unregister('current_order');
+        $this->registry->register('current_order', $order);
+    }
+
+    /**
+     * Register shipment in registry.
+     *
+     * @param ShipmentInterface $shipment
+     * @return void
+     */
+    private function registerShipment(ShipmentInterface $shipment): void
+    {
+        $this->registry->unregister('current_shipment');
+        $this->registry->register('current_shipment', $shipment);
+    }
+
+    /**
+     * Render print shipment block.
+     *
+     * @return string
+     */
+    private function renderPrintShipmentBlock(): string
+    {
+        $page = $this->pageFactory->create();
+        $page->addHandle([
+            'default',
+            'sales_order_printshipment',
+        ]);
+        $page->getLayout()->generateXml();
+        $printShipmentBlock = $page->getLayout()->getBlock('sales.order.print.shipment');
+        $this->assertNotFalse($printShipmentBlock);
+
+        return $printShipmentBlock->toHtml();
     }
 
     /**
@@ -193,45 +181,58 @@ class ShipmentTest extends TestCase
     }
 
     /**
-     * Register order in registry.
+     * @magentoDataFixture Magento/Sales/_files/shipment_for_order_with_customer.php
      *
-     * @param OrderInterface $order
      * @return void
      */
-    private function registerOrder(OrderInterface $order): void
+    public function testOrderInformation(): void
+    {
+        $order = $this->orderFactory->create()->loadByIncrementId('100000001');
+        $this->registerOrder($order);
+        $block = $this->layout->createBlock(Shipment::class);
+        $orderDate = $block->formatDate($order->getCreatedAt(), IntlDateFormatter::LONG);
+        $templates = [
+            'Order status' => [
+                'template' => 'Magento_Sales::order/order_status.phtml',
+                'expected_data' => (string)__($order->getStatusLabel()),
+            ],
+            'Order date' => [
+                'template' => 'Magento_Sales::order/order_date.phtml',
+                'expected_data' => (string)__('Order Date: %1', $orderDate),
+            ],
+        ];
+        foreach ($templates as $key => $data) {
+            $this->assertStringContainsString(
+                $data['expected_data'],
+                strip_tags($block->setTemplate($data['template'])->toHtml()),
+                sprintf('%s wasn\'t found.', $key)
+            );
+        }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
+        $this->pageFactory = $this->objectManager->get(PageFactory::class);
+        $this->countryFactory = $this->objectManager->get(CountryFactory::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
     {
         $this->registry->unregister('current_order');
-        $this->registry->register('current_order', $order);
-    }
-
-    /**
-     * Register shipment in registry.
-     *
-     * @param ShipmentInterface $shipment
-     * @return void
-     */
-    private function registerShipment(ShipmentInterface $shipment): void
-    {
         $this->registry->unregister('current_shipment');
-        $this->registry->register('current_shipment', $shipment);
-    }
 
-    /**
-     * Render print shipment block.
-     *
-     * @return string
-     */
-    private function renderPrintShipmentBlock(): string
-    {
-        $page = $this->pageFactory->create();
-        $page->addHandle([
-            'default',
-            'sales_order_printshipment',
-        ]);
-        $page->getLayout()->generateXml();
-        $printShipmentBlock = $page->getLayout()->getBlock('sales.order.print.shipment');
-        $this->assertNotFalse($printShipmentBlock);
-
-        return $printShipmentBlock->toHtml();
+        parent::tearDown();
     }
 }

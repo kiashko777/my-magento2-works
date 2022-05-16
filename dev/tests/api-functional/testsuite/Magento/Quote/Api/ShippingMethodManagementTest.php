@@ -3,39 +3,37 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Quote\Api;
 
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Integration\Api\CustomerTokenServiceInterface;
+use Magento\Quote\Api\Data\ShippingMethodInterface;
+use Magento\Quote\Model\Cart\ShippingMethodConverter;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\Quote\Address\Rate;
+use Magento\Quote\Model\Quote\TotalsCollector;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\WebapiAbstract;
-use Magento\Quote\Api\Data\ShippingMethodInterface;
 
 class ShippingMethodManagementTest extends WebapiAbstract
 {
     const SERVICE_VERSION = 'V1';
     const SERVICE_NAME = 'quoteShippingMethodManagementV1';
     const RESOURCE_PATH = '/V1/carts/';
-
+    /**
+     * @var Quote
+     */
+    protected $quote;
+    /**
+     * @var TotalsCollector
+     */
+    protected $totalsCollector;
     /**
      * @var ObjectManager
      */
     private $objectManager;
-
-    /**
-     * @var \Magento\Quote\Model\Quote
-     */
-    protected $quote;
-
-    /**
-     * @var \Magento\Quote\Model\Quote\TotalsCollector
-     */
-    protected $totalsCollector;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
-        $this->totalsCollector = $this->objectManager->create(\Magento\Quote\Model\Quote\TotalsCollector::class);
-    }
 
     /**
      * @magentoApiDataFixture Magento/Checkout/_files/quote_with_virtual_product_and_address.php
@@ -43,10 +41,31 @@ class ShippingMethodManagementTest extends WebapiAbstract
      */
     public function testGetListForVirtualCart()
     {
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        $quote = $this->objectManager->create(Quote::class);
         $cartId = $quote->load('test_order_with_virtual_product', 'reserved_order_id')->getId();
 
         $this->assertEquals([], $this->_webApiCall($this->getListServiceInfo($cartId), ["cartId" => $cartId]));
+    }
+
+    /**
+     * Service info
+     *
+     * @param int $cartId
+     * @return array
+     */
+    protected function getListServiceInfo($cartId)
+    {
+        return [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH . $cartId . '/shipping-methods',
+                'httpMethod' => Request::HTTP_METHOD_GET,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'GetList',
+            ],
+        ];
     }
 
     /**
@@ -54,8 +73,8 @@ class ShippingMethodManagementTest extends WebapiAbstract
      */
     public function testGetList()
     {
-        /** @var \Magento\Quote\Model\Quote $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class);
         $quote->load('test_order_1', 'reserved_order_id');
         $cartId = $quote->getId();
         if (!$cartId) {
@@ -73,6 +92,26 @@ class ShippingMethodManagementTest extends WebapiAbstract
     }
 
     /**
+     * Convert rate models array to data array
+     *
+     * @param string $currencyCode
+     * @param Rate[] $groupedRates
+     * @return array
+     */
+    protected function convertRates($groupedRates, $currencyCode)
+    {
+        $result = [];
+        /** @var ShippingMethodConverter $converter */
+        $converter = $this->objectManager->create(ShippingMethodConverter::class);
+        foreach ($groupedRates as $carrierRates) {
+            foreach ($carrierRates as $rate) {
+                $result[] = $converter->modelToDataObject($rate, $currencyCode)->__toArray();
+            }
+        }
+        return $result;
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      * @magentoApiDataFixture Magento/Checkout/_files/quote_with_address_saved.php
      */
@@ -82,9 +121,9 @@ class ShippingMethodManagementTest extends WebapiAbstract
 
         $this->quote->load('test_order_1', 'reserved_order_id');
 
-        /** @var \Magento\Integration\Api\CustomerTokenServiceInterface $customerTokenService */
+        /** @var CustomerTokenServiceInterface $customerTokenService */
         $customerTokenService = $this->objectManager->create(
-            \Magento\Integration\Api\CustomerTokenServiceInterface::class
+            CustomerTokenServiceInterface::class
         );
         $token = $customerTokenService->createCustomerAccessToken('customer@example.com', 'password');
 
@@ -97,7 +136,7 @@ class ShippingMethodManagementTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/carts/mine/shipping-methods',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
                 'token' => $token
             ]
         ];
@@ -123,44 +162,10 @@ class ShippingMethodManagementTest extends WebapiAbstract
         $this->assertEquals($expectedData, $result[0]);
     }
 
-    /**
-     * Service info
-     *
-     * @param int $cartId
-     * @return array
-     */
-    protected function getListServiceInfo($cartId)
+    protected function setUp(): void
     {
-        return [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . $cartId . '/shipping-methods',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'GetList',
-            ],
-        ];
-    }
-
-    /**
-     * Convert rate models array to data array
-     *
-     * @param string $currencyCode
-     * @param \Magento\Quote\Model\Quote\Address\Rate[] $groupedRates
-     * @return array
-     */
-    protected function convertRates($groupedRates, $currencyCode)
-    {
-        $result = [];
-        /** @var \Magento\Quote\Model\Cart\ShippingMethodConverter $converter */
-        $converter = $this->objectManager->create(\Magento\Quote\Model\Cart\ShippingMethodConverter::class);
-        foreach ($groupedRates as $carrierRates) {
-            foreach ($carrierRates as $rate) {
-                $result[] = $converter->modelToDataObject($rate, $currencyCode)->__toArray();
-            }
-        }
-        return $result;
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->quote = $this->objectManager->create(Quote::class);
+        $this->totalsCollector = $this->objectManager->create(TotalsCollector::class);
     }
 }

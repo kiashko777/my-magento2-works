@@ -30,29 +30,24 @@ class AbstractTest extends TestCase
      * Stub class name for class under test
      */
     const STUB_CLASS = 'Magento_Catalog_Block_Product_AbstractProduct_Stub';
-
-    /**
-     * @var AbstractProduct
-     */
-    protected $block;
-
-    /**
-     * @var ProductInterface
-     */
-    protected $product;
-
-    /**
-     * @var ProductRepositoryInterface
-     */
-    protected $productRepository;
-
     /**
      * Flag is stub class was created
      *
      * @var bool
      */
     protected static $isStubClass = false;
-
+    /**
+     * @var AbstractProduct
+     */
+    protected $block;
+    /**
+     * @var ProductInterface
+     */
+    protected $product;
+    /**
+     * @var ProductRepositoryInterface
+     */
+    protected $productRepository;
     /**
      * @var ObjectManager
      */
@@ -67,30 +62,6 @@ class AbstractTest extends TestCase
      * @var SerializerInterface
      */
     private $json;
-
-    /**
-     * @inheritdoc
-     */
-
-    protected function setUp(): void
-    {
-        if (!self::$isStubClass) {
-            $this->getMockForAbstractClass(
-                AbstractProduct::class,
-                [],
-                self::STUB_CLASS,
-                false
-            );
-            self::$isStubClass = true;
-        }
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->objectManager->get(DesignInterface::class)->setDefaultDesignTheme();
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->block = $this->layout->createBlock(self::STUB_CLASS);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->json = $this->objectManager->get(SerializerInterface::class);
-    }
 
     /**
      * @magentoDataFixture Magento/CatalogUrlRewrite/_files/product_simple.php
@@ -249,5 +220,29 @@ class AbstractTest extends TestCase
         $finalPriceHtml = $this->block->getProductPriceHtml($product, FinalPrice::PRICE_CODE);
         $this->assertStringContainsString('price-' . FinalPrice::PRICE_CODE, $finalPriceHtml);
         $this->assertStringContainsString('product-price-' . $product->getId(), $finalPriceHtml);
+    }
+
+    /**
+     * @inheritdoc
+     */
+
+    protected function setUp(): void
+    {
+        if (!self::$isStubClass) {
+            $this->getMockForAbstractClass(
+                AbstractProduct::class,
+                [],
+                self::STUB_CLASS,
+                false
+            );
+            self::$isStubClass = true;
+        }
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->objectManager->get(DesignInterface::class)->setDefaultDesignTheme();
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->block = $this->layout->createBlock(self::STUB_CLASS);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->json = $this->objectManager->get(SerializerInterface::class);
     }
 }

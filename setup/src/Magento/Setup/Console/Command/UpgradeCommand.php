@@ -3,15 +3,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Console\Command;
 
+use Exception;
 use Magento\Deploy\Console\Command\App\ConfigImportCommand;
 use Magento\Framework\App\DeploymentConfig;
 use Magento\Framework\App\ObjectManager;
 use Magento\Framework\App\State as AppState;
+use Magento\Framework\Config\CacheInterface;
 use Magento\Framework\Console\Cli;
 use Magento\Framework\Exception\RuntimeException;
-use Magento\Framework\Config\CacheInterface;
 use Magento\Framework\Setup\ConsoleLogger;
 use Magento\Framework\Setup\Declaration\Schema\DryRunLogger;
 use Magento\Framework\Setup\Declaration\Schema\OperationsExecutor;
@@ -68,12 +70,13 @@ class UpgradeCommand extends AbstractSetupCommand
      * @param CacheInterface|null $cache
      */
     public function __construct(
-        InstallerFactory $installerFactory,
+        InstallerFactory    $installerFactory,
         SearchConfigFactory $searchConfigFactory,
-        DeploymentConfig $deploymentConfig = null,
-        AppState $appState = null,
-        CacheInterface $cache = null
-    ) {
+        DeploymentConfig    $deploymentConfig = null,
+        AppState            $appState = null,
+        CacheInterface      $cache = null
+    )
+    {
         $this->installerFactory = $installerFactory;
         $this->searchConfigFactory = $searchConfigFactory;
         $this->deploymentConfig = $deploymentConfig ?: ObjectManager::getInstance()->get(DeploymentConfig::class);
@@ -163,7 +166,7 @@ class UpgradeCommand extends AbstractSetupCommand
                     '<info>Please re-run Magento compile command. Use the command "setup:di:compile"</info>'
                 );
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $output->writeln('<error>' . $e->getMessage() . '</error>');
             return Cli::RETURN_FAILURE;
         }

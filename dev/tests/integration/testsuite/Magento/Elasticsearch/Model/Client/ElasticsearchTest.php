@@ -3,25 +3,27 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Elasticsearch\Model\Client;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\Indexer\Model\Indexer;
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Store\Model\StoreManagerInterface;
-use Magento\Elasticsearch\SearchAdapter\ConnectionManager;
-use Magento\Elasticsearch6\Model\Client\Elasticsearch as ElasticsearchClient;
 use Magento\Elasticsearch\Model\Config;
+use Magento\Elasticsearch\SearchAdapter\ConnectionManager;
 use Magento\Elasticsearch\SearchAdapter\SearchIndexNameResolver;
-use Magento\TestModuleCatalogSearch\Model\ElasticsearchVersionChecker;
+use Magento\Elasticsearch6\Model\Client\Elasticsearch as ElasticsearchClient;
 use Magento\Framework\Search\EngineResolverInterface;
+use Magento\Indexer\Model\Indexer;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestModuleCatalogSearch\Model\ElasticsearchVersionChecker;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoDbIsolation enabled
  * @magentoAppIsolation enabled
  * @magentoDataFixture Magento/Elasticsearch/_files/configurable_products.php
  */
-class ElasticsearchTest extends \PHPUnit\Framework\TestCase
+class ElasticsearchTest extends TestCase
 {
     /**
      * @var string
@@ -58,27 +60,29 @@ class ElasticsearchTest extends \PHPUnit\Framework\TestCase
      */
     private $productRepository;
 
-    protected function setUp(): void
+    /**
+     * @magentoConfigFixture current_store catalog/search/elasticsearch_index_prefix composite_product_search
+     */
+    public function testSearchConfigurableProductBySimpleProductName()
     {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->connectionManager = $objectManager->create(ConnectionManager::class);
-        $this->client = $this->connectionManager->getConnection();
-        $this->storeManager = $objectManager->create(StoreManagerInterface::class);
-        $this->clientConfig = $objectManager->create(Config::class);
-        $this->searchIndexNameResolver = $objectManager->create(SearchIndexNameResolver::class);
-        $this->productRepository = $objectManager->create(ProductRepositoryInterface::class);
-        $indexer = $objectManager->create(Indexer::class);
-        $indexer->load('catalogsearch_fulltext');
-        $indexer->reindexAll();
+        $this->assertProductWithSkuFound('configurable', $this->search('Configurable Option'));
     }
 
     /**
-     * Make sure that correct engine is set
+     * Assert that product with SKU is present in response
+     *
+     * @param string $sku
+     * @param array $result
+     * @return bool
      */
-    protected function assertPreConditions(): void
+    private function assertProductWithSkuFound($sku, array $result)
     {
-        $currentEngine = Bootstrap::getObjectManager()->get(EngineResolverInterface::class)->getCurrentSearchEngine();
-        $this->assertEquals($this->getInstalledSearchEngine(), $currentEngine);
+        foreach ($result as $item) {
+            if ($item['_source']['sku'] == $sku) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -113,14 +117,6 @@ class ElasticsearchTest extends \PHPUnit\Framework\TestCase
     /**
      * @magentoConfigFixture current_store catalog/search/elasticsearch_index_prefix composite_product_search
      */
-    public function testSearchConfigurableProductBySimpleProductName()
-    {
-        $this->assertProductWithSkuFound('configurable', $this->search('Configurable Option'));
-    }
-
-    /**
-     * @magentoConfigFixture current_store catalog/search/elasticsearch_index_prefix composite_product_search
-     */
     public function testSearchConfigurableProductBySimpleProductAttributeMultiselect()
     {
         $this->assertProductWithSkuFound('configurable', $this->search('dog'));
@@ -142,21 +138,27 @@ class ElasticsearchTest extends \PHPUnit\Framework\TestCase
         $this->assertProductWithSkuFound('configurable', $this->search('simpledescription'));
     }
 
-    /**
-     * Assert that product with SKU is present in response
-     *
-     * @param string $sku
-     * @param array $result
-     * @return bool
-     */
-    private function assertProductWithSkuFound($sku, array $result)
+    protected function setUp(): void
     {
-        foreach ($result as $item) {
-            if ($item['_source']['sku'] == $sku) {
-                return true;
-            }
-        }
-        return false;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->connectionManager = $objectManager->create(ConnectionManager::class);
+        $this->client = $this->connectionManager->getConnection();
+        $this->storeManager = $objectManager->create(StoreManagerInterface::class);
+        $this->clientConfig = $objectManager->create(Config::class);
+        $this->searchIndexNameResolver = $objectManager->create(SearchIndexNameResolver::class);
+        $this->productRepository = $objectManager->create(ProductRepositoryInterface::class);
+        $indexer = $objectManager->create(Indexer::class);
+        $indexer->load('catalogsearch_fulltext');
+        $indexer->reindexAll();
+    }
+
+    /**
+     * Make sure that correct engine is set
+     */
+    protected function assertPreConditions(): void
+    {
+        $currentEngine = Bootstrap::getObjectManager()->get(EngineResolverInterface::class)->getCurrentSearchEngine();
+        $this->assertEquals($this->getInstalledSearchEngine(), $currentEngine);
     }
 
     /**

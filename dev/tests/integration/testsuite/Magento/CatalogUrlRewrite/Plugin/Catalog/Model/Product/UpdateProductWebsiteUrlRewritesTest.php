@@ -7,10 +7,9 @@ declare(strict_types=1);
 
 namespace Magento\CatalogUrlRewrite\Plugin\Catalog\Model\Product;
 
-use Magento\Catalog\Api\Data\ProductInterface;
-use Magento\Catalog\Model\ResourceModel\Product\Collection as ProductCollection;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product\Action;
+use Magento\Catalog\Model\ResourceModel\Product\Collection as ProductCollection;
 use Magento\Store\Api\StoreWebsiteRelationInterface;
 use Magento\Store\Model\Website;
 use Magento\Store\Model\WebsiteRepository;
@@ -34,16 +33,6 @@ class UpdateProductWebsiteUrlRewritesTest extends TestCase
     private $storeWebsiteRelation;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->action = $objectManager->get(Action::class);
-        $this->storeWebsiteRelation = $objectManager->get(StoreWebsiteRelationInterface::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/product_simple_with_url_key.php
      * @magentoDataFixture Magento/Store/_files/second_website_with_store_group_and_store.php
      */
@@ -53,7 +42,7 @@ class UpdateProductWebsiteUrlRewritesTest extends TestCase
         $websiteRepository = Bootstrap::getObjectManager()->get(WebsiteRepository::class);
         $website = $websiteRepository->get('test');
         $productRepository = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class);
-        $product =  $productRepository->get('simple1', false, null, true);
+        $product = $productRepository->get('simple1', false, null, true);
         $this->action->updateWebsites([$product->getId()], [$website->getId()], 'add');
         $storeIds = $this->storeWebsiteRelation->getStoreByWebsiteId($website->getId());
 
@@ -82,7 +71,7 @@ class UpdateProductWebsiteUrlRewritesTest extends TestCase
         $website = $websiteRepository->get('test');
         $productRepository = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class);
         // test the first product
-        $product =  $productRepository->get('simple1', false, null, true);
+        $product = $productRepository->get('simple1', false, null, true);
         // store filter condition about the first product in collection
         $productCollection = Bootstrap::getObjectManager()->get(ProductCollection::class);
         $productCollection->addFieldToFilter('entity_id', $product->getId());
@@ -100,7 +89,7 @@ class UpdateProductWebsiteUrlRewritesTest extends TestCase
             $url
         );
         // test the second product
-        $product =  $productRepository->get('simple2', false, null, true);
+        $product = $productRepository->get('simple2', false, null, true);
         $this->action->updateWebsites([$product->getId()], [$website->getId()], 'add');
         $storeIds = $this->storeWebsiteRelation->getStoreByWebsiteId($website->getId());
         $this->assertStringContainsString(
@@ -114,5 +103,15 @@ class UpdateProductWebsiteUrlRewritesTest extends TestCase
             $product->getUrlKey() . '.html',
             $url
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->action = $objectManager->get(Action::class);
+        $this->storeWebsiteRelation = $objectManager->get(StoreWebsiteRelationInterface::class);
     }
 }

@@ -9,12 +9,16 @@ namespace Magento\GraphQl\Tax;
 
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Framework\App\Config\ReinitableConfigInterface;
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\Tax\Model\Calculation\Rate;
+use Magento\Tax\Model\Calculation\Rule;
+use Magento\Tax\Model\Config;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
-use Magento\Store\Model\StoreManagerInterface;
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Framework\App\Config\ScopeConfigInterface;
-use Magento\Tax\Model\Config;
 
 /**
  * @magentoAppIsolation enabled
@@ -31,10 +35,10 @@ class ProductViewTest extends GraphQlAbstract
      */
     private $productRepository;
 
-    /** @var \Magento\Tax\Model\Calculation\Rate[] */
+    /** @var Rate[] */
     private $fixtureTaxRates;
 
-    /** @var \Magento\Tax\Model\Calculation\Rule[] */
+    /** @var Rule[] */
     private $fixtureTaxRules;
 
     /** @var string */
@@ -47,82 +51,6 @@ class ProductViewTest extends GraphQlAbstract
      * @var StoreManagerInterface
      */
     private $storeManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-
-        /** @var \Magento\Config\Model\ResourceModel\Config $config */
-        $config = $this->objectManager->get(\Magento\Config\Model\ResourceModel\Config::class);
-
-        /** @var ScopeConfigInterface $scopeConfig */
-        $scopeConfig = $this->objectManager->get(ScopeConfigInterface::class);
-
-        $this->defaultRegionSystemSetting = $scopeConfig->getValue(
-            Config::CONFIG_XML_PATH_DEFAULT_REGION
-        );
-
-        $this->defaultPriceDisplayType = $scopeConfig->getValue(
-            Config::CONFIG_XML_PATH_PRICE_DISPLAY_TYPE
-        );
-
-        //default state tax calculation AL
-        $config->saveConfig(
-            Config::CONFIG_XML_PATH_DEFAULT_REGION,
-            1
-        );
-
-        $config->saveConfig(
-            Config::CONFIG_XML_PATH_PRICE_DISPLAY_TYPE,
-            3
-        );
-        $this->getFixtureTaxRates();
-        $this->getFixtureTaxRules();
-
-        /** @var \Magento\Framework\App\Config\ReinitableConfigInterface $config */
-        $config = $this->objectManager->get(\Magento\Framework\App\Config\ReinitableConfigInterface::class);
-        $config->reinit();
-        /** @var ScopeConfigInterface $scopeConfig */
-        $scopeConfig = $this->objectManager->get(ScopeConfigInterface::class);
-        $scopeConfig->clean();
-    }
-
-    protected function tearDown(): void
-    {
-        /** @var \Magento\Config\Model\ResourceModel\Config $config */
-        $config = $this->objectManager->get(\Magento\Config\Model\ResourceModel\Config::class);
-
-        //default state tax calculation AL
-        $config->saveConfig(
-            Config::CONFIG_XML_PATH_DEFAULT_REGION,
-            $this->defaultRegionSystemSetting
-        );
-
-        $config->saveConfig(
-            Config::CONFIG_XML_PATH_PRICE_DISPLAY_TYPE,
-            $this->defaultPriceDisplayType
-        );
-        $taxRules = $this->getFixtureTaxRules();
-        if (count($taxRules)) {
-            $taxRates = $this->getFixtureTaxRates();
-            foreach ($taxRules as $taxRule) {
-                $taxRule->delete();
-            }
-            foreach ($taxRates as $taxRate) {
-                $taxRate->delete();
-            }
-        }
-
-        /** @var \Magento\Framework\App\Config\ReinitableConfigInterface $config */
-        $config = $this->objectManager->get(\Magento\Framework\App\Config\ReinitableConfigInterface::class);
-        $config->reinit();
-
-        /** @var ScopeConfigInterface $scopeConfig */
-        $scopeConfig = $this->objectManager->get(ScopeConfigInterface::class);
-        $scopeConfig->clean();
-    }
 
     /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
@@ -202,56 +130,13 @@ QUERY;
 
         $response = $this->graphQlQuery($query);
 
-        /** @var \Magento\Catalog\Model\Product $product */
+        /** @var Product $product */
         $product = $this->productRepository->get($productSku, false, null, true);
         $this->assertArrayHasKey('products', $response);
         $this->assertArrayHasKey('items', $response['products']);
         $this->assertCount(1, $response['products']['items']);
         $this->assertArrayHasKey(0, $response['products']['items']);
         $this->assertBaseFields($product, $response['products']['items'][0]);
-    }
-
-    /**
-     * Get tax rates created in Magento\Tax\_files\tax_rule_region_1_al.php
-     *
-     * @return \Magento\Tax\Model\Calculation\Rate[]
-     */
-    private function getFixtureTaxRates()
-    {
-        if ($this->fixtureTaxRates === null) {
-            $this->fixtureTaxRates = [];
-            if ($this->getFixtureTaxRules()) {
-                $taxRateIds = (array)$this->getFixtureTaxRules()[0]->getRates();
-                foreach ($taxRateIds as $taxRateId) {
-                    /** @var \Magento\Tax\Model\Calculation\Rate $taxRate */
-                    $taxRate = Bootstrap::getObjectManager()->create(\Magento\Tax\Model\Calculation\Rate::class);
-                    $this->fixtureTaxRates[] = $taxRate->load($taxRateId);
-                }
-            }
-        }
-        return $this->fixtureTaxRates;
-    }
-
-    /**
-     * Get tax rule created in Magento\Tax\_files\tax_rule_region_1_al.php
-     *
-     * @return \Magento\Tax\Model\Calculation\Rule[]
-     */
-    private function getFixtureTaxRules()
-    {
-        if ($this->fixtureTaxRules === null) {
-            $this->fixtureTaxRules = [];
-            $taxRuleCodes = ['AL Test Rule'];
-            foreach ($taxRuleCodes as $taxRuleCode) {
-                /** @var \Magento\Tax\Model\Calculation\Rule $taxRule */
-                $taxRule = Bootstrap::getObjectManager()->create(\Magento\Tax\Model\Calculation\Rule::class);
-                $taxRule->load($taxRuleCode, 'code');
-                if ($taxRule->getId()) {
-                    $this->fixtureTaxRules[] = $taxRule;
-                }
-            }
-        }
-        return $this->fixtureTaxRules;
     }
 
     /**
@@ -295,8 +180,8 @@ QUERY;
                                             'value' => 0.2865,
                                             'currency' => 'USD',
                                         ],
-                                        'code' => 'TAX',
-                                        'description' => 'INCLUDED',
+                                    'code' => 'TAX',
+                                    'description' => 'INCLUDED',
                                 ],
                         ]
                     ],
@@ -313,8 +198,8 @@ QUERY;
                                             'value' => 0.7500,
                                             'currency' => 'USD',
                                         ],
-                                        'code' => 'TAX',
-                                        'description' => 'INCLUDED',
+                                    'code' => 'TAX',
+                                    'description' => 'INCLUDED',
                                 ],
                         ]
                     ],
@@ -331,8 +216,8 @@ QUERY;
                                             'value' => 0.2865,
                                             'currency' => 'USD',
                                         ],
-                                        'code' => 'TAX',
-                                        'description' => 'INCLUDED',
+                                    'code' => 'TAX',
+                                    'description' => 'INCLUDED',
                                 ],
                         ]
                     ],
@@ -344,5 +229,124 @@ QUERY;
         ];
 
         $this->assertResponseFields($actualResponse, $assertionMap);
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
+
+        /** @var \Magento\Config\Model\ResourceModel\Config $config */
+        $config = $this->objectManager->get(\Magento\Config\Model\ResourceModel\Config::class);
+
+        /** @var ScopeConfigInterface $scopeConfig */
+        $scopeConfig = $this->objectManager->get(ScopeConfigInterface::class);
+
+        $this->defaultRegionSystemSetting = $scopeConfig->getValue(
+            Config::CONFIG_XML_PATH_DEFAULT_REGION
+        );
+
+        $this->defaultPriceDisplayType = $scopeConfig->getValue(
+            Config::CONFIG_XML_PATH_PRICE_DISPLAY_TYPE
+        );
+
+        //default state tax calculation AL
+        $config->saveConfig(
+            Config::CONFIG_XML_PATH_DEFAULT_REGION,
+            1
+        );
+
+        $config->saveConfig(
+            Config::CONFIG_XML_PATH_PRICE_DISPLAY_TYPE,
+            3
+        );
+        $this->getFixtureTaxRates();
+        $this->getFixtureTaxRules();
+
+        /** @var ReinitableConfigInterface $config */
+        $config = $this->objectManager->get(ReinitableConfigInterface::class);
+        $config->reinit();
+        /** @var ScopeConfigInterface $scopeConfig */
+        $scopeConfig = $this->objectManager->get(ScopeConfigInterface::class);
+        $scopeConfig->clean();
+    }
+
+    /**
+     * Get tax rates created in Magento\Tax\_files\tax_rule_region_1_al.php
+     *
+     * @return Rate[]
+     */
+    private function getFixtureTaxRates()
+    {
+        if ($this->fixtureTaxRates === null) {
+            $this->fixtureTaxRates = [];
+            if ($this->getFixtureTaxRules()) {
+                $taxRateIds = (array)$this->getFixtureTaxRules()[0]->getRates();
+                foreach ($taxRateIds as $taxRateId) {
+                    /** @var Rate $taxRate */
+                    $taxRate = Bootstrap::getObjectManager()->create(Rate::class);
+                    $this->fixtureTaxRates[] = $taxRate->load($taxRateId);
+                }
+            }
+        }
+        return $this->fixtureTaxRates;
+    }
+
+    /**
+     * Get tax rule created in Magento\Tax\_files\tax_rule_region_1_al.php
+     *
+     * @return Rule[]
+     */
+    private function getFixtureTaxRules()
+    {
+        if ($this->fixtureTaxRules === null) {
+            $this->fixtureTaxRules = [];
+            $taxRuleCodes = ['AL Test Rule'];
+            foreach ($taxRuleCodes as $taxRuleCode) {
+                /** @var Rule $taxRule */
+                $taxRule = Bootstrap::getObjectManager()->create(Rule::class);
+                $taxRule->load($taxRuleCode, 'code');
+                if ($taxRule->getId()) {
+                    $this->fixtureTaxRules[] = $taxRule;
+                }
+            }
+        }
+        return $this->fixtureTaxRules;
+    }
+
+    protected function tearDown(): void
+    {
+        /** @var \Magento\Config\Model\ResourceModel\Config $config */
+        $config = $this->objectManager->get(\Magento\Config\Model\ResourceModel\Config::class);
+
+        //default state tax calculation AL
+        $config->saveConfig(
+            Config::CONFIG_XML_PATH_DEFAULT_REGION,
+            $this->defaultRegionSystemSetting
+        );
+
+        $config->saveConfig(
+            Config::CONFIG_XML_PATH_PRICE_DISPLAY_TYPE,
+            $this->defaultPriceDisplayType
+        );
+        $taxRules = $this->getFixtureTaxRules();
+        if (count($taxRules)) {
+            $taxRates = $this->getFixtureTaxRates();
+            foreach ($taxRules as $taxRule) {
+                $taxRule->delete();
+            }
+            foreach ($taxRates as $taxRate) {
+                $taxRate->delete();
+            }
+        }
+
+        /** @var ReinitableConfigInterface $config */
+        $config = $this->objectManager->get(ReinitableConfigInterface::class);
+        $config->reinit();
+
+        /** @var ScopeConfigInterface $scopeConfig */
+        $scopeConfig = $this->objectManager->get(ScopeConfigInterface::class);
+        $scopeConfig->clean();
     }
 }

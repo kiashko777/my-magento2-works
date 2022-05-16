@@ -8,9 +8,9 @@ declare(strict_types=1);
 namespace Magento\Csp\Model\Policy\Renderer;
 
 use Magento\Csp\Model\Policy\FetchPolicy;
+use Magento\Framework\App\Response\Http as HttpResponse;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
-use Magento\Framework\App\Response\Http as HttpResponse;
 
 /**
  * Test that rendering policies via headers works.
@@ -26,15 +26,6 @@ class SimplePolicyHeaderRendererTest extends TestCase
      * @var HttpResponse
      */
     private $response;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->renderer = Bootstrap::getObjectManager()->get(SimplePolicyHeaderRenderer::class);
-        $this->response = Bootstrap::getObjectManager()->create(HttpResponse::class);
-    }
 
     /**
      * Test policy rendering in restrict mode.
@@ -113,7 +104,7 @@ class SimplePolicyHeaderRendererTest extends TestCase
         $this->assertEmpty($this->response->getHeader('Content-Security-Policy'));
         $this->assertEquals(
             'default-src https://magento.com https: \'self\' \'unsafe-eval\' \'strict-dynamic\''
-            . ' \'unsafe-hashes\' \'nonce-'.base64_encode($policy->getNonceValues()[0]).'\''
+            . ' \'unsafe-hashes\' \'nonce-' . base64_encode($policy->getNonceValues()[0]) . '\''
             . ' \'sha256-B2yPHKaXnvFWtRChIbabYmUBFZdVfKKXHbWtWidDVF8=\';',
             $header->getFieldValue()
         );
@@ -178,5 +169,14 @@ class SimplePolicyHeaderRendererTest extends TestCase
         $this->assertNotEmpty($reportToHeader = $this->response->getHeader('Report-To'));
         $this->assertNotEmpty($reportData = json_decode("[{$reportToHeader->getFieldValue()}]", true));
         $this->assertEquals('report-endpoint', $reportData[0]['group']);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->renderer = Bootstrap::getObjectManager()->get(SimplePolicyHeaderRenderer::class);
+        $this->response = Bootstrap::getObjectManager()->create(HttpResponse::class);
     }
 }

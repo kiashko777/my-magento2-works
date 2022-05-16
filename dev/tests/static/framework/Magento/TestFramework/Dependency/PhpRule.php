@@ -9,9 +9,10 @@ declare(strict_types=1);
 
 namespace Magento\TestFramework\Dependency;
 
+use DOMDocument;
+use DOMElement;
 use Magento\Framework\App\Utility\Files;
 use Magento\Framework\Config\Reader\Filesystem as ConfigReader;
-use Magento\Framework\Exception\ConfigurationMismatchException;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\UrlInterface;
 use Magento\TestFramework\Dependency\Reader\ClassScanner;
@@ -25,31 +26,6 @@ use Magento\TestFramework\Inspection\Exception;
 class PhpRule implements RuleInterface
 {
     /**
-     * List of filepaths for DI files
-     *
-     * @var array
-     */
-    private $diFiles;
-
-    /**
-     * Map from plugin classes to the subjects they modify
-     *
-     * @var array
-     */
-    private $pluginMap;
-
-    /**
-     * List of routers
-     *
-     * Format: array(
-     *  '{Router}' => '{Module_Name}'
-     * )
-     *
-     * @var array
-     */
-    private $_mapRouters = [];
-
-    /**
      * List of layout blocks
      *
      * Format: array(
@@ -60,13 +36,11 @@ class PhpRule implements RuleInterface
      * @var array
      */
     protected $_mapLayoutBlocks = [];
-
     /**
      * Used to retrieve information from WebApi urls
      * @var ConfigReader
      */
     protected $configReader;
-
     /**
      * Default modules list.
      *
@@ -76,7 +50,28 @@ class PhpRule implements RuleInterface
         'frontend' => 'Magento\Theme',
         'Adminhtml' => 'Magento\Adminhtml',
     ];
-
+    /**
+     * List of filepaths for DI files
+     *
+     * @var array
+     */
+    private $diFiles;
+    /**
+     * Map from plugin classes to the subjects they modify
+     *
+     * @var array
+     */
+    private $pluginMap;
+    /**
+     * List of routers
+     *
+     * Format: array(
+     *  '{Router}' => '{Module_Name}'
+     * )
+     *
+     * @var array
+     */
+    private $_mapRouters = [];
     /**
      * @var RouteMapper
      */
@@ -109,14 +104,15 @@ class PhpRule implements RuleInterface
      * @param RouteMapper|null $routeMapper
      */
     public function __construct(
-        array $mapRouters,
-        array $mapLayoutBlocks,
+        array        $mapRouters,
+        array        $mapLayoutBlocks,
         ConfigReader $configReader,
-        array $pluginMap = [],
-        array $whitelists = [],
+        array        $pluginMap = [],
+        array        $whitelists = [],
         ClassScanner $classScanner = null,
-        RouteMapper $routeMapper = null
-    ) {
+        RouteMapper  $routeMapper = null
+    )
+    {
         $this->_mapRouters = $mapRouters;
         $this->_mapLayoutBlocks = $mapLayoutBlocks;
         $this->configReader = $configReader;
@@ -159,13 +155,15 @@ class PhpRule implements RuleInterface
     }
 
     /**
-     * Get routes whitelist
+     * Merge dependencies
      *
+     * @param array $known
+     * @param array $new
      * @return array
      */
-    private function getRoutesWhitelist(): array
+    private function considerCaseDependencies($known, $new)
     {
-        return $this->whitelists['routes'] ?? [];
+        return array_merge($known, $new);
     }
 
     /**
@@ -232,48 +230,6 @@ class PhpRule implements RuleInterface
     }
 
     /**
-     * Load DI configuration files
-     *
-     * @return array
-     * @throws \Exception
-     */
-    private function loadDiFiles()
-    {
-        if (!$this->diFiles) {
-            $this->diFiles = Files::init()->getDiConfigs();
-        }
-        return $this->diFiles;
-    }
-
-    /**
-     * Generate an array of plugin info
-     *
-     * @return array
-     * @throws \Exception
-     */
-    private function loadPluginMap()
-    {
-        if (!$this->pluginMap) {
-            foreach ($this->loadDiFiles() as $filepath) {
-                $dom = new \DOMDocument();
-                // phpcs:ignore Magento2.Functions.DiscouragedFunction
-                $dom->loadXML(file_get_contents($filepath));
-                $typeNodes = $dom->getElementsByTagName('type');
-                /** @var \DOMElement $type */
-                foreach ($typeNodes as $type) {
-                    /** @var \DOMElement $plugin */
-                    foreach ($type->getElementsByTagName('plugin') as $plugin) {
-                        $subject = $type->getAttribute('name');
-                        $pluginType = $plugin->getAttribute('type');
-                        $this->pluginMap[$pluginType] = $subject;
-                    }
-                }
-            }
-        }
-        return $this->pluginMap;
-    }
-
-    /**
      * Determine whether a the dependency relation is because of a plugin
      *
      * True IFF the dependent is a plugin for some class in the same module as the dependency.
@@ -298,6 +254,48 @@ class PhpRule implements RuleInterface
         } else {
             return false;
         }
+    }
+
+    /**
+     * Generate an array of plugin info
+     *
+     * @return array
+     * @throws \Exception
+     */
+    private function loadPluginMap()
+    {
+        if (!$this->pluginMap) {
+            foreach ($this->loadDiFiles() as $filepath) {
+                $dom = new DOMDocument();
+                // phpcs:ignore Magento2.Functions.DiscouragedFunction
+                $dom->loadXML(file_get_contents($filepath));
+                $typeNodes = $dom->getElementsByTagName('type');
+                /** @var DOMElement $type */
+                foreach ($typeNodes as $type) {
+                    /** @var DOMElement $plugin */
+                    foreach ($type->getElementsByTagName('plugin') as $plugin) {
+                        $subject = $type->getAttribute('name');
+                        $pluginType = $plugin->getAttribute('type');
+                        $this->pluginMap[$pluginType] = $subject;
+                    }
+                }
+            }
+        }
+        return $this->pluginMap;
+    }
+
+    /**
+     * Load DI configuration files
+     *
+     * @return array
+     * @throws \Exception
+     */
+    private function loadDiFiles()
+    {
+        if (!$this->diFiles) {
+            $this->diFiles = Files::init()->getDiConfigs();
+        }
+        return $this->diFiles;
     }
 
     /**
@@ -397,52 +395,6 @@ class PhpRule implements RuleInterface
     }
 
     /**
-     * Helper method to get module dependencies used by a standard URL
-     *
-     * @param string $path
-     * @return string[]
-     * @throws NoSuchActionException
-     */
-    private function processStandardUrl(string $path)
-    {
-        $pattern = '#(?<route_id>[a-z0-9\-_]{3,})'
-            . '(/(?<controller_name>[a-z0-9\-_]+))?(/(?<action_name>[a-z0-9\-_]+))?#i';
-        if (!preg_match($pattern, $path, $match)) {
-            throw new NoSuchActionException('Failed to parse standard url path: ' . $path);
-        }
-        $routeId = $match['route_id'];
-        $controllerName = $match['controller_name'] ?? UrlInterface::DEFAULT_CONTROLLER_NAME;
-        $actionName = $match['action_name'] ?? UrlInterface::DEFAULT_ACTION_NAME;
-
-        return $this->routeMapper->getDependencyByRoutePath(
-            $routeId,
-            $controllerName,
-            $actionName
-        );
-    }
-
-    /**
-     * Create regex patterns from service url paths
-     *
-     * @return array
-     */
-    private function getServiceMethodRegexps(): array
-    {
-        if (!$this->serviceMethods) {
-            $this->serviceMethods = [];
-            $serviceRoutes = $this->configReader->read()['routes'];
-            foreach ($serviceRoutes as $serviceRouteUrl => $methods) {
-                $pattern = '#:\w+#';
-                $replace = '\w+';
-                $serviceRouteUrlRegex = preg_replace($pattern, $replace, $serviceRouteUrl);
-                $serviceRouteUrlRegex = '#^' . $serviceRouteUrlRegex . '$#';
-                $this->serviceMethods[$serviceRouteUrlRegex] = $methods;
-            }
-        }
-        return $this->serviceMethods;
-    }
-
-    /**
      * Helper method to get module dependencies used by an API URL
      *
      * @param string $path
@@ -470,6 +422,62 @@ class PhpRule implements RuleInterface
             }
         }
         throw new NoSuchActionException('Failed to match service with url path: ' . $path);
+    }
+
+    /**
+     * Create regex patterns from service url paths
+     *
+     * @return array
+     */
+    private function getServiceMethodRegexps(): array
+    {
+        if (!$this->serviceMethods) {
+            $this->serviceMethods = [];
+            $serviceRoutes = $this->configReader->read()['routes'];
+            foreach ($serviceRoutes as $serviceRouteUrl => $methods) {
+                $pattern = '#:\w+#';
+                $replace = '\w+';
+                $serviceRouteUrlRegex = preg_replace($pattern, $replace, $serviceRouteUrl);
+                $serviceRouteUrlRegex = '#^' . $serviceRouteUrlRegex . '$#';
+                $this->serviceMethods[$serviceRouteUrlRegex] = $methods;
+            }
+        }
+        return $this->serviceMethods;
+    }
+
+    /**
+     * Helper method to get module dependencies used by a standard URL
+     *
+     * @param string $path
+     * @return string[]
+     * @throws NoSuchActionException
+     */
+    private function processStandardUrl(string $path)
+    {
+        $pattern = '#(?<route_id>[a-z0-9\-_]{3,})'
+            . '(/(?<controller_name>[a-z0-9\-_]+))?(/(?<action_name>[a-z0-9\-_]+))?#i';
+        if (!preg_match($pattern, $path, $match)) {
+            throw new NoSuchActionException('Failed to parse standard url path: ' . $path);
+        }
+        $routeId = $match['route_id'];
+        $controllerName = $match['controller_name'] ?? UrlInterface::DEFAULT_CONTROLLER_NAME;
+        $actionName = $match['action_name'] ?? UrlInterface::DEFAULT_ACTION_NAME;
+
+        return $this->routeMapper->getDependencyByRoutePath(
+            $routeId,
+            $controllerName,
+            $actionName
+        );
+    }
+
+    /**
+     * Get routes whitelist
+     *
+     * @return array
+     */
+    private function getRoutesWhitelist(): array
+    {
+        return $this->whitelists['routes'] ?? [];
     }
 
     /**
@@ -600,17 +608,5 @@ class PhpRule implements RuleInterface
             $result[] = ['modules' => [$module], 'type' => $value['type'], 'source' => $value['source']];
         }
         return $result;
-    }
-
-    /**
-     * Merge dependencies
-     *
-     * @param array $known
-     * @param array $new
-     * @return array
-     */
-    private function considerCaseDependencies($known, $new)
-    {
-        return array_merge($known, $new);
     }
 }

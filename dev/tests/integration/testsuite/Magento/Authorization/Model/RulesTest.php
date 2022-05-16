@@ -3,32 +3,28 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Authorization\Model;
+
+use Magento\TestFramework\Entity;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\User\Model\User;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class RulesTest extends \PHPUnit\Framework\TestCase
+class RulesTest extends TestCase
 {
     /**
-     * @var \Magento\Authorization\Model\Rules
+     * @var Rules
      */
     protected $_model;
 
     /**
-     * @var \Magento\User\Model\User
+     * @var User
      */
     protected $user;
-
-    protected function setUp(): void
-    {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Authorization\Model\Rules::class
-        );
-        $this->user = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\User\Model\User::class
-        );
-    }
 
     /**
      * @magentoDbIsolation enabled
@@ -43,7 +39,7 @@ class RulesTest extends \PHPUnit\Framework\TestCase
             ->setRoleId(1)
             ->setPermission('allow');
 
-        $crud = new \Magento\TestFramework\Entity($this->_model, ['permission' => 'deny']);
+        $crud = new Entity($this->_model, ['permission' => 'deny']);
         $crud->testCrud();
     }
 
@@ -54,20 +50,6 @@ class RulesTest extends \PHPUnit\Framework\TestCase
     {
         $expectedDefaultPermissions = ['Magento_Backend::all'];
         $this->_checkExistingPermissions($expectedDefaultPermissions);
-    }
-
-    /**
-     * @covers \Magento\Authorization\Model\Rules::saveRel
-     * @magentoDbIsolation enabled
-     */
-    public function testSetAllowForAllResources()
-    {
-        $resources = ['Magento_Backend::all'];
-        $this->user->loadByUsername(\Magento\TestFramework\Bootstrap::ADMIN_NAME);
-        $roleId = $this->user->getRole()->getRoleId();
-        $this->_model->setRoleId($roleId)->setResources($resources)->saveRel();
-        $expectedPermissions = ['Magento_Backend::all'];
-        $this->_checkExistingPermissions($expectedPermissions);
     }
 
     /**
@@ -93,5 +75,29 @@ class RulesTest extends \PHPUnit\Framework\TestCase
             );
         }
         $this->assertEquals($expectedDefaultPermissions, $actualPermissions, 'Default permissions are invalid');
+    }
+
+    /**
+     * @covers \Magento\Authorization\Model\Rules::saveRel
+     * @magentoDbIsolation enabled
+     */
+    public function testSetAllowForAllResources()
+    {
+        $resources = ['Magento_Backend::all'];
+        $this->user->loadByUsername(\Magento\TestFramework\Bootstrap::ADMIN_NAME);
+        $roleId = $this->user->getRole()->getRoleId();
+        $this->_model->setRoleId($roleId)->setResources($resources)->saveRel();
+        $expectedPermissions = ['Magento_Backend::all'];
+        $this->_checkExistingPermissions($expectedPermissions);
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Rules::class
+        );
+        $this->user = Bootstrap::getObjectManager()->create(
+            User::class
+        );
     }
 }

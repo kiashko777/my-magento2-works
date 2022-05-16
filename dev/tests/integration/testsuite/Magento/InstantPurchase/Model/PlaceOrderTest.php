@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\InstantPurchase\Model;
 
 use Magento\Catalog\Api\Data\ProductCustomOptionInterface;
@@ -13,8 +14,8 @@ use Magento\Customer\Model\Customer;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Store\Api\StoreRepositoryInterface;
 use Magento\Store\Model\Store;
-use PHPUnit\Framework\TestCase;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppIsolation enabled
@@ -26,11 +27,6 @@ class PlaceOrderTest extends TestCase
      * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
@@ -45,6 +41,134 @@ class PlaceOrderTest extends TestCase
             [],
             'Simple Products Ordered.'
         );
+    }
+
+    /**
+     * Run system under test.
+     *
+     * @param $productSku
+     * @param array $productRequest
+     * @param string $expectedResult
+     * @return int order identifier
+     */
+    private function invokeTestProductPlacement($productSku, array $productRequest, string $expectedResult): int
+    {
+        /** @var PlaceOrder $model */
+        $model = $this->objectManager->create(PlaceOrder::class);
+
+        $store = $this->getFixtureStore();
+        $customer = $this->getFixtureCustomer();
+        $instantPurchaseOption = $this->createInstantPurchaseOptionFromFixture();
+        $product = $this->getFixtureProduct($productSku);
+
+        $orderId = $model->placeOrder(
+            $store,
+            $customer,
+            $instantPurchaseOption,
+            $product,
+            array_merge(
+                [
+                    'qty' => '1',
+                    'options' => $this->createProductOptionsRequest($product)
+                ],
+                $productRequest
+            )
+        );
+        $this->assertNotEmpty($orderId, $expectedResult);
+        return $orderId;
+    }
+
+    /**
+     * Returns Store created by fixture.
+     *
+     * @return Store
+     */
+    private function getFixtureStore(): Store
+    {
+        $repository = $this->objectManager->create(StoreRepositoryInterface::class);
+        $store = $repository->get('default');
+        return $store;
+    }
+
+    /**
+     * Returns Customer created by fixture.
+     *
+     * @return Customer
+     */
+    private function getFixtureCustomer(): Customer
+    {
+        $repository = $this->objectManager->create(CustomerRepositoryInterface::class);
+        $customerData = $repository->getById(1);
+        $customer = $this->objectManager->create(Customer::class);
+        $customer->updateData($customerData);
+        return $customer;
+    }
+
+    /**
+     * Creates instant purchase option based on data from fixture.
+     *
+     * @return InstantPurchaseOption
+     */
+    private function createInstantPurchaseOptionFromFixture(): InstantPurchaseOption
+    {
+        $factory = $this->objectManager->get(InstantPurchaseOptionLoadingFactory::class);
+        $fixtureCustomer = $this->getFixtureCustomer();
+        $option = $factory->create(
+            $fixtureCustomer->getId(),
+            'fakePublicHash', // @see Magento/InstantPurchase/_files/fake_payment_token.php
+            $fixtureCustomer->getDefaultShippingAddress()->getId(),
+            $fixtureCustomer->getDefaultBillingAddress()->getId(),
+            'instant-purchase',
+            'cheapest'
+        );
+        return $option;
+    }
+
+    /**
+     * Returns Products created by fixture.
+     *
+     * @param string $sku
+     * @return Product
+     */
+    private function getFixtureProduct(string $sku): Product
+    {
+        $repository = $this->objectManager->create(ProductRepositoryInterface::class);
+        $product = $repository->get($sku, false, $this->getFixtureStore()->getId());
+        $product->setData('salable', true);
+        return $product;
+    }
+
+    /**
+     * Creates custom options selection product request data.
+     *
+     * @param Product $product
+     * @return array
+     */
+    private function createProductOptionsRequest(Product $product): array
+    {
+        $options = [];
+        /** @var Product\Option $option */
+        foreach ($product->getOptions() as $option) {
+            switch ($option->getGroupByType()) {
+                case ProductCustomOptionInterface::OPTION_GROUP_DATE:
+                    $value = [
+                        'year' => date('Y'),
+                        'month' => date('n'),
+                        'day' => date('j'),
+                        'hour' => date('G'),
+                        'minute' => date('i')
+                    ];
+                    break;
+                case ProductCustomOptionInterface::OPTION_GROUP_SELECT:
+                    $value = key($option->getValues());
+                    break;
+                default:
+                    $value = 'test';
+                    break;
+            }
+            $options[$option->getId()] = $value;
+        }
+        return $options;
     }
 
     /**
@@ -136,131 +260,8 @@ class PlaceOrderTest extends TestCase
         );
     }
 
-    /**
-     * Run system under test.
-     *
-     * @param $productSku
-     * @param array $productRequest
-     * @param string $expectedResult
-     * @return int order identifier
-     */
-    private function invokeTestProductPlacement($productSku, array $productRequest, string $expectedResult): int
+    protected function setUp(): void
     {
-        /** @var PlaceOrder $model */
-        $model = $this->objectManager->create(PlaceOrder::class);
-
-        $store = $this->getFixtureStore();
-        $customer = $this->getFixtureCustomer();
-        $instantPurchaseOption = $this->createInstantPurchaseOptionFromFixture();
-        $product = $this->getFixtureProduct($productSku);
-
-        $orderId = $model->placeOrder(
-            $store,
-            $customer,
-            $instantPurchaseOption,
-            $product,
-            array_merge(
-                [
-                    'qty' => '1',
-                    'options' => $this->createProductOptionsRequest($product)
-                ],
-                $productRequest
-            )
-        );
-        $this->assertNotEmpty($orderId, $expectedResult);
-        return $orderId;
-    }
-
-    /**
-     * Returns Store created by fixture.
-     *
-     * @return Store
-     */
-    private function getFixtureStore(): Store
-    {
-        $repository = $this->objectManager->create(StoreRepositoryInterface::class);
-        $store = $repository->get('default');
-        return $store;
-    }
-
-    /**
-     * Returns Customer created by fixture.
-     *
-     * @return Customer
-     */
-    private function getFixtureCustomer(): Customer
-    {
-        $repository = $this->objectManager->create(CustomerRepositoryInterface::class);
-        $customerData = $repository->getById(1);
-        $customer = $this->objectManager->create(Customer::class);
-        $customer->updateData($customerData);
-        return $customer;
-    }
-
-    /**
-     * Returns Products created by fixture.
-     *
-     * @param string $sku
-     * @return Product
-     */
-    private function getFixtureProduct(string $sku): Product
-    {
-        $repository = $this->objectManager->create(ProductRepositoryInterface::class);
-        $product = $repository->get($sku, false, $this->getFixtureStore()->getId());
-        $product->setData('salable', true);
-        return $product;
-    }
-
-    /**
-     * Creates instant purchase option based on data from fixture.
-     *
-     * @return InstantPurchaseOption
-     */
-    private function createInstantPurchaseOptionFromFixture(): InstantPurchaseOption
-    {
-        $factory = $this->objectManager->get(InstantPurchaseOptionLoadingFactory::class);
-        $fixtureCustomer = $this->getFixtureCustomer();
-        $option = $factory->create(
-            $fixtureCustomer->getId(),
-            'fakePublicHash', // @see Magento/InstantPurchase/_files/fake_payment_token.php
-            $fixtureCustomer->getDefaultShippingAddress()->getId(),
-            $fixtureCustomer->getDefaultBillingAddress()->getId(),
-            'instant-purchase',
-            'cheapest'
-        );
-        return $option;
-    }
-
-    /**
-     * Creates custom options selection product request data.
-     *
-     * @param Product $product
-     * @return array
-     */
-    private function createProductOptionsRequest(Product $product): array
-    {
-        $options = [];
-        /** @var Product\Option $option */
-        foreach ($product->getOptions() as $option) {
-            switch ($option->getGroupByType()) {
-                case ProductCustomOptionInterface::OPTION_GROUP_DATE:
-                    $value = [
-                        'year' => date('Y'),
-                        'month' => date('n'),
-                        'day' => date('j'),
-                        'hour' => date('G'),
-                        'minute' => date('i')
-                    ];
-                    break;
-                case ProductCustomOptionInterface::OPTION_GROUP_SELECT:
-                    $value = key($option->getValues());
-                    break;
-                default:
-                    $value = 'test';
-                    break;
-            }
-            $options[$option->getId()] = $value;
-        }
-        return $options;
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

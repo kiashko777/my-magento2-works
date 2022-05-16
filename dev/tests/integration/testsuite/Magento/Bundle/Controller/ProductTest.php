@@ -7,9 +7,14 @@
 /**
  * Test class for \Magento\Catalog\Controller\Products (bundle product type)
  */
+
 namespace Magento\Bundle\Controller;
 
-class ProductTest extends \Magento\TestFramework\TestCase\AbstractController
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\TestFramework\Helper\Xpath;
+use Magento\TestFramework\TestCase\AbstractController;
+
+class ProductTest extends AbstractController
 {
     /**
      * @magentoDataFixture Magento/Bundle/_files/product.php
@@ -17,8 +22,8 @@ class ProductTest extends \Magento\TestFramework\TestCase\AbstractController
      */
     public function testViewAction()
     {
-        /** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-        $productRepository = $this->_objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = $this->_objectManager->create(ProductRepositoryInterface::class);
         $product = $productRepository->get('bundle-product');
         $this->dispatch('catalog/product/view/id/' . $product->getEntityId());
         $responseBody = $this->getResponse()->getBody();
@@ -35,7 +40,7 @@ class ProductTest extends \Magento\TestFramework\TestCase\AbstractController
         $this->assertStringNotContainsString('class="options-container-big"', $responseBody);
         $this->assertEquals(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//*[@id="product-options-wrapper"]',
                 $responseBody
             )

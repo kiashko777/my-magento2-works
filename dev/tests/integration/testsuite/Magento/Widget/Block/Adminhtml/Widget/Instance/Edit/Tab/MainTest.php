@@ -3,43 +3,53 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Widget\Block\Adminhtml\Widget\Instance\Edit\Tab;
+
+use Magento\Framework\Data\Form\Element\Select;
+use Magento\Framework\DataObject;
+use Magento\Framework\Registry;
+use Magento\Framework\View\Layout;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class MainTest extends \PHPUnit\Framework\TestCase
+class MainTest extends TestCase
 {
     public function testPackageThemeElement()
     {
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $objectManager->get(\Magento\Framework\Registry::class)
-            ->register('current_widget_instance', new \Magento\Framework\DataObject());
-        /** @var \Magento\Widget\Block\Adminhtml\Widget\Instance\Edit\Tab\Main $block */
-        $block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
+        /** @var $objectManager ObjectManager */
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->get(Registry::class)
+            ->register('current_widget_instance', new DataObject());
+        /** @var Main $block */
+        $block = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
         )->createBlock(
-            \Magento\Widget\Block\Adminhtml\Widget\Instance\Edit\Tab\Main::class
+            Main::class
         );
         $block->setTemplate(null);
         $block->toHtml();
         $element = $block->getForm()->getElement('theme_id');
-        $this->assertInstanceOf(\Magento\Framework\Data\Form\Element\Select::class, $element);
+        $this->assertInstanceOf(Select::class, $element);
         $this->assertTrue($element->getDisabled());
     }
 
     public function testTypeElement()
     {
-        $block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\Layout::class
+        $block = Bootstrap::getObjectManager()->get(
+            Layout::class
         )->createBlock(
-            \Magento\Widget\Block\Adminhtml\Widget\Instance\Edit\Tab\Main::class
+            Main::class
         );
         $block->setTemplate(null);
         $block->toHtml();
         $element = $block->getForm()->getElement('instance_code');
-        $this->assertInstanceOf(\Magento\Framework\Data\Form\Element\Select::class, $element);
+        $this->assertInstanceOf(Select::class, $element);
         $this->assertTrue($element->getDisabled());
     }
 }

@@ -378,13 +378,13 @@ define([
                 }, 300);
             }
         },
-        _delay: function(handler, delay) {
+        _delay: function (handler, delay) {
             var instance = this,
                 handlerProxy = function () {
-                return (typeof handler === "string" ? instance[handler] : handler)
-                    .apply(instance, arguments);
-            };
-            
+                    return (typeof handler === "string" ? instance[handler] : handler)
+                        .apply(instance, arguments);
+                };
+
             return setTimeout(handlerProxy, delay || 0);
         }
     });

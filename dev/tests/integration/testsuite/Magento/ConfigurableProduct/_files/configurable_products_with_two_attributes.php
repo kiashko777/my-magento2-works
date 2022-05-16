@@ -13,6 +13,7 @@ use Magento\Catalog\Setup\CategorySetup;
 use Magento\ConfigurableProduct\Helper\Product\Options\Factory;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 use Magento\Eav\Api\Data\AttributeOptionInterface;
+use Magento\Eav\Model\Config;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
@@ -30,8 +31,8 @@ $productRepository = Bootstrap::getObjectManager()
 /** @var $installer CategorySetup */
 $installer = Bootstrap::getObjectManager()->create(CategorySetup::class);
 
-/** @var \Magento\Eav\Model\Config $eavConfig */
-$eavConfig = Bootstrap::getObjectManager()->get(\Magento\Eav\Model\Config::class);
+/** @var Config $eavConfig */
+$eavConfig = Bootstrap::getObjectManager()->get(Config::class);
 $firstAttribute = $eavConfig->getAttribute(Product::ENTITY, 'test_configurable_first');
 $secondAttribute = $eavConfig->getAttribute(Product::ENTITY, 'test_configurable_second');
 

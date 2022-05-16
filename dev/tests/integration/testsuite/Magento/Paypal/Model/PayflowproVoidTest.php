@@ -33,6 +33,8 @@ use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use ReflectionException;
+use ReflectionProperty;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
@@ -83,6 +85,119 @@ class PayflowproVoidTest extends TestCase
 
         $order = $this->getOrderByIncrementId('100000001');
         $this->assertFalse($order->canVoidPayment());
+    }
+
+    /**
+     * Returns prepared order.
+     *
+     * @return Order
+     * @throws ReflectionException
+     */
+    private function getOrder(): Order
+    {
+        /** @var $order Order */
+        $order = $this->getOrderByIncrementId('100000001');
+        $orderItem = $this->createMock(Item::class);
+        $orderItem->method('getQtyToInvoice')
+            ->willReturn(true);
+        $order->setItems([$orderItem]);
+
+        $payment = $order->getPayment();
+        $canVoidLookupProperty = new ReflectionProperty(get_class($payment), '_canVoidLookup');
+        $canVoidLookupProperty->setAccessible(true);
+        $canVoidLookupProperty->setValue($payment, true);
+
+        return $order;
+    }
+
+    /**
+     * Get stored order.
+     *
+     * @param string $incrementId
+     * @return OrderInterface
+     */
+    private function getOrderByIncrementId(string $incrementId): OrderInterface
+    {
+        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
+        $searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
+        $searchCriteria = $searchCriteriaBuilder->addFilter(OrderInterface::INCREMENT_ID, $incrementId)
+            ->create();
+
+        $orderRepository = $this->objectManager->get(OrderRepositoryInterface::class);
+        $orders = $orderRepository->getList($searchCriteria)
+            ->getItems();
+
+        /** @var OrderInterface $order */
+        return array_pop($orders);
+    }
+
+    /**
+     * Returns payment method instance.
+     *
+     * @param DataObject $response
+     * @return PaymentMethodInterface
+     * @throws ReflectionException
+     */
+    private function getPaymentMethodInstance(DataObject $response): PaymentMethodInterface
+    {
+        $gatewayMock = $this->createMock(Gateway::class);
+        $gatewayMock->expects($this->once())
+            ->method('postRequest')
+            ->willReturn($response);
+
+        $configMock = $this->createMock(PayflowConfig::class);
+        $configFactoryMock = $this->createPartialMock(
+            ConfigInterfaceFactory::class,
+            ['create']
+        );
+
+        $configFactoryMock->expects($this->once())
+            ->method('create')
+            ->willReturn($configMock);
+
+        $configMock->expects($this->any())
+            ->method('getValue')
+            ->willReturnMap(
+                [
+                    ['use_proxy', false],
+                    ['sandbox_flag', '1'],
+                    ['transaction_url_test_mode', 'https://test_transaction_url']
+                ]
+            );
+
+        /** @var Payflowpro|MockObject $instance */
+        $instance = $this->getMockBuilder(Payflowpro::class)
+            ->setMethods(['setStore', 'getInfoInstance'])
+            ->setConstructorArgs(
+                [
+                    $this->objectManager->get(Context::class),
+                    $this->objectManager->get(Registry::class),
+                    $this->objectManager->get(ExtensionAttributesFactory::class),
+                    $this->objectManager->get(AttributeValueFactory::class),
+                    $this->objectManager->get(Data::class),
+                    $this->objectManager->get(ScopeConfigInterface::class),
+                    $this->objectManager->get(Logger::class),
+                    $this->objectManager->get(ModuleListInterface::class),
+                    $this->objectManager->get(TimezoneInterface::class),
+                    $this->objectManager->get(StoreManagerInterface::class),
+                    $configFactoryMock,
+                    $gatewayMock,
+                    $this->objectManager->get(HandlerInterface::class),
+                    null,
+                    null,
+                    []
+                ]
+            )
+            ->getMock();
+
+        $instance->expects($this->once())
+            ->method('setStore')
+            ->willReturnSelf();
+        $paymentInfoInstance = $this->createMock(InfoInterface::class);
+        $instance->method('getInfoInstance')
+            ->willReturn($paymentInfoInstance);
+
+        return $instance;
     }
 
     /**
@@ -151,118 +266,5 @@ class PayflowproVoidTest extends TestCase
 
         $this->expectException(CommandException::class);
         $order->cancel();
-    }
-
-    /**
-     * Returns prepared order.
-     *
-     * @return Order
-     * @throws \ReflectionException
-     */
-    private function getOrder(): Order
-    {
-        /** @var $order Order */
-        $order = $this->getOrderByIncrementId('100000001');
-        $orderItem = $this->createMock(Item::class);
-        $orderItem->method('getQtyToInvoice')
-            ->willReturn(true);
-        $order->setItems([$orderItem]);
-
-        $payment = $order->getPayment();
-        $canVoidLookupProperty = new \ReflectionProperty(get_class($payment), '_canVoidLookup');
-        $canVoidLookupProperty->setAccessible(true);
-        $canVoidLookupProperty->setValue($payment, true);
-
-        return $order;
-    }
-
-    /**
-     * Returns payment method instance.
-     *
-     * @param DataObject $response
-     * @return PaymentMethodInterface
-     * @throws \ReflectionException
-     */
-    private function getPaymentMethodInstance(DataObject $response): PaymentMethodInterface
-    {
-        $gatewayMock = $this->createMock(Gateway::class);
-        $gatewayMock->expects($this->once())
-            ->method('postRequest')
-            ->willReturn($response);
-
-        $configMock = $this->createMock(PayflowConfig::class);
-        $configFactoryMock = $this->createPartialMock(
-            ConfigInterfaceFactory::class,
-            ['create']
-        );
-
-        $configFactoryMock->expects($this->once())
-            ->method('create')
-            ->willReturn($configMock);
-
-        $configMock->expects($this->any())
-            ->method('getValue')
-            ->willReturnMap(
-                [
-                    ['use_proxy', false],
-                    ['sandbox_flag', '1'],
-                    ['transaction_url_test_mode', 'https://test_transaction_url']
-                ]
-            );
-
-        /** @var Payflowpro|MockObject $instance */
-        $instance = $this->getMockBuilder(Payflowpro::class)
-            ->setMethods(['setStore', 'getInfoInstance'])
-            ->setConstructorArgs(
-                [
-                    $this->objectManager->get(Context::class),
-                    $this->objectManager->get(Registry::class),
-                    $this->objectManager->get(ExtensionAttributesFactory::class),
-                    $this->objectManager->get(AttributeValueFactory::class),
-                    $this->objectManager->get(Data::class),
-                    $this->objectManager->get(ScopeConfigInterface::class),
-                    $this->objectManager->get(Logger::class),
-                    $this->objectManager->get(ModuleListInterface::class),
-                    $this->objectManager->get(TimezoneInterface::class),
-                    $this->objectManager->get(StoreManagerInterface::class),
-                    $configFactoryMock,
-                    $gatewayMock,
-                    $this->objectManager->get(HandlerInterface::class),
-                    null,
-                    null,
-                    []
-                ]
-            )
-            ->getMock();
-
-        $instance->expects($this->once())
-            ->method('setStore')
-            ->willReturnSelf();
-        $paymentInfoInstance = $this->createMock(InfoInterface::class);
-        $instance->method('getInfoInstance')
-            ->willReturn($paymentInfoInstance);
-
-        return $instance;
-    }
-
-    /**
-     * Get stored order.
-     *
-     * @param string $incrementId
-     * @return OrderInterface
-     */
-    private function getOrderByIncrementId(string $incrementId): OrderInterface
-    {
-        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
-        $searchCriteriaBuilder = $this->objectManager->get(SearchCriteriaBuilder::class);
-        $searchCriteria = $searchCriteriaBuilder->addFilter(OrderInterface::INCREMENT_ID, $incrementId)
-            ->create();
-
-        $orderRepository = $this->objectManager->get(OrderRepositoryInterface::class);
-        $orders = $orderRepository->getList($searchCriteria)
-            ->getItems();
-
-        /** @var OrderInterface $order */
-        return array_pop($orders);
     }
 }

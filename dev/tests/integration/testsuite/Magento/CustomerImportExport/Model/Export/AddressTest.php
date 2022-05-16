@@ -6,14 +6,23 @@
 
 namespace Magento\CustomerImportExport\Model\Export;
 
+use Magento\Customer\Model\Attribute;
+use Magento\Customer\Model\ResourceModel\Address\Attribute\Collection;
 use Magento\CustomerImportExport\Model\Import\Address as ImportAddress;
+use Magento\Framework\Registry;
+use Magento\ImportExport\Model\Export\Adapter\Csv;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\Store\Model\Website;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for customer address export model
  *
  * @magentoDataFixture Magento/Customer/_files/import_export/customer_with_addresses.php
  */
-class AddressTest extends \PHPUnit\Framework\TestCase
+class AddressTest extends TestCase
 {
     /**
      * @var Address
@@ -27,24 +36,6 @@ class AddressTest extends \PHPUnit\Framework\TestCase
      */
     protected $_websites = [];
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\CustomerImportExport\Model\Export\Address::class
-        );
-
-        $websites = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Store\Model\StoreManagerInterface::class
-        )->getWebsites(
-            true
-        );
-        /** @var $website \Magento\Store\Model\Website */
-        foreach ($websites as $website) {
-            $this->_websites[$website->getId()] = $website->getCode();
-        }
-    }
-
     /**
      * Test export method
      */
@@ -55,11 +46,11 @@ class AddressTest extends \PHPUnit\Framework\TestCase
         $entityIdCode = Address::COLUMN_ADDRESS_ID;
 
         $expectedAttributes = [];
-        /** @var $collection \Magento\Customer\Model\ResourceModel\Address\Attribute\Collection */
-        $collection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Model\ResourceModel\Address\Attribute\Collection::class
+        /** @var $collection Collection */
+        $collection = Bootstrap::getObjectManager()->create(
+            Collection::class
         );
-        /** @var $attribute \Magento\Customer\Model\Attribute */
+        /** @var $attribute Attribute */
         foreach ($collection as $attribute) {
             $expectedAttributes[] = $attribute->getAttributeCode();
         }
@@ -68,8 +59,8 @@ class AddressTest extends \PHPUnit\Framework\TestCase
         $defaultAddressMap = ImportAddress::getDefaultAddressAttributeMapping();
 
         $this->_model->setWriter(
-            \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-                \Magento\ImportExport\Model\Export\Adapter\Csv::class
+            Bootstrap::getObjectManager()->create(
+                Csv::class
             )
         );
         $this->_model->setParameters([]);
@@ -84,13 +75,13 @@ class AddressTest extends \PHPUnit\Framework\TestCase
 
         $this->assertNotEmpty($data['data'], 'No data was exported');
 
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        /** @var $objectManager ObjectManager */
+        $objectManager = Bootstrap::getObjectManager();
 
         // Get addresses
         /** @var $customers \Magento\Customer\Model\Customer[] */
         $customers = $objectManager->get(
-            \Magento\Framework\Registry::class
+            Registry::class
         )->registry(
             '_fixture/Magento_ImportExport_Customers_Array'
         );
@@ -126,6 +117,34 @@ class AddressTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Export CSV string to array
+     *
+     * @param string $content
+     * @param mixed $entityId
+     * @return array
+     */
+    protected function _csvToArray($content, $entityId = null)
+    {
+        $data = ['header' => [], 'data' => []];
+
+        $lines = str_getcsv($content, "\n");
+        foreach ($lines as $index => $line) {
+            if ($index == 0) {
+                $data['header'] = str_getcsv($line);
+            } else {
+                $row = array_combine($data['header'], str_getcsv($line));
+                if ($entityId !== null && !empty($row[$entityId])) {
+                    $data['data'][$row[$entityId]] = $row;
+                } else {
+                    $data['data'][] = $row;
+                }
+            }
+        }
+
+        return $data;
+    }
+
+    /**
      * Get possible gender values for filter
      *
      * @return array
@@ -147,8 +166,8 @@ class AddressTest extends \PHPUnit\Framework\TestCase
         $entityIdCode = Address::COLUMN_ADDRESS_ID;
 
         $this->_model->setWriter(
-            \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-                \Magento\ImportExport\Model\Export\Adapter\Csv::class
+            Bootstrap::getObjectManager()->create(
+                Csv::class
             )
         );
 
@@ -156,13 +175,13 @@ class AddressTest extends \PHPUnit\Framework\TestCase
 
         $this->_model->setParameters($filterData);
 
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        /** @var $objectManager ObjectManager */
+        $objectManager = Bootstrap::getObjectManager();
 
         // Get expected address count
         /** @var $customers \Magento\Customer\Model\Customer[] */
         $customers = $objectManager->get(
-            \Magento\Framework\Registry::class
+            Registry::class
         )->registry(
             '_fixture/Magento_ImportExport_Customers_Array'
         );
@@ -192,37 +211,9 @@ class AddressTest extends \PHPUnit\Framework\TestCase
     public function testGetAttributeCollection()
     {
         $this->assertInstanceOf(
-            \Magento\Customer\Model\ResourceModel\Address\Attribute\Collection::class,
+            Collection::class,
             $this->_model->getAttributeCollection()
         );
-    }
-
-    /**
-     * Export CSV string to array
-     *
-     * @param string $content
-     * @param mixed $entityId
-     * @return array
-     */
-    protected function _csvToArray($content, $entityId = null)
-    {
-        $data = ['header' => [], 'data' => []];
-
-        $lines = str_getcsv($content, "\n");
-        foreach ($lines as $index => $line) {
-            if ($index == 0) {
-                $data['header'] = str_getcsv($line);
-            } else {
-                $row = array_combine($data['header'], str_getcsv($line));
-                if ($entityId !== null && !empty($row[$entityId])) {
-                    $data['data'][$row[$entityId]] = $row;
-                } else {
-                    $data['data'][] = $row;
-                }
-            }
-        }
-
-        return $data;
     }
 
     /**
@@ -231,5 +222,23 @@ class AddressTest extends \PHPUnit\Framework\TestCase
     public function testGetFileName()
     {
         $this->assertEquals($this->_model->getEntityTypeCode(), $this->_model->getFileName());
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Address::class
+        );
+
+        $websites = Bootstrap::getObjectManager()->get(
+            StoreManagerInterface::class
+        )->getWebsites(
+            true
+        );
+        /** @var $website Website */
+        foreach ($websites as $website) {
+            $this->_websites[$website->getId()] = $website->getCode();
+        }
     }
 }

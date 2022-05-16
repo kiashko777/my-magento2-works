@@ -4,16 +4,26 @@
  * See COPYING.txt for license details.
  */
 
-\Magento\TestFramework\Helper\Bootstrap::getInstance()->reinitialize();
+use Magento\Catalog\Api\CategoryLinkManagementInterface;
+use Magento\Catalog\Api\Data\ProductCustomOptionInterface;
+use Magento\Catalog\Api\Data\ProductCustomOptionInterfaceFactory;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 
-/** @var \Magento\TestFramework\ObjectManager $objectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+Bootstrap::getInstance()->reinitialize();
 
-/** @var \Magento\Catalog\Api\CategoryLinkManagementInterface $categoryLinkManagement */
-$categoryLinkManagement = $objectManager->create(\Magento\Catalog\Api\CategoryLinkManagementInterface::class);
+/** @var ObjectManager $objectManager */
+$objectManager = Bootstrap::getObjectManager();
 
-/** @var $product \Magento\Catalog\Model\Product */
-$product = $objectManager->create(\Magento\Catalog\Model\Product::class);
+/** @var CategoryLinkManagementInterface $categoryLinkManagement */
+$categoryLinkManagement = $objectManager->create(CategoryLinkManagementInterface::class);
+
+/** @var $product Product */
+$product = $objectManager->create(Product::class);
 $product->isObjectNew(true);
 $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setAttributeSetId(4)
@@ -28,8 +38,8 @@ $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setMetaTitle('meta title')
     ->setMetaKeyword('meta keyword')
     ->setMetaDescription('meta description')
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setStockData(
         [
             'use_config_manage_stock' => 1,
@@ -89,24 +99,24 @@ $oldOptions = [
     ],
     [
         'previous_group' => 'text',
-        'title'     => 'Test Field',
-        'type'      => 'field',
+        'title' => 'Test Field',
+        'type' => 'field',
         'is_require' => 1,
         'sort_order' => 0,
-        'price'     => 1,
+        'price' => 1,
         'price_type' => 'fixed',
-        'sku'       => '1-text',
+        'sku' => '1-text',
         'max_characters' => 100,
     ],
 ];
 
 $options = [];
 
-/** @var \Magento\Catalog\Api\Data\ProductCustomOptionInterfaceFactory $customOptionFactory */
-$customOptionFactory = $objectManager->create(\Magento\Catalog\Api\Data\ProductCustomOptionInterfaceFactory::class);
+/** @var ProductCustomOptionInterfaceFactory $customOptionFactory */
+$customOptionFactory = $objectManager->create(ProductCustomOptionInterfaceFactory::class);
 
 foreach ($oldOptions as $option) {
-    /** @var \Magento\Catalog\Api\Data\ProductCustomOptionInterface $option */
+    /** @var ProductCustomOptionInterface $option */
     $option = $customOptionFactory->create(['data' => $option]);
     $option->setProductSku($product->getSku());
 
@@ -115,8 +125,8 @@ foreach ($oldOptions as $option) {
 
 $product->setOptions($options);
 
-/** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepositoryFactory */
-$productRepositoryFactory = $objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+/** @var ProductRepositoryInterface $productRepositoryFactory */
+$productRepositoryFactory = $objectManager->create(ProductRepositoryInterface::class);
 $productRepositoryFactory->save($product);
 
 $categoryLinkManagement->assignProductToCategories(

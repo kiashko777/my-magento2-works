@@ -47,28 +47,6 @@ class ItemsTest extends TestCase
     private $pageFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
-        $this->pageFactory = $this->objectManager->get(PageFactory::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->registry->unregister('current_order');
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Sales/_files/order.php
      *
      * @return void
@@ -79,6 +57,18 @@ class ItemsTest extends TestCase
         $this->registerOrder($order);
         $this->block = $this->layout->createBlock(Items::class);
         $this->assertCount(1, $this->block->getItems());
+    }
+
+    /**
+     * Register order in registry.
+     *
+     * @param OrderInterface $order
+     * @return void
+     */
+    private function registerOrder(OrderInterface $order): void
+    {
+        $this->registry->unregister('current_order');
+        $this->registry->register('current_order', $order);
     }
 
     /**
@@ -95,6 +85,20 @@ class ItemsTest extends TestCase
         /** @var Pager $pagerBlock */
         $pagerBlock = $this->block->getChildBlock('sales_order_item_pager');
         $this->assertCount(1, $pagerBlock->getCollection()->getItems());
+    }
+
+    /**
+     * Create items block with pager
+     */
+    private function prepareBlockWithPager(): void
+    {
+        $this->block = $this->layout->createBlock(Items::class, 'items_block');
+        $this->layout->addBlock(
+            $this->objectManager->get(Pager::class),
+            'sales_order_item_pager',
+            'items_block'
+        );
+        $this->block->setLayout($this->layout);
     }
 
     /**
@@ -215,28 +219,24 @@ class ItemsTest extends TestCase
     }
 
     /**
-     * Register order in registry.
-     *
-     * @param OrderInterface $order
-     * @return void
+     * @inheritdoc
      */
-    private function registerOrder(OrderInterface $order): void
+    protected function setUp(): void
     {
-        $this->registry->unregister('current_order');
-        $this->registry->register('current_order', $order);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
+        $this->pageFactory = $this->objectManager->get(PageFactory::class);
     }
 
     /**
-     * Create items block with pager
+     * @inheritdoc
      */
-    private function prepareBlockWithPager(): void
+    protected function tearDown(): void
     {
-        $this->block = $this->layout->createBlock(Items::class, 'items_block');
-        $this->layout->addBlock(
-            $this->objectManager->get(Pager::class),
-            'sales_order_item_pager',
-            'items_block'
-        );
-        $this->block->setLayout($this->layout);
+        $this->registry->unregister('current_order');
+
+        parent::tearDown();
     }
 }

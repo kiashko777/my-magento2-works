@@ -11,6 +11,8 @@ use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
+use ReflectionException;
+use ReflectionMethod;
 
 class CollectionTest extends TestCase
 {
@@ -20,18 +22,10 @@ class CollectionTest extends TestCase
     private $objectManager;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
-
-    /**
      * Tests collection properties.
      *
-     * @throws \ReflectionException
      * @return void
+     * @throws ReflectionException
      */
     public function testCollectionCreate(): void
     {
@@ -40,7 +34,7 @@ class CollectionTest extends TestCase
         $tableDescription = $gridCollection->getConnection()
             ->describeTable($gridCollection->getMainTable());
 
-        $mapper = new \ReflectionMethod(
+        $mapper = new ReflectionMethod(
             Collection::class,
             '_getMapper'
         );
@@ -76,5 +70,13 @@ class CollectionTest extends TestCase
             "WHERE (((`main_table`.`created_at` = '{$convertedDate}')))";
 
         $this->assertEquals($expectedSelect, $collection->getSelectSql(true));
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

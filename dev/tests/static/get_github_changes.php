@@ -260,6 +260,26 @@ class GitRepo
     }
 
     /**
+     * Makes call ro git cli
+     *
+     * @param string $command
+     * @return mixed
+     */
+    private function call($command)
+    {
+        $gitCmd = sprintf(
+            'git --git-dir %s --work-tree %s',
+            escapeshellarg("{$this->workTree}/.git"),
+            escapeshellarg($this->workTree)
+        );
+        $tmp = sprintf('%s %s', $gitCmd, $command);
+        // exec() have to be here since this is test.
+        // phpcs:ignore Magento2.Security.InsecureFunction
+        exec($tmp, $output);
+        return $output;
+    }
+
+    /**
      * Remove remote
      *
      * @param string $alias
@@ -336,10 +356,11 @@ class GitRepo
      */
     protected function filterChangedFiles(
         array $changes,
-        $remoteAlias,
-        $remoteBranch,
-        $changesType = self::CHANGE_TYPE_ALL
-    ) {
+              $remoteAlias,
+              $remoteBranch,
+              $changesType = self::CHANGE_TYPE_ALL
+    )
+    {
         $countScannedFiles = 0;
         $changedFilesMasks = $this->buildChangedFilesMask($changesType);
         $filteredChanges = [];
@@ -384,9 +405,9 @@ class GitRepo
     {
         $changedFilesMasks = [];
         foreach ([
-            self::CHANGE_TYPE_ADDED => "A\t",
-            self::CHANGE_TYPE_MODIFIED => "M\t",
-        ] as $changeType => $changedFilesMask) {
+                     self::CHANGE_TYPE_ADDED => "A\t",
+                     self::CHANGE_TYPE_MODIFIED => "M\t",
+                 ] as $changeType => $changedFilesMask) {
             if ($changeType & $changesType) {
                 $changedFilesMasks[] = $changedFilesMask;
             }
@@ -469,25 +490,5 @@ class GitRepo
     public function getChangedContentFiles()
     {
         return $this->changedContentFiles;
-    }
-
-    /**
-     * Makes call ro git cli
-     *
-     * @param string $command
-     * @return mixed
-     */
-    private function call($command)
-    {
-        $gitCmd = sprintf(
-            'git --git-dir %s --work-tree %s',
-            escapeshellarg("{$this->workTree}/.git"),
-            escapeshellarg($this->workTree)
-        );
-        $tmp = sprintf('%s %s', $gitCmd, $command);
-        // exec() have to be here since this is test.
-        // phpcs:ignore Magento2.Security.InsecureFunction
-        exec($tmp, $output);
-        return $output;
     }
 }

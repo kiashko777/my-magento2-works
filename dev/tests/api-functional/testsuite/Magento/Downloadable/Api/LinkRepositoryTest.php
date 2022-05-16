@@ -6,11 +6,14 @@
 
 namespace Magento\Downloadable\Api;
 
-use Magento\Catalog\Api\ProductRepositoryInterface;
+use Exception;
 use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\ProductFactory;
 use Magento\Downloadable\Model\Link;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
+use SoapFault;
 
 /**
  * API tests for Magento\Downloadable\Model\LinkRepository.
@@ -36,91 +39,6 @@ class LinkRepositoryTest extends WebapiAbstract
      * @var string
      */
     protected $testImagePath;
-
-    protected function setUp(): void
-    {
-        $this->createServiceInfo = [
-            'rest' => [
-                'resourcePath' => '/V1/products/downloadable-product/downloadable-links',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
-            ],
-            'soap' => [
-                'service' => 'downloadableLinkRepositoryV1',
-                'serviceVersion' => 'V1',
-                'operation' => 'downloadableLinkRepositoryV1Save',
-            ],
-        ];
-
-        $this->updateServiceInfo = [
-            'rest' => [
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
-            ],
-            'soap' => [
-                'service' => 'downloadableLinkRepositoryV1',
-                'serviceVersion' => 'V1',
-                'operation' => 'downloadableLinkRepositoryV1Save',
-            ],
-        ];
-
-        $this->deleteServiceInfo = [
-            'rest' => [
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
-            ],
-            'soap' => [
-                'service' => 'downloadableLinkRepositoryV1',
-                'serviceVersion' => 'V1',
-                'operation' => 'downloadableLinkRepositoryV1Delete',
-            ],
-        ];
-
-        $this->testImagePath = __DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'test_image.jpg';
-    }
-
-    /**
-     * Retrieve product that was updated by test
-     *
-     * @param bool $isScopeGlobal if true product store ID will be set to 0
-     * @return Product
-     */
-    protected function getTargetProduct($isScopeGlobal = false)
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        if ($isScopeGlobal) {
-            $product = $objectManager->get(\Magento\Catalog\Model\ProductFactory::class)
-                ->create()
-                ->setStoreId(0)
-                ->load(1);
-        } else {
-            $product = $objectManager->get(\Magento\Catalog\Model\ProductFactory::class)->create()->load(1);
-        }
-
-        return $product;
-    }
-
-    /**
-     * Retrieve product link by its ID (or first link if ID is not specified)
-     *
-     * @param Product $product
-     * @param int|null $linkId
-     * @return Link|null
-     */
-    protected function getTargetLink(Product $product, $linkId = null)
-    {
-        $links = $product->getExtensionAttributes()->getDownloadableProductLinks();
-        if ($linkId !== null) {
-            if (!empty($links)) {
-                foreach ($links as $link) {
-                    if ($link->getId() == $linkId) {
-                        return $link;
-                    }
-                }
-            }
-            return null;
-        }
-
-        // return first link
-        return reset($links);
-    }
 
     /**
      * @magentoApiDataFixture Magento/Downloadable/_files/product_downloadable.php
@@ -168,6 +86,52 @@ class LinkRepositoryTest extends WebapiAbstract
         $this->assertStringEndsWith('.jpg', $link->getLinkFile());
         $this->assertNull($link->getLinkUrl());
         $this->assertNull($link->getSampleUrl());
+    }
+
+    /**
+     * Retrieve product link by its ID (or first link if ID is not specified)
+     *
+     * @param Product $product
+     * @param int|null $linkId
+     * @return Link|null
+     */
+    protected function getTargetLink(Product $product, $linkId = null)
+    {
+        $links = $product->getExtensionAttributes()->getDownloadableProductLinks();
+        if ($linkId !== null) {
+            if (!empty($links)) {
+                foreach ($links as $link) {
+                    if ($link->getId() == $linkId) {
+                        return $link;
+                    }
+                }
+            }
+            return null;
+        }
+
+        // return first link
+        return reset($links);
+    }
+
+    /**
+     * Retrieve product that was updated by test
+     *
+     * @param bool $isScopeGlobal if true product store ID will be set to 0
+     * @return Product
+     */
+    protected function getTargetProduct($isScopeGlobal = false)
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        if ($isScopeGlobal) {
+            $product = $objectManager->get(ProductFactory::class)
+                ->create()
+                ->setStoreId(0)
+                ->load(1);
+        } else {
+            $product = $objectManager->get(ProductFactory::class)->create()->load(1);
+        }
+
+        return $product;
     }
 
     /**
@@ -248,7 +212,7 @@ class LinkRepositoryTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfLinkTypeIsNotSpecified()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The link type is invalid. Verify and try again.');
 
         $requestData = [
@@ -274,7 +238,7 @@ class LinkRepositoryTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfLinkFileContentIsNotAValidBase64EncodedString()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Provided content must be valid base64 encoded data.');
 
         $requestData = [
@@ -307,7 +271,7 @@ class LinkRepositoryTest extends WebapiAbstract
      */
     public function testCreateLinkWithMissingLinkFileThrowsException(): void
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('link file not found. Please try again.');
 
         $requestData = [
@@ -337,7 +301,7 @@ class LinkRepositoryTest extends WebapiAbstract
      */
     public function testCreateLinkWithMissingSampleFileThrowsException(): void
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('link sample file not found. Please try again.');
 
         $requestData = [
@@ -364,7 +328,7 @@ class LinkRepositoryTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfSampleFileContentIsNotAValidBase64EncodedString()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Provided content must be valid base64 encoded data.');
 
         $requestData = [
@@ -394,7 +358,7 @@ class LinkRepositoryTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfLinkFileNameContainsForbiddenCharacters()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Provided file name contains forbidden characters.');
 
         $requestData = [
@@ -425,7 +389,7 @@ class LinkRepositoryTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfSampleFileNameContainsForbiddenCharacters()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Provided file name contains forbidden characters.');
 
         $requestData = [
@@ -456,7 +420,7 @@ class LinkRepositoryTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfLinkUrlHasWrongFormat()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('link URL must have valid format.');
 
         $requestData = [
@@ -483,7 +447,7 @@ class LinkRepositoryTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfLinkUrlUsesDomainNotInWhitelist()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('link URL\'s domain is not in list of downloadable_domains in env.php.');
 
         $requestData = [
@@ -510,7 +474,7 @@ class LinkRepositoryTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfSampleUrlUsesDomainNotInWhitelist()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Sample URL\'s domain is not in list of downloadable_domains in env.php.');
 
         $requestData = [
@@ -537,7 +501,7 @@ class LinkRepositoryTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfSampleUrlHasWrongFormat()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Sample URL must have valid format.');
 
         $requestData = [
@@ -565,7 +529,7 @@ class LinkRepositoryTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfLinkPriceIsInvalid($linkPrice)
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('link price must have numeric positive value.');
 
         $requestData = [
@@ -603,7 +567,7 @@ class LinkRepositoryTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfSortOrderIsInvalid($sortOrder)
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Sort order must be a positive integer.');
 
         $requestData = [
@@ -640,7 +604,7 @@ class LinkRepositoryTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfNumberOfDownloadsIsInvalid($numberOfDownloads)
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Number of downloads must be a positive integer.');
 
         $requestData = [
@@ -749,7 +713,7 @@ class LinkRepositoryTest extends WebapiAbstract
      */
     public function testUpdateThrowsExceptionIfTargetProductDoesNotExist()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage(
             'The product that was requested doesn\'t exist. Verify the product and try again.'
         );
@@ -777,7 +741,7 @@ class LinkRepositoryTest extends WebapiAbstract
      */
     public function testUpdateThrowsExceptionIfThereIsNoDownloadableLinkWithGivenId()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage(
             'No downloadable link with the provided ID was found. Verify the ID and try again.'
         );
@@ -809,7 +773,7 @@ class LinkRepositoryTest extends WebapiAbstract
      */
     public function testUpdateThrowsExceptionIfLinkPriceIsInvalid($linkPrice)
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('link price must have numeric positive value.');
 
         $linkId = $this->getTargetLink($this->getTargetProduct())->getId();
@@ -839,7 +803,7 @@ class LinkRepositoryTest extends WebapiAbstract
      */
     public function testUpdateThrowsExceptionIfSortOrderIsInvalid($sortOrder)
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Sort order must be a positive integer.');
 
         $linkId = $this->getTargetLink($this->getTargetProduct())->getId();
@@ -868,7 +832,7 @@ class LinkRepositoryTest extends WebapiAbstract
      */
     public function testUpdateThrowsExceptionIfNumberOfDownloadsIsInvalid($numberOfDownloads)
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Number of downloads must be a positive integer.');
 
         $linkId = $this->getTargetLink($this->getTargetProduct())->getId();
@@ -918,7 +882,7 @@ class LinkRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/products/' . $sku . $urlTail,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => 'downloadableLinkRepositoryV1',
@@ -966,7 +930,7 @@ class LinkRepositoryTest extends WebapiAbstract
      */
     public function testDeleteThrowsExceptionIfThereIsNoDownloadableLinkWithGivenId()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage(
             'No downloadable link with the provided ID was found. Verify the ID and try again.'
         );
@@ -990,7 +954,7 @@ class LinkRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/products/' . $sku . $urlTail,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => 'downloadableLinkRepositoryV1',
@@ -1004,9 +968,9 @@ class LinkRepositoryTest extends WebapiAbstract
         $expectedMessage = "The product that was requested doesn't exist. Verify the product and try again.";
         try {
             $this->_webApiCall($serviceInfo, $requestData);
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertEquals($expectedMessage, $e->getMessage());
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->assertStringContainsString($expectedMessage, $e->getMessage());
         }
     }
@@ -1022,7 +986,7 @@ class LinkRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/products/' . $sku . $urlTail,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => 'downloadableLinkRepositoryV1',
@@ -1042,7 +1006,7 @@ class LinkRepositoryTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfTargetProductTypeIsNotDownloadable()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage(
             'The product needs to be the downloadable type. Verify the product and try again.'
         );
@@ -1070,7 +1034,7 @@ class LinkRepositoryTest extends WebapiAbstract
      */
     public function testCreateThrowsExceptionIfTargetProductDoesNotExist()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage(
             'The product that was requested doesn\'t exist. Verify the product and try again.'
         );
@@ -1092,5 +1056,44 @@ class LinkRepositoryTest extends WebapiAbstract
             ],
         ];
         $this->_webApiCall($this->createServiceInfo, $requestData);
+    }
+
+    protected function setUp(): void
+    {
+        $this->createServiceInfo = [
+            'rest' => [
+                'resourcePath' => '/V1/products/downloadable-product/downloadable-links',
+                'httpMethod' => Request::HTTP_METHOD_POST,
+            ],
+            'soap' => [
+                'service' => 'downloadableLinkRepositoryV1',
+                'serviceVersion' => 'V1',
+                'operation' => 'downloadableLinkRepositoryV1Save',
+            ],
+        ];
+
+        $this->updateServiceInfo = [
+            'rest' => [
+                'httpMethod' => Request::HTTP_METHOD_PUT,
+            ],
+            'soap' => [
+                'service' => 'downloadableLinkRepositoryV1',
+                'serviceVersion' => 'V1',
+                'operation' => 'downloadableLinkRepositoryV1Save',
+            ],
+        ];
+
+        $this->deleteServiceInfo = [
+            'rest' => [
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
+            ],
+            'soap' => [
+                'service' => 'downloadableLinkRepositoryV1',
+                'serviceVersion' => 'V1',
+                'operation' => 'downloadableLinkRepositoryV1Delete',
+            ],
+        ];
+
+        $this->testImagePath = __DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'test_image.jpg';
     }
 }

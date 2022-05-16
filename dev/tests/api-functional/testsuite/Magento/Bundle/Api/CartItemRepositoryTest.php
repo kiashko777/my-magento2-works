@@ -3,8 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Bundle\Api;
 
+use Magento\Bundle\Model\Option;
+use Magento\Bundle\Model\Product\Type;
+use Magento\Catalog\Model\Product;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Quote\Model\Quote;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 class CartItemRepositoryTest extends WebapiAbstract
@@ -14,22 +22,17 @@ class CartItemRepositoryTest extends WebapiAbstract
     const RESOURCE_PATH = '/V1/carts/';
 
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoApiDataFixture Magento/Checkout/_files/quote_with_bundle_and_options.php
      */
     public function testGetAll()
     {
-        /** @var $quote \Magento\Quote\Model\Quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class)->load(
+        /** @var $quote Quote */
+        $quote = $this->objectManager->create(Quote::class)->load(
             'test_order_bundle',
             'reserved_order_id'
         );
@@ -38,7 +41,7 @@ class CartItemRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $quoteId . '/items',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -68,9 +71,9 @@ class CartItemRepositoryTest extends WebapiAbstract
      */
     public function testAddItem()
     {
-        /** @var \Magento\Catalog\Model\Product $product */
-        $product = $this->objectManager->create(\Magento\Catalog\Model\Product::class)->load(3);
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class)->load(
+        /** @var Product $product */
+        $product = $this->objectManager->create(Product::class)->load(3);
+        $quote = $this->objectManager->create(Quote::class)->load(
             'test_order_item_with_items',
             'reserved_order_id'
         );
@@ -88,14 +91,14 @@ class CartItemRepositoryTest extends WebapiAbstract
 
         $productSku = $product->getSku();
         $productId = $product->getId();
-        /** @var \Magento\Quote\Model\Quote  $quote */
+        /** @var Quote $quote */
 
         $cartId = $quote->getId();
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $cartId . '/items',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -132,8 +135,8 @@ class CartItemRepositoryTest extends WebapiAbstract
      */
     public function testUpdate()
     {
-        /** @var \Magento\Quote\Model\Quote  $quote */
-        $quote = $this->objectManager->create(\Magento\Quote\Model\Quote::class)->load(
+        /** @var Quote $quote */
+        $quote = $this->objectManager->create(Quote::class)->load(
             'test_order_bundle',
             'reserved_order_id'
         );
@@ -143,12 +146,12 @@ class CartItemRepositoryTest extends WebapiAbstract
         $itemId = $cartItem->getId();
 
         $product = $cartItem->getProduct();
-        /** @var $typeInstance \Magento\Bundle\Model\Product\Type */
+        /** @var $typeInstance Type */
         $typeInstance = $product->getTypeInstance();
         $typeInstance->setStoreFilter($product->getStoreId(), $product);
         $optionCollection = $typeInstance->getOptionsCollection($product);
         $bundleOptions = [];
-        /** @var $option \Magento\Bundle\Model\Option */
+        /** @var $option Option */
         foreach ($optionCollection as $option) {
             if (!$option->getRequired()) {
                 continue;
@@ -162,7 +165,7 @@ class CartItemRepositoryTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $cartId . '/items/' . $itemId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -185,7 +188,7 @@ class CartItemRepositoryTest extends WebapiAbstract
         ];
         $this->_webApiCall($serviceInfo, $requestData);
 
-        $quoteUpdated = $this->objectManager->create(\Magento\Quote\Model\Quote::class)->load(
+        $quoteUpdated = $this->objectManager->create(Quote::class)->load(
             'test_order_bundle',
             'reserved_order_id'
         );
@@ -202,5 +205,10 @@ class CartItemRepositoryTest extends WebapiAbstract
             $this->assertEquals($optionQty, $buyRequest['bundle_option_qty'][$optionId]);
             $this->assertEquals($optionSelections, $buyRequest['bundle_option'][$optionId]);
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

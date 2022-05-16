@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Quote\Guest;
 
+use Exception;
 use Magento\GraphQl\Quote\GetMaskedQuoteIdByReservedOrderId;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
@@ -20,12 +21,6 @@ class ApplyCouponToCartTest extends GraphQlAbstract
      * @var GetMaskedQuoteIdByReservedOrderId
      */
     private $getMaskedQuoteIdByReservedOrderId;
-
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-    }
 
     /**
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
@@ -47,6 +42,27 @@ class ApplyCouponToCartTest extends GraphQlAbstract
     }
 
     /**
+     * @param string $maskedQuoteId
+     * @param string $couponCode
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId, string $couponCode): string
+    {
+        return <<<QUERY
+mutation {
+  applyCouponToCart(input: {cart_id: "$maskedQuoteId", coupon_code: "$couponCode"}) {
+    cart {
+    id
+      applied_coupon {
+        code
+      }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
      * @magentoApiDataFixture Magento/GraphQl/Quote/_files/guest/create_empty_cart.php
      * @magentoApiDataFixture Magento/GraphQl/Quote/_files/add_simple_product.php
@@ -54,7 +70,7 @@ class ApplyCouponToCartTest extends GraphQlAbstract
      */
     public function testApplyCouponTwice()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('A coupon is already applied to the cart. Please remove it to apply another');
 
         $couponCode = '2?ds5!2d';
@@ -75,7 +91,7 @@ class ApplyCouponToCartTest extends GraphQlAbstract
      */
     public function testApplyCouponToCartWithoutItems()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Cart does not contain products.');
 
         $couponCode = '2?ds5!2d';
@@ -93,7 +109,7 @@ class ApplyCouponToCartTest extends GraphQlAbstract
      */
     public function testApplyCouponToCustomerCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
 
         $couponCode = '2?ds5!2d';
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
@@ -110,7 +126,7 @@ class ApplyCouponToCartTest extends GraphQlAbstract
      */
     public function testApplyNonExistentCouponToCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The coupon code isn\'t valid. Verify the code and try again.');
 
         $couponCode = 'non_existent_coupon_code';
@@ -125,7 +141,7 @@ class ApplyCouponToCartTest extends GraphQlAbstract
      */
     public function testApplyCouponToNonExistentCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
 
         $couponCode = '2?ds5!2d';
         $maskedQuoteId = 'non_existent_masked_id';
@@ -146,7 +162,7 @@ class ApplyCouponToCartTest extends GraphQlAbstract
      */
     public function testApplyCouponWhichIsNotApplicable()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The coupon code isn\'t valid. Verify the code and try again.');
 
         $couponCode = '2?ds5!2d';
@@ -156,24 +172,9 @@ class ApplyCouponToCartTest extends GraphQlAbstract
         $this->graphQlMutation($query);
     }
 
-    /**
-     * @param string $maskedQuoteId
-     * @param string $couponCode
-     * @return string
-     */
-    private function getQuery(string $maskedQuoteId, string $couponCode): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-mutation {
-  applyCouponToCart(input: {cart_id: "$maskedQuoteId", coupon_code: "$couponCode"}) {
-    cart {
-    id
-      applied_coupon {
-        code
-      }
-    }
-  }
-}
-QUERY;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
     }
 }

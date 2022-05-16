@@ -8,9 +8,8 @@ declare(strict_types=1);
 namespace Magento\TestModuleFedex\Model;
 
 use Magento\Framework\Exception\NotFoundException;
-use Magento\Framework\HTTP\AsyncClient\Request;
-use Magento\Framework\Module\Dir;
 use Magento\Framework\Filesystem\Io\File;
+use Magento\Framework\Module\Dir;
 use Magento\Framework\Stdlib\ArrayManager;
 
 /**
@@ -43,10 +42,11 @@ class MockResponseBodyLoader
      * @param ArrayManager
      */
     public function __construct(
-        Dir $moduleDirectory,
-        File $fileIo,
+        Dir          $moduleDirectory,
+        File         $fileIo,
         ArrayManager $arrayManager
-    ) {
+    )
+    {
         $this->moduleDirectory = $moduleDirectory;
         $this->fileIo = $fileIo;
         $this->arrayManager = $arrayManager;

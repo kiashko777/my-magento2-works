@@ -4,17 +4,22 @@
  * See COPYING.txt for license details.
  */
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\MysqlMq\Model\MessageFactory;
+use Magento\MysqlMq\Model\MessageStatusFactory;
+use Magento\MysqlMq\Model\QueueFactory;
+use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var \Magento\MysqlMq\Model\MessageFactory $messageFactory */
-$messageFactory = $objectManager->create(\Magento\MysqlMq\Model\MessageFactory::class);
+$objectManager = Bootstrap::getObjectManager();
+
+/** @var MessageFactory $messageFactory */
+$messageFactory = $objectManager->create(MessageFactory::class);
 $message1 = $messageFactory->create()
     ->load('topic.updated.use.just.in.tests', 'topic_name');
 
 $messageId1 = $message1->getId();
 
-/** @var \Magento\MysqlMq\Model\MessageStatusFactory $messageStatusFactory */
-$queueFactory = $objectManager->create(\Magento\MysqlMq\Model\QueueFactory::class);
+/** @var MessageStatusFactory $messageStatusFactory */
+$queueFactory = $objectManager->create(QueueFactory::class);
 $queueId1 = $queueFactory->create()
     ->load('queue1', Magento\MysqlMq\Model\Queue::KEY_NAME)
     ->getId();
@@ -46,8 +51,8 @@ $plan = [
     ],
 ];
 
-/** @var \Magento\MysqlMq\Model\MessageStatusFactory $messageStatusFactory */
-$messageStatusFactory = $objectManager->create(\Magento\MysqlMq\Model\MessageStatusFactory::class);
+/** @var MessageStatusFactory $messageStatusFactory */
+$messageStatusFactory = $objectManager->create(MessageStatusFactory::class);
 foreach ($plan as $instruction) {
     $messageStatus = $messageStatusFactory->create();
 

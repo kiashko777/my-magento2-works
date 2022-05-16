@@ -3,7 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestModule5\Service\V1\Entity;
+
+use Magento\Framework\Api\AbstractExtensibleObject;
 
 /**
  * Some Data Object short description.
@@ -11,7 +14,7 @@ namespace Magento\TestModule5\Service\V1\Entity;
  * Data Object long
  * multi line description.
  */
-class AllSoapAndRest extends \Magento\Framework\Api\AbstractExtensibleObject
+class AllSoapAndRest extends AbstractExtensibleObject
 {
     /**
      * Entity ID

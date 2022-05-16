@@ -31,22 +31,18 @@ class VarDirectiveTest extends TestCase
      */
     private $filter;
 
-    protected function setUp(): void
-    {
-        $objectManager = ObjectManager::getInstance();
-        $this->variableResolver = $objectManager->get(StrictResolver::class);
-        $this->filter = $objectManager->get(Template::class);
-        $this->processor = $objectManager->create(
-            VarDirective::class,
-            ['variableResolver' => $this->variableResolver]
-        );
-    }
-
     public function testFallback()
     {
         $template = 'blah {{var}} blah';
         $result = $this->processor->process($this->createConstruction($this->processor, $template), $this->filter, []);
         self::assertSame('{{var}}', $result);
+    }
+
+    private function createConstruction(VarDirective $directive, string $value): array
+    {
+        preg_match($directive->getRegularExpression(), $value, $construction);
+
+        return $construction;
     }
 
     /**
@@ -66,16 +62,16 @@ class VarDirectiveTest extends TestCase
     public function useCasesProvider()
     {
         return [
-            ['foo',['foo' => true], '1'],
-            ['foo',['foo' => 'abc'], 'abc'],
-            ['foo',['foo' => 1.234], '1.234'],
-            ['foo',['foo' => 0xF], '15'],
-            ['foo',['foo' => false], ''],
-            ['foo',['foo' => null], ''],
-            ['foo.bar',['foo' => ['bar' => 'abc']], 'abc'],
-            ['foo.bar',['foo' => ['bar' => false]], ''],
-            ['foo.getBar().baz',['foo' => new DataObject(['bar' => ['baz' => 'abc']])], 'abc'],
-            ['foo.getBar().baz',['foo' => new DataObject(['bar' => ['baz' => false]])], ''],
+            ['foo', ['foo' => true], '1'],
+            ['foo', ['foo' => 'abc'], 'abc'],
+            ['foo', ['foo' => 1.234], '1.234'],
+            ['foo', ['foo' => 0xF], '15'],
+            ['foo', ['foo' => false], ''],
+            ['foo', ['foo' => null], ''],
+            ['foo.bar', ['foo' => ['bar' => 'abc']], 'abc'],
+            ['foo.bar', ['foo' => ['bar' => false]], ''],
+            ['foo.getBar().baz', ['foo' => new DataObject(['bar' => ['baz' => 'abc']])], 'abc'],
+            ['foo.getBar().baz', ['foo' => new DataObject(['bar' => ['baz' => false]])], ''],
             [
                 'foo.getBar().baz|foofilter|nl2br',
                 ['foo' => new DataObject(['bar' => ['baz' => "foo\nbar"]])],
@@ -89,10 +85,14 @@ class VarDirectiveTest extends TestCase
         ];
     }
 
-    private function createConstruction(VarDirective $directive, string $value): array
+    protected function setUp(): void
     {
-        preg_match($directive->getRegularExpression(), $value, $construction);
-
-        return $construction;
+        $objectManager = ObjectManager::getInstance();
+        $this->variableResolver = $objectManager->get(StrictResolver::class);
+        $this->filter = $objectManager->get(Template::class);
+        $this->processor = $objectManager->create(
+            VarDirective::class,
+            ['variableResolver' => $this->variableResolver]
+        );
     }
 }

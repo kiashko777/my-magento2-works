@@ -47,20 +47,6 @@ class CategoryTest extends TestCase
     private $layerResolver;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->categoryFactory = $this->objectManager->get(CategoryInterfaceFactory::class);
-        $this->layerResolver = $this->objectManager->get(Resolver::class);
-        $this->provider = $this->objectManager->create(Category::class, ['layer' => $this->layerResolver->get()]);
-        $this->registry = $this->objectManager->get(Registry::class);
-    }
-
-    /**
      * @return void
      */
     public function testValidateCategoryWithoutId(): void
@@ -79,5 +65,19 @@ class CategoryTest extends TestCase
     {
         $this->provider->setCategoryId(111);
         $this->assertFalse($this->provider->isValid());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->categoryFactory = $this->objectManager->get(CategoryInterfaceFactory::class);
+        $this->layerResolver = $this->objectManager->get(Resolver::class);
+        $this->provider = $this->objectManager->create(Category::class, ['layer' => $this->layerResolver->get()]);
+        $this->registry = $this->objectManager->get(Registry::class);
     }
 }

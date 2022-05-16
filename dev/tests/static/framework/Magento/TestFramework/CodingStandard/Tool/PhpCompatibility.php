@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace Magento\TestFramework\CodingStandard\Tool;
 
+use PHP_CodeSniffer\Config;
+
 /**
  * Implements a wrapper around `phpcs` for usage with the `PHPCompatibility` sniffs against a specific PHP version.
  */
@@ -20,6 +22,6 @@ class PhpCompatibility extends CodeSniffer implements CompatibilityInterface
      */
     public function setTestVersion(string $version): void
     {
-        \PHP_CodeSniffer\Config::setConfigData('testVersion', $version);
+        Config::setConfigData('testVersion', $version);
     }
 }

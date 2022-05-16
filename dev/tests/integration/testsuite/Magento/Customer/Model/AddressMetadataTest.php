@@ -3,35 +3,25 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Customer\Model;
 
 use Magento\Customer\Api\AddressMetadataInterface;
+use Magento\Customer\Api\Data\ValidationRuleInterfaceFactory;
+use Magento\Customer\Model\Data\AttributeMetadata;
+use Magento\Framework\Api\ExtensionAttribute\Config\Reader;
+use Magento\Framework\Config\CacheInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
-use Magento\TestFramework\Helper\CacheCleaner;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class AddressMetadataTest extends \PHPUnit\Framework\TestCase
+class AddressMetadataTest extends TestCase
 {
     /** @var AddressMetadataInterface */
     private $service;
 
     /** @var AddressMetadataInterface */
     private $serviceTwo;
-
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $objectManager->configure(
-            [
-                \Magento\Framework\Api\ExtensionAttribute\Config\Reader::class => [
-                    'arguments' => [
-                        'fileResolver' => ['instance' => \Magento\Customer\Model\FileResolverStub::class],
-                    ],
-                ],
-            ]
-        );
-        $this->service = $objectManager->create(\Magento\Customer\Api\AddressMetadataInterface::class);
-        $this->serviceTwo = $objectManager->create(\Magento\Customer\Api\AddressMetadataInterface::class);
-    }
 
     public function testGetCustomAttributesMetadata()
     {
@@ -198,9 +188,9 @@ class AddressMetadataTest extends \PHPUnit\Framework\TestCase
 
     public function testGetAttributes()
     {
-        /** @var \Magento\Customer\Api\Data\ValidationRuleInterfaceFactory $validationRulesFactory */
-        $validationRulesFactory = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Api\Data\ValidationRuleInterfaceFactory::class
+        /** @var ValidationRuleInterfaceFactory $validationRulesFactory */
+        $validationRulesFactory = Bootstrap::getObjectManager()->create(
+            ValidationRuleInterfaceFactory::class
         );
         $expectedValidationRules = [
             $validationRulesFactory->create(['data' => ['name' => 'max_text_length', 'value' => 255]]),
@@ -227,7 +217,7 @@ class AddressMetadataTest extends \PHPUnit\Framework\TestCase
 
         /** Check some fields of one attribute metadata */
         $attributeMetadata = $formAttributesMetadata['company'];
-        $this->assertInstanceOf(\Magento\Customer\Model\Data\AttributeMetadata::class, $attributeMetadata);
+        $this->assertInstanceOf(AttributeMetadata::class, $attributeMetadata);
         $this->assertEquals('company', $attributeMetadata->getAttributeCode(), 'Attribute code is invalid');
         $validationRules = $attributeMetadata->getValidationRules();
         $this->assertEquals($expectedValidationRules, $validationRules);
@@ -266,12 +256,28 @@ class AddressMetadataTest extends \PHPUnit\Framework\TestCase
         );
     }
 
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->configure(
+            [
+                Reader::class => [
+                    'arguments' => [
+                        'fileResolver' => ['instance' => FileResolverStub::class],
+                    ],
+                ],
+            ]
+        );
+        $this->service = $objectManager->create(AddressMetadataInterface::class);
+        $this->serviceTwo = $objectManager->create(AddressMetadataInterface::class);
+    }
+
     protected function tearDown(): void
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
 
-        /* @var \Magento\Framework\Config\CacheInterface $cache */
-        $cache = $objectManager->create(\Magento\Framework\Config\CacheInterface::class);
+        /* @var CacheInterface $cache */
+        $cache = $objectManager->create(CacheInterface::class);
         $cache->remove('extension_attributes_config');
     }
 }

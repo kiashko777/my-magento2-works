@@ -5,27 +5,36 @@
  */
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Checkout\Model\Cart;
+use Magento\Checkout\Model\Session;
+use Magento\Eav\Model\Config;
+use Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection;
+use Magento\Framework\DataObject;
+use Magento\Quote\Model\QuoteIdMask;
+use Magento\Quote\Model\QuoteIdMaskFactory;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/ConfigurableProduct/_files/product_configurable.php');
 /** @var $attribute \Magento\Catalog\Model\ResourceModel\Eav\Attribute */
 
 $objectManager = Bootstrap::getObjectManager();
-/** @var $product \Magento\Catalog\Model\Product */
+/** @var $product Product */
 $productRepository = $objectManager->create(ProductRepositoryInterface::class);
 $product = $productRepository->get('configurable');
 /* Create simple products per each option */
-/** @var $options \Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection */
+/** @var $options Collection */
 $options = $objectManager->create(
-    \Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection::class
+    Collection::class
 );
-/** @var \Magento\Eav\Model\Config $eavConfig */
-$eavConfig = $objectManager->get(\Magento\Eav\Model\Config::class);
-$attribute = $eavConfig->getAttribute(\Magento\Catalog\Model\Product::ENTITY, 'test_configurable');
+/** @var Config $eavConfig */
+$eavConfig = $objectManager->get(Config::class);
+$attribute = $eavConfig->getAttribute(Product::ENTITY, 'test_configurable');
 $option = $options->setAttributeFilter($attribute->getId())->getFirstItem();
 
-$requestInfo = new \Magento\Framework\DataObject(
+$requestInfo = new DataObject(
     [
         'product' => 1,
         'selected_configurable_option' => 1,
@@ -36,18 +45,18 @@ $requestInfo = new \Magento\Framework\DataObject(
     ]
 );
 
-/** @var $cart \Magento\Checkout\Model\Cart */
-$cart = $objectManager->create(\Magento\Checkout\Model\Cart::class);
+/** @var $cart Cart */
+$cart = $objectManager->create(Cart::class);
 $cart->addProduct($product, $requestInfo);
 $cart->getQuote()->setReservedOrderId('test_cart_with_configurable');
 $cart->save();
 
-/** @var $objectManager \Magento\TestFramework\ObjectManager */
-$objectManager->removeSharedInstance(\Magento\Checkout\Model\Session::class);
+/** @var $objectManager ObjectManager */
+$objectManager->removeSharedInstance(Session::class);
 
-/** @var \Magento\Quote\Model\QuoteIdMask $quoteIdMask */
-$quoteIdMask = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->create(\Magento\Quote\Model\QuoteIdMaskFactory::class)
+/** @var QuoteIdMask $quoteIdMask */
+$quoteIdMask = Bootstrap::getObjectManager()
+    ->create(QuoteIdMaskFactory::class)
     ->create();
 $quoteIdMask->setQuoteId($cart->getQuote()->getId());
 $quoteIdMask->setDataChanges(true);

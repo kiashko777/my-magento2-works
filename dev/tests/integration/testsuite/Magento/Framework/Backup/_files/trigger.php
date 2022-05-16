@@ -4,6 +4,7 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Framework\DB\Ddl\Table;
 use Magento\Framework\DB\Ddl\Trigger;
 use Magento\Framework\DB\Ddl\TriggerFactory;
 use Magento\Framework\Module\Setup;
@@ -15,7 +16,7 @@ $table = $setup->getConnection()->newTable(
     $tableName
 )->addColumn(
     'id',
-    \Magento\Framework\DB\Ddl\Table::TYPE_SMALLINT,
+    Table::TYPE_SMALLINT,
     null,
     ['identity' => true, 'nullable' => false, 'primary' => true],
     'ID'

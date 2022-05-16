@@ -39,10 +39,11 @@ class GetPriceIndexDataByProductId
      * @param DimensionFactory $dimensionFactory
      */
     public function __construct(
-        ProductResource $productResource,
+        ProductResource    $productResource,
         PriceTableResolver $priceTableResolver,
-        DimensionFactory $dimensionFactory
-    ) {
+        DimensionFactory   $dimensionFactory
+    )
+    {
         $this->productResource = $productResource;
         $this->priceTableResolver = $priceTableResolver;
         $this->dimensionFactory = $dimensionFactory;

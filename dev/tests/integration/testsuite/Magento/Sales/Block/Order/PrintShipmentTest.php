@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Sales\Block\Order;
 
+use IntlDateFormatter;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Registry;
 use Magento\Framework\View\Layout;
@@ -37,19 +38,6 @@ class PrintShipmentTest extends TestCase
     private $orderFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Sales/_files/shipment_for_order_with_customer.php
      *
      * @return void
@@ -59,7 +47,7 @@ class PrintShipmentTest extends TestCase
         $order = $this->orderFactory->create()->loadByIncrementId('100000001');
         $this->registerOrder($order);
         $block = $this->layout->createBlock(PrintShipment::class);
-        $orderDate = $block->formatDate($order->getCreatedAt(), \IntlDateFormatter::LONG);
+        $orderDate = $block->formatDate($order->getCreatedAt(), IntlDateFormatter::LONG);
         $templates = [
             'Order status' => [
                 'template' => 'Magento_Sales::order/order_status.phtml',
@@ -89,5 +77,18 @@ class PrintShipmentTest extends TestCase
     {
         $this->registry->unregister('current_order');
         $this->registry->register('current_order', $order);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
     }
 }

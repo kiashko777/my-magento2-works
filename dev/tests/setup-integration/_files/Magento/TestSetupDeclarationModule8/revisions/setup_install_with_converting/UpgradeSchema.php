@@ -13,6 +13,7 @@ use Magento\Framework\DB\Ddl\Table;
 use Magento\Framework\Setup\ModuleContextInterface;
 use Magento\Framework\Setup\SchemaSetupInterface;
 use Magento\Framework\Setup\UpgradeSchemaInterface;
+use Zend_Db_Exception;
 
 /**
  * Upgrade schema script for the TestSetupDeclarationModule8 module.
@@ -31,7 +32,7 @@ class UpgradeSchema implements UpgradeSchemaInterface
 
     /**
      * @inheritdoc
-     * @throws \Zend_Db_Exception
+     * @throws Zend_Db_Exception
      */
     public function upgrade(SchemaSetupInterface $setup, ModuleContextInterface $context)
     {
@@ -86,7 +87,7 @@ class UpgradeSchema implements UpgradeSchemaInterface
      *
      * @param SchemaSetupInterface $setup
      * @param Table $table
-     * @throws \Zend_Db_Exception
+     * @throws Zend_Db_Exception
      */
     private function addColumns(SchemaSetupInterface $setup, Table $table): void
     {
@@ -153,7 +154,7 @@ class UpgradeSchema implements UpgradeSchemaInterface
      * Add indexes.
      *
      * @param Table $table
-     * @throws \Zend_Db_Exception
+     * @throws Zend_Db_Exception
      */
     private function addIndexes(Table $table): void
     {
@@ -184,7 +185,7 @@ class UpgradeSchema implements UpgradeSchemaInterface
      * Add constraints.
      *
      * @param Table $table
-     * @throws \Zend_Db_Exception
+     * @throws Zend_Db_Exception
      */
     private function addConstraints(Table $table): void
     {
@@ -209,7 +210,7 @@ class UpgradeSchema implements UpgradeSchemaInterface
      *
      * @param SchemaSetupInterface $setup
      * @param $tableName
-     * @throws \Zend_Db_Exception
+     * @throws Zend_Db_Exception
      */
     private function createSimpleTable(SchemaSetupInterface $setup, $tableName): void
     {

@@ -36,18 +36,6 @@ class EavAttributeTest extends TestCase
     private $swatchResource;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productAttributeRepository = $this->objectManager->get(ProductAttributeRepositoryInterface::class);
-        $this->swatchResource = $this->objectManager->get(SwatchResource::class);
-    }
-
-    /**
      * @return void
      */
     public function testEavAttributePluginIsRegistered(): void
@@ -74,6 +62,21 @@ class EavAttributeTest extends TestCase
     }
 
     /**
+     * Collect options ids
+     *
+     * @param array $options
+     * @return array
+     */
+    private function collectOptionsIds(array $options): array
+    {
+        foreach ($options as $option) {
+            $optionsIds[] = $option->getValue();
+        }
+
+        return $optionsIds ?? [];
+    }
+
+    /**
      * Prepare options
      *
      * @param array $options
@@ -91,21 +94,6 @@ class EavAttributeTest extends TestCase
     }
 
     /**
-     * Collect options ids
-     *
-     * @param array $options
-     * @return array
-     */
-    private function collectOptionsIds(array $options): array
-    {
-        foreach ($options as $option) {
-            $optionsIds[] = $option->getValue();
-        }
-
-        return $optionsIds ?? [];
-    }
-
-    /**
      * Fetch related to provided ids records from eav_attribute_option_swatch table
      *
      * @param $optionsIds
@@ -118,5 +106,17 @@ class EavAttributeTest extends TestCase
             ->where('main_table.option_id IN (?)', $optionsIds);
 
         return $connection->fetchAll($select);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productAttributeRepository = $this->objectManager->get(ProductAttributeRepositoryInterface::class);
+        $this->swatchResource = $this->objectManager->get(SwatchResource::class);
     }
 }

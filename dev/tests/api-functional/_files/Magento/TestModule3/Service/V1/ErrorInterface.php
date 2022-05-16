@@ -5,12 +5,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestModule3\Service\V1;
+
+use Magento\TestModule3\Service\V1\Entity\Parameter;
+use Magento\TestModule3\Service\V1\Entity\WrappedErrorParameter;
 
 interface ErrorInterface
 {
     /**
-     * @return \Magento\TestModule3\Service\V1\Entity\Parameter
+     * @return Parameter
      */
     public function success();
 
@@ -45,7 +49,7 @@ interface ErrorInterface
     public function returnIncompatibleDataType();
 
     /**
-     * @param \Magento\TestModule3\Service\V1\Entity\WrappedErrorParameter[] $wrappedErrorParameters
+     * @param WrappedErrorParameter[] $wrappedErrorParameters
      * @return int Status
      */
     public function inputException($wrappedErrorParameters);

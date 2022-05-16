@@ -3,49 +3,40 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Cms\Model;
 
+use Magento\Backend\Model\Auth\Session;
 use Magento\Cms\Api\PageRepositoryInterface;
 use Magento\Framework\App\ResourceConnection;
-use Magento\Framework\Stdlib\DateTime\DateTime;
+use Magento\Framework\DB\Adapter\AdapterInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\User\Model\User;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class PageTest extends \PHPUnit\Framework\TestCase
+class PageTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        $user = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\User\Model\User::class
-        )->loadByUsername(
-            \Magento\TestFramework\Bootstrap::ADMIN_NAME
-        );
-
-        /** @var $session \Magento\Backend\Model\Auth\Session */
-        $session = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Backend\Model\Auth\Session::class
-        );
-        $session->setUser($user);
-    }
-
     /**
      * Tests the get by identifier command
      * @param array $pageData
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @throws NoSuchEntityException
      * @magentoDbIsolation enabled
      * @dataProvider testGetByIdentifierDataProvider
      */
     public function testGetByIdentifier(array $pageData)
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
 
-        /** @var \Magento\Cms\Model\GetPageByIdentifier $getPageByIdentifierCommand */
+        /** @var GetPageByIdentifier $getPageByIdentifierCommand */
         /** @var \Magento\Cms\Model\ResourceModel\Page $pageResource */
-        /** @var \Magento\Cms\Model\PageFactory $pageFactory */
-        $pageFactory = $objectManager->create(\Magento\Cms\Model\PageFactory::class);
+        /** @var PageFactory $pageFactory */
+        $pageFactory = $objectManager->create(PageFactory::class);
         $pageResource = $objectManager->create(\Magento\Cms\Model\ResourceModel\Page::class);
-        $getPageByIdentifierCommand = $objectManager->create(\Magento\Cms\Model\GetPageByIdentifier::class);
+        $getPageByIdentifierCommand = $objectManager->create(GetPageByIdentifier::class);
 
         # Prepare and save the temporary page
         $tempPage = $pageFactory->create();
@@ -66,9 +57,9 @@ class PageTest extends \PHPUnit\Framework\TestCase
      */
     public function testGenerateIdentifierFromTitle($data, $expectedIdentifier)
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var \Magento\Cms\Model\Page $page */
-        $page = $objectManager->create(\Magento\Cms\Model\Page::class);
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var Page $page */
+        $page = $objectManager->create(Page::class);
         $page->setData($data);
         $page->save();
         $this->assertEquals($expectedIdentifier, $page->getIdentifier());
@@ -79,16 +70,16 @@ class PageTest extends \PHPUnit\Framework\TestCase
      */
     public function testUpdateTime()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
 
         /**
-         * @var $db \Magento\Framework\DB\Adapter\AdapterInterface
+         * @var $db AdapterInterface
          */
-        $db = $objectManager->get(\Magento\Framework\App\ResourceConnection::class)
+        $db = $objectManager->get(ResourceConnection::class)
             ->getConnection(ResourceConnection::DEFAULT_CONNECTION);
 
-        /** @var \Magento\Cms\Model\Page $page */
-        $page = $objectManager->create(\Magento\Cms\Model\Page::class);
+        /** @var Page $page */
+        $page = $objectManager->create(Page::class);
         $page->setData(['title' => 'Test', 'stores' => [1]]);
         $beforeTimestamp = $db->fetchCol('SELECT UNIX_TIMESTAMP()')[0];
         $page->save();
@@ -103,7 +94,7 @@ class PageTest extends \PHPUnit\Framework\TestCase
         $this->assertLessThanOrEqual($afterTimestamp, $pageTimestamp);
     }
 
-    public function generateIdentifierFromTitleDataProvider() : array
+    public function generateIdentifierFromTitleDataProvider(): array
     {
         return [
             ['data' => ['title' => 'Test title', 'stores' => [1]], 'expectedIdentifier' => 'test-title'],
@@ -122,7 +113,7 @@ class PageTest extends \PHPUnit\Framework\TestCase
      * Data provider for "testGetByIdentifier" method
      * @return array
      */
-    public function testGetByIdentifierDataProvider() : array
+    public function testGetByIdentifierDataProvider(): array
     {
         return [
             ['data' => [
@@ -134,5 +125,20 @@ class PageTest extends \PHPUnit\Framework\TestCase
                 'is_active' => 1
             ]]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $user = Bootstrap::getObjectManager()->create(
+            User::class
+        )->loadByUsername(
+            \Magento\TestFramework\Bootstrap::ADMIN_NAME
+        );
+
+        /** @var $session Session */
+        $session = Bootstrap::getObjectManager()->get(
+            Session::class
+        );
+        $session->setUser($user);
     }
 }

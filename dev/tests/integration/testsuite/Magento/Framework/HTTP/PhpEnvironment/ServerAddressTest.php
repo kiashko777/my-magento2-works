@@ -3,23 +3,27 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\HTTP\PhpEnvironment;
 
-class ServerAddressTest extends \PHPUnit\Framework\TestCase
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class ServerAddressTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\HTTP\PhpEnvironment\ServerAddress
+     * @var ServerAddress
      */
     protected $_helper;
-
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->_helper = $objectManager->get(\Magento\Framework\HTTP\PhpEnvironment\ServerAddress::class);
-    }
 
     public function testGetServerAddress()
     {
         $this->assertFalse($this->_helper->getServerAddress());
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->_helper = $objectManager->get(ServerAddress::class);
     }
 }

@@ -6,11 +6,11 @@
 declare(strict_types=1);
 
 use Magento\Framework\App\Config;
-use Magento\Store\Model\StoreRepository;
-use Magento\Quote\Model\QuoteFactory;
 use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\QuoteFactory;
 use Magento\Quote\Model\QuoteRepository;
 use Magento\Store\Model\Store;
+use Magento\Store\Model\StoreRepository;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;

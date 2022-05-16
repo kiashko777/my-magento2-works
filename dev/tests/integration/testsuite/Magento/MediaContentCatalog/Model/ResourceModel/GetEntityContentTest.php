@@ -9,8 +9,8 @@ declare(strict_types=1);
 namespace Magento\MediaContentCatalog\Model\ResourceModel;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\MediaContentApi\Model\GetEntityContentsInterface;
 use Magento\MediaContentApi\Api\Data\ContentIdentityInterfaceFactory;
+use Magento\MediaContentApi\Model\GetEntityContentsInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
 
@@ -40,17 +40,6 @@ class GetEntityContentTest extends TestCase
     private $productRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getContent = $objectManager->get(GetEntityContentsInterface::class);
-        $this->contentIdentityFactory = $objectManager->get(ContentIdentityInterfaceFactory::class);
-        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
-    }
-
-    /**
      * Test for get content from product in different store views
      *
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
@@ -62,7 +51,7 @@ class GetEntityContentTest extends TestCase
             [
                 self::TYPE => self::CONTENT_TYPE,
                 self::FIELD => 'description',
-                self::ENTITY_ID => (string) $product->getEntityId(),
+                self::ENTITY_ID => (string)$product->getEntityId(),
             ]
         );
         $this->assertEquals(
@@ -83,7 +72,7 @@ class GetEntityContentTest extends TestCase
             [
                 self::TYPE => self::CONTENT_TYPE,
                 self::FIELD => 'description',
-                self::ENTITY_ID => (string) $product->getEntityId(),
+                self::ENTITY_ID => (string)$product->getEntityId(),
             ]
         );
         $this->assertEquals(
@@ -93,5 +82,16 @@ class GetEntityContentTest extends TestCase
             ],
             $this->getContent->execute($contentIdentity)
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getContent = $objectManager->get(GetEntityContentsInterface::class);
+        $this->contentIdentityFactory = $objectManager->get(ContentIdentityInterfaceFactory::class);
+        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
     }
 }

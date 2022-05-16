@@ -4,14 +4,18 @@
  * See COPYING.txt for license details.
  */
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\GiftMessage\Model\Message;
+use Magento\Quote\Model\Quote;
+use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var \Magento\Quote\Model\Quote $quote */
-$quote = $objectManager->create(\Magento\Quote\Model\Quote::class);
+$objectManager = Bootstrap::getObjectManager();
+
+/** @var Quote $quote */
+$quote = $objectManager->create(Quote::class);
 $quote->load('message_order_21', 'reserved_order_id');
 
-/** @var \Magento\GiftMessage\Model\Message $message */
-$message = $objectManager->create(\Magento\GiftMessage\Model\Message::class);
+/** @var Message $message */
+$message = $objectManager->create(Message::class);
 $message->load($quote->getGiftMessageId());
 $message->delete();
 

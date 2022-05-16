@@ -6,22 +6,26 @@
 
 namespace Magento\Catalog\Block\Adminhtml\Product\Helper\Form\Gallery;
 
+use Magento\Backend\Block\Media\Uploader;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Block\Adminhtml\Product\Helper\Form\Gallery;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Gallery\UpdateHandler;
 use Magento\Framework\App\Request\DataPersistorInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Registry;
+use Magento\Framework\View\LayoutInterface;
 use Magento\Store\Api\StoreRepositoryInterface;
 use Magento\Store\Model\Store;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class ContentTest extends \PHPUnit\Framework\TestCase
+class ContentTest extends TestCase
 {
     /**
      * Test subject.
@@ -50,29 +54,9 @@ class ContentTest extends \PHPUnit\Framework\TestCase
      */
     private $productRepository;
 
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $gallery = Bootstrap::getObjectManager()->get(Gallery::class);
-        $layout = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
-        );
-        $this->block = $layout->createBlock(
-            Content::class,
-            'block'
-        );
-        $this->block->setElement($gallery);
-        $this->registry = Bootstrap::getObjectManager()->get(Registry::class);
-        $this->dataPersistor = Bootstrap::getObjectManager()->get(DataPersistorInterface::class);
-        $this->storeRepository = Bootstrap::getObjectManager()->create(StoreRepositoryInterface::class);
-        $this->productRepository = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class);
-    }
-
     public function testGetUploader()
     {
-        $this->assertInstanceOf(\Magento\Backend\Block\Media\Uploader::class, $this->block->getUploader());
+        $this->assertInstanceOf(Uploader::class, $this->block->getUploader());
     }
 
     /**
@@ -95,6 +79,26 @@ class ContentTest extends \PHPUnit\Framework\TestCase
         $this->assertSame('Image Alt Text', $image->label);
         $this->assertSame('Image Alt Text', $image->label_default);
         $this->assertMatchesRegularExpression('~/media/catalog/product/m/a/magento_image~', $image->url);
+    }
+
+    /**
+     * Prepare product, and set it to registry and data persistor.
+     *
+     * @param bool $isProductNew
+     * @return void
+     */
+    private function prepareProduct(bool $isProductNew)
+    {
+        $product = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class)->get('simple');
+        if ($isProductNew) {
+            $newProduct = Bootstrap::getObjectManager()->create(Product::class);
+            $this->registry->register('current_product', $newProduct);
+            $productData['product'] = $product->getData();
+            $dataPersistor = Bootstrap::getObjectManager()->get(DataPersistorInterface::class);
+            $dataPersistor->set('catalog_product', $productData);
+        } else {
+            $this->registry->register('current_product', $product);
+        }
     }
 
     /**
@@ -148,14 +152,15 @@ class ContentTest extends \PHPUnit\Framework\TestCase
      * @param string $viewFromStore
      * @param array $expectedImages
      * @return void
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @throws NoSuchEntityException
      */
     public function testImagesPositionStoreView(
         string $addFromStore,
-        array $newImages,
+        array  $newImages,
         string $viewFromStore,
-        array $expectedImages
-    ): void {
+        array  $expectedImages
+    ): void
+    {
         $storeId = (int)$this->storeRepository->get($addFromStore)->getId();
         $product = $this->getProduct($storeId);
         $images = $product->getData('media_gallery')['images'];
@@ -177,6 +182,18 @@ class ContentTest extends \PHPUnit\Framework\TestCase
             json_decode($this->block->getImagesJson(), true)
         );
         $this->assertEquals($expectedImages, array_values($actualImages));
+    }
+
+    /**
+     * Returns product for testing.
+     *
+     * @param int $storeId
+     * @param string $sku
+     * @return ProductInterface
+     */
+    private function getProduct(int $storeId = Store::DEFAULT_STORE_ID, string $sku = 'simple'): ProductInterface
+    {
+        return $this->productRepository->get($sku, false, $storeId, true);
     }
 
     /**
@@ -239,34 +256,22 @@ class ContentTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Returns product for testing.
-     *
-     * @param int $storeId
-     * @param string $sku
-     * @return ProductInterface
+     * @inheritdoc
      */
-    private function getProduct(int $storeId = Store::DEFAULT_STORE_ID, string $sku = 'simple'): ProductInterface
+    protected function setUp(): void
     {
-        return $this->productRepository->get($sku, false, $storeId, true);
-    }
-
-    /**
-     * Prepare product, and set it to registry and data persistor.
-     *
-     * @param bool $isProductNew
-     * @return void
-     */
-    private function prepareProduct(bool $isProductNew)
-    {
-        $product = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class)->get('simple');
-        if ($isProductNew) {
-            $newProduct = Bootstrap::getObjectManager()->create(Product::class);
-            $this->registry->register('current_product', $newProduct);
-            $productData['product'] = $product->getData();
-            $dataPersistor = Bootstrap::getObjectManager()->get(DataPersistorInterface::class);
-            $dataPersistor->set('catalog_product', $productData);
-        } else {
-            $this->registry->register('current_product', $product);
-        }
+        $gallery = Bootstrap::getObjectManager()->get(Gallery::class);
+        $layout = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
+        );
+        $this->block = $layout->createBlock(
+            Content::class,
+            'block'
+        );
+        $this->block->setElement($gallery);
+        $this->registry = Bootstrap::getObjectManager()->get(Registry::class);
+        $this->dataPersistor = Bootstrap::getObjectManager()->get(DataPersistorInterface::class);
+        $this->storeRepository = Bootstrap::getObjectManager()->create(StoreRepositoryInterface::class);
+        $this->productRepository = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class);
     }
 }

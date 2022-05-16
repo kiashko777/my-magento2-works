@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Wishlist\Controller\Index;
 
+use Laminas\Stdlib\Parameters;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Customer\Model\Session;
 use Magento\Framework\App\Request\Http as HttpRequest;
@@ -14,7 +15,6 @@ use Magento\Framework\Escaper;
 use Magento\Framework\Message\MessageInterface;
 use Magento\TestFramework\TestCase\AbstractController;
 use Magento\TestFramework\Wishlist\Model\GetWishlistByCustomerId;
-use Laminas\Stdlib\Parameters;
 
 /**
  * Test for add product to wish list.
@@ -38,30 +38,6 @@ class AddTest extends AbstractController
     private $escaper;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->customerSession = $this->_objectManager->get(Session::class);
-        $this->getWishlistByCustomerId = $this->_objectManager->get(GetWishlistByCustomerId::class);
-        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->escaper = $this->_objectManager->get(Escaper::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->customerSession->setCustomerId(null);
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
      * @magentoDataFixture Magento/Catalog/_files/product_simple_xss.php
      *
@@ -75,6 +51,48 @@ class AddTest extends AbstractController
         $escapedProductName = $this->escaper->escapeHtml($product->getName());
         $this->performAddToWishListRequest(['product' => $product->getId()]);
         $this->assertSuccess(1, 1, $escapedProductName);
+    }
+
+    /**
+     * Prepare referer to test.
+     *
+     * @return void
+     */
+    private function prepareReferer(): void
+    {
+        $parameters = $this->_objectManager->create(Parameters::class);
+        $parameters->set('HTTP_REFERER', 'http://localhost/test');
+        $this->getRequest()->setServer($parameters);
+    }
+
+    /**
+     * Perform request add item to wish list.
+     *
+     * @param array $params
+     * @return void
+     */
+    private function performAddToWishListRequest(array $params): void
+    {
+        $this->getRequest()->setParams($params)->setMethod(HttpRequest::METHOD_POST);
+        $this->dispatch('wishlist/index/add');
+    }
+
+    /**
+     * Assert success response and items count.
+     *
+     * @param int $customerId
+     * @param int $itemsCount
+     * @param string $productName
+     * @return void
+     */
+    private function assertSuccess(int $customerId, int $itemsCount, string $productName): void
+    {
+        $expectedMessage = sprintf("\n%s has been added to your Wish List.", $productName)
+            . " Click <a href=\"http://localhost/test\">here</a> to continue shopping.";
+        $this->assertSessionMessages($this->equalTo([(string)__($expectedMessage)]), MessageInterface::TYPE_SUCCESS);
+        $wishlist = $this->getWishlistByCustomerId->execute($customerId);
+        $this->assertCount($itemsCount, $wishlist->getItemCollection());
+        $this->assertRedirect($this->stringContains('wishlist/index/index/wishlist_id/' . $wishlist->getId()));
     }
 
     /**
@@ -146,44 +164,26 @@ class AddTest extends AbstractController
     }
 
     /**
-     * Perform request add item to wish list.
-     *
-     * @param array $params
-     * @return void
+     * @inheritdoc
      */
-    private function performAddToWishListRequest(array $params): void
+    protected function setUp(): void
     {
-        $this->getRequest()->setParams($params)->setMethod(HttpRequest::METHOD_POST);
-        $this->dispatch('wishlist/index/add');
+        parent::setUp();
+
+        $this->customerSession = $this->_objectManager->get(Session::class);
+        $this->getWishlistByCustomerId = $this->_objectManager->get(GetWishlistByCustomerId::class);
+        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->escaper = $this->_objectManager->get(Escaper::class);
     }
 
     /**
-     * Assert success response and items count.
-     *
-     * @param int $customerId
-     * @param int $itemsCount
-     * @param string $productName
-     * @return void
+     * @inheritdoc
      */
-    private function assertSuccess(int $customerId, int $itemsCount, string $productName): void
+    protected function tearDown(): void
     {
-        $expectedMessage = sprintf("\n%s has been added to your Wish List.", $productName)
-            . " Click <a href=\"http://localhost/test\">here</a> to continue shopping.";
-        $this->assertSessionMessages($this->equalTo([(string)__($expectedMessage)]), MessageInterface::TYPE_SUCCESS);
-        $wishlist = $this->getWishlistByCustomerId->execute($customerId);
-        $this->assertCount($itemsCount, $wishlist->getItemCollection());
-        $this->assertRedirect($this->stringContains('wishlist/index/index/wishlist_id/' . $wishlist->getId()));
-    }
+        $this->customerSession->setCustomerId(null);
 
-    /**
-     * Prepare referer to test.
-     *
-     * @return void
-     */
-    private function prepareReferer(): void
-    {
-        $parameters = $this->_objectManager->create(Parameters::class);
-        $parameters->set('HTTP_REFERER', 'http://localhost/test');
-        $this->getRequest()->setServer($parameters);
+        parent::tearDown();
     }
 }

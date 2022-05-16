@@ -3,10 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\DownloadableImportExport\Model;
 
-use Magento\CatalogImportExport\Model\AbstractProductExportImportTestCase;
 use Magento\Catalog\Model\Product;
+use Magento\CatalogImportExport\Model\AbstractProductExportImportTestCase;
 
 /**
  * Test export and import downloadable products
@@ -55,7 +56,8 @@ class DownloadableTest extends AbstractProductExportImportTestCase
     protected function assertEqualsSpecificAttributes(
         Product $expectedProduct,
         Product $actualProduct
-    ): void {
+    ): void
+    {
         $expectedProductLinks = $expectedProduct->getExtensionAttributes()->getDownloadableProductLinks();
         $expectedProductSamples = $expectedProduct->getExtensionAttributes()->getDownloadableProductSamples();
 

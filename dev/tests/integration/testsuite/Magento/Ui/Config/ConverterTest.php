@@ -3,14 +3,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Ui\Config;
 
-use Magento\TestFramework\Helper\Bootstrap;
+use DOMDocument;
 use Magento\Framework\Config\FileIterator;
 use Magento\Framework\Filesystem\DriverPool;
 use Magento\Framework\Filesystem\File\ReadFactory;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class ConverterTest extends \PHPUnit\Framework\TestCase
+class ConverterTest extends TestCase
 {
     /**
      * @var Converter
@@ -21,13 +24,6 @@ class ConverterTest extends \PHPUnit\Framework\TestCase
      * @var string
      */
     private $fixturePath;
-
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->converter = $objectManager->create(Converter::class);
-        $this->fixturePath = realpath(__DIR__ . '/../_files/view/ui_component');
-    }
 
     /**
      * @param string $componentName
@@ -40,7 +36,7 @@ class ConverterTest extends \PHPUnit\Framework\TestCase
 
         $fixtureFiles = $this->getFixtureFiles($componentName);
         foreach ($fixtureFiles as $filePath => $fileContent) {
-            $dom = new \DOMDocument();
+            $dom = new DOMDocument();
             $dom->loadXML($fileContent);
             $actualResult = $this->converter->convert($dom);
 
@@ -54,6 +50,55 @@ class ConverterTest extends \PHPUnit\Framework\TestCase
                 "Wrong '{$this->getTypeByPath($filePath)}' configuration for '{$componentName}' Ui Component" . PHP_EOL
             );
         }
+    }
+
+    /**
+     * Retrieve expected result by $componentName
+     *
+     * @param string $componentName
+     * @return array
+     */
+    private function getExpectedResult($componentName)
+    {
+        $filename = $this->fixturePath . '/expected/' . $componentName . '.php';
+        if (is_file($filename)) {
+            return include($filename);
+        }
+
+        return [];
+    }
+
+    /**
+     * Retrieve fixture files by $componentName
+     *
+     * @param string $componentName
+     * @return FileIterator
+     */
+    private function getFixtureFiles($componentName)
+    {
+        $realPaths = [];
+        foreach (['semantic', 'mixed', 'arbitrary'] as $filePath) {
+            $realPaths[] = $this->fixturePath . '/' . $filePath . '/' . $componentName . '.xml';
+        }
+        return new FileIterator(new ReadFactory(new DriverPool), $realPaths);
+    }
+
+    /**
+     * Retrieve fixture type by file path
+     *
+     * @param string $path
+     * @return string
+     */
+    private function getTypeByPath($path)
+    {
+        $result = '';
+        $pos = strpos($path, $this->fixturePath);
+        if ($pos !== false) {
+            $restParts = explode('/', substr($path, strlen($this->fixturePath) + 1));
+            $result = array_shift($restParts);
+        }
+
+        return $result;
     }
 
     public function getComponentNameDataProvider()
@@ -110,52 +155,10 @@ class ConverterTest extends \PHPUnit\Framework\TestCase
         ];
     }
 
-    /**
-     * Retrieve fixture files by $componentName
-     *
-     * @param string $componentName
-     * @return FileIterator
-     */
-    private function getFixtureFiles($componentName)
+    protected function setUp(): void
     {
-        $realPaths = [];
-        foreach (['semantic', 'mixed', 'arbitrary'] as $filePath) {
-            $realPaths[] = $this->fixturePath . '/' . $filePath . '/' . $componentName . '.xml';
-        }
-        return new FileIterator(new ReadFactory(new DriverPool), $realPaths);
-    }
-
-    /**
-     * Retrieve expected result by $componentName
-     *
-     * @param string $componentName
-     * @return array
-     */
-    private function getExpectedResult($componentName)
-    {
-        $filename = $this->fixturePath . '/expected/' . $componentName . '.php';
-        if (is_file($filename)) {
-            return include($filename);
-        }
-
-        return [];
-    }
-
-    /**
-     * Retrieve fixture type by file path
-     *
-     * @param string $path
-     * @return string
-     */
-    private function getTypeByPath($path)
-    {
-        $result = '';
-        $pos = strpos($path, $this->fixturePath);
-        if ($pos !== false) {
-            $restParts = explode('/', substr($path, strlen($this->fixturePath) + 1));
-            $result = array_shift($restParts);
-        }
-
-        return $result;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->converter = $objectManager->create(Converter::class);
+        $this->fixturePath = realpath(__DIR__ . '/../_files/view/ui_component');
     }
 }

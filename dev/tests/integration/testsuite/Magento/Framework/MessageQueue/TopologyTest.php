@@ -31,20 +31,6 @@ class TopologyTest extends TestCase
     private $helper;
 
     /**
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->helper = Bootstrap::getObjectManager()->create(Amqp::class);
-
-        if (!$this->helper->isAvailable()) {
-            $this->fail('This test relies on RabbitMQ Management Plugin.');
-        }
-
-        $this->declaredExchanges = $this->helper->getExchanges();
-    }
-
-    /**
      * @dataProvider exchangeDataProvider
      * @param array $expectedConfig
      * @param array $bindingConfig
@@ -181,5 +167,19 @@ class TopologyTest extends TestCase
                 ]
             ],
         ];
+    }
+
+    /**
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        $this->helper = Bootstrap::getObjectManager()->create(Amqp::class);
+
+        if (!$this->helper->isAvailable()) {
+            $this->fail('This test relies on RabbitMQ Management Plugin.');
+        }
+
+        $this->declaredExchanges = $this->helper->getExchanges();
     }
 }

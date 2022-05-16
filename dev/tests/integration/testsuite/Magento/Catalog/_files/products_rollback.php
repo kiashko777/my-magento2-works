@@ -4,8 +4,15 @@
  * See COPYING.txt for license details.
  */
 
-/** @var \Magento\Framework\Registry $registry */
-$registry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
+/** @var Registry $registry */
+
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\CatalogInventory\Model\StockRegistryStorage;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$registry = Bootstrap::getObjectManager()->get(Registry::class);
 
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
@@ -13,25 +20,25 @@ $registry->register('isSecureArea', true);
 /**
  * @var Magento\Catalog\Api\ProductRepositoryInterface $productRepository
  */
-$productRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+$productRepository = Bootstrap::getObjectManager()
+    ->get(ProductRepositoryInterface::class);
 try {
     $product = $productRepository->get('simple', false, null, true);
     $productRepository->delete($product);
-} catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+} catch (NoSuchEntityException $e) {
     //Products already removed
 }
 
 try {
     $customDesignProduct = $productRepository->get('custom-design-simple-product', false, null, true);
     $productRepository->delete($customDesignProduct);
-} catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+} catch (NoSuchEntityException $e) {
     //Products already removed
 }
 
-/** @var \Magento\CatalogInventory\Model\StockRegistryStorage $stockRegistryStorage */
-$stockRegistryStorage = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->get(\Magento\CatalogInventory\Model\StockRegistryStorage::class);
+/** @var StockRegistryStorage $stockRegistryStorage */
+$stockRegistryStorage = Bootstrap::getObjectManager()
+    ->get(StockRegistryStorage::class);
 $stockRegistryStorage->clean();
 
 $registry->unregister('isSecureArea');

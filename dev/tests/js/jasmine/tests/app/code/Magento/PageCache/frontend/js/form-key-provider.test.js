@@ -14,7 +14,7 @@ define([
         var inputContainer;
 
         beforeEach(function () {
-            inputContainer =  document.createElement('input');
+            inputContainer = document.createElement('input');
             inputContainer.setAttribute('value', '');
             inputContainer.setAttribute('name', 'form_key');
             document.querySelector('body').appendChild(inputContainer);

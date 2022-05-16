@@ -47,28 +47,6 @@ class ConfigurableProductsFixtureTest extends TestCase
      */
     private $attributePatternMock;
 
-    protected function setUp(): void
-    {
-        $this->fixtureModelMock = $this->getMockBuilder(FixtureModel::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['createAttributeSet', 'getValue', 'getObjectManager'])
-            ->getMock();
-
-        $this->attributeSetsFixtureMock = $this->getMockBuilder(AttributeSetFixture::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $this->attributePatternMock = $this->getMockBuilder(Pattern::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $this->model = (new ObjectManager($this))->getObject(ConfigurableProductsFixture::class, [
-            'fixtureModel' => $this->fixtureModelMock,
-            'attributeSetsFixture' => $this->attributeSetsFixtureMock,
-            'attributePattern' => $this->attributePatternMock,
-        ]);
-    }
-
     /**
      * @SuppressWarnings(PHPMD)
      */
@@ -156,7 +134,7 @@ class ConfigurableProductsFixtureTest extends TestCase
         $valuesMap = [
             ['configurable_products', 0, 1],
             ['simple_products', 0, 1],
-            ['search_terms', null, ['search_term' =>[['term' => 'iphone 6', 'count' => '1']]]],
+            ['search_terms', null, ['search_term' => [['term' => 'iphone 6', 'count' => '1']]]],
             ['configurable_products_variation', 3, 1],
             [
                 'search_config',
@@ -244,5 +222,27 @@ class ConfigurableProductsFixtureTest extends TestCase
     public function testIntroduceParamLabels()
     {
         $this->assertSame([], $this->model->introduceParamLabels());
+    }
+
+    protected function setUp(): void
+    {
+        $this->fixtureModelMock = $this->getMockBuilder(FixtureModel::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['createAttributeSet', 'getValue', 'getObjectManager'])
+            ->getMock();
+
+        $this->attributeSetsFixtureMock = $this->getMockBuilder(AttributeSetFixture::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->attributePatternMock = $this->getMockBuilder(Pattern::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->model = (new ObjectManager($this))->getObject(ConfigurableProductsFixture::class, [
+            'fixtureModel' => $this->fixtureModelMock,
+            'attributeSetsFixture' => $this->attributeSetsFixtureMock,
+            'attributePattern' => $this->attributePatternMock,
+        ]);
     }
 }

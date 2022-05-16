@@ -3,73 +3,53 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Security\Model;
+
+use Magento\Backend\App\Area\FrontNameResolver;
+use Magento\Backend\Model\Auth;
+use Magento\Backend\Model\Auth\Session;
+use Magento\Framework\Config\ScopeInterface;
+use Magento\Framework\Message\ManagerInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Security\Model\ResourceModel\AdminSessionInfo\Collection;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class AdminSessionsManagerTest extends \PHPUnit\Framework\TestCase
+class AdminSessionsManagerTest extends TestCase
 {
     /**
-     * @var \Magento\Backend\Model\Auth
+     * @var Auth
      */
     protected $auth;
 
     /**
-     * @var \Magento\Backend\Model\Auth\Session
+     * @var Session
      */
     protected $authSession;
 
     /**
-     * @var \Magento\Security\Model\AdminSessionInfo
+     * @var AdminSessionInfo
      */
     protected $adminSessionInfo;
 
     /**
-     * @var \Magento\Security\Model\AdminSessionsManager
+     * @var AdminSessionsManager
      */
     protected $adminSessionsManager;
 
     /**
-     * @var \Magento\Framework\Message\ManagerInterface
+     * @var ManagerInterface
      */
     protected $messageManager;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
-
-    /**
-     * Set up
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->objectManager->get(\Magento\Framework\Config\ScopeInterface::class)
-            ->setCurrentScope(\Magento\Backend\App\Area\FrontNameResolver::AREA_CODE);
-        $this->auth = $this->objectManager->create(\Magento\Backend\Model\Auth::class);
-        $this->authSession = $this->objectManager->create(\Magento\Backend\Model\Auth\Session::class);
-        $this->adminSessionInfo = $this->objectManager->create(\Magento\Security\Model\AdminSessionInfo::class);
-        $this->auth->setAuthStorage($this->authSession);
-        $this->messageManager = $this->objectManager->get(\Magento\Framework\Message\ManagerInterface::class);
-        $this->adminSessionsManager = $this->objectManager->create(\Magento\Security\Model\AdminSessionsManager::class);
-    }
-
-    /**
-     * Tear down
-     */
-    protected function tearDown(): void
-    {
-        $this->auth = null;
-        $this->authSession  = null;
-        $this->adminSessionInfo  = null;
-        $this->adminSessionsManager = null;
-        $this->objectManager = null;
-        parent::tearDown();
-    }
 
     /**
      * Test if current admin user is logged out
@@ -114,7 +94,7 @@ class AdminSessionsManagerTest extends \PHPUnit\Framework\TestCase
      */
     public function testTerminateOtherSessionsProcessLogin()
     {
-        $session = $this->objectManager->create(\Magento\Security\Model\AdminSessionInfo::class);
+        $session = $this->objectManager->create(AdminSessionInfo::class);
         $session->setSessionId('669e2e3d752e8')
             ->setUserId(1)
             ->setStatus(1)
@@ -128,7 +108,7 @@ class AdminSessionsManagerTest extends \PHPUnit\Framework\TestCase
         $session->load('669e2e3d752e8', 'session_id');
         $this->assertEquals(
             AdminSessionInfo::LOGGED_OUT_BY_LOGIN,
-            (int) $session->getStatus()
+            (int)$session->getStatus()
         );
     }
 
@@ -160,8 +140,8 @@ class AdminSessionsManagerTest extends \PHPUnit\Framework\TestCase
      */
     public function testLogoutOtherUserSessions()
     {
-        /** @var \Magento\Security\Model\AdminSessionInfo $session */
-        $session = $this->objectManager->create(\Magento\Security\Model\AdminSessionInfo::class);
+        /** @var AdminSessionInfo $session */
+        $session = $this->objectManager->create(AdminSessionInfo::class);
         $session->setSessionId('669e2e3d752e8')
             ->setUserId(1)
             ->setStatus(1)
@@ -185,13 +165,13 @@ class AdminSessionsManagerTest extends \PHPUnit\Framework\TestCase
      * @param AdminSessionInfo $session
      * @return ResourceModel\AdminSessionInfo\Collection
      */
-    protected function getCollectionForLogoutOtherUserSessions(\Magento\Security\Model\AdminSessionInfo $session)
+    protected function getCollectionForLogoutOtherUserSessions(AdminSessionInfo $session)
     {
-        /** @var \Magento\Security\Model\ResourceModel\AdminSessionInfo\Collection $collection */
+        /** @var Collection $collection */
         $collection = $session->getResourceCollection();
         $collection->filterByUser(
             $this->authSession->getUser()->getId(),
-            \Magento\Security\Model\AdminSessionInfo::LOGGED_IN,
+            AdminSessionInfo::LOGGED_IN,
             $this->authSession->getSessionId()
         )
             ->filterExpiredSessions(100)
@@ -209,8 +189,8 @@ class AdminSessionsManagerTest extends \PHPUnit\Framework\TestCase
      */
     public function testCleanExpiredSessions()
     {
-        /** @var \Magento\Security\Model\AdminSessionInfo $session */
-        $session = $this->objectManager->create(\Magento\Security\Model\AdminSessionInfo::class);
+        /** @var AdminSessionInfo $session */
+        $session = $this->objectManager->create(AdminSessionInfo::class);
         $collection = $this->getCollectionForCleanExpiredSessions($session);
         $sizeBefore = $collection->getSize();
         $this->adminSessionsManager->cleanExpiredSessions();
@@ -225,12 +205,43 @@ class AdminSessionsManagerTest extends \PHPUnit\Framework\TestCase
      * @param AdminSessionInfo $session
      * @return ResourceModel\AdminSessionInfo\Collection
      */
-    protected function getCollectionForCleanExpiredSessions(\Magento\Security\Model\AdminSessionInfo $session)
+    protected function getCollectionForCleanExpiredSessions(AdminSessionInfo $session)
     {
-        /** @var \Magento\Security\Model\ResourceModel\AdminSessionInfo\Collection $collection */
+        /** @var Collection $collection */
         $collection = $session->getResourceCollection()
             ->load();
 
         return $collection;
+    }
+
+    /**
+     * Set up
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->objectManager->get(ScopeInterface::class)
+            ->setCurrentScope(FrontNameResolver::AREA_CODE);
+        $this->auth = $this->objectManager->create(Auth::class);
+        $this->authSession = $this->objectManager->create(Session::class);
+        $this->adminSessionInfo = $this->objectManager->create(AdminSessionInfo::class);
+        $this->auth->setAuthStorage($this->authSession);
+        $this->messageManager = $this->objectManager->get(ManagerInterface::class);
+        $this->adminSessionsManager = $this->objectManager->create(AdminSessionsManager::class);
+    }
+
+    /**
+     * Tear down
+     */
+    protected function tearDown(): void
+    {
+        $this->auth = null;
+        $this->authSession = null;
+        $this->adminSessionInfo = null;
+        $this->adminSessionsManager = null;
+        $this->objectManager = null;
+        parent::tearDown();
     }
 }

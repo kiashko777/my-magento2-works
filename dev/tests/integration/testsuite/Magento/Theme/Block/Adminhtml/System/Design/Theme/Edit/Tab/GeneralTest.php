@@ -3,42 +3,35 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Theme\Block\Adminhtml\System\Design\Theme\Edit\Tab;
+
+use Magento\Framework\Registry;
+use Magento\Framework\View\Design\ThemeInterface;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class GeneralTest extends \PHPUnit\Framework\TestCase
+class GeneralTest extends TestCase
 {
-    /** @var \Magento\Framework\View\LayoutInterface */
+    /** @var LayoutInterface */
     protected $_layout;
 
-    /** @var \Magento\Framework\View\Design\ThemeInterface */
+    /** @var ThemeInterface */
     protected $_theme;
 
-    /** @var \Magento\Theme\Block\Adminhtml\System\Design\Theme\Edit\Tab\General */
+    /** @var General */
     protected $_block;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->_layout = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
-        );
-        $this->_theme = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\View\Design\ThemeInterface::class
-        );
-        $this->_theme->setType(\Magento\Framework\View\Design\ThemeInterface::TYPE_VIRTUAL);
-        $this->_block = $this->_layout->createBlock(
-            \Magento\Theme\Block\Adminhtml\System\Design\Theme\Edit\Tab\General::class
-        );
-    }
 
     public function testToHtmlPreviewImageNote()
     {
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $objectManager->get(\Magento\Framework\Registry::class)->register('current_theme', $this->_theme);
+        /** @var $objectManager ObjectManager */
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->get(Registry::class)->register('current_theme', $this->_theme);
         $this->_block->setArea('Adminhtml');
 
         $this->_block->toHtml();
@@ -49,13 +42,28 @@ class GeneralTest extends \PHPUnit\Framework\TestCase
 
     public function testToHtmlPreviewImageUrl()
     {
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
-        $this->_theme->setType(\Magento\Framework\View\Design\ThemeInterface::TYPE_PHYSICAL);
+        /** @var $objectManager ObjectManager */
+        $this->_theme->setType(ThemeInterface::TYPE_PHYSICAL);
         $this->_theme->setPreviewImage('preview_image_test.jpg');
         $this->_block->setArea('Adminhtml');
 
         $html = $this->_block->toHtml();
         preg_match_all('/pub\/static\/Adminhtml\/_view\/en_US/', $html, $result);
         $this->assertEmpty($result[0]);
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->_layout = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
+        );
+        $this->_theme = Bootstrap::getObjectManager()->create(
+            ThemeInterface::class
+        );
+        $this->_theme->setType(ThemeInterface::TYPE_VIRTUAL);
+        $this->_block = $this->_layout->createBlock(
+            General::class
+        );
     }
 }

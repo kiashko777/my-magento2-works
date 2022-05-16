@@ -5,17 +5,19 @@
  */
 
 use Magento\Sales\Api\Data\OrderInterfaceFactory;
+use Magento\Sales\Model\Order;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Sales/_files/order.php');
 
 $objectManager = Bootstrap::getObjectManager();
-/** @var \Magento\Sales\Model\Order $order */
+/** @var Order $order */
 $order = $objectManager->get(OrderInterfaceFactory::class)->create()->loadByIncrementId('100000001');
 $order->setStatus(
-    $order->getConfig()->getStateDefaultStatus(\Magento\Sales\Model\Order::STATE_PENDING_PAYMENT)
+    $order->getConfig()->getStateDefaultStatus(Order::STATE_PENDING_PAYMENT)
 )->setStoreId(
-    $objectManager->get(\Magento\Store\Model\StoreManagerInterface::class)->getStore('default')->getId()
+    $objectManager->get(StoreManagerInterface::class)->getStore('default')->getId()
 );
 $order->save();

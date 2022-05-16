@@ -68,33 +68,6 @@ class CategoryTest extends TestCase
     private $productResource;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->categoryRepository = $this->objectManager->get(CategoryRepositoryInterface::class);
-        $this->categoryResource = $this->objectManager->get(CategoryResource::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-        $this->categoryCollection = $this->objectManager->get(CategoryCollectionFactory::class)->create();
-        $this->filesystem = $this->objectManager->get(Filesystem::class);
-        $this->mediaDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::MEDIA);
-        $this->productResource = Bootstrap::getObjectManager()->get(ProductResource::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->mediaDirectory->delete(self::BASE_PATH);
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/category.php
      * @magentoDataFixture Magento/Catalog/_files/catalog_tmp_category_image.php
      * @magentoDbIsolation disabled
@@ -131,6 +104,18 @@ class CategoryTest extends TestCase
     }
 
     /**
+     * Prepare image url for image data
+     *
+     * @param string $file
+     * @return string
+     */
+    private function prepareDataImageUrl(string $file): string
+    {
+        return $this->storeManager->getStore()->getBaseUrl(UrlInterface::URL_TYPE_MEDIA)
+            . self::BASE_TMP_PATH . DIRECTORY_SEPARATOR . $file;
+    }
+
+    /**
      * Test that adding or removing products in a category should not trigger full reindex in scheduled update mode
      *
      * @magentoAppArea Adminhtml
@@ -149,7 +134,7 @@ class CategoryTest extends TestCase
     {
         // products are ordered by entity_id DESC because their positions are same and equal to 0
         $initialProducts = ['simple1002', 'simple1001', 'simple1000'];
-        $defaultStoreId = (int) $this->storeManager->getDefaultStoreView()->getId();
+        $defaultStoreId = (int)$this->storeManager->getDefaultStoreView()->getId();
         $category = $this->getCategory(['name' => 'Category 999']);
         $expectedProducts = array_keys($products);
         $productIdsBySkus = $this->productResource->getProductsIdsBySkus($expectedProducts);
@@ -179,6 +164,47 @@ class CategoryTest extends TestCase
         $mViewCron->execute();
         $collection = $this->getCategoryProducts($category, $defaultStoreId);
         $this->assertEquals($expectedProducts, $collection->getColumnValues('sku'));
+    }
+
+    /**
+     * @param array $filters
+     * @return CategoryModel
+     */
+    private function getCategory(array $filters): CategoryModel
+    {
+        /** @var CategoryCollection $categoryCollection */
+        $categoryCollection = $this->objectManager->create(CategoryCollection::class);
+        foreach ($filters as $field => $value) {
+            $categoryCollection->addFieldToFilter($field, $value);
+        }
+
+        return $categoryCollection->getFirstItem();
+    }
+
+    /**
+     * @param string $indexerId
+     * @return IndexerInterface
+     */
+    private function getIndexer(string $indexerId): IndexerInterface
+    {
+        /** @var IndexerRegistry $indexerRegistry */
+        $indexerRegistry = $this->objectManager->get(IndexerRegistry::class);
+        return $indexerRegistry->get($indexerId);
+    }
+
+    /**
+     * @param CategoryModel $category
+     * @param int $defaultStoreId
+     * @return ProductCollection
+     */
+    private function getCategoryProducts(CategoryModel $category, int $defaultStoreId)
+    {
+        /** @var ProductCollection $collection */
+        $collection = $this->objectManager->create(ProductCollection::class);
+        $collection->setStoreId($defaultStoreId);
+        $collection->addCategoryFilter($category);
+        $collection->addAttributeToSort('position');
+        return $collection;
     }
 
     /**
@@ -212,55 +238,29 @@ class CategoryTest extends TestCase
     }
 
     /**
-     * @param CategoryModel $category
-     * @param int $defaultStoreId
-     * @return ProductCollection
+     * @inheritdoc
      */
-    private function getCategoryProducts(CategoryModel $category, int $defaultStoreId)
+    protected function setUp(): void
     {
-        /** @var ProductCollection $collection */
-        $collection = $this->objectManager->create(ProductCollection::class);
-        $collection->setStoreId($defaultStoreId);
-        $collection->addCategoryFilter($category);
-        $collection->addAttributeToSort('position');
-        return $collection;
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->categoryRepository = $this->objectManager->get(CategoryRepositoryInterface::class);
+        $this->categoryResource = $this->objectManager->get(CategoryResource::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
+        $this->categoryCollection = $this->objectManager->get(CategoryCollectionFactory::class)->create();
+        $this->filesystem = $this->objectManager->get(Filesystem::class);
+        $this->mediaDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::MEDIA);
+        $this->productResource = Bootstrap::getObjectManager()->get(ProductResource::class);
     }
 
     /**
-     * @param array $filters
-     * @return CategoryModel
+     * @inheritdoc
      */
-    private function getCategory(array $filters): CategoryModel
+    protected function tearDown(): void
     {
-        /** @var CategoryCollection $categoryCollection */
-        $categoryCollection = $this->objectManager->create(CategoryCollection::class);
-        foreach ($filters as $field => $value) {
-            $categoryCollection->addFieldToFilter($field, $value);
-        }
+        $this->mediaDirectory->delete(self::BASE_PATH);
 
-        return $categoryCollection->getFirstItem();
-    }
-
-    /**
-     * @param string $indexerId
-     * @return IndexerInterface
-     */
-    private function getIndexer(string $indexerId): IndexerInterface
-    {
-        /** @var IndexerRegistry $indexerRegistry */
-        $indexerRegistry = $this->objectManager->get(IndexerRegistry::class);
-        return $indexerRegistry->get($indexerId);
-    }
-
-    /**
-     * Prepare image url for image data
-     *
-     * @param string $file
-     * @return string
-     */
-    private function prepareDataImageUrl(string $file): string
-    {
-        return $this->storeManager->getStore()->getBaseUrl(UrlInterface::URL_TYPE_MEDIA)
-            . self::BASE_TMP_PATH . DIRECTORY_SEPARATOR . $file;
+        parent::tearDown();
     }
 }

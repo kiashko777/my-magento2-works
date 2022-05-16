@@ -8,9 +8,9 @@ declare(strict_types=1);
 namespace Magento\TestFramework\Workaround\Override\Config;
 
 use Magento\Framework\Config\FileResolverInterface;
-use Magento\Framework\View\File\CollectorInterface;
-use Magento\Framework\View\DesignInterface;
 use Magento\Framework\Filesystem\Directory\ReadFactory;
+use Magento\Framework\View\DesignInterface;
+use Magento\Framework\View\File\CollectorInterface;
 
 class FileResolver implements FileResolverInterface
 {
@@ -36,9 +36,10 @@ class FileResolver implements FileResolverInterface
      */
     public function __construct(
         CollectorInterface $baseFiles,
-        DesignInterface $design,
-        ReadFactory $readFactory
-    ) {
+        DesignInterface    $design,
+        ReadFactory        $readFactory
+    )
+    {
         $this->baseFiles = $baseFiles;
         $this->design = $design;
         $this->readFactory = $readFactory;

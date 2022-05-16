@@ -29,14 +29,6 @@ class GetHostedProSecureUrlTest extends TestCase
     /** @var GetMaskedQuoteIdByReservedOrderId */
     private $getMaskedQuoteIdByReservedOrderId;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->json = $objectManager->get(SerializerInterface::class);
-        $this->graphQlRequest = $objectManager->create(GraphQlRequest::class);
-    }
-
     /**
      * Test get hostedpro secure URL
      *
@@ -68,5 +60,13 @@ QUERY;
         $expectedSecureUrl = 'https://hostedpro.paypal.com';
         $actualSecureUrl = $responseData['data']['getHostedProUrl']['secure_form_url'];
         $this->assertEquals($expectedSecureUrl, $actualSecureUrl);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->json = $objectManager->get(SerializerInterface::class);
+        $this->graphQlRequest = $objectManager->create(GraphQlRequest::class);
     }
 }

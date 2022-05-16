@@ -3,37 +3,24 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Backend\Block\System\Store;
+
+use Magento\Backend\App\Area\FrontNameResolver;
+use Magento\Backend\Block\System\Store\Edit\Form\Group;
+use Magento\Framework\Registry;
+use Magento\Framework\View\Layout;
+use Magento\Framework\View\LayoutInterface;
+use Magento\Store\Model\Website;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class EditTest extends \PHPUnit\Framework\TestCase
+class EditTest extends TestCase
 {
-    protected function tearDown(): void
-    {
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $objectManager->get(\Magento\Framework\Registry::class)->unregister('store_type');
-        $objectManager->get(\Magento\Framework\Registry::class)->unregister('store_data');
-        $objectManager->get(\Magento\Framework\Registry::class)->unregister('store_action');
-    }
-
-    /**
-     * @param $registryData
-     */
-    protected function _initStoreTypesInRegistry($registryData)
-    {
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        foreach ($registryData as $key => $value) {
-            if ($key == 'store_data') {
-                $value = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create($value);
-            }
-            $objectManager->get(\Magento\Framework\Registry::class)->register($key, $value);
-        }
-    }
-
     /**
      * @magentoAppIsolation enabled
      * @param $registryData
@@ -44,15 +31,30 @@ class EditTest extends \PHPUnit\Framework\TestCase
     {
         $this->_initStoreTypesInRegistry($registryData);
 
-        /** @var $layout \Magento\Framework\View\Layout */
-        $layout = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
+        /** @var $layout Layout */
+        $layout = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
         );
-        /** @var $block \Magento\Backend\Block\System\Store\Edit */
-        $block = $layout->createBlock(\Magento\Backend\Block\System\Store\Edit::class, 'block');
-        $block->setArea(\Magento\Backend\App\Area\FrontNameResolver::AREA_CODE);
+        /** @var $block Edit */
+        $block = $layout->createBlock(Edit::class, 'block');
+        $block->setArea(FrontNameResolver::AREA_CODE);
 
         $this->assertInstanceOf($expected, $block->getChildBlock('form'));
+    }
+
+    /**
+     * @param $registryData
+     */
+    protected function _initStoreTypesInRegistry($registryData)
+    {
+        /** @var $objectManager ObjectManager */
+        $objectManager = Bootstrap::getObjectManager();
+        foreach ($registryData as $key => $value) {
+            if ($key == 'store_data') {
+                $value = Bootstrap::getObjectManager()->create($value);
+            }
+            $objectManager->get(Registry::class)->register($key, $value);
+        }
     }
 
     /**
@@ -62,12 +64,12 @@ class EditTest extends \PHPUnit\Framework\TestCase
     {
         return [
             [
-                ['store_type' => 'website', 'store_data' => \Magento\Store\Model\Website::class],
+                ['store_type' => 'website', 'store_data' => Website::class],
                 \Magento\Backend\Block\System\Store\Edit\Form\Website::class,
             ],
             [
                 ['store_type' => 'group', 'store_data' => \Magento\Store\Model\Store::class],
-                \Magento\Backend\Block\System\Store\Edit\Form\Group::class
+                Group::class
             ],
             [
                 ['store_type' => 'store', 'store_data' => \Magento\Store\Model\Store::class],
@@ -86,13 +88,13 @@ class EditTest extends \PHPUnit\Framework\TestCase
     {
         $this->_initStoreTypesInRegistry($registryData);
 
-        /** @var $layout \Magento\Framework\View\Layout */
-        $layout = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
+        /** @var $layout Layout */
+        $layout = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
         );
-        /** @var $block \Magento\Backend\Block\System\Store\Edit */
-        $block = $layout->createBlock(\Magento\Backend\Block\System\Store\Edit::class, 'block');
-        $block->setArea(\Magento\Backend\App\Area\FrontNameResolver::AREA_CODE);
+        /** @var $block Edit */
+        $block = $layout->createBlock(Edit::class, 'block');
+        $block->setArea(FrontNameResolver::AREA_CODE);
 
         $this->assertEquals($expected, $block->getHeaderText());
     }
@@ -106,7 +108,7 @@ class EditTest extends \PHPUnit\Framework\TestCase
             [
                 [
                     'store_type' => 'website',
-                    'store_data' => \Magento\Store\Model\Website::class,
+                    'store_data' => Website::class,
                     'store_action' => 'add',
                 ],
                 'New Web Site',
@@ -114,7 +116,7 @@ class EditTest extends \PHPUnit\Framework\TestCase
             [
                 [
                     'store_type' => 'website',
-                    'store_data' => \Magento\Store\Model\Website::class,
+                    'store_data' => Website::class,
                     'store_action' => 'edit',
                 ],
                 'Edit Web Site'
@@ -136,5 +138,14 @@ class EditTest extends \PHPUnit\Framework\TestCase
                 'Edit Store View'
             ]
         ];
+    }
+
+    protected function tearDown(): void
+    {
+        /** @var $objectManager ObjectManager */
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->get(Registry::class)->unregister('store_type');
+        $objectManager->get(Registry::class)->unregister('store_data');
+        $objectManager->get(Registry::class)->unregister('store_action');
     }
 }

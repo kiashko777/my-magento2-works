@@ -31,22 +31,18 @@ class IfDirectiveTest extends TestCase
      */
     private $filter;
 
-    protected function setUp(): void
-    {
-        $objectManager = ObjectManager::getInstance();
-        $this->variableResolver = $objectManager->get(StrictResolver::class);
-        $this->filter = $objectManager->get(Template::class);
-        $this->processor = $objectManager->create(
-            IfDirective::class,
-            ['variableResolver' => $this->variableResolver]
-        );
-    }
-
     public function testFallbackWithNoVariables()
     {
         $template = 'blah {{if foo}}blah{{/if}} blah';
         $result = $this->processor->process($this->createConstruction($this->processor, $template), $this->filter, []);
         self::assertEquals('{{if foo}}blah{{/if}}', $result);
+    }
+
+    private function createConstruction(IfDirective $directive, string $value): array
+    {
+        preg_match($directive->getRegularExpression(), $value, $construction);
+
+        return $construction;
     }
 
     /**
@@ -65,17 +61,17 @@ class IfDirectiveTest extends TestCase
     public function useCasesProvider()
     {
         return [
-            ['{{if foo}}blah{{/if}}',['foo' => true], 'blah'],
-            ['{{if foo}}blah{{/if}}',['foo' => false], ''],
-            ['{{if foo.bar}}blah{{/if}}',['foo' => ['bar' => true]], 'blah'],
-            ['{{if foo.bar}}blah{{/if}}',['foo' => ['bar' => false]], ''],
-            ['{{if foo.getBar().baz}}blah{{/if}}',['foo' => new DataObject(['bar' => ['baz' => true]])], 'blah'],
-            ['{{if foo.getBar().baz}}blah{{/if}}',['foo' => new DataObject(['bar' => ['baz' => false]])], ''],
+            ['{{if foo}}blah{{/if}}', ['foo' => true], 'blah'],
+            ['{{if foo}}blah{{/if}}', ['foo' => false], ''],
+            ['{{if foo.bar}}blah{{/if}}', ['foo' => ['bar' => true]], 'blah'],
+            ['{{if foo.bar}}blah{{/if}}', ['foo' => ['bar' => false]], ''],
+            ['{{if foo.getBar().baz}}blah{{/if}}', ['foo' => new DataObject(['bar' => ['baz' => true]])], 'blah'],
+            ['{{if foo.getBar().baz}}blah{{/if}}', ['foo' => new DataObject(['bar' => ['baz' => false]])], ''],
 
-            ['{{if foo}}blah{{else}}other{{/if}}',['foo' => true], 'blah'],
-            ['{{if foo}}blah{{else}}other{{/if}}',['foo' => false], 'other'],
-            ['{{if foo.bar}}blah{{else}}other{{/if}}',['foo' => ['bar' => true]], 'blah'],
-            ['{{if foo.bar}}blah{{else}}other{{/if}}',['foo' => ['bar' => false]], 'other'],
+            ['{{if foo}}blah{{else}}other{{/if}}', ['foo' => true], 'blah'],
+            ['{{if foo}}blah{{else}}other{{/if}}', ['foo' => false], 'other'],
+            ['{{if foo.bar}}blah{{else}}other{{/if}}', ['foo' => ['bar' => true]], 'blah'],
+            ['{{if foo.bar}}blah{{else}}other{{/if}}', ['foo' => ['bar' => false]], 'other'],
             [
                 '{{if foo.getBar().baz}}blah{{else}}other{{/if}}',
                 ['foo' => new DataObject(['bar' => ['baz' => true]])],
@@ -89,10 +85,14 @@ class IfDirectiveTest extends TestCase
         ];
     }
 
-    private function createConstruction(IfDirective $directive, string $value): array
+    protected function setUp(): void
     {
-        preg_match($directive->getRegularExpression(), $value, $construction);
-
-        return $construction;
+        $objectManager = ObjectManager::getInstance();
+        $this->variableResolver = $objectManager->get(StrictResolver::class);
+        $this->filter = $objectManager->get(Template::class);
+        $this->processor = $objectManager->create(
+            IfDirective::class,
+            ['variableResolver' => $this->variableResolver]
+        );
     }
 }

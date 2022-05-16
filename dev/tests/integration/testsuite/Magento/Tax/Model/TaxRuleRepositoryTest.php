@@ -6,26 +6,39 @@
 
 namespace Magento\Tax\Model;
 
+use Magento\Framework\Api\DataObjectHelper;
 use Magento\Framework\Api\Filter;
+use Magento\Framework\Api\FilterBuilder;
+use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\Exception\CouldNotSaveException;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Registry;
+use Magento\Tax\Api\Data\TaxRuleInterface;
+use Magento\Tax\Api\Data\TaxRuleInterfaceFactory;
+use Magento\Tax\Api\TaxRateRepositoryInterface;
+use Magento\Tax\Api\TaxRuleRepositoryInterface;
+use Magento\Tax\Model\Calculation\Rule;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class TaxRuleRepositoryTest extends \PHPUnit\Framework\TestCase
+class TaxRuleRepositoryTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
     /**
-     * @var \Magento\Tax\Api\Data\TaxRuleInterfaceFactory
+     * @var TaxRuleInterfaceFactory
      */
     private $taxRuleFactory;
 
     /**
-     * @var \Magento\Tax\Api\TaxRuleRepositoryInterface
+     * @var TaxRuleRepositoryInterface
      */
     private $taxRuleRepository;
 
@@ -62,24 +75,14 @@ class TaxRuleRepositoryTest extends \PHPUnit\Framework\TestCase
     private $taxRules;
 
     /**
-     * @var \Magento\Tax\Api\TaxRateRepositoryInterface
+     * @var TaxRateRepositoryInterface
      */
     private $taxRateRepository;
 
     /**
-     * @var \Magento\Framework\Api\DataObjectHelper
+     * @var DataObjectHelper
      */
     private $dataObjectHelper;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->taxRuleRepository = $this->objectManager->get(\Magento\Tax\Api\TaxRuleRepositoryInterface::class);
-        $this->taxRateRepository = $this->objectManager->get(\Magento\Tax\Api\TaxRateRepositoryInterface::class);
-        $this->taxRuleFactory = $this->objectManager->create(\Magento\Tax\Api\Data\TaxRuleInterfaceFactory::class);
-        $this->dataObjectHelper = $this->objectManager->create(\Magento\Framework\Api\DataObjectHelper::class);
-        $this->taxRuleFixtureFactory = new TaxRuleFixtureFactory();
-    }
 
     /**
      * @magentoDbIsolation enabled
@@ -92,7 +95,7 @@ class TaxRuleRepositoryTest extends \PHPUnit\Framework\TestCase
         $taxRule = $this->taxRuleRepository->save($taxRuleDataObject);
 
         //Assertions
-        $this->assertInstanceOf(\Magento\Tax\Api\Data\TaxRuleInterface::class, $taxRule);
+        $this->assertInstanceOf(TaxRuleInterface::class, $taxRule);
         $this->assertEquals($taxRuleDataObject->getCode(), $taxRule->getCode());
         $this->assertEquals(
             $taxRuleDataObject->getCustomerTaxClassIds(),
@@ -105,11 +108,28 @@ class TaxRuleRepositoryTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Creates Tax Rule Data Object
+     *
+     * @return TaxRuleInterface
+     */
+    private function createTaxRuleDataObject()
+    {
+        $taxRule = $this->taxRuleFactory->create();
+        $taxRule->setCode('code')
+            ->setCustomerTaxClassIds([3])
+            ->setProductTaxClassIds([2])
+            ->setTaxRateIds([2])
+            ->setPriority(0)
+            ->setPosition(1);
+        return $taxRule;
+    }
+
+    /**
      * @magentoDbIsolation enabled
      */
     public function testSaveThrowsExceptionIdIfTargetTaxRuleDoesNotExist()
     {
-        $this->expectException(\Magento\Framework\Exception\NoSuchEntityException::class);
+        $this->expectException(NoSuchEntityException::class);
         $this->expectExceptionMessage('No such entity with taxRuleId = 9999');
 
         $taxRuleDataObject = $this->taxRuleFactory->create();
@@ -128,7 +148,7 @@ class TaxRuleRepositoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testSaveThrowsExceptionIfProvidedTaxClassIdsAreInvalid()
     {
-        $this->expectException(\Magento\Framework\Exception\CouldNotSaveException::class);
+        $this->expectException(CouldNotSaveException::class);
         $this->expectExceptionMessage('No such entity');
 
         $taxRuleData = [
@@ -146,7 +166,7 @@ class TaxRuleRepositoryTest extends \PHPUnit\Framework\TestCase
         $this->dataObjectHelper->populateWithArray(
             $taxRule,
             $taxRuleData,
-            \Magento\Tax\Api\Data\TaxRuleInterface::class
+            TaxRuleInterface::class
         );
 
         $this->taxRuleRepository->save($taxRule);
@@ -157,7 +177,7 @@ class TaxRuleRepositoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testSaveThrowsExceptionIfProvidedPositionIsInvalid()
     {
-        $this->expectException(\Magento\Framework\Exception\CouldNotSaveException::class);
+        $this->expectException(CouldNotSaveException::class);
         $this->expectExceptionMessage('The position value of "-1" must be greater than or equal to 0.');
 
         $taxRuleData = [
@@ -173,7 +193,7 @@ class TaxRuleRepositoryTest extends \PHPUnit\Framework\TestCase
         $this->dataObjectHelper->populateWithArray(
             $taxRule,
             $taxRuleData,
-            \Magento\Tax\Api\Data\TaxRuleInterface::class
+            TaxRuleInterface::class
         );
 
         //Tax rule service call
@@ -206,9 +226,9 @@ class TaxRuleRepositoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetReturnsTaxRuleCreatedFromModel()
     {
-        /** @var $registry \Magento\Framework\Registry */
-        $registry = $this->objectManager->get(\Magento\Framework\Registry::class);
-        /** @var $taxRuleModel \Magento\Tax\Model\Calculation\Rule */
+        /** @var $registry Registry */
+        $registry = $this->objectManager->get(Registry::class);
+        /** @var $taxRuleModel Rule */
         $taxRuleModel = $registry->registry('_fixture/Magento_Tax_Model_Calculation_Rule');
         $this->assertNotNull($taxRuleModel);
         $ruleId = $taxRuleModel->getId();
@@ -227,12 +247,12 @@ class TaxRuleRepositoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testDeleteById()
     {
-        $this->expectException(\Magento\Framework\Exception\NoSuchEntityException::class);
+        $this->expectException(NoSuchEntityException::class);
         $this->expectExceptionMessage('No such entity with taxRuleId');
 
-        /** @var $registry \Magento\Framework\Registry */
-        $registry = $this->objectManager->get(\Magento\Framework\Registry::class);
-        /** @var $taxRule \Magento\Tax\Model\Calculation\Rule */
+        /** @var $registry Registry */
+        $registry = $this->objectManager->get(Registry::class);
+        /** @var $taxRule Rule */
         $taxRule = $registry->registry('_fixture/Magento_Tax_Model_Calculation_Rule');
         $this->assertNotNull($taxRule);
         $ruleId = $taxRule->getId();
@@ -249,12 +269,12 @@ class TaxRuleRepositoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testDeleteByIdThrowsExceptionIfTargetTaxRuleDoesNotExist()
     {
-        $this->expectException(\Magento\Framework\Exception\NoSuchEntityException::class);
+        $this->expectException(NoSuchEntityException::class);
         $this->expectExceptionMessage('No such entity with taxRuleId');
 
-        /** @var $registry \Magento\Framework\Registry */
-        $registry = $this->objectManager->get(\Magento\Framework\Registry::class);
-        /** @var $taxRule \Magento\Tax\Model\Calculation\Rule */
+        /** @var $registry Registry */
+        $registry = $this->objectManager->get(Registry::class);
+        /** @var $taxRule Rule */
         $taxRule = $registry->registry('_fixture/Magento_Tax_Model_Calculation_Rule');
         $this->assertNotNull($taxRule);
         $ruleId = $taxRule->getId();
@@ -285,7 +305,7 @@ class TaxRuleRepositoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testSaveThrowsExceptionIsRequiredFieldsAreMissing()
     {
-        $this->expectException(\Magento\Framework\Exception\CouldNotSaveException::class);
+        $this->expectException(CouldNotSaveException::class);
         $this->expectExceptionMessage('"code" is required. Enter and try again.');
 
         $taxRule = $this->taxRuleRepository->save($this->createTaxRuleDataObject());
@@ -307,9 +327,9 @@ class TaxRuleRepositoryTest extends \PHPUnit\Framework\TestCase
     {
         $this->setUpDefaultRules();
 
-        /** @var \Magento\Framework\Api\SearchCriteriaBuilder $searchBuilder */
+        /** @var SearchCriteriaBuilder $searchBuilder */
         $searchBuilder = Bootstrap::getObjectManager()
-            ->create(\Magento\Framework\Api\SearchCriteriaBuilder::class);
+            ->create(SearchCriteriaBuilder::class);
         foreach ($filters as $filter) {
             $searchBuilder->addFilters([$filter]);
         }
@@ -332,43 +352,6 @@ class TaxRuleRepositoryTest extends \PHPUnit\Framework\TestCase
         }
 
         $this->tearDownDefaultRules();
-    }
-
-    public function searchTaxRulesDataProvider()
-    {
-        $filterBuilder = Bootstrap::getObjectManager()->create(\Magento\Framework\Api\FilterBuilder::class);
-
-        return [
-            'code eq "Default Rule"' => [
-                [$filterBuilder->setField('code')->setValue('Default Rule')->create()],
-                null,
-                ['Default Rule'],
-            ],
-            'customer_tax_class_ids eq 3 AND priority eq 0' => [
-                [
-                    $filterBuilder->setField('customer_tax_class_ids')->setValue(3)->create(),
-                    $filterBuilder->setField('priority')->setValue('0')->create(),
-                ],
-                [],
-                ['Default Rule', 'Higher Rate Rule'],
-            ],
-            'code eq "Default Rule" OR code eq "Higher Rate Rule"' => [
-                [],
-                [
-                    $filterBuilder->setField('code')->setValue('Default Rule')->create(),
-                    $filterBuilder->setField('code')->setValue('Higher Rate Rule')->create(),
-                ],
-                ['Default Rule', 'Higher Rate Rule'],
-            ],
-            'code like "%Rule"' => [
-                [
-                    $filterBuilder->setField('code')->setValue('%Rule')->setConditionType('like')
-                        ->create(),
-                ],
-                [],
-                ['Default Rule', 'Higher Rate Rule'],
-            ],
-        ];
     }
 
     /**
@@ -436,20 +419,50 @@ class TaxRuleRepositoryTest extends \PHPUnit\Framework\TestCase
         $this->taxRuleFixtureFactory->deleteTaxClasses(array_values($this->taxClasses));
     }
 
-    /**
-     * Creates Tax Rule Data Object
-     *
-     * @return \Magento\Tax\Api\Data\TaxRuleInterface
-     */
-    private function createTaxRuleDataObject()
+    public function searchTaxRulesDataProvider()
     {
-        $taxRule = $this->taxRuleFactory->create();
-        $taxRule->setCode('code')
-            ->setCustomerTaxClassIds([3])
-            ->setProductTaxClassIds([2])
-            ->setTaxRateIds([2])
-            ->setPriority(0)
-            ->setPosition(1);
-        return $taxRule;
+        $filterBuilder = Bootstrap::getObjectManager()->create(FilterBuilder::class);
+
+        return [
+            'code eq "Default Rule"' => [
+                [$filterBuilder->setField('code')->setValue('Default Rule')->create()],
+                null,
+                ['Default Rule'],
+            ],
+            'customer_tax_class_ids eq 3 AND priority eq 0' => [
+                [
+                    $filterBuilder->setField('customer_tax_class_ids')->setValue(3)->create(),
+                    $filterBuilder->setField('priority')->setValue('0')->create(),
+                ],
+                [],
+                ['Default Rule', 'Higher Rate Rule'],
+            ],
+            'code eq "Default Rule" OR code eq "Higher Rate Rule"' => [
+                [],
+                [
+                    $filterBuilder->setField('code')->setValue('Default Rule')->create(),
+                    $filterBuilder->setField('code')->setValue('Higher Rate Rule')->create(),
+                ],
+                ['Default Rule', 'Higher Rate Rule'],
+            ],
+            'code like "%Rule"' => [
+                [
+                    $filterBuilder->setField('code')->setValue('%Rule')->setConditionType('like')
+                        ->create(),
+                ],
+                [],
+                ['Default Rule', 'Higher Rate Rule'],
+            ],
+        ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->taxRuleRepository = $this->objectManager->get(TaxRuleRepositoryInterface::class);
+        $this->taxRateRepository = $this->objectManager->get(TaxRateRepositoryInterface::class);
+        $this->taxRuleFactory = $this->objectManager->create(TaxRuleInterfaceFactory::class);
+        $this->dataObjectHelper = $this->objectManager->create(DataObjectHelper::class);
+        $this->taxRuleFixtureFactory = new TaxRuleFixtureFactory();
     }
 }

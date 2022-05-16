@@ -1,4 +1,5 @@
 <?php
+
 namespace Magento\Framework\Stdlib;
 
 /**
@@ -8,26 +9,18 @@ namespace Magento\Framework\Stdlib;
 
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\HttpClient\CurlClientWithCookies;
+use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
  * End to end test of the Cookie Manager, using curl.
  *
  * Uses controllers in TestModule1 to set and delete cookies and verify 'Set-Cookie' headers that come back.
  */
-class CookieManagerTest extends \Magento\TestFramework\TestCase\WebapiAbstract
+class CookieManagerTest extends WebapiAbstract
 {
-    private $cookieTesterUrl = 'testmoduleone/CookieTester';
-
     /** @var CurlClientWithCookies */
     protected $curlClient;
-
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->curlClient = $objectManager->get(
-            \Magento\TestFramework\TestCase\HttpClient\CurlClientWithCookies::class
-        );
-    }
+    private $cookieTesterUrl = 'testmoduleone/CookieTester';
 
     /**
      * Set a sensitive Cookie and delete it.
@@ -52,6 +45,24 @@ class CookieManagerTest extends \Magento\TestFramework\TestCase\WebapiAbstract
         $this->assertEquals('true', $cookie['httponly']);
         $this->assertFalse(isset($cookie['secure']));
         $this->assertFalse(isset($cookie['max-age']));
+    }
+
+    /**
+     * Find cookie with given name in the list of cookies
+     *
+     * @param string $cookieName
+     * @param array $cookies
+     * @return $cookie|null
+     * @SuppressWarnings(PHPMD.UnusedLocalVariable)
+     */
+    private function findCookie($cookieName, $cookies)
+    {
+        foreach ($cookies as $cookieIndex => $cookie) {
+            if ($cookie['name'] === $cookieName) {
+                return $cookie;
+            }
+        }
+        return null;
     }
 
     /**
@@ -147,21 +158,11 @@ class CookieManagerTest extends \Magento\TestFramework\TestCase\WebapiAbstract
         $this->assertEquals('Thu, 01-Jan-1970 00:00:01 GMT', $cookie['expires']);
     }
 
-    /**
-     * Find cookie with given name in the list of cookies
-     *
-     * @param string $cookieName
-     * @param array $cookies
-     * @return $cookie|null
-     * @SuppressWarnings(PHPMD.UnusedLocalVariable)
-     */
-    private function findCookie($cookieName, $cookies)
+    protected function setUp(): void
     {
-        foreach ($cookies as $cookieIndex => $cookie) {
-            if ($cookie['name'] === $cookieName) {
-                return $cookie;
-            }
-        }
-        return null;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->curlClient = $objectManager->get(
+            CurlClientWithCookies::class
+        );
     }
 }

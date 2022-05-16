@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Authentication\Rest;
 
 use OAuth\Common\Http\Uri\UriInterface;
@@ -17,10 +18,11 @@ class CurlClient extends \OAuth\Common\Http\Client\CurlClient
      */
     public function retrieveResponse(
         UriInterface $endpoint,
-        $requestBody,
-        array $extraHeaders = [],
-        $method = 'POST'
-    ) {
+                     $requestBody,
+        array        $extraHeaders = [],
+                     $method = 'POST'
+    )
+    {
         $this->setCurlParameters([CURLOPT_FAILONERROR => true]);
         return parent::retrieveResponse($endpoint, $requestBody, $extraHeaders, $method);
     }

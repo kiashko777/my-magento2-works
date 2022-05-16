@@ -12,9 +12,12 @@ use Magento\CatalogInventory\Model\StockRegistryProvider;
 use Magento\Checkout\Model\Session;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Quote\Api\CartRepositoryInterface;
+use Magento\Quote\Api\Data\CartInterface;
+use Magento\Quote\Model\Quote\Item;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class AbstractCartTest extends \PHPUnit\Framework\TestCase
+class AbstractCartTest extends TestCase
 {
     /**
      * Tests that product in shopping cart remains visible even after it becomes out of stock.
@@ -47,7 +50,7 @@ class AbstractCartTest extends \PHPUnit\Framework\TestCase
 
         $items = array_filter(
             $abstractCart->getItems(),
-            function (\Magento\Quote\Model\Quote\Item $item) use ($productSku) {
+            function (Item $item) use ($productSku) {
                 return $item->getSku() === $productSku;
             }
         );
@@ -76,7 +79,7 @@ class AbstractCartTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @param string $reservedOrderId
-     * @return \Magento\Quote\Api\Data\CartInterface
+     * @return CartInterface
      */
     private function getStoredQuote($reservedOrderId)
     {

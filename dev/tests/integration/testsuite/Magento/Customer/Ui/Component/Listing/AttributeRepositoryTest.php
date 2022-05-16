@@ -23,14 +23,6 @@ class AttributeRepositoryTest extends TestCase
     private $model;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->model = Bootstrap::getObjectManager()->create(AttributeRepository::class);
-    }
-
-    /**
      * Test for get store_id option array
      *
      * @magentoDataFixture Magento/Store/_files/core_fixturestore.php
@@ -61,5 +53,13 @@ class AttributeRepositoryTest extends TestCase
         }
 
         return $result;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->model = Bootstrap::getObjectManager()->create(AttributeRepository::class);
     }
 }

@@ -3,14 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Ui\Config\Reader;
 
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Framework\Config\FileIterator;
 use Magento\Framework\Filesystem\DriverPool;
 use Magento\Framework\Filesystem\File\ReadFactory;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class DomTest extends \PHPUnit\Framework\TestCase
+class DomTest extends TestCase
 {
     /**
      * @var Dom
@@ -39,6 +41,29 @@ class DomTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * @param string $filename
+     * @return FileIterator
+     */
+    private function getComponentFiles($filename)
+    {
+        $path = realpath(__DIR__ . '/../../_files/view');
+        $paths = [
+            $path . '/module_one/ui_component/' . $filename,
+            $path . '/module_two/ui_component/' . $filename
+        ];
+        return new FileIterator(new ReadFactory(new DriverPool), $paths);
+    }
+
+    /**
+     * @param $filename
+     * @return string
+     */
+    private function getMergedFilePath($filename)
+    {
+        return realpath(__DIR__ . '/../../_files/view/ui_component') . DIRECTORY_SEPARATOR . $filename;
+    }
+
+    /**
      * @return void
      */
     public function testDefinitionDom()
@@ -64,28 +89,5 @@ class DomTest extends \PHPUnit\Framework\TestCase
             $this->getMergedFilePath('etc/test_definition_merged.xml'),
             $this->dom->getDom()->saveXML()
         );
-    }
-
-    /**
-     * @param string $filename
-     * @return \Magento\Framework\Config\FileIterator
-     */
-    private function getComponentFiles($filename)
-    {
-        $path = realpath(__DIR__ . '/../../_files/view');
-        $paths = [
-            $path . '/module_one/ui_component/' . $filename,
-            $path . '/module_two/ui_component/' . $filename
-        ];
-        return new FileIterator(new ReadFactory(new DriverPool), $paths);
-    }
-
-    /**
-     * @param $filename
-     * @return string
-     */
-    private function getMergedFilePath($filename)
-    {
-        return realpath(__DIR__ . '/../../_files/view/ui_component') . DIRECTORY_SEPARATOR. $filename;
     }
 }

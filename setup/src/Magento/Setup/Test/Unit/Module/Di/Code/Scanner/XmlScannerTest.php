@@ -29,19 +29,6 @@ class XmlScannerTest extends TestCase
      */
     protected $_testFiles = [];
 
-    protected function setUp(): void
-    {
-        $this->_model = new XmlScanner(
-            $this->_logMock = $this->createMock(Log::class)
-        );
-        $testDir = __DIR__ . '/../../' . '/_files';
-        $this->_testFiles = [
-            $testDir . '/app/code/Magento/SomeModule/etc/Adminhtml/system.xml',
-            $testDir . '/app/code/Magento/SomeModule/etc/di.xml',
-            $testDir . '/app/code/Magento/SomeModule/view/frontend/default.xml',
-        ];
-    }
-
     public function testCollectEntities()
     {
         $className = 'Magento\Store\Model\Config\Invalidator\Proxy';
@@ -75,5 +62,18 @@ class XmlScannerTest extends TestCase
         $actual = $this->_model->collectEntities($this->_testFiles);
         $expected = [];
         $this->assertEquals($expected, $actual);
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = new XmlScanner(
+            $this->_logMock = $this->createMock(Log::class)
+        );
+        $testDir = __DIR__ . '/../../' . '/_files';
+        $this->_testFiles = [
+            $testDir . '/app/code/Magento/SomeModule/etc/Adminhtml/system.xml',
+            $testDir . '/app/code/Magento/SomeModule/etc/di.xml',
+            $testDir . '/app/code/Magento/SomeModule/view/frontend/default.xml',
+        ];
     }
 }

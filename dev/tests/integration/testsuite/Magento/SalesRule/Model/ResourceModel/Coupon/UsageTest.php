@@ -10,6 +10,7 @@ use Magento\Framework\DataObject;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\SalesRule\Model\Coupon;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Tests accounting of coupon usages.
@@ -17,7 +18,7 @@ use Magento\TestFramework\Helper\Bootstrap;
  * @magentoDbIsolation enabled
  * @magentoAppIsolation enabled
  */
-class UsageTest extends \PHPUnit\Framework\TestCase
+class UsageTest extends TestCase
 {
     /**
      * @var ObjectManagerInterface

@@ -7,7 +7,6 @@ declare(strict_types=1);
 
 namespace Magento\LayeredNavigation\Block\Navigation\Search;
 
-use Magento\Catalog\Model\Layer\Filter\AbstractFilter;
 use Magento\Catalog\Model\Layer\Resolver;
 use Magento\LayeredNavigation\Block\Navigation\Category\DecimalFilterTest as CategoryDecimalFilterTest;
 
@@ -33,7 +32,8 @@ class DecimalFilterTest extends CategoryDecimalFilterTest
         array $products,
         array $attributeData,
         array $expectation
-    ): void {
+    ): void
+    {
         $this->getSearchFiltersAndAssert($products, $attributeData, $expectation);
     }
 

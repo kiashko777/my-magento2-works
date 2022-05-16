@@ -29,14 +29,6 @@ class SubscriptionStatusTest extends GraphQlAbstract
      */
     private $subscriberFactory;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
-        $this->subscriberFactory = Bootstrap::getObjectManager()->get(SubscriberFactory::class);
-    }
-
     /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      */
@@ -57,10 +49,23 @@ QUERY;
     }
 
     /**
+     * @param string $email
+     * @param string $password
+     *
+     * @return array
+     * @throws AuthenticationException
+     */
+    private function getHeaderMap(string $email, string $password): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($email, $password);
+        return ['Authorization' => 'Bearer ' . $customerToken];
+    }
+
+    /**
      */
     public function testGetSubscriptionStatusIfUserIsNotAuthorizedTest()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The current customer isn\'t authorized.');
 
         $query = <<<QUERY
@@ -107,7 +112,7 @@ QUERY;
      */
     public function testChangeSubscriptionStatuIfUserIsNotAuthorizedTest()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The current customer isn\'t authorized.');
 
         $query = <<<QUERY
@@ -151,17 +156,12 @@ QUERY;
         $this->assertFalse($response['updateCustomer']['customer']['is_subscribed']);
     }
 
-    /**
-     * @param string $email
-     * @param string $password
-     *
-     * @return array
-     * @throws AuthenticationException
-     */
-    private function getHeaderMap(string $email, string $password): array
+    protected function setUp(): void
     {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($email, $password);
-        return ['Authorization' => 'Bearer ' . $customerToken];
+        parent::setUp();
+
+        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
+        $this->subscriberFactory = Bootstrap::getObjectManager()->get(SubscriberFactory::class);
     }
 
     protected function tearDown(): void

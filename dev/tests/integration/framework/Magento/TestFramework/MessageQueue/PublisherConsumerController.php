@@ -64,13 +64,14 @@ class PublisherConsumerController
      */
     public function __construct(
         PublisherInterface $publisher,
-        OsInfo $osInfo,
-        Amqp $amqpHelper,
-        $logFilePath,
-        $consumers,
-        $appInitParams,
-        $maxMessages = null
-    ) {
+        OsInfo             $osInfo,
+        Amqp               $amqpHelper,
+                           $logFilePath,
+                           $consumers,
+                           $appInitParams,
+                           $maxMessages = null
+    )
+    {
         $this->consumers = $consumers;
         $this->publisher = $publisher;
         $this->logFilePath = $logFilePath;
@@ -146,20 +147,6 @@ class PublisherConsumerController
     }
 
     /**
-     * Get Consumers ProcessIds
-     *
-     * @return array
-     */
-    public function getConsumersProcessIds()
-    {
-        $consumers = [];
-        foreach ($this->consumers as $consumer) {
-            $consumers[$consumer] = $this->getConsumerProcessIds($consumer);
-        }
-        return $consumers;
-    }
-
-    /**
      * Get Consumer ProcessIds
      *
      * @param string $consumer
@@ -198,6 +185,37 @@ class PublisherConsumerController
     }
 
     /**
+     * Start consumers
+     *
+     * @return void
+     */
+    public function startConsumers(): void
+    {
+        foreach ($this->consumers as $consumer) {
+            if (!$this->getConsumerProcessIds($consumer)) {
+                // exec() have to be here since this is test.
+                // phpcs:ignore Magento2.Security.InsecureFunction
+                exec("{$this->getConsumerStartCommand($consumer, true)} > /dev/null &");
+            }
+            sleep(5);
+        }
+    }
+
+    /**
+     * Get Consumers ProcessIds
+     *
+     * @return array
+     */
+    public function getConsumersProcessIds()
+    {
+        $consumers = [];
+        foreach ($this->consumers as $consumer) {
+            $consumers[$consumer] = $this->getConsumerProcessIds($consumer);
+        }
+        return $consumers;
+    }
+
+    /**
      * Wait for asynchronous result
      *
      * @param callable $condition
@@ -225,22 +243,5 @@ class PublisherConsumerController
     public function getPublisher()
     {
         return $this->publisher;
-    }
-
-    /**
-     * Start consumers
-     *
-     * @return void
-     */
-    public function startConsumers(): void
-    {
-        foreach ($this->consumers as $consumer) {
-            if (!$this->getConsumerProcessIds($consumer)) {
-                // exec() have to be here since this is test.
-                // phpcs:ignore Magento2.Security.InsecureFunction
-                exec("{$this->getConsumerStartCommand($consumer, true)} > /dev/null &");
-            }
-            sleep(5);
-        }
     }
 }

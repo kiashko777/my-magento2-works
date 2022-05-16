@@ -3,9 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Dependency\Parser\Composer;
 
-class JsonTest extends \PHPUnit\Framework\TestCase
+use PHPUnit\Framework\TestCase;
+
+class JsonTest extends TestCase
 {
     /**
      * @var string
@@ -16,13 +19,6 @@ class JsonTest extends \PHPUnit\Framework\TestCase
      * @var Json
      */
     protected $parser;
-
-    protected function setUp(): void
-    {
-        $this->fixtureDir = realpath(__DIR__ . '/../../_files') . '/';
-
-        $this->parser = new Json();
-    }
 
     public function testParse()
     {
@@ -52,5 +48,12 @@ class JsonTest extends \PHPUnit\Framework\TestCase
         );
 
         $this->assertEquals($expected, $actual);
+    }
+
+    protected function setUp(): void
+    {
+        $this->fixtureDir = realpath(__DIR__ . '/../../_files') . '/';
+
+        $this->parser = new Json();
     }
 }

@@ -6,36 +6,48 @@
 
 namespace Magento\Tax\Model\Calculation;
 
+use Exception;
+use Magento\Directory\Model\CountryFactory;
+use Magento\Directory\Model\RegionFactory;
+use Magento\Framework\Api\DataObjectHelper;
+use Magento\Framework\Api\Filter;
+use Magento\Framework\Api\FilterBuilder;
+use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\Exception\AlreadyExistsException;
 use Magento\Framework\Exception\InputException;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Store\Model\Store;
 use Magento\Tax\Api\Data\TaxRateInterface;
-use Magento\Tax\Model\Calculation\Rate;
+use Magento\Tax\Api\Data\TaxRateInterfaceFactory;
+use Magento\Tax\Api\TaxRateRepositoryInterface;
 use Magento\Tax\Model\TaxRuleFixtureFactory;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class RateRepositoryTest extends \PHPUnit\Framework\TestCase
+class RateRepositoryTest extends TestCase
 {
     /**
      * Object Manager
      *
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
     /**
      * TaxRate factory
      *
-     * @var \Magento\Tax\Api\Data\TaxRateInterfaceFactory
+     * @var TaxRateInterfaceFactory
      */
     private $taxRateFactory;
 
     /**
      * TaxRateService
      *
-     * @var \Magento\Tax\Api\TaxRateRepositoryInterface
+     * @var TaxRateRepositoryInterface
      */
     private $rateRepository;
 
@@ -47,30 +59,19 @@ class RateRepositoryTest extends \PHPUnit\Framework\TestCase
     private $taxRateFixtureFactory;
 
     /**
-     * @var \Magento\Directory\Model\CountryFactory
+     * @var CountryFactory
      */
     private $countryFactory;
 
     /**
-     * @var  \Magento\Directory\Model\RegionFactory
+     * @var  RegionFactory
      */
     private $regionFactory;
 
     /**
-     * @var \Magento\Framework\Api\DataObjectHelper
+     * @var DataObjectHelper
      */
     private $dataObjectHelper;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->rateRepository = $this->objectManager->get(\Magento\Tax\Api\TaxRateRepositoryInterface::class);
-        $this->taxRateFactory = $this->objectManager->create(\Magento\Tax\Api\Data\TaxRateInterfaceFactory::class);
-        $this->dataObjectHelper = $this->objectManager->create(\Magento\Framework\Api\DataObjectHelper::class);
-        $this->taxRateFixtureFactory = new TaxRuleFixtureFactory();
-        $this->countryFactory = $this->objectManager->create(\Magento\Directory\Model\CountryFactory::class);
-        $this->regionFactory = $this->objectManager->create(\Magento\Directory\Model\RegionFactory::class);
-    }
 
     /**
      * @magentoDbIsolation enabled
@@ -88,12 +89,12 @@ class RateRepositoryTest extends \PHPUnit\Framework\TestCase
         ];
         // Tax rate data object created
         $taxRate = $this->taxRateFactory->create();
-        $this->dataObjectHelper->populateWithArray($taxRate, $taxData, \Magento\Tax\Api\Data\TaxRateInterface::class);
+        $this->dataObjectHelper->populateWithArray($taxRate, $taxData, TaxRateInterface::class);
         //Tax rate service call
         $taxRateServiceData = $this->rateRepository->save($taxRate);
 
         //Assertions
-        $this->assertInstanceOf(\Magento\Tax\Api\Data\TaxRateInterface::class, $taxRateServiceData);
+        $this->assertInstanceOf(TaxRateInterface::class, $taxRateServiceData);
         $this->assertEquals($taxData['tax_country_id'], $taxRateServiceData->getTaxCountryId());
         $this->assertEquals($taxData['tax_region_id'], $taxRateServiceData->getTaxRegionId());
         $this->assertEquals($taxData['rate'], $taxRateServiceData->getRate());
@@ -120,12 +121,12 @@ class RateRepositoryTest extends \PHPUnit\Framework\TestCase
         ];
         // Tax rate data object created
         $taxRate = $this->taxRateFactory->create();
-        $this->dataObjectHelper->populateWithArray($taxRate, $taxData, \Magento\Tax\Api\Data\TaxRateInterface::class);
+        $this->dataObjectHelper->populateWithArray($taxRate, $taxData, TaxRateInterface::class);
         //Tax rate service call
         $taxRateServiceData = $this->rateRepository->save($taxRate);
 
         //Assertions
-        $this->assertInstanceOf(\Magento\Tax\Api\Data\TaxRateInterface::class, $taxRateServiceData);
+        $this->assertInstanceOf(TaxRateInterface::class, $taxRateServiceData);
         $this->assertEquals($taxData['tax_country_id'], $taxRateServiceData->getTaxCountryId());
         $this->assertEquals($taxData['tax_region_id'], $taxRateServiceData->getTaxRegionId());
         $this->assertEquals($taxData['rate'], $taxRateServiceData->getRate());
@@ -142,7 +143,7 @@ class RateRepositoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testSaveWithTitles()
     {
-        $store = $this->objectManager->get(\Magento\Store\Model\Store::class);
+        $store = $this->objectManager->get(Store::class);
         $store->load('test', 'code');
 
         $taxData = [
@@ -162,12 +163,12 @@ class RateRepositoryTest extends \PHPUnit\Framework\TestCase
         ];
         // Tax rate data object created
         $taxRate = $this->taxRateFactory->create();
-        $this->dataObjectHelper->populateWithArray($taxRate, $taxData, \Magento\Tax\Api\Data\TaxRateInterface::class);
+        $this->dataObjectHelper->populateWithArray($taxRate, $taxData, TaxRateInterface::class);
         //Tax rate service call
         $taxRateServiceData = $this->rateRepository->save($taxRate);
 
         //Assertions
-        $this->assertInstanceOf(\Magento\Tax\Api\Data\TaxRateInterface::class, $taxRateServiceData);
+        $this->assertInstanceOf(TaxRateInterface::class, $taxRateServiceData);
         $this->assertEquals($taxData['tax_country_id'], $taxRateServiceData->getTaxCountryId());
         $this->assertEquals($taxData['tax_region_id'], $taxRateServiceData->getTaxRegionId());
         $this->assertEquals($taxData['rate'], $taxRateServiceData->getRate());
@@ -195,7 +196,7 @@ class RateRepositoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testSaveThrowsExceptionIfTargetTaxRateDoesNotExist()
     {
-        $this->expectException(\Magento\Framework\Exception\NoSuchEntityException::class);
+        $this->expectException(NoSuchEntityException::class);
         $this->expectExceptionMessage('No such entity with taxRateId = 9999');
 
         $invalidTaxData = [
@@ -212,7 +213,7 @@ class RateRepositoryTest extends \PHPUnit\Framework\TestCase
         $this->dataObjectHelper->populateWithArray(
             $taxRate,
             $invalidTaxData,
-            \Magento\Tax\Api\Data\TaxRateInterface::class
+            TaxRateInterface::class
         );
         $this->rateRepository->save($taxRate);
     }
@@ -222,7 +223,7 @@ class RateRepositoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testSaveThrowsExceptionIfTaxRateWithCorrespondingCodeAlreadyExists()
     {
-        $this->expectException(\Magento\Framework\Exception\AlreadyExistsException::class);
+        $this->expectException(AlreadyExistsException::class);
         $this->expectExceptionMessage('Code already exists.');
 
         $invalidTaxData = [
@@ -239,14 +240,14 @@ class RateRepositoryTest extends \PHPUnit\Framework\TestCase
         $this->dataObjectHelper->populateWithArray(
             $taxRate1,
             $invalidTaxData,
-            \Magento\Tax\Api\Data\TaxRateInterface::class
+            TaxRateInterface::class
         );
 
         $taxRate2 = $this->taxRateFactory->create();
         $this->dataObjectHelper->populateWithArray(
             $taxRate2,
             $invalidTaxData,
-            \Magento\Tax\Api\Data\TaxRateInterface::class
+            TaxRateInterface::class
         );
 
         //Service call initiated twice to add the same code
@@ -257,17 +258,17 @@ class RateRepositoryTest extends \PHPUnit\Framework\TestCase
     /**
      * @param array $dataArray
      * @param string $errorMessages
-     * @throws \Magento\Framework\Exception\InputException
+     * @throws InputException
      *
      * @dataProvider createDataProvider
      * @magentoDbIsolation enabled
      */
     public function testSaveThrowsExceptionIfGivenDataIsInvalid($dataArray, $errorMessages)
     {
-        $this->expectException(\Magento\Framework\Exception\InputException::class);
+        $this->expectException(InputException::class);
 
         $taxRate = $this->taxRateFactory->create();
-        $this->dataObjectHelper->populateWithArray($taxRate, $dataArray, \Magento\Tax\Api\Data\TaxRateInterface::class);
+        $this->dataObjectHelper->populateWithArray($taxRate, $dataArray, TaxRateInterface::class);
         try {
             $this->rateRepository->save($taxRate);
         } catch (InputException $exception) {
@@ -415,7 +416,7 @@ class RateRepositoryTest extends \PHPUnit\Framework\TestCase
             'code' => 'US_12_Code',
             'rate' => '7.5',
         ];
-        $rate = $this->objectManager->create(\Magento\Tax\Model\Calculation\Rate::class)
+        $rate = $this->objectManager->create(Rate::class)
             ->setData($data)
             ->save();
 
@@ -435,7 +436,7 @@ class RateRepositoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetThrowsExceptionIfTargetTaxRateDoesNotExist()
     {
-        $this->expectException(\Magento\Framework\Exception\NoSuchEntityException::class);
+        $this->expectException(NoSuchEntityException::class);
         $this->expectExceptionMessage('No such entity with taxRateId = 9999');
 
         $this->rateRepository->get(9999);
@@ -476,7 +477,7 @@ class RateRepositoryTest extends \PHPUnit\Framework\TestCase
      */
     public function testSaveThrowsExceptionIfTargetTaxRateExistsButProvidedDataIsInvalid()
     {
-        $this->expectException(\Magento\Framework\Exception\InputException::class);
+        $this->expectException(InputException::class);
         $this->expectExceptionMessage('postcode');
 
         $taxRate = $this->taxRateFactory->create();
@@ -524,7 +525,7 @@ class RateRepositoryTest extends \PHPUnit\Framework\TestCase
                 'fieldValue' => $taxRateId,
             ];
             $this->assertEquals($expectedParams, $e->getParameters());
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->fail('Caught unexpected exception');
         }
     }
@@ -556,14 +557,14 @@ class RateRepositoryTest extends \PHPUnit\Framework\TestCase
                 'fieldValue' => $taxRateId,
             ];
             $this->assertEquals($expectedParams, $e->getParameters());
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->fail('Caught unexpected exception');
         }
     }
 
     /**
-     * @param \Magento\Framework\Api\Filter[] $filters
-     * @param \Magento\Framework\Api\Filter[] $filterGroup
+     * @param Filter[] $filters
+     * @param Filter[] $filterGroup
      * @param $expectedRateCodes
      *
      * @magentoDbIsolation enabled
@@ -581,9 +582,9 @@ class RateRepositoryTest extends \PHPUnit\Framework\TestCase
             ]
         );
 
-        /** @var \Magento\Framework\Api\SearchCriteriaBuilder $searchBuilder */
+        /** @var SearchCriteriaBuilder $searchBuilder */
         $searchBuilder = Bootstrap::getObjectManager()
-            ->create(\Magento\Framework\Api\SearchCriteriaBuilder::class);
+            ->create(SearchCriteriaBuilder::class);
         foreach ($filters as $filter) {
             $searchBuilder->addFilters([$filter]);
         }
@@ -603,7 +604,7 @@ class RateRepositoryTest extends \PHPUnit\Framework\TestCase
 
     public function searchTaxRatesDataProvider()
     {
-        $filterBuilder = Bootstrap::getObjectManager()->create(\Magento\Framework\Api\FilterBuilder::class);
+        $filterBuilder = Bootstrap::getObjectManager()->create(FilterBuilder::class);
 
         return [
             'eq' => [
@@ -645,5 +646,16 @@ class RateRepositoryTest extends \PHPUnit\Framework\TestCase
                 ['US - 42 - 7.5', 'US - 42 - 22'],
             ],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->rateRepository = $this->objectManager->get(TaxRateRepositoryInterface::class);
+        $this->taxRateFactory = $this->objectManager->create(TaxRateInterfaceFactory::class);
+        $this->dataObjectHelper = $this->objectManager->create(DataObjectHelper::class);
+        $this->taxRateFixtureFactory = new TaxRuleFixtureFactory();
+        $this->countryFactory = $this->objectManager->create(CountryFactory::class);
+        $this->regionFactory = $this->objectManager->create(RegionFactory::class);
     }
 }

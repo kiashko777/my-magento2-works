@@ -7,9 +7,10 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Controller\Adminhtml\Product\Save;
 
+use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product;
-use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Model\Product\Type;
 use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Framework\Message\MessageInterface;
 use Magento\TestFramework\TestCase\AbstractBackendController;
@@ -30,15 +31,6 @@ class LinksTest extends AbstractBackendController
 
     /** @var ProductRepositoryInterface $productRepository */
     private $productRepository;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->productRepository = $this->_objectManager->create(ProductRepositoryInterface::class);
-    }
 
     /**
      * Test add simple related, up-sells, cross-sells product
@@ -79,7 +71,7 @@ class LinksTest extends AbstractBackendController
                 'name' => 'Simple Products',
                 'sku' => 'simple',
                 'url_key' => 'simple-product',
-                'type_id' => \Magento\Catalog\Model\Product\Type::TYPE_SIMPLE
+                'type_id' => Type::TYPE_SIMPLE
             ],
             'links' => [
                 'upsell' => [
@@ -140,5 +132,14 @@ class LinksTest extends AbstractBackendController
         }
 
         return $actualLinks;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->productRepository = $this->_objectManager->create(ProductRepositoryInterface::class);
     }
 }

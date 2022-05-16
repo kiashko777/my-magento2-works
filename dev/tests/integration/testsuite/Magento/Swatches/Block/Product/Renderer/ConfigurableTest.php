@@ -85,26 +85,6 @@ class ConfigurableTest extends TestCase
     private $product;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->serializer = $this->objectManager->get(SerializerInterface::class);
-        $this->swatchHelper = $this->objectManager->get(Media::class);
-        $this->imageUrlBuilder = $this->objectManager->get(UrlBuilder::class);
-        $this->productAttributeRepository = $this->objectManager->get(ProductAttributeRepositoryInterface::class);
-        $this->configurableAttribute = $this->productAttributeRepository->get('test_configurable');
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->product = $this->productRepository->get('configurable');
-        $this->productResource = $this->objectManager->get(ProductResource::class);
-        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(ConfigurableBlock::class);
-        $this->block->setProduct($this->product);
-    }
-
-    /**
      * @magentoDataFixture Magento/Swatches/_files/configurable_product_with_visual_swatch_attribute.php
      * @return void
      */
@@ -121,6 +101,42 @@ class ConfigurableTest extends TestCase
         );
         $config = $this->serializer->unserialize($this->block->getJsonSwatchConfig());
         $this->assertOptionsData($config, $expectedOptions, ['swatch_input_type' => 'visual']);
+    }
+
+    /**
+     * @return array
+     */
+    private function getDefaultOptionsList(): array
+    {
+        return [
+            'option 1' => ['type' => '1', 'value' => '#000000', 'label' => 'option 1'],
+            'option 2' => ['type' => '2', 'value' => '', 'thumb' => '', 'label' => 'option 2'],
+            'option 3' => ['type' => '3', 'value' => null, 'label' => 'option 3'],
+        ];
+    }
+
+    /**
+     * Asserts swatch options data.
+     *
+     * @param array $config
+     * @param array $expectedOptions
+     * @param array $expectedAdditional
+     * @return void
+     */
+    private function assertOptionsData(array $config, array $expectedOptions, array $expectedAdditional): void
+    {
+        $this->assertNotEmpty($config);
+        $resultOptions = $config[$this->configurableAttribute->getAttributeId()];
+        foreach ($expectedOptions as $label => $data) {
+            $resultOption = $resultOptions[$this->configurableAttribute->getSource()->getOptionId($label)];
+            $this->assertEquals($data['type'], $resultOption['type']);
+            $this->assertEquals($data['label'], $resultOption['label']);
+            $this->assertEquals($data['value'], $resultOption['value']);
+            if (!empty($data['thumb'])) {
+                $this->assertEquals($data['thumb'], $resultOption['thumb']);
+            }
+        }
+        $this->assertEquals($expectedAdditional, $this->serializer->unserialize($resultOptions['additional_data']));
     }
 
     /**
@@ -146,6 +162,55 @@ class ConfigurableTest extends TestCase
             $expectedOptions,
             ['swatch_input_type' => 'visual', 'use_product_image_for_swatch' => 1]
         );
+    }
+
+    /**
+     * Updates attribute 'use_product_image_for_swatch' flag.
+     *
+     * @return void
+     */
+    private function updateAttributeUseProductImageFlag(): void
+    {
+        $this->configurableAttribute->setData('use_product_image_for_swatch', 1);
+        $this->configurableAttribute = $this->productAttributeRepository->save($this->configurableAttribute);
+    }
+
+    /**
+     * Updates Products image.
+     *
+     * @param string $sku
+     * @param string $imageName
+     * @param array $imageRoles
+     * @return void
+     */
+    private function updateProductImage(
+        string $sku,
+        string $imageName,
+        array  $imageRoles = ['image', 'small_image', 'thumbnail']
+    ): void
+    {
+        $product = $this->productRepository->get($sku);
+        $product->setStoreId(Store::DEFAULT_STORE_ID)
+            ->setData(
+                'media_gallery',
+                [
+                    'images' => [
+                        [
+                            'file' => $imageName,
+                            'position' => 1,
+                            'label' => 'Image Alt Text',
+                            'disabled' => 0,
+                            'media_type' => 'image'
+                        ],
+                    ]
+                ]
+            )
+            ->setCanSaveCustomOptions(true);
+        foreach ($imageRoles as $role) {
+            $product->setData($role, $imageName);
+        }
+
+        $this->productResource->save($product);
     }
 
     /**
@@ -197,86 +262,22 @@ class ConfigurableTest extends TestCase
     }
 
     /**
-     * @return array
+     * @inheritdoc
      */
-    private function getDefaultOptionsList(): array
+    protected function setUp(): void
     {
-        return [
-            'option 1' => ['type' => '1', 'value' => '#000000', 'label' => 'option 1'],
-            'option 2' => ['type' => '2', 'value' => '', 'thumb' => '', 'label' => 'option 2'],
-            'option 3' => ['type' => '3', 'value' => null, 'label' => 'option 3'],
-        ];
-    }
-
-    /**
-     * Asserts swatch options data.
-     *
-     * @param array $config
-     * @param array $expectedOptions
-     * @param array $expectedAdditional
-     * @return void
-     */
-    private function assertOptionsData(array $config, array $expectedOptions, array $expectedAdditional): void
-    {
-        $this->assertNotEmpty($config);
-        $resultOptions = $config[$this->configurableAttribute->getAttributeId()];
-        foreach ($expectedOptions as $label => $data) {
-            $resultOption = $resultOptions[$this->configurableAttribute->getSource()->getOptionId($label)];
-            $this->assertEquals($data['type'], $resultOption['type']);
-            $this->assertEquals($data['label'], $resultOption['label']);
-            $this->assertEquals($data['value'], $resultOption['value']);
-            if (!empty($data['thumb'])) {
-                $this->assertEquals($data['thumb'], $resultOption['thumb']);
-            }
-        }
-        $this->assertEquals($expectedAdditional, $this->serializer->unserialize($resultOptions['additional_data']));
-    }
-
-    /**
-     * Updates attribute 'use_product_image_for_swatch' flag.
-     *
-     * @return void
-     */
-    private function updateAttributeUseProductImageFlag(): void
-    {
-        $this->configurableAttribute->setData('use_product_image_for_swatch', 1);
-        $this->configurableAttribute = $this->productAttributeRepository->save($this->configurableAttribute);
-    }
-
-    /**
-     * Updates Products image.
-     *
-     * @param string $sku
-     * @param string $imageName
-     * @param array $imageRoles
-     * @return void
-     */
-    private function updateProductImage(
-        string $sku,
-        string $imageName,
-        array $imageRoles = ['image', 'small_image', 'thumbnail']
-    ): void {
-        $product = $this->productRepository->get($sku);
-        $product->setStoreId(Store::DEFAULT_STORE_ID)
-            ->setData(
-                'media_gallery',
-                [
-                    'images' => [
-                        [
-                            'file' => $imageName,
-                            'position' => 1,
-                            'label' => 'Image Alt Text',
-                            'disabled' => 0,
-                            'media_type' => 'image'
-                        ],
-                    ]
-                ]
-            )
-            ->setCanSaveCustomOptions(true);
-        foreach ($imageRoles as $role) {
-            $product->setData($role, $imageName);
-        }
-
-        $this->productResource->save($product);
+        parent::setUp();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->serializer = $this->objectManager->get(SerializerInterface::class);
+        $this->swatchHelper = $this->objectManager->get(Media::class);
+        $this->imageUrlBuilder = $this->objectManager->get(UrlBuilder::class);
+        $this->productAttributeRepository = $this->objectManager->get(ProductAttributeRepositoryInterface::class);
+        $this->configurableAttribute = $this->productAttributeRepository->get('test_configurable');
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->product = $this->productRepository->get('configurable');
+        $this->productResource = $this->objectManager->get(ProductResource::class);
+        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(ConfigurableBlock::class);
+        $this->block->setProduct($this->product);
     }
 }

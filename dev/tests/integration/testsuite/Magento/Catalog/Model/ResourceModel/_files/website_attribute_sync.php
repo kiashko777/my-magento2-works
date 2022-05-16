@@ -4,18 +4,23 @@
  * See COPYING.txt for license details.
  */
 
-use \Magento\Store\Model\Website;
-use \Magento\Store\Model\ResourceModel\Website as WebsiteResourceModel;
-use \Magento\Store\Model\Group;
-use Magento\Store\Model\ResourceModel\Group as GroupResourceModel;
-use Magento\Store\Model\Store;
-use Magento\Store\Model\ResourceModel\Store as StoreResourceModel;
-use \Magento\Catalog\Api\ProductRepositoryInterface;
-use \Magento\Framework\App\ResourceConnection;
-use \Magento\Catalog\Model\Product\Attribute\Source\Status as AttributeStatus;
-use \Magento\Catalog\Model\Product;
+use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status as AttributeStatus;
+use Magento\Catalog\Model\Product\Visibility;
 use Magento\Catalog\Model\ResourceModel\Attribute\WebsiteAttributesSynchronizer;
-use \Magento\TestFramework\Helper\Bootstrap;
+use Magento\CatalogSearch\Model\Indexer\Fulltext\Processor;
+use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\EntityManager\MetadataPool;
+use Magento\Framework\FlagManager;
+use Magento\Store\Model\Group;
+use Magento\Store\Model\ResourceModel\Group as GroupResourceModel;
+use Magento\Store\Model\ResourceModel\Store as StoreResourceModel;
+use Magento\Store\Model\ResourceModel\Website as WebsiteResourceModel;
+use Magento\Store\Model\Store;
+use Magento\Store\Model\Website;
+use Magento\TestFramework\Helper\Bootstrap;
 
 /**
  * create whole website->storeGroup->[store1,store2] structure and add product to it with
@@ -30,9 +35,9 @@ $storeGroupResourceModel = $objectManager->get(GroupResourceModel::class);
 $storeResourceModel = $objectManager->get(StoreResourceModel::class);
 $productRepository = $objectManager->create(ProductRepositoryInterface::class);
 $resourceConnection = $objectManager->get(ResourceConnection::class);
-$flagManager = $objectManager->get(\Magento\Framework\FlagManager::class);
-$productLinkField = $objectManager->get(\Magento\Framework\EntityManager\MetadataPool::class)
-    ->getMetadata(\Magento\Catalog\Api\Data\ProductInterface::class)
+$flagManager = $objectManager->get(FlagManager::class);
+$productLinkField = $objectManager->get(MetadataPool::class)
+    ->getMetadata(ProductInterface::class)
     ->getLinkField();
 
 /**
@@ -98,7 +103,7 @@ $stores = [
 ];
 
 $objectManager
-    ->create(\Magento\CatalogSearch\Model\Indexer\Fulltext\Processor::class)
+    ->create(Processor::class)
     ->reindexAll();
 
 /**
@@ -123,7 +128,7 @@ $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setMetaTitle('meta title')
     ->setMetaKeyword('meta keyword')
     ->setMetaDescription('meta description')
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
     ->setStatus(AttributeStatus::STATUS_ENABLED)
     ->setWebsiteIds([$website->getId()])
     ->setCategoryIds([])

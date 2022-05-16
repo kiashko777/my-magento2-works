@@ -3,8 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Api;
 
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 class CategoryAttributeOptionManagementInterfaceTest extends WebapiAbstract
@@ -19,19 +21,19 @@ class CategoryAttributeOptionManagementInterfaceTest extends WebapiAbstract
         $testAttributeCode = 'include_in_menu';
         $expectedOptions = [
             [
-                    'label' => 'Yes',
-                    'value' => '1',
+                'label' => 'Yes',
+                'value' => '1',
             ],
             [
-                    'label' => 'No',
-                    'value' => '0',
+                'label' => 'No',
+                'value' => '0',
             ],
         ];
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/' . $testAttributeCode . '/options',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,

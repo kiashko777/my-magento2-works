@@ -29,13 +29,6 @@ class TaxRatesFixtureTest extends TestCase
      */
     private $model;
 
-    protected function setUp(): void
-    {
-        $this->fixtureModelMock = $this->createMock(FixtureModel::class);
-
-        $this->model = new TaxRatesFixture($this->fixtureModelMock);
-    }
-
     public function testExecute()
     {
         $rateMock = $this->createPartialMock(Rate::class, ['setId', 'delete']);
@@ -103,5 +96,12 @@ class TaxRatesFixtureTest extends TestCase
     public function testIntroduceParamLabels()
     {
         $this->assertSame([], $this->model->introduceParamLabels());
+    }
+
+    protected function setUp(): void
+    {
+        $this->fixtureModelMock = $this->createMock(FixtureModel::class);
+
+        $this->model = new TaxRatesFixture($this->fixtureModelMock);
     }
 }

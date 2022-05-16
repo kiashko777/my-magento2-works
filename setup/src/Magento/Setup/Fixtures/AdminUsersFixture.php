@@ -7,7 +7,9 @@
 namespace Magento\Setup\Fixtures;
 
 use Magento\Authorization\Model\Acl\Role\Group;
+use Magento\Authorization\Model\Role;
 use Magento\Authorization\Model\RoleFactory;
+use Magento\Authorization\Model\Rules;
 use Magento\Authorization\Model\RulesFactory;
 use Magento\Authorization\Model\UserContextInterface;
 use Magento\Framework\Acl\RootResource;
@@ -62,13 +64,14 @@ class AdminUsersFixture extends Fixture
      * @param RootResource $rootResource
      */
     public function __construct(
-        FixtureModel $fixtureModel,
-        UserFactory $userFactory,
+        FixtureModel          $fixtureModel,
+        UserFactory           $userFactory,
         UserCollectionFactory $userCollectionFactory,
-        RoleFactory $roleFactory,
-        RulesFactory $rulesFactory,
-        RootResource $rootResource
-    ) {
+        RoleFactory           $roleFactory,
+        RulesFactory          $rulesFactory,
+        RootResource          $rootResource
+    )
+    {
         parent::__construct($fixtureModel);
         $this->userFactory = $userFactory;
         $this->roleFactory = $roleFactory;
@@ -105,6 +108,34 @@ class AdminUsersFixture extends Fixture
     }
 
     /**
+     * Create administrator role with all privileges.
+     *
+     * @return Role
+     */
+    private function createAdministratorRole()
+    {
+        $role = $this->roleFactory->create();
+        $role->setParentId(0)
+            ->setTreeLevel(1)
+            ->setSortOrder(1)
+            ->setRoleType(Group::ROLE_TYPE)
+            ->setUserId(0)
+            ->setUserType(UserContextInterface::USER_TYPE_ADMIN)
+            ->setRoleName('Example Administrator');
+        $role->save();
+
+        /** @var Rules $rule */
+        $rule = $this->rulesFactory->create();
+        $rule->setRoleId($role->getId())
+            ->setResourceId($this->rootResource->getId())
+            ->setPrivilegies(null)
+            ->setPermission('allow');
+        $rule->save();
+
+        return $role;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function getActionTitle()
@@ -120,33 +151,5 @@ class AdminUsersFixture extends Fixture
         return [
             'admin_users' => 'Admin Users'
         ];
-    }
-
-    /**
-     * Create administrator role with all privileges.
-     *
-     * @return \Magento\Authorization\Model\Role
-     */
-    private function createAdministratorRole()
-    {
-        $role = $this->roleFactory->create();
-        $role->setParentId(0)
-            ->setTreeLevel(1)
-            ->setSortOrder(1)
-            ->setRoleType(Group::ROLE_TYPE)
-            ->setUserId(0)
-            ->setUserType(UserContextInterface::USER_TYPE_ADMIN)
-            ->setRoleName('Example Administrator');
-        $role->save();
-
-        /** @var \Magento\Authorization\Model\Rules $rule */
-        $rule = $this->rulesFactory->create();
-        $rule->setRoleId($role->getId())
-            ->setResourceId($this->rootResource->getId())
-            ->setPrivilegies(null)
-            ->setPermission('allow');
-        $rule->save();
-
-        return $role;
     }
 }

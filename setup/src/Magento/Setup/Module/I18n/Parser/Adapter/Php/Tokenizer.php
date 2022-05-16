@@ -3,7 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\I18n\Parser\Adapter\Php;
+
+use Exception;
+use Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer\Token;
 
 /**
  * Tokenizer
@@ -88,6 +92,44 @@ class Tokenizer
     }
 
     /**
+     * Get next token skipping all whitespaces
+     *
+     * @return Token|false
+     */
+    public function getNextRealToken()
+    {
+        do {
+            $token = $this->getNextToken();
+        } while ($token && $token->isWhitespace());
+        return $token;
+    }
+
+    /**
+     * Get next token
+     *
+     * @return bool|Token
+     */
+    public function getNextToken()
+    {
+        return ($token = next($this->_tokens)) ? $this->_createToken($token) : false;
+    }
+
+    /**
+     * Create token from array|string
+     *
+     * @param array|string $tokenData
+     * @return Token
+     */
+    private function _createToken($tokenData)
+    {
+        if (is_array($tokenData)) {
+            return new Tokenizer\Token($tokenData[0], $tokenData[1], $tokenData[2]);
+        } else {
+            return new Tokenizer\Token($tokenData, $tokenData);
+        }
+    }
+
+    /**
      * Get arguments tokens of function
      *
      * @return array
@@ -120,20 +162,10 @@ class Tokenizer
                     break;
                 }
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return [];
         }
         return $arguments;
-    }
-
-    /**
-     * Whenever inner argument closed
-     *
-     * @return bool
-     */
-    private function _isInnerArgumentClosed()
-    {
-        return $this->_openBrackets - 1 == $this->_closeBrackets;
     }
 
     /**
@@ -158,7 +190,7 @@ class Tokenizer
     /**
      * Get current token
      *
-     * @return \Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer\Token
+     * @return Token
      */
     public function getCurrentToken()
     {
@@ -166,26 +198,13 @@ class Tokenizer
     }
 
     /**
-     * Get next token
+     * Whenever inner argument closed
      *
-     * @return bool|\Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer\Token
+     * @return bool
      */
-    public function getNextToken()
+    private function _isInnerArgumentClosed()
     {
-        return ($token = next($this->_tokens)) ? $this->_createToken($token) : false;
-    }
-
-    /**
-     * Get next token skipping all whitespaces
-     *
-     * @return \Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer\Token|false
-     */
-    public function getNextRealToken()
-    {
-        do {
-            $token = $this->getNextToken();
-        } while ($token && $token->isWhitespace());
-        return $token;
+        return $this->_openBrackets - 1 == $this->_closeBrackets;
     }
 
     /**
@@ -196,20 +215,5 @@ class Tokenizer
     public function isEndOfLoop()
     {
         return key($this->_tokens) === null;
-    }
-
-    /**
-     * Create token from array|string
-     *
-     * @param array|string $tokenData
-     * @return \Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer\Token
-     */
-    private function _createToken($tokenData)
-    {
-        if (is_array($tokenData)) {
-            return new Tokenizer\Token($tokenData[0], $tokenData[1], $tokenData[2]);
-        } else {
-            return new Tokenizer\Token($tokenData, $tokenData);
-        }
     }
 }

@@ -5,11 +5,10 @@
  */
 declare(strict_types=1);
 
-use Magento\Integration\Model\Oauth\Token\RequestThrottler;
-use Magento\Framework\Registry;
 use Magento\Customer\Model\Customer;
+use Magento\Framework\Registry;
+use Magento\Integration\Model\Oauth\Token\RequestThrottler;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Customer\Model\Address;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Store/_files/websites_different_countries_rollback.php');
@@ -20,7 +19,7 @@ $registry = Bootstrap::getObjectManager()->get(Registry::class);
 //Removing customers.
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
-/** @var $customer \Magento\Customer\Model\Customer*/
+/** @var $customer Customer */
 $customer = Bootstrap::getObjectManager()->create(Customer::class);
 $customer->load(1);
 if ($customer->getId()) {
@@ -38,7 +37,7 @@ $throttler->resetAuthenticationFailuresCount(
 //Second customer.
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
-/** @var $customer \Magento\Customer\Model\Customer*/
+/** @var $customer Customer */
 $customer = Bootstrap::getObjectManager()->create(Customer::class);
 $customer->load(2);
 if ($customer->getId()) {

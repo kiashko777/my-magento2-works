@@ -5,9 +5,9 @@
  */
 declare(strict_types=1);
 
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Catalog\Model\ProductFactory;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\ProductFactory;
+use Magento\TestFramework\Helper\Bootstrap;
 
 /** @var Magento\Framework\ObjectManagerInterface $objcetManager */
 $objectManager = Bootstrap::getObjectManager();

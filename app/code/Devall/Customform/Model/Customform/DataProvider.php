@@ -4,9 +4,9 @@ declare(strict_types=1);
 namespace Devall\Customform\Model\Customform;
 
 use Devall\Customform\Model\ResourceModel\Customform\CollectionFactory;
+use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\App\Request\DataPersistorInterface;
 use Magento\Framework\Filesystem;
-use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Store\Model\StoreManagerInterface;
 
 class DataProvider extends \Magento\Ui\DataProvider\AbstractDataProvider

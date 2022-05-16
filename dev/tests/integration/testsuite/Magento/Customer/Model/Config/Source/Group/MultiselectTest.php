@@ -3,20 +3,22 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Customer\Model\Config\Source\Group;
 
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class \Magento\Customer\Model\Config\Source\Group\Multiselect
  */
-class MultiselectTest extends \PHPUnit\Framework\TestCase
+class MultiselectTest extends TestCase
 {
     public function testToOptionArray()
     {
         /** @var Multiselect $multiselect */
         $multiselect = Bootstrap::getObjectManager()->get(
-            \Magento\Customer\Model\Config\Source\Group\Multiselect::class
+            Multiselect::class
         );
 
         $options = $multiselect->toOptionArray();

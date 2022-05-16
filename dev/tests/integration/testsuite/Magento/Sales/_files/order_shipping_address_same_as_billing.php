@@ -4,9 +4,15 @@
  * See COPYING.txt for license details.
  */
 
-/** @var $billingAddress \Magento\Sales\Model\Order\Address */
-$billingAddress = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Sales\Model\Order\Address::class,
+/** @var $billingAddress Address */
+
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Address;
+use Magento\Sales\Model\Order\Payment;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$billingAddress = Bootstrap::getObjectManager()->create(
+    Address::class,
     [
         'data' => [
             'firstname' => 'guest',
@@ -26,16 +32,16 @@ $billingAddress->setAddressType('billing');
 $shippingAddress = clone $billingAddress;
 $shippingAddress->setId(null)->setAddressType('shipping');
 
-/** @var $order \Magento\Sales\Model\Order */
-$order = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Sales\Model\Order::class);
+/** @var $order Order */
+$order = Bootstrap::getObjectManager()->create(Order::class);
 $order->loadByIncrementId('100000001');
 $clonedOrder = clone $order;
 $order->setIncrementId('100000002');
 $order->save();
 
-/** @var $payment \Magento\Sales\Model\Order\Payment */
-$payment = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Sales\Model\Order\Payment::class
+/** @var $payment Payment */
+$payment = Bootstrap::getObjectManager()->create(
+    Payment::class
 );
 $payment->setMethod('checkmo');
 

@@ -3,17 +3,22 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Customer\Block\Adminhtml\Edit\Tab\View;
 
 use Magento\Customer\Controller\RegistryConstants;
+use Magento\Framework\App\State;
+use Magento\Framework\Registry;
+use Magento\Framework\View\LayoutInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for \Magento\Customer\Block\Adminhtml\Edit\Tab\View\Sales
  *
  * @magentoAppArea Adminhtml
  */
-class SalesTest extends \PHPUnit\Framework\TestCase
+class SalesTest extends TestCase
 {
     const MAIN_WEBSITE = 1;
 
@@ -27,7 +32,7 @@ class SalesTest extends \PHPUnit\Framework\TestCase
     /**
      * Core registry.
      *
-     * @var \Magento\Framework\Registry
+     * @var Registry
      */
     private $coreRegistry;
 
@@ -37,38 +42,6 @@ class SalesTest extends \PHPUnit\Framework\TestCase
      * @var string
      */
     private $html;
-
-    /**
-     * Execute per test initialization.
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $objectManager->get(\Magento\Framework\App\State::class)->setAreaCode('Adminhtml');
-
-        $this->coreRegistry = $objectManager->get(\Magento\Framework\Registry::class);
-        $this->coreRegistry->register(RegistryConstants::CURRENT_CUSTOMER_ID, 1);
-
-        $this->block = $objectManager->get(
-            \Magento\Framework\View\LayoutInterface::class
-        )->createBlock(
-            \Magento\Customer\Block\Adminhtml\Edit\Tab\View\Sales::class,
-            'sales_' . random_int(0, PHP_INT_MAX),
-            ['coreRegistry' => $this->coreRegistry]
-        )->setTemplate(
-            'tab/view/sales.phtml'
-        );
-        $this->html = $this->block->toHtml();
-    }
-
-    /**
-     * Execute post test cleanup.
-     */
-    protected function tearDown(): void
-    {
-        $this->coreRegistry->unregister(RegistryConstants::CURRENT_CUSTOMER_ID);
-        $this->html = '';
-    }
 
     /**
      * Test basic currency formatting on the Main Website.
@@ -123,5 +96,37 @@ class SalesTest extends \PHPUnit\Framework\TestCase
     {
         $this->assertStringContainsString('<span class="title">Sales Statistics</span>', $this->html);
         $this->assertStringContainsString('<strong>All Store Views</strong>', $this->html);
+    }
+
+    /**
+     * Execute per test initialization.
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->get(State::class)->setAreaCode('Adminhtml');
+
+        $this->coreRegistry = $objectManager->get(Registry::class);
+        $this->coreRegistry->register(RegistryConstants::CURRENT_CUSTOMER_ID, 1);
+
+        $this->block = $objectManager->get(
+            LayoutInterface::class
+        )->createBlock(
+            Sales::class,
+            'sales_' . random_int(0, PHP_INT_MAX),
+            ['coreRegistry' => $this->coreRegistry]
+        )->setTemplate(
+            'tab/view/sales.phtml'
+        );
+        $this->html = $this->block->toHtml();
+    }
+
+    /**
+     * Execute post test cleanup.
+     */
+    protected function tearDown(): void
+    {
+        $this->coreRegistry->unregister(RegistryConstants::CURRENT_CUSTOMER_ID);
+        $this->html = '';
     }
 }

@@ -3,14 +3,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Captcha\Observer;
+
+use Magento\TestFramework\TestCase\AbstractController;
 
 /**
  * Test captcha observer behavior
  *
  * @magentoAppArea Adminhtml
  */
-class CaseCheckUserForgotPasswordBackendWhenCaptchaFailedTest extends \Magento\TestFramework\TestCase\AbstractController
+class CaseCheckUserForgotPasswordBackendWhenCaptchaFailedTest extends AbstractController
 {
     /**
      * @magentoDbIsolation enabled

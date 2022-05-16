@@ -19,18 +19,8 @@ use Magento\TestFramework\TestCase\AbstractBackendController;
  */
 class ProductReviewsTest extends AbstractBackendController
 {
-    /** @var LayoutInterface  */
+    /** @var LayoutInterface */
     private $layout;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->layout = $this->_objectManager->get(LayoutInterface::class);
-    }
 
     /**
      * Check Customer product review action.
@@ -42,6 +32,19 @@ class ProductReviewsTest extends AbstractBackendController
     {
         $this->dispatchWithIdParam(1);
         $this->assertStringContainsString('<div id="reviewGrid"', $this->getResponse()->getBody());
+    }
+
+    /**
+     * Dispatch request with id parameter
+     *
+     * @param int $id
+     * @return void
+     */
+    private function dispatchWithIdParam(int $id): void
+    {
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
+        $this->getRequest()->setParams(['id' => $id]);
+        $this->dispatch('backend/review/customer/productReviews');
     }
 
     /**
@@ -61,15 +64,12 @@ class ProductReviewsTest extends AbstractBackendController
     }
 
     /**
-     * Dispatch request with id parameter
-     *
-     * @param int $id
-     * @return void
+     * @inheritdoc
      */
-    private function dispatchWithIdParam(int $id): void
+    protected function setUp(): void
     {
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
-        $this->getRequest()->setParams(['id' => $id]);
-        $this->dispatch('backend/review/customer/productReviews');
+        parent::setUp();
+
+        $this->layout = $this->_objectManager->get(LayoutInterface::class);
     }
 }

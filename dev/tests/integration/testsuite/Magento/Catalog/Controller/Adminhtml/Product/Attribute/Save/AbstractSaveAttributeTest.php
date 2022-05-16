@@ -81,30 +81,79 @@ abstract class AbstractSaveAttributeTest extends AbstractBackendController
     }
 
     /**
-     * Create attribute via save product attribute controller and assert that we have error during save process.
+     * Get attribute code from attribute data. If attribute code doesn't exist in
+     * attribute data get attribute using default frontend label.
      *
      * @param array $attributeData
-     * @param string $errorMessage
+     * @return string
+     */
+    private function getAttributeCodeFromAttributeData(array $attributeData): string
+    {
+        $attributeCode = $attributeData['attribute_code'] ?? null;
+        if (!$attributeCode) {
+            $attributeCode = strtolower(
+                str_replace(' ', '_', $attributeData['frontend_label'][Store::DEFAULT_STORE_ID])
+            );
+        }
+
+        return $attributeCode;
+    }
+
+    /**
+     * Create serialized options string.
+     *
+     * @param array $optionsArr
+     * @return string
+     */
+    private function serializeOptions(array $optionsArr): string
+    {
+        $resultArr = [];
+
+        foreach ($optionsArr as $option) {
+            $resultArr[] = http_build_query($option);
+        }
+
+        return $this->jsonSerializer->serialize($resultArr);
+    }
+
+    /**
+     * Create attribute using catalog/product_attribute/save action.
+     *
+     * @param array $attributeData
      * @return void
      */
-    protected function createAttributeUsingDataWithErrorAndAssert(array $attributeData, string $errorMessage): void
+    private function dispatchAttributeSave(array $attributeData): void
     {
-        if (isset($attributeData['serialized_options_arr'])
-            && count($attributeData['serialized_options_arr'])
-        ) {
-            $attributeData['serialized_options'] = $this->serializeOptions($attributeData['serialized_options_arr']);
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
+        $this->getRequest()->setPostValue($attributeData);
+        $this->dispatch('backend/catalog/product_attribute/save');
+    }
+
+    /**
+     * Compare attribute data with data which we use for create attribute.
+     *
+     * @param AttributeInterface|AbstractAttribute $attribute
+     * @param array $attributeData
+     * @param array $checkData
+     * @return void
+     */
+    private function assertAttributeData(
+        AttributeInterface $attribute,
+        array              $attributeData,
+        array              $checkData
+    ): void
+    {
+        $frontendInput = $checkData['frontend_input'] ?? $attributeData['frontend_input'];
+        $this->assertEquals('Test attribute name', $attribute->getDefaultFrontendLabel());
+        $this->assertEquals($frontendInput, $attribute->getFrontendInput());
+
+        if (isset($attributeData['serialized_options'])) {
+            $this->assertAttributeOptions($attribute, $attributeData['serialized_options_arr']);
         }
-        $this->dispatchAttributeSave($attributeData);
-        $this->assertSessionMessages(
-            $this->equalTo([$this->escaper->escapeHtml($errorMessage)]),
-            MessageInterface::TYPE_ERROR
-        );
-        $attributeCode = $this->getAttributeCodeFromAttributeData($attributeData);
-        try {
-            $attribute = $this->productAttributeRepository->get($attributeCode);
-            $this->productAttributeRepository->delete($attribute);
-        } catch (NoSuchEntityException $e) {
-            //Attribute already deleted.
+
+        //Additional asserts
+        foreach ($checkData as $valueKey => $value) {
+            $this->assertEquals($value, $attribute->getDataUsingMethod($valueKey));
         }
     }
 
@@ -133,78 +182,30 @@ abstract class AbstractSaveAttributeTest extends AbstractBackendController
     }
 
     /**
-     * Compare attribute data with data which we use for create attribute.
+     * Create attribute via save product attribute controller and assert that we have error during save process.
      *
-     * @param AttributeInterface|AbstractAttribute $attribute
      * @param array $attributeData
-     * @param array $checkData
+     * @param string $errorMessage
      * @return void
      */
-    private function assertAttributeData(
-        AttributeInterface $attribute,
-        array $attributeData,
-        array $checkData
-    ): void {
-        $frontendInput = $checkData['frontend_input'] ?? $attributeData['frontend_input'];
-        $this->assertEquals('Test attribute name', $attribute->getDefaultFrontendLabel());
-        $this->assertEquals($frontendInput, $attribute->getFrontendInput());
-
-        if (isset($attributeData['serialized_options'])) {
-            $this->assertAttributeOptions($attribute, $attributeData['serialized_options_arr']);
-        }
-
-        //Additional asserts
-        foreach ($checkData as $valueKey => $value) {
-            $this->assertEquals($value, $attribute->getDataUsingMethod($valueKey));
-        }
-    }
-
-    /**
-     * Get attribute code from attribute data. If attribute code doesn't exist in
-     * attribute data get attribute using default frontend label.
-     *
-     * @param array $attributeData
-     * @return string
-     */
-    private function getAttributeCodeFromAttributeData(array $attributeData): string
+    protected function createAttributeUsingDataWithErrorAndAssert(array $attributeData, string $errorMessage): void
     {
-        $attributeCode = $attributeData['attribute_code'] ?? null;
-        if (!$attributeCode) {
-            $attributeCode = strtolower(
-                str_replace(' ', '_', $attributeData['frontend_label'][Store::DEFAULT_STORE_ID])
-            );
+        if (isset($attributeData['serialized_options_arr'])
+            && count($attributeData['serialized_options_arr'])
+        ) {
+            $attributeData['serialized_options'] = $this->serializeOptions($attributeData['serialized_options_arr']);
         }
-
-        return $attributeCode;
-    }
-
-    /**
-     * Create attribute using catalog/product_attribute/save action.
-     *
-     * @param array $attributeData
-     * @return void
-     */
-    private function dispatchAttributeSave(array $attributeData): void
-    {
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
-        $this->getRequest()->setPostValue($attributeData);
-        $this->dispatch('backend/catalog/product_attribute/save');
-    }
-
-    /**
-     * Create serialized options string.
-     *
-     * @param array $optionsArr
-     * @return string
-     */
-    private function serializeOptions(array $optionsArr): string
-    {
-        $resultArr = [];
-
-        foreach ($optionsArr as $option) {
-            $resultArr[] = http_build_query($option);
+        $this->dispatchAttributeSave($attributeData);
+        $this->assertSessionMessages(
+            $this->equalTo([$this->escaper->escapeHtml($errorMessage)]),
+            MessageInterface::TYPE_ERROR
+        );
+        $attributeCode = $this->getAttributeCodeFromAttributeData($attributeData);
+        try {
+            $attribute = $this->productAttributeRepository->get($attributeCode);
+            $this->productAttributeRepository->delete($attribute);
+        } catch (NoSuchEntityException $e) {
+            //Attribute already deleted.
         }
-
-        return $this->jsonSerializer->serialize($resultArr);
     }
 }

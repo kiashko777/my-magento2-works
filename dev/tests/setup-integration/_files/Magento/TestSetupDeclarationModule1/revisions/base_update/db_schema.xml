@@ -8,14 +8,17 @@
 <schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
     <table name="reference_table" resource="default" comment="Reference table">
-        <column xsi:type="smallint" name="smallint_ref" padding="6" nullable="false" unsigned="false" identity="true" comment="Smallint"/>
+        <column xsi:type="smallint" name="smallint_ref" padding="6" nullable="false" unsigned="false" identity="true"
+                comment="Smallint"/>
         <constraint xsi:type="primary" referenceId="tinyint_primary">
             <column name="smallint_ref"/>
         </constraint>
     </table>
     <table name="test_table" resource="default" comment="Test Table">
-        <column xsi:type="smallint" name="smallint" default="0" padding="6" nullable="true" unsigned="false" comment="Smallint"/>
-        <column xsi:type="bigint" name="bigint" default="0" padding="20" nullable="true" unsigned="false" comment="Bigint"/>
+        <column xsi:type="smallint" name="smallint" default="0" padding="6" nullable="true" unsigned="false"
+                comment="Smallint"/>
+        <column xsi:type="bigint" name="bigint" default="0" padding="20" nullable="true" unsigned="false"
+                comment="Bigint"/>
         <column xsi:type="float" name="float" default="0" scale="0" precision="10" comment="Float"/>
         <column xsi:type="date" name="date" comment="Date"/>
         <column xsi:type="timestamp" name="timestamp" default="CURRENT_TIMESTAMP" on_update="true" comment="Timestamp"/>

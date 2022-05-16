@@ -2,9 +2,11 @@
 
 namespace Pixelpro\Helloworld\Setup;
 
-use Magento\Framework\Setup\UpgradeSchemaInterface;
-use Magento\Framework\Setup\SchemaSetupInterface;
+use Magento\Framework\DB\Adapter\AdapterInterface;
+use Magento\Framework\DB\Ddl\Table;
 use Magento\Framework\Setup\ModuleContextInterface;
+use Magento\Framework\Setup\SchemaSetupInterface;
+use Magento\Framework\Setup\UpgradeSchemaInterface;
 
 class UpgradeSchema implements UpgradeSchemaInterface
 {
@@ -19,7 +21,7 @@ class UpgradeSchema implements UpgradeSchemaInterface
                 )
                     ->addColumn(
                         'post_id',
-                        \Magento\Framework\DB\Ddl\Table::TYPE_INTEGER,
+                        Table::TYPE_INTEGER,
                         null,
                         [
                             'identity' => true,
@@ -31,14 +33,14 @@ class UpgradeSchema implements UpgradeSchemaInterface
                     )
                     ->addColumn(
                         'title',
-                        \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
+                        Table::TYPE_TEXT,
                         255,
                         ['nullable => false'],
                         'Title'
                     )
                     ->addColumn(
                         'content',
-                        \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
+                        Table::TYPE_TEXT,
                         '64k',
                         [],
                         'Content'
@@ -50,10 +52,10 @@ class UpgradeSchema implements UpgradeSchemaInterface
                     $setup->getIdxName(
                         $installer->getTable('pixelpro_helloworld_post'),
                         ['title', 'content'],
-                        \Magento\Framework\DB\Adapter\AdapterInterface::INDEX_TYPE_FULLTEXT
+                        AdapterInterface::INDEX_TYPE_FULLTEXT
                     ),
                     ['title', 'content'],
-                    \Magento\Framework\DB\Adapter\AdapterInterface::INDEX_TYPE_FULLTEXT
+                    AdapterInterface::INDEX_TYPE_FULLTEXT
                 );
             }
         }

@@ -4,12 +4,15 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Downloadable\Api\DomainManagerInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
 
-\Magento\TestFramework\Helper\Bootstrap::getInstance()->getInstance()->reinitialize();
+Bootstrap::getInstance()->getInstance()->reinitialize();
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 
 /** @var DomainManagerInterface $domainManager */
 $domainManager = $objectManager->get(DomainManagerInterface::class);
@@ -22,15 +25,15 @@ $domainManager->removeDomains(
     ]
 );
 
-/** @var \Magento\Framework\Registry $registry */
-$registry = $objectManager->get(\Magento\Framework\Registry::class);
+/** @var Registry $registry */
+$registry = $objectManager->get(Registry::class);
 
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
-/** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
+/** @var ProductRepositoryInterface $productRepository */
 $productRepository = $objectManager
-    ->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+    ->get(ProductRepositoryInterface::class);
 try {
     $product = $productRepository->get('downloadable-product', false, null, true);
     $productRepository->delete($product);

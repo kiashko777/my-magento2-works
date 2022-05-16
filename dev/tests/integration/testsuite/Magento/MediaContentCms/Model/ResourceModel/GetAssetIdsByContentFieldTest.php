@@ -32,12 +32,31 @@ class GetAssetIdsByContentFieldTest extends TestCase
     private $getAssetIdsByContentField;
 
     /**
-     * @inheritdoc
+     * Data provider for block tests
+     *
+     * @return array
      */
-    protected function setUp(): void
+    public static function blockDataProvider(): array
     {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getAssetIdsByContentField = $objectManager->get(GetAssetIdsByContentFieldInterface::class);
+        return [
+            [self::STATUS_FIELD, self::STATUS_ENABLED, [self::FIXTURE_ASSET_ID]],
+            [self::STATUS_FIELD, self::STATUS_DISABLED, []],
+            [self::STORE_FIELD, self::DEFAULT_STORE_ID, [self::FIXTURE_ASSET_ID]],
+        ];
+    }
+
+    /**
+     * Data provider for page tests
+     *
+     * @return array
+     */
+    public static function pageDataProvider(): array
+    {
+        return [
+            [self::STATUS_FIELD, self::STATUS_ENABLED, [self::FIXTURE_ASSET_ID]],
+            [self::STATUS_FIELD, self::STATUS_DISABLED, []],
+            [self::STORE_FIELD, self::ADMIN_STORE_ID, [self::FIXTURE_ASSET_ID]],
+        ];
     }
 
     /**
@@ -83,30 +102,11 @@ class GetAssetIdsByContentFieldTest extends TestCase
     }
 
     /**
-     * Data provider for block tests
-     *
-     * @return array
+     * @inheritdoc
      */
-    public static function blockDataProvider(): array
+    protected function setUp(): void
     {
-        return [
-            [self::STATUS_FIELD, self::STATUS_ENABLED, [self::FIXTURE_ASSET_ID]],
-            [self::STATUS_FIELD, self::STATUS_DISABLED, []],
-            [self::STORE_FIELD, self::DEFAULT_STORE_ID, [self::FIXTURE_ASSET_ID]],
-        ];
-    }
-
-    /**
-     * Data provider for page tests
-     *
-     * @return array
-     */
-    public static function pageDataProvider(): array
-    {
-        return [
-            [self::STATUS_FIELD, self::STATUS_ENABLED, [self::FIXTURE_ASSET_ID]],
-            [self::STATUS_FIELD, self::STATUS_DISABLED, []],
-            [self::STORE_FIELD, self::ADMIN_STORE_ID, [self::FIXTURE_ASSET_ID]],
-        ];
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getAssetIdsByContentField = $objectManager->get(GetAssetIdsByContentFieldInterface::class);
     }
 }

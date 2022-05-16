@@ -7,10 +7,10 @@ declare(strict_types=1);
 
 namespace Magento\Sales\CustomerData;
 
+use Magento\Customer\Model\Session;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
-use Magento\Customer\Model\Session;
 
 /**
  * @magentoAppIsolation enabled
@@ -21,11 +21,6 @@ class LastOrderedItemsTest extends TestCase
      * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoDataFixture Magento/Sales/_files/order_with_customer_and_multiple_order_items.php
@@ -44,5 +39,10 @@ class LastOrderedItemsTest extends TestCase
             count($data['items']),
             'Section items count should not be greater than ' . LastOrderedItems::SIDEBAR_ORDER_LIMIT
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

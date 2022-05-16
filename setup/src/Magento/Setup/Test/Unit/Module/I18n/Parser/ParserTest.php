@@ -10,9 +10,9 @@ namespace Magento\Setup\Test\Unit\Module\I18n\Parser;
 use Magento\Setup\Module\I18n\Dictionary\Phrase;
 use Magento\Setup\Module\I18n\Factory;
 use Magento\Setup\Module\I18n\FilesCollector;
+use Magento\Setup\Module\I18n\Parser as Parser;
 use Magento\Setup\Module\I18n\Parser\AbstractParser;
 use Magento\Setup\Module\I18n\Parser\AdapterInterface;
-use Magento\Setup\Module\I18n\Parser as Parser;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -32,14 +32,6 @@ class ParserTest extends TestCase
      * @var MockObject|Factory
      */
     protected $factory;
-
-    protected function setUp(): void
-    {
-        $this->filesCollector = $this->createMock(FilesCollector::class);
-        $this->factory = $this->createMock(Factory::class);
-
-        $this->parser = new Parser\Parser($this->filesCollector, $this->factory);
-    }
 
     /**
      * @param array $options
@@ -119,7 +111,7 @@ class ParserTest extends TestCase
                             'phrase' => 'php phrase111',
                             'quote' => "'"
                         ],
-                        [   'phrase' => 'php phrase112',
+                        ['phrase' => 'php phrase112',
                             'quote' => '"'
                         ]
                     ],
@@ -128,7 +120,7 @@ class ParserTest extends TestCase
                             'phrase' => 'php phrase121',
                             'quote' => "'"
                         ],
-                        [   'phrase' => 'php phrase122',
+                        ['phrase' => 'php phrase122',
                             'quote' => '"'
                         ]
                     ],
@@ -140,7 +132,7 @@ class ParserTest extends TestCase
                             'phrase' => 'js phrase111',
                             'quote' => "'"
                         ],
-                        [   'phrase' => 'js phrase112',
+                        ['phrase' => 'js phrase112',
                             'quote' => '"'
                         ]
                     ],
@@ -149,7 +141,7 @@ class ParserTest extends TestCase
                             'phrase' => 'js phrase121',
                             'quote' => "'"
                         ],
-                        [   'phrase' => 'js phrase122',
+                        ['phrase' => 'js phrase122',
                             'quote' => '"'
                         ]
                     ],
@@ -177,6 +169,14 @@ class ParserTest extends TestCase
                 ],
             ]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->filesCollector = $this->createMock(FilesCollector::class);
+        $this->factory = $this->createMock(Factory::class);
+
+        $this->parser = new Parser\Parser($this->filesCollector, $this->factory);
     }
 }
 

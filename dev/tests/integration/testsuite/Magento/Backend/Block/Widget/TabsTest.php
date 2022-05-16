@@ -3,33 +3,43 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Backend\Block\Widget;
+
+use Magento\Framework\Registry;
+use Magento\Framework\View\Layout;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use Magento\Widget\Block\Adminhtml\Widget\Instance\Edit\Tab\Main;
+use Magento\Widget\Model\Widget\Instance;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class TabsTest extends \PHPUnit\Framework\TestCase
+class TabsTest extends TestCase
 {
     /**
      * @magentoAppIsolation enabled
      */
     public function testAddTab()
     {
-        /** @var $widgetInstance \Magento\Widget\Model\Widget\Instance */
-        $widgetInstance = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Widget\Model\Widget\Instance::class
+        /** @var $widgetInstance Instance */
+        $widgetInstance = Bootstrap::getObjectManager()->create(
+            Instance::class
         );
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $objectManager->get(\Magento\Framework\Registry::class)->register('current_widget_instance', $widgetInstance);
+        /** @var $objectManager ObjectManager */
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->get(Registry::class)->register('current_widget_instance', $widgetInstance);
 
-        /** @var $layout \Magento\Framework\View\Layout */
-        $layout = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
+        /** @var $layout Layout */
+        $layout = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
         );
-        /** @var $block \Magento\Backend\Block\Widget\Tabs */
-        $block = $layout->createBlock(\Magento\Backend\Block\Widget\Tabs::class, 'block');
-        $layout->addBlock(\Magento\Widget\Block\Adminhtml\Widget\Instance\Edit\Tab\Main::class, 'child_tab', 'block');
+        /** @var $block Tabs */
+        $block = $layout->createBlock(Tabs::class, 'block');
+        $layout->addBlock(Main::class, 'child_tab', 'block');
         $block->addTab('tab_id', 'child_tab');
 
         $this->assertEquals(['tab_id'], $block->getTabsIds());

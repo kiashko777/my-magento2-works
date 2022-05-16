@@ -3,31 +3,28 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Authorization\Model\ResourceModel\Role;
 
 use Magento\Authorization\Model\UserContextInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\User\Model\User;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Role collection test
  * @magentoAppArea Adminhtml
  */
-class CollectionTest extends \PHPUnit\Framework\TestCase
+class CollectionTest extends TestCase
 {
     /**
-     * @var \Magento\Authorization\Model\ResourceModel\Role\Collection
+     * @var Collection
      */
     protected $_collection;
 
-    protected function setUp(): void
-    {
-        $this->_collection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Authorization\Model\ResourceModel\Role\Collection::class
-        );
-    }
-
     public function testSetUserFilter()
     {
-        $user = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\User\Model\User::class);
+        $user = Bootstrap::getObjectManager()->create(User::class);
         $user->loadByUsername(\Magento\TestFramework\Bootstrap::ADMIN_NAME);
         $this->_collection->setUserFilter($user->getId(), UserContextInterface::USER_TYPE_ADMIN);
 
@@ -52,5 +49,12 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
             $this->assertArrayHasKey('value', $item);
             $this->assertArrayHasKey('label', $item);
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->_collection = Bootstrap::getObjectManager()->create(
+            Collection::class
+        );
     }
 }

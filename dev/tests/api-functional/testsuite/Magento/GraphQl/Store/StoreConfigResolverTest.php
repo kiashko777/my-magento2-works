@@ -27,14 +27,6 @@ class StoreConfigResolverTest extends GraphQlAbstract
     private $objectManager;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Store/_files/store.php
      * @throws NoSuchEntityException
      */
@@ -97,9 +89,10 @@ QUERY;
      */
     private function validateStoreConfig(
         StoreConfigInterface $storeConfig,
-        array $responseConfig,
-        Store $store
-    ): void {
+        array                $responseConfig,
+        Store                $store
+    ): void
+    {
         $this->assertEquals($storeConfig->getId(), $responseConfig['id']);
         $this->assertEquals($storeConfig->getCode(), $responseConfig['code']);
 
@@ -136,5 +129,13 @@ QUERY;
         $this->assertEquals($storeConfig->getSecureBaseStaticUrl(), $responseConfig['secure_base_static_url']);
         $this->assertEquals($storeConfig->getSecureBaseMediaUrl(), $responseConfig['secure_base_media_url']);
         $this->assertEquals($store->getName(), $responseConfig['store_name']);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

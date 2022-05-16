@@ -5,16 +5,21 @@
  */
 
 /** @var \Magento\Widget\Model\ResourceModel\Widget\Instance $resourceModel */
-$resourceModel = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
+
+use Magento\Framework\View\Design\ThemeInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Widget\Model\Widget\Instance;
+
+$resourceModel = Bootstrap::getObjectManager()
     ->get(\Magento\Widget\Model\ResourceModel\Widget\Instance::class);
 
-$model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->get(\Magento\Widget\Model\Widget\Instance::class);
+$model = Bootstrap::getObjectManager()
+    ->get(Instance::class);
 
 // Set default theme as work ground for MAGETWO-63643
-/** @var \Magento\Framework\View\Design\ThemeInterface $theme */
-$theme = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Framework\View\Design\ThemeInterface::class
+/** @var ThemeInterface $theme */
+$theme = Bootstrap::getObjectManager()->create(
+    ThemeInterface::class
 );
 $theme->load('Magento/luma', 'theme_path');
 

@@ -141,16 +141,6 @@ class DataObjectMethodReflection implements MethodReflection
     }
 
     /**
-     * Get prefix from method name.
-     *
-     * @return string
-     */
-    private function getMethodNamePrefix(): string
-    {
-        return (string)substr($this->methodName, 0, self::PREFIX_LENGTH);
-    }
-
-    /**
      * Get Magic Methods parameters.
      *
      * @return ParameterReflection[]
@@ -182,6 +172,16 @@ class DataObjectMethodReflection implements MethodReflection
         }
 
         return $params;
+    }
+
+    /**
+     * Get prefix from method name.
+     *
+     * @return string
+     */
+    private function getMethodNamePrefix(): string
+    {
+        return (string)substr($this->methodName, 0, self::PREFIX_LENGTH);
     }
 
     /**

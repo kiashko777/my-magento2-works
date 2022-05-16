@@ -6,12 +6,17 @@
 
 namespace Magento\Backend\Block\Page;
 
+use Magento\Framework\App\ProductMetadata;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
 /**
  * Test \Magento\Backend\Block\Page\Footer
  *
  * @magentoAppArea Adminhtml
  */
-class FooterTest extends \PHPUnit\Framework\TestCase
+class FooterTest extends TestCase
 {
     /**
      * Test Products Version Value
@@ -19,28 +24,9 @@ class FooterTest extends \PHPUnit\Framework\TestCase
     const TEST_PRODUCT_VERSION = '222.333.444';
 
     /**
-     * @var \Magento\Backend\Block\Page\Footer
+     * @var Footer
      */
     protected $block;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $productMetadataMock = $this->getMockBuilder(\Magento\Framework\App\ProductMetadata::class)
-            ->setMethods(['getVersion'])
-            ->disableOriginalConstructor()
-            ->getMock();
-        $productMetadataMock->expects($this->once())
-            ->method('getVersion')
-            ->willReturn($this::TEST_PRODUCT_VERSION);
-        $this->block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
-        )->createBlock(
-            \Magento\Backend\Block\Page\Footer::class,
-            '',
-            ['productMetadata' => $productMetadataMock]
-        );
-    }
 
     public function testToHtml()
     {
@@ -49,6 +35,25 @@ class FooterTest extends \PHPUnit\Framework\TestCase
             'ver. ' . $this::TEST_PRODUCT_VERSION,
             $footerContent,
             'No or wrong product version.'
+        );
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $productMetadataMock = $this->getMockBuilder(ProductMetadata::class)
+            ->setMethods(['getVersion'])
+            ->disableOriginalConstructor()
+            ->getMock();
+        $productMetadataMock->expects($this->once())
+            ->method('getVersion')
+            ->willReturn($this::TEST_PRODUCT_VERSION);
+        $this->block = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
+        )->createBlock(
+            Footer::class,
+            '',
+            ['productMetadata' => $productMetadataMock]
         );
     }
 }

@@ -26,12 +26,6 @@ class DataRetrieverTest extends TestCase
      */
     private $priceIndexerProcessor;
 
-    protected function setUp(): void
-    {
-        $this->dataRetriever = Bootstrap::getObjectManager()->create(DataRetriever::class);
-        $this->priceIndexerProcessor = Bootstrap::getObjectManager()->get(Processor::class);
-    }
-
     /**
      * Test retrieve products data for reports by entity id's
      * Do not use magentoDbIsolation because index statement changing "tears" transaction (triggers creating)
@@ -50,5 +44,11 @@ class DataRetrieverTest extends TestCase
         $this->assertNotEmpty($actualResult);
         $this->assertCount(1, $actualResult);
         $this->assertEquals(10, $actualResult[$productId]['price']);
+    }
+
+    protected function setUp(): void
+    {
+        $this->dataRetriever = Bootstrap::getObjectManager()->create(DataRetriever::class);
+        $this->priceIndexerProcessor = Bootstrap::getObjectManager()->get(Processor::class);
     }
 }

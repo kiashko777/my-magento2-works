@@ -45,16 +45,16 @@ class TextAreaAttributeTest extends AbstractAttributeTest
     /**
      * @inheritdic
      */
-    protected function getAttributeCode(): string
+    protected function getDefaultAttributeValue(): string
     {
-        return 'text_attribute';
+        return 'Default value for text area attribute';
     }
 
     /**
      * @inheritdic
      */
-    protected function getDefaultAttributeValue(): string
+    protected function getAttributeCode(): string
     {
-        return 'Default value for text area attribute';
+        return 'text_attribute';
     }
 }

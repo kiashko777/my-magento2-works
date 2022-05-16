@@ -3,26 +3,24 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Customer\Block\Address\Renderer;
 
+use Magento\Customer\Model\Address;
+use Magento\Customer\Model\Address\Config;
 use Magento\Eav\Model\AttributeDataFactory;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * DefaultRenderer
  */
-class DefaultRendererTest extends \PHPUnit\Framework\TestCase
+class DefaultRendererTest extends TestCase
 {
     /**
-     * @var \Magento\Customer\Model\Address\Config
+     * @var Config
      */
     protected $_addressConfig;
-
-    protected function setUp(): void
-    {
-        $this->_addressConfig = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Customer\Model\Address\Config::class
-        );
-    }
 
     /**
      * @dataProvider renderArrayDataProvider
@@ -96,8 +94,8 @@ class DefaultRendererTest extends \PHPUnit\Framework\TestCase
             'telephone' => '3468676',
         ];
 
-        $address = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Model\Address::class
+        $address = Bootstrap::getObjectManager()->create(
+            Address::class
         )->setData(
             $data
         );
@@ -127,5 +125,12 @@ United States|\nT: 3468676|\n|\n|"
 United States\nT: 3468676\n\n"
             ]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->_addressConfig = Bootstrap::getObjectManager()->get(
+            Config::class
+        );
     }
 }

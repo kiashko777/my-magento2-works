@@ -61,6 +61,13 @@ abstract class AbstractAddressFormTest extends TestCase
     }
 
     /**
+     * Get form block
+     *
+     * @return BlockInterface
+     */
+    abstract protected function getFormBlock(): BlockInterface;
+
+    /**
      * Check that all form values are filled according to address attributes values
      *
      * @param int $customerId
@@ -73,6 +80,28 @@ abstract class AbstractAddressFormTest extends TestCase
         foreach ($this->formAttributes as $attribute) {
             $this->assertEquals($address->getData($attribute), $form->getElement($attribute)->getValue());
         }
+    }
+
+    /**
+     * Get appropriate customer address
+     *
+     * @param int $customerId
+     * @return AddressModelInterface
+     */
+    abstract protected function getAddress(int $customerId): AddressModelInterface;
+
+    /**
+     * Prepare form
+     *
+     * @param int $customerId
+     * @return Form
+     */
+    private function prepareForm(int $customerId): Form
+    {
+        $quote = $this->quoteRepository->getForCustomer($customerId);
+        $this->form->getCreateOrderModel()->setQuote($quote);
+
+        return $this->form->getForm();
     }
 
     /**
@@ -93,33 +122,4 @@ abstract class AbstractAddressFormTest extends TestCase
             $this->assertNull($form->getElement($attribute)->getValue());
         }
     }
-
-    /**
-     * Prepare form
-     *
-     * @param int $customerId
-     * @return Form
-     */
-    private function prepareForm(int $customerId): Form
-    {
-        $quote = $this->quoteRepository->getForCustomer($customerId);
-        $this->form->getCreateOrderModel()->setQuote($quote);
-
-        return $this->form->getForm();
-    }
-
-    /**
-     * Get form block
-     *
-     * @return BlockInterface
-     */
-    abstract protected function getFormBlock(): BlockInterface;
-
-    /**
-     * Get appropriate customer address
-     *
-     * @param int $customerId
-     * @return AddressModelInterface
-     */
-    abstract protected function getAddress(int $customerId): AddressModelInterface;
 }

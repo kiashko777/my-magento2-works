@@ -7,6 +7,10 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Catalog;
 
+use Exception;
+use Magento\Catalog\Model\Category;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
 
 /**
@@ -29,7 +33,7 @@ class ReadCategoryAfterDeleteTest extends GraphQlAbstract
      * @param int $categoryToDelete
      * @param array $expectedResult
      * @return void
-     * @throws \Exception
+     * @throws Exception
      */
     public function testCategoryDelete($categoryToDelete, $expectedResult): void
     {
@@ -38,6 +42,27 @@ class ReadCategoryAfterDeleteTest extends GraphQlAbstract
         $query = $this->getQuery(400);
         $response = $this->graphQlQuery($query, [], '', ['store' => 'default']);
         $this->assertResponseFields($response, $expectedResult);
+    }
+
+    /**
+     * @param int $categoryId
+     * @return void
+     */
+    private function deleteCategory(int $categoryId): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $registry = $objectManager->get(Registry::class);
+        $registry->unregister('isSecureArea');
+        $registry->register('isSecureArea', true);
+
+        $category = $objectManager->create(Category::class);
+        $category->load($categoryId);
+        if ($category->getId()) {
+            $category->delete();
+        }
+
+        $registry->unregister('isSecureArea');
+        $registry->register('isSecureArea', false);
     }
 
     /**
@@ -62,27 +87,6 @@ class ReadCategoryAfterDeleteTest extends GraphQlAbstract
     }
 }
 QUERY;
-    }
-
-    /**
-     * @param int $categoryId
-     * @return void
-     */
-    private function deleteCategory(int $categoryId): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $registry = $objectManager->get(\Magento\Framework\Registry::class);
-        $registry->unregister('isSecureArea');
-        $registry->register('isSecureArea', true);
-
-        $category = $objectManager->create(\Magento\Catalog\Model\Category::class);
-        $category->load($categoryId);
-        if ($category->getId()) {
-            $category->delete();
-        }
-
-        $registry->unregister('isSecureArea');
-        $registry->register('isSecureArea', false);
     }
 
     /**

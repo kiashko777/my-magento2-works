@@ -3,32 +3,41 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Block\Adminhtml\Product\Helper\Form;
 
-class CategoryTest extends \PHPUnit\Framework\TestCase
+use Magento\Backend\App\Area\FrontNameResolver;
+use Magento\Framework\Authorization\Policy\DefaultPolicy;
+use Magento\Framework\AuthorizationInterface;
+use Magento\Framework\Data\FormFactory;
+use Magento\Framework\View\Layout;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class CategoryTest extends TestCase
 {
     /**
      * @magentoAppArea Adminhtml
      */
     public function testGetAfterElementHtml()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $layout = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\View\Layout::class,
-            ['area' => \Magento\Backend\App\Area\FrontNameResolver::AREA_CODE]
+        $objectManager = Bootstrap::getObjectManager();
+        $layout = Bootstrap::getObjectManager()->create(
+            Layout::class,
+            ['area' => FrontNameResolver::AREA_CODE]
         );
-        $authorization = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\AuthorizationInterface::class,
-            ['aclPolicy' =>  new \Magento\Framework\Authorization\Policy\DefaultPolicy()]
+        $authorization = Bootstrap::getObjectManager()->create(
+            AuthorizationInterface::class,
+            ['aclPolicy' => new DefaultPolicy()]
         );
 
         $block = $objectManager->create(
-            \Magento\Catalog\Block\Adminhtml\Product\Helper\Form\Category::class,
+            Category::class,
             ['layout' => $layout, 'authorization' => $authorization]
         );
 
-        /** @var $formFactory \Magento\Framework\Data\FormFactory */
-        $formFactory = $objectManager->get(\Magento\Framework\Data\FormFactory::class);
+        /** @var $formFactory FormFactory */
+        $formFactory = $objectManager->get(FormFactory::class);
         $form = $formFactory->create();
         $block->setForm($form);
 

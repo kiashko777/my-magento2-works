@@ -9,11 +9,34 @@
  *
  * @link http://php.net/manual/en/function.stream-filter-register.php
  */
+
 namespace Magento\Test\Profiler;
 
-class OutputBambooTestFilter extends \php_user_filter
+use php_user_filter;
+use PHPUnit\Framework\Assert;
+
+class OutputBambooTestFilter extends php_user_filter
 {
     private static $_collectedData = '';
+
+    public static function resetCollectedData()
+    {
+        self::$_collectedData = '';
+    }
+
+    /**
+     * Assert that collected data matches expected format
+     *
+     * @param string $expectedData
+     */
+    public static function assertCollectedData($expectedData)
+    {
+        Assert::assertStringMatchesFormat(
+            $expectedData,
+            self::$_collectedData,
+            'Expected data went through the stream.'
+        );
+    }
 
     /**
      * Collect intercepted data
@@ -35,24 +58,5 @@ class OutputBambooTestFilter extends \php_user_filter
             stream_bucket_append($out, $bucket);
         }
         return PSFS_PASS_ON;
-    }
-
-    public static function resetCollectedData()
-    {
-        self::$_collectedData = '';
-    }
-
-    /**
-     * Assert that collected data matches expected format
-     *
-     * @param string $expectedData
-     */
-    public static function assertCollectedData($expectedData)
-    {
-        \PHPUnit\Framework\Assert::assertStringMatchesFormat(
-            $expectedData,
-            self::$_collectedData,
-            'Expected data went through the stream.'
-        );
     }
 }

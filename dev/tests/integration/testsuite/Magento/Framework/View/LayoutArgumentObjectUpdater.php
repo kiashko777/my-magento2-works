@@ -3,18 +3,22 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\View;
+
+use Magento\Framework\Data\Collection;
+use Magento\Framework\View\Layout\Argument\UpdaterInterface;
 
 /**
  * Dummy layout argument updater model
  */
-class LayoutArgumentObjectUpdater implements \Magento\Framework\View\Layout\Argument\UpdaterInterface
+class LayoutArgumentObjectUpdater implements UpdaterInterface
 {
     /**
      * Update specified argument
      *
-     * @param \Magento\Framework\Data\Collection $argument
-     * @return \Magento\Framework\Data\Collection
+     * @param Collection $argument
+     * @return Collection
      */
     public function update($argument)
     {

@@ -8,6 +8,7 @@ namespace Magento\Translation\Controller;
 
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractController;
 use Magento\Translation\Model\ResourceModel\StringUtils;
 
 /**
@@ -15,8 +16,21 @@ use Magento\Translation\Model\ResourceModel\StringUtils;
  *
  * @magentoDbIsolation disabled
  */
-class AjaxTest extends \Magento\TestFramework\TestCase\AbstractController
+class AjaxTest extends AbstractController
 {
+    /**
+     * @inheritDoc
+     */
+    public static function tearDownAfterClass(): void
+    {
+        try {
+            Bootstrap::getObjectManager()->get(StringUtils::class)->deleteTranslate('phrase with &');
+        } catch (NoSuchEntityException $exception) {
+            //translate already deleted
+        }
+        parent::tearDownAfterClass();
+    }
+
     /**
      * @param array $postData
      * @param string $expected
@@ -67,18 +81,5 @@ class AjaxTest extends \Magento\TestFramework\TestCase\AbstractController
                 '[]',
             ],
         ];
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public static function tearDownAfterClass(): void
-    {
-        try {
-            Bootstrap::getObjectManager()->get(StringUtils::class)->deleteTranslate('phrase with &');
-        } catch (NoSuchEntityException $exception) {
-            //translate already deleted
-        }
-        parent::tearDownAfterClass();
     }
 }

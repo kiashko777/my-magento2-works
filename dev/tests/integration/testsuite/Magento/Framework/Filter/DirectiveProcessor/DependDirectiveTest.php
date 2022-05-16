@@ -31,22 +31,18 @@ class DependDirectiveTest extends TestCase
      */
     private $filter;
 
-    protected function setUp(): void
-    {
-        $objectManager = ObjectManager::getInstance();
-        $this->variableResolver = $objectManager->get(StrictResolver::class);
-        $this->filter = $objectManager->get(Template::class);
-        $this->processor = $objectManager->create(
-            DependDirective::class,
-            ['variableResolver' => $this->variableResolver]
-        );
-    }
-
     public function testFallbackWithNoVariables()
     {
         $template = 'blah {{depend foo}}blah{{/depend}} blah';
         $result = $this->processor->process($this->createConstruction($this->processor, $template), $this->filter, []);
         self::assertEquals('{{depend foo}}blah{{/depend}}', $result);
+    }
+
+    private function createConstruction(DependDirective $directive, string $value): array
+    {
+        preg_match($directive->getRegularExpression(), $value, $construction);
+
+        return $construction;
     }
 
     /**
@@ -66,19 +62,23 @@ class DependDirectiveTest extends TestCase
     public function useCasesProvider()
     {
         return [
-            ['foo',['foo' => true], true],
-            ['foo',['foo' => false], false],
-            ['foo.bar',['foo' => ['bar' => true]], true],
-            ['foo.bar',['foo' => ['bar' => false]], false],
-            ['foo.getBar().baz',['foo' => new DataObject(['bar' => ['baz' => true]])], true],
-            ['foo.getBar().baz',['foo' => new DataObject(['bar' => ['baz' => false]])], false],
+            ['foo', ['foo' => true], true],
+            ['foo', ['foo' => false], false],
+            ['foo.bar', ['foo' => ['bar' => true]], true],
+            ['foo.bar', ['foo' => ['bar' => false]], false],
+            ['foo.getBar().baz', ['foo' => new DataObject(['bar' => ['baz' => true]])], true],
+            ['foo.getBar().baz', ['foo' => new DataObject(['bar' => ['baz' => false]])], false],
         ];
     }
 
-    private function createConstruction(DependDirective $directive, string $value): array
+    protected function setUp(): void
     {
-        preg_match($directive->getRegularExpression(), $value, $construction);
-
-        return $construction;
+        $objectManager = ObjectManager::getInstance();
+        $this->variableResolver = $objectManager->get(StrictResolver::class);
+        $this->filter = $objectManager->get(Template::class);
+        $this->processor = $objectManager->create(
+            DependDirective::class,
+            ['variableResolver' => $this->variableResolver]
+        );
     }
 }

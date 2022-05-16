@@ -10,6 +10,7 @@ namespace Magento\SomeModule;
 use Magento\Framework\ObjectManagerInterface;
 
 require_once __DIR__ . '/Element.php';
+
 class ElementFactory
 {
     /**

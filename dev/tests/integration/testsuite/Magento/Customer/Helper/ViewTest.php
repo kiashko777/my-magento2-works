@@ -3,31 +3,27 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Customer\Helper;
 
 use Magento\Customer\Api\CustomerMetadataInterface;
+use Magento\Customer\Api\Data\AttributeMetadataInterface;
+use Magento\Customer\Api\Data\CustomerInterface;
+use Magento\Customer\Api\Data\CustomerInterfaceFactory;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
-class ViewTest extends \PHPUnit\Framework\TestCase
+class ViewTest extends TestCase
 {
-    /** @var \Magento\Customer\Helper\View */
+    /** @var View */
     protected $_helper;
 
-    /** @var CustomerMetadataInterface|\PHPUnit\Framework\MockObject\MockObject */
+    /** @var CustomerMetadataInterface|MockObject */
     protected $_customerMetadataService;
 
-    protected function setUp(): void
-    {
-        $this->_customerMetadataService = $this->createMock(\Magento\Customer\Api\CustomerMetadataInterface::class);
-        $this->_helper = Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Helper\View::class,
-            ['customerMetadataService' => $this->_customerMetadataService]
-        );
-        parent::setUp();
-    }
-
     /**
-     * @param \Magento\Customer\Api\Data\CustomerInterface $customerData
+     * @param CustomerInterface $customerData
      * @param string $expectedCustomerName
      * @param bool $isPrefixAllowed
      * @param bool $isMiddleNameAllowed
@@ -40,11 +36,12 @@ class ViewTest extends \PHPUnit\Framework\TestCase
         $isPrefixAllowed = false,
         $isMiddleNameAllowed = false,
         $isSuffixAllowed = false
-    ) {
-        $visibleAttribute = $this->createMock(\Magento\Customer\Api\Data\AttributeMetadataInterface::class);
+    )
+    {
+        $visibleAttribute = $this->createMock(AttributeMetadataInterface::class);
         $visibleAttribute->expects($this->any())->method('isVisible')->willReturn(true);
 
-        $invisibleAttribute = $this->createMock(\Magento\Customer\Api\Data\AttributeMetadataInterface::class);
+        $invisibleAttribute = $this->createMock(AttributeMetadataInterface::class);
         $invisibleAttribute->expects($this->any())->method('isVisible')->willReturn(false);
 
         $this->_customerMetadataService->expects(
@@ -68,9 +65,9 @@ class ViewTest extends \PHPUnit\Framework\TestCase
 
     public function getCustomerNameDataProvider()
     {
-        /** @var \Magento\Customer\Api\Data\CustomerInterfaceFactory $customerFactory */
+        /** @var CustomerInterfaceFactory $customerFactory */
         $customerFactory = Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Api\Data\CustomerInterfaceFactory::class
+            CustomerInterfaceFactory::class
         );
         return [
             'With disabled prefix, middle name, suffix' => [
@@ -135,5 +132,15 @@ class ViewTest extends \PHPUnit\Framework\TestCase
                 '&lt;h1&gt;FirstName&lt;/h1&gt; &lt;strong&gt;LastName&lt;/strong&gt;',
             ],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->_customerMetadataService = $this->createMock(CustomerMetadataInterface::class);
+        $this->_helper = Bootstrap::getObjectManager()->create(
+            View::class,
+            ['customerMetadataService' => $this->_customerMetadataService]
+        );
+        parent::setUp();
     }
 }

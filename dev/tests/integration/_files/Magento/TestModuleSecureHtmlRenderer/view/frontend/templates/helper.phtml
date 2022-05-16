@@ -4,10 +4,17 @@
  * See COPYING.txt for license details.
  */
 
-/** @var \Magento\Framework\View\Helper\SecureHtmlRenderer $secureRenderer */
+/** @var SecureHtmlRenderer $secureRenderer */
+
+use Magento\Framework\View\Helper\SecureHtmlRenderer;
+
 ?>
-<h1 <?= /* @noEscape */$secureRenderer->renderEventListener('onclick', 'alert()') ?>>Hello there!</h1>
-<?= /* @noEscape */ $secureRenderer->renderTag('script', ['src' => 'http://my.magento.com/static/script.js'], false); ?>
-<?= /* @noEscape */ $secureRenderer->renderTag('script', [], "\n    let myVar = 1;\n", false) ?>
-<?= /* @noEscape */ $secureRenderer->renderTag('div', [], 'I am just <a> text', true) ?>
+<h1 <?= /* @noEscape */
+$secureRenderer->renderEventListener('onclick', 'alert()') ?>>Hello there!</h1>
+<?= /* @noEscape */
+$secureRenderer->renderTag('script', ['src' => 'http://my.magento.com/static/script.js'], false); ?>
+<?= /* @noEscape */
+$secureRenderer->renderTag('script', [], "\n    let myVar = 1;\n", false) ?>
+<?= /* @noEscape */
+$secureRenderer->renderTag('div', [], 'I am just <a> text', true) ?>
 

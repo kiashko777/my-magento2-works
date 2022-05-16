@@ -7,33 +7,26 @@
 /**
  * Test class for \Magento\TestFramework\Bootstrap\Profiler.
  */
+
 namespace Magento\Test\Bootstrap;
 
-class ProfilerTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\Profiler\Driver\Standard;
+use Magento\Framework\Profiler\Driver\Standard\Output\Csvfile;
+use Magento\TestFramework\Bootstrap\Profiler;
+use Magento\TestFramework\Profiler\OutputBamboo;
+use PHPUnit\Framework\TestCase;
+
+class ProfilerTest extends TestCase
 {
     /**
-     * @var \Magento\TestFramework\Bootstrap\Profiler
+     * @var Profiler
      */
     protected $_object;
 
     /**
-     * @var \Magento\Framework\Profiler\Driver\Standard|PHPUnit\Framework\MockObject_MockObject
+     * @var Standard|PHPUnit\Framework\MockObject_MockObject
      */
     protected $_driver;
-
-    protected function setUp(): void
-    {
-        $this->expectOutputString('');
-        $this->_driver =
-            $this->createPartialMock(\Magento\Framework\Profiler\Driver\Standard::class, ['registerOutput']);
-        $this->_object = new \Magento\TestFramework\Bootstrap\Profiler($this->_driver);
-    }
-
-    protected function tearDown(): void
-    {
-        $this->_driver = null;
-        $this->_object = null;
-    }
 
     public function testRegisterFileProfiler()
     {
@@ -42,7 +35,7 @@ class ProfilerTest extends \PHPUnit\Framework\TestCase
         )->method(
             'registerOutput'
         )->with(
-            $this->isInstanceOf(\Magento\Framework\Profiler\Driver\Standard\Output\Csvfile::class)
+            $this->isInstanceOf(Csvfile::class)
         );
         $this->_object->registerFileProfiler('php://output');
     }
@@ -54,8 +47,22 @@ class ProfilerTest extends \PHPUnit\Framework\TestCase
         )->method(
             'registerOutput'
         )->with(
-            $this->isInstanceOf(\Magento\TestFramework\Profiler\OutputBamboo::class)
+            $this->isInstanceOf(OutputBamboo::class)
         );
         $this->_object->registerBambooProfiler('php://output', __DIR__ . '/_files/metrics.php');
+    }
+
+    protected function setUp(): void
+    {
+        $this->expectOutputString('');
+        $this->_driver =
+            $this->createPartialMock(Standard::class, ['registerOutput']);
+        $this->_object = new Profiler($this->_driver);
+    }
+
+    protected function tearDown(): void
+    {
+        $this->_driver = null;
+        $this->_object = null;
     }
 }

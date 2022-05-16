@@ -5,7 +5,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\TestCase\Webapi;
+
+use Magento\Integration\Model\Integration;
 
 interface AdapterInterface
 {
@@ -37,7 +40,7 @@ interface AdapterInterface
      * </pre>
      * @param array $arguments
      * @param string|null $storeCode if store code not provided, default store code will be used
-     * @param \Magento\Integration\Model\Integration|null $integration
+     * @param Integration|null $integration
      * @return array|string|int|float|bool
      */
     public function call($serviceInfo, $arguments = [], $storeCode = null, $integration = null);

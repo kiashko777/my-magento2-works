@@ -25,16 +25,6 @@ class LicenseTest extends TestCase
      */
     private $filesystemMock;
 
-    protected function setUp(): void
-    {
-        $this->directoryReadMock = $this->createMock(Read::class);
-        $this->filesystemMock = $this->createMock(Filesystem::class);
-        $this->filesystemMock
-            ->expects($this->once())
-            ->method('getDirectoryRead')
-            ->willReturn($this->directoryReadMock);
-    }
-
     public function testGetContents()
     {
         $this->directoryReadMock
@@ -59,5 +49,15 @@ class LicenseTest extends TestCase
 
         $license = new License($this->filesystemMock);
         $this->assertFalse($license->getContents());
+    }
+
+    protected function setUp(): void
+    {
+        $this->directoryReadMock = $this->createMock(Read::class);
+        $this->filesystemMock = $this->createMock(Filesystem::class);
+        $this->filesystemMock
+            ->expects($this->once())
+            ->method('getDirectoryRead')
+            ->willReturn($this->directoryReadMock);
     }
 }

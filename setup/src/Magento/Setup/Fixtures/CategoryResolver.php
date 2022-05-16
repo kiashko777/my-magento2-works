@@ -49,11 +49,12 @@ class CategoryResolver
      * @internal param Category $category
      */
     public function __construct(
-        StoreManager $storeManager,
-        CategoryFactory $categoryFactory,
+        StoreManager                $storeManager,
+        CategoryFactory             $categoryFactory,
         CategoryRepositoryInterface $categoryRepository,
-        CollectionFactory $collectionFactory
-    ) {
+        CollectionFactory           $collectionFactory
+    )
+    {
         $this->storeManager = $storeManager;
         $this->categoryFactory = $categoryFactory;
         $this->collectionFactory = $collectionFactory;

@@ -34,6 +34,44 @@ class AuthorizationTest extends TestCase
     private $categoryFactory;
 
     /**
+     * @magentoDataFixture Magento/Catalog/_files/category.php
+     *
+     * @return void
+     */
+    public function testAuthorizationWithoutPermissions(): void
+    {
+        $category = $this->createCategoryWithData(['entity_id' => 333, 'custom_use_parent_settings' => true]);
+        $this->expectException(AuthorizationException::class);
+        $this->expectExceptionMessage((string)__('Not allowed to edit the category\'s design attributes'));
+        $this->model->authorizeSavingOf($category);
+    }
+
+    /**
+     * Create category instance with provided data
+     *
+     * @param array $data
+     * @return CategoryInterface
+     */
+    private function createCategoryWithData(array $data): CategoryInterface
+    {
+        $category = $this->categoryFactory->create();
+        $category->addData($data);
+
+        return $category;
+    }
+
+    /**
+     * @return void
+     */
+    public function testAuthorizationWithWrongCategoryId(): void
+    {
+        $wrongCategoryId = 56464654;
+        $category = $this->createCategoryWithData(['entity_id' => $wrongCategoryId]);
+        $this->expectExceptionObject(NoSuchEntityException::singleField('id', $wrongCategoryId));
+        $this->model->authorizeSavingOf($category);
+    }
+
+    /**
      * @inheritdoc
      */
     protected function setUp(): void
@@ -57,43 +95,5 @@ class AuthorizationTest extends TestCase
         $this->objectManager->removeSharedInstance(Authorization::class);
 
         parent::tearDown();
-    }
-
-    /**
-     * @magentoDataFixture Magento/Catalog/_files/category.php
-     *
-     * @return void
-     */
-    public function testAuthorizationWithoutPermissions(): void
-    {
-        $category = $this->createCategoryWithData(['entity_id' => 333, 'custom_use_parent_settings' => true]);
-        $this->expectException(AuthorizationException::class);
-        $this->expectExceptionMessage((string)__('Not allowed to edit the category\'s design attributes'));
-        $this->model->authorizeSavingOf($category);
-    }
-
-    /**
-     * @return void
-     */
-    public function testAuthorizationWithWrongCategoryId(): void
-    {
-        $wrongCategoryId = 56464654;
-        $category = $this->createCategoryWithData(['entity_id' => $wrongCategoryId]);
-        $this->expectExceptionObject(NoSuchEntityException::singleField('id', $wrongCategoryId));
-        $this->model->authorizeSavingOf($category);
-    }
-
-    /**
-     * Create category instance with provided data
-     *
-     * @param array $data
-     * @return CategoryInterface
-     */
-    private function createCategoryWithData(array $data): CategoryInterface
-    {
-        $category = $this->categoryFactory->create();
-        $category->addData($data);
-
-        return $category;
     }
 }

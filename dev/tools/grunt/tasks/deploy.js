@@ -5,11 +5,11 @@
 module.exports = function (grunt) {
     'use strict';
 
-    var exec    = require('child_process').execSync,
-        spawn   = require('child_process').spawn,
-        log     = grunt.log.write,
-        ok      = grunt.log.ok,
-        error   = grunt.log.error;
+    var exec = require('child_process').execSync,
+        spawn = require('child_process').spawn,
+        log = grunt.log.write,
+        ok = grunt.log.ok,
+        error = grunt.log.error;
 
     grunt.registerTask('deploy', function () {
         var deploy,

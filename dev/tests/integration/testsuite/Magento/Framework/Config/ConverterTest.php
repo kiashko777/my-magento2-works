@@ -6,10 +6,14 @@
 
 namespace Magento\Framework\Config;
 
+use DOMDocument;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
 /**
  * Tests Magento\Framework\Config\Convert
  */
-class ConverterTest extends \PHPUnit\Framework\TestCase
+class ConverterTest extends TestCase
 {
     /**
      * @var Converter
@@ -25,7 +29,7 @@ class ConverterTest extends \PHPUnit\Framework\TestCase
      */
     public function testParseVarElement($sourceString, $expected)
     {
-        $document = new \DOMDocument();
+        $document = new DOMDocument();
         $document->loadXML($sourceString);
         $actual = $this->converter->convert($document);
 
@@ -44,14 +48,14 @@ class ConverterTest extends \PHPUnit\Framework\TestCase
     {
         $sourceString = <<<'XML'
 <?xml version="1.0"?>
-<view xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+<view xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 xsi:noNamespaceSchemaLocation="urn:magento:framework:Config/etc/view.xsd">
-    <vars module="Magento_Test">    
-        <var name="str">some string</var>  
-        <var name="int-1">1</var>        
-        <var name="int-0">0</var>        
-        <var name="bool-true">true</var> 
-        <var name="bool-false">false</var> 
+    <vars module="Magento_Test">
+        <var name="str">some string</var>
+        <var name="int-1">1</var>
+        <var name="int-0">0</var>
+        <var name="bool-true">true</var>
+        <var name="bool-false">false</var>
     </vars>
  </view>
 XML;
@@ -80,7 +84,7 @@ XML;
      */
     protected function setUp(): void
     {
-        $this->converter = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-              ->create(\Magento\Framework\Config\Converter::class);
+        $this->converter = Bootstrap::getObjectManager()
+            ->create(Converter::class);
     }
 }

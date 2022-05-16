@@ -3,7 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sitemap\Model\ResourceModel\Catalog;
+
+use Magento\Store\Model\Store;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\Sitemap\Model\ResourceModel\Catalog\Products.
@@ -12,7 +17,7 @@ namespace Magento\Sitemap\Model\ResourceModel\Catalog;
  * @magentoDataFixtureBeforeTransaction Magento/Catalog/_files/enable_reindex_schedule.php
  * @magentoDataFixture Magento/Sitemap/_files/sitemap_products.php
  */
-class ProductTest extends \PHPUnit\Framework\TestCase
+class ProductTest extends TestCase
 {
     /**
      * Base product image path
@@ -28,10 +33,10 @@ class ProductTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetCollectionNone()
     {
-        $model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Sitemap\Model\ResourceModel\Catalog\Product::class
+        $model = Bootstrap::getObjectManager()->create(
+            Product::class
         );
-        $products = $model->getCollection(\Magento\Store\Model\Store::DISTRO_STORE_ID);
+        $products = $model->getCollection(Store::DISTRO_STORE_ID);
 
         $this->_checkProductCollection($products, 3, [1, 4, 5]);
 
@@ -46,6 +51,31 @@ class ProductTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Check product collection
+     * 1) Check that all products are loaded
+     * 2) Check that products are loaded correctly and all required attributes present
+     *
+     * @param array $products
+     * @param int $expectedCount
+     * @param array $expectedKeys
+     */
+    protected function _checkProductCollection(array $products, $expectedCount, array $expectedKeys)
+    {
+        // Check all expected products were added into collection
+        $this->assertCount($expectedCount, $products, 'Number of loaded products is incorrect');
+        foreach ($expectedKeys as $expectedKey) {
+            $this->assertArrayHasKey($expectedKey, $products);
+        }
+
+        // Check all expected attributes are present
+        foreach ($products as $product) {
+            $this->assertNotEmpty($product->getUpdatedAt());
+            $this->assertNotEmpty($product->getId());
+            $this->assertNotEmpty($product->getUrl());
+        }
+    }
+
+    /**
      * Test getCollection All images
      * 1) Check thumbnails
      * 2) Check images loading
@@ -56,10 +86,10 @@ class ProductTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetCollectionAll()
     {
-        $model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Sitemap\Model\ResourceModel\Catalog\Product::class
+        $model = Bootstrap::getObjectManager()->create(
+            Product::class
         );
-        $products = $model->getCollection(\Magento\Store\Model\Store::DISTRO_STORE_ID);
+        $products = $model->getCollection(Store::DISTRO_STORE_ID);
 
         $this->_checkProductCollection($products, 3, [1, 4, 5]);
 
@@ -125,10 +155,10 @@ class ProductTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetCollectionBase()
     {
-        $model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Sitemap\Model\ResourceModel\Catalog\Product::class
+        $model = Bootstrap::getObjectManager()->create(
+            Product::class
         );
-        $products = $model->getCollection(\Magento\Store\Model\Store::DISTRO_STORE_ID);
+        $products = $model->getCollection(Store::DISTRO_STORE_ID);
 
         $this->_checkProductCollection($products, 3, [1, 4, 5]);
 
@@ -165,30 +195,5 @@ class ProductTest extends \PHPUnit\Framework\TestCase
         $this->assertEmpty($products[5]->getThumbnail(), 'thumbnail is not empty');
         $this->assertEquals('no_selection', $products[5]->getImage(), 'image is incorrect');
         $this->assertEmpty($products[5]->getImages(), 'Products images were loaded');
-    }
-
-    /**
-     * Check product collection
-     * 1) Check that all products are loaded
-     * 2) Check that products are loaded correctly and all required attributes present
-     *
-     * @param array $products
-     * @param int $expectedCount
-     * @param array $expectedKeys
-     */
-    protected function _checkProductCollection(array $products, $expectedCount, array $expectedKeys)
-    {
-        // Check all expected products were added into collection
-        $this->assertCount($expectedCount, $products, 'Number of loaded products is incorrect');
-        foreach ($expectedKeys as $expectedKey) {
-            $this->assertArrayHasKey($expectedKey, $products);
-        }
-
-        // Check all expected attributes are present
-        foreach ($products as $product) {
-            $this->assertNotEmpty($product->getUpdatedAt());
-            $this->assertNotEmpty($product->getId());
-            $this->assertNotEmpty($product->getUrl());
-        }
     }
 }

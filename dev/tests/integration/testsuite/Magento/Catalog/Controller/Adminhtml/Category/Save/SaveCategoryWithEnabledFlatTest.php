@@ -63,38 +63,6 @@ class SaveCategoryWithEnabledFlatTest extends AbstractSaveCategoryTest
     private $createdCategoryId;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->indexerRegistry = $this->_objectManager->get(IndexerRegistry::class);
-        $this->urlRewriteResource = $this->_objectManager->get(UrlRewriteResource::class);
-        $this->categoryRepository = $this->_objectManager->get(CategoryRepositoryInterface::class);
-        $this->categoryFlatIndexer = $this->_objectManager->get(Flat::class);
-        $this->categoryFlatResource = $this->_objectManager->get(CategoryFlatResource::class);
-        $this->categoryFlatCollectionFactory = $this->_objectManager->get(CollectionFactory::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        parent::tearDown();
-        $categoryFlatIndexer = $this->indexerRegistry->get(State::INDEXER_ID);
-        $categoryFlatIndexer->invalidate();
-        $this->categoryFlatResource->getConnection()->dropTable($this->categoryFlatResource->getMainTable());
-        $this->deleteAllCategoryUrlRewrites();
-        try {
-            $this->categoryRepository->deleteByIdentifier($this->createdCategoryId);
-        } catch (NoSuchEntityException $e) {
-            //Category already deleted.
-        }
-        $this->createdCategoryId = null;
-    }
-
-    /**
      * Assert that category flat table is created and flat table contain category with created child category.
      *
      * @magentoDataFixture Magento/Catalog/_files/category.php
@@ -249,6 +217,38 @@ class SaveCategoryWithEnabledFlatTest extends AbstractSaveCategoryTest
                 ],
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->indexerRegistry = $this->_objectManager->get(IndexerRegistry::class);
+        $this->urlRewriteResource = $this->_objectManager->get(UrlRewriteResource::class);
+        $this->categoryRepository = $this->_objectManager->get(CategoryRepositoryInterface::class);
+        $this->categoryFlatIndexer = $this->_objectManager->get(Flat::class);
+        $this->categoryFlatResource = $this->_objectManager->get(CategoryFlatResource::class);
+        $this->categoryFlatCollectionFactory = $this->_objectManager->get(CollectionFactory::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+        $categoryFlatIndexer = $this->indexerRegistry->get(State::INDEXER_ID);
+        $categoryFlatIndexer->invalidate();
+        $this->categoryFlatResource->getConnection()->dropTable($this->categoryFlatResource->getMainTable());
+        $this->deleteAllCategoryUrlRewrites();
+        try {
+            $this->categoryRepository->deleteByIdentifier($this->createdCategoryId);
+        } catch (NoSuchEntityException $e) {
+            //Category already deleted.
+        }
+        $this->createdCategoryId = null;
     }
 
     /**

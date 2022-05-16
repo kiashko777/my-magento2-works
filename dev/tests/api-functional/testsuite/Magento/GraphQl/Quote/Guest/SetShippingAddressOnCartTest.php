@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Quote\Guest;
 
+use Exception;
 use Magento\GraphQl\Quote\GetMaskedQuoteIdByReservedOrderId;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
@@ -20,12 +21,6 @@ class SetShippingAddressOnCartTest extends GraphQlAbstract
      * @var GetMaskedQuoteIdByReservedOrderId
      */
     private $getMaskedQuoteIdByReservedOrderId;
-
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-    }
 
     /**
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
@@ -89,6 +84,29 @@ QUERY;
     }
 
     /**
+     * Verify the all the whitelisted fields for a New Address Object
+     *
+     * @param array $shippingAddressResponse
+     */
+    private function assertNewShippingAddressFields(array $shippingAddressResponse): void
+    {
+        $assertionMap = [
+            ['response_field' => 'firstname', 'expected_value' => 'test firstname'],
+            ['response_field' => 'lastname', 'expected_value' => 'test lastname'],
+            ['response_field' => 'company', 'expected_value' => 'test company'],
+            ['response_field' => 'street', 'expected_value' => [0 => 'test street 1', 1 => 'test street 2']],
+            ['response_field' => 'city', 'expected_value' => 'test city'],
+            ['response_field' => 'postcode', 'expected_value' => '887766'],
+            ['response_field' => 'telephone', 'expected_value' => '88776655'],
+            ['response_field' => 'country', 'expected_value' => ['code' => 'US', 'label' => 'US']],
+            ['response_field' => '__typename', 'expected_value' => 'ShippingCartAddress'],
+            ['response_field' => 'customer_notes', 'expected_value' => 'Test note']
+        ];
+
+        $this->assertResponseFields($shippingAddressResponse, $assertionMap);
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Catalog/_files/product_virtual.php
      * @magentoApiDataFixture Magento/GraphQl/Quote/_files/guest/create_empty_cart.php
      * @magentoApiDataFixture Magento/GraphQl/Quote/_files/add_virtual_product.php
@@ -96,7 +114,7 @@ QUERY;
      */
     public function testSetNewShippingAddressOnCartWithVirtualProduct()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Shipping address is not allowed on cart: cart contains no items for shipment.');
 
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
@@ -143,7 +161,7 @@ QUERY;
      */
     public function testSetShippingAddressFromAddressBook()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('The current customer isn\'t authorized.');
 
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
@@ -181,7 +199,7 @@ QUERY;
      */
     public function testSetShippingAddressToCustomerCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
 
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
 
@@ -262,7 +280,7 @@ QUERY;
      */
     public function testSetMultipleNewShippingAddresses()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('You cannot specify multiple shipping addresses.');
 
         $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
@@ -317,7 +335,7 @@ QUERY;
      */
     public function testSetShippingAddressOnNonExistentCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Could not find a cart with ID "non_existent_masked_id"');
 
         $maskedQuoteId = 'non_existent_masked_id';
@@ -456,26 +474,9 @@ QUERY;
         $this->assertEquals('CA', $address['region']['code']);
     }
 
-    /**
-     * Verify the all the whitelisted fields for a New Address Object
-     *
-     * @param array $shippingAddressResponse
-     */
-    private function assertNewShippingAddressFields(array $shippingAddressResponse): void
+    protected function setUp(): void
     {
-        $assertionMap = [
-            ['response_field' => 'firstname', 'expected_value' => 'test firstname'],
-            ['response_field' => 'lastname', 'expected_value' => 'test lastname'],
-            ['response_field' => 'company', 'expected_value' => 'test company'],
-            ['response_field' => 'street', 'expected_value' => [0 => 'test street 1', 1 => 'test street 2']],
-            ['response_field' => 'city', 'expected_value' => 'test city'],
-            ['response_field' => 'postcode', 'expected_value' => '887766'],
-            ['response_field' => 'telephone', 'expected_value' => '88776655'],
-            ['response_field' => 'country', 'expected_value' => ['code' => 'US', 'label' => 'US']],
-            ['response_field' => '__typename', 'expected_value' => 'ShippingCartAddress'],
-            ['response_field' => 'customer_notes', 'expected_value' => 'Test note']
-        ];
-
-        $this->assertResponseFields($shippingAddressResponse, $assertionMap);
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
     }
 }

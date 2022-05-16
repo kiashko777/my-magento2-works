@@ -3,8 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Service\V1;
 
+use Exception;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Sales\Model\ResourceModel\Order\Creditmemo\Collection;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
@@ -23,21 +28,21 @@ class CreditmemoCancelTest extends WebapiAbstract
      */
     public function testCreditmemoCancel()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('You can not cancel Credit Memo');
 
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
 
-        /** @var \Magento\Sales\Model\ResourceModel\Order\Creditmemo\Collection $creditmemoCollection */
+        /** @var Collection $creditmemoCollection */
         $creditmemoCollection = $objectManager->get(
-            \Magento\Sales\Model\ResourceModel\Order\Creditmemo\Collection::class
+            Collection::class
         );
         $creditmemo = $creditmemoCollection->getFirstItem();
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/creditmemo/' . $creditmemo->getId(),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,

@@ -7,23 +7,25 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Controller\Adminhtml;
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Attribute\Backend\LayoutUpdate;
-use Magento\Framework\Acl\Builder;
-use Magento\Framework\App\Request\DataPersistorInterface;
-use Magento\Framework\Message\Manager;
-use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Catalog\Model\Product\Attribute\LayoutUpdateManager;
+use Magento\Catalog\Model\Product\Type;
 use Magento\Catalog\Model\ProductRepository;
 use Magento\Catalog\Model\ProductRepositoryFactory;
+use Magento\Catalog\Model\ResourceModel\Product as ProductResource;
+use Magento\Framework\Acl\Builder;
+use Magento\Framework\App\Request\DataPersistorInterface;
+use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\Message\Manager;
 use Magento\Framework\Message\MessageInterface;
 use Magento\TestFramework\Catalog\Model\ProductLayoutUpdateManager;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Catalog\Model\ResourceModel\Product as ProductResource;
-use Magento\Catalog\Model\Product;
+use Magento\TestFramework\Helper\Xpath;
 use Magento\TestFramework\TestCase\AbstractBackendController;
-use Magento\Catalog\Model\Product\Attribute\LayoutUpdateManager;
-use Magento\Catalog\Model\Product\Type;
-use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\Catalog\Model\Category;
+use Throwable;
 
 /**
  * Test class for Products Adminhtml actions
@@ -52,25 +54,6 @@ class ProductTest extends AbstractBackendController
      * @var ProductRepositoryInterface
      */
     private $productRepository;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        Bootstrap::getObjectManager()->configure([
-            'preferences' => [
-                LayoutUpdateManager::class =>
-                    ProductLayoutUpdateManager::class
-            ]
-        ]);
-        parent::setUp();
-
-        $this->aclBuilder = Bootstrap::getObjectManager()->get(Builder::class);
-        $this->repositoryFactory = Bootstrap::getObjectManager()->get(ProductRepositoryFactory::class);
-        $this->resourceModel = Bootstrap::getObjectManager()->get(ProductResource::class);
-        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
-    }
 
     /**
      * Test calling save with invalid product's ID.
@@ -131,6 +114,26 @@ class ProductTest extends AbstractBackendController
     }
 
     /**
+     * Dispatch Save&Duplicate action and check it
+     *
+     * @param Product $product
+     */
+    private function assertSaveAndDuplicateAction(Product $product)
+    {
+        $this->getRequest()->setPostValue(['back' => 'duplicate']);
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
+        $this->dispatch('backend/catalog/product/save/id/' . $product->getEntityId());
+        $this->assertSessionMessages(
+            $this->containsEqual('You saved the product.'),
+            MessageInterface::TYPE_SUCCESS
+        );
+        $this->assertSessionMessages(
+            $this->containsEqual('You duplicated the product.'),
+            MessageInterface::TYPE_SUCCESS
+        );
+    }
+
+    /**
      * Tests of saving and duplicating existing product after the script execution.
      *
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
@@ -162,7 +165,7 @@ class ProductTest extends AbstractBackendController
 
         $this->assertEquals(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//*[@id="add_new_product"]',
                 $body
             ),
@@ -170,7 +173,7 @@ class ProductTest extends AbstractBackendController
         );
         $this->assertEquals(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//*[@id="add_new_product-button"]',
                 $body
             ),
@@ -178,7 +181,7 @@ class ProductTest extends AbstractBackendController
         );
         $this->assertEquals(
             0,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//*[@id="add_new_product-button" and contains(@class,"disabled")]',
                 $body
             ),
@@ -186,7 +189,7 @@ class ProductTest extends AbstractBackendController
         );
         $this->assertEquals(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//*[@id="add_new_product"]/*[contains(@class,"action-toggle")]',
                 $body
             ),
@@ -209,7 +212,7 @@ class ProductTest extends AbstractBackendController
 
         $this->assertEquals(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//*[@id="save-button"]',
                 $body
             ),
@@ -218,7 +221,7 @@ class ProductTest extends AbstractBackendController
 
         $this->assertEquals(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//*[@id="save_and_new"]',
                 $body
             ),
@@ -227,7 +230,7 @@ class ProductTest extends AbstractBackendController
 
         $this->assertEquals(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//*[@id="save_and_duplicate"]',
                 $body
             ),
@@ -349,6 +352,24 @@ class ProductTest extends AbstractBackendController
     }
 
     /**
+     * Return product data for test without entity_id for further save
+     *
+     * @param array $tierPrice
+     * @return array
+     */
+    private function getProductData(array $tierPrice)
+    {
+        /** @var ProductRepository $repo */
+        $repo = $this->repositoryFactory->create();
+        $product = $repo->get('tier_prices')->getData();
+        $product['tier_price'] = $tierPrice;
+        $product['entity_id'] = null;
+        /** @phpstan-ignore-next-line */
+        unset($product['entity_id']);
+        return $product;
+    }
+
+    /**
      * Provide test data for testSaveActionWithAlreadyExistingUrlKey().
      *
      * @return array
@@ -414,29 +435,11 @@ class ProductTest extends AbstractBackendController
     }
 
     /**
-     * Return product data for test without entity_id for further save
-     *
-     * @param array $tierPrice
-     * @return array
-     */
-    private function getProductData(array $tierPrice)
-    {
-        /** @var ProductRepository $repo */
-        $repo = $this->repositoryFactory->create();
-        $product = $repo->get('tier_prices')->getData();
-        $product['tier_price'] = $tierPrice;
-        $product['entity_id'] = null;
-        /** @phpstan-ignore-next-line */
-        unset($product['entity_id']);
-        return $product;
-    }
-
-    /**
      * Check whether additional authorization is required for the design fields.
      *
      * @magentoDbIsolation enabled
-     * @throws \Throwable
      * @return void
+     * @throws Throwable
      */
     public function testSaveDesign(): void
     {
@@ -495,8 +498,8 @@ class ProductTest extends AbstractBackendController
      * Save design without the permissions but with default values.
      *
      * @magentoDbIsolation enabled
-     * @throws \Throwable
      * @return void
+     * @throws Throwable
      */
     public function testSaveDesignWithDefaults(): void
     {
@@ -545,8 +548,8 @@ class ProductTest extends AbstractBackendController
      *
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
      * @magentoDbIsolation disabled
-     * @throws \Throwable
      * @return void
+     * @throws Throwable
      */
     public function testSaveCustomLayout(): void
     {
@@ -596,26 +599,6 @@ class ProductTest extends AbstractBackendController
         $repo = $this->repositoryFactory->create();
         $product = $repo->get('simple');
         $this->assertEquals($file, $product->getData('custom_layout_update_file'));
-    }
-
-    /**
-     * Dispatch Save&Duplicate action and check it
-     *
-     * @param Product $product
-     */
-    private function assertSaveAndDuplicateAction(Product $product)
-    {
-        $this->getRequest()->setPostValue(['back' => 'duplicate']);
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
-        $this->dispatch('backend/catalog/product/save/id/' . $product->getEntityId());
-        $this->assertSessionMessages(
-            $this->containsEqual('You saved the product.'),
-            MessageInterface::TYPE_SUCCESS
-        );
-        $this->assertSessionMessages(
-            $this->containsEqual('You duplicated the product.'),
-            MessageInterface::TYPE_SUCCESS
-        );
     }
 
     /**
@@ -704,5 +687,24 @@ class ProductTest extends AbstractBackendController
             $this->equalTo([(string)__('You saved the product.')]),
             MessageInterface::TYPE_SUCCESS
         );
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        Bootstrap::getObjectManager()->configure([
+            'preferences' => [
+                LayoutUpdateManager::class =>
+                    ProductLayoutUpdateManager::class
+            ]
+        ]);
+        parent::setUp();
+
+        $this->aclBuilder = Bootstrap::getObjectManager()->get(Builder::class);
+        $this->repositoryFactory = Bootstrap::getObjectManager()->get(ProductRepositoryFactory::class);
+        $this->resourceModel = Bootstrap::getObjectManager()->get(ProductResource::class);
+        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
     }
 }

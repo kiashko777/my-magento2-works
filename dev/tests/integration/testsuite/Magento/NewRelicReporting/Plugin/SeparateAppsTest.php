@@ -9,26 +9,19 @@ namespace Magento\NewRelicReporting\Plugin;
 
 use Magento\Framework\App\State;
 use Magento\NewRelicReporting\Model\NewRelicWrapper;
-use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class SeparateAppsTest
  */
-class SeparateAppsTest extends \PHPUnit\Framework\TestCase
+class SeparateAppsTest extends TestCase
 {
     /**
      * @var ObjectManager
      */
     private $objectManager;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoConfigFixture default/newrelicreporting/general/enable 1
@@ -72,5 +65,13 @@ class SeparateAppsTest extends \PHPUnit\Framework\TestCase
         $state = $this->objectManager->get(State::class);
 
         $state->setAreaCode('90210');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

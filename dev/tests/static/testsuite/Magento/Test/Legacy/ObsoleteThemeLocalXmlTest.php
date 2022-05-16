@@ -7,11 +7,13 @@
 /**
  * Legacy tests to find themes non-modular local.xml files declaration
  */
+
 namespace Magento\Test\Legacy;
 
 use Magento\Framework\Component\ComponentRegistrar;
+use PHPUnit\Framework\TestCase;
 
-class ObsoleteThemeLocalXmlTest extends \PHPUnit\Framework\TestCase
+class ObsoleteThemeLocalXmlTest extends TestCase
 {
     public function testLocalXmlFilesAbsent()
     {

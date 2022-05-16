@@ -3,33 +3,38 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogInventory\Model\Quote\Item;
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use Magento\CatalogInventory\Api\Data\StockItemInterface;
+use Magento\CatalogInventory\Model\Quote\Item\QuantityValidator\Initializer\Option;
 use Magento\CatalogInventory\Model\Stock\StockItemRepository;
 use Magento\CatalogInventory\Model\StockState;
 use Magento\CatalogInventory\Observer\QuantityValidatorObserver;
+use Magento\Checkout\Model\Session;
 use Magento\Eav\Model\Config;
+use Magento\Framework\DataObject;
+use Magento\Framework\Event;
+use Magento\Framework\Event\Observer;
 use Magento\Framework\Exception\CouldNotSaveException;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Quote\Api\Data\CartInterface;
 use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\Quote\Item;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\CatalogInventory\Model\Quote\Item\QuantityValidator\Initializer\Option;
-use Magento\Framework\Event\Observer;
-use Magento\Framework\Event;
-use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\Framework\DataObject;
-use Magento\Checkout\Model\Session;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class QuantityValidatorTest
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class QuantityValidatorTest extends \PHPUnit\Framework\TestCase
+class QuantityValidatorTest extends TestCase
 {
     /**
      * @var QuantityValidator
@@ -37,60 +42,34 @@ class QuantityValidatorTest extends \PHPUnit\Framework\TestCase
     private $quantityValidator;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     private $observerMock;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     private $eventMock;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     private $optionInitializer;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     private $stockState;
 
     /**
-     * @var \Magento\CatalogInventory\Observer\QuantityValidatorObserver
+     * @var QuantityValidatorObserver
      */
     private $observer;
-
-    /**
-     * Set up
-     */
-    protected function setUp(): void
-    {
-        /** @var \Magento\Framework\ObjectManagerInterface objectManager */
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->observerMock = $this->createMock(Observer::class);
-        $this->optionInitializer = $this->createMock(Option::class);
-        $this->stockState = $this->createMock(StockState::class);
-        $this->quantityValidator = $this->objectManager->create(
-            QuantityValidator::class,
-            [
-                'optionInitializer' => $this->optionInitializer,
-                'stockState' => $this->stockState
-            ]
-        );
-        $this->observer = $this->objectManager->create(
-            QuantityValidatorObserver::class,
-            [
-                'quantityValidator' => $this->quantityValidator
-            ]
-        );
-        $this->eventMock = $this->createPartialMock(Event::class, ['getItem']);
-    }
 
     /**
      * @magentoDataFixture Magento/Checkout/_files/quote_with_bundle_product.php
@@ -99,16 +78,16 @@ class QuantityValidatorTest extends \PHPUnit\Framework\TestCase
      */
     public function testQuoteWithOptions()
     {
-        /** @var $session \Magento\Checkout\Model\Session  */
+        /** @var $session Session */
         $session = $this->objectManager->create(Session::class);
 
-        /** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
+        /** @var ProductRepositoryInterface $productRepository */
         $productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
         /** @var $product Product */
         $product = $productRepository->get('bundle-product');
         $resultMock = $this->createMock(DataObject::class);
         $this->stockState->expects($this->any())->method('checkQtyIncrements')->willReturn($resultMock);
-        /* @var $quoteItem \Magento\Quote\Model\Quote\Item */
+        /* @var $quoteItem Item */
         $quoteItem = $this->_getQuoteItemIdByProductId($session->getQuote(), $product->getId());
         $this->observerMock->expects($this->once())->method('getEvent')->willReturn($this->eventMock);
         $this->optionInitializer->expects($this->any())->method('initialize')->willReturn($resultMock);
@@ -118,19 +97,38 @@ class QuantityValidatorTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Gets \Magento\Quote\Model\Quote\Item from \Magento\Quote\Model\Quote by product id
+     *
+     * @param Quote $quote
+     * @param int $productId
+     * @return Item
+     */
+    private function _getQuoteItemIdByProductId($quote, $productId)
+    {
+        /** @var $quoteItems Item[] */
+        $quoteItems = $quote->getAllItems();
+        foreach ($quoteItems as $quoteItem) {
+            if ($productId == $quoteItem->getProductId()) {
+                return $quoteItem;
+            }
+        }
+        $this->fail('Test failed since no quoteItem found by productId ' . $productId);
+    }
+
+    /**
      * @magentoDataFixture Magento/Checkout/_files/quote_with_bundle_product.php
      * @magentoDbIsolation disabled
      * @magentoAppIsolation enabled
      */
     public function testQuoteWithOptionsWithErrors()
     {
-        /** @var $session \Magento\Checkout\Model\Session  */
+        /** @var $session Session */
         $session = $this->objectManager->create(Session::class);
-        /** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
+        /** @var ProductRepositoryInterface $productRepository */
         $productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
         /** @var $product Product */
         $product = $productRepository->get('bundle-product');
-        /* @var $quoteItem \Magento\Quote\Model\Quote\Item */
+        /* @var $quoteItem Item */
         $quoteItem = $this->_getQuoteItemIdByProductId($session->getQuote(), $product->getId());
         $resultMock = $this->createPartialMock(
             DataObject::class,
@@ -150,8 +148,8 @@ class QuantityValidatorTest extends \PHPUnit\Framework\TestCase
      * Set mock of Stock State Result to Quote Item Options.
      *
      *
-     * @param \Magento\Quote\Model\Quote\Item $quoteItem
-     * @param \PHPUnit\Framework\MockObject\MockObject $resultMock
+     * @param Item $quoteItem
+     * @param MockObject $resultMock
      */
     private function setMockStockStateResultToQuoteItemOptions($quoteItem, $resultMock)
     {
@@ -258,21 +256,28 @@ class QuantityValidatorTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Gets \Magento\Quote\Model\Quote\Item from \Magento\Quote\Model\Quote by product id
-     *
-     * @param Quote $quote
-     * @param int $productId
-     * @return \Magento\Quote\Model\Quote\Item
+     * Set up
      */
-    private function _getQuoteItemIdByProductId($quote, $productId)
+    protected function setUp(): void
     {
-        /** @var $quoteItems \Magento\Quote\Model\Quote\Item[] */
-        $quoteItems = $quote->getAllItems();
-        foreach ($quoteItems as $quoteItem) {
-            if ($productId == $quoteItem->getProductId()) {
-                return $quoteItem;
-            }
-        }
-        $this->fail('Test failed since no quoteItem found by productId '.$productId);
+        /** @var ObjectManagerInterface objectManager */
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->observerMock = $this->createMock(Observer::class);
+        $this->optionInitializer = $this->createMock(Option::class);
+        $this->stockState = $this->createMock(StockState::class);
+        $this->quantityValidator = $this->objectManager->create(
+            QuantityValidator::class,
+            [
+                'optionInitializer' => $this->optionInitializer,
+                'stockState' => $this->stockState
+            ]
+        );
+        $this->observer = $this->objectManager->create(
+            QuantityValidatorObserver::class,
+            [
+                'quantityValidator' => $this->quantityValidator
+            ]
+        );
+        $this->eventMock = $this->createPartialMock(Event::class, ['getItem']);
     }
 }

@@ -8,8 +8,8 @@ declare(strict_types=1);
 namespace Magento\TestModuleUps\Model;
 
 use Magento\Framework\Exception\NotFoundException;
-use Magento\Framework\Module\Dir;
 use Magento\Framework\Filesystem\Io\File;
+use Magento\Framework\Module\Dir;
 
 /**
  * Load mock response body for UPS rate request
@@ -33,9 +33,10 @@ class MockResponseBodyLoader
      * @param File $fileIo
      */
     public function __construct(
-        Dir $moduleDirectory,
+        Dir  $moduleDirectory,
         File $fileIo
-    ) {
+    )
+    {
         $this->moduleDirectory = $moduleDirectory;
         $this->fileIo = $fileIo;
     }

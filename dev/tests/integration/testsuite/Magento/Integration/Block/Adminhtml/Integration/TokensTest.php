@@ -8,24 +8,19 @@
 namespace Magento\Integration\Block\Adminhtml\Integration;
 
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\Integration\Block\Adminhtml\Integration\Tokens
  *
  * @magentoAppArea Adminhtml
  */
-class TokensTest extends \PHPUnit\Framework\TestCase
+class TokensTest extends TestCase
 {
     /**
-     * @var \Magento\Integration\Block\Adminhtml\Integration\Tokens
+     * @var Tokens
      */
     protected $tokensBlock;
-
-    protected function setUp(): void
-    {
-        $this->tokensBlock = Bootstrap::getObjectManager()
-            ->create(\Magento\Integration\Block\Adminhtml\Integration\Tokens::class);
-    }
 
     public function testGetFormFields()
     {
@@ -97,5 +92,11 @@ class TokensTest extends \PHPUnit\Framework\TestCase
             $htmlContent,
             "HTML content of token block should contain information about 'Access Token Secret'."
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->tokensBlock = Bootstrap::getObjectManager()
+            ->create(Tokens::class);
     }
 }

@@ -4,10 +4,18 @@
  * See COPYING.txt for license details.
  */
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\Catalog\Api\Data\ProductCustomOptionInterface;
+use Magento\Catalog\Api\Data\ProductCustomOptionInterfaceFactory;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var $product \Magento\Catalog\Model\Product */
-$product = $objectManager->create(\Magento\Catalog\Model\Product::class);
+$objectManager = Bootstrap::getObjectManager();
+
+/** @var $product Product */
+$product = $objectManager->create(Product::class);
 
 $product->setTypeId(
     'simple'
@@ -28,9 +36,9 @@ $product->setTypeId(
 )->setMetaDescription(
     'meta description'
 )->setVisibility(
-    \Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH
+    Visibility::VISIBILITY_BOTH
 )->setStatus(
-    \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED
+    Status::STATUS_ENABLED
 )->setCanSaveCustomOptions(
     true
 )->setStockData(
@@ -194,11 +202,11 @@ $options = [
 
 $customOptions = [];
 
-/** @var \Magento\Catalog\Api\Data\ProductCustomOptionInterfaceFactory $customOptionFactory */
-$customOptionFactory = $objectManager->create(\Magento\Catalog\Api\Data\ProductCustomOptionInterfaceFactory::class);
+/** @var ProductCustomOptionInterfaceFactory $customOptionFactory */
+$customOptionFactory = $objectManager->create(ProductCustomOptionInterfaceFactory::class);
 
 foreach ($options as $option) {
-    /** @var \Magento\Catalog\Api\Data\ProductCustomOptionInterface $customOption */
+    /** @var ProductCustomOptionInterface $customOption */
     $customOption = $customOptionFactory->create(['data' => $option]);
     $customOption->setProductSku($product->getSku());
 
@@ -207,6 +215,6 @@ foreach ($options as $option) {
 
 $product->setOptions($customOptions);
 
-/** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepositoryFactory */
-$productRepository = $objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+/** @var ProductRepositoryInterface $productRepositoryFactory */
+$productRepository = $objectManager->create(ProductRepositoryInterface::class);
 $productRepository->save($product);

@@ -3,11 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Stdlib\DateTime\Filter;
 
+use Magento\Framework\Locale\ResolverInterface;
+use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
-class DateTimeTest extends \PHPUnit\Framework\TestCase
+class DateTimeTest extends TestCase
 {
     /**
      * @var ObjectManager
@@ -15,34 +20,19 @@ class DateTimeTest extends \PHPUnit\Framework\TestCase
     private $objectManager;
 
     /**
-     * @var \Magento\Framework\Locale\ResolverInterface
+     * @var ResolverInterface
      */
     private $localeResolver;
 
     /**
-     * @var \Magento\Framework\Stdlib\DateTime\TimezoneInterface
+     * @var TimezoneInterface
      */
     private $localeDate;
 
     /**
-     * @var \Magento\Framework\Stdlib\DateTime\Filter\DateTime
+     * @var DateTime
      */
     private $dateTimeFilter;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-
-        $this->localeResolver = $this->objectManager->get(\Magento\Framework\Locale\ResolverInterface::class);
-
-        $this->localeDate = $this->objectManager->get(\Magento\Framework\Stdlib\DateTime\TimezoneInterface::class, [
-            'localeResolver' => $this->localeResolver
-        ]);
-
-        $this->dateTimeFilter = $this->objectManager->get(\Magento\Framework\Stdlib\DateTime\Filter\DateTime::class, [
-            'localeDate' => $this->localeDate
-        ]);
-    }
 
     /**
      * @param string $locale
@@ -80,5 +70,20 @@ class DateTimeTest extends \PHPUnit\Framework\TestCase
             ['en_US', '2017-09-01T15:30:00.000Z', '2017-09-01 15:30:00'],
             ['fr_FR', '2017-09-01T15:30:00.000Z', '2017-09-01 15:30:00']
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $this->localeResolver = $this->objectManager->get(ResolverInterface::class);
+
+        $this->localeDate = $this->objectManager->get(TimezoneInterface::class, [
+            'localeResolver' => $this->localeResolver
+        ]);
+
+        $this->dateTimeFilter = $this->objectManager->get(DateTime::class, [
+            'localeDate' => $this->localeDate
+        ]);
     }
 }

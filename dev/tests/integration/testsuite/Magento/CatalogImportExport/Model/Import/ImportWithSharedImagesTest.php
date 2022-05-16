@@ -66,38 +66,6 @@ class ImportWithSharedImagesTest extends TestCase
     private $importDataResource;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->fileSystem = $this->objectManager->get(Filesystem::class);
-        $this->fileDriver = $this->objectManager->get(File::class);
-        $this->mediaConfig = $this->objectManager->get(ConfigInterface::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->import = $this->objectManager->get(ProductFactory::class)->create();
-        $this->csvFactory = $this->objectManager->get(CsvFactory::class);
-        $this->importDataResource = $this->objectManager->get(Data::class);
-        $this->appParams = Bootstrap::getInstance()->getBootstrap()->getApplication()
-            ->getInitParams()[AppBootstrap::INIT_PARAM_FILESYSTEM_DIR_PATHS];
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->removeFiles();
-        $this->removeProducts();
-        $this->importDataResource->cleanBunches();
-
-        parent::tearDown();
-    }
-
-    /**
      * @return void
      */
     public function testImportProductsWithSameImages(): void
@@ -117,54 +85,25 @@ class ImportWithSharedImagesTest extends TestCase
     }
 
     /**
-     * Check product images
+     * Move images to appropriate folder
      *
-     * @param string $expectedImagePath
-     * @param array $productSkus
+     * @param string $fileName
      * @return void
      */
-    private function checkProductsImages(string $expectedImagePath, array $productSkus): void
+    private function moveImages(string $fileName): void
     {
-        foreach ($productSkus as $productSku) {
-            $product = $this->productRepository->get($productSku);
-            $productImageItem = $product->getMediaGalleryImages()->getFirstItem();
-            $productImageFile = $productImageItem->getFile();
-            $productImagePath = $productImageItem->getPath();
-            $this->filesToRemove[] = $productImagePath;
-            $this->assertEquals($expectedImagePath, $productImageFile);
-            $this->assertNotEmpty($productImagePath);
-            $this->assertTrue($this->fileDriver->isExists($productImagePath));
-        }
-    }
-
-    /**
-     * Remove created files
-     *
-     * @return void
-     */
-    private function removeFiles(): void
-    {
-        foreach ($this->filesToRemove as $file) {
-            if ($this->fileDriver->isExists($file)) {
-                $this->fileDriver->deleteFile($file);
-            }
-        }
-    }
-
-    /**
-     * Remove created products
-     *
-     * @return void
-     */
-    private function removeProducts(): void
-    {
-        foreach ($this->createdProductsSkus as $sku) {
-            try {
-                $this->productRepository->deleteById($sku);
-            } catch (NoSuchEntityException $e) {
-                //already removed
-            }
-        }
+        $rootDirectory = $this->fileSystem->getDirectoryWrite(DirectoryList::ROOT);
+        $tmpDir = $rootDirectory->getRelativePath(
+            $this->appParams[DirectoryList::MEDIA][DirectoryList::PATH]
+        );
+        $fixtureDir = realpath(__DIR__ . '/../../_files');
+        $tmpFilePath = $rootDirectory->getAbsolutePath($tmpDir . DIRECTORY_SEPARATOR . $fileName);
+        $this->fileDriver->createDirectory($tmpDir);
+        $rootDirectory->getDriver()->copy(
+            $fixtureDir . DIRECTORY_SEPARATOR . $fileName,
+            $tmpFilePath
+        );
+        $this->filesToRemove[] = $tmpFilePath;
     }
 
     /**
@@ -213,24 +152,85 @@ class ImportWithSharedImagesTest extends TestCase
     }
 
     /**
-     * Move images to appropriate folder
+     * Check product images
      *
-     * @param string $fileName
+     * @param string $expectedImagePath
+     * @param array $productSkus
      * @return void
      */
-    private function moveImages(string $fileName): void
+    private function checkProductsImages(string $expectedImagePath, array $productSkus): void
     {
-        $rootDirectory = $this->fileSystem->getDirectoryWrite(DirectoryList::ROOT);
-        $tmpDir = $rootDirectory->getRelativePath(
-            $this->appParams[DirectoryList::MEDIA][DirectoryList::PATH]
-        );
-        $fixtureDir = realpath(__DIR__ . '/../../_files');
-        $tmpFilePath = $rootDirectory->getAbsolutePath($tmpDir . DIRECTORY_SEPARATOR . $fileName);
-        $this->fileDriver->createDirectory($tmpDir);
-        $rootDirectory->getDriver()->copy(
-            $fixtureDir . DIRECTORY_SEPARATOR . $fileName,
-            $tmpFilePath
-        );
-        $this->filesToRemove[] = $tmpFilePath;
+        foreach ($productSkus as $productSku) {
+            $product = $this->productRepository->get($productSku);
+            $productImageItem = $product->getMediaGalleryImages()->getFirstItem();
+            $productImageFile = $productImageItem->getFile();
+            $productImagePath = $productImageItem->getPath();
+            $this->filesToRemove[] = $productImagePath;
+            $this->assertEquals($expectedImagePath, $productImageFile);
+            $this->assertNotEmpty($productImagePath);
+            $this->assertTrue($this->fileDriver->isExists($productImagePath));
+        }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->fileSystem = $this->objectManager->get(Filesystem::class);
+        $this->fileDriver = $this->objectManager->get(File::class);
+        $this->mediaConfig = $this->objectManager->get(ConfigInterface::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->import = $this->objectManager->get(ProductFactory::class)->create();
+        $this->csvFactory = $this->objectManager->get(CsvFactory::class);
+        $this->importDataResource = $this->objectManager->get(Data::class);
+        $this->appParams = Bootstrap::getInstance()->getBootstrap()->getApplication()
+            ->getInitParams()[AppBootstrap::INIT_PARAM_FILESYSTEM_DIR_PATHS];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->removeFiles();
+        $this->removeProducts();
+        $this->importDataResource->cleanBunches();
+
+        parent::tearDown();
+    }
+
+    /**
+     * Remove created files
+     *
+     * @return void
+     */
+    private function removeFiles(): void
+    {
+        foreach ($this->filesToRemove as $file) {
+            if ($this->fileDriver->isExists($file)) {
+                $this->fileDriver->deleteFile($file);
+            }
+        }
+    }
+
+    /**
+     * Remove created products
+     *
+     * @return void
+     */
+    private function removeProducts(): void
+    {
+        foreach ($this->createdProductsSkus as $sku) {
+            try {
+                $this->productRepository->deleteById($sku);
+            } catch (NoSuchEntityException $e) {
+                //already removed
+            }
+        }
     }
 }

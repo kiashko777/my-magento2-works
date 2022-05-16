@@ -3,10 +3,27 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Service\V1;
 
-use Magento\TestFramework\TestCase\WebapiAbstract;
 use Magento\Catalog\Api\Data\ProductCustomOptionInterface;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Sales\Api\Data\OrderInterface;
+use Magento\Sales\Api\Data\OrderItemFactory;
+use Magento\Sales\Api\Data\OrderItemInterface;
+use Magento\Sales\Api\Data\OrderPaymentFactory;
+use Magento\Sales\Api\Data\OrderPaymentInterface;
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\AddressRepository;
+use Magento\Sales\Model\Order\ItemFactory;
+use Magento\Sales\Model\Order\PaymentFactory;
+use Magento\Sales\Model\OrderFactory;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\WebapiAbstract;
+use ReflectionClass;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
@@ -22,13 +39,42 @@ class OrderCreateTest extends WebapiAbstract
     const ORDER_INCREMENT_ID = '100000001';
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
 
-    protected function setUp(): void
+    /**
+     * @magentoApiDataFixture Magento/Catalog/_files/product_simple.php
+     */
+    public function testOrderCreate()
     {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $order = $this->prepareOrder();
+
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH,
+                'httpMethod' => Request::HTTP_METHOD_POST,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_READ_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_READ_NAME . 'save',
+            ],
+        ];
+        $this->assertNotEmpty($this->_webApiCall($serviceInfo, ['entity' => $order]));
+
+        /** @var Order $model */
+        $model = $this->objectManager->get(Order::class);
+        $model->load($order['customer_email'], 'customer_email');
+        $this->assertTrue((bool)$model->getId());
+        $this->assertEquals($order['base_grand_total'], $model->getBaseGrandTotal());
+        $this->assertEquals($order['grand_total'], $model->getGrandTotal());
+        $this->assertNotNull($model->getShippingAddress());
+        $this->assertTrue((bool)$model->getShippingAddress()->getId());
+        $this->assertEquals('Flat Rate - Fixed', $model->getShippingDescription());
+        $shippingMethod = $model->getShippingMethod(true);
+        $this->assertEquals('flatrate', $shippingMethod['carrier_code']);
+        $this->assertEquals('flatrate', $shippingMethod['method']);
     }
 
     /**
@@ -36,25 +82,25 @@ class OrderCreateTest extends WebapiAbstract
      */
     protected function prepareOrder()
     {
-        /** @var \Magento\Sales\Model\Order $orderBuilder */
-        $orderFactory = $this->objectManager->get(\Magento\Sales\Model\OrderFactory::class);
-        /** @var \Magento\Sales\Api\Data\OrderItemFactory $orderItemFactory */
-        $orderItemFactory = $this->objectManager->get(\Magento\Sales\Model\Order\ItemFactory::class);
-        /** @var \Magento\Sales\Api\Data\OrderPaymentFactory $orderPaymentFactory */
-        $orderPaymentFactory = $this->objectManager->get(\Magento\Sales\Model\Order\PaymentFactory::class);
-        /** @var \Magento\Sales\Model\Order\AddressRepository $orderAddressRepository */
-        $orderAddressRepository = $this->objectManager->get(\Magento\Sales\Model\Order\AddressRepository::class);
-        /** @var  \Magento\Store\Model\StoreManagerInterface $storeManager */
-        $storeManager = $this->objectManager->get(\Magento\Store\Model\StoreManagerInterface::class);
+        /** @var Order $orderBuilder */
+        $orderFactory = $this->objectManager->get(OrderFactory::class);
+        /** @var OrderItemFactory $orderItemFactory */
+        $orderItemFactory = $this->objectManager->get(ItemFactory::class);
+        /** @var OrderPaymentFactory $orderPaymentFactory */
+        $orderPaymentFactory = $this->objectManager->get(PaymentFactory::class);
+        /** @var AddressRepository $orderAddressRepository */
+        $orderAddressRepository = $this->objectManager->get(AddressRepository::class);
+        /** @var  StoreManagerInterface $storeManager */
+        $storeManager = $this->objectManager->get(StoreManagerInterface::class);
 
         $order = $orderFactory->create(
-            ['data' => $this->getDataStructure(\Magento\Sales\Api\Data\OrderInterface::class)]
+            ['data' => $this->getDataStructure(OrderInterface::class)]
         );
         $orderItem = $orderItemFactory->create(
-            ['data' => $this->getDataStructure(\Magento\Sales\Api\Data\OrderItemInterface::class)]
+            ['data' => $this->getDataStructure(OrderItemInterface::class)]
         );
         $orderPayment = $orderPaymentFactory->create(
-            ['data' => $this->getDataStructure(\Magento\Sales\Api\Data\OrderPaymentInterface::class)]
+            ['data' => $this->getDataStructure(OrderPaymentInterface::class)]
         );
 
         $email = uniqid() . 'email@example.com';
@@ -151,7 +197,7 @@ class OrderCreateTest extends WebapiAbstract
 
     protected function getDataStructure($className)
     {
-        $refClass = new \ReflectionClass($className);
+        $refClass = new ReflectionClass($className);
         $constants = $refClass->getConstants();
         $data = array_fill_keys($constants, null);
         unset($data['custom_attributes']);
@@ -164,8 +210,8 @@ class OrderCreateTest extends WebapiAbstract
      */
     protected function addProductOption($orderItem)
     {
-        /** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-        $productRepository = $this->objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
         $product = $productRepository->get('simple');
         $options = [];
         foreach ($product->getOptions() as $option) {
@@ -204,37 +250,8 @@ class OrderCreateTest extends WebapiAbstract
         return $returnValue;
     }
 
-    /**
-     * @magentoApiDataFixture Magento/Catalog/_files/product_simple.php
-     */
-    public function testOrderCreate()
+    protected function setUp(): void
     {
-        $order = $this->prepareOrder();
-
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_READ_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_READ_NAME . 'save',
-            ],
-        ];
-        $this->assertNotEmpty($this->_webApiCall($serviceInfo, ['entity' => $order]));
-
-        /** @var \Magento\Sales\Model\Order $model */
-        $model = $this->objectManager->get(\Magento\Sales\Model\Order::class);
-        $model->load($order['customer_email'], 'customer_email');
-        $this->assertTrue((bool)$model->getId());
-        $this->assertEquals($order['base_grand_total'], $model->getBaseGrandTotal());
-        $this->assertEquals($order['grand_total'], $model->getGrandTotal());
-        $this->assertNotNull($model->getShippingAddress());
-        $this->assertTrue((bool)$model->getShippingAddress()->getId());
-        $this->assertEquals('Flat Rate - Fixed', $model->getShippingDescription());
-        $shippingMethod = $model->getShippingMethod(true);
-        $this->assertEquals('flatrate', $shippingMethod['carrier_code']);
-        $this->assertEquals('flatrate', $shippingMethod['method']);
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

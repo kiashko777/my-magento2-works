@@ -5,20 +5,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Model;
 
-class ResourceTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\Model\ResourceModel\Db\Profiler;
+use Magento\TestFramework\Db\Adapter\Mysql;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class ResourceTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\App\ResourceConnection
+     * @var ResourceConnection
      */
     protected $_model;
-
-    protected function setUp(): void
-    {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\Framework\App\ResourceConnection::class);
-    }
 
     public function testGetTableName()
     {
@@ -26,8 +27,8 @@ class ResourceTest extends \PHPUnit\Framework\TestCase
         $tableSuffix = 'suffix';
         $tableNameOrig = 'store_website';
 
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\App\ResourceConnection::class,
+        $this->_model = Bootstrap::getObjectManager()->create(
+            ResourceConnection::class,
             ['tablePrefix' => 'prefix_']
         );
 
@@ -43,15 +44,15 @@ class ResourceTest extends \PHPUnit\Framework\TestCase
      */
     public function testProfilerInit()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
 
         /** @var \Magento\Framework\DB\Adapter\Pdo\Mysql $connection */
         $connection = $objectManager->create(
-            \Magento\TestFramework\Db\Adapter\Mysql::class,
+            Mysql::class,
             [
                 'config' => [
                     'profiler' => [
-                        'class' => \Magento\Framework\Model\ResourceModel\Db\Profiler::class,
+                        'class' => Profiler::class,
                         'enabled' => 'true',
                     ],
                     'username' => 'username',
@@ -63,10 +64,16 @@ class ResourceTest extends \PHPUnit\Framework\TestCase
             ]
         );
 
-        /** @var \Magento\Framework\Model\ResourceModel\Db\Profiler $profiler */
+        /** @var Profiler $profiler */
         $profiler = $connection->getProfiler();
 
-        $this->assertInstanceOf(\Magento\Framework\Model\ResourceModel\Db\Profiler::class, $profiler);
+        $this->assertInstanceOf(Profiler::class, $profiler);
         $this->assertTrue($profiler->getEnabled());
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()
+            ->create(ResourceConnection::class);
     }
 }

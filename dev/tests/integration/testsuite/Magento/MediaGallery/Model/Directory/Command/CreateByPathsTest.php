@@ -11,15 +11,18 @@ namespace Magento\MediaGallery\Model\Directory\Command;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Exception\CouldNotDeleteException;
 use Magento\Framework\Exception\CouldNotSaveException;
+use Magento\Framework\Exception\FileSystemException;
 use Magento\Framework\Filesystem;
+use Magento\Framework\Filesystem\Directory\WriteInterface;
 use Magento\MediaGalleryApi\Api\CreateDirectoriesByPathsInterface;
 use Magento\MediaGalleryApi\Api\DeleteDirectoriesByPathsInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for CreateDirectoriesByPathsInterface
  */
-class CreateByPathsTest extends \PHPUnit\Framework\TestCase
+class CreateByPathsTest extends TestCase
 {
     /**
      * Test directory name
@@ -42,14 +45,17 @@ class CreateByPathsTest extends \PHPUnit\Framework\TestCase
     private $deleteByPaths;
 
     /**
-     * @inheritdoc
+     * @throws FileSystemException
      */
-    protected function setUp(): void
+    public static function tearDownAfterClass(): void
     {
-        $this->createByPaths = Bootstrap::getObjectManager()->get(CreateDirectoriesByPathsInterface::class);
-        $this->deleteByPaths = Bootstrap::getObjectManager()->get(DeleteDirectoriesByPathsInterface::class);
-        $this->mediaDirectoryPath = Bootstrap::getObjectManager()->get(Filesystem::class)
-            ->getDirectoryRead(DirectoryList::MEDIA)->getAbsolutePath();
+        $filesystem = Bootstrap::getObjectManager()
+            ->get(Filesystem::class);
+        /** @var WriteInterface $directory */
+        $directory = $filesystem->getDirectoryWrite(DirectoryList::MEDIA);
+        if ($directory->isExist(self::TEST_DIRECTORY_NAME)) {
+            $directory->delete(self::TEST_DIRECTORY_NAME);
+        }
     }
 
     /**
@@ -125,16 +131,13 @@ class CreateByPathsTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @throws \Magento\Framework\Exception\FileSystemException
+     * @inheritdoc
      */
-    public static function tearDownAfterClass(): void
+    protected function setUp(): void
     {
-        $filesystem = Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\Filesystem::class);
-        /** @var \Magento\Framework\Filesystem\Directory\WriteInterface $directory */
-        $directory = $filesystem->getDirectoryWrite(DirectoryList::MEDIA);
-        if ($directory->isExist(self::TEST_DIRECTORY_NAME)) {
-            $directory->delete(self::TEST_DIRECTORY_NAME);
-        }
+        $this->createByPaths = Bootstrap::getObjectManager()->get(CreateDirectoriesByPathsInterface::class);
+        $this->deleteByPaths = Bootstrap::getObjectManager()->get(DeleteDirectoriesByPathsInterface::class);
+        $this->mediaDirectoryPath = Bootstrap::getObjectManager()->get(Filesystem::class)
+            ->getDirectoryRead(DirectoryList::MEDIA)->getAbsolutePath();
     }
 }

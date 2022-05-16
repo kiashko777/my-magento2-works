@@ -6,33 +6,30 @@
 
 namespace Magento\Integration\Block\Adminhtml\Integration\Edit\Tab;
 
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Registry;
+use Magento\Framework\View\Layout;
+use Magento\Framework\View\LayoutInterface;
+use Magento\Integration\Block\Adminhtml\Integration\Tokens;
 use Magento\Integration\Controller\Adminhtml\Integration;
 use Magento\Integration\Model\Integration as IntegrationModel;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for \Magento\Integration\Block\Adminhtml\Integration\Edit\Tab\Info
  */
-class InfoTest extends \PHPUnit\Framework\TestCase
+class InfoTest extends TestCase
 {
     /**
-     * @var \Magento\Integration\Block\Adminhtml\Integration\Edit\Tab\Info
+     * @var Info
      */
     private $block;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-
-        /** @var $layout \Magento\Framework\View\Layout */
-        $layout = $this->objectManager->create(\Magento\Framework\View\LayoutInterface::class);
-        $this->block = $layout->createBlock(\Magento\Integration\Block\Adminhtml\Integration\Edit\Tab\Info::class);
-        $this->block->addChild('integration_tokens', \Magento\Integration\Block\Adminhtml\Integration\Tokens::class);
-    }
 
     /**
      * @magentoAppArea Adminhtml
@@ -62,8 +59,8 @@ class InfoTest extends \PHPUnit\Framework\TestCase
      */
     public function testToHtmlWithIntegrationData()
     {
-        /** @var \Magento\Framework\Registry $coreRegistry */
-        $coreRegistry = $this->objectManager->get(\Magento\Framework\Registry::class);
+        /** @var Registry $coreRegistry */
+        $coreRegistry = $this->objectManager->get(Registry::class);
         $coreRegistry->unregister(Integration::REGISTRY_KEY_CURRENT_INTEGRATION);
         $name = 'nameExample';
         $email = 'admin@example.com';
@@ -114,5 +111,15 @@ class InfoTest extends \PHPUnit\Framework\TestCase
             '/<input id="integration_properties_token_secret" name="token_secret".*type="text".*>/',
             $this->block->toHtml()
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        /** @var $layout Layout */
+        $layout = $this->objectManager->create(LayoutInterface::class);
+        $this->block = $layout->createBlock(Info::class);
+        $this->block->addChild('integration_tokens', Tokens::class);
     }
 }

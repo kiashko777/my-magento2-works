@@ -3,46 +3,43 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\View;
 
-use \Magento\TestFramework\Helper\Bootstrap;
+use Magento\Framework\App\State;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Theme\Model\Theme\Registration;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Tests for the view layer fallback mechanism
  * @magentoComponentsDir Magento/Theme/Model/_files/design
  * @magentoDbIsolation enabled
  */
-class FileSystemTest extends \PHPUnit\Framework\TestCase
+class FileSystemTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\View\FileSystem
+     * @var FileSystem
      */
     protected $_model = null;
-
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        /** @var \Magento\Theme\Model\Theme\Registration $registration */
-        $registration = $objectManager->get(
-            \Magento\Theme\Model\Theme\Registration::class
-        );
-        $registration->register();
-        $objectManager->get(\Magento\Framework\App\State::class)->setAreaCode('frontend');
-        $this->_model = $objectManager->create(
-            \Magento\Framework\View\FileSystem::class
-        );
-        $objectManager->get(
-            \Magento\Framework\View\DesignInterface::class
-        )->setDesignTheme(
-            'Test_FrameworkThemeTest/default'
-        );
-    }
 
     public function testGetTemplateFileName()
     {
         $expected = '%s/frontend/Test/default/Magento_Catalog/templates/theme_template.phtml';
         $actual = $this->_model->getTemplateFileName('Magento_Catalog::theme_template.phtml', []);
         $this->_testExpectedVersusActualFilename($expected, $actual);
+    }
+
+    /**
+     * Tests expected vs actual found fallback filename
+     *
+     * @param string $expected
+     * @param string $actual
+     */
+    protected function _testExpectedVersusActualFilename($expected, $actual)
+    {
+        $this->assertStringMatchesFormat($expected, $actual);
+        $this->assertFileExists($actual);
     }
 
     public function testGetFileNameAccordingToLocale()
@@ -63,15 +60,22 @@ class FileSystemTest extends \PHPUnit\Framework\TestCase
         $this->_testExpectedVersusActualFilename($expected, $actual);
     }
 
-    /**
-     * Tests expected vs actual found fallback filename
-     *
-     * @param string $expected
-     * @param string $actual
-     */
-    protected function _testExpectedVersusActualFilename($expected, $actual)
+    protected function setUp(): void
     {
-        $this->assertStringMatchesFormat($expected, $actual);
-        $this->assertFileExists($actual);
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var Registration $registration */
+        $registration = $objectManager->get(
+            Registration::class
+        );
+        $registration->register();
+        $objectManager->get(State::class)->setAreaCode('frontend');
+        $this->_model = $objectManager->create(
+            FileSystem::class
+        );
+        $objectManager->get(
+            DesignInterface::class
+        )->setDesignTheme(
+            'Test_FrameworkThemeTest/default'
+        );
     }
 }

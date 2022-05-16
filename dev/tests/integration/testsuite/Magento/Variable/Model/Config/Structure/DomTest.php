@@ -9,8 +9,9 @@ declare(strict_types=1);
 namespace Magento\Variable\Model\Config\Structure;
 
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class DomTest extends \PHPUnit\Framework\TestCase
+class DomTest extends TestCase
 {
 
     public function testMerge()
@@ -23,7 +24,7 @@ class DomTest extends \PHPUnit\Framework\TestCase
             ],
         );
         $model = Bootstrap::getObjectManager()->create(
-            \Magento\Variable\Model\Config\Structure\Dom::class,
+            Dom::class,
             [
                 'xml' => '<config/>',
                 'availableVariables' => $availableVariables

@@ -3,21 +3,26 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-use Magento\Framework\Exception\NoSuchEntityException;
 
-/** @var \Magento\Framework\Registry $registry */
-$registry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
+
+/** @var Registry $registry */
+$registry = Bootstrap::getObjectManager()->get(Registry::class);
 
 /**
- * @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository
+ * @var ProductRepositoryInterface $productRepository
  */
-$productRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-    \Magento\Catalog\Api\ProductRepositoryInterface::class
+$productRepository = Bootstrap::getObjectManager()->get(
+    ProductRepositoryInterface::class
 );
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 try {
-    /** @var $simpleProduct \Magento\Catalog\Model\Product */
+    /** @var $simpleProduct Product */
     $simpleProduct = $productRepository->get('simple', false, null, true);
     $simpleProduct->delete();
 } catch (NoSuchEntityException $e) {
@@ -25,7 +30,7 @@ try {
 }
 
 try {
-    /** @var $virtualProduct \Magento\Catalog\Model\Product */
+    /** @var $virtualProduct Product */
     $virtualProduct = $productRepository->get('virtual-product', false, null, true);
     $virtualProduct->delete();
 } catch (NoSuchEntityException $e) {
@@ -33,7 +38,7 @@ try {
 }
 
 try {
-    /** @var $groupedProduct \Magento\Catalog\Model\Product */
+    /** @var $groupedProduct Product */
     $groupedProduct = $productRepository->get('grouped-product', false, null, true);
     $groupedProduct->delete();
 } catch (NoSuchEntityException $e) {

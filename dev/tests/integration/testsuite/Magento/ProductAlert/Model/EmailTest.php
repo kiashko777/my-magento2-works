@@ -66,23 +66,6 @@ class EmailTest extends TestCase
     private $customerRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->_objectManager = Bootstrap::getObjectManager();
-        $this->customerAccountManagement = $this->_objectManager->create(
-            AccountManagementInterface::class
-        );
-        $this->_customerViewHelper = $this->_objectManager->create(View::class);
-        $this->transportBuilder = $this->_objectManager->get(TransportBuilderMock::class);
-        $this->customerRepository = $this->_objectManager->create(CustomerRepositoryInterface::class);
-        $this->productRepository = $this->_objectManager->create(ProductRepositoryInterface::class);
-
-        $this->_emailModel = $this->_objectManager->create(Email::class);
-    }
-
-    /**
      * @magentoAppArea frontend
      * @magentoDataFixture Magento/Customer/_files/customer.php
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
@@ -204,5 +187,22 @@ class EmailTest extends TestCase
         $from = $this->transportBuilder->getSentMessage()->getFrom()[0];
         $this->assertEquals('Fixture Store Owner', $from->getName());
         $this->assertEquals('fixture.store.owner@example.com', $from->getEmail());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->_objectManager = Bootstrap::getObjectManager();
+        $this->customerAccountManagement = $this->_objectManager->create(
+            AccountManagementInterface::class
+        );
+        $this->_customerViewHelper = $this->_objectManager->create(View::class);
+        $this->transportBuilder = $this->_objectManager->get(TransportBuilderMock::class);
+        $this->customerRepository = $this->_objectManager->create(CustomerRepositoryInterface::class);
+        $this->productRepository = $this->_objectManager->create(ProductRepositoryInterface::class);
+
+        $this->_emailModel = $this->_objectManager->create(Email::class);
     }
 }

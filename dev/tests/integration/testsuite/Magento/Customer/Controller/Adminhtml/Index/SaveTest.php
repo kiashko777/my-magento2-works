@@ -66,32 +66,6 @@ class SaveTest extends AbstractBackendController
     private $customer;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->customerRepository = $this->_objectManager->get(CustomerRepositoryInterface::class);
-        $this->customerViewHelper = $this->_objectManager->get(CustomerNameGenerationInterface::class);
-        $this->subscriberFactory = $this->_objectManager->get(SubscriberFactory::class);
-        $this->session = $this->_objectManager->get(Session::class);
-        $this->storeManager = $this->_objectManager->get(StoreManagerInterface::class);
-        $this->localeResolver = $this->_objectManager->get(ResolverInterface::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        if ($this->customer instanceof CustomerInterface) {
-            $this->customerRepository->delete($this->customer);
-        }
-
-        parent::tearDown();
-    }
-
-    /**
      * Create customer
      *
      * @dataProvider createCustomerProvider
@@ -114,6 +88,48 @@ class SaveTest extends AbstractBackendController
             (int)$postData['customer'][CustomerData::WEBSITE_ID],
             $expectedData
         );
+    }
+
+    /**
+     * Create or update customer using backend/customer/index/save action.
+     *
+     * @param array $postData
+     * @param array $params
+     * @return void
+     */
+    private function dispatchCustomerSave(array $postData, array $params = []): void
+    {
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
+        $this->getRequest()->setPostValue($postData);
+        if (!empty($params)) {
+            $this->getRequest()->setParams($params);
+        }
+        $this->dispatch($this->baseControllerUrl . 'save');
+    }
+
+    /**
+     * Check that customer parameters match expected values.
+     *
+     * @param string $customerEmail
+     * @param int $customerWebsiteId
+     * @param array $expectedData
+     * @return void
+     */
+    private function assertCustomerData(
+        string $customerEmail,
+        int    $customerWebsiteId,
+        array  $expectedData
+    ): void
+    {
+        $this->customer = $this->customerRepository->get($customerEmail, $customerWebsiteId);
+        $actualCustomerArray = $this->customer->__toArray();
+        foreach ($expectedData['customer'] as $key => $expectedValue) {
+            $this->assertEquals(
+                $expectedValue,
+                $actualCustomerArray[$key],
+                "Invalid expected value for $key field."
+            );
+        }
     }
 
     /**
@@ -161,6 +177,54 @@ class SaveTest extends AbstractBackendController
                 ),
             ],
         ];
+    }
+
+    /**
+     * Default values for customer creation
+     *
+     * @return array
+     */
+    private function getDefaultCustomerData(): array
+    {
+        return [
+            'customer' => [
+                CustomerData::WEBSITE_ID => '1',
+                CustomerData::GROUP_ID => '1',
+                CustomerData::DISABLE_AUTO_GROUP_CHANGE => '1',
+                CustomerData::PREFIX => 'Mr.',
+                CustomerData::FIRSTNAME => 'Jane',
+                CustomerData::MIDDLENAME => 'Mdl',
+                CustomerData::LASTNAME => 'Doe',
+                CustomerData::SUFFIX => 'Esq.',
+                CustomerData::EMAIL => 'janedoe' . uniqid() . '@example.com',
+                CustomerData::DOB => '01/01/2000',
+                CustomerData::TAXVAT => '121212',
+                CustomerData::GENDER => Bootstrap::getObjectManager()->get(AttributeRepositoryInterface::class)
+                    ->get(CustomerMetadataInterface::ENTITY_TYPE_CUSTOMER, 'gender')->getSource()->getOptionId('Male'),
+                'sendemail_store_id' => '1',
+            ]
+        ];
+    }
+
+    /**
+     * Expected values for customer creation
+     *
+     * @param array $defaultCustomerData
+     * @return array
+     */
+    private function getExpectedCustomerData(array $defaultCustomerData): array
+    {
+        unset($defaultCustomerData['customer']['sendemail_store_id']);
+        return array_replace_recursive(
+            $defaultCustomerData,
+            [
+                'customer' => [
+                    CustomerData::DOB => '2000-01-01',
+                    CustomerData::STORE_ID => 1,
+                    CustomerData::CREATED_IN => 'Default Store View',
+                ],
+            ]
+        );
     }
 
     /**
@@ -317,6 +381,29 @@ class SaveTest extends AbstractBackendController
     }
 
     /**
+     * Check that customer subscription status match expected status.
+     *
+     * @param int $customerId
+     * @param int $websiteId
+     * @param int $expectedStatus
+     * @param int $expectedStoreId
+     * @return void
+     */
+    private function assertCustomerSubscription(
+        int $customerId,
+        int $websiteId,
+        int $expectedStatus,
+        int $expectedStoreId
+    ): void
+    {
+        $subscriber = $this->subscriberFactory->create();
+        $subscriber->loadByCustomer($customerId, $websiteId);
+        $this->assertNotEmpty($subscriber->getId());
+        $this->assertEquals($expectedStatus, $subscriber->getStatus());
+        $this->assertEquals($expectedStoreId, $subscriber->getStoreId());
+    }
+
+    /**
      * @magentoDataFixture Magento/Newsletter/_files/subscribers.php
      * @return void
      */
@@ -401,6 +488,91 @@ class SaveTest extends AbstractBackendController
     }
 
     /**
+     * Prepare email mock to test emails.
+     *
+     * @magentoDataFixture Magento/Customer/_files/customer.php
+     * @param int $occurrenceNumber
+     * @param string $templateId
+     * @param array $sender
+     * @param int $customerId
+     * @param string|null $newEmail
+     * @return MockObject
+     */
+    private function prepareEmailMock(
+        int    $occurrenceNumber,
+        string $templateId,
+        array  $sender,
+        int    $customerId,
+               $newEmail = null
+    ): MockObject
+    {
+        $area = Area::AREA_FRONTEND;
+        $customer = $this->customerRepository->getById($customerId);
+        $storeId = $customer->getStoreId();
+        $name = $this->customerViewHelper->getCustomerName($customer);
+
+        $transportMock = $this->getMockBuilder(TransportInterface::class)
+            ->setMethods(['sendMessage'])
+            ->getMockForAbstractClass();
+        $transportMock->expects($this->exactly($occurrenceNumber))
+            ->method('sendMessage');
+        $transportBuilderMock = $this->getMockBuilder(TransportBuilder::class)
+            ->disableOriginalConstructor()
+            ->setMethods(
+                [
+                    'addTo',
+                    'setFrom',
+                    'setTemplateIdentifier',
+                    'setTemplateVars',
+                    'setTemplateOptions',
+                    'getTransport',
+                ]
+            )
+            ->getMock();
+        $transportBuilderMock->method('setTemplateIdentifier')
+            ->with($templateId)
+            ->willReturnSelf();
+        $transportBuilderMock->method('setTemplateOptions')
+            ->with(['area' => $area, 'store' => $storeId])
+            ->willReturnSelf();
+        $transportBuilderMock->method('setTemplateVars')
+            ->willReturnSelf();
+        $transportBuilderMock->method('setFrom')
+            ->with($sender)
+            ->willReturnSelf();
+        $transportBuilderMock->method('addTo')
+            ->with($this->logicalOr($customer->getEmail(), $newEmail), $name)
+            ->willReturnSelf();
+        $transportBuilderMock->expects($this->exactly($occurrenceNumber))
+            ->method('getTransport')
+            ->willReturn($transportMock);
+
+        return $transportBuilderMock;
+    }
+
+    /**
+     * Add email mock to class
+     *
+     * @param MockObject $transportBuilderMock
+     * @param string $className
+     * @return void
+     */
+    private function addEmailMockToClass(
+        MockObject $transportBuilderMock,
+                   $className
+    ): void
+    {
+        $mocked = $this->_objectManager->create(
+            $className,
+            ['transportBuilder' => $transportBuilderMock]
+        );
+        $this->_objectManager->addSharedInstance(
+            $mocked,
+            $className
+        );
+    }
+
+    /**
      * @magentoDataFixture Magento/Customer/_files/customer_sample.php
      * @return void
      */
@@ -479,196 +651,28 @@ class SaveTest extends AbstractBackendController
     }
 
     /**
-     * Default values for customer creation
-     *
-     * @return array
+     * @inheritdoc
      */
-    private function getDefaultCustomerData(): array
+    protected function setUp(): void
     {
-        return [
-            'customer' => [
-                CustomerData::WEBSITE_ID => '1',
-                CustomerData::GROUP_ID => '1',
-                CustomerData::DISABLE_AUTO_GROUP_CHANGE => '1',
-                CustomerData::PREFIX => 'Mr.',
-                CustomerData::FIRSTNAME => 'Jane',
-                CustomerData::MIDDLENAME => 'Mdl',
-                CustomerData::LASTNAME => 'Doe',
-                CustomerData::SUFFIX => 'Esq.',
-                CustomerData::EMAIL => 'janedoe' . uniqid() . '@example.com',
-                CustomerData::DOB => '01/01/2000',
-                CustomerData::TAXVAT => '121212',
-                CustomerData::GENDER => Bootstrap::getObjectManager()->get(AttributeRepositoryInterface::class)
-                    ->get(CustomerMetadataInterface::ENTITY_TYPE_CUSTOMER, 'gender')->getSource()->getOptionId('Male'),
-                'sendemail_store_id' => '1',
-            ]
-        ];
+        parent::setUp();
+        $this->customerRepository = $this->_objectManager->get(CustomerRepositoryInterface::class);
+        $this->customerViewHelper = $this->_objectManager->get(CustomerNameGenerationInterface::class);
+        $this->subscriberFactory = $this->_objectManager->get(SubscriberFactory::class);
+        $this->session = $this->_objectManager->get(Session::class);
+        $this->storeManager = $this->_objectManager->get(StoreManagerInterface::class);
+        $this->localeResolver = $this->_objectManager->get(ResolverInterface::class);
     }
 
     /**
-     * Expected values for customer creation
-     *
-     * @param array $defaultCustomerData
-     * @return array
+     * @inheritdoc
      */
-    private function getExpectedCustomerData(array $defaultCustomerData): array
+    protected function tearDown(): void
     {
-        unset($defaultCustomerData['customer']['sendemail_store_id']);
-        return array_replace_recursive(
-            $defaultCustomerData,
-            [
-                'customer' => [
-                    CustomerData::DOB => '2000-01-01',
-                    CustomerData::STORE_ID => 1,
-                    CustomerData::CREATED_IN => 'Default Store View',
-                ],
-            ]
-        );
-    }
-
-    /**
-     * Create or update customer using backend/customer/index/save action.
-     *
-     * @param array $postData
-     * @param array $params
-     * @return void
-     */
-    private function dispatchCustomerSave(array $postData, array $params = []): void
-    {
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
-        $this->getRequest()->setPostValue($postData);
-        if (!empty($params)) {
-            $this->getRequest()->setParams($params);
+        if ($this->customer instanceof CustomerInterface) {
+            $this->customerRepository->delete($this->customer);
         }
-        $this->dispatch($this->baseControllerUrl . 'save');
-    }
 
-    /**
-     * Check that customer parameters match expected values.
-     *
-     * @param string $customerEmail
-     * @param int $customerWebsiteId
-     * @param array $expectedData
-     * @return void
-     */
-    private function assertCustomerData(
-        string $customerEmail,
-        int $customerWebsiteId,
-        array $expectedData
-    ): void {
-        $this->customer = $this->customerRepository->get($customerEmail, $customerWebsiteId);
-        $actualCustomerArray = $this->customer->__toArray();
-        foreach ($expectedData['customer'] as $key => $expectedValue) {
-            $this->assertEquals(
-                $expectedValue,
-                $actualCustomerArray[$key],
-                "Invalid expected value for $key field."
-            );
-        }
-    }
-
-    /**
-     * Check that customer subscription status match expected status.
-     *
-     * @param int $customerId
-     * @param int $websiteId
-     * @param int $expectedStatus
-     * @param int $expectedStoreId
-     * @return void
-     */
-    private function assertCustomerSubscription(
-        int $customerId,
-        int $websiteId,
-        int $expectedStatus,
-        int $expectedStoreId
-    ): void {
-        $subscriber = $this->subscriberFactory->create();
-        $subscriber->loadByCustomer($customerId, $websiteId);
-        $this->assertNotEmpty($subscriber->getId());
-        $this->assertEquals($expectedStatus, $subscriber->getStatus());
-        $this->assertEquals($expectedStoreId, $subscriber->getStoreId());
-    }
-
-    /**
-     * Prepare email mock to test emails.
-     *
-     * @magentoDataFixture Magento/Customer/_files/customer.php
-     * @param int $occurrenceNumber
-     * @param string $templateId
-     * @param array $sender
-     * @param int $customerId
-     * @param string|null $newEmail
-     * @return MockObject
-     */
-    private function prepareEmailMock(
-        int $occurrenceNumber,
-        string $templateId,
-        array $sender,
-        int $customerId,
-        $newEmail = null
-    ) : MockObject {
-        $area = Area::AREA_FRONTEND;
-        $customer = $this->customerRepository->getById($customerId);
-        $storeId = $customer->getStoreId();
-        $name = $this->customerViewHelper->getCustomerName($customer);
-
-        $transportMock = $this->getMockBuilder(TransportInterface::class)
-            ->setMethods(['sendMessage'])
-            ->getMockForAbstractClass();
-        $transportMock->expects($this->exactly($occurrenceNumber))
-            ->method('sendMessage');
-        $transportBuilderMock = $this->getMockBuilder(TransportBuilder::class)
-            ->disableOriginalConstructor()
-            ->setMethods(
-                [
-                    'addTo',
-                    'setFrom',
-                    'setTemplateIdentifier',
-                    'setTemplateVars',
-                    'setTemplateOptions',
-                    'getTransport',
-                ]
-            )
-            ->getMock();
-        $transportBuilderMock->method('setTemplateIdentifier')
-            ->with($templateId)
-            ->willReturnSelf();
-        $transportBuilderMock->method('setTemplateOptions')
-            ->with(['area' => $area, 'store' => $storeId])
-            ->willReturnSelf();
-        $transportBuilderMock->method('setTemplateVars')
-            ->willReturnSelf();
-        $transportBuilderMock->method('setFrom')
-            ->with($sender)
-            ->willReturnSelf();
-        $transportBuilderMock->method('addTo')
-            ->with($this->logicalOr($customer->getEmail(), $newEmail), $name)
-            ->willReturnSelf();
-        $transportBuilderMock->expects($this->exactly($occurrenceNumber))
-            ->method('getTransport')
-            ->willReturn($transportMock);
-
-        return $transportBuilderMock;
-    }
-
-    /**
-     * Add email mock to class
-     *
-     * @param MockObject $transportBuilderMock
-     * @param string $className
-     * @return void
-     */
-    private function addEmailMockToClass(
-        MockObject $transportBuilderMock,
-        $className
-    ): void {
-        $mocked = $this->_objectManager->create(
-            $className,
-            ['transportBuilder' => $transportBuilderMock]
-        );
-        $this->_objectManager->addSharedInstance(
-            $mocked,
-            $className
-        );
+        parent::tearDown();
     }
 }

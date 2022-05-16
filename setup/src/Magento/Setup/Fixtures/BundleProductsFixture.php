@@ -9,6 +9,9 @@ namespace Magento\Setup\Fixtures;
 use Magento\Bundle\Api\Data\LinkInterface;
 use Magento\Bundle\Model\Product\Type;
 use Magento\Catalog\Model\Product\Visibility;
+use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
+use Magento\Setup\Model\FixtureGenerator\BundleProductGenerator;
+use Magento\Setup\Model\FixtureGenerator\ProductGenerator;
 
 /**
  * Generate bundle products based on profile configuration
@@ -37,17 +40,17 @@ class BundleProductsFixture extends Fixture
     protected $priority = 42;
 
     /**
-     * @var \Magento\Setup\Model\FixtureGenerator\ProductGenerator
+     * @var ProductGenerator
      */
     private $productGenerator;
 
     /**
-     * @var \Magento\Setup\Model\FixtureGenerator\BundleProductGenerator
+     * @var BundleProductGenerator
      */
     private $bundleProductGenerator;
 
     /**
-     * @var \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory
+     * @var CollectionFactory
      */
     private $productCollectionFactory;
 
@@ -73,22 +76,23 @@ class BundleProductsFixture extends Fixture
 
     /**
      * @param FixtureModel $fixtureModel
-     * @param \Magento\Setup\Model\FixtureGenerator\ProductGenerator $productGenerator
-     * @param \Magento\Setup\Model\FixtureGenerator\BundleProductGenerator $bundleProductGenerator
-     * @param \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory $productCollectionFactory
+     * @param ProductGenerator $productGenerator
+     * @param BundleProductGenerator $bundleProductGenerator
+     * @param CollectionFactory $productCollectionFactory
      * @param ProductsAmountProvider $productsAmountProvider
      * @param WebsiteCategoryProvider $websiteCategoryProvider
      * @param PriceProvider $priceProvider
      */
     public function __construct(
-        FixtureModel $fixtureModel,
-        \Magento\Setup\Model\FixtureGenerator\ProductGenerator $productGenerator,
-        \Magento\Setup\Model\FixtureGenerator\BundleProductGenerator $bundleProductGenerator,
-        \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory $productCollectionFactory,
-        ProductsAmountProvider $productsAmountProvider,
-        WebsiteCategoryProvider $websiteCategoryProvider,
-        PriceProvider $priceProvider
-    ) {
+        FixtureModel                                                   $fixtureModel,
+        ProductGenerator         $productGenerator,
+        BundleProductGenerator   $bundleProductGenerator,
+        CollectionFactory $productCollectionFactory,
+        ProductsAmountProvider                                         $productsAmountProvider,
+        WebsiteCategoryProvider                                        $websiteCategoryProvider,
+        PriceProvider                                                  $priceProvider
+    )
+    {
         parent::__construct($fixtureModel);
         $this->productGenerator = $productGenerator;
         $this->bundleProductGenerator = $bundleProductGenerator;
@@ -184,17 +188,6 @@ class BundleProductsFixture extends Fixture
     }
 
     /**
-     * Get sku pattern for bundle product option item
-     *
-     * @param string $bundleOptionSuffix
-     * @return string
-     */
-    private function getBundleOptionItemSkuPattern($bundleOptionSuffix)
-    {
-        return $this->getBundleSkuPattern($bundleOptionSuffix) . ' - option %s';
-    }
-
-    /**
      * Get sku pattern for bundle product. Replace suffix pattern with passed value
      *
      * @param string $bundleOptionSuffix
@@ -203,6 +196,18 @@ class BundleProductsFixture extends Fixture
     private function getBundleSkuPattern($bundleOptionSuffix)
     {
         return sprintf(self::SKU_PATTERN, '%s', $bundleOptionSuffix);
+    }
+
+    /**
+     * Get bundle product index number
+     *
+     * @param int $entityNumber
+     * @param int $variationCount
+     * @return float
+     */
+    private function getBundleProductIndex($entityNumber, $variationCount)
+    {
+        return floor($entityNumber / $variationCount) + $this->getNewProductStartIndex();
     }
 
     /**
@@ -222,18 +227,6 @@ class BundleProductsFixture extends Fixture
     }
 
     /**
-     * Get bundle product index number
-     *
-     * @param int $entityNumber
-     * @param int $variationCount
-     * @return float
-     */
-    private function getBundleProductIndex($entityNumber, $variationCount)
-    {
-        return floor($entityNumber / $variationCount) + $this->getNewProductStartIndex();
-    }
-
-    /**
      * Get bundle variation index number
      *
      * @param int $entityNumber
@@ -243,6 +236,17 @@ class BundleProductsFixture extends Fixture
     private function getBundleVariationIndex($entityNumber, $variationCount)
     {
         return $entityNumber % $variationCount + 1;
+    }
+
+    /**
+     * Get sku pattern for bundle product option item
+     *
+     * @param string $bundleOptionSuffix
+     * @return string
+     */
+    private function getBundleOptionItemSkuPattern($bundleOptionSuffix)
+    {
+        return $this->getBundleSkuPattern($bundleOptionSuffix) . ' - option %s';
     }
 
     /**

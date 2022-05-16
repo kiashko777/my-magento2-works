@@ -22,11 +22,12 @@ class AreaList extends \Magento\Framework\App\AreaList
      * @param string|null $default
      */
     public function __construct(
-        ObjectManagerInterface $objectManager,
+        ObjectManagerInterface   $objectManager,
         FrontNameResolverFactory $resolverFactory,
-        array $areas = [],
-        $default = null
-    ) {
+        array                    $areas = [],
+                                 $default = null
+    )
+    {
         parent::__construct($objectManager, $resolverFactory, $areas, $default);
         /**
          * Then Magento is installed for setup-integration tests, di.xml files are parsed from all Magento modules,

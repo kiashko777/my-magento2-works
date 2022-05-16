@@ -5,19 +5,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Profiler\Driver\Standard\Output;
 
-class HtmlTest extends \PHPUnit\Framework\TestCase
+use PHPUnit\Framework\TestCase;
+
+class HtmlTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Profiler\Driver\Standard\Output\Html
+     * @var Html
      */
     protected $_output;
-
-    protected function setUp(): void
-    {
-        $this->_output = new \Magento\Framework\Profiler\Driver\Standard\Output\Html();
-    }
 
     /**
      * Test display method
@@ -39,16 +37,6 @@ class HtmlTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @return array
-     */
-    public function displayDataProvider()
-    {
-        return [
-            ['statFile' => __DIR__ . '/_files/timers.php', 'expectedHtmlFile' => __DIR__ . '/_files/output.html']
-        ];
-    }
-
-    /**
      * Asserts display() result equals
      *
      * @param string $actualHtml
@@ -66,5 +54,20 @@ class HtmlTest extends \PHPUnit\Framework\TestCase
             );
         }
         $this->assertEquals($expectedHtml, $actualHtml);
+    }
+
+    /**
+     * @return array
+     */
+    public function displayDataProvider()
+    {
+        return [
+            ['statFile' => __DIR__ . '/_files/timers.php', 'expectedHtmlFile' => __DIR__ . '/_files/output.html']
+        ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->_output = new Html();
     }
 }

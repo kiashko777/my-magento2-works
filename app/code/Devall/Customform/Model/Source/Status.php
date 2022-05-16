@@ -21,16 +21,6 @@ class Status extends AbstractSource implements SourceInterface, OptionSourceInte
     /**#@-*/
 
     /**
-     * Retrieve option array
-     *
-     * @return string[]
-     */
-    public static function getOptionArray()
-    {
-        return [self::STATUS_ENABLED => __('Enabled'), self::STATUS_DISABLED => __('Disabled')];
-    }
-
-    /**
      * Retrieve option array with empty value
      *
      * @return string[]
@@ -44,5 +34,15 @@ class Status extends AbstractSource implements SourceInterface, OptionSourceInte
         }
 
         return $result;
+    }
+
+    /**
+     * Retrieve option array
+     *
+     * @return string[]
+     */
+    public static function getOptionArray()
+    {
+        return [self::STATUS_ENABLED => __('Enabled'), self::STATUS_DISABLED => __('Disabled')];
     }
 }

@@ -11,6 +11,7 @@ use Magento\TestFramework\Workaround\Override\Config;
 use Magento\TestFramework\Workaround\Override\WrapperGenerator;
 use PHPUnit\Runner\StandardTestSuiteLoader;
 use PHPUnit\Runner\TestSuiteLoader;
+use ReflectionClass;
 
 /**
  * Custom suite loader for adding wrapper for tests.
@@ -45,14 +46,14 @@ class SuiteLoader implements TestSuiteLoader
     /**
      * @inheritdoc
      */
-    public function load(string $suiteClassFile): \ReflectionClass
+    public function load(string $suiteClassFile): ReflectionClass
     {
         $resultClass = $this->suiteLoader->load($suiteClassFile);
 
         if ($this->testsConfig->hasSkippedTest($resultClass->getName())
             && !in_array(SkippableInterface::class, $resultClass->getInterfaceNames(), true)
         ) {
-            $resultClass = new \ReflectionClass($this->generator->generateTestWrapper($resultClass));
+            $resultClass = new ReflectionClass($this->generator->generateTestWrapper($resultClass));
         }
 
         return $resultClass;
@@ -61,7 +62,7 @@ class SuiteLoader implements TestSuiteLoader
     /**
      * @inheritdoc
      */
-    public function reload(\ReflectionClass $aClass): \ReflectionClass
+    public function reload(ReflectionClass $aClass): ReflectionClass
     {
         return $aClass;
     }

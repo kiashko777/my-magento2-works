@@ -4,30 +4,35 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Customer\Model\GroupManagement;
+use Magento\SalesRule\Model\Rule;
+use Magento\SalesRule\Model\Rule\Condition\Address;
+use Magento\SalesRule\Model\Rule\Condition\Combine;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var \Magento\SalesRule\Model\Rule $rule */
-$salesRule = Bootstrap::getObjectManager()->create(\Magento\SalesRule\Model\Rule::class);
+/** @var Rule $rule */
+$salesRule = Bootstrap::getObjectManager()->create(Rule::class);
 $salesRule->setData(
     [
         'name' => '50% Off on Checkmo Payment Method',
         'is_active' => 1,
-        'customer_group_ids' => [\Magento\Customer\Model\GroupManagement::NOT_LOGGED_IN_ID],
-        'coupon_type' => \Magento\SalesRule\Model\Rule::COUPON_TYPE_NO_COUPON,
+        'customer_group_ids' => [GroupManagement::NOT_LOGGED_IN_ID],
+        'coupon_type' => Rule::COUPON_TYPE_NO_COUPON,
         'simple_action' => 'by_percent',
         'discount_amount' => 50,
         'discount_step' => 0,
         'stop_rules_processing' => 1,
         'website_ids' => [
             Bootstrap::getObjectManager()->get(
-                \Magento\Store\Model\StoreManagerInterface::class
+                StoreManagerInterface::class
             )->getWebsite()->getId()
         ]
     ]
 );
 
 $salesRule->getConditions()->loadArray([
-    'type' => \Magento\SalesRule\Model\Rule\Condition\Combine::class,
+    'type' => Combine::class,
     'attribute' => null,
     'operator' => null,
     'value' => '1',
@@ -36,7 +41,7 @@ $salesRule->getConditions()->loadArray([
     'conditions' =>
         [
             [
-                'type' => \Magento\SalesRule\Model\Rule\Condition\Address::class,
+                'type' => Address::class,
                 'attribute' => 'payment_method',
                 'operator' => '==',
                 'value' => 'checkmo'

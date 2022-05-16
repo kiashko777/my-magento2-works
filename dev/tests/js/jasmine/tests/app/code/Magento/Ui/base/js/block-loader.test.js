@@ -10,10 +10,10 @@ define([
     'use strict';
 
     var blockLoaderTmpl = '<div data-role="loader" class="loading-mask" style="position: absolute;">\n' +
-        '    <div class="loader">\n' +
-        '        <img src="<%= loaderImageHref %>" alt="Loading..." title="Loading..." style="position: absolute;">\n' +
-        '    </div>\n' +
-        '</div>',
+            '    <div class="loader">\n' +
+            '        <img src="<%= loaderImageHref %>" alt="Loading..." title="Loading..." style="position: absolute;">\n' +
+            '    </div>\n' +
+            '</div>',
         injector = new Squire(),
         mocks = {
             'Magento_Ui/js/lib/knockout/template/loader': {

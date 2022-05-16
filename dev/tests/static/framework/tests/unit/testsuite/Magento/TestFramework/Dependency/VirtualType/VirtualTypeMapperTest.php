@@ -3,34 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Dependency\VirtualType;
 
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
-class VirtualTypeMapperTest extends \PHPUnit\Framework\TestCase
+class VirtualTypeMapperTest extends TestCase
 {
     /**
      * @var VirtualTypeMapper
      */
     private $mapper;
-
-    protected function setUp(): void
-    {
-        $managerHelper = new ObjectManager($this);
-        $this->mapper = $managerHelper->getObject(VirtualTypeMapper::class, [
-            'map' => [
-                'global' => [
-                    'virtualType1' => 'Magento\SomeModule\Some\Class1',
-                    'virtualType2' => 'Magento\SomeModule\Some\Class2',
-                    'virtualType3' => 'Magento\SomeModule\Some\Class3',
-                ],
-                'Adminhtml' => [
-                    'virtualType1' => 'Magento\SomeModule\Some\Class4',
-                    'virtualType4' => 'Magento\SomeModule\Some\Class5',
-                ]
-            ]
-        ]);
-    }
 
     public function testGetScopeFromFile()
     {
@@ -98,6 +82,26 @@ class VirtualTypeMapperTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * @param array $expectation
+     * @param array $input
+     */
+    private static function assertArrayEqualsRecursive(
+        array $expectation,
+        array $input
+    )
+    {
+        static::assertEquals(count($expectation), count($input));
+        foreach ($expectation as $ek => $ev) {
+            self::assertArrayHasKey($ek, $input);
+            if (is_array($ev)) {
+                self::assertArrayEqualsRecursive($ev, $input[$ek]);
+            } else {
+                self::assertEquals($ev, $input[$ek]);
+            }
+        }
+    }
+
+    /**
      * @param array $diFilesPath
      * @param array $expectedVirtualTypesDependencies
      * @dataProvider loadConfigurationDataProvider
@@ -154,32 +158,31 @@ class VirtualTypeMapperTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @param array $expectation
-     * @param array $input
-     */
-    private static function assertArrayEqualsRecursive(
-        array $expectation,
-        array $input
-    ) {
-        static::assertEquals(count($expectation), count($input));
-        foreach ($expectation as $ek => $ev) {
-            self::assertArrayHasKey($ek, $input);
-            if (is_array($ev)) {
-                self::assertArrayEqualsRecursive($ev, $input[$ek]);
-            } else {
-                self::assertEquals($ev, $input[$ek]);
-            }
-        }
-    }
-
-    /**
      * @param string $fileName
      * @return string
      */
     private function getFilePath($fileName)
     {
         return __DIR__
-        . DIRECTORY_SEPARATOR
-        . '_files' . DIRECTORY_SEPARATOR . $fileName;
+            . DIRECTORY_SEPARATOR
+            . '_files' . DIRECTORY_SEPARATOR . $fileName;
+    }
+
+    protected function setUp(): void
+    {
+        $managerHelper = new ObjectManager($this);
+        $this->mapper = $managerHelper->getObject(VirtualTypeMapper::class, [
+            'map' => [
+                'global' => [
+                    'virtualType1' => 'Magento\SomeModule\Some\Class1',
+                    'virtualType2' => 'Magento\SomeModule\Some\Class2',
+                    'virtualType3' => 'Magento\SomeModule\Some\Class3',
+                ],
+                'Adminhtml' => [
+                    'virtualType1' => 'Magento\SomeModule\Some\Class4',
+                    'virtualType4' => 'Magento\SomeModule\Some\Class5',
+                ]
+            ]
+        ]);
     }
 }

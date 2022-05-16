@@ -3,8 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Dependency\Report\Circular;
 
+use Magento\Setup\Module\Dependency\Report\Circular\Data\Config;
 use Magento\Setup\Module\Dependency\Report\Writer\Csv\AbstractWriter;
 
 /**
@@ -20,7 +22,7 @@ class Writer extends AbstractWriter
     /**
      * Template method. Prepare data step
      *
-     * @param \Magento\Setup\Module\Dependency\Report\Circular\Data\Config $config
+     * @param Config $config
      * @return array
      */
     protected function prepareData($config)

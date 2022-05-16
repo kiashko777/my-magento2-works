@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\View;
 
 use Magento\Framework\App\State;
@@ -20,24 +21,6 @@ class LayoutTestWithExceptions extends TestCase
      * @var Layout
      */
     protected $layout;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $layoutFactory = $objectManager->get(LayoutFactory::class);
-        $this->layout = $layoutFactory->create();
-        $layoutElement = new Element(
-            __DIR__ . '/_files/layout_with_exceptions/layout.xml',
-            0,
-            true
-        );
-
-        $this->layout->setXml($layoutElement);
-        $objectManager->get(\Magento\Framework\App\Cache\Type\Layout::class)->clean();
-    }
 
     /**
      * Test to Create structure of elements from the loaded XML configuration with exception
@@ -67,5 +50,23 @@ class LayoutTestWithExceptions extends TestCase
         $this->layout->addOutputElement('block.with.broken.action');
 
         $this->assertEmpty($this->layout->getOutput());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $layoutFactory = $objectManager->get(LayoutFactory::class);
+        $this->layout = $layoutFactory->create();
+        $layoutElement = new Element(
+            __DIR__ . '/_files/layout_with_exceptions/layout.xml',
+            0,
+            true
+        );
+
+        $this->layout->setXml($layoutElement);
+        $objectManager->get(\Magento\Framework\App\Cache\Type\Layout::class)->clean();
     }
 }

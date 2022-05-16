@@ -7,50 +7,38 @@
 /**
  * Test class for \Magento\Checkout\Controller\Cart
  */
+
 namespace Magento\Checkout\Controller;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Checkout\Controller\Cart\Add;
 use Magento\Checkout\Model\Session;
 use Magento\Checkout\Model\Session as CheckoutSession;
 use Magento\Customer\Model\ResourceModel\CustomerRepository;
-use Magento\Framework\Data\Form\FormKey;
-use Magento\Framework\Api\SearchCriteriaBuilder;
-use Magento\Quote\Model\Quote;
-use Magento\Quote\Api\CartRepositoryInterface;
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\TestFramework\Request;
 use Magento\Customer\Model\Session as CustomerSession;
+use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\Data\Form\FormKey;
+use Magento\Framework\Message\MessageInterface;
+use Magento\Quote\Api\CartRepositoryInterface;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\Quote\Item;
 use Magento\Sales\Model\ResourceModel\Order\Collection as OrderCollection;
 use Magento\Sales\Model\ResourceModel\Order\Item\Collection as OrderItemCollection;
-use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Helper\Xpath;
+use Magento\TestFramework\Request;
+use Magento\TestFramework\TestCase\AbstractController;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @magentoDbIsolation enabled
  */
-class CartTest extends \Magento\TestFramework\TestCase\AbstractController
+class CartTest extends AbstractController
 {
     /** @var CheckoutSession */
     private $checkoutSession;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->checkoutSession = $this->_objectManager->get(CheckoutSession::class);
-        $this->_objectManager->addSharedInstance($this->checkoutSession, CheckoutSession::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->_objectManager->removeSharedInstance(CheckoutSession::class);
-        parent::tearDown();
-    }
 
     /**
      * Test for \Magento\Checkout\Controller\Cart::configureAction() with simple product
@@ -64,7 +52,7 @@ class CartTest extends \Magento\TestFramework\TestCase\AbstractController
 
         /** @var ProductRepositoryInterface $productRepository */
         $productRepository = $this->_objectManager->create(ProductRepositoryInterface::class);
-        /** @var $product \Magento\Catalog\Model\Product */
+        /** @var $product Product */
         $product = $productRepository->get('simple');
 
         $quoteItem = $this->_getQuoteItemIdByProductId($session->getQuote(), $product->getId());
@@ -75,16 +63,36 @@ class CartTest extends \Magento\TestFramework\TestCase\AbstractController
         );
         $response = $this->getResponse();
 
-        $this->assertSessionMessages($this->isEmpty(), \Magento\Framework\Message\MessageInterface::TYPE_ERROR);
+        $this->assertSessionMessages($this->isEmpty(), MessageInterface::TYPE_ERROR);
 
         $this->assertEquals(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//button[@type="submit" and @title="Update Cart"]',
                 $response->getBody()
             ),
             'Response for simple product doesn\'t contain "Update Cart" button'
         );
+    }
+
+    /**
+     * Gets \Magento\Quote\Model\Quote\Item from \Magento\Quote\Model\Quote by product id
+     *
+     * @param Quote $quote
+     * @param string|int $productId
+     *
+     * @return Item|null
+     */
+    private function _getQuoteItemIdByProductId($quote, $productId)
+    {
+        /** @var $quoteItems Item[] */
+        $quoteItems = $quote->getAllItems();
+        foreach ($quoteItems as $quoteItem) {
+            if ($productId == $quoteItem->getProductId()) {
+                return $quoteItem;
+            }
+        }
+        return null;
     }
 
     /**
@@ -100,7 +108,7 @@ class CartTest extends \Magento\TestFramework\TestCase\AbstractController
 
         /** @var ProductRepositoryInterface $productRepository */
         $productRepository = $this->_objectManager->create(ProductRepositoryInterface::class);
-        /** @var $product \Magento\Catalog\Model\Product */
+        /** @var $product Product */
         $product = $productRepository->get('simple_with_custom_options');
 
         $quoteItem = $this->_getQuoteItemIdByProductId($quote, $product->getId());
@@ -111,11 +119,11 @@ class CartTest extends \Magento\TestFramework\TestCase\AbstractController
         );
         $response = $this->getResponse();
 
-        $this->assertSessionMessages($this->isEmpty(), \Magento\Framework\Message\MessageInterface::TYPE_ERROR);
+        $this->assertSessionMessages($this->isEmpty(), MessageInterface::TYPE_ERROR);
 
         $this->assertEquals(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//button[@type="submit" and @title="Update Cart"]',
                 $response->getBody()
             ),
@@ -124,144 +132,12 @@ class CartTest extends \Magento\TestFramework\TestCase\AbstractController
 
         $this->assertEquals(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//input[contains(@class,"product-custom-option") and @type="text"]',
                 $response->getBody()
             ),
             'Response for simple product with custom option doesn\'t contain custom option input field'
         );
-    }
-
-    /**
-     * Test for \Magento\Checkout\Controller\Cart::configureAction() with bundle product
-     *
-     * @magentoDataFixture Magento/Checkout/_files/quote_with_bundle_product.php
-     * @magentoDbIsolation disabled
-     */
-    public function testConfigureActionWithBundleProduct()
-    {
-        /** @var $session CheckoutSession */
-        $session = $this->_objectManager->create(CheckoutSession::class);
-
-        /** @var ProductRepositoryInterface $productRepository */
-        $productRepository = $this->_objectManager->create(ProductRepositoryInterface::class);
-        /** @var $product \Magento\Catalog\Model\Product */
-        $product = $productRepository->get('bundle-product');
-
-        $quoteItem = $this->_getQuoteItemIdByProductId($session->getQuote(), $product->getId());
-        $this->assertNotNull($quoteItem, 'Cannot get quote item for bundle product');
-
-        $this->dispatch(
-            'checkout/cart/configure/id/' . $quoteItem->getId() . '/product_id/' . $quoteItem->getProduct()->getId()
-        );
-        $response = $this->getResponse();
-
-        $this->assertSessionMessages($this->isEmpty(), \Magento\Framework\Message\MessageInterface::TYPE_ERROR);
-
-        $this->assertEquals(
-            1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
-                '//button[@type="submit" and @title="Update Cart"]',
-                $response->getBody()
-            ),
-            'Response for bundle product doesn\'t contain "Update Cart" button'
-        );
-    }
-
-    /**
-     * Test for \Magento\Checkout\Controller\Cart::configureAction() with downloadable product
-     *
-     * @magentoDataFixture Magento/Checkout/_files/quote_with_downloadable_product.php
-     */
-    public function testConfigureActionWithDownloadableProduct()
-    {
-        /** @var $session CheckoutSession */
-        $session = $this->_objectManager->create(CheckoutSession::class);
-
-        /** @var ProductRepositoryInterface $productRepository */
-        $productRepository = $this->_objectManager->create(ProductRepositoryInterface::class);
-        /** @var $product \Magento\Catalog\Model\Product */
-        $product = $productRepository->get('downloadable-product');
-
-        $quoteItem = $this->_getQuoteItemIdByProductId($session->getQuote(), $product->getId());
-        $this->assertNotNull($quoteItem, 'Cannot get quote item for downloadable product');
-
-        $this->dispatch(
-            'checkout/cart/configure/id/' . $quoteItem->getId() . '/product_id/' . $quoteItem->getProduct()->getId()
-        );
-        $response = $this->getResponse();
-
-        $this->assertSessionMessages($this->isEmpty(), \Magento\Framework\Message\MessageInterface::TYPE_ERROR);
-
-        $this->assertEquals(
-            1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
-                '//button[@type="submit" and @title="Update Cart"]',
-                $response->getBody()
-            ),
-            'Response for downloadable product doesn\'t contain "Update Cart" button'
-        );
-
-        $this->assertEquals(
-            1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
-                '//*[@id="downloadable-links-list"]',
-                $response->getBody()
-            ),
-            'Response for downloadable product doesn\'t contain links for download'
-        );
-    }
-
-    /**
-     * @magentoDataFixture Magento/Customer/_files/customer.php
-     * @magentoDataFixture Magento/Checkout/_files/quote_with_simple_product.php
-     * @magentoAppIsolation enabled
-     */
-    public function testUpdatePostAction()
-    {
-        /** @var ProductRepositoryInterface $productRepository */
-        $productRepository = $this->_objectManager->create(ProductRepositoryInterface::class);
-        /** @var $product \Magento\Catalog\Model\Product */
-        $product = $productRepository->get('simple');
-
-        /** Preconditions */
-        $customerFromFixture = 1;
-        $productId = $product->getId();
-        $originalQuantity = 1;
-        $updatedQuantity = 2;
-        /** @var $checkoutSession CheckoutSession */
-        $checkoutSession = $this->_objectManager->create(CheckoutSession::class);
-        $quoteItem = $this->_getQuoteItemIdByProductId($checkoutSession->getQuote(), $productId);
-
-        /** @var FormKey $formKey */
-        $formKey = $this->_objectManager->get(FormKey::class);
-        $postData = [
-            'cart' => [$quoteItem->getId() => ['qty' => $updatedQuantity]],
-            'update_cart_action' => 'update_qty',
-            'form_key' => $formKey->getFormKey(),
-        ];
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
-        $this->getRequest()->setPostValue($postData);
-        /** @var $customerSession \Magento\Customer\Model\Session */
-        $customerSession = $this->_objectManager->create(\Magento\Customer\Model\Session::class);
-        $customerSession->setCustomerId($customerFromFixture);
-
-        $this->assertNotNull($quoteItem, 'Cannot get quote item for simple product');
-        $this->assertEquals(
-            $originalQuantity,
-            $quoteItem->getQty(),
-            "Precondition failed: invalid quote item quantity"
-        );
-
-        /** Execute SUT */
-        $this->dispatch('checkout/cart/updatePost');
-
-        /** Check results */
-        /** @var \Magento\Quote\Model\Quote $quote */
-        $quote = $this->_objectManager->create(\Magento\Quote\Model\Quote::class);
-        $quote->load($checkoutSession->getQuote()->getId());
-        $quoteItem = $this->_getQuoteItemIdByProductId($quote, $product->getId());
-        $this->assertEquals($updatedQuantity, $quoteItem->getQty(), "Invalid quote item quantity");
     }
 
     /**
@@ -285,23 +161,135 @@ class CartTest extends \Magento\TestFramework\TestCase\AbstractController
     }
 
     /**
-     * Gets \Magento\Quote\Model\Quote\Item from \Magento\Quote\Model\Quote by product id
+     * Test for \Magento\Checkout\Controller\Cart::configureAction() with bundle product
      *
-     * @param \Magento\Quote\Model\Quote $quote
-     * @param string|int $productId
-     *
-     * @return \Magento\Quote\Model\Quote\Item|null
+     * @magentoDataFixture Magento/Checkout/_files/quote_with_bundle_product.php
+     * @magentoDbIsolation disabled
      */
-    private function _getQuoteItemIdByProductId($quote, $productId)
+    public function testConfigureActionWithBundleProduct()
     {
-        /** @var $quoteItems \Magento\Quote\Model\Quote\Item[] */
-        $quoteItems = $quote->getAllItems();
-        foreach ($quoteItems as $quoteItem) {
-            if ($productId == $quoteItem->getProductId()) {
-                return $quoteItem;
-            }
-        }
-        return null;
+        /** @var $session CheckoutSession */
+        $session = $this->_objectManager->create(CheckoutSession::class);
+
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = $this->_objectManager->create(ProductRepositoryInterface::class);
+        /** @var $product Product */
+        $product = $productRepository->get('bundle-product');
+
+        $quoteItem = $this->_getQuoteItemIdByProductId($session->getQuote(), $product->getId());
+        $this->assertNotNull($quoteItem, 'Cannot get quote item for bundle product');
+
+        $this->dispatch(
+            'checkout/cart/configure/id/' . $quoteItem->getId() . '/product_id/' . $quoteItem->getProduct()->getId()
+        );
+        $response = $this->getResponse();
+
+        $this->assertSessionMessages($this->isEmpty(), MessageInterface::TYPE_ERROR);
+
+        $this->assertEquals(
+            1,
+            Xpath::getElementsCountForXpath(
+                '//button[@type="submit" and @title="Update Cart"]',
+                $response->getBody()
+            ),
+            'Response for bundle product doesn\'t contain "Update Cart" button'
+        );
+    }
+
+    /**
+     * Test for \Magento\Checkout\Controller\Cart::configureAction() with downloadable product
+     *
+     * @magentoDataFixture Magento/Checkout/_files/quote_with_downloadable_product.php
+     */
+    public function testConfigureActionWithDownloadableProduct()
+    {
+        /** @var $session CheckoutSession */
+        $session = $this->_objectManager->create(CheckoutSession::class);
+
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = $this->_objectManager->create(ProductRepositoryInterface::class);
+        /** @var $product Product */
+        $product = $productRepository->get('downloadable-product');
+
+        $quoteItem = $this->_getQuoteItemIdByProductId($session->getQuote(), $product->getId());
+        $this->assertNotNull($quoteItem, 'Cannot get quote item for downloadable product');
+
+        $this->dispatch(
+            'checkout/cart/configure/id/' . $quoteItem->getId() . '/product_id/' . $quoteItem->getProduct()->getId()
+        );
+        $response = $this->getResponse();
+
+        $this->assertSessionMessages($this->isEmpty(), MessageInterface::TYPE_ERROR);
+
+        $this->assertEquals(
+            1,
+            Xpath::getElementsCountForXpath(
+                '//button[@type="submit" and @title="Update Cart"]',
+                $response->getBody()
+            ),
+            'Response for downloadable product doesn\'t contain "Update Cart" button'
+        );
+
+        $this->assertEquals(
+            1,
+            Xpath::getElementsCountForXpath(
+                '//*[@id="downloadable-links-list"]',
+                $response->getBody()
+            ),
+            'Response for downloadable product doesn\'t contain links for download'
+        );
+    }
+
+    /**
+     * @magentoDataFixture Magento/Customer/_files/customer.php
+     * @magentoDataFixture Magento/Checkout/_files/quote_with_simple_product.php
+     * @magentoAppIsolation enabled
+     */
+    public function testUpdatePostAction()
+    {
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = $this->_objectManager->create(ProductRepositoryInterface::class);
+        /** @var $product Product */
+        $product = $productRepository->get('simple');
+
+        /** Preconditions */
+        $customerFromFixture = 1;
+        $productId = $product->getId();
+        $originalQuantity = 1;
+        $updatedQuantity = 2;
+        /** @var $checkoutSession CheckoutSession */
+        $checkoutSession = $this->_objectManager->create(CheckoutSession::class);
+        $quoteItem = $this->_getQuoteItemIdByProductId($checkoutSession->getQuote(), $productId);
+
+        /** @var FormKey $formKey */
+        $formKey = $this->_objectManager->get(FormKey::class);
+        $postData = [
+            'cart' => [$quoteItem->getId() => ['qty' => $updatedQuantity]],
+            'update_cart_action' => 'update_qty',
+            'form_key' => $formKey->getFormKey(),
+        ];
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
+        $this->getRequest()->setPostValue($postData);
+        /** @var $customerSession CustomerSession */
+        $customerSession = $this->_objectManager->create(CustomerSession::class);
+        $customerSession->setCustomerId($customerFromFixture);
+
+        $this->assertNotNull($quoteItem, 'Cannot get quote item for simple product');
+        $this->assertEquals(
+            $originalQuantity,
+            $quoteItem->getQty(),
+            "Precondition failed: invalid quote item quantity"
+        );
+
+        /** Execute SUT */
+        $this->dispatch('checkout/cart/updatePost');
+
+        /** Check results */
+        /** @var Quote $quote */
+        $quote = $this->_objectManager->create(Quote::class);
+        $quote->load($checkoutSession->getQuote()->getId());
+        $quoteItem = $this->_getQuoteItemIdByProductId($quote, $product->getId());
+        $this->assertEquals($updatedQuantity, $quoteItem->getQty(), "Invalid quote item quantity");
     }
 
     /**
@@ -323,13 +311,13 @@ class CartTest extends \Magento\TestFramework\TestCase\AbstractController
             'form_key' => $formKey->getFormKey(),
             'isAjax' => 1
         ];
-        \Magento\TestFramework\Helper\Bootstrap::getInstance()->loadArea($area);
+        Bootstrap::getInstance()->loadArea($area);
         $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
         $this->getRequest()->setPostValue($postData);
 
-        $quote =  $this->_objectManager->create(\Magento\Checkout\Model\Cart::class);
-        /** @var \Magento\Checkout\Controller\Cart\Add $controller */
-        $controller = $this->_objectManager->create(\Magento\Checkout\Controller\Cart\Add::class, [$quote]);
+        $quote = $this->_objectManager->create(\Magento\Checkout\Model\Cart::class);
+        /** @var Add $controller */
+        $controller = $this->_objectManager->create(Add::class, [$quote]);
         $controller->execute();
 
         $this->assertStringContainsString(json_encode([]), $this->getResponse()->getBody());
@@ -353,7 +341,7 @@ class CartTest extends \Magento\TestFramework\TestCase\AbstractController
     }
 
     /**
-     * @covers \Magento\Checkout\Controller\Cart\Addgroup::execute()
+     * @covers       \Magento\Checkout\Controller\Cart\Addgroup::execute()
      *
      * Test customer can add items to cart only if they belong to him.
      *
@@ -394,6 +382,34 @@ class CartTest extends \Magento\TestFramework\TestCase\AbstractController
     }
 
     /**
+     * Prepare request for testReorderItems.
+     *
+     * @param string $method
+     * @return void
+     */
+    private function prepareRequest(string $method)
+    {
+        /** @var OrderItemCollection $orderItems */
+        $orderItems = $this->_objectManager->create(OrderItemCollection::class);
+        /** @var FormKey $key */
+        $key = $this->_objectManager->get(FormKey::class);
+        $data = [
+            'form_key' => $key->getFormKey(),
+            'order_items' => $orderItems->getAllIds(),
+        ];
+        $this->getRequest()->setMethod($method);
+        switch ($method) {
+            case Request::METHOD_POST:
+                $this->getRequest()->setPostValue($data);
+                break;
+            case Request::METHOD_GET:
+            default:
+                $this->getRequest()->setParams($data);
+                break;
+        }
+    }
+
+    /**
      * Data provider for testReorderItems.
      *
      * @return array
@@ -421,30 +437,21 @@ class CartTest extends \Magento\TestFramework\TestCase\AbstractController
     }
 
     /**
-     * Prepare request for testReorderItems.
-     *
-     * @param string $method
-     * @return void
+     * @inheritdoc
      */
-    private function prepareRequest(string $method)
+    protected function setUp(): void
     {
-        /** @var OrderItemCollection $orderItems */
-        $orderItems = $this->_objectManager->create(OrderItemCollection::class);
-        /** @var FormKey $key */
-        $key = $this->_objectManager->get(FormKey::class);
-        $data = [
-            'form_key' => $key->getFormKey(),
-            'order_items' => $orderItems->getAllIds(),
-        ];
-        $this->getRequest()->setMethod($method);
-        switch ($method) {
-            case Request::METHOD_POST:
-                $this->getRequest()->setPostValue($data);
-                break;
-            case Request::METHOD_GET:
-            default:
-                $this->getRequest()->setParams($data);
-                break;
-        }
+        parent::setUp();
+        $this->checkoutSession = $this->_objectManager->get(CheckoutSession::class);
+        $this->_objectManager->addSharedInstance($this->checkoutSession, CheckoutSession::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->_objectManager->removeSharedInstance(CheckoutSession::class);
+        parent::tearDown();
     }
 }

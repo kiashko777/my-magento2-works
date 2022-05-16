@@ -6,22 +6,27 @@
 
 namespace Magento\Cms\Controller\Adminhtml\Wysiwyg\Images;
 
+use Magento\Cms\Helper\Wysiwyg\Images;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Filesystem;
+use Magento\Framework\Filesystem\Directory\WriteInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for \Magento\Cms\Controller\Adminhtml\Wysiwyg\Images\NewFolder class.
  *
  * @magentoAppArea Adminhtml
  */
-class NewFolderTest extends \PHPUnit\Framework\TestCase
+class NewFolderTest extends TestCase
 {
     /**
-     * @var \Magento\Cms\Controller\Adminhtml\Wysiwyg\Images\NewFolder
+     * @var NewFolder
      */
     private $model;
 
     /**
-     * @var \Magento\Framework\Filesystem\Directory\WriteInterface
+     * @var WriteInterface
      */
     private $mediaDirectory;
 
@@ -33,30 +38,30 @@ class NewFolderTest extends \PHPUnit\Framework\TestCase
     /**
      * @var string
      */
-    private $dirName= 'NewDirectory';
+    private $dirName = 'NewDirectory';
 
     /**
-     * @var \Magento\Framework\Filesystem
+     * @var Filesystem
      */
     private $filesystem;
 
     /**
-     * @var \Magento\Cms\Helper\Wysiwyg\Images
+     * @var Images
      */
     private $imagesHelper;
 
     /**
      * @inheritdoc
      */
-    protected function setUp(): void
+    public static function tearDownAfterClass(): void
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->filesystem = $objectManager->get(\Magento\Framework\Filesystem::class);
-        /** @var \Magento\Cms\Helper\Wysiwyg\Images $imagesHelper */
-        $this->imagesHelper = $objectManager->get(\Magento\Cms\Helper\Wysiwyg\Images::class);
-        $this->mediaDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::MEDIA);
-        $this->fullDirectoryPath = $this->imagesHelper->getStorageRoot();
-        $this->model = $objectManager->get(\Magento\Cms\Controller\Adminhtml\Wysiwyg\Images\NewFolder::class);
+        $filesystem = Bootstrap::getObjectManager()
+            ->get(Filesystem::class);
+        /** @var WriteInterface $directory */
+        $directory = $filesystem->getDirectoryWrite(DirectoryList::MEDIA);
+        if ($directory->isExist('wysiwyg')) {
+            $directory->delete('wysiwyg');
+        }
     }
 
     /**
@@ -87,8 +92,8 @@ class NewFolderTest extends \PHPUnit\Framework\TestCase
      */
     public function testExecuteWithLinkedMedia()
     {
-        $linkedDirectoryPath =  $this->filesystem->getDirectoryRead(DirectoryList::PUB)
-                ->getAbsolutePath()  . 'linked_media';
+        $linkedDirectoryPath = $this->filesystem->getDirectoryRead(DirectoryList::PUB)
+                ->getAbsolutePath() . 'linked_media';
         $this->model->getRequest()->setMethod('POST')
             ->setPostValue('name', $this->dirName);
         $this->model->getStorage()
@@ -121,14 +126,14 @@ class NewFolderTest extends \PHPUnit\Framework\TestCase
     /**
      * @inheritdoc
      */
-    public static function tearDownAfterClass(): void
+    protected function setUp(): void
     {
-        $filesystem = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\Filesystem::class);
-        /** @var \Magento\Framework\Filesystem\Directory\WriteInterface $directory */
-        $directory = $filesystem->getDirectoryWrite(DirectoryList::MEDIA);
-        if ($directory->isExist('wysiwyg')) {
-            $directory->delete('wysiwyg');
-        }
+        $objectManager = Bootstrap::getObjectManager();
+        $this->filesystem = $objectManager->get(Filesystem::class);
+        /** @var Images $imagesHelper */
+        $this->imagesHelper = $objectManager->get(Images::class);
+        $this->mediaDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::MEDIA);
+        $this->fullDirectoryPath = $this->imagesHelper->getStorageRoot();
+        $this->model = $objectManager->get(NewFolder::class);
     }
 }

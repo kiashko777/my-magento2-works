@@ -30,7 +30,8 @@ define([
                     return cart;
                 },
                 reload: jasmine.createSpy(),
-                getInitCustomerData: function () {}
+                getInitCustomerData: function () {
+                }
             }
         },
         mocksTwo = {
@@ -44,7 +45,8 @@ define([
                     return cartTwo;
                 },
                 reload: jasmine.createSpy(),
-                getInitCustomerData: function () {}
+                getInitCustomerData: function () {
+                }
             }
         };
 
@@ -52,7 +54,8 @@ define([
         try {
             injector.clean();
             injector.remove();
-        } catch (e) {}
+        } catch (e) {
+        }
     });
 
     describe('Test that customer data is reloaded when quote subtotal and cart subtotal are different', function () {

@@ -16,12 +16,6 @@ class ReaderTest extends TestCase
      */
     private $reader;
 
-    protected function setUp(): void
-    {
-        $this->reader = Bootstrap::getObjectManager()
-            ->create(Reader::class);
-    }
-
     public function testRead()
     {
         $result = $this->reader->read();
@@ -57,5 +51,11 @@ class ReaderTest extends TestCase
         $this->assertEquals('^[0-9]{3}-[0-9]{3}$', $result['KR']['pattern_1']['pattern']);
         $this->assertEquals('12345', $result['KR']['pattern_2']['example']);
         $this->assertEquals('^[0-9]{5}$', $result['KR']['pattern_2']['pattern']);
+    }
+
+    protected function setUp(): void
+    {
+        $this->reader = Bootstrap::getObjectManager()
+            ->create(Reader::class);
     }
 }

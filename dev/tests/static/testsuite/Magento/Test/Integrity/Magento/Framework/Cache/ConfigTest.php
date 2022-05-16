@@ -3,7 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Magento\Test\Integrity\Magento\Framework\Cache;
 
@@ -33,21 +33,6 @@ class ConfigTest extends TestCase
     private $xsdValidator;
 
     /**
-     * Setup environment for test
-     */
-    protected function setUp(): void
-    {
-        if (!function_exists('libxml_set_external_entity_loader')) {
-            $this->markTestSkipped('Skipped on HHVM. Will be fixed in MAGETWO-45033');
-        }
-        $this->urnResolver = new UrnResolver();
-        $this->xsdSchema = $this->urnResolver->getRealPath(
-            'urn:magento:framework:Cache/etc/cache.xsd'
-        );
-        $this->xsdValidator = new XsdValidator();
-    }
-
-    /**
      * Tests invalid configurations
      *
      * @param string $xmlString
@@ -56,8 +41,9 @@ class ConfigTest extends TestCase
      */
     public function testSchemaCorrectlyIdentifiesInvalidXml(
         string $xmlString,
-        array $expectedError
-    ): void {
+        array  $expectedError
+    ): void
+    {
         $actualError = $this->xsdValidator->validate(
             $this->xsdSchema,
             $xmlString
@@ -85,5 +71,20 @@ class ConfigTest extends TestCase
     public function schemaCorrectlyIdentifiesInvalidXmlDataProvider(): array
     {
         return include __DIR__ . '/_files/invalidCacheConfigXmlArray.php';
+    }
+
+    /**
+     * Setup environment for test
+     */
+    protected function setUp(): void
+    {
+        if (!function_exists('libxml_set_external_entity_loader')) {
+            $this->markTestSkipped('Skipped on HHVM. Will be fixed in MAGETWO-45033');
+        }
+        $this->urnResolver = new UrnResolver();
+        $this->xsdSchema = $this->urnResolver->getRealPath(
+            'urn:magento:framework:Cache/etc/cache.xsd'
+        );
+        $this->xsdValidator = new XsdValidator();
     }
 }

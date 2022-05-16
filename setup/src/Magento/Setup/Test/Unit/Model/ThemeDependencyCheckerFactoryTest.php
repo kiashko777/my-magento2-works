@@ -31,6 +31,16 @@ class ThemeDependencyCheckerFactoryTest extends TestCase
      */
     private $objectManager;
 
+    public function testCreate()
+    {
+        $this->objectManagerProvider->expects($this->once())->method('get')->willReturn($this->objectManager);
+        $this->objectManager->expects($this->once())
+            ->method('get')
+            ->with(ThemeDependencyChecker::class);
+        $this->themeDependencyCheckerFactory = new ThemeDependencyCheckerFactory($this->objectManagerProvider);
+        $this->themeDependencyCheckerFactory->create();
+    }
+
     protected function setUp(): void
     {
         $this->objectManagerProvider = $this->createMock(ObjectManagerProvider::class);
@@ -40,15 +50,5 @@ class ThemeDependencyCheckerFactoryTest extends TestCase
             '',
             false
         );
-    }
-
-    public function testCreate()
-    {
-        $this->objectManagerProvider->expects($this->once())->method('get')->willReturn($this->objectManager);
-        $this->objectManager->expects($this->once())
-            ->method('get')
-            ->with(ThemeDependencyChecker::class);
-        $this->themeDependencyCheckerFactory = new ThemeDependencyCheckerFactory($this->objectManagerProvider);
-        $this->themeDependencyCheckerFactory->create();
     }
 }

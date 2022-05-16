@@ -20,7 +20,7 @@ class PoolTest extends TestCase
     {
         /** @var ObjectManagerConfig $diConfig */
         $diConfig = ObjectManager::getInstance()->get(ObjectManagerConfig::class);
-        $argumentConfig = $diConfig->getArguments(\Magento\Framework\App\Cache\Frontend\Pool::class);
+        $argumentConfig = $diConfig->getArguments(Pool::class);
 
         $pageCacheDir = $argumentConfig['frontendSettings']['page_cache']['backend_options']['cache_dir'] ?? null;
         $defaultCacheDir = $argumentConfig['frontendSettings']['default']['backend_options']['cache_dir'] ?? null;
@@ -41,8 +41,8 @@ class PoolTest extends TestCase
         $testData = 'test data';
         $testKey = 'test-key';
 
-        /** @var \Magento\Framework\App\Cache\Frontend\Pool $cacheFrontendPool */
-        $cacheFrontendPool = ObjectManager::getInstance()->get(\Magento\Framework\App\Cache\Frontend\Pool::class);
+        /** @var Pool $cacheFrontendPool */
+        $cacheFrontendPool = ObjectManager::getInstance()->get(Pool::class);
 
         $pageCache = $cacheFrontendPool->get('page_cache');
         $pageCache->save($testData, $testKey);

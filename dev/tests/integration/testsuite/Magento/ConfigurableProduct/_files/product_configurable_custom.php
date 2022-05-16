@@ -4,29 +4,39 @@
  * See COPYING.txt for license details.
  */
 declare(strict_types=1);
+
+use Magento\Catalog\Api\CategoryLinkManagementInterface;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Setup\CategorySetup;
+use Magento\CatalogInventory\Model\Stock\Item;
+use Magento\ConfigurableProduct\Helper\Product\Options\Factory;
+use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
+use Magento\Eav\Model\Config;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture(
     'Magento/ConfigurableProduct/_files/configurable_attribute_with_source_model.php'
 );
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 
-$installer = $objectManager->create(\Magento\Catalog\Setup\CategorySetup::class);
+$installer = $objectManager->create(CategorySetup::class);
 
-$eavConfig = $objectManager->get(\Magento\Eav\Model\Config::class);
-$attribute = $eavConfig->getAttribute(\Magento\Catalog\Model\Product::ENTITY, 'test_configurable_with_sm');
+$eavConfig = $objectManager->get(Config::class);
+$attribute = $eavConfig->getAttribute(Product::ENTITY, 'test_configurable_with_sm');
 $options = $attribute->getOptions();
 
-$productRepository = $objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+$productRepository = $objectManager->create(ProductRepositoryInterface::class);
 $attributeValues = [];
 $associatedProductIds = [];
-$attributeSetId = $installer->getAttributeSetId(\Magento\Catalog\Model\Product::ENTITY, 'Default');
+$attributeSetId = $installer->getAttributeSetId(Product::ENTITY, 'Default');
 
 foreach ($options as $key => $option) {
     $productId = $key + 10;
 
-    $product = $objectManager->create(\Magento\Catalog\Model\Product::class);
+    $product = $objectManager->create(Product::class);
     $product->setTypeId(Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
         ->setId($productId)
         ->setAttributeSetId($attributeSetId)
@@ -40,7 +50,7 @@ foreach ($options as $key => $option) {
         ->setStockData(['use_config_manage_stock' => 1, 'qty' => 100, 'is_qty_decimal' => 0, 'is_in_stock' => 1]);
     $product = $productRepository->save($product);
 
-    $stockItem = $objectManager->create(\Magento\CatalogInventory\Model\Stock\Item::class);
+    $stockItem = $objectManager->create(Item::class);
     $stockItem->load($productId, 'product_id');
     if (!$stockItem->getProductId()) {
         $stockItem->setProductId($productId);
@@ -59,7 +69,7 @@ foreach ($options as $key => $option) {
     $associatedProductIds[] = $product->getId();
 }
 
-$optionsFactory = $objectManager->create(\Magento\ConfigurableProduct\Helper\Product\Options\Factory::class);
+$optionsFactory = $objectManager->create(Factory::class);
 $configurableAttributesData = [
     [
         'attribute_id' => $attribute->getId(),
@@ -71,13 +81,13 @@ $configurableAttributesData = [
 ];
 $configurableOptions = $optionsFactory->create($configurableAttributesData);
 
-$product = $objectManager->create(\Magento\Catalog\Model\Product::class);
+$product = $objectManager->create(Product::class);
 $extensionConfigurableAttributes = $product->getExtensionAttributes();
 $extensionConfigurableAttributes->setConfigurableProductOptions($configurableOptions);
 $extensionConfigurableAttributes->setConfigurableProductLinks($associatedProductIds);
 $product->setExtensionAttributes($extensionConfigurableAttributes);
 
-$product->setTypeId(\Magento\ConfigurableProduct\Model\Product\Type\Configurable::TYPE_CODE)
+$product->setTypeId(Configurable::TYPE_CODE)
     ->setId(1)
     ->setAttributeSetId($attributeSetId)
     ->setWebsiteIds([1])
@@ -88,7 +98,7 @@ $product->setTypeId(\Magento\ConfigurableProduct\Model\Product\Type\Configurable
     ->setStockData(['use_config_manage_stock' => 1, 'is_in_stock' => 1]);
 $productRepository->save($product);
 
-$categoryLinkManagement = $objectManager->create(\Magento\Catalog\Api\CategoryLinkManagementInterface::class);
+$categoryLinkManagement = $objectManager->create(CategoryLinkManagementInterface::class);
 $categoryLinkManagement->assignProductToCategories(
     $product->getSku(),
     [2]

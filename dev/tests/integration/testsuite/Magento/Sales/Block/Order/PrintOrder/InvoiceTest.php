@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Sales\Block\Order\PrintOrder;
 
+use IntlDateFormatter;
 use Magento\Directory\Model\CountryFactory;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Registry;
@@ -56,34 +57,6 @@ class InvoiceTest extends TestCase
     private $orderPaymentFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
-        $this->invoiceFactory = $this->objectManager->get(InvoiceInterfaceFactory::class);
-        $this->pageFactory = $this->objectManager->get(PageFactory::class);
-        $this->countryFactory = $this->objectManager->get(CountryFactory::class);
-        $this->orderPaymentFactory = $this->objectManager->create(OrderPaymentInterfaceFactory::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->registry->unregister('current_order');
-        $this->registry->unregister('current_invoice');
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoAppIsolation enabled
      *
      * @return void
@@ -105,6 +78,18 @@ class InvoiceTest extends TestCase
         $actualHtml = $block->getInvoiceTotalsHtml($invoice);
         $this->assertSame($invoice, $childBlock->getInvoice());
         $this->assertEquals($expectedHtml, $actualHtml);
+    }
+
+    /**
+     * Register order in registry.
+     *
+     * @param OrderInterface $order
+     * @return void
+     */
+    private function registerOrder(OrderInterface $order): void
+    {
+        $this->registry->unregister('current_order');
+        $this->registry->register('current_order', $order);
     }
 
     /**
@@ -135,33 +120,34 @@ class InvoiceTest extends TestCase
     }
 
     /**
-     * @magentoDataFixture Magento/Sales/_files/invoices_for_items.php
+     * Register invoice in registry.
      *
+     * @param InvoiceInterface $invoice
      * @return void
      */
-    public function testOrderInformation(): void
+    private function registerInvoice(InvoiceInterface $invoice): void
     {
-        $order = $this->orderFactory->create()->loadByIncrementId('100000555');
-        $this->registerOrder($order);
-        $block = $this->layout->createBlock(Invoice::class);
-        $orderDate = $block->formatDate($order->getCreatedAt(), \IntlDateFormatter::LONG);
-        $templates = [
-            'Order status' => [
-                'template' => 'Magento_Sales::order/order_status.phtml',
-                'expected_data' => (string)__($order->getStatusLabel()),
-            ],
-            'Order date' => [
-                'template' => 'Magento_Sales::order/order_date.phtml',
-                'expected_data' => (string)__('Order Date: %1', $orderDate),
-            ],
-        ];
-        foreach ($templates as $key => $data) {
-            $this->assertStringContainsString(
-                $data['expected_data'],
-                strip_tags($block->setTemplate($data['template'])->toHtml()),
-                sprintf('%s wasn\'t found.', $key)
-            );
-        }
+        $this->registry->unregister('current_invoice');
+        $this->registry->register('current_invoice', $invoice);
+    }
+
+    /**
+     * Render print invoice block.
+     *
+     * @return string
+     */
+    private function renderPrintInvoiceBlock(): string
+    {
+        $page = $this->pageFactory->create();
+        $page->addHandle([
+            'default',
+            'sales_order_printinvoice',
+        ]);
+        $page->getLayout()->generateXml();
+        $printInvoiceBlock = $page->getLayout()->getBlock('sales.order.print.invoice');
+        $this->assertNotFalse($printInvoiceBlock);
+
+        return $printInvoiceBlock->toHtml();
     }
 
     /**
@@ -226,45 +212,60 @@ class InvoiceTest extends TestCase
     }
 
     /**
-     * Register order in registry.
+     * @magentoDataFixture Magento/Sales/_files/invoices_for_items.php
      *
-     * @param OrderInterface $order
      * @return void
      */
-    private function registerOrder(OrderInterface $order): void
+    public function testOrderInformation(): void
+    {
+        $order = $this->orderFactory->create()->loadByIncrementId('100000555');
+        $this->registerOrder($order);
+        $block = $this->layout->createBlock(Invoice::class);
+        $orderDate = $block->formatDate($order->getCreatedAt(), IntlDateFormatter::LONG);
+        $templates = [
+            'Order status' => [
+                'template' => 'Magento_Sales::order/order_status.phtml',
+                'expected_data' => (string)__($order->getStatusLabel()),
+            ],
+            'Order date' => [
+                'template' => 'Magento_Sales::order/order_date.phtml',
+                'expected_data' => (string)__('Order Date: %1', $orderDate),
+            ],
+        ];
+        foreach ($templates as $key => $data) {
+            $this->assertStringContainsString(
+                $data['expected_data'],
+                strip_tags($block->setTemplate($data['template'])->toHtml()),
+                sprintf('%s wasn\'t found.', $key)
+            );
+        }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
+        $this->invoiceFactory = $this->objectManager->get(InvoiceInterfaceFactory::class);
+        $this->pageFactory = $this->objectManager->get(PageFactory::class);
+        $this->countryFactory = $this->objectManager->get(CountryFactory::class);
+        $this->orderPaymentFactory = $this->objectManager->create(OrderPaymentInterfaceFactory::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
     {
         $this->registry->unregister('current_order');
-        $this->registry->register('current_order', $order);
-    }
-
-    /**
-     * Register invoice in registry.
-     *
-     * @param InvoiceInterface $invoice
-     * @return void
-     */
-    private function registerInvoice(InvoiceInterface $invoice): void
-    {
         $this->registry->unregister('current_invoice');
-        $this->registry->register('current_invoice', $invoice);
-    }
 
-    /**
-     * Render print invoice block.
-     *
-     * @return string
-     */
-    private function renderPrintInvoiceBlock(): string
-    {
-        $page = $this->pageFactory->create();
-        $page->addHandle([
-            'default',
-            'sales_order_printinvoice',
-        ]);
-        $page->getLayout()->generateXml();
-        $printInvoiceBlock = $page->getLayout()->getBlock('sales.order.print.invoice');
-        $this->assertNotFalse($printInvoiceBlock);
-
-        return $printInvoiceBlock->toHtml();
+        parent::tearDown();
     }
 }

@@ -17,9 +17,9 @@ Resolver::getInstance()->requireDataFixture('Magento/Sales/_files/order.php');
 $objectManager = Bootstrap::getObjectManager();
 /** @var StoreManagerInterface $storeManager */
 $storeManager = $objectManager->get(StoreManagerInterface::class);
-$defaultWebsiteId = (int) $storeManager->getWebsite('base')->getId();
-$websiteId = (int) $storeManager->getWebsite('test')->getId();
-$storeId = (int) $storeManager->getStore('fixture_second_store')->getId();
+$defaultWebsiteId = (int)$storeManager->getWebsite('base')->getId();
+$websiteId = (int)$storeManager->getWebsite('test')->getId();
+$storeId = (int)$storeManager->getStore('fixture_second_store')->getId();
 
 /** @var ProductRepositoryInterface $productRepository */
 $productRepository = $objectManager->get(ProductRepositoryInterface::class);

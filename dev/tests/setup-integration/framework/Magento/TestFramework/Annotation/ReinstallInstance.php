@@ -7,7 +7,9 @@
 namespace Magento\TestFramework\Annotation;
 
 use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Module\ModuleResource;
+use Magento\TestFramework\Application;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
 
@@ -17,16 +19,16 @@ use Magento\TestFramework\ObjectManager;
 class ReinstallInstance
 {
     /**
-     * @var \Magento\TestFramework\Application
+     * @var Application
      */
     private $application;
 
     /**
      * Constructor
      *
-     * @param \Magento\TestFramework\Application $application
+     * @param Application $application
      */
-    public function __construct(\Magento\TestFramework\Application $application)
+    public function __construct(Application $application)
     {
         $this->application = $application;
     }
@@ -44,7 +46,7 @@ class ReinstallInstance
     /**
      * Handler for 'endTest' event.
      *
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @throws LocalizedException
      */
     public function endTest()
     {

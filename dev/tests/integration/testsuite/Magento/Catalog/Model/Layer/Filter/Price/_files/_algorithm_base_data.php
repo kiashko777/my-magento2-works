@@ -16,7 +16,7 @@ $testCases = [
             ['from' => 0, 'to' => '', 'count' => 138]
         ],
         'incomplete_reason' => ' '
-     ],
+    ],
     // small prices data set 1
     [
         range(0.01, 0.08, 0.01),
@@ -24,7 +24,7 @@ $testCases = [
         [
             ['from' => 0, 'to' => '', 'count' => 138]
         ],
-            'incomplete_reason' => ' '
+        'incomplete_reason' => ' '
     ],
     // zero price test data set 2
     [
@@ -116,7 +116,7 @@ $testCases = [
             ['from' => 10, 'to' => '', 'count' => 10]
         ],
         'incomplete_reason' => 'MC-33826:'
-        . 'Stabilize skipped test cases for Integration AlgorithmBaseTest with elasticsearch'
+            . 'Stabilize skipped test cases for Integration AlgorithmBaseTest with elasticsearch'
     ],
     // test if best rounding factor is used data set 7
     [

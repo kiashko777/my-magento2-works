@@ -3,15 +3,25 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Api\ExtensionAttribute\Config;
+
+use Magento\Catalog\Api\Data\Product;
+use Magento\Customer\Api\Data\CustomerInterface;
+use Magento\Framework\App\Arguments\FileResolver\Primary;
+use Magento\Framework\App\Arguments\ValidationState;
+use Magento\Framework\App\State;
+use Magento\Framework\Config\Dom\UrnResolver;
+use Magento\Tax\Api\Data\TaxRateInterface;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Tests for \Magento\Framework\Api\ExtensionAttribute\Config\Reader
  */
-class ReaderTest extends \PHPUnit\Framework\TestCase
+class ReaderTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Api\ExtensionAttribute\Config\Reader
+     * @var Reader
      */
     protected $_model;
 
@@ -21,54 +31,28 @@ class ReaderTest extends \PHPUnit\Framework\TestCase
     protected $_fileList;
 
     /**
-     * @var \Magento\Framework\App\Arguments\FileResolver\Primary
+     * @var Primary
      */
     protected $_fileResolverMock;
 
     /**
-     * @var \Magento\Framework\App\Arguments\ValidationState
+     * @var ValidationState
      */
     protected $_validationState;
 
     /**
-     * @var \Magento\Framework\Api\ExtensionAttribute\Config\SchemaLocator
+     * @var SchemaLocator
      */
     protected $_schemaLocator;
 
     /**
-     * @var \Magento\Framework\Api\ExtensionAttribute\Config\Converter
+     * @var Converter
      */
     protected $_converter;
 
-    protected function setUp(): void
-    {
-        $fixturePath = realpath(__DIR__ . '/_files') . '/';
-        $this->_fileList = [
-            file_get_contents($fixturePath . 'config_one.xml'),
-            file_get_contents($fixturePath . 'config_two.xml'),
-        ];
-
-        $this->_fileResolverMock = $this->getMockBuilder(\Magento\Framework\App\Arguments\FileResolver\Primary::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['get'])
-            ->getMock();
-        $this->_fileResolverMock->expects($this->once())
-            ->method('get')
-            ->willReturn($this->_fileList);
-
-        $this->_converter = new \Magento\Framework\Api\ExtensionAttribute\Config\Converter();
-
-        $this->_validationState = new \Magento\Framework\App\Arguments\ValidationState(
-            \Magento\Framework\App\State::MODE_DEFAULT
-        );
-        $this->_schemaLocator = new \Magento\Framework\Api\ExtensionAttribute\Config\SchemaLocator(
-            new \Magento\Framework\Config\Dom\UrnResolver()
-        );
-    }
-
     public function testMerge()
     {
-        $model = new \Magento\Framework\Api\ExtensionAttribute\Config\Reader(
+        $model = new Reader(
             $this->_fileResolverMock,
             $this->_converter,
             $this->_schemaLocator,
@@ -76,15 +60,15 @@ class ReaderTest extends \PHPUnit\Framework\TestCase
         );
 
         $expectedArray = [
-            \Magento\Tax\Api\Data\TaxRateInterface::class => [],
-            \Magento\Catalog\Api\Data\Product::class => [
+            TaxRateInterface::class => [],
+            Product::class => [
                 'stock_item' => [
                     "type" => "Magento\CatalogInventory\Api\Data\StockItem",
                     "resourceRefs" => [],
                     "join" => null,
                 ],
             ],
-            \Magento\Customer\Api\Data\CustomerInterface::class => [
+            CustomerInterface::class => [
                 'custom_1' => [
                     "type" => "Magento\Customer\Api\Data\CustomerCustom",
                     "resourceRefs" => [],
@@ -104,5 +88,31 @@ class ReaderTest extends \PHPUnit\Framework\TestCase
         ];
 
         $this->assertEquals($expectedArray, $model->read('global'));
+    }
+
+    protected function setUp(): void
+    {
+        $fixturePath = realpath(__DIR__ . '/_files') . '/';
+        $this->_fileList = [
+            file_get_contents($fixturePath . 'config_one.xml'),
+            file_get_contents($fixturePath . 'config_two.xml'),
+        ];
+
+        $this->_fileResolverMock = $this->getMockBuilder(Primary::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['get'])
+            ->getMock();
+        $this->_fileResolverMock->expects($this->once())
+            ->method('get')
+            ->willReturn($this->_fileList);
+
+        $this->_converter = new Converter();
+
+        $this->_validationState = new ValidationState(
+            State::MODE_DEFAULT
+        );
+        $this->_schemaLocator = new SchemaLocator(
+            new UrnResolver()
+        );
     }
 }

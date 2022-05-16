@@ -4,12 +4,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\GroupedProduct\Api;
+
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
  * @magentoAppIsolation enabled
  */
-class ProductLinkManagementTest extends \Magento\TestFramework\TestCase\WebapiAbstract
+class ProductLinkManagementTest extends WebapiAbstract
 {
     const SERVICE_NAME = 'catalogProductLinkManagementV1';
     const SERVICE_VERSION = 'V1';
@@ -26,7 +30,7 @@ class ProductLinkManagementTest extends \Magento\TestFramework\TestCase\WebapiAb
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $productSku . '/links/' . $linkType,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,

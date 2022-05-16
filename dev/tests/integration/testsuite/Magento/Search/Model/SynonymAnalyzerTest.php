@@ -3,24 +3,22 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Search\Model;
+
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoDataFixture Magento/Search/_files/synonym_reader.php
  * @magentoDbIsolation disabled
  */
-class SynonymAnalyzerTest extends \PHPUnit\Framework\TestCase
+class SynonymAnalyzerTest extends TestCase
 {
     /**
-     * @var \Magento\Search\Model\SynonymAnalyzer
+     * @var SynonymAnalyzer
      */
     private $synAnalyzer;
-
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->synAnalyzer = $objectManager->get(\Magento\Search\Model\SynonymAnalyzer::class);
-    }
 
     /**
      * Data provider for the test
@@ -32,7 +30,7 @@ class SynonymAnalyzerTest extends \PHPUnit\Framework\TestCase
         return [
             'WithSynonymsFromStoreViewScope' => [
                 'phrase' => 'elizabeth is the english queen',
-                'expectedResult' => [['elizabeth'],['is'],['the'],['british', 'english'],['queen', 'monarch']]
+                'expectedResult' => [['elizabeth'], ['is'], ['the'], ['british', 'english'], ['queen', 'monarch']]
             ],
             'WithSynonymsFromWebsiteScope' => [
                 'phrase' => 'orange hill',
@@ -94,5 +92,11 @@ class SynonymAnalyzerTest extends \PHPUnit\Framework\TestCase
     {
         $synonyms = $this->synAnalyzer->getSynonymsForPhrase($phrase);
         $this->assertEquals($expectedResult, $synonyms);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->synAnalyzer = $objectManager->get(SynonymAnalyzer::class);
     }
 }

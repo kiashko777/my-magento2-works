@@ -7,8 +7,8 @@ declare(strict_types=1);
 
 namespace Magento\Backend\Controller\Adminhtml\Dashboard;
 
-use Magento\TestFramework\TestCase\AbstractBackendController;
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * @magentoAppArea Adminhtml

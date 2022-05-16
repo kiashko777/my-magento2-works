@@ -36,16 +36,6 @@ class RobotsTest extends TestCase
     private $storeManager;
 
     /**
-     * @inheridoc
-     */
-    protected function setUp(): void
-    {
-        $this->layout = Bootstrap::getObjectManager()->get(LayoutInterface::class);
-        $this->sitemapFactory = Bootstrap::getObjectManager()->get(SitemapFactory::class);
-        $this->storeManager = Bootstrap::getObjectManager()->get(StoreManagerInterface::class);
-    }
-
-    /**
      * Test toHtml with few websites
      *
      * @magentoDataFixture Magento/Store/_files/multiple_websites_with_store_groups_stores.php
@@ -66,6 +56,21 @@ class RobotsTest extends TestCase
     }
 
     /**
+     * Create Sitemap
+     *
+     * @param string $fileName
+     * @param int $storeId
+     * @param string $siteMath
+     * @return void
+     */
+    private function createSitemap(string $fileName, int $storeId, string $siteMath = '/'): void
+    {
+        $model = $this->sitemapFactory->create();
+        $model->setData(['sitemap_filename' => $fileName, 'store_id' => $storeId, 'sitemap_path' => $siteMath]);
+        $model->save();
+    }
+
+    /**
      * Returns toHtml output per store
      *
      * @param int $storeId
@@ -80,17 +85,12 @@ class RobotsTest extends TestCase
     }
 
     /**
-     * Create Sitemap
-     *
-     * @param string $fileName
-     * @param int $storeId
-     * @param string $siteMath
-     * @return void
+     * @inheridoc
      */
-    private function createSitemap(string $fileName, int $storeId, string $siteMath = '/'): void
+    protected function setUp(): void
     {
-        $model = $this->sitemapFactory->create();
-        $model->setData(['sitemap_filename' => $fileName, 'store_id' => $storeId, 'sitemap_path' => $siteMath]);
-        $model->save();
+        $this->layout = Bootstrap::getObjectManager()->get(LayoutInterface::class);
+        $this->sitemapFactory = Bootstrap::getObjectManager()->get(SitemapFactory::class);
+        $this->storeManager = Bootstrap::getObjectManager()->get(StoreManagerInterface::class);
     }
 }

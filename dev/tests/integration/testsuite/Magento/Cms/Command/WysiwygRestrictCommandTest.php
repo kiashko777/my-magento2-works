@@ -33,16 +33,6 @@ class WysiwygRestrictCommandTest extends TestCase
     private $factory;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->config = $objectManager->get(ReinitableConfigInterface::class);
-        $this->factory = $objectManager->get(WysiwygRestrictCommandFactory::class);
-    }
-
-    /**
      * "Execute" method cases.
      *
      * @return array
@@ -74,5 +64,15 @@ class WysiwygRestrictCommandTest extends TestCase
 
         $this->config->reinit();
         $this->assertEquals($expectedFlag, $this->config->isSetFlag(Validator::CONFIG_PATH_THROW_EXCEPTION));
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->config = $objectManager->get(ReinitableConfigInterface::class);
+        $this->factory = $objectManager->get(WysiwygRestrictCommandFactory::class);
     }
 }

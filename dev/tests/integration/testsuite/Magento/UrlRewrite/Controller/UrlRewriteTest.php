@@ -7,8 +7,8 @@ declare(strict_types=1);
 
 namespace Magento\UrlRewrite\Controller;
 
-use Magento\TestFramework\TestCase\AbstractController;
 use Magento\Framework\App\Response\Http as HttpResponse;
+use Magento\TestFramework\TestCase\AbstractController;
 
 /**
  * Class to test Match corresponding URL Rewrite
@@ -19,8 +19,8 @@ class UrlRewriteTest extends AbstractController
      * @magentoDataFixture Magento/UrlRewrite/_files/url_rewrite.php
      * @magentoDbIsolation disabled
      *
-     * @covers \Magento\UrlRewrite\Controller\Router::match
-     * @covers \Magento\UrlRewrite\Model\Storage\DbStorage::doFindOneByData
+     * @covers       \Magento\UrlRewrite\Controller\Router::match
+     * @covers       \Magento\UrlRewrite\Model\Storage\DbStorage::doFindOneByData
      *
      * @param string $request
      * @param string $redirect
@@ -32,8 +32,9 @@ class UrlRewriteTest extends AbstractController
     public function testMatchUrlRewrite(
         string $request,
         string $redirect,
-        int $expectedCode = HttpResponse::STATUS_CODE_301
-    ): void {
+        int    $expectedCode = HttpResponse::STATUS_CODE_301
+    ): void
+    {
         $this->dispatch($request);
         /** @var HttpResponse $response */
         $response = $this->getResponse();

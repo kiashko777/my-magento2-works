@@ -7,13 +7,15 @@ declare(strict_types=1);
 
 namespace Magento\Sales\Model\Order;
 
+use Magento\Sales\Model\Order;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\Sales\Model\Order\Config
  */
-class ConfigTest extends \PHPUnit\Framework\TestCase
+class ConfigTest extends TestCase
 {
     /**
      * @var ObjectManager
@@ -26,15 +28,6 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
     private $orderConfig;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->orderConfig = $this->objectManager->create(Config::class);
-    }
-
-    /**
      * Correct display of the list of "Order States" after assigning
      * the state "complete" to a custom order status.
      *
@@ -45,7 +38,7 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
         $allStates = $this->orderConfig->getStates();
         /** @var Status $completeStatus */
         $completeStatus = $this->objectManager->create(Status::class)
-            ->load(\Magento\Sales\Model\Order::STATE_COMPLETE);
+            ->load(Order::STATE_COMPLETE);
         $completeState = $allStates[$completeStatus->getStatus()];
 
         $this->assertEquals($completeStatus->getLabel(), $completeState->getText());
@@ -73,5 +66,14 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
             ['fraud', 'Suspected Fraud'],
             ['processing', 'Processing'],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->orderConfig = $this->objectManager->create(Config::class);
     }
 }

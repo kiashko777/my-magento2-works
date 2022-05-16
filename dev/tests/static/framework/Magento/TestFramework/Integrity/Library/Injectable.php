@@ -3,10 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Integrity\Library;
 
 use Laminas\Code\Reflection\ClassReflection;
 use Laminas\Code\Reflection\FileReflection;
+use Laminas\Code\Reflection\MethodReflection;
 use Laminas\Code\Reflection\ParameterReflection;
 use ReflectionClass;
 use ReflectionException;
@@ -18,7 +20,7 @@ use ReflectionParameter;
 class Injectable
 {
     /**
-     * @var \ReflectionException[]
+     * @var ReflectionException[]
      */
     protected $dependencies = [];
 
@@ -26,15 +28,15 @@ class Injectable
      * Get dependencies
      *
      * @param FileReflection $fileReflection
-     * @return \ReflectionException[]
-     * @throws \ReflectionException
+     * @return ReflectionException[]
+     * @throws ReflectionException
      */
     public function getDependencies(FileReflection $fileReflection)
     {
         foreach ($fileReflection->getClasses() as $class) {
             /** @var ClassReflection $class */
             foreach ($class->getMethods() as $method) {
-                /** @var \Laminas\Code\Reflection\MethodReflection $method */
+                /** @var MethodReflection $method */
                 if ($method->getDeclaringClass()->getName() != $class->getName()) {
                     continue;
                 }
@@ -46,7 +48,7 @@ class Injectable
                         if ($dependency instanceof ClassReflection) {
                             $this->dependencies[] = $dependency->getName();
                         }
-                    } catch (\ReflectionException $e) {
+                    } catch (ReflectionException $e) {
                         if (preg_match('#^Class ([A-Za-z0-9_\\\\]+) does not exist$#', $e->getMessage(), $result)) {
                             $this->dependencies[] = $result[1];
                         } else {

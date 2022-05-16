@@ -30,6 +30,14 @@ class ConfigTest extends TestCase
      */
     protected $config;
 
+    public function testGetDependenciesCount()
+    {
+        $this->moduleFirst->expects($this->once())->method('getDependenciesCount')->willReturn(0);
+        $this->moduleSecond->expects($this->once())->method('getDependenciesCount')->willReturn(2);
+
+        $this->assertEquals(2, $this->config->getDependenciesCount());
+    }
+
     protected function setUp(): void
     {
         $this->moduleFirst = $this->createMock(Module::class);
@@ -40,13 +48,5 @@ class ConfigTest extends TestCase
             Config::class,
             ['modules' => [$this->moduleFirst, $this->moduleSecond]]
         );
-    }
-
-    public function testGetDependenciesCount()
-    {
-        $this->moduleFirst->expects($this->once())->method('getDependenciesCount')->willReturn(0);
-        $this->moduleSecond->expects($this->once())->method('getDependenciesCount')->willReturn(2);
-
-        $this->assertEquals(2, $this->config->getDependenciesCount());
     }
 }

@@ -3,39 +3,49 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Model\Product;
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Block\Product\ListProduct;
+use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\CategoryFactory;
+use Magento\Catalog\Model\Product;
 use Magento\CatalogSearch\Model\Indexer\Fulltext;
+use Magento\Framework\App\Cache\StateInterface;
+use Magento\Framework\App\CacheInterface;
+use Magento\Framework\Indexer\IndexerRegistry;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Store\Api\WebsiteRepositoryInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class ActionTest extends \PHPUnit\Framework\TestCase
+class ActionTest extends TestCase
 {
     /**
-     * @var \Magento\Catalog\Model\Product\Action
+     * @var Action
      */
     private $action;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
     public static function setUpBeforeClass(): void
     {
-        /** @var \Magento\Framework\Indexer\IndexerRegistry $indexerRegistry */
-        $indexerRegistry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\Indexer\IndexerRegistry::class);
+        /** @var IndexerRegistry $indexerRegistry */
+        $indexerRegistry = Bootstrap::getObjectManager()
+            ->get(IndexerRegistry::class);
         $indexerRegistry->get(Fulltext::INDEXER_ID)->setScheduled(true);
     }
 
-    protected function setUp(): void
+    public static function tearDownAfterClass(): void
     {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-
-        /** @var \Magento\Framework\App\Cache\StateInterface $cacheState */
-        $cacheState = $this->objectManager->get(\Magento\Framework\App\Cache\StateInterface::class);
-        $cacheState->setEnabled(\Magento\PageCache\Model\Cache\Type::TYPE_IDENTIFIER, true);
-
-        $this->action = $this->objectManager->create(\Magento\Catalog\Model\Product\Action::class);
+        /** @var IndexerRegistry $indexerRegistry */
+        $indexerRegistry = Bootstrap::getObjectManager()
+            ->get(IndexerRegistry::class);
+        $indexerRegistry->get(Fulltext::INDEXER_ID)->setScheduled(false);
     }
 
     /**
@@ -47,22 +57,22 @@ class ActionTest extends \PHPUnit\Framework\TestCase
      */
     public function testUpdateWebsites()
     {
-        /** @var \Magento\Store\Api\WebsiteRepositoryInterface $websiteRepository */
-        $websiteRepository = $this->objectManager->create(\Magento\Store\Api\WebsiteRepositoryInterface::class);
+        /** @var WebsiteRepositoryInterface $websiteRepository */
+        $websiteRepository = $this->objectManager->create(WebsiteRepositoryInterface::class);
 
-        /** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-        $productRepository = $this->objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
 
-        /** @var \Magento\Framework\App\CacheInterface $cacheManager */
+        /** @var CacheInterface $cacheManager */
         $pageCache = $this->objectManager->create(\Magento\PageCache\Model\Cache\Type::class);
 
-        /** @var \Magento\Catalog\Model\Product $product */
+        /** @var Product $product */
         $product = $productRepository->get('simple');
         foreach ($product->getCategoryIds() as $categoryId) {
             $pageCache->save(
                 'test_data',
                 'test_data_category_id_' . $categoryId,
-                [\Magento\Catalog\Model\Category::CACHE_TAG . '_' . $categoryId]
+                [Category::CACHE_TAG . '_' . $categoryId]
             );
             $this->assertEquals('test_data', $pageCache->load('test_data_category_id_' . $categoryId));
         }
@@ -94,15 +104,15 @@ class ActionTest extends \PHPUnit\Framework\TestCase
      */
     public function testUpdateAttributes($status, $productsCount)
     {
-        /** @var \Magento\Framework\Indexer\IndexerRegistry $indexerRegistry */
-        $indexerRegistry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\Indexer\IndexerRegistry::class);
+        /** @var IndexerRegistry $indexerRegistry */
+        $indexerRegistry = Bootstrap::getObjectManager()
+            ->get(IndexerRegistry::class);
         $indexerRegistry->get(Fulltext::INDEXER_ID)->setScheduled(false);
 
-        /** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-        $productRepository = $this->objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
 
-        /** @var \Magento\Catalog\Model\Product $product */
+        /** @var Product $product */
         $product = $productRepository->get('configurable');
         $productAttributesOptions = $product->getExtensionAttributes()->getConfigurableProductLinks();
         $attrData = ['status' => $status];
@@ -114,9 +124,9 @@ class ActionTest extends \PHPUnit\Framework\TestCase
         }
         $this->action->updateAttributes($configurableOptionsId, $attrData, $product->getStoreId());
 
-        $categoryFactory = $this->objectManager->create(\Magento\Catalog\Model\CategoryFactory::class);
-        /** @var \Magento\Catalog\Block\Product\ListProduct $listProduct */
-        $listProduct = $this->objectManager->create(\Magento\Catalog\Block\Product\ListProduct::class);
+        $categoryFactory = $this->objectManager->create(CategoryFactory::class);
+        /** @var ListProduct $listProduct */
+        $listProduct = $this->objectManager->create(ListProduct::class);
         $category = $categoryFactory->create()->load(2);
         $layer = $listProduct->getLayer();
         $layer->setCurrentCategory($category);
@@ -152,11 +162,14 @@ class ActionTest extends \PHPUnit\Framework\TestCase
         ];
     }
 
-    public static function tearDownAfterClass(): void
+    protected function setUp(): void
     {
-        /** @var \Magento\Framework\Indexer\IndexerRegistry $indexerRegistry */
-        $indexerRegistry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Framework\Indexer\IndexerRegistry::class);
-        $indexerRegistry->get(Fulltext::INDEXER_ID)->setScheduled(false);
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        /** @var StateInterface $cacheState */
+        $cacheState = $this->objectManager->get(StateInterface::class);
+        $cacheState->setEnabled(\Magento\PageCache\Model\Cache\Type::TYPE_IDENTIFIER, true);
+
+        $this->action = $this->objectManager->create(Action::class);
     }
 }

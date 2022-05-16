@@ -5,36 +5,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Paypal\Block\Payment\Form\Billing;
 
-class AgreementTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\DataObject;
+use Magento\Framework\View\LayoutInterface;
+use Magento\Quote\Model\ResourceModel\Quote\Collection;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class AgreementTest extends TestCase
 {
-    /** @var \Magento\Paypal\Block\Payment\Form\Billing\Agreement */
+    /** @var Agreement */
     protected $_block;
-
-    protected function setUp(): void
-    {
-        $quote = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Quote\Model\ResourceModel\Quote\Collection::class
-        )->getFirstItem();
-        /** @var \Magento\Framework\View\LayoutInterface $layout */
-        $layout = $this->getMockBuilder(\Magento\Framework\View\LayoutInterface::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $layout->expects(
-            $this->once()
-        )->method(
-            'getBlock'
-        )->willReturn(
-            new \Magento\Framework\DataObject(['quote' => $quote])
-        );
-        $layout->expects($this->once())->method('getParentName')->willReturn('billing_agreement_form');
-
-        $this->_block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Paypal\Block\Payment\Form\Billing\Agreement::class
-        );
-        $this->_block->setLayout($layout);
-    }
 
     /**
      * @magentoDataFixture Magento/Sales/_files/quote_with_customer.php
@@ -45,5 +28,29 @@ class AgreementTest extends \PHPUnit\Framework\TestCase
         $billingAgreements = $this->_block->getBillingAgreements();
         $this->assertCount(1, $billingAgreements);
         $this->assertEquals('REF-ID-TEST-678', array_shift($billingAgreements));
+    }
+
+    protected function setUp(): void
+    {
+        $quote = Bootstrap::getObjectManager()->create(
+            Collection::class
+        )->getFirstItem();
+        /** @var LayoutInterface $layout */
+        $layout = $this->getMockBuilder(LayoutInterface::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $layout->expects(
+            $this->once()
+        )->method(
+            'getBlock'
+        )->willReturn(
+            new DataObject(['quote' => $quote])
+        );
+        $layout->expects($this->once())->method('getParentName')->willReturn('billing_agreement_form');
+
+        $this->_block = Bootstrap::getObjectManager()->create(
+            Agreement::class
+        );
+        $this->_block->setLayout($layout);
     }
 }

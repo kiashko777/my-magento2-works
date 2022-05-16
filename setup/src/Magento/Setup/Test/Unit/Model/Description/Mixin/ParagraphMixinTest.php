@@ -17,11 +17,6 @@ class ParagraphMixinTest extends TestCase
      */
     private $mixin;
 
-    protected function setUp(): void
-    {
-        $this->mixin = new ParagraphMixin();
-    }
-
     /**
      * @dataProvider getTestData
      */
@@ -47,5 +42,10 @@ class ParagraphMixinTest extends TestCase
                 . '<p>Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>'
             ]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->mixin = new ParagraphMixin();
     }
 }

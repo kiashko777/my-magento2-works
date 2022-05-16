@@ -3,47 +3,50 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestModuleMSC\Api;
+
+use Magento\TestModuleMSC\Api\Data\ItemInterface;
 
 interface AllSoapAndRestInterface
 {
     /**
      * @param int $itemId
-     * @return \Magento\TestModuleMSC\Api\Data\ItemInterface
+     * @return ItemInterface
      */
     public function item($itemId);
 
     /**
      * @param string $name
-     * @return \Magento\TestModuleMSC\Api\Data\ItemInterface
+     * @return ItemInterface
      */
     public function create($name);
 
     /**
-     * @param \Magento\TestModuleMSC\Api\Data\ItemInterface $entityItem
-     * @return \Magento\TestModuleMSC\Api\Data\ItemInterface
+     * @param ItemInterface $entityItem
+     * @return ItemInterface
      */
-    public function update(\Magento\TestModuleMSC\Api\Data\ItemInterface $entityItem);
+    public function update(ItemInterface $entityItem);
 
     /**
-     * @return \Magento\TestModuleMSC\Api\Data\ItemInterface[]
+     * @return ItemInterface[]
      */
     public function items();
 
     /**
      * @param string $name
-     * @return \Magento\TestModuleMSC\Api\Data\ItemInterface
+     * @return ItemInterface
      */
     public function testOptionalParam($name = null);
 
     /**
-     * @param \Magento\TestModuleMSC\Api\Data\ItemInterface $entityItem
-     * @return \Magento\TestModuleMSC\Api\Data\ItemInterface
+     * @param ItemInterface $entityItem
+     * @return ItemInterface
      */
-    public function itemAnyType(\Magento\TestModuleMSC\Api\Data\ItemInterface $entityItem);
+    public function itemAnyType(ItemInterface $entityItem);
 
     /**
-     * @return \Magento\TestModuleMSC\Api\Data\ItemInterface
+     * @return ItemInterface
      */
     public function getPreconfiguredItem();
 }

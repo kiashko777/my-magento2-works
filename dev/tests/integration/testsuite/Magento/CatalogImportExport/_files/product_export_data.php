@@ -4,7 +4,12 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Catalog\Api\Data\ProductCustomOptionInterface;
+use Magento\Catalog\Api\Data\ProductCustomOptionInterfaceFactory;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
@@ -21,8 +26,8 @@ $objectManager = Bootstrap::getObjectManager();
 /** @var ProductRepositoryInterface $productRepository */
 $productRepository = $objectManager->create(ProductRepositoryInterface::class);
 $product = $productRepository->get('simple_ms_2');
-/** @var \Magento\Catalog\Model\Product $productModel */
-$productModel = $objectManager->create(\Magento\Catalog\Model\Product::class);
+/** @var Product $productModel */
+$productModel = $objectManager->create(Product::class);
 
 $customOptions = [
     [
@@ -79,9 +84,9 @@ $productModel->setTypeId(
 )->setTierPrice(
     [0 => ['website_id' => 0, 'cust_group' => 0, 'price_qty' => 3, 'price' => 8]]
 )->setVisibility(
-    \Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH
+    Visibility::VISIBILITY_BOTH
 )->setStatus(
-    \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED
+    Status::STATUS_ENABLED
 )->setWebsiteIds(
     [1]
 )->setStockData(
@@ -96,11 +101,11 @@ $productModel->setTypeId(
 
 $options = [];
 
-/** @var \Magento\Catalog\Api\Data\ProductCustomOptionInterfaceFactory $customOptionFactory */
-$customOptionFactory = $objectManager->create(\Magento\Catalog\Api\Data\ProductCustomOptionInterfaceFactory::class);
+/** @var ProductCustomOptionInterfaceFactory $customOptionFactory */
+$customOptionFactory = $objectManager->create(ProductCustomOptionInterfaceFactory::class);
 
 foreach ($customOptions as $option) {
-    /** @var \Magento\Catalog\Api\Data\ProductCustomOptionInterface $option */
+    /** @var ProductCustomOptionInterface $option */
     $option = $customOptionFactory->create(['data' => $option]);
     $option->setProductSku($productModel->getSku());
 

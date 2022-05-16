@@ -8,9 +8,10 @@ namespace Magento\Eav\Model\ResourceModel\UpdateHandler;
 
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Model\Product;
-use Magento\Eav\Model\ResourceModel\UpdateHandlerAbstract;
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Eav\Model\ResourceModel\UpdateHandler;
+use Magento\Eav\Model\ResourceModel\UpdateHandlerAbstract;
+use Magento\Store\Model\Store;
+use Magento\TestFramework\Helper\Bootstrap;
 
 /**
  * @magentoAppArea Adminhtml
@@ -19,7 +20,7 @@ use Magento\Eav\Model\ResourceModel\UpdateHandler;
 class ExecuteProcessForCustomStoreTest extends UpdateHandlerAbstract
 {
     /**
-     * @covers \Magento\Eav\Model\ResourceModel\UpdateHandler::execute
+     * @covers       \Magento\Eav\Model\ResourceModel\UpdateHandler::execute
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
      * @magentoDataFixture Magento/Store/_files/second_store.php
      * @dataProvider getCustomStoreDataProvider
@@ -31,7 +32,7 @@ class ExecuteProcessForCustomStoreTest extends UpdateHandlerAbstract
      */
     public function testExecuteProcessForCustomStore($code, $snapshotValue, $newValue, $expected)
     {
-        $store = Bootstrap::getObjectManager()->create(\Magento\Store\Model\Store::class);
+        $store = Bootstrap::getObjectManager()->create(Store::class);
         $store->load('fixture_second_store', 'code');
 
         $this->reindexAll();

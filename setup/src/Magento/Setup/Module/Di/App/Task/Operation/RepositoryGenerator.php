@@ -7,8 +7,9 @@
 namespace Magento\Setup\Module\Di\App\Task\Operation;
 
 use Magento\Setup\Module\Di\App\Task\OperationInterface;
-use Magento\Setup\Module\Di\Code\Scanner;
 use Magento\Setup\Module\Di\Code\Reader\ClassesScanner;
+use Magento\Setup\Module\Di\Code\Scanner;
+use Magento\Setup\Module\Di\Code\Scanner\ConfigurationScanner;
 
 class RepositoryGenerator implements OperationInterface
 {
@@ -28,22 +29,23 @@ class RepositoryGenerator implements OperationInterface
     private $classesScanner;
 
     /**
-     * @var Scanner\ConfigurationScanner
+     * @var ConfigurationScanner
      */
     private $configurationScanner;
 
     /**
      * @param ClassesScanner $classesScanner
      * @param Scanner\RepositoryScanner $repositoryScanner
-     * @param Scanner\ConfigurationScanner $configurationScanner
+     * @param ConfigurationScanner $configurationScanner
      * @param array $data
      */
     public function __construct(
-        ClassesScanner $classesScanner,
-        Scanner\RepositoryScanner $repositoryScanner,
-        \Magento\Setup\Module\Di\Code\Scanner\ConfigurationScanner $configurationScanner,
-        $data = []
-    ) {
+        ClassesScanner                                             $classesScanner,
+        Scanner\RepositoryScanner                                  $repositoryScanner,
+        ConfigurationScanner $configurationScanner,
+                                                                   $data = []
+    )
+    {
         $this->repositoryScanner = $repositoryScanner;
         $this->data = $data;
         $this->classesScanner = $classesScanner;

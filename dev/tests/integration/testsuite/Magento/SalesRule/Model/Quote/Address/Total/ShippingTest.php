@@ -44,13 +44,6 @@ class ShippingTest extends TestCase
      */
     private $objectManager;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->cartManagement = $this->objectManager->get(GuestCartManagementInterface::class);
-        $this->itemRepository = $this->objectManager->get(GuestCartItemRepositoryInterface::class);
-    }
-
     /**
      * @magentoAppIsolation enabled
      * @magentoDataFixture Magento/SalesRule/_files/rule_free_shipping_by_product_weight.php
@@ -65,6 +58,58 @@ class ShippingTest extends TestCase
         $this->assertTrue(count($methods) > 0);
         $this->assertEquals('flatrate', $methods[0]->getMethodCode());
         $this->assertEquals(0, $methods[0]->getAmount());
+    }
+
+    /**
+     * @param string $cartMaskId
+     * @param string $sku
+     * @param int $qty
+     * @throws NoSuchEntityException
+     */
+    private function addToCart(string $cartMaskId, string $sku, int $qty): void
+    {
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        /** @var CartRepositoryInterface $cartRepository */
+        $cartRepository = $this->objectManager->get(CartRepositoryInterface::class);
+        $product = $productRepository->get($sku);
+        $quote = $this->getQuote($cartMaskId);
+        $quote->addProduct($product, $qty);
+        $cartRepository->save($quote);
+    }
+
+    /**
+     * @param string $cartMaskId
+     * @return CartInterface
+     * @throws NoSuchEntityException
+     */
+    private function getQuote(string $cartMaskId): CartInterface
+    {
+        /** @var CartRepositoryInterface $cartRepository */
+        $cartRepository = $this->objectManager->get(CartRepositoryInterface::class);
+        /** @var MaskedQuoteIdToQuoteIdInterface $maskedQuoteIdToQuoteId */
+        $maskedQuoteIdToQuoteId = $this->objectManager->get(MaskedQuoteIdToQuoteIdInterface::class);
+        $cartId = $maskedQuoteIdToQuoteId->execute($cartMaskId);
+        return $cartRepository->get($cartId);
+    }
+
+    /**
+     * Estimate shipment for guest cart
+     *
+     * @param int $cartId
+     * @return ShippingMethodInterface[]
+     */
+    private function estimateShipping($cartId)
+    {
+        $addressFactory = $this->objectManager->get(AddressInterfaceFactory::class);
+        /** @var AddressInterface $address */
+        $address = $addressFactory->create();
+        $address->setCountryId('US');
+        $address->setRegionId(2);
+
+        /** @var GuestShipmentEstimationInterface $estimation */
+        $estimation = $this->objectManager->get(GuestShipmentEstimationInterface::class);
+        return $estimation->estimateByExtendedAddress($cartId, $address);
     }
 
     /**
@@ -100,74 +145,6 @@ class ShippingTest extends TestCase
     }
 
     /**
-     * @magentoAppIsolation enabled
-     * @magentoDataFixture Magento/SalesRule/_files/cart_rule_free_shipping.php
-     * @magentoDataFixture Magento/Catalog/_files/products_list.php
-     */
-    public function testFreeMethodWeightWithMaximumQtyDiscount()
-    {
-        $this->setFreeShippingForProduct('simple-249', 2);
-        $cartId = $this->cartManagement->createEmptyCart();
-        $this->addToCart($cartId, 'simple-249', 5);
-        $this->addToCart($cartId, 'simple-156', 1);
-        $this->estimateShipping($cartId);
-        $quote = $this->getQuote($cartId);
-        $this->assertEquals(40, $quote->getShippingAddress()->getFreeMethodWeight());
-    }
-
-    /**
-     * Estimate shipment for guest cart
-     *
-     * @param int $cartId
-     * @return ShippingMethodInterface[]
-     */
-    private function estimateShipping($cartId)
-    {
-        $addressFactory = $this->objectManager->get(AddressInterfaceFactory::class);
-        /** @var AddressInterface $address */
-        $address = $addressFactory->create();
-        $address->setCountryId('US');
-        $address->setRegionId(2);
-
-        /** @var GuestShipmentEstimationInterface $estimation */
-        $estimation = $this->objectManager->get(GuestShipmentEstimationInterface::class);
-        return $estimation->estimateByExtendedAddress($cartId, $address);
-    }
-
-    /**
-     * @param string $cartMaskId
-     * @return CartInterface
-     * @throws NoSuchEntityException
-     */
-    private function getQuote(string $cartMaskId): CartInterface
-    {
-        /** @var CartRepositoryInterface $cartRepository */
-        $cartRepository = $this->objectManager->get(CartRepositoryInterface::class);
-        /** @var MaskedQuoteIdToQuoteIdInterface $maskedQuoteIdToQuoteId */
-        $maskedQuoteIdToQuoteId = $this->objectManager->get(MaskedQuoteIdToQuoteIdInterface::class);
-        $cartId = $maskedQuoteIdToQuoteId->execute($cartMaskId);
-        return $cartRepository->get($cartId);
-    }
-
-    /**
-     * @param string $cartMaskId
-     * @param string $sku
-     * @param int $qty
-     * @throws NoSuchEntityException
-     */
-    private function addToCart(string $cartMaskId, string $sku, int $qty): void
-    {
-        /** @var ProductRepositoryInterface $productRepository */
-        $productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        /** @var CartRepositoryInterface $cartRepository */
-        $cartRepository = $this->objectManager->get(CartRepositoryInterface::class);
-        $product = $productRepository->get($sku);
-        $quote = $this->getQuote($cartMaskId);
-        $quote->addProduct($product, $qty);
-        $cartRepository->save($quote);
-    }
-
-    /**
      * @param string $sku
      * @param int $qty
      */
@@ -200,5 +177,28 @@ class ShippingTest extends TestCase
         ];
         $salesRule->loadPost($data);
         $salesRule->save();
+    }
+
+    /**
+     * @magentoAppIsolation enabled
+     * @magentoDataFixture Magento/SalesRule/_files/cart_rule_free_shipping.php
+     * @magentoDataFixture Magento/Catalog/_files/products_list.php
+     */
+    public function testFreeMethodWeightWithMaximumQtyDiscount()
+    {
+        $this->setFreeShippingForProduct('simple-249', 2);
+        $cartId = $this->cartManagement->createEmptyCart();
+        $this->addToCart($cartId, 'simple-249', 5);
+        $this->addToCart($cartId, 'simple-156', 1);
+        $this->estimateShipping($cartId);
+        $quote = $this->getQuote($cartId);
+        $this->assertEquals(40, $quote->getShippingAddress()->getFreeMethodWeight());
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->cartManagement = $this->objectManager->get(GuestCartManagementInterface::class);
+        $this->itemRepository = $this->objectManager->get(GuestCartItemRepositoryInterface::class);
     }
 }

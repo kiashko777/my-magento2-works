@@ -12,9 +12,9 @@ use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Registry;
 use Magento\Store\Api\Data\StoreInterface;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
-use Magento\Store\Model\StoreManagerInterface;
 
 /**
  * Test registry locator
@@ -39,6 +39,52 @@ class RegistryLocatorTest extends TestCase
     /** @var ProductRepositoryInterface */
     private $productRepository;
 
+    /**
+     * @magentoDbIsolation disabled
+     * @magentoDataFixture Magento/Catalog/_files/product_two_websites.php
+     *
+     * @return void
+     */
+    public function testGetWebsiteIds(): void
+    {
+        $product = $this->productRepository->get('simple-on-two-websites');
+        $this->registerProduct($product);
+        $this->assertEquals($product->getExtensionAttributes()->getWebsiteIds(), $this->registryLocator->getWebsiteIds());
+    }
+
+    /**
+     * Register the product
+     *
+     * @param ProductInterface $product
+     * @return void
+     */
+    private function registerProduct(ProductInterface $product): void
+    {
+        $this->registry->unregister('current_product');
+        $this->registry->register('current_product', $product);
+    }
+
+    /**
+     * @return void
+     */
+    public function testGetBaseCurrencyCode(): void
+    {
+        $store = $this->storeManager->getStore();
+        $this->registerStore($store);
+        $this->assertEquals($store->getBaseCurrencyCode(), $this->registryLocator->getBaseCurrencyCode());
+    }
+
+    /**
+     * Register the store
+     *
+     * @param StoreInterface $store
+     * @return void
+     */
+    private function registerStore(StoreInterface $store): void
+    {
+        $this->registry->unregister('current_store');
+        $this->registry->register('current_store', $store);
+    }
 
     /**
      * @inheritdoc
@@ -64,53 +110,5 @@ class RegistryLocatorTest extends TestCase
         $this->registry->unregister('current_store');
 
         parent::tearDown();
-    }
-
-
-    /**
-     * @magentoDbIsolation disabled
-     * @magentoDataFixture Magento/Catalog/_files/product_two_websites.php
-     *
-     * @return void
-     */
-    public function testGetWebsiteIds(): void
-    {
-        $product = $this->productRepository->get('simple-on-two-websites');
-        $this->registerProduct($product);
-        $this->assertEquals($product->getExtensionAttributes()->getWebsiteIds(), $this->registryLocator->getWebsiteIds());
-    }
-
-    /**
-     * @return void
-     */
-    public function testGetBaseCurrencyCode(): void
-    {
-        $store = $this->storeManager->getStore();
-        $this->registerStore($store);
-        $this->assertEquals($store->getBaseCurrencyCode(), $this->registryLocator->getBaseCurrencyCode());
-    }
-
-    /**
-     * Register the product
-     *
-     * @param ProductInterface $product
-     * @return void
-     */
-    private function registerProduct(ProductInterface $product): void
-    {
-        $this->registry->unregister('current_product');
-        $this->registry->register('current_product', $product);
-    }
-
-    /**
-     * Register the store
-     *
-     * @param StoreInterface $store
-     * @return void
-     */
-    private function registerStore(StoreInterface $store): void
-    {
-        $this->registry->unregister('current_store');
-        $this->registry->register('current_store', $store);
     }
 }

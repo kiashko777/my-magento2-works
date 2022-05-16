@@ -4,10 +4,14 @@
  * See COPYING.txt for license details.
  */
 
-/** @var $category \Magento\Catalog\Model\Category */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+/** @var $category Category */
 
-$categoryFirst = $objectManager->create(\Magento\Catalog\Model\Category::class);
+use Magento\Catalog\Model\Category;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
+
+$categoryFirst = $objectManager->create(Category::class);
 $categoryFirst->setName('Category 1')
     ->setPath('1/2')
     ->setLevel(2)
@@ -18,7 +22,7 @@ $categoryFirst->setName('Category 1')
     ->save();
 
 // products from this fixture were moved to indexer_catalog_products.php
-$categorySecond = $objectManager->create(\Magento\Catalog\Model\Category::class);
+$categorySecond = $objectManager->create(Category::class);
 $categorySecond->setName('\'Category 6\'')
     ->setPath($categoryFirst->getPath())
     ->setLevel(3)

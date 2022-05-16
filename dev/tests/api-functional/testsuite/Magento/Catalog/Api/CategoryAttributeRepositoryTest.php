@@ -4,9 +4,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Api;
 
-class CategoryAttributeRepositoryTest extends \Magento\TestFramework\TestCase\WebapiAbstract
+use Magento\Catalog\Api\Data\CategoryAttributeInterface;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\TestFramework\TestCase\WebapiAbstract;
+
+class CategoryAttributeRepositoryTest extends WebapiAbstract
 {
     const SERVICE_NAME = 'catalogCategoryAttributeRepositoryV1';
     const SERVICE_VERSION = 'V1';
@@ -24,6 +29,26 @@ class CategoryAttributeRepositoryTest extends \Magento\TestFramework\TestCase\We
         $this->assertArrayHasKey('attribute_id', $attribute);
         $this->assertArrayHasKey('attribute_code', $attribute);
         $this->assertEquals($attributeCode, $attribute['attribute_code']);
+    }
+
+    /**
+     * @param $attributeCode
+     * @return array|bool|float|int|string
+     */
+    protected function getAttribute($attributeCode)
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH . '/' . $attributeCode,
+                'httpMethod' => Request::HTTP_METHOD_GET,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'Get',
+            ],
+        ];
+        return $this->_webApiCall($serviceInfo, ['attributeCode' => $attributeCode]);
     }
 
     public function testGetList()
@@ -44,13 +69,13 @@ class CategoryAttributeRepositoryTest extends \Magento\TestFramework\TestCase\We
                 'current_page' => 1,
                 'page_size' => 2,
             ],
-            'entityTypeCode' => \Magento\Catalog\Api\Data\CategoryAttributeInterface::ENTITY_TYPE_CODE,
+            'entityTypeCode' => CategoryAttributeInterface::ENTITY_TYPE_CODE,
         ];
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '?' . http_build_query($searchCriteria),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -70,25 +95,5 @@ class CategoryAttributeRepositoryTest extends \Magento\TestFramework\TestCase\We
         $this->assertTrue(count($response['items']) > 0);
 
         $this->assertNotNull($response['items'][0]['attribute_id']);
-    }
-
-    /**
-     * @param $attributeCode
-     * @return array|bool|float|int|string
-     */
-    protected function getAttribute($attributeCode)
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . '/' . $attributeCode,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'Get',
-            ],
-        ];
-        return $this->_webApiCall($serviceInfo, ['attributeCode' => $attributeCode]);
     }
 }

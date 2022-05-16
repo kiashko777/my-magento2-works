@@ -48,21 +48,6 @@ class TopMenuTest extends TestCase
     private $storeManager;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->categoryFactory = $this->objectManager->get(CategoryFactory::class);
-        $this->categoryRepository = $this->objectManager->create(CategoryRepositoryInterface::class);
-        $this->layout = $this->objectManager->get(LayoutInterface::class);
-        $this->block = $this->layout->createBlock(Topmenu::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-    }
-
-    /**
      * Checks menu item displaying.
      *
      * @magentoDataFixture Magento/Catalog/_files/category.php
@@ -136,6 +121,47 @@ class TopMenuTest extends TestCase
                 'Category ' . $data['name'] . ' should appear in the menu!'
             );
         }
+    }
+
+    /**
+     * Update existing categories or create new ones
+     *
+     * @param array $categories
+     * @return void
+     */
+    private function updateCategories(array $categories): void
+    {
+        foreach ($categories as $categoryData) {
+            if (!$categoryData['is_new_category']) {
+                $category = $this->categoryRepository->get($this->getCategoryIdByName($categoryData['category_name']));
+                unset($categoryData['category_name']);
+            } else {
+                $categoryData[Category::KEY_PARENT_ID] = $this->getCategoryIdByName($categoryData['parent_name']);
+                unset($categoryData['parent_name']);
+                $category = $this->categoryFactory->create();
+            }
+            unset($categoryData['is_new_category']);
+            $category->addData($categoryData);
+            $this->categoryRepository->save($category);
+        }
+    }
+
+    /**
+     * @param string $name
+     * @return string|null
+     */
+    private function getCategoryIdByName(string $name): ?string
+    {
+        $categoryCollectionFactory = $this->objectManager->get(CollectionFactory::class);
+        /** @var Collection $categoryCollection */
+        $categoryCollection = $categoryCollectionFactory->create();
+        /** @var $category Category */
+        $category = $categoryCollection
+            ->addAttributeToFilter(CategoryInterface::KEY_NAME, $name)
+            ->setPageSize(1)
+            ->getFirstItem();
+
+        return $category->getId();
     }
 
     /**
@@ -304,6 +330,28 @@ class TopMenuTest extends TestCase
     }
 
     /**
+     * Get an array from the menu tree with category identifiers and their position
+     *
+     * @param Node $node
+     * @return array
+     */
+    private function getMenuTree(Node $node): array
+    {
+        $nodes = [];
+        if (!is_null($node->getId())) {
+            $nodes['position'] = str_replace('nav-', '', $node->getData('position_class'));
+        }
+        $childrenNodes = $node->getChildren()->getNodes();
+        /** @var Node $childNode */
+        foreach ($childrenNodes as $childNode) {
+            $name = $childNode->getName();
+            $nodes[$name] = $this->getMenuTree($childNode);
+        }
+
+        return $nodes;
+    }
+
+    /**
      * @return array
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
      */
@@ -427,7 +475,8 @@ class TopMenuTest extends TestCase
         string $storeCode,
         string $expectedCategory,
         string $notExpectedCategory
-    ): void {
+    ): void
+    {
         $this->storeManager->setCurrentStore($storeCode);
         $output = $this->block->getHtml('level-top', 'submenu', 0);
         $this->assertStringContainsString(
@@ -464,65 +513,17 @@ class TopMenuTest extends TestCase
     }
 
     /**
-     * Update existing categories or create new ones
-     *
-     * @param array $categories
-     * @return void
+     * @inheritdoc
      */
-    private function updateCategories(array $categories): void
+    protected function setUp(): void
     {
-        foreach ($categories as $categoryData) {
-            if (!$categoryData['is_new_category']) {
-                $category = $this->categoryRepository->get($this->getCategoryIdByName($categoryData['category_name']));
-                unset($categoryData['category_name']);
-            } else {
-                $categoryData[Category::KEY_PARENT_ID] = $this->getCategoryIdByName($categoryData['parent_name']);
-                unset($categoryData['parent_name']);
-                $category = $this->categoryFactory->create();
-            }
-            unset($categoryData['is_new_category']);
-            $category->addData($categoryData);
-            $this->categoryRepository->save($category);
-        }
-    }
+        parent::setUp();
 
-    /**
-     * Get an array from the menu tree with category identifiers and their position
-     *
-     * @param Node $node
-     * @return array
-     */
-    private function getMenuTree(Node $node): array
-    {
-        $nodes = [];
-        if (!is_null($node->getId())) {
-            $nodes['position'] = str_replace('nav-', '', $node->getData('position_class'));
-        }
-        $childrenNodes = $node->getChildren()->getNodes();
-        /** @var Node $childNode */
-        foreach ($childrenNodes as $childNode) {
-            $name = $childNode->getName();
-            $nodes[$name] = $this->getMenuTree($childNode);
-        }
-
-        return $nodes;
-    }
-
-    /**
-     * @param string $name
-     * @return string|null
-     */
-    private function getCategoryIdByName(string $name): ?string
-    {
-        $categoryCollectionFactory = $this->objectManager->get(CollectionFactory::class);
-        /** @var Collection $categoryCollection */
-        $categoryCollection = $categoryCollectionFactory->create();
-        /** @var $category Category */
-        $category = $categoryCollection
-            ->addAttributeToFilter(CategoryInterface::KEY_NAME, $name)
-            ->setPageSize(1)
-            ->getFirstItem();
-
-        return $category->getId();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->categoryFactory = $this->objectManager->get(CategoryFactory::class);
+        $this->categoryRepository = $this->objectManager->create(CategoryRepositoryInterface::class);
+        $this->layout = $this->objectManager->get(LayoutInterface::class);
+        $this->block = $this->layout->createBlock(Topmenu::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
     }
 }

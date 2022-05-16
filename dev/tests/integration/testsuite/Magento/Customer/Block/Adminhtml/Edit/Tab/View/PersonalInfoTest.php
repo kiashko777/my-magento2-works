@@ -3,10 +3,27 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Customer\Block\Adminhtml\Edit\Tab\View;
 
+use IntlDateFormatter;
+use Magento\Backend\Block\Template\Context;
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Api\Data\CustomerInterface;
 use Magento\Customer\Api\Data\CustomerInterfaceFactory;
+use Magento\Customer\Api\GroupRepositoryInterface;
 use Magento\Customer\Controller\RegistryConstants;
+use Magento\Customer\Model\CustomerRegistry;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Reflection\DataObjectProcessor;
+use Magento\Framework\Registry;
+use Magento\Framework\Stdlib\DateTime;
+use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
+use Magento\Framework\View\LayoutInterface;
+use Magento\Store\Model\ScopeInterface;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Magento\Customer\Block\Adminhtml\Edit\Tab\View
@@ -14,85 +31,30 @@ use Magento\Customer\Controller\RegistryConstants;
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @magentoAppArea Adminhtml
  */
-class PersonalInfoTest extends \PHPUnit\Framework\TestCase
+class PersonalInfoTest extends TestCase
 {
-    /** @var  \Magento\Backend\Block\Template\Context */
-    private $_context;
-
-    /** @var  \Magento\Framework\Registry */
-    private $_coreRegistry;
-
-    /** @var  CustomerInterfaceFactory */
-    private $_customerFactory;
-
-    /** @var  \Magento\Customer\Api\CustomerRepositoryInterface */
-    private $_customerRepository;
-
-    /** @var  \Magento\Customer\Api\GroupRepositoryInterface */
-    private $_groupRepository;
-
-    /** @var \Magento\Store\Model\StoreManagerInterface */
-    private $_storeManager;
-
-    /** @var \Magento\Framework\ObjectManagerInterface */
-    private $_objectManager;
-
-    /** @var \Magento\Framework\Reflection\DataObjectProcessor */
-    private $_dataObjectProcessor;
-
-    /** @var  PersonalInfo */
-    private $_block;
-
     /**
-     * @var \Magento\Framework\Stdlib\DateTime
+     * @var DateTime
      */
     protected $dateTime;
-
-    protected function setUp(): void
-    {
-        $this->_objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-
-        $this->_storeManager = $this->_objectManager->get(\Magento\Store\Model\StoreManagerInterface::class);
-        $this->_context = $this->_objectManager->get(
-            \Magento\Backend\Block\Template\Context::class,
-            ['storeManager' => $this->_storeManager]
-        );
-
-        $this->_customerFactory = $this->_objectManager->get(
-            \Magento\Customer\Api\Data\CustomerInterfaceFactory::class
-        );
-        $this->_coreRegistry = $this->_objectManager->get(\Magento\Framework\Registry::class);
-        $this->_customerRepository = $this->_objectManager->get(
-            \Magento\Customer\Api\CustomerRepositoryInterface::class
-        );
-        $this->_dataObjectProcessor = $this->_objectManager->get(
-            \Magento\Framework\Reflection\DataObjectProcessor::class
-        );
-
-        $this->_groupRepository = $this->_objectManager->get(\Magento\Customer\Api\GroupRepositoryInterface::class);
-        $this->dateTime = $this->_objectManager->get(\Magento\Framework\Stdlib\DateTime::class);
-
-        $this->_block = $this->_objectManager->get(
-            \Magento\Framework\View\LayoutInterface::class
-        )->createBlock(
-            \Magento\Customer\Block\Adminhtml\Edit\Tab\View\PersonalInfo::class,
-            '',
-            [
-                'context' => $this->_context,
-                'groupService' => $this->_groupRepository,
-                'registry' => $this->_coreRegistry
-            ]
-        );
-    }
-
-    protected function tearDown(): void
-    {
-        $this->_coreRegistry->unregister(RegistryConstants::CURRENT_CUSTOMER_ID);
-        /** @var \Magento\Customer\Model\CustomerRegistry $customerRegistry */
-        $customerRegistry = $this->_objectManager->get(\Magento\Customer\Model\CustomerRegistry::class);
-        //Cleanup customer from registry
-        $customerRegistry->remove(1);
-    }
+    /** @var  Context */
+    private $_context;
+    /** @var  Registry */
+    private $_coreRegistry;
+    /** @var  CustomerInterfaceFactory */
+    private $_customerFactory;
+    /** @var  CustomerRepositoryInterface */
+    private $_customerRepository;
+    /** @var  GroupRepositoryInterface */
+    private $_groupRepository;
+    /** @var StoreManagerInterface */
+    private $_storeManager;
+    /** @var ObjectManagerInterface */
+    private $_objectManager;
+    /** @var DataObjectProcessor */
+    private $_dataObjectProcessor;
+    /** @var  PersonalInfo */
+    private $_block;
 
     /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
@@ -102,12 +64,12 @@ class PersonalInfoTest extends \PHPUnit\Framework\TestCase
         $expectedCustomer = $this->_loadCustomer();
         $expectedCustomerData = $this->_dataObjectProcessor->buildOutputDataArray(
             $expectedCustomer,
-            \Magento\Customer\Api\Data\CustomerInterface::class
+            CustomerInterface::class
         );
         $actualCustomer = $this->_block->getCustomer();
         $actualCustomerData = $this->_dataObjectProcessor->buildOutputDataArray(
             $actualCustomer,
-            \Magento\Customer\Api\Data\CustomerInterface::class
+            CustomerInterface::class
         );
         foreach ($expectedCustomerData as $property => $value) {
             $expectedValue = is_numeric($value) ? (int)$value : $value;
@@ -117,12 +79,44 @@ class PersonalInfoTest extends \PHPUnit\Framework\TestCase
         }
     }
 
+    /**
+     * @return CustomerInterface
+     */
+    private function _loadCustomer()
+    {
+        $customer = $this->_customerRepository->getById(1);
+        $data = ['account' => $this->_dataObjectProcessor
+            ->buildOutputDataArray($customer, CustomerInterface::class),];
+        $this->_context->getBackendSession()->setCustomerData($data);
+        $this->_coreRegistry->register(RegistryConstants::CURRENT_CUSTOMER_ID, $customer->getId());
+        return $customer;
+    }
+
     public function testGetCustomerEmpty()
     {
         $expectedCustomer = $this->createCustomerAndAddToBackendSession();
         $actualCustomer = $this->_block->getCustomer();
         $this->assertEquals($expectedCustomer->getExtensionAttributes(), $actualCustomer->getExtensionAttributes());
         $this->assertEquals($expectedCustomer, $actualCustomer);
+    }
+
+    /**
+     * @return CustomerInterface
+     */
+    private function createCustomerAndAddToBackendSession()
+    {
+        /** @var CustomerInterface $customer */
+        $customer = $this->_customerFactory->create()->setFirstname(
+            'firstname'
+        )->setLastname(
+            'lastname'
+        )->setEmail(
+            'email@email.com'
+        );
+        $data = ['account' => $this->_dataObjectProcessor
+            ->buildOutputDataArray($customer, CustomerInterface::class),];
+        $this->_context->getBackendSession()->setCustomerData($data);
+        return $customer;
     }
 
     /**
@@ -147,7 +141,7 @@ class PersonalInfoTest extends \PHPUnit\Framework\TestCase
     {
         $createdAt = $this->_block->formatDate(
             $this->_loadCustomer()->getCreatedAt(),
-            \IntlDateFormatter::MEDIUM,
+            IntlDateFormatter::MEDIUM,
             true
         );
         $this->assertEquals($createdAt, $this->_block->getCreateDate());
@@ -161,12 +155,12 @@ class PersonalInfoTest extends \PHPUnit\Framework\TestCase
         $customer = $this->_loadCustomer();
         $localeDate = $this->_context->getLocaleDate();
         $timezone = $localeDate->getConfigTimezone(
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+            ScopeInterface::SCOPE_STORE,
             $customer->getStoreId()
         );
         $storeCreateDate = $this->_block->formatDate(
             $customer->getCreatedAt(),
-            \IntlDateFormatter::MEDIUM,
+            IntlDateFormatter::MEDIUM,
             true,
             null,
             $timezone
@@ -180,13 +174,13 @@ class PersonalInfoTest extends \PHPUnit\Framework\TestCase
     public function testGetStoreCreateDateTimezone()
     {
         /**
-         * @var \Magento\Framework\Stdlib\DateTime\TimezoneInterface $defaultTimeZonePath
+         * @var TimezoneInterface $defaultTimeZonePath
          */
-        $defaultTimeZonePath = $this->_objectManager->get(\Magento\Framework\Stdlib\DateTime\TimezoneInterface::class)
+        $defaultTimeZonePath = $this->_objectManager->get(TimezoneInterface::class)
             ->getDefaultTimezonePath();
         $timezone = $this->_context->getScopeConfig()->getValue(
             $defaultTimeZonePath,
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+            ScopeInterface::SCOPE_STORE,
             $this->_loadCustomer()->getStoreId()
         );
         $this->assertEquals($timezone, $this->_block->getStoreCreateDateTimezone());
@@ -207,7 +201,7 @@ class PersonalInfoTest extends \PHPUnit\Framework\TestCase
     public function testIsConfirmedStatusConfirmationIsNotRequired()
     {
         $password = 'password';
-        /** @var \Magento\Customer\Api\Data\CustomerInterface $customer */
+        /** @var CustomerInterface $customer */
         $customer = $this->_customerFactory->create()->setConfirmation(
             true
         )->setFirstname(
@@ -253,35 +247,49 @@ class PersonalInfoTest extends \PHPUnit\Framework\TestCase
         );
     }
 
-    /**
-     * @return \Magento\Customer\Api\Data\CustomerInterface
-     */
-    private function createCustomerAndAddToBackendSession()
+    protected function setUp(): void
     {
-        /** @var \Magento\Customer\Api\Data\CustomerInterface $customer */
-        $customer = $this->_customerFactory->create()->setFirstname(
-            'firstname'
-        )->setLastname(
-            'lastname'
-        )->setEmail(
-            'email@email.com'
+        $this->_objectManager = Bootstrap::getObjectManager();
+
+        $this->_storeManager = $this->_objectManager->get(StoreManagerInterface::class);
+        $this->_context = $this->_objectManager->get(
+            Context::class,
+            ['storeManager' => $this->_storeManager]
         );
-        $data = ['account' => $this->_dataObjectProcessor
-            ->buildOutputDataArray($customer, \Magento\Customer\Api\Data\CustomerInterface::class), ];
-        $this->_context->getBackendSession()->setCustomerData($data);
-        return $customer;
+
+        $this->_customerFactory = $this->_objectManager->get(
+            CustomerInterfaceFactory::class
+        );
+        $this->_coreRegistry = $this->_objectManager->get(Registry::class);
+        $this->_customerRepository = $this->_objectManager->get(
+            CustomerRepositoryInterface::class
+        );
+        $this->_dataObjectProcessor = $this->_objectManager->get(
+            DataObjectProcessor::class
+        );
+
+        $this->_groupRepository = $this->_objectManager->get(GroupRepositoryInterface::class);
+        $this->dateTime = $this->_objectManager->get(DateTime::class);
+
+        $this->_block = $this->_objectManager->get(
+            LayoutInterface::class
+        )->createBlock(
+            PersonalInfo::class,
+            '',
+            [
+                'context' => $this->_context,
+                'groupService' => $this->_groupRepository,
+                'registry' => $this->_coreRegistry
+            ]
+        );
     }
 
-    /**
-     * @return \Magento\Customer\Api\Data\CustomerInterface
-     */
-    private function _loadCustomer()
+    protected function tearDown(): void
     {
-        $customer = $this->_customerRepository->getById(1);
-        $data = ['account' => $this->_dataObjectProcessor
-            ->buildOutputDataArray($customer, \Magento\Customer\Api\Data\CustomerInterface::class), ];
-        $this->_context->getBackendSession()->setCustomerData($data);
-        $this->_coreRegistry->register(RegistryConstants::CURRENT_CUSTOMER_ID, $customer->getId());
-        return $customer;
+        $this->_coreRegistry->unregister(RegistryConstants::CURRENT_CUSTOMER_ID);
+        /** @var CustomerRegistry $customerRegistry */
+        $customerRegistry = $this->_objectManager->get(CustomerRegistry::class);
+        //Cleanup customer from registry
+        $customerRegistry->remove(1);
     }
 }

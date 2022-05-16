@@ -7,6 +7,7 @@
 namespace Magento\Setup\Model;
 
 use Magento\Framework\Config\ConfigOptionsListConstants;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Math\Random;
 
 /**
@@ -33,7 +34,7 @@ class CryptKeyGenerator implements CryptKeyGeneratorInterface
      * Generates & returns a string to be used as crypt key.
      *
      * @return string
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @throws LocalizedException
      */
     public function generate()
     {
@@ -47,7 +48,7 @@ class CryptKeyGenerator implements CryptKeyGeneratorInterface
      * Returns a random string.
      *
      * @return string
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @throws LocalizedException
      */
     private function getRandomString()
     {

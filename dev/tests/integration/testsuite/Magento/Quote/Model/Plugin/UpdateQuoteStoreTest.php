@@ -9,6 +9,8 @@ namespace Magento\Quote\Model\Plugin;
 
 use Magento\Checkout\Model\Session;
 use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Stdlib\Cookie\PhpCookieManager;
 use Magento\FunctionalTestingFramework\ObjectManagerInterface;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Model\Quote;
@@ -17,12 +19,15 @@ use Magento\Store\Api\StoreCookieManagerInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\Store\Model\StoreRepository;
 use Magento\TestFramework\Helper\Bootstrap as BootstrapHelper;
+use PHPUnit\Framework\TestCase;
+use ReflectionClass;
+use ReflectionException;
 
 /**
  * @magentoAppArea frontend
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class UpdateQuoteStoreTest extends \PHPUnit\Framework\TestCase
+class UpdateQuoteStoreTest extends TestCase
 {
     /**
      * @var ObjectManagerInterface
@@ -34,19 +39,13 @@ class UpdateQuoteStoreTest extends \PHPUnit\Framework\TestCase
      */
     private $quoteRepository;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = BootstrapHelper::getObjectManager();
-        $this->quoteRepository = $this->objectManager->create(CartRepositoryInterface::class);
-    }
-
     /**
      * Tests that active quote store id updates after store cookie change.
      *
      * @magentoDataFixture Magento/Quote/_files/empty_quote.php
      * @magentoDataFixture Magento/Store/_files/second_store.php
-     * @throws \ReflectionException
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
+     * @throws ReflectionException
+     * @throws NoSuchEntityException
      */
     public function testUpdateQuoteStoreAfterChangeStoreCookie()
     {
@@ -108,23 +107,29 @@ class UpdateQuoteStoreTest extends \PHPUnit\Framework\TestCase
      *
      * @param $currentStore
      * @return StoreCookieManagerInterface
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     private function getStoreCookieManager(StoreInterface $currentStore): StoreCookieManagerInterface
     {
         /** @var StoreCookieManagerInterface $storeCookieManager */
         $storeCookieManager = $this->objectManager->get(StoreCookieManagerInterface::class);
-        $cookieManagerMock = $this->getMockBuilder(\Magento\Framework\Stdlib\Cookie\PhpCookieManager::class)
+        $cookieManagerMock = $this->getMockBuilder(PhpCookieManager::class)
             ->disableOriginalConstructor()
             ->getMock();
         $cookieManagerMock->method('getCookie')
             ->willReturn($currentStore->getCode());
 
-        $reflection = new \ReflectionClass($storeCookieManager);
+        $reflection = new ReflectionClass($storeCookieManager);
         $cookieManager = $reflection->getProperty('cookieManager');
         $cookieManager->setAccessible(true);
         $cookieManager->setValue($storeCookieManager, $cookieManagerMock);
 
         return $storeCookieManager;
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = BootstrapHelper::getObjectManager();
+        $this->quoteRepository = $this->objectManager->create(CartRepositoryInterface::class);
     }
 }

@@ -6,7 +6,10 @@
 
 namespace Magento\Setup\Model\FixtureGenerator;
 
+use Closure;
 use Magento\Customer\Api\Data\CustomerInterface;
+use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\DB\Adapter\AdapterInterface;
 
 /**
  * Customer generator
@@ -24,25 +27,26 @@ class CustomerGenerator
     private $customerTemplateGenerator;
 
     /**
-     * @var \Magento\Framework\App\ResourceConnection
+     * @var ResourceConnection
      */
     private $resourceConnection;
 
     /**
-     * @var \Magento\Framework\DB\Adapter\AdapterInterface
+     * @var AdapterInterface
      */
     private $connection;
 
     /**
      * @param EntityGeneratorFactory $entityGeneratorFactory
      * @param CustomerTemplateGenerator $customerTemplateGenerator
-     * @param \Magento\Framework\App\ResourceConnection $resourceConnection
+     * @param ResourceConnection $resourceConnection
      */
     public function __construct(
-        EntityGeneratorFactory $entityGeneratorFactory,
-        CustomerTemplateGenerator $customerTemplateGenerator,
-        \Magento\Framework\App\ResourceConnection $resourceConnection
-    ) {
+        EntityGeneratorFactory                    $entityGeneratorFactory,
+        CustomerTemplateGenerator                 $customerTemplateGenerator,
+        ResourceConnection $resourceConnection
+    )
+    {
         $this->entityGeneratorFactory = $entityGeneratorFactory;
         $this->customerTemplateGenerator = $customerTemplateGenerator;
         $this->resourceConnection = $resourceConnection;
@@ -86,7 +90,7 @@ class CustomerGenerator
      * to replace default customer data with data from fixture
      *
      * @SuppressWarnings(PHPMD.UnusedLocalVariable)
-     * @return \Closure
+     * @return Closure
      */
     private function getCustomerEntityHandler()
     {
@@ -104,7 +108,7 @@ class CustomerGenerator
      * to replace default customer address data with data from fixture
      *
      * @SuppressWarnings(PHPMD.UnusedLocalVariable)
-     * @return \Closure
+     * @return Closure
      */
     private function getCustomerAddressEntityHandler()
     {
@@ -130,7 +134,7 @@ class CustomerGenerator
         $customerMaxId = $this->getConnection()->fetchOne("select max(entity_id) from `$customerTableName`");
         for ($i = 1; $i < $customerMaxId; $i += $batchSize) {
             $this->getConnection()->query(
-            "
+                "
                     update `$customerTableName` customer
                         join (
                             select
@@ -152,7 +156,7 @@ class CustomerGenerator
     }
 
     /**
-     * @return \Magento\Framework\DB\Adapter\AdapterInterface
+     * @return AdapterInterface
      */
     private function getConnection()
     {

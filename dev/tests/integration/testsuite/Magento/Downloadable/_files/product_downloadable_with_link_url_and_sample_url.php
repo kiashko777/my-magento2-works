@@ -4,19 +4,19 @@
  * See COPYING.txt for license details.
  */
 
-use Magento\Downloadable\Api\DomainManagerInterface;
-use Magento\Store\Model\StoreManagerInterface;
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Downloadable\Api\Data\LinkInterfaceFactory;
 use Magento\Catalog\Api\Data\ProductInterface;
-use Magento\Downloadable\Model\Product\Type;
-use Magento\Catalog\Model\Product\Visibility;
+use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Downloadable\Api\Data\LinkInterface;
+use Magento\Downloadable\Api\Data\LinkInterfaceFactory;
+use Magento\Downloadable\Api\Data\SampleInterfaceFactory;
+use Magento\Downloadable\Api\DomainManagerInterface;
 use Magento\Downloadable\Helper\Download;
 use Magento\Downloadable\Model\Link;
-use Magento\Downloadable\Api\Data\SampleInterfaceFactory;
-use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\Downloadable\Api\Data\LinkInterface;
+use Magento\Downloadable\Model\Product\Type;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 
 $objectManager = Bootstrap::getObjectManager();
 

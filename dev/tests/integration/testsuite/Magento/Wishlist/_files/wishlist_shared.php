@@ -5,9 +5,12 @@
  */
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product\Option;
 use Magento\Customer\Model\CustomerRegistry;
+use Magento\Framework\DataObject;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
+use Magento\Wishlist\Model\Wishlist;
 
 Resolver::getInstance()->requireDataFixture('Magento/Customer/_files/customer.php');
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/product_simple.php');
@@ -22,7 +25,7 @@ $simpleProduct = $productRepository->get('simple');
 
 $options = [];
 foreach ($simpleProduct->getOptions() as $option) {
-    /* @var $option \Magento\Catalog\Model\Product\Option */
+    /* @var $option Option */
     switch ($option->getType()) {
         case 'field':
             $options[$option->getId()] = '1-text';
@@ -39,12 +42,12 @@ foreach ($simpleProduct->getOptions() as $option) {
     }
 }
 
-/* @var $wishlist \Magento\Wishlist\Model\Wishlist */
+/* @var $wishlist Wishlist */
 $wishlist = Bootstrap::getObjectManager()->create(
-    \Magento\Wishlist\Model\Wishlist::class
+    Wishlist::class
 );
 $wishlist->loadByCustomerId($customer->getId(), true);
-$wishlist->addNewItem($simpleProduct, new \Magento\Framework\DataObject(['options' => $options]));
+$wishlist->addNewItem($simpleProduct, new DataObject(['options' => $options]));
 $wishlist->setSharingCode('fixture_unique_code')
     ->setShared(1)
     ->save();

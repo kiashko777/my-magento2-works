@@ -8,8 +8,8 @@ declare(strict_types=1);
 namespace Magento\TestFramework\SalesRule\Model;
 
 use Magento\Framework\Api\SearchCriteriaBuilder;
-use Magento\SalesRule\Api\RuleRepositoryInterface;
 use Magento\SalesRule\Api\Data\RuleInterface;
+use Magento\SalesRule\Api\RuleRepositoryInterface;
 
 /**
  * Search and return Sales rule by name.

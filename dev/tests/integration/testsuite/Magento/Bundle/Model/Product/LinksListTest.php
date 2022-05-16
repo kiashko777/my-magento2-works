@@ -23,14 +23,6 @@ class LinksListTest extends TestCase
     private $linksList;
 
     /**
-     * @inheridoc
-     */
-    protected function setUp(): void
-    {
-        $this->linksList = Bootstrap::getObjectManager()->get(LinksList::class);
-    }
-
-    /**
      * verify get items with zero option selection price.
      *
      * @magentoDataFixture Magento/Bundle/_files//fixed_bundle_product_zero_price_option_selection.php
@@ -46,5 +38,13 @@ class LinksListTest extends TestCase
         $link = current($links);
         self::assertEquals('simple1', $link->getSku());
         self::assertEquals(0, $link->getPrice());
+    }
+
+    /**
+     * @inheridoc
+     */
+    protected function setUp(): void
+    {
+        $this->linksList = Bootstrap::getObjectManager()->get(LinksList::class);
     }
 }

@@ -32,16 +32,6 @@ class DeleteAttributeControllerErrorTest extends AbstractDeleteAttributeControll
     private $attributeRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->escaper = $this->_objectManager->get(Escaper::class);
-        $this->attributeRepository = $this->_objectManager->get(AttributeRepositoryInterface::class);
-    }
-
-    /**
      * Try to delete attribute via controller action without attribute ID.
      *
      * @return void
@@ -75,5 +65,15 @@ class DeleteAttributeControllerErrorTest extends AbstractDeleteAttributeControll
             $this->equalTo([$this->escaper->escapeHtml((string)__('We can\'t delete the attribute.'))]),
             MessageInterface::TYPE_ERROR
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->escaper = $this->_objectManager->get(Escaper::class);
+        $this->attributeRepository = $this->_objectManager->get(AttributeRepositoryInterface::class);
     }
 }

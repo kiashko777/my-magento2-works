@@ -6,74 +6,78 @@
 
 namespace Magento\CheckoutAgreements\Model\Checkout\Plugin;
 
+use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Checkout\Api\Data\TotalsInformationInterface;
+use Magento\Checkout\Api\TotalsInformationManagementInterface;
+use Magento\Checkout\Model\GuestPaymentInformationManagement;
+use Magento\Checkout\Model\Session;
+use Magento\CheckoutAgreements\Model\Agreement;
+use Magento\Framework\Exception\CouldNotSaveException;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Quote\Api\CartItemRepositoryInterface;
+use Magento\Quote\Api\CartManagementInterface;
+use Magento\Quote\Api\CartRepositoryInterface;
+use Magento\Quote\Api\Data\AddressInterface;
+use Magento\Quote\Api\Data\CartItemInterface;
+use Magento\Quote\Api\Data\PaymentExtension;
+use Magento\Quote\Api\Data\PaymentInterface;
+use Magento\Quote\Api\PaymentMethodManagementInterface;
+use Magento\Quote\Model\QuoteIdMask;
+use Magento\Quote\Model\QuoteIdMaskFactory;
+use Magento\Quote\Model\ShippingAddressManagementInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class GuestValidationTest extends \PHPUnit\Framework\TestCase
+class GuestValidationTest extends TestCase
 {
     /**
-     * @var \Magento\Checkout\Model\Session
+     * @var Session
      */
     private $checkoutSession;
 
     /**
-     * @var \Magento\Quote\Api\CartRepositoryInterface
+     * @var CartRepositoryInterface
      */
     private $cartRepository;
 
     /**
-     * @var \Magento\Quote\Api\CartManagementInterface
+     * @var CartManagementInterface
      */
     private $cartManagement;
 
     /**
-     * @var \Magento\Quote\Api\CartItemRepositoryInterface
+     * @var CartItemRepositoryInterface
      */
     private $cartItemRepository;
 
     /**
-     * @var \Magento\Quote\Model\QuoteIdMask
+     * @var QuoteIdMask
      */
     private $quoteIdMaskFactory;
 
     /**
-     * @var \Magento\Quote\Api\PaymentMethodManagementInterface
+     * @var PaymentMethodManagementInterface
      */
     private $paymentMethodManagement;
 
     /**
-     * @var \Magento\Quote\Model\ShippingAddressManagementInterface
+     * @var ShippingAddressManagementInterface
      */
     private $shippingAddressManagement;
 
     /**
-     * @var \Magento\Checkout\Api\TotalsInformationManagementInterface
+     * @var TotalsInformationManagementInterface
      */
     private $totalsInformationManagement;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->checkoutSession = $this->objectManager->create(\Magento\Checkout\Model\Session::class);
-        $this->cartRepository = $this->objectManager->create(\Magento\Quote\Api\CartRepositoryInterface::class);
-        $this->cartManagement = $this->objectManager->create(\Magento\Quote\Api\CartManagementInterface::class);
-        $this->cartItemRepository = $this->objectManager->create(\Magento\Quote\Api\CartItemRepositoryInterface::class);
-        $this->quoteIdMaskFactory = $this->objectManager->create(\Magento\Quote\Model\QuoteIdMaskFactory::class);
-        $this->paymentMethodManagement = $this->objectManager->create(
-            \Magento\Quote\Api\PaymentMethodManagementInterface::class
-        );
-        $this->totalsInformationManagement = $this->objectManager->create(
-            \Magento\Checkout\Api\TotalsInformationManagementInterface::class
-        );
-        $this->shippingAddressManagement = $this->objectManager->create(
-            \Magento\Quote\Model\ShippingAddressManagementInterface::class
-        );
-    }
 
     /**
      * Expected - Order fail with exception.
@@ -122,7 +126,7 @@ class GuestValidationTest extends \PHPUnit\Framework\TestCase
         $this->checkoutSession->setQuoteId($quote->getId());
 
         //Grab masked quote Id to pass to payment manager
-        /** @var $quoteIdMask \Magento\Quote\Model\QuoteIdMask */
+        /** @var $quoteIdMask QuoteIdMask */
         $quoteIdMask = $this->quoteIdMaskFactory->create()->load(
             $this->checkoutSession->getQuote()->getId(),
             'quote_id'
@@ -130,7 +134,7 @@ class GuestValidationTest extends \PHPUnit\Framework\TestCase
         $maskedCartId = $quoteIdMask->getMaskedId();
 
         $paymentManagement = $this->objectManager->create(
-            \Magento\Checkout\Model\GuestPaymentInformationManagement::class
+            GuestPaymentInformationManagement::class
         );
 
         try {
@@ -141,7 +145,7 @@ class GuestValidationTest extends \PHPUnit\Framework\TestCase
                 $billingAddress
             );
             $this->assertNotNull($orderId);
-        } catch (\Magento\Framework\Exception\CouldNotSaveException $e) {
+        } catch (CouldNotSaveException $e) {
             $this->assertEquals(
                 __(
                     "The order wasn't placed. "
@@ -152,49 +156,9 @@ class GuestValidationTest extends \PHPUnit\Framework\TestCase
         }
     }
 
-    public function dataProvider()
-    {
-        return [
-            [[]],
-            [['First Checkout Agreement (active)']],
-            [['First Checkout Agreement (active)', 'Second Checkout Agreement (active)']]
-        ];
-    }
-
-    /**
-     * @param string $guestEmail
-     * @return \Magento\Quote\Api\Data\AddressInterface
-     */
-    private function getBillingAddress($guestEmail)
-    {
-        /** @var \Magento\Quote\Api\Data\AddressInterface $billingAddress */
-        $billingAddress = $this->objectManager->create(\Magento\Quote\Api\Data\AddressInterface::class);
-        $billingAddress->setFirstname('First');
-        $billingAddress->setLastname('Last');
-        $billingAddress->setEmail($guestEmail);
-        $billingAddress->setStreet('Street');
-        $billingAddress->setCity('City');
-        $billingAddress->setTelephone('1234567890');
-        $billingAddress->setPostcode('12345');
-        $billingAddress->setRegionId(12);
-        $billingAddress->setCountryId('US');
-        return $billingAddress;
-    }
-
-    /**
-     * @param string $agreementName
-     * @return \Magento\CheckoutAgreements\Model\Agreement
-     */
-    private function getAgreement($agreementName)
-    {
-        $agreement = $this->objectManager->create(\Magento\CheckoutAgreements\Model\Agreement::class);
-        $agreement->load($agreementName, 'name');
-        return $agreement;
-    }
-
     /**
      * @param string[] $agreementNames
-     * @return \Magento\Quote\Api\Data\PaymentExtension
+     * @return PaymentExtension
      */
     private function getPaymentExtension($agreementNames)
     {
@@ -202,19 +166,30 @@ class GuestValidationTest extends \PHPUnit\Framework\TestCase
         foreach ($agreementNames as $agreementName) {
             $agreementIds[] = $this->getAgreement($agreementName)->getAgreementId();
         }
-        $extension = $this->objectManager->get(\Magento\Quote\Api\Data\PaymentExtension::class);
+        $extension = $this->objectManager->get(PaymentExtension::class);
         $extension->setAgreementIds($agreementIds);
         return $extension;
     }
 
     /**
+     * @param string $agreementName
+     * @return Agreement
+     */
+    private function getAgreement($agreementName)
+    {
+        $agreement = $this->objectManager->create(Agreement::class);
+        $agreement->load($agreementName, 'name');
+        return $agreement;
+    }
+
+    /**
      * @param int $productId
-     * @return \Magento\Catalog\Api\Data\ProductInterface
+     * @return ProductInterface
      */
     private function getProduct($productId)
     {
-        /** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-        $productRepository = $this->objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
         $product = $productRepository->getById($productId);
         $product->setOptions(null);
         $productRepository->save($product);
@@ -222,25 +197,11 @@ class GuestValidationTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @param \Magento\Catalog\Api\Data\ProductInterface $product
-     * @param string $cartId
-     */
-    private function addProductToCart($product, $cartId)
-    {
-        /** @var \Magento\Quote\Api\Data\CartItemInterface $quoteItem */
-        $quoteItem = $this->objectManager->create(\Magento\Quote\Api\Data\CartItemInterface::class);
-        $quoteItem->setQuoteId($cartId);
-        $quoteItem->setProduct($product);
-        $quoteItem->setQty(2);
-        $this->cartItemRepository->save($quoteItem);
-    }
-
-    /**
-     * @return \Magento\Quote\Api\Data\AddressInterface
+     * @return AddressInterface
      */
     private function getShippingAddress()
     {
-        $shippingAddress = $this->objectManager->create(\Magento\Quote\Api\Data\AddressInterface::class);
+        $shippingAddress = $this->objectManager->create(AddressInterface::class);
         $shippingAddress->setFirstname('First');
         $shippingAddress->setLastname('Last');
         $shippingAddress->setEmail(null);
@@ -255,15 +216,62 @@ class GuestValidationTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @param \Magento\Quote\Api\Data\AddressInterface $shippingAddress
+     * @param string $guestEmail
+     * @return AddressInterface
+     */
+    private function getBillingAddress($guestEmail)
+    {
+        /** @var AddressInterface $billingAddress */
+        $billingAddress = $this->objectManager->create(AddressInterface::class);
+        $billingAddress->setFirstname('First');
+        $billingAddress->setLastname('Last');
+        $billingAddress->setEmail($guestEmail);
+        $billingAddress->setStreet('Street');
+        $billingAddress->setCity('City');
+        $billingAddress->setTelephone('1234567890');
+        $billingAddress->setPostcode('12345');
+        $billingAddress->setRegionId(12);
+        $billingAddress->setCountryId('US');
+        return $billingAddress;
+    }
+
+    /**
+     * @param $paymentMethod
+     * @param $paymentExtension
+     * @return PaymentInterface
+     */
+    private function getPayment($paymentMethod, $paymentExtension)
+    {
+        $payment = $this->objectManager->create(PaymentInterface::class);
+        $payment->setMethod($paymentMethod);
+        $payment->setExtensionAttributes($paymentExtension);
+        return $payment;
+    }
+
+    /**
+     * @param ProductInterface $product
+     * @param string $cartId
+     */
+    private function addProductToCart($product, $cartId)
+    {
+        /** @var CartItemInterface $quoteItem */
+        $quoteItem = $this->objectManager->create(CartItemInterface::class);
+        $quoteItem->setQuoteId($cartId);
+        $quoteItem->setProduct($product);
+        $quoteItem->setQty(2);
+        $this->cartItemRepository->save($quoteItem);
+    }
+
+    /**
+     * @param AddressInterface $shippingAddress
      * @param string $carrierCode
      * @param string $methodCode
-     * @return \Magento\Checkout\Api\Data\TotalsInformationInterface
+     * @return TotalsInformationInterface
      */
     private function getTotals($shippingAddress, $carrierCode, $methodCode)
     {
-        /** @var \Magento\Checkout\Api\Data\TotalsInformationInterface $totals */
-        $totals = $this->objectManager->create(\Magento\Checkout\Api\Data\TotalsInformationInterface::class);
+        /** @var TotalsInformationInterface $totals */
+        $totals = $this->objectManager->create(TotalsInformationInterface::class);
         $totals->setAddress($shippingAddress);
         $totals->setShippingCarrierCode($carrierCode);
         $totals->setShippingMethodCode($methodCode);
@@ -271,16 +279,31 @@ class GuestValidationTest extends \PHPUnit\Framework\TestCase
         return $totals;
     }
 
-    /**
-     * @param $paymentMethod
-     * @param $paymentExtension
-     * @return \Magento\Quote\Api\Data\PaymentInterface
-     */
-    private function getPayment($paymentMethod, $paymentExtension)
+    public function dataProvider()
     {
-        $payment = $this->objectManager->create(\Magento\Quote\Api\Data\PaymentInterface::class);
-        $payment->setMethod($paymentMethod);
-        $payment->setExtensionAttributes($paymentExtension);
-        return $payment;
+        return [
+            [[]],
+            [['First Checkout Agreement (active)']],
+            [['First Checkout Agreement (active)', 'Second Checkout Agreement (active)']]
+        ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->checkoutSession = $this->objectManager->create(Session::class);
+        $this->cartRepository = $this->objectManager->create(CartRepositoryInterface::class);
+        $this->cartManagement = $this->objectManager->create(CartManagementInterface::class);
+        $this->cartItemRepository = $this->objectManager->create(CartItemRepositoryInterface::class);
+        $this->quoteIdMaskFactory = $this->objectManager->create(QuoteIdMaskFactory::class);
+        $this->paymentMethodManagement = $this->objectManager->create(
+            PaymentMethodManagementInterface::class
+        );
+        $this->totalsInformationManagement = $this->objectManager->create(
+            TotalsInformationManagementInterface::class
+        );
+        $this->shippingAddressManagement = $this->objectManager->create(
+            ShippingAddressManagementInterface::class
+        );
     }
 }

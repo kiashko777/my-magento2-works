@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Api;
 
 use Magento\Framework\Api\FilterBuilder;
@@ -11,18 +12,14 @@ use Magento\Framework\Api\SortOrder;
 use Magento\Framework\Api\SortOrderBuilder;
 use Magento\Sales\Api\Data\InvoiceItemInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class InvoiceItemRepositoryInterfaceTest extends \PHPUnit\Framework\TestCase
+class InvoiceItemRepositoryInterfaceTest extends TestCase
 {
     /**
      * @var InvoiceItemRepositoryInterface
      */
     private $repository;
-
-    protected function setUp(): void
-    {
-        $this->repository = Bootstrap::getObjectManager()->create(InvoiceItemRepositoryInterface::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Sales/_files/invoice_items_for_search.php
@@ -58,7 +55,7 @@ class InvoiceItemRepositoryInterfaceTest extends \PHPUnit\Framework\TestCase
             ->create();
 
         /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
-        $searchCriteriaBuilder =  Bootstrap::getObjectManager()->create(SearchCriteriaBuilder::class);
+        $searchCriteriaBuilder = Bootstrap::getObjectManager()->create(SearchCriteriaBuilder::class);
 
         $searchCriteriaBuilder->addFilters([$filter1, $filter2, $filter3, $filter4]);
         $searchCriteriaBuilder->addFilters([$filter5]);
@@ -74,5 +71,10 @@ class InvoiceItemRepositoryInterfaceTest extends \PHPUnit\Framework\TestCase
         $items = array_values($searchResult->getItems());
         $this->assertCount(1, $items);
         $this->assertEquals('item 2', $items[0][InvoiceItemInterface::NAME]);
+    }
+
+    protected function setUp(): void
+    {
+        $this->repository = Bootstrap::getObjectManager()->create(InvoiceItemRepositoryInterface::class);
     }
 }

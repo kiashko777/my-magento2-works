@@ -7,6 +7,7 @@
 /**
  * Implementation of the @magentoConfigFixture DocBlock annotation
  */
+
 namespace Magento\TestFramework\Annotation;
 
 use Magento\Framework\App\Config\MutableScopeConfigInterface;
@@ -52,91 +53,15 @@ class ConfigFixture
     protected $storeConfigValues = [];
 
     /**
-     * Retrieve configuration node value
+     * Handler for 'startTest' event
      *
-     * @param string $configPath
-     * @param string|bool|null $scopeCode
-     * @return string
-     */
-    protected function _getConfigValue($configPath, $scopeCode = null)
-    {
-        return $this->getScopeConfigValue($configPath, ScopeInterface::SCOPE_STORE, $scopeCode);
-    }
-
-    /**
-     * Retrieve scope configuration node value
-     *
-     * @param string $configPath
-     * @param string $scopeType
-     * @param string|null $scopeCode
-     * @return mixed|null
-     */
-    protected function getScopeConfigValue(string $configPath, string $scopeType, string $scopeCode = null)
-    {
-        $result = null;
-        if ($scopeCode !== false) {
-            $scopeConfig = $this->getScopeConfig();
-            $result = $scopeConfig->getValue($configPath, $scopeType, $scopeCode);
-        }
-        return $result;
-    }
-
-    /**
-     * Assign configuration node value
-     *
-     * @param string $configPath
-     * @param string $value
-     * @param string|bool|null $storeCode
+     * @param TestCase $test
      * @return void
      */
-    protected function _setConfigValue($configPath, $value, $storeCode = false)
+    public function startTest(TestCase $test)
     {
-        $scopeType = $storeCode === false ? ScopeConfigInterface::SCOPE_TYPE_DEFAULT : ScopeInterface::SCOPE_STORE;
-        $this->setScopeConfigValue($configPath, $value, $scopeType, $storeCode);
-    }
-
-    /**
-     * Set config scope value
-     *
-     * @param string $configPath
-     * @param string|null $value
-     * @param string $scopeType
-     * @param string|null $scopeCode
-     * @return void
-     */
-    protected function setScopeConfigValue(
-        string $configPath,
-        ?string $value,
-        string $scopeType,
-        ?string $scopeCode
-    ): void {
-        $config = $this->getMutableScopeConfig();
-        if (strpos($configPath, 'default/') === 0) {
-            $configPath = substr($configPath, 8);
-            $config->setValue($configPath, $value, ScopeConfigInterface::SCOPE_TYPE_DEFAULT);
-        } else {
-            $config->setValue($configPath, $value, $scopeType, $scopeCode);
-        }
-    }
-
-    /**
-     * Get mutable config object
-     *
-     * @return MutableScopeConfigInterface
-     */
-    protected function getMutableScopeConfig(): MutableScopeConfigInterface
-    {
-        return Bootstrap::getObjectManager()->get(MutableScopeConfigInterface::class);
-    }
-
-    /**
-     * Get config object
-     *
-     * @return ScopeConfigInterface
-     */
-    protected function getScopeConfig(): ScopeConfigInterface
-    {
-        return Bootstrap::getObjectManager()->get(ScopeConfigInterface::class);
+        $this->_currentTest = $test;
+        $this->_assignConfigData($test);
     }
 
     /**
@@ -187,6 +112,95 @@ class ConfigFixture
     }
 
     /**
+     * Retrieve configuration node value
+     *
+     * @param string $configPath
+     * @param string|bool|null $scopeCode
+     * @return string
+     */
+    protected function _getConfigValue($configPath, $scopeCode = null)
+    {
+        return $this->getScopeConfigValue($configPath, ScopeInterface::SCOPE_STORE, $scopeCode);
+    }
+
+    /**
+     * Retrieve scope configuration node value
+     *
+     * @param string $configPath
+     * @param string $scopeType
+     * @param string|null $scopeCode
+     * @return mixed|null
+     */
+    protected function getScopeConfigValue(string $configPath, string $scopeType, string $scopeCode = null)
+    {
+        $result = null;
+        if ($scopeCode !== false) {
+            $scopeConfig = $this->getScopeConfig();
+            $result = $scopeConfig->getValue($configPath, $scopeType, $scopeCode);
+        }
+        return $result;
+    }
+
+    /**
+     * Get config object
+     *
+     * @return ScopeConfigInterface
+     */
+    protected function getScopeConfig(): ScopeConfigInterface
+    {
+        return Bootstrap::getObjectManager()->get(ScopeConfigInterface::class);
+    }
+
+    /**
+     * Assign configuration node value
+     *
+     * @param string $configPath
+     * @param string $value
+     * @param string|bool|null $storeCode
+     * @return void
+     */
+    protected function _setConfigValue($configPath, $value, $storeCode = false)
+    {
+        $scopeType = $storeCode === false ? ScopeConfigInterface::SCOPE_TYPE_DEFAULT : ScopeInterface::SCOPE_STORE;
+        $this->setScopeConfigValue($configPath, $value, $scopeType, $storeCode);
+    }
+
+    /**
+     * Set config scope value
+     *
+     * @param string $configPath
+     * @param string|null $value
+     * @param string $scopeType
+     * @param string|null $scopeCode
+     * @return void
+     */
+    protected function setScopeConfigValue(
+        string  $configPath,
+        ?string $value,
+        string  $scopeType,
+        ?string $scopeCode
+    ): void
+    {
+        $config = $this->getMutableScopeConfig();
+        if (strpos($configPath, 'default/') === 0) {
+            $configPath = substr($configPath, 8);
+            $config->setValue($configPath, $value, ScopeConfigInterface::SCOPE_TYPE_DEFAULT);
+        } else {
+            $config->setValue($configPath, $value, $scopeType, $scopeCode);
+        }
+    }
+
+    /**
+     * Get mutable config object
+     *
+     * @return MutableScopeConfigInterface
+     */
+    protected function getMutableScopeConfig(): MutableScopeConfigInterface
+    {
+        return Bootstrap::getObjectManager()->get(MutableScopeConfigInterface::class);
+    }
+
+    /**
      * Sets website-scoped config value
      *
      * @param array $matches
@@ -217,6 +231,19 @@ class ConfigFixture
         $originalValue = $this->_getConfigValue($configPath);
         $this->globalConfigValues[$configPath] = $originalValue;
         $this->_setConfigValue($configPath, $requiredValue);
+    }
+
+    /**
+     * Handler for 'endTest' event
+     *
+     * @param TestCase $test
+     * @return void
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
+    public function endTest(TestCase $test)
+    {
+        $this->_currentTest = null;
+        $this->_restoreConfigData();
     }
 
     /**
@@ -253,31 +280,6 @@ class ConfigFixture
             }
         }
         $this->websiteConfigValues = [];
-    }
-
-    /**
-     * Handler for 'startTest' event
-     *
-     * @param TestCase $test
-     * @return void
-     */
-    public function startTest(TestCase $test)
-    {
-        $this->_currentTest = $test;
-        $this->_assignConfigData($test);
-    }
-
-    /**
-     * Handler for 'endTest' event
-     *
-     * @param TestCase $test
-     * @return void
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-     */
-    public function endTest(TestCase $test)
-    {
-        $this->_currentTest = null;
-        $this->_restoreConfigData();
     }
 
     /**

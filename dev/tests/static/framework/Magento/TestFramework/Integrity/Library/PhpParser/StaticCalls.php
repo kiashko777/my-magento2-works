@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Integrity\Library\PhpParser;
 
 /**
@@ -39,6 +40,21 @@ class StaticCalls implements ParserInterface, DependenciesCollectorInterface
     }
 
     /**
+     * @inheritdoc
+     */
+    public function parse($token, $key)
+    {
+        if (is_array(
+                $token
+            ) && $token[0] == T_PAAMAYIM_NEKUDOTAYIM && $this->isTokenClass(
+                $this->tokens->getPreviousToken($key)
+            )
+        ) {
+            $this->staticCalls[] = $key;
+        }
+    }
+
+    /**
      * Check if it's foreign dependency
      *
      * @param array $token
@@ -47,50 +63,14 @@ class StaticCalls implements ParserInterface, DependenciesCollectorInterface
     protected function isTokenClass($token)
     {
         return is_array(
-            $token
-        ) && !(in_array(
-            $token[1],
-            ['static', 'self', 'parent']
-        ) || preg_match(
-            '#^\$#',
-            $token[1]
-        ));
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function parse($token, $key)
-    {
-        if (is_array(
-            $token
-        ) && $token[0] == T_PAAMAYIM_NEKUDOTAYIM && $this->isTokenClass(
-            $this->tokens->getPreviousToken($key)
-        )
-        ) {
-            $this->staticCalls[] = $key;
-        }
-    }
-
-    /**
-     * Return class name from token
-     *
-     * @param int $staticCall
-     * @return string
-     */
-    protected function getClassByStaticCall($staticCall)
-    {
-        $step = 1;
-        $staticClassParts = [];
-        while ($this->tokens->getTokenCodeByKey(
-            $staticCall - $step
-        ) == T_STRING || $this->tokens->getTokenCodeByKey(
-            $staticCall - $step
-        ) == T_NS_SEPARATOR) {
-            $staticClassParts[] = $this->tokens->getTokenValueByKey($staticCall - $step);
-            $step++;
-        }
-        return implode(array_reverse($staticClassParts));
+                $token
+            ) && !(in_array(
+                    $token[1],
+                    ['static', 'self', 'parent']
+                ) || preg_match(
+                    '#^\$#',
+                    $token[1]
+                ));
     }
 
     /**
@@ -107,5 +87,26 @@ class StaticCalls implements ParserInterface, DependenciesCollectorInterface
         }
 
         return $this->dependencies;
+    }
+
+    /**
+     * Return class name from token
+     *
+     * @param int $staticCall
+     * @return string
+     */
+    protected function getClassByStaticCall($staticCall)
+    {
+        $step = 1;
+        $staticClassParts = [];
+        while ($this->tokens->getTokenCodeByKey(
+                $staticCall - $step
+            ) == T_STRING || $this->tokens->getTokenCodeByKey(
+                $staticCall - $step
+            ) == T_NS_SEPARATOR) {
+            $staticClassParts[] = $this->tokens->getTokenValueByKey($staticCall - $step);
+            $step++;
+        }
+        return implode(array_reverse($staticClassParts));
     }
 }

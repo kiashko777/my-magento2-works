@@ -30,18 +30,6 @@ class ItemCollectionProviderTest extends TestCase
     private $itemCollectionProvider;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->itemCollectionProvider = $this->objectManager->get(ItemCollectionProvider::class);
-        $this->categoryRepository = $this->objectManager->get(CategoryRepositoryInterface::class);
-    }
-
-    /**
      * @magentoDbIsolation disabled
      * @magentoDataFixture Magento/Catalog/_files/category_product.php
      * @magentoDataFixture Magento/Catalog/_files/second_product_simple.php
@@ -54,5 +42,17 @@ class ItemCollectionProviderTest extends TestCase
         $categoryProductsCollection = $this->itemCollectionProvider->getCollection($category);
         $this->assertCount(1, $categoryProductsCollection);
         $this->assertEquals('simple333', $categoryProductsCollection->getFirstItem()->getSku());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->itemCollectionProvider = $this->objectManager->get(ItemCollectionProvider::class);
+        $this->categoryRepository = $this->objectManager->get(CategoryRepositoryInterface::class);
     }
 }

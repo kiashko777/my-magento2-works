@@ -3,12 +3,26 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Tax\Model\Sales\Total\Quote;
 
+use LogicException;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Customer\Api\AddressRepositoryInterface;
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Model\Customer;
+use Magento\Customer\Model\Group;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Registry;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\Quote\Address;
+use Magento\Quote\Model\Quote\Address\Item;
 use Magento\Quote\Model\Quote\TotalsCollector;
+use Magento\Tax\Model\ClassModel;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Indexer\TestCase;
 
 require_once __DIR__ . '/SetupUtil.php';
 require_once __DIR__ . '/../../../../_files/tax_calculation_data_aggregated.php';
@@ -21,7 +35,7 @@ require_once __DIR__ . '/../../../../_files/full_discount_with_tax.php';
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class TaxTest extends \Magento\TestFramework\Indexer\TestCase
+class TaxTest extends TestCase
 {
     /**
      * Utility object for setting up tax rates, tax classes and tax rules
@@ -34,19 +48,6 @@ class TaxTest extends \Magento\TestFramework\Indexer\TestCase
      * @var TotalsCollector
      */
     private $totalsCollector;
-
-    /**
-     * test setup
-     */
-    protected function setUp(): void
-    {
-        /** @var  \Magento\Framework\ObjectManagerInterface $objectManager */
-        $objectManager = Bootstrap::getObjectManager();
-        $this->totalsCollector = $objectManager->create(TotalsCollector::class);
-        $this->setupUtil = new SetupUtil($objectManager);
-
-        parent::setUp();
-    }
 
     /**
      * Test taxes collection for quote.
@@ -66,41 +67,41 @@ class TaxTest extends \Magento\TestFramework\Indexer\TestCase
     {
         /** Preconditions */
         $objectManager = Bootstrap::getObjectManager();
-        /** @var \Magento\Tax\Model\ClassModel $customerTaxClass */
-        $customerTaxClass = $objectManager->create(\Magento\Tax\Model\ClassModel::class);
+        /** @var ClassModel $customerTaxClass */
+        $customerTaxClass = $objectManager->create(ClassModel::class);
         $fixtureCustomerTaxClass = 'CustomerTaxClass2';
         $customerTaxClass->load($fixtureCustomerTaxClass, 'class_name');
         $fixtureCustomerId = 1;
-        /** @var \Magento\Customer\Model\Customer $customer */
-        $customer = $objectManager->create(\Magento\Customer\Model\Customer::class)->load($fixtureCustomerId);
-        /** @var \Magento\Customer\Model\Group $customerGroup */
-        $customerGroup = $objectManager->create(\Magento\Customer\Model\Group::class)
+        /** @var Customer $customer */
+        $customer = $objectManager->create(Customer::class)->load($fixtureCustomerId);
+        /** @var Group $customerGroup */
+        $customerGroup = $objectManager->create(Group::class)
             ->load('custom_group', 'customer_group_code');
         $customerGroup->setTaxClassId($customerTaxClass->getId())->save();
         $customer->setGroupId($customerGroup->getId())->save();
 
-        /** @var \Magento\Tax\Model\ClassModel $productTaxClass */
-        $productTaxClass = $objectManager->create(\Magento\Tax\Model\ClassModel::class);
+        /** @var ClassModel $productTaxClass */
+        $productTaxClass = $objectManager->create(ClassModel::class);
         $fixtureProductTaxClass = 'ProductTaxClass1';
         $productTaxClass->load($fixtureProductTaxClass, 'class_name');
-        /** @var \Magento\Catalog\Model\Product $product */
-        $product = $objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class)->get('simple');
+        /** @var Product $product */
+        $product = $objectManager->create(ProductRepositoryInterface::class)->get('simple');
         $product->setTaxClassId($productTaxClass->getId())->save();
 
         $fixtureCustomerAddressId = 1;
         $customerAddress = $objectManager->create(\Magento\Customer\Model\Address::class)->load($fixtureCustomerId);
         /** Set data which corresponds tax class fixture */
         $customerAddress->setCountryId('US')->setRegionId(12)->save();
-        /** @var \Magento\Quote\Model\Quote\Address $quoteShippingAddress */
-        $quoteShippingAddress = $objectManager->create(\Magento\Quote\Model\Quote\Address::class);
-        /** @var \Magento\Customer\Api\AddressRepositoryInterface $addressRepository */
-        $addressRepository = $objectManager->create(\Magento\Customer\Api\AddressRepositoryInterface::class);
+        /** @var Address $quoteShippingAddress */
+        $quoteShippingAddress = $objectManager->create(Address::class);
+        /** @var AddressRepositoryInterface $addressRepository */
+        $addressRepository = $objectManager->create(AddressRepositoryInterface::class);
         $quoteShippingAddress->importCustomerAddressData($addressRepository->getById($fixtureCustomerAddressId));
 
-        /** @var \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository */
-        $customerRepository = $objectManager->create(\Magento\Customer\Api\CustomerRepositoryInterface::class);
-        /** @var \Magento\Quote\Model\Quote $quote */
-        $quote = $objectManager->create(\Magento\Quote\Model\Quote::class);
+        /** @var CustomerRepositoryInterface $customerRepository */
+        $customerRepository = $objectManager->create(CustomerRepositoryInterface::class);
+        /** @var Quote $quote */
+        $quote = $objectManager->create(Quote::class);
         $quote->setStoreId(1)
             ->setIsActive(true)
             ->setIsMultiShipping(false)
@@ -150,7 +151,7 @@ class TaxTest extends \Magento\TestFramework\Indexer\TestCase
         $quoteData = $fullDiscountIncTax['quote_data'];
         $expectedResults = $fullDiscountIncTax['expected_result'];
 
-        /** @var  \Magento\Framework\ObjectManagerInterface $objectManager */
+        /** @var  ObjectManagerInterface $objectManager */
         $objectManager = Bootstrap::getObjectManager();
 
         //Setup tax configurations
@@ -167,32 +168,61 @@ class TaxTest extends \Magento\TestFramework\Indexer\TestCase
     }
 
     /**
-     * Verify fields in quote item
+     * Verify fields in quote address and quote item are correct
      *
-     * @param \Magento\Quote\Model\Quote\Address\Item $item
-     * @param array $expectedItemData
+     * @param Address $quoteAddress
+     * @param array $expectedResults
      * @return $this
      */
-    protected function verifyItem($item, $expectedItemData)
+    protected function verifyResult($quoteAddress, $expectedResults)
     {
-        foreach ($expectedItemData as $key => $value) {
-            $this->assertEquals($value, $item->getData($key), 'item ' . $key . ' is incorrect');
+        $addressData = $expectedResults['address_data'];
+
+        $this->verifyQuoteAddress($quoteAddress, $addressData);
+
+        $quoteItems = $quoteAddress->getAllItems();
+        foreach ($quoteItems as $item) {
+            /** @var  Item $item */
+            $sku = $item->getProduct()->getSku();
+            $expectedItemData = $expectedResults['items_data'][$sku];
+            $this->verifyItem($item, $expectedItemData);
         }
 
         return $this;
     }
 
     /**
-     * Verify one tax rate in a tax row
+     * Verify fields in quote address
      *
-     * @param array $appliedTaxRate
-     * @param array $expectedAppliedTaxRate
+     * @param Address $quoteAddress
+     * @param array $expectedAddressData
      * @return $this
      */
-    protected function verifyAppliedTaxRate($appliedTaxRate, $expectedAppliedTaxRate)
+    protected function verifyQuoteAddress($quoteAddress, $expectedAddressData)
     {
-        foreach ($expectedAppliedTaxRate as $key => $value) {
-            $this->assertEquals($value, $appliedTaxRate[$key], 'Applied tax rate ' . $key . ' is incorrect');
+        foreach ($expectedAddressData as $key => $value) {
+            if ($key == 'applied_taxes') {
+                $this->verifyAppliedTaxes($quoteAddress->getAppliedTaxes(), $value);
+            } else {
+                $this->assertEquals($value, $quoteAddress->getData($key), 'Quote address ' . $key . ' is incorrect');
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * Verify that applied taxes are correct
+     *
+     * @param array $appliedTaxes
+     * @param array $expectedAppliedTaxes
+     * @return $this
+     */
+    protected function verifyAppliedTaxes($appliedTaxes, $expectedAppliedTaxes)
+    {
+        foreach ($expectedAppliedTaxes as $taxRateKey => $expectedTaxRate) {
+            $this->assertTrue(isset($appliedTaxes[$taxRateKey]), 'Missing tax rate ' . $taxRateKey);
+            $this->verifyAppliedTax($appliedTaxes[$taxRateKey], $expectedTaxRate);
         }
         return $this;
     }
@@ -219,60 +249,31 @@ class TaxTest extends \Magento\TestFramework\Indexer\TestCase
     }
 
     /**
-     * Verify that applied taxes are correct
+     * Verify one tax rate in a tax row
      *
-     * @param array $appliedTaxes
-     * @param array $expectedAppliedTaxes
+     * @param array $appliedTaxRate
+     * @param array $expectedAppliedTaxRate
      * @return $this
      */
-    protected function verifyAppliedTaxes($appliedTaxes, $expectedAppliedTaxes)
+    protected function verifyAppliedTaxRate($appliedTaxRate, $expectedAppliedTaxRate)
     {
-        foreach ($expectedAppliedTaxes as $taxRateKey => $expectedTaxRate) {
-            $this->assertTrue(isset($appliedTaxes[$taxRateKey]), 'Missing tax rate ' . $taxRateKey);
-            $this->verifyAppliedTax($appliedTaxes[$taxRateKey], $expectedTaxRate);
+        foreach ($expectedAppliedTaxRate as $key => $value) {
+            $this->assertEquals($value, $appliedTaxRate[$key], 'Applied tax rate ' . $key . ' is incorrect');
         }
         return $this;
     }
 
     /**
-     * Verify fields in quote address
+     * Verify fields in quote item
      *
-     * @param \Magento\Quote\Model\Quote\Address $quoteAddress
-     * @param array $expectedAddressData
+     * @param Item $item
+     * @param array $expectedItemData
      * @return $this
      */
-    protected function verifyQuoteAddress($quoteAddress, $expectedAddressData)
+    protected function verifyItem($item, $expectedItemData)
     {
-        foreach ($expectedAddressData as $key => $value) {
-            if ($key == 'applied_taxes') {
-                $this->verifyAppliedTaxes($quoteAddress->getAppliedTaxes(), $value);
-            } else {
-                $this->assertEquals($value, $quoteAddress->getData($key), 'Quote address ' . $key . ' is incorrect');
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * Verify fields in quote address and quote item are correct
-     *
-     * @param \Magento\Quote\Model\Quote\Address $quoteAddress
-     * @param array $expectedResults
-     * @return $this
-     */
-    protected function verifyResult($quoteAddress, $expectedResults)
-    {
-        $addressData = $expectedResults['address_data'];
-
-        $this->verifyQuoteAddress($quoteAddress, $addressData);
-
-        $quoteItems = $quoteAddress->getAllItems();
-        foreach ($quoteItems as $item) {
-            /** @var  \Magento\Quote\Model\Quote\Address\Item $item */
-            $sku = $item->getProduct()->getSku();
-            $expectedItemData = $expectedResults['items_data'][$sku];
-            $this->verifyItem($item, $expectedItemData);
+        foreach ($expectedItemData as $key => $value) {
+            $this->assertEquals($value, $item->getData($key), 'item ' . $key . ' is incorrect');
         }
 
         return $this;
@@ -292,11 +293,11 @@ class TaxTest extends \Magento\TestFramework\Indexer\TestCase
      */
     public function testTaxCalculation($configData, $quoteData, $expectedResults)
     {
-        $db = \Magento\TestFramework\Helper\Bootstrap::getInstance()->getBootstrap()
+        $db = Bootstrap::getInstance()->getBootstrap()
             ->getApplication()
             ->getDbInstance();
         if (!$db->isDbDumpExists()) {
-            throw new \LogicException('DB dump does not exist.');
+            throw new LogicException('DB dump does not exist.');
         }
         $db->restoreFromDbDump();
         //Setup tax configurations
@@ -314,18 +315,6 @@ class TaxTest extends \Magento\TestFramework\Indexer\TestCase
     }
 
     /**
-     * Read the array defined in ../../../../_files/tax_calculation_data_aggregated.php
-     * and feed it to testTaxCalculation
-     *
-     * @return array
-     */
-    public function taxDataProvider()
-    {
-        global $taxCalculationData;
-        return $taxCalculationData;
-    }
-
-    /**
      * Cleanup test by removing products.
      *
      * @param string[] $skus
@@ -336,7 +325,7 @@ class TaxTest extends \Magento\TestFramework\Indexer\TestCase
         $objectManager = Bootstrap::getObjectManager();
         /** @var ProductRepositoryInterface $productRepository */
         $productRepository = $objectManager->create(ProductRepositoryInterface::class);
-        $registry = $objectManager->get(\Magento\Framework\Registry::class);
+        $registry = $objectManager->get(Registry::class);
         /** @var ProductRepositoryInterface $productRepository */
         $registry->unregister('isSecureArea');
         $registry->register('isSecureArea', true);
@@ -351,5 +340,30 @@ class TaxTest extends \Magento\TestFramework\Indexer\TestCase
 
         $registry->unregister('isSecureArea');
         $registry->register('isSecureArea', false);
+    }
+
+    /**
+     * Read the array defined in ../../../../_files/tax_calculation_data_aggregated.php
+     * and feed it to testTaxCalculation
+     *
+     * @return array
+     */
+    public function taxDataProvider()
+    {
+        global $taxCalculationData;
+        return $taxCalculationData;
+    }
+
+    /**
+     * test setup
+     */
+    protected function setUp(): void
+    {
+        /** @var  ObjectManagerInterface $objectManager */
+        $objectManager = Bootstrap::getObjectManager();
+        $this->totalsCollector = $objectManager->create(TotalsCollector::class);
+        $this->setupUtil = new SetupUtil($objectManager);
+
+        parent::setUp();
     }
 }

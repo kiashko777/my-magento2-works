@@ -7,9 +7,14 @@ declare(strict_types=1);
 
 namespace Magento\Setup\Module\Di\Code\Reader;
 
+use FilesystemIterator;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\App\ObjectManager;
 use Magento\Framework\Exception\FileSystemException;
+use Magento\Framework\Phrase;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
 
 /**
  * Class ClassesScanner
@@ -76,12 +81,12 @@ class ClassesScanner implements ClassesScannerInterface
         }
         if (!(bool)$realPath) {
             throw new FileSystemException(
-                new \Magento\Framework\Phrase('The "%1" path is invalid. Verify the path and try again.', [$path])
+                new Phrase('The "%1" path is invalid. Verify the path and try again.', [$path])
             );
         }
-        $recursiveIterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($realPath, \FilesystemIterator::FOLLOW_SYMLINKS),
-            \RecursiveIteratorIterator::SELF_FIRST
+        $recursiveIterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($realPath, FilesystemIterator::FOLLOW_SYMLINKS),
+            RecursiveIteratorIterator::SELF_FIRST
         );
 
         $classes = $this->extract($recursiveIterator);
@@ -94,14 +99,14 @@ class ClassesScanner implements ClassesScannerInterface
     /**
      * Extracts all the classes from the recursive iterator
      *
-     * @param \RecursiveIteratorIterator $recursiveIterator
+     * @param RecursiveIteratorIterator $recursiveIterator
      * @return array
      */
-    private function extract(\RecursiveIteratorIterator $recursiveIterator)
+    private function extract(RecursiveIteratorIterator $recursiveIterator)
     {
         $classes = [];
         foreach ($recursiveIterator as $fileItem) {
-            /** @var $fileItem \SplFileInfo */
+            /** @var $fileItem SplFileInfo */
             if ($fileItem->isDir() || $fileItem->getExtension() !== 'php' || $fileItem->getBasename()[0] == '.') {
                 continue;
             }
@@ -123,23 +128,6 @@ class ClassesScanner implements ClassesScannerInterface
     }
 
     /**
-     * Include class from file path.
-     *
-     * @param string $className
-     * @param string $fileItemPath
-     * @return bool Whether the class is included or not
-     */
-    private function includeClass(string $className, string $fileItemPath): bool
-    {
-        if (!class_exists($className)) {
-            // phpcs:ignore
-            require_once $fileItemPath;
-            return true;
-        }
-        return false;
-    }
-
-    /**
      * Find out if file should be excluded
      *
      * @param string $fileItemPath
@@ -155,6 +143,23 @@ class ClassesScanner implements ClassesScannerInterface
             if (preg_match($pattern, str_replace('\\', '/', $fileItemPath))) {
                 return true;
             }
+        }
+        return false;
+    }
+
+    /**
+     * Include class from file path.
+     *
+     * @param string $className
+     * @param string $fileItemPath
+     * @return bool Whether the class is included or not
+     */
+    private function includeClass(string $className, string $fileItemPath): bool
+    {
+        if (!class_exists($className)) {
+            // phpcs:ignore
+            require_once $fileItemPath;
+            return true;
         }
         return false;
     }

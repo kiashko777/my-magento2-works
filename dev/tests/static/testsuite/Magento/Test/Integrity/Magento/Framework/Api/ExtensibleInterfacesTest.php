@@ -3,9 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Magento\Framework\Api;
 
+use Laminas\Code\Reflection\FileReflection;
+use Magento\Framework\Api\ExtensibleDataInterface;
+use Magento\Framework\App\Utility\AggregateInvoker;
 use Magento\Framework\App\Utility\Files;
+use PHPUnit\Framework\TestCase;
+use ReflectionClass;
+use ReflectionException;
 
 /**
  * Check interfaces inherited from \Magento\Framework\Api\ExtensibleDataInterface.
@@ -13,20 +20,20 @@ use Magento\Framework\App\Utility\Files;
  * Ensure that all interfaces inherited from \Magento\Framework\Api\ExtensibleDataInterface
  * override getExtensionAttributes() method and have correct return type specified.
  */
-class ExtensibleInterfacesTest extends \PHPUnit\Framework\TestCase
+class ExtensibleInterfacesTest extends TestCase
 {
-    const EXTENSIBLE_DATA_INTERFACE = \Magento\Framework\Api\ExtensibleDataInterface::class;
+    const EXTENSIBLE_DATA_INTERFACE = ExtensibleDataInterface::class;
 
     /**
      * Check return types of getExtensionAttributes() methods.
      */
     public function testGetSetExtensionAttributes()
     {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
+        $invoker = new AggregateInvoker($this);
         $invoker(
-            /**
-             * @param string $filename
-             */
+        /**
+         * @param string $filename
+         */
             function ($filename) {
                 $errors = [];
                 $fileContent = file_get_contents($filename);
@@ -41,7 +48,7 @@ class ExtensibleInterfacesTest extends \PHPUnit\Framework\TestCase
                     $namespace = $matches[1];
                     $interfaceName = $matches[2];
                     $fullInterfaceName = '\\' . $namespace . '\\' . $interfaceName;
-                    $interfaceReflection = new \ReflectionClass($fullInterfaceName);
+                    $interfaceReflection = new ReflectionClass($fullInterfaceName);
                     if ($interfaceReflection->isSubclassOf(self::EXTENSIBLE_DATA_INTERFACE)) {
                         $interfaceName = '\\' . $interfaceReflection->getName();
                         $extensionClassName = substr($interfaceName, 0, -strlen('Interface')) . 'Extension';
@@ -78,16 +85,17 @@ class ExtensibleInterfacesTest extends \PHPUnit\Framework\TestCase
     /**
      * Check getExtensionAttributes methods
      *
-     * @param \ReflectionClass $interfaceReflection
+     * @param ReflectionClass $interfaceReflection
      * @param string $extensionInterfaceName
      * @param string $fullInterfaceName
      * @return array
      */
     private function checkGetExtensionAttributes(
-        \ReflectionClass $interfaceReflection,
-        $extensionInterfaceName,
-        $fullInterfaceName
-    ) {
+        ReflectionClass $interfaceReflection,
+                         $extensionInterfaceName,
+                         $fullInterfaceName
+    )
+    {
         $errors = [];
         try {
             $methodReflection = $interfaceReflection->getMethod('getExtensionAttributes');
@@ -99,7 +107,7 @@ class ExtensibleInterfacesTest extends \PHPUnit\Framework\TestCase
                     "'{$fullInterfaceName}::getExtensionAttributes()' must be declared "
                     . "with a return type of '{$extensionInterfaceName}'.";
             }
-        } catch (\ReflectionException $e) {
+        } catch (ReflectionException $e) {
             $errors[] = "The following method should be declared in "
                 . "'{$extensionInterfaceName}'. '{$extensionInterfaceName}' must be specified as"
                 . " a return type for '{$fullInterfaceName}::getExtensionAttributes()'";
@@ -111,16 +119,17 @@ class ExtensibleInterfacesTest extends \PHPUnit\Framework\TestCase
     /**
      * Check setExtensionAttributes methods
      *
-     * @param \ReflectionClass $interfaceReflection
+     * @param ReflectionClass $interfaceReflection
      * @param string $extensionInterfaceName
      * @param string $fullInterfaceName
      * @return array
      */
     private function checkSetExtensionAttributes(
-        \ReflectionClass $interfaceReflection,
-        $extensionInterfaceName,
-        $fullInterfaceName
-    ) {
+        ReflectionClass $interfaceReflection,
+                         $extensionInterfaceName,
+                         $fullInterfaceName
+    )
+    {
         $errors = [];
         try {
             $methodReflection = $interfaceReflection->getMethod('setExtensionAttributes');
@@ -144,56 +153,12 @@ class ExtensibleInterfacesTest extends \PHPUnit\Framework\TestCase
                         . "in '{$fullInterfaceName}::setExtensionAttributes()'.";
                 }
             }
-        } catch (\ReflectionException $e) {
+        } catch (ReflectionException $e) {
             $errors[] = "'{$fullInterfaceName}::setExtensionAttributes()' must be declared "
                 . "with a '{$extensionInterfaceName}' parameter type.";
         }
 
         return $errors;
-    }
-
-    /**
-     * Ensure that all classes extended from extensible classes implement getter and setter for extension attributes.
-     */
-    public function testExtensibleClassesWithMissingInterface() //phpcs:ignore Generic.Metrics.NestingLevel
-    {
-        $invoker = new \Magento\Framework\App\Utility\AggregateInvoker($this);
-        $invoker(
-            /**
-             * @param string $filename
-             */
-            function ($filename) {
-                $errors = [];
-                $fileContent = file_get_contents($filename);
-                $extensibleClassPattern = 'class [^\{]+extends[^\{]+AbstractExtensible';
-                $abstractExtensibleClassPattern = 'abstract ' . $extensibleClassPattern;
-                if (preg_match('/' . $extensibleClassPattern . '/', $fileContent) &&
-                    !preg_match('/' . $abstractExtensibleClassPattern . '/', $fileContent)
-                ) {
-                    $fileReflection = new \Laminas\Code\Reflection\FileReflection($filename, true);
-                    foreach ($fileReflection->getClasses() as $classReflection) {
-                        if ($classReflection->isSubclassOf(self::EXTENSIBLE_DATA_INTERFACE)) {
-                            $methodsToCheck = ['setExtensionAttributes', 'getExtensionAttributes'];
-                            foreach ($methodsToCheck as $methodName) {
-                                try {
-                                    $classReflection->getMethod($methodName);
-                                } catch (\ReflectionException $e) {
-                                    $className = $classReflection->getName();
-                                    $errors[] = "'{$className}::{$methodName}()' must be declared or "
-                                        . "'{$className}' should not be inherited from extensible class.";
-                                }
-                            }
-                        }
-                    }
-                }
-
-                $this->assertEmpty(
-                    $errors,
-                    "Error validating $filename\n" . print_r($errors, true)
-                );
-            },
-            $this->getPhpFiles()
-        );
     }
 
     /**
@@ -211,23 +176,6 @@ class ExtensibleInterfacesTest extends \PHPUnit\Framework\TestCase
             $interfaces[substr($file, strlen(BP))] = [$file];
         }
         return $interfaces;
-    }
-
-    /**
-     * Retrieve a list of all php files declared in the Magento application and Magento library.
-     *
-     * @return array
-     */
-    public function getPhpFiles()
-    {
-        $codeFiles = $this->getFiles(BP . '/app', '*.php');
-        $libFiles = $this->getFiles(BP . '/lib/Magento', '*.php');
-        $phpFiles = [];
-        $filesToCheck = $this->blacklistFilter(array_merge($codeFiles, $libFiles));
-        foreach ($filesToCheck as $file) {
-            $phpFiles[substr($file, strlen(BP))] = [$file];
-        }
-        return $phpFiles;
     }
 
     /**
@@ -262,5 +210,66 @@ class ExtensibleInterfacesTest extends \PHPUnit\Framework\TestCase
             }
         }
         return $postFilter;
+    }
+
+    /**
+     * Ensure that all classes extended from extensible classes implement getter and setter for extension attributes.
+     */
+    public function testExtensibleClassesWithMissingInterface() //phpcs:ignore Generic.Metrics.NestingLevel
+    {
+        $invoker = new AggregateInvoker($this);
+        $invoker(
+        /**
+         * @param string $filename
+         */
+            function ($filename) {
+                $errors = [];
+                $fileContent = file_get_contents($filename);
+                $extensibleClassPattern = 'class [^\{]+extends[^\{]+AbstractExtensible';
+                $abstractExtensibleClassPattern = 'abstract ' . $extensibleClassPattern;
+                if (preg_match('/' . $extensibleClassPattern . '/', $fileContent) &&
+                    !preg_match('/' . $abstractExtensibleClassPattern . '/', $fileContent)
+                ) {
+                    $fileReflection = new FileReflection($filename, true);
+                    foreach ($fileReflection->getClasses() as $classReflection) {
+                        if ($classReflection->isSubclassOf(self::EXTENSIBLE_DATA_INTERFACE)) {
+                            $methodsToCheck = ['setExtensionAttributes', 'getExtensionAttributes'];
+                            foreach ($methodsToCheck as $methodName) {
+                                try {
+                                    $classReflection->getMethod($methodName);
+                                } catch (ReflectionException $e) {
+                                    $className = $classReflection->getName();
+                                    $errors[] = "'{$className}::{$methodName}()' must be declared or "
+                                        . "'{$className}' should not be inherited from extensible class.";
+                                }
+                            }
+                        }
+                    }
+                }
+
+                $this->assertEmpty(
+                    $errors,
+                    "Error validating $filename\n" . print_r($errors, true)
+                );
+            },
+            $this->getPhpFiles()
+        );
+    }
+
+    /**
+     * Retrieve a list of all php files declared in the Magento application and Magento library.
+     *
+     * @return array
+     */
+    public function getPhpFiles()
+    {
+        $codeFiles = $this->getFiles(BP . '/app', '*.php');
+        $libFiles = $this->getFiles(BP . '/lib/Magento', '*.php');
+        $phpFiles = [];
+        $filesToCheck = $this->blacklistFilter(array_merge($codeFiles, $libFiles));
+        foreach ($filesToCheck as $file) {
+            $phpFiles[substr($file, strlen(BP))] = [$file];
+        }
+        return $phpFiles;
     }
 }

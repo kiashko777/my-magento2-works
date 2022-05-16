@@ -35,12 +35,12 @@ return [
     '/config/*[self::global|self::Adminhtml|self::frontend]/di' => 'This configuration moved to di.xml file',
     '/config/*[self::global|self::Adminhtml|self::frontend]/events' => 'This configuration moved to events.xml file',
     '/config/*[self::global|self::Adminhtml|self::frontend]/routers' => 'Routes configuration moved to routes.xml file,' .
-    'routers list can be set through Di configuration of \Magento\Framework\App\RouterList model',
+        'routers list can be set through Di configuration of \Magento\Framework\App\RouterList model',
     '/config/global/importexport' => 'This configuration moved to import.xml and export.xml files',
     '/config/global/catalog/product/type' => 'This configuration moved to product_types.xml file',
     '/config/global/catalog/product/options' => 'This configuration moved to product_options.xml file',
     '/config/global/catalog/product/media/image_types' => 'This configuration moved to Di configuration of ' .
-    '\Magento\Backend\Block\Catalog\Product\Frontend\Product\Watermark',
+        '\Magento\Backend\Block\Catalog\Product\Frontend\Product\Watermark',
     '/config/global/eav_attributes' => 'This configuration moved to eav_attributes.xml file',
     '/config/global/index' => 'This configuration moved to indexers.xml file',
     '/config/global/catalogrule' => 'This configuration moved to Di configuration of \Magento\CatalogRule\Model\Rule',
@@ -51,9 +51,9 @@ return [
     '/config/global/secure_url' => 'This configuration moved to Di configuration of \Magento\Framework\Url\SecurityInfo',
     '/config/global/dev' => 'This configuration moved to Di configuration of \Magento\Framework\App\Action\Context',
     '/config/global/webapi' => 'This configuration moved to Di configuration of \Magento\Webapi\Controller\Request\Rest\Interpreter\Factory' .
-    ' and \Magento\Webapi\Controller\Response\Rest\Renderer\Factory',
+        ' and \Magento\Webapi\Controller\Response\Rest\Renderer\Factory',
     '/config/global/cms' => 'This configuration moved to Di configuration of \Magento\Cms\Model\Wysiwyg\Images\Storage' .
-    ' and \Magento\Cms\Model\Wysiwyg\Config',
+        ' and \Magento\Cms\Model\Wysiwyg\Config',
     '/config/global/widget' => 'This configuration moved to Di configuration of \Magento\Cms\Model\Template\FilterProvider',
     '/config/global/catalog/product/flat/max_index_count' => 'This configuration moved to Di configuration of \Magento\Catalog\Model\ResourceModel\Product\Flat\Indexer',
     '/config/global/catalog/product/flat/attribute_groups' => 'This configuration moved to Di configuration of \Magento\Catalog\Model\ResourceModel\Product\Flat\Indexer',
@@ -63,10 +63,10 @@ return [
     '/config/frontend/catalog/per_page_values/list' => 'This configuration moved to Di configuration of \Magento\Catalog\Model\Config\Source\ListPerPage',
     '/config/frontend/catalog/per_page_values/grid' => 'This configuration moved to Di configuration of \Magento\Catalog\Model\Config\Source\GridPerPage',
     '/config/global/catalog/product/design' => 'This configuration moved to Di configuration of' .
-    ' \Magento\Catalog\Model\Entity\Product\Attribute\Design\Option\Container',
+        ' \Magento\Catalog\Model\Entity\Product\Attribute\Design\Option\Container',
     '/config/global/catalog/product/attributes' => 'This configuration moved catalog_attributes.xml',
     '/config/global/eav_frontendclasses' => 'This configuration was removed. ' .
-    'Please pluginize \Magento\Eav\Helper\Data::getFrontendClasses to extend frontend classes list',
+        'Please pluginize \Magento\Eav\Helper\Data::getFrontendClasses to extend frontend classes list',
     '/config/global/resources' => 'This configuration moved to Di configuration of \Magento\Framework\App\ResourceConnection',
     '/config/global/resource' => 'This configuration moved to Di configuration of \Magento\Framework\App\ResourceConnection',
     '/config/*/events/core_block_abstract_to_html_after' => 'Event has been replaced with "core_layout_render_element"',

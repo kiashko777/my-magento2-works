@@ -3,9 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Model\Order;
 
-class ItemTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\App\ObjectManager;
+use PHPUnit\Framework\TestCase;
+
+class ItemTest extends TestCase
 {
     /**
      * @param string $options
@@ -14,7 +18,7 @@ class ItemTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetProductOptions($options, $expectedData)
     {
-        $model = \Magento\Framework\App\ObjectManager::getInstance()->get(\Magento\Sales\Model\Order\Item::class);
+        $model = ObjectManager::getInstance()->get(Item::class);
         $model->setData('product_options', $options);
         $this->assertEquals($expectedData, $model->getProductOptions());
     }

@@ -8,15 +8,16 @@ declare(strict_types=1);
 namespace Magento\Catalog\Model\Indexer\Category\Product\Action;
 
 use Magento\Catalog\Model\Indexer\Category\Product\Action\Full as OriginObject;
-use Magento\TestFramework\Catalog\Model\Indexer\Category\Product\Action\Full as PreferenceObject;
 use Magento\Framework\Interception\PluginListInterface;
+use Magento\TestFramework\Catalog\Model\Indexer\Category\Product\Action\Full as PreferenceObject;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for Magento\Catalog\Model\Indexer\Category\Products\Action\Full *
  */
-class FullTest extends \PHPUnit\Framework\TestCase
+class FullTest extends TestCase
 {
     /**
      * @var PreferenceObject
@@ -36,6 +37,20 @@ class FullTest extends \PHPUnit\Framework\TestCase
     private $objectManager;
 
     /**
+     * Test possibility to add object preference
+     */
+    public function testPreference()
+    {
+        $interceptorClassName = get_class($this->interceptor);
+
+        // Check interceptor class name
+        $this->assertEquals($interceptorClassName, PreferenceObject::class . '\Interceptor');
+
+        //check that there are no fatal errors
+        $this->pluginList->getNext($interceptorClassName, 'execute');
+    }
+
+    /**
      * @inheritDoc
      */
     protected function setUp(): void
@@ -53,19 +68,5 @@ class FullTest extends \PHPUnit\Framework\TestCase
     protected function tearDown(): void
     {
         $this->objectManager->removeSharedInstance(OriginObject::class);
-    }
-
-    /**
-     * Test possibility to add object preference
-     */
-    public function testPreference()
-    {
-        $interceptorClassName = get_class($this->interceptor);
-
-        // Check interceptor class name
-        $this->assertEquals($interceptorClassName, PreferenceObject::class . '\Interceptor');
-
-        //check that there are no fatal errors
-        $this->pluginList->getNext($interceptorClassName, 'execute');
     }
 }

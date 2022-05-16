@@ -73,30 +73,6 @@ class CreateAddressTest extends AbstractController
     private $customerRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->escaper = $this->_objectManager->get(Escaper::class);
-        $this->customerSession = $this->_objectManager->get(Session::class);
-        $this->customerRegistry = $this->_objectManager->get(CustomerRegistry::class);
-        $this->getRegionIdByName = $this->_objectManager->get(GetRegionIdByName::class);
-        $this->customerRepository = $this->_objectManager->get(CustomerRepositoryInterface::class);
-        $this->customerSession->setCustomerId('5');
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->customerSession->setCustomerId(null);
-        $this->customerRegistry->removeByEmail('customer5@example.com');
-        parent::tearDown();
-    }
-
-    /**
      * Assert that default or non-default customer address successfully created via controller on frontend.
      *
      * @dataProvider postDataForSuccessCreateDefaultAddressDataProvider
@@ -108,9 +84,10 @@ class CreateAddressTest extends AbstractController
      */
     public function testAddressSuccessfullyCreatedAsDefaultForCustomer(
         array $postData,
-        bool $isShippingDefault,
-        bool $isBillingDefault
-    ): void {
+        bool  $isShippingDefault,
+        bool  $isBillingDefault
+    ): void
+    {
         $customer = $this->customerRepository->get('customer5@example.com');
         $this->assertNull($customer->getDefaultShipping(), 'Customer already have default shipping address');
         $this->assertNull($customer->getDefaultBilling(), 'Customer already have default billing address');
@@ -126,6 +103,41 @@ class CreateAddressTest extends AbstractController
         $expectedBillingId = $isBillingDefault ? $address->getId() : null;
         $this->assertEquals($expectedShippingId, $customer->getDefaultShipping());
         $this->assertEquals($expectedBillingId, $customer->getDefaultBilling());
+    }
+
+    /**
+     * Perform request with provided POST data.
+     *
+     * @param array $postData
+     * @return void
+     */
+    private function performRequestWithData(array $postData): void
+    {
+        if (isset($postData['custom_region_name'])) {
+            $postData[AddressInterface::REGION_ID] = $this->getRegionIdByName->execute(
+                $postData['custom_region_name'],
+                $postData[AddressInterface::COUNTRY_ID]
+            );
+            unset($postData['custom_region_name']);
+        }
+
+        $this->getRequest()->setPostValue($postData)->setMethod(Http::METHOD_POST);
+        $this->dispatch('customer/address/formPost');
+    }
+
+    /**
+     * Check that save address request performed successfully
+     * (proper success message and redirect to customer/address/index are appear).
+     *
+     * @return void
+     */
+    private function checkRequestPerformedSuccessfully(): void
+    {
+        $this->assertRedirect($this->stringContains('customer/address/index'));
+        $this->assertSessionMessages(
+            $this->equalTo([(string)__('You saved the address.')]),
+            MessageInterface::TYPE_SUCCESS
+        );
     }
 
     /**
@@ -280,6 +292,24 @@ class CreateAddressTest extends AbstractController
     }
 
     /**
+     * Check that save address request performed with input validation errors
+     * (proper error messages and redirect to customer/address/edit are appear).
+     *
+     * @param array $expectedSessionMessages
+     * @return void
+     */
+    private function checkRequestPerformedWithInputValidationErrors(array $expectedSessionMessages): void
+    {
+        $this->assertRedirect($this->stringContains('customer/address/edit'));
+        foreach ($expectedSessionMessages as $expectedMessage) {
+            $this->assertSessionMessages(
+                $this->containsEqual($this->escaper->escapeHtml((string)__($expectedMessage))),
+                MessageInterface::TYPE_ERROR
+            );
+        }
+    }
+
+    /**
      * Data provider which contain broken POST data for create customer address with error.
      *
      * @return array
@@ -337,55 +367,26 @@ class CreateAddressTest extends AbstractController
     }
 
     /**
-     * Perform request with provided POST data.
-     *
-     * @param array $postData
-     * @return void
+     * @inheritdoc
      */
-    private function performRequestWithData(array $postData): void
+    protected function setUp(): void
     {
-        if (isset($postData['custom_region_name'])) {
-            $postData[AddressInterface::REGION_ID] = $this->getRegionIdByName->execute(
-                $postData['custom_region_name'],
-                $postData[AddressInterface::COUNTRY_ID]
-            );
-            unset($postData['custom_region_name']);
-        }
-
-        $this->getRequest()->setPostValue($postData)->setMethod(Http::METHOD_POST);
-        $this->dispatch('customer/address/formPost');
+        parent::setUp();
+        $this->escaper = $this->_objectManager->get(Escaper::class);
+        $this->customerSession = $this->_objectManager->get(Session::class);
+        $this->customerRegistry = $this->_objectManager->get(CustomerRegistry::class);
+        $this->getRegionIdByName = $this->_objectManager->get(GetRegionIdByName::class);
+        $this->customerRepository = $this->_objectManager->get(CustomerRepositoryInterface::class);
+        $this->customerSession->setCustomerId('5');
     }
 
     /**
-     * Check that save address request performed successfully
-     * (proper success message and redirect to customer/address/index are appear).
-     *
-     * @return void
+     * @inheritdoc
      */
-    private function checkRequestPerformedSuccessfully(): void
+    protected function tearDown(): void
     {
-        $this->assertRedirect($this->stringContains('customer/address/index'));
-        $this->assertSessionMessages(
-            $this->equalTo([(string)__('You saved the address.')]),
-            MessageInterface::TYPE_SUCCESS
-        );
-    }
-
-    /**
-     * Check that save address request performed with input validation errors
-     * (proper error messages and redirect to customer/address/edit are appear).
-     *
-     * @param array $expectedSessionMessages
-     * @return void
-     */
-    private function checkRequestPerformedWithInputValidationErrors(array $expectedSessionMessages): void
-    {
-        $this->assertRedirect($this->stringContains('customer/address/edit'));
-        foreach ($expectedSessionMessages as $expectedMessage) {
-            $this->assertSessionMessages(
-                $this->containsEqual($this->escaper->escapeHtml((string)__($expectedMessage))),
-                MessageInterface::TYPE_ERROR
-            );
-        }
+        $this->customerSession->setCustomerId(null);
+        $this->customerRegistry->removeByEmail('customer5@example.com');
+        parent::tearDown();
     }
 }

@@ -9,8 +9,8 @@ declare(strict_types=1);
 namespace Magento\Sniffs\Html;
 
 use Magento\Framework\Filter\Template;
-use PHP_CodeSniffer\Sniffs\Sniff;
 use PHP_CodeSniffer\Files\File;
+use PHP_CodeSniffer\Sniffs\Sniff;
 
 /**
  * Sniff for invalid directive usage in HTML templates
@@ -82,6 +82,39 @@ class HtmlDirectiveSniff implements Sniff
         }
 
         return $html;
+    }
+
+    /**
+     * Validate directive variable usage is valid. e.g. {{var <variable body>}} or {{somedir some_param="$foo.bar()"}}
+     *
+     * @param File $phpcsFile
+     * @param string $body
+     */
+    private function validateVariableUsage(File $phpcsFile, string $body): void
+    {
+        $this->usedVariables[] = 'var ' . trim($body);
+        if (strpos($body, '|') !== false) {
+            $this->unfilteredVariables[] = 'var ' . trim(explode('|', $body, 2)[0]);
+        }
+        $variableTokenizer = new Template\Tokenizer\Variable();
+        $variableTokenizer->setString($body);
+        $stack = $variableTokenizer->tokenize();
+
+        if (empty($stack)) {
+            return;
+        }
+
+        foreach ($stack as $token) {
+            // As a static analyzer there are no data types to know if this is a DataObject so allow all get* methods
+            if ($token['type'] === 'method' && substr($token['name'], 0, 3) !== 'get') {
+                $phpcsFile->addError(
+                    'Template directives may not invoke methods. Only scalar array access is allowed.' . PHP_EOL
+                    . 'Found "' . trim($body) . '"',
+                    null,
+                    'HtmlTemplates.DirectiveUsage.ProhibitedMethodCall'
+                );
+            }
+        }
     }
 
     /**
@@ -170,39 +203,6 @@ class HtmlDirectiveSniff implements Sniff
     }
 
     /**
-     * Validate directive variable usage is valid. e.g. {{var <variable body>}} or {{somedir some_param="$foo.bar()"}}
-     *
-     * @param File $phpcsFile
-     * @param string $body
-     */
-    private function validateVariableUsage(File $phpcsFile, string $body): void
-    {
-        $this->usedVariables[] = 'var ' . trim($body);
-        if (strpos($body, '|') !== false) {
-            $this->unfilteredVariables[] = 'var ' . trim(explode('|', $body, 2)[0]);
-        }
-        $variableTokenizer = new Template\Tokenizer\Variable();
-        $variableTokenizer->setString($body);
-        $stack = $variableTokenizer->tokenize();
-
-        if (empty($stack)) {
-            return;
-        }
-
-        foreach ($stack as $token) {
-            // As a static analyzer there are no data types to know if this is a DataObject so allow all get* methods
-            if ($token['type'] === 'method' && substr($token['name'], 0, 3) !== 'get') {
-                $phpcsFile->addError(
-                    'Template directives may not invoke methods. Only scalar array access is allowed.' . PHP_EOL
-                    . 'Found "' . trim($body) . '"',
-                    null,
-                    'HtmlTemplates.DirectiveUsage.ProhibitedMethodCall'
-                );
-            }
-        }
-    }
-
-    /**
      * Validate the variables defined in the template comment block match the variables actually used in the template
      *
      * @param File $phpcsFile
@@ -248,7 +248,7 @@ class HtmlDirectiveSniff implements Sniff
         foreach ($undefinedVariables as $undefinedVariable) {
             $phpcsFile->addError(
                 'Template @vars comment block is missing a variable used in the template.' . PHP_EOL
-                 . 'Missing variable: ' . $undefinedVariable,
+                . 'Missing variable: ' . $undefinedVariable,
                 null,
                 'HtmlTemplates.DirectiveUsage.UndefinedVariable'
             );

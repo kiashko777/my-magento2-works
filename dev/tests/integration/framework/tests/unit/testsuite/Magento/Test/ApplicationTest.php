@@ -17,14 +17,16 @@ use Magento\Framework\Config\Scope;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Shell;
 use Magento\TestFramework\Application;
-use Magento\TestFramework\Helper\Bootstrap as TestFrameworkBootstrap;
 use Magento\TestFramework\Db\Mysql;
+use Magento\TestFramework\Helper\Bootstrap as TestFrameworkBootstrap;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
 /**
  * Provides tests for \Magento\TestFramework\Application.
  */
-class ApplicationTest extends \PHPUnit\Framework\TestCase
+class ApplicationTest extends TestCase
 {
     /**
      * Test subject.
@@ -39,12 +41,12 @@ class ApplicationTest extends \PHPUnit\Framework\TestCase
     private $tempDir;
 
     /**
-     * @var Shell|\PHPUnit\Framework\MockObject\MockObject
+     * @var Shell|MockObject
      */
     private $shell;
 
     /**
-     * @var ClassLoaderWrapper|\PHPUnit\Framework\MockObject\MockObject
+     * @var ClassLoaderWrapper|MockObject
      */
     private $autoloadWrapper;
 
@@ -52,30 +54,6 @@ class ApplicationTest extends \PHPUnit\Framework\TestCase
      * @var string
      */
     private $appMode;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->shell = $this->createMock(Shell::class);
-
-        $this->autoloadWrapper = $this->getMockBuilder(ClassLoaderWrapper::class)
-            ->disableOriginalConstructor()->getMock();
-
-        $this->tempDir = '/temp/dir';
-        $this->appMode = \Magento\Framework\App\State::MODE_DEVELOPER;
-
-        $this->subject = new Application(
-            $this->shell,
-            $this->tempDir,
-            'config.php',
-            'global-config.php',
-            '',
-            $this->appMode,
-            $this->autoloadWrapper
-        );
-    }
 
     /**
      * @covers \Magento\TestFramework\Application::getTempDir
@@ -95,7 +73,7 @@ class ApplicationTest extends \PHPUnit\Framework\TestCase
         );
         $this->assertArrayHasKey(State::PARAM_MODE, $initParams, 'Application mode is not configured');
         $this->assertEquals(
-            \Magento\Framework\App\State::MODE_DEVELOPER,
+            State::MODE_DEVELOPER,
             $initParams[State::PARAM_MODE],
             'Wrong application mode configured'
         );
@@ -112,12 +90,13 @@ class ApplicationTest extends \PHPUnit\Framework\TestCase
      * @dataProvider installDataProvider
      */
     public function testInstall(
-        string $installConfigFilePath,
-        string $globalConfigFilePath,
+        string  $installConfigFilePath,
+        string  $globalConfigFilePath,
         ?string $postInstallSetupCommandsFilePath,
-        array $expectedShellExecutionCalls,
-        bool $isExceptionExpected = false
-    ) {
+        array   $expectedShellExecutionCalls,
+        bool    $isExceptionExpected = false
+    )
+    {
         $tmpDir = sys_get_temp_dir();
 
         $subject = new Application(
@@ -170,6 +149,28 @@ class ApplicationTest extends \PHPUnit\Framework\TestCase
         }
 
         $subject->install(false);
+    }
+
+    /**
+     * Generate magento-init-params query responsible for dictating application paths to the magento command line
+     *
+     * @param string $dir The base application directory
+     * @return string
+     */
+    private function getInitParamsQuery(string $dir)
+    {
+        return str_replace(
+            '%s',
+            $dir,
+            'MAGE_DIRS[etc][path]=%s/etc&MAGE_DIRS[var][path]=%s/var&' .
+            'MAGE_DIRS[var_export][path]=%s/var/export&MAGE_DIRS[media][path]=%s/pub/media&' .
+            'MAGE_DIRS[static][path]=%s/pub/static&' .
+            'MAGE_DIRS[view_preprocessed][path]=%s/var/view_preprocessed/pub/static&' .
+            'MAGE_DIRS[code][path]=%s/generated/code&MAGE_DIRS[cache][path]=%s/var/cache&' .
+            'MAGE_DIRS[log][path]=%s/var/log&MAGE_DIRS[session][path]=%s/var/session&' .
+            'MAGE_DIRS[tmp][path]=%s/var/tmp&MAGE_DIRS[upload][path]=%s/var/upload&' .
+            'MAGE_DIRS[pub][path]=%s/pub&MAGE_DIRS[import_export][path]=%s/var&MAGE_MODE=developer'
+        );
     }
 
     /**
@@ -295,7 +296,7 @@ class ApplicationTest extends \PHPUnit\Framework\TestCase
             ->with($this->identicalTo($areaCode))
             ->willReturn($area);
 
-        /** @var ObjectManagerInterface|\PHPUnit\Framework\MockObject\MockObject $objectManager */
+        /** @var ObjectManagerInterface|MockObject $objectManager */
         $objectManager = $this->getMockBuilder(ObjectManagerInterface::class)
             ->disableOriginalConstructor()
             ->getMockForAbstractClass();
@@ -342,24 +343,26 @@ class ApplicationTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Generate magento-init-params query responsible for dictating application paths to the magento command line
-     *
-     * @param string $dir The base application directory
-     * @return string
+     * @inheritdoc
      */
-    private function getInitParamsQuery(string $dir)
+    protected function setUp(): void
     {
-        return str_replace(
-            '%s',
-            $dir,
-            'MAGE_DIRS[etc][path]=%s/etc&MAGE_DIRS[var][path]=%s/var&' .
-            'MAGE_DIRS[var_export][path]=%s/var/export&MAGE_DIRS[media][path]=%s/pub/media&' .
-            'MAGE_DIRS[static][path]=%s/pub/static&' .
-            'MAGE_DIRS[view_preprocessed][path]=%s/var/view_preprocessed/pub/static&' .
-            'MAGE_DIRS[code][path]=%s/generated/code&MAGE_DIRS[cache][path]=%s/var/cache&' .
-            'MAGE_DIRS[log][path]=%s/var/log&MAGE_DIRS[session][path]=%s/var/session&' .
-            'MAGE_DIRS[tmp][path]=%s/var/tmp&MAGE_DIRS[upload][path]=%s/var/upload&' .
-            'MAGE_DIRS[pub][path]=%s/pub&MAGE_DIRS[import_export][path]=%s/var&MAGE_MODE=developer'
+        $this->shell = $this->createMock(Shell::class);
+
+        $this->autoloadWrapper = $this->getMockBuilder(ClassLoaderWrapper::class)
+            ->disableOriginalConstructor()->getMock();
+
+        $this->tempDir = '/temp/dir';
+        $this->appMode = State::MODE_DEVELOPER;
+
+        $this->subject = new Application(
+            $this->shell,
+            $this->tempDir,
+            'config.php',
+            'global-config.php',
+            '',
+            $this->appMode,
+            $this->autoloadWrapper
         );
     }
 }

@@ -37,19 +37,6 @@ class ConfirmCustomerByTokenTest extends TestCase
     private $connection;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-
-        $resource = $this->objectManager->get(ResourceConnection::class);
-        $this->connection = $resource->getConnection();
-
-        $this->confirmCustomerByToken = $this->objectManager->get(ConfirmCustomerByToken::class);
-    }
-
-    /**
      * Customer address shouldn't validate during confirm customer by token
      *
      * @magentoDataFixture Magento/Customer/_files/customer.php
@@ -88,5 +75,18 @@ class ConfirmCustomerByTokenTest extends TestCase
             ['city' => ''],
             $this->connection->quoteInto('entity_id = ?', $id)
         );
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+
+        $resource = $this->objectManager->get(ResourceConnection::class);
+        $this->connection = $resource->getConnection();
+
+        $this->confirmCustomerByToken = $this->objectManager->get(ConfirmCustomerByToken::class);
     }
 }

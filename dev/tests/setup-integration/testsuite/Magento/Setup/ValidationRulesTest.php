@@ -33,14 +33,6 @@ class ValidationRulesTest extends SetupTestCase
      */
     private $cliCommad;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->schemaConfig = $objectManager->create(SchemaConfig::class);
-        $this->moduleManager = $objectManager->get(TestModuleManager::class);
-        $this->cliCommad = $objectManager->get(CliCommand::class);
-    }
-
     /**
      * @moduleName Magento_TestSetupDeclarationModule8
      */
@@ -105,5 +97,13 @@ class ValidationRulesTest extends SetupTestCase
             'etc'
         );
         $this->schemaConfig->getDeclarationConfig();
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->schemaConfig = $objectManager->create(SchemaConfig::class);
+        $this->moduleManager = $objectManager->get(TestModuleManager::class);
+        $this->cliCommad = $objectManager->get(CliCommand::class);
     }
 }

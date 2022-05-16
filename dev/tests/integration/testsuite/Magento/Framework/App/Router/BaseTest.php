@@ -3,41 +3,40 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\App\Router;
 
-class BaseTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\App\ActionInterface;
+use Magento\Framework\Controller\Index;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use Magento\TestFramework\Request;
+use PHPUnit\Framework\TestCase;
+
+class BaseTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\App\Router\Base
+     * @var Base
      */
     protected $_model;
-
-    protected function setUp(): void
-    {
-        $options = ['routerId' => 'standard'];
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\App\Router\Base::class,
-            $options
-        );
-    }
 
     /**
      * @magentoAppArea frontend
      */
     public function testMatch()
     {
-        if (!\Magento\TestFramework\Helper\Bootstrap::canTestHeaders()) {
+        if (!Bootstrap::canTestHeaders()) {
             $this->markTestSkipped('Can\'t test get match without sending headers');
         }
 
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var $request \Magento\TestFramework\Request */
-        $request = $objectManager->get(\Magento\TestFramework\Request::class);
+        /** @var $objectManager ObjectManager */
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var $request Request */
+        $request = $objectManager->get(Request::class);
 
-        $this->assertInstanceOf(\Magento\Framework\App\ActionInterface::class, $this->_model->match($request));
+        $this->assertInstanceOf(ActionInterface::class, $this->_model->match($request));
         $request->setRequestUri('framework/index/index');
-        $this->assertInstanceOf(\Magento\Framework\App\ActionInterface::class, $this->_model->match($request));
+        $this->assertInstanceOf(ActionInterface::class, $this->_model->match($request));
 
         $request->setPathInfo(
             'not_exists/not_exists/not_exists'
@@ -54,8 +53,17 @@ class BaseTest extends \PHPUnit\Framework\TestCase
     public function testGetControllerClassName()
     {
         $this->assertEquals(
-            \Magento\Framework\Controller\Index::class,
+            Index::class,
             $this->_model->getActionClassName('Magento_Framework', 'index')
+        );
+    }
+
+    protected function setUp(): void
+    {
+        $options = ['routerId' => 'standard'];
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Base::class,
+            $options
         );
     }
 }

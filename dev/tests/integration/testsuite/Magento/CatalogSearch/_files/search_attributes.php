@@ -5,9 +5,14 @@
  */
 
 /* Create attribute */
-/** @var $installer \Magento\Catalog\Setup\CategorySetup */
-$installer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Catalog\Setup\CategorySetup::class
+/** @var $installer CategorySetup */
+
+use Magento\Catalog\Setup\CategorySetup;
+use Magento\Eav\Model\Config;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$installer = Bootstrap::getObjectManager()->create(
+    CategorySetup::class
 );
 
 $attributesData = [
@@ -24,7 +29,7 @@ $attributesData = [
 foreach ($attributesData as $data) {
 
     /** @var $attribute \Magento\Catalog\Model\ResourceModel\Eav\Attribute */
-    $attribute = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+    $attribute = Bootstrap::getObjectManager()->create(
         \Magento\Catalog\Model\ResourceModel\Eav\Attribute::class
     );
     $attributeData = array_merge(
@@ -61,6 +66,6 @@ foreach ($attributesData as $data) {
     $installer->addAttributeToGroup('catalog_product', 'Default', 'General', $attribute->getId());
 }
 
-/** @var \Magento\Eav\Model\Config $eavConfig */
-$eavConfig = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Eav\Model\Config::class);
+/** @var Config $eavConfig */
+$eavConfig = Bootstrap::getObjectManager()->get(Config::class);
 $eavConfig->clear();

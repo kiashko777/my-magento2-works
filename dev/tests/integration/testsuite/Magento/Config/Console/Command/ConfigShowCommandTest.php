@@ -16,6 +16,7 @@ use Magento\Framework\Filesystem;
 use Magento\Store\Model\ScopeInterface;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
@@ -69,36 +70,6 @@ class ConfigShowCommandTest extends TestCase
     private $structure;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->configFilePool = $objectManager->get(ConfigFilePool::class);
-        $this->filesystem = $objectManager->get(Filesystem::class);
-        $this->reader = $objectManager->get(FileReader::class);
-        $this->writer = $objectManager->get(Writer::class);
-        $this->structure = $objectManager->get(Structure::class);
-
-        $this->config = $this->loadConfig();
-        $this->envConfig = $this->loadEnvConfig();
-        $this->env = $_ENV;
-
-        $config = include __DIR__ . '/../../_files/config.php';
-        $this->writer->saveConfig([ConfigFilePool::APP_CONFIG => $config]);
-
-        $config = include __DIR__ . '/../../_files/env.php';
-        $this->writer->saveConfig([ConfigFilePool::APP_ENV => $config]);
-
-        $_ENV['CONFIG__DEFAULT__WEB__TEST2__TEST_VALUE_4'] = 'value4.env.default.test';
-        $_ENV['CONFIG__WEBSITES__BASE__WEB__TEST2__TEST_VALUE_4'] = 'value4.env.website_base.test';
-        $_ENV['CONFIG__STORES__DEFAULT__WEB__TEST2__TEST_VALUE_4'] = 'value4.env.store_default.test';
-
-        $command = $objectManager->create(ConfigShowCommand::class);
-        $this->commandTester = new CommandTester($command);
-    }
-
-    /**
      * Test execute config show command
      *
      * @param string $scope
@@ -148,7 +119,7 @@ class ConfigShowCommandTest extends TestCase
      */
     private function setConfigPaths(): void
     {
-        $reflection = new \ReflectionClass(Structure::class);
+        $reflection = new ReflectionClass(Structure::class);
         $mappedPaths = $reflection->getProperty('mappedPaths');
         $mappedPaths->setAccessible(true);
         $mappedPaths->setValue($this->structure, $this->getConfigPaths());
@@ -331,6 +302,36 @@ class ConfigShowCommandTest extends TestCase
                 ]
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->configFilePool = $objectManager->get(ConfigFilePool::class);
+        $this->filesystem = $objectManager->get(Filesystem::class);
+        $this->reader = $objectManager->get(FileReader::class);
+        $this->writer = $objectManager->get(Writer::class);
+        $this->structure = $objectManager->get(Structure::class);
+
+        $this->config = $this->loadConfig();
+        $this->envConfig = $this->loadEnvConfig();
+        $this->env = $_ENV;
+
+        $config = include __DIR__ . '/../../_files/config.php';
+        $this->writer->saveConfig([ConfigFilePool::APP_CONFIG => $config]);
+
+        $config = include __DIR__ . '/../../_files/env.php';
+        $this->writer->saveConfig([ConfigFilePool::APP_ENV => $config]);
+
+        $_ENV['CONFIG__DEFAULT__WEB__TEST2__TEST_VALUE_4'] = 'value4.env.default.test';
+        $_ENV['CONFIG__WEBSITES__BASE__WEB__TEST2__TEST_VALUE_4'] = 'value4.env.website_base.test';
+        $_ENV['CONFIG__STORES__DEFAULT__WEB__TEST2__TEST_VALUE_4'] = 'value4.env.store_default.test';
+
+        $command = $objectManager->create(ConfigShowCommand::class);
+        $this->commandTester = new CommandTester($command);
     }
 
     /**

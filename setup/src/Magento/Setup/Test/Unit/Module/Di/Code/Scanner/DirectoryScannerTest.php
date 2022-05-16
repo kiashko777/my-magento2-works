@@ -22,12 +22,6 @@ class DirectoryScannerTest extends TestCase
      */
     protected $_testDir;
 
-    protected function setUp(): void
-    {
-        $this->_model = new DirectoryScanner();
-        $this->_testDir = str_replace('\\', '/', realpath(__DIR__ . '/../../') . '/_files');
-    }
-
     public function testScan()
     {
         $filePatterns = [
@@ -59,5 +53,11 @@ class DirectoryScannerTest extends TestCase
         $this->assertEquals(sort($expected['view']), sort($actual['view']), 'Incorrect view files list');
         $this->assertEquals(sort($expected['design']), sort($actual['design']), 'Incorrect design files list');
         $this->assertEquals(sort($expected['etc']), sort($actual['etc']), 'Incorrect etc files list');
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = new DirectoryScanner();
+        $this->_testDir = str_replace('\\', '/', realpath(__DIR__ . '/../../') . '/_files');
     }
 }

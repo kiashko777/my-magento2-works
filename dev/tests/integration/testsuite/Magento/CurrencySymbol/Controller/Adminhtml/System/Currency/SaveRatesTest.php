@@ -6,34 +6,23 @@
 
 namespace Magento\CurrencySymbol\Controller\Adminhtml\System\Currency;
 
+use Magento\Directory\Model\Currency;
 use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Framework\Escaper;
+use Magento\Framework\Message\MessageInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
-class SaveRatesTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class SaveRatesTest extends AbstractBackendController
 {
 
-    /** @var \Magento\Directory\Model\Currency $currencyRate */
+    /** @var Currency $currencyRate */
     protected $currencyRate;
 
     /**
      * @var Escaper
      */
     private $escaper;
-
-    /**
-     * Initial setup
-     */
-    protected function setUp(): void
-    {
-        $this->currencyRate = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Directory\Model\Currency::class
-        );
-        $this->escaper = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            Escaper::class
-        );
-
-        parent::setUp();
-    }
 
     /**
      * Test save action
@@ -58,7 +47,7 @@ class SaveRatesTest extends \Magento\TestFramework\TestCase\AbstractBackendContr
 
         $this->assertSessionMessages(
             $this->containsEqual((string)__('All valid rates have been saved.')),
-            \Magento\Framework\Message\MessageInterface::TYPE_SUCCESS
+            MessageInterface::TYPE_SUCCESS
         );
 
         $this->assertEquals(
@@ -95,7 +84,22 @@ class SaveRatesTest extends \Magento\TestFramework\TestCase\AbstractBackendContr
                     (string)__('Please correct the input data for "%1 => %2" rate.', $currencyCode, $currencyTo)
                 )
             ),
-            \Magento\Framework\Message\MessageInterface::TYPE_WARNING
+            MessageInterface::TYPE_WARNING
         );
+    }
+
+    /**
+     * Initial setup
+     */
+    protected function setUp(): void
+    {
+        $this->currencyRate = Bootstrap::getObjectManager()->create(
+            Currency::class
+        );
+        $this->escaper = Bootstrap::getObjectManager()->create(
+            Escaper::class
+        );
+
+        parent::setUp();
     }
 }

@@ -4,12 +4,16 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Registry;
 use Magento\Integration\Model\Oauth\Token\RequestThrottler;
+use Magento\TestFramework\Helper\Bootstrap;
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 
-/** @var \Magento\Framework\Registry $registry */
-$registry = $objectManager->get(\Magento\Framework\Registry::class);
+/** @var Registry $registry */
+$registry = $objectManager->get(Registry::class);
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
@@ -22,16 +26,16 @@ $customersToRemove = [
 /**
  * @var Magento\Customer\Api\CustomerRepositoryInterface
  */
-$customerRepository = $objectManager->create(\Magento\Customer\Api\CustomerRepositoryInterface::class);
+$customerRepository = $objectManager->create(CustomerRepositoryInterface::class);
 /**
  * @var RequestThrottler $throttler
  */
-$throttler = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(RequestThrottler::class);
+$throttler = Bootstrap::getObjectManager()->create(RequestThrottler::class);
 foreach ($customersToRemove as $customerEmail) {
     try {
         $customer = $customerRepository->get($customerEmail);
         $customerRepository->delete($customer);
-    } catch (\Magento\Framework\Exception\NoSuchEntityException $exception) {
+    } catch (NoSuchEntityException $exception) {
         /**
          * Tests which are wrapped with MySQL transaction clear all data by transaction rollback.
          */

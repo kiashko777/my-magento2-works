@@ -7,7 +7,11 @@
 /**
  * Bootstrap of the memory monitoring
  */
+
 namespace Magento\TestFramework\Bootstrap;
+
+use InvalidArgumentException;
+use Magento\TestFramework\MemoryLimit;
 
 class Memory
 {
@@ -17,7 +21,7 @@ class Memory
     const POLICY_SHUTDOWN = 'register_shutdown_function';
 
     /**
-     * @var \Magento\TestFramework\MemoryLimit
+     * @var MemoryLimit
      */
     private $_memoryLimit;
 
@@ -27,16 +31,17 @@ class Memory
     private $_activationPolicy;
 
     /**
-     * @param \Magento\TestFramework\MemoryLimit $memoryLimit
+     * @param MemoryLimit $memoryLimit
      * @param callable|string $activationPolicy
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     public function __construct(
-        \Magento\TestFramework\MemoryLimit $memoryLimit,
-        $activationPolicy = self::POLICY_SHUTDOWN
-    ) {
+        MemoryLimit $memoryLimit,
+                                           $activationPolicy = self::POLICY_SHUTDOWN
+    )
+    {
         if (!is_callable($activationPolicy)) {
-            throw new \InvalidArgumentException('Activation policy is expected to be a callable.');
+            throw new InvalidArgumentException('Activation policy is expected to be a callable.');
         }
         $this->_memoryLimit = $memoryLimit;
         $this->_activationPolicy = $activationPolicy;

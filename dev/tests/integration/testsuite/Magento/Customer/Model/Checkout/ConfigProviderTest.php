@@ -25,17 +25,6 @@ class ConfigProviderTest extends TestCase
     private $configProvider;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->configProvider = $this->objectManager->get(ConfigProvider::class);
-    }
-
-    /**
      * @magentoConfigFixture current_store customer/password/autocomplete_on_storefront 1
      *
      * @return void
@@ -53,5 +42,16 @@ class ConfigProviderTest extends TestCase
     public function testAutocompletePasswordDisabled(): void
     {
         $this->assertEquals('off', $this->configProvider->getConfig()['autocomplete']);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->configProvider = $this->objectManager->get(ConfigProvider::class);
     }
 }

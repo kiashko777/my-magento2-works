@@ -7,12 +7,17 @@
 namespace Magento\User\Controller\Adminhtml;
 
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\Encryption\EncryptorInterface;
+use Magento\Framework\Message\MessageInterface;
 use Magento\TestFramework\Bootstrap;
+use Magento\TestFramework\Helper\Xpath;
+use Magento\TestFramework\TestCase\AbstractBackendController;
+use Magento\User\Block\User\Edit\Tab\Main;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class UserTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class UserTest extends AbstractBackendController
 {
     /**
      * Verify that the main user page contains the user grid
@@ -24,7 +29,7 @@ class UserTest extends \Magento\TestFramework\TestCase\AbstractBackendController
         $this->assertStringContainsString('Users', $response);
         $this->assertEquals(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//*[@id="permissionsUserGrid_table"]',
                 $response
             )
@@ -62,7 +67,7 @@ class UserTest extends \Magento\TestFramework\TestCase\AbstractBackendController
         $this->dispatch('backend/admin/user/save');
         $this->assertSessionMessages(
             $this->equalTo(['This user no longer exists.']),
-            \Magento\Framework\Message\MessageInterface::TYPE_ERROR
+            MessageInterface::TYPE_ERROR
         );
         $this->assertRedirect($this->stringContains('backend/admin/user/index/'));
     }
@@ -112,13 +117,13 @@ class UserTest extends \Magento\TestFramework\TestCase\AbstractBackendController
                 'lastname' => 'Last',
                 'password' => 'password_with_1_number',
                 'password_confirmation' => 'password_with_1_number',
-                \Magento\User\Block\User\Edit\Tab\Main::CURRENT_USER_PASSWORD_FIELD => Bootstrap::ADMIN_PASSWORD,
+                Main::CURRENT_USER_PASSWORD_FIELD => Bootstrap::ADMIN_PASSWORD,
             ]
         );
         $this->dispatch('backend/admin/user/save');
         $this->assertSessionMessages(
             $this->equalTo(['You saved the user.']),
-            \Magento\Framework\Message\MessageInterface::TYPE_SUCCESS
+            MessageInterface::TYPE_SUCCESS
         );
         $this->assertRedirect($this->stringContains('backend/admin/user/index/'));
     }
@@ -138,15 +143,15 @@ class UserTest extends \Magento\TestFramework\TestCase\AbstractBackendController
                 'email' => 'adminUser@example.com',
                 'firstname' => 'John',
                 'lastname' => 'Doe',
-                'password' => \Magento\TestFramework\Bootstrap::ADMIN_PASSWORD,
-                'password_confirmation' => \Magento\TestFramework\Bootstrap::ADMIN_PASSWORD,
-                \Magento\User\Block\User\Edit\Tab\Main::CURRENT_USER_PASSWORD_FIELD => Bootstrap::ADMIN_PASSWORD,
+                'password' => Bootstrap::ADMIN_PASSWORD,
+                'password_confirmation' => Bootstrap::ADMIN_PASSWORD,
+                Main::CURRENT_USER_PASSWORD_FIELD => Bootstrap::ADMIN_PASSWORD,
             ]
         );
         $this->dispatch('backend/admin/user/save/active_tab/main_section');
         $this->assertSessionMessages(
             $this->equalTo(['A user with the same user name or email already exists.']),
-            \Magento\Framework\Message\MessageInterface::TYPE_ERROR
+            MessageInterface::TYPE_ERROR
         );
         $this->assertRedirect($this->stringContains('backend/admin/user/edit/'));
         $this->assertRedirect($this->matchesRegularExpression('/^((?!active_tab).)*$/'));
@@ -177,7 +182,7 @@ class UserTest extends \Magento\TestFramework\TestCase\AbstractBackendController
             $this->assertEquals($postData['email'], $user->getEmail());
             $this->assertEquals($postData['firstname'], $user->getFirstname());
             $this->assertEquals($postData['lastname'], $user->getLastname());
-            $encryptor = $objectManager->get(\Magento\Framework\Encryption\EncryptorInterface::class);
+            $encryptor = $objectManager->get(EncryptorInterface::class);
             $this->assertTrue($encryptor->validateHash($postData['password'], $user->getPassword()));
         } else {
             $this->assertRedirect($this->stringContains('backend/admin/user/edit'));
@@ -210,7 +215,7 @@ class UserTest extends \Magento\TestFramework\TestCase\AbstractBackendController
                 'lastname' => 'Last',
                 'password' => $passwordPair['password'],
                 'password_confirmation' => $passwordPair['password_confirmation'],
-                \Magento\User\Block\User\Edit\Tab\Main::CURRENT_USER_PASSWORD_FIELD => Bootstrap::ADMIN_PASSWORD,
+                Main::CURRENT_USER_PASSWORD_FIELD => Bootstrap::ADMIN_PASSWORD,
             ];
             $data[] = [$postData, $passwordPair['is_correct']];
         }
@@ -257,7 +262,7 @@ class UserTest extends \Magento\TestFramework\TestCase\AbstractBackendController
         $this->assertStringContainsString('User Information', $response);
         $this->assertEquals(
             1,
-            \Magento\TestFramework\Helper\Xpath::getElementsCountForXpath(
+            Xpath::getElementsCountForXpath(
                 '//*[@id="user_base_fieldset"]',
                 $response
             )

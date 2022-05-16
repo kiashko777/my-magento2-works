@@ -7,9 +7,10 @@ declare(strict_types=1);
 
 namespace Magento\PaypalGraphQl\Model\Resolver\Customer;
 
+use Magento\Framework\Serialize\SerializerInterface;
+use Magento\Integration\Model\Oauth\Token;
 use Magento\Paypal\Model\Api\Nvp;
 use Magento\PaypalGraphQl\PaypalExpressAbstractTest;
-use Magento\Framework\Serialize\SerializerInterface;
 use Magento\Quote\Model\QuoteIdToMaskedQuoteId;
 
 /**
@@ -28,14 +29,6 @@ class PaypalExpressTokenTest extends PaypalExpressAbstractTest
      * @var QuoteIdToMaskedQuoteId
      */
     private $quoteIdToMaskedId;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->json = $this->objectManager->get(SerializerInterface::class);
-        $this->quoteIdToMaskedId = $this->objectManager->get(QuoteIdToMaskedQuoteId::class);
-    }
 
     /**
      * Test create paypal token for customer
@@ -62,7 +55,7 @@ class PaypalExpressTokenTest extends PaypalExpressAbstractTest
         $reservedQuoteId = 'test_quote';
         $cart = $this->getQuoteByReservedOrderId($reservedQuoteId);
         $cartId = $cart->getId();
-        $maskedCartId = $this->quoteIdToMaskedId->execute((int) $cartId);
+        $maskedCartId = $this->quoteIdToMaskedId->execute((int)$cartId);
 
         $query = $this->getCreateTokenMutation($maskedCartId, $paymentMethod);
 
@@ -83,8 +76,8 @@ class PaypalExpressTokenTest extends PaypalExpressAbstractTest
             ->with(Nvp::SET_EXPRESS_CHECKOUT, $paypalRequest)
             ->willReturn($paypalResponse);
 
-        /** @var \Magento\Integration\Model\Oauth\Token $tokenModel */
-        $tokenModel = $this->objectManager->create(\Magento\Integration\Model\Oauth\Token::class);
+        /** @var Token $tokenModel */
+        $tokenModel = $this->objectManager->create(Token::class);
         $customerToken = $tokenModel->createCustomerToken(1)->getToken();
 
         $requestHeaders = [
@@ -111,5 +104,13 @@ class PaypalExpressTokenTest extends PaypalExpressAbstractTest
             ['paypal_express'],
             ['payflow_express'],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->json = $this->objectManager->get(SerializerInterface::class);
+        $this->quoteIdToMaskedId = $this->objectManager->get(QuoteIdToMaskedQuoteId::class);
     }
 }

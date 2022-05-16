@@ -11,8 +11,9 @@ use Magento\Framework\App\Area;
 use Magento\Framework\App\Cache\Manager;
 use Magento\Framework\App\Interception\Cache\CompiledConfig;
 use Magento\Framework\Interception\Config\Config as InterceptionConfig;
-use Magento\Setup\Module\Di\Code\Reader\Type;
+use Magento\Framework\Interception\Definition\Runtime;
 use Magento\Framework\ObjectManager\InterceptableValidator;
+use Magento\Setup\Module\Di\Code\Reader\Type;
 
 class InterceptionConfigurationBuilder
 {
@@ -56,12 +57,13 @@ class InterceptionConfigurationBuilder
      * @param InterceptableValidator $interceptableValidator
      */
     public function __construct(
-        InterceptionConfig $interceptionConfig,
-        PluginList $pluginList,
-        Type $typeReader,
-        Manager $cacheManager,
+        InterceptionConfig     $interceptionConfig,
+        PluginList             $pluginList,
+        Type                   $typeReader,
+        Manager                $cacheManager,
         InterceptableValidator $interceptableValidator
-    ) {
+    )
+    {
         $this->interceptionConfig = $interceptionConfig;
         $this->pluginList = $pluginList;
         $this->typeReader = $typeReader;
@@ -197,7 +199,7 @@ class InterceptionConfigurationBuilder
      */
     private function getInterceptedMethods($interceptionConfiguration)
     {
-        $pluginDefinitionList = new \Magento\Framework\Interception\Definition\Runtime();
+        $pluginDefinitionList = new Runtime();
         foreach ($interceptionConfiguration as &$plugins) {
             $pluginsMethods = [];
             foreach ($plugins as $plugin) {

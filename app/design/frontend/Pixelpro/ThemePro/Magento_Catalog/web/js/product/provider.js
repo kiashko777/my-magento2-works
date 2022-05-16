@@ -141,8 +141,8 @@ define([
                 currentProductIds = productResolver($('#product_addtocart_form')),
                 productCurrentScope = this.data.productCurrentScope,
                 scopeId = productCurrentScope === 'store' ? window.checkout.storeId :
-                productCurrentScope === 'group' ? window.checkout.storeGroupId :
-                    window.checkout.websiteId;
+                    productCurrentScope === 'group' ? window.checkout.storeGroupId :
+                        window.checkout.websiteId;
 
             _.each(ids, function (id, key) {
                 if (

@@ -20,11 +20,6 @@ class ChildrenClassesSearchTest extends TestCase
      */
     private $childrenClassesSearch;
 
-    protected function setUp(): void
-    {
-        $this->childrenClassesSearch = new ChildrenClassesSearch();
-    }
-
     public function testChildrenSearch(): void
     {
         $files = [
@@ -50,5 +45,10 @@ class ChildrenClassesSearchTest extends TestCase
         ];
 
         $this->assertSame($expected, $found);
+    }
+
+    protected function setUp(): void
+    {
+        $this->childrenClassesSearch = new ChildrenClassesSearch();
     }
 }

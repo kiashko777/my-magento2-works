@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\ConfigurableProduct\Pricing\Price;
 
 use Magento\Catalog\Api\Data\ProductInterface;
@@ -13,8 +14,9 @@ use Magento\Catalog\Model\ResourceModel\Product\Collection as ProductCollection;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\Framework\Data\Collection;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class SpecialPriceTest extends \PHPUnit\Framework\TestCase
+class SpecialPriceTest extends TestCase
 {
     /**
      * @var ProductRepositoryInterface
@@ -25,12 +27,6 @@ class SpecialPriceTest extends \PHPUnit\Framework\TestCase
      * @var CollectionFactory
      */
     private $productCollectionFactory;
-
-    protected function setUp(): void
-    {
-        $this->productRepository = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class);
-        $this->productCollectionFactory = Bootstrap::getObjectManager()->get(CollectionFactory::class);
-    }
 
     /**
      * @magentoDataFixture Magento/ConfigurableProduct/_files/product_configurable.php
@@ -111,5 +107,11 @@ class SpecialPriceTest extends \PHPUnit\Framework\TestCase
         $items = array_values($collection->getItems());
         self::assertEquals('simple_77', $items[0]->getSku());
         self::assertEquals('configurable', $items[1]->getSku());
+    }
+
+    protected function setUp(): void
+    {
+        $this->productRepository = Bootstrap::getObjectManager()->get(ProductRepositoryInterface::class);
+        $this->productCollectionFactory = Bootstrap::getObjectManager()->get(CollectionFactory::class);
     }
 }

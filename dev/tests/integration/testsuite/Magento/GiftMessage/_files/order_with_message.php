@@ -3,23 +3,28 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\GiftMessage\Model\Message;
+use Magento\Sales\Api\Data\OrderItemInterface;
+use Magento\Sales\Model\Order;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Sales/_files/order.php');
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 
-/** @var \Magento\GiftMessage\Model\Message $message */
-$message = $objectManager->create(\Magento\GiftMessage\Model\Message::class);
+/** @var Message $message */
+$message = $objectManager->create(Message::class);
 $message->setSender('Romeo');
 $message->setRecipient('Mercutio');
 $message->setMessage('I thought all for the best.');
 $message->save();
 
-/** @var \Magento\Sales\Model\Order $order */
-$order = $objectManager->create(\Magento\Sales\Model\Order::class)->loadByIncrementId('100000001');
+/** @var Order $order */
+$order = $objectManager->create(Order::class)->loadByIncrementId('100000001');
 
-/** @var \Magento\Sales\Api\Data\OrderItemInterface $orderItem */
+/** @var OrderItemInterface $orderItem */
 $orderItem = $order->getItems();
 $orderItem = array_shift($orderItem);
 $orderItem->setGiftMessageId($message->getId());

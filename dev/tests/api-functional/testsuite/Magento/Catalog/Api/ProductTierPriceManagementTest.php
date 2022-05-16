@@ -7,6 +7,8 @@
 
 namespace Magento\Catalog\Api;
 
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
@@ -30,7 +32,7 @@ class ProductTierPriceManagementTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . $productSku . '/group-prices/' . $customerGroupId . '/tiers',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -71,9 +73,9 @@ class ProductTierPriceManagementTest extends WebapiAbstract
         $productSku = 'simple';
         $serviceInfo = [
             'rest' => [
-                'resourcePath' =>   self::RESOURCE_PATH
+                'resourcePath' => self::RESOURCE_PATH
                     . $productSku . "/group-prices/" . $customerGroupId . "/tiers/" . $qty,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -107,7 +109,7 @@ class ProductTierPriceManagementTest extends WebapiAbstract
             'rest' => [
                 'resourcePath' => '/V1/products/' . $productSku
                     . '/group-prices/' . $customerGroupId . '/tiers/' . $qty . '/price/' . $price,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -123,9 +125,9 @@ class ProductTierPriceManagementTest extends WebapiAbstract
             'price' => $price,
         ];
         $this->_webApiCall($serviceInfo, $requestData);
-        $objectManager = \Magento\TestFramework\ObjectManager::getInstance();
-        /** @var \Magento\Catalog\Api\ProductTierPriceManagementInterface $service */
-        $service = $objectManager->get(\Magento\Catalog\Api\ProductTierPriceManagementInterface::class);
+        $objectManager = ObjectManager::getInstance();
+        /** @var ProductTierPriceManagementInterface $service */
+        $service = $objectManager->get(ProductTierPriceManagementInterface::class);
         $prices = $service->getList($productSku, 1);
         $this->assertCount(1, $prices);
         $this->assertEquals(10, $prices[0]->getValue());
@@ -146,7 +148,7 @@ class ProductTierPriceManagementTest extends WebapiAbstract
             'rest' => [
                 'resourcePath' => '/V1/products/' . $productSku
                     . '/group-prices/' . $customerGroupId . '/tiers/' . $qty . '/price/' . $price,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -161,9 +163,9 @@ class ProductTierPriceManagementTest extends WebapiAbstract
             'price' => $price,
         ];
         $this->_webApiCall($serviceInfo, $requestData);
-        $objectManager = \Magento\TestFramework\ObjectManager::getInstance();
-        /** @var \Magento\Catalog\Api\ProductTierPriceManagementInterface $service */
-        $service = $objectManager->get(\Magento\Catalog\Api\ProductTierPriceManagementInterface::class);
+        $objectManager = ObjectManager::getInstance();
+        /** @var ProductTierPriceManagementInterface $service */
+        $service = $objectManager->get(ProductTierPriceManagementInterface::class);
         $prices = $service->getList($productSku, 'all');
         $this->assertCount(3, $prices);
         $this->assertEquals(20, (int)$prices[2]->getValue());
@@ -184,7 +186,7 @@ class ProductTierPriceManagementTest extends WebapiAbstract
             'rest' => [
                 'resourcePath' => '/V1/products/' . $productSku
                     . '/group-prices/' . $customerGroupId . '/tiers/' . $qty . '/price/' . $price,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
+                'httpMethod' => Request::HTTP_METHOD_POST,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -199,9 +201,9 @@ class ProductTierPriceManagementTest extends WebapiAbstract
             'price' => $price,
         ];
         $this->_webApiCall($serviceInfo, $requestData);
-        $objectManager = \Magento\TestFramework\ObjectManager::getInstance();
-        /** @var \Magento\Catalog\Api\ProductTierPriceManagementInterface $service */
-        $service = $objectManager->get(\Magento\Catalog\Api\ProductTierPriceManagementInterface::class);
+        $objectManager = ObjectManager::getInstance();
+        /** @var ProductTierPriceManagementInterface $service */
+        $service = $objectManager->get(ProductTierPriceManagementInterface::class);
         $prices = $service->getList($productSku, 'all');
         $this->assertCount(2, $prices);
         $this->assertEquals(20, (int)$prices[0]->getValue());

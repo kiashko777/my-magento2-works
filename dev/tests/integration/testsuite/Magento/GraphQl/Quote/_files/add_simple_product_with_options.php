@@ -22,7 +22,7 @@ $quoteFactory = Bootstrap::getObjectManager()->get(QuoteFactory::class);
 $quoteResource = Bootstrap::getObjectManager()->get(QuoteResource::class);
 /** @var CartRepositoryInterface $cartRepository */
 $cartRepository = Bootstrap::getObjectManager()->get(CartRepositoryInterface::class);
-/** @var OptionFactory  $productOptionFactory */
+/** @var OptionFactory $productOptionFactory */
 $productOptionFactory = Bootstrap::getObjectManager()->get(OptionFactory::class);
 /** @var DataObjectFactory $dataObjectFactory */
 $dataObjectFactory = Bootstrap::getObjectManager()->get(DataObjectFactory::class);
@@ -33,7 +33,7 @@ $product = $productRepository->get('simple_product');
 $productOptions = $productOption->getProductOptionCollection($product);
 $cartItemCustomOptions = [];
 
-/** @var ProductOption  $productOption */
+/** @var ProductOption $productOption */
 foreach ($productOptions as $productOption) {
     $cartItemCustomOptions[$productOption->getId()] = 'initial value';
 }

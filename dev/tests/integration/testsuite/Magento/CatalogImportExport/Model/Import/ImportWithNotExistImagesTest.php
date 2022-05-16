@@ -85,38 +85,6 @@ class ImportWithNotExistImagesTest extends TestCase
     }
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->queue = $this->objectManager->create(Queue::class, ['queueName' => 'export']);
-        $this->messageEncoder = $this->objectManager->get(MessageEncoder::class);
-        $this->consumer = $this->objectManager->get(Consumer::class);
-        $this->directory = $this->objectManager->get(Filesystem::class)->getDirectoryWrite(DirectoryList::VAR_DIR);
-        $this->csvReader = $this->objectManager->get(Csv::class);
-        $this->import = $this->objectManager->get(ProductFactory::class)->create();
-        $this->csvFactory = $this->objectManager->get(CsvFactory::class);
-        $this->fileSystem = $this->objectManager->get(Filesystem::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        if ($this->filePath && $this->directory->isExist($this->filePath)) {
-            $this->directory->delete($this->filePath);
-        }
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/CatalogImportExport/_files/export_queue_product_with_images.php
      *
      * @return void
@@ -172,20 +140,6 @@ class ImportWithNotExistImagesTest extends TestCase
     }
 
     /**
-     * Get export csv file
-     *
-     * @param string $file
-     * @return CsvSource
-     */
-    private function prepareFile(string $file): CsvSource
-    {
-        return $this->csvFactory->create([
-            'file' => $file,
-            'directory' => $this->fileSystem->getDirectoryWrite(DirectoryList::VAR_DIR),
-        ]);
-    }
-
-    /**
      * Assert import errors
      *
      * @return void
@@ -209,6 +163,20 @@ class ImportWithNotExistImagesTest extends TestCase
     }
 
     /**
+     * Get export csv file
+     *
+     * @param string $file
+     * @return CsvSource
+     */
+    private function prepareFile(string $file): CsvSource
+    {
+        return $this->csvFactory->create([
+            'file' => $file,
+            'directory' => $this->fileSystem->getDirectoryWrite(DirectoryList::VAR_DIR),
+        ]);
+    }
+
+    /**
      * Assert product images were not changed after import
      *
      * @param string $imageName
@@ -221,5 +189,37 @@ class ImportWithNotExistImagesTest extends TestCase
         $this->assertEquals($imageName, $product->getImage());
         $this->assertEquals($imageName, $product->getSmallImage());
         $this->assertEquals($imageName, $product->getThumbnail());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->queue = $this->objectManager->create(Queue::class, ['queueName' => 'export']);
+        $this->messageEncoder = $this->objectManager->get(MessageEncoder::class);
+        $this->consumer = $this->objectManager->get(Consumer::class);
+        $this->directory = $this->objectManager->get(Filesystem::class)->getDirectoryWrite(DirectoryList::VAR_DIR);
+        $this->csvReader = $this->objectManager->get(Csv::class);
+        $this->import = $this->objectManager->get(ProductFactory::class)->create();
+        $this->csvFactory = $this->objectManager->get(CsvFactory::class);
+        $this->fileSystem = $this->objectManager->get(Filesystem::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        if ($this->filePath && $this->directory->isExist($this->filePath)) {
+            $this->directory->delete($this->filePath);
+        }
+
+        parent::tearDown();
     }
 }

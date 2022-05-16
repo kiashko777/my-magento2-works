@@ -3,21 +3,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Tax\Model\ResourceModel\Report;
 
-class CollectionTest extends \PHPUnit\Framework\TestCase
+use Magento\Reports\Model\Item;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class CollectionTest extends TestCase
 {
     /**
-     * @var \Magento\Tax\Model\ResourceModel\Report\Collection
+     * @var Collection
      */
     private $_collection;
-
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->_collection = $objectManager->create(\Magento\Tax\Model\ResourceModel\Report\Collection::class);
-        $this->_collection->setPeriod('day')->setDateRange(null, null)->addStoreFilter([1]);
-    }
 
     /**
      * @magentoDataFixture Magento/Tax/_files/order_with_tax.php
@@ -29,10 +27,17 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
             ['code' => 'tax_code', 'percent' => 10, 'orders_count' => 1, 'tax_base_amount_sum' => 20],
         ];
         $actualResult = [];
-        /** @var \Magento\Reports\Model\Item $reportItem */
+        /** @var Item $reportItem */
         foreach ($this->_collection->getItems() as $reportItem) {
             $actualResult[] = array_intersect_key($reportItem->getData(), $expectedResult[0]);
         }
         $this->assertEquals($expectedResult, $actualResult);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->_collection = $objectManager->create(Collection::class);
+        $this->_collection->setPeriod('day')->setDateRange(null, null)->addStoreFilter([1]);
     }
 }

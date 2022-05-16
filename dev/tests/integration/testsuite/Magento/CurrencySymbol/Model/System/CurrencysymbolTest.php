@@ -6,33 +6,22 @@
 
 namespace Magento\CurrencySymbol\Model\System;
 
+use Magento\Framework\App\Config\ReinitableConfigInterface;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for Magento\CurrencySymbol\Model\System\Currencysymbol
  *
  * @magentoAppArea Adminhtml
  */
-class CurrencysymbolTest extends \PHPUnit\Framework\TestCase
+class CurrencysymbolTest extends TestCase
 {
     /**
-     * @var \Magento\CurrencySymbol\Model\System\Currencysymbol
+     * @var Currencysymbol
      */
     protected $currencySymbolModel;
-
-    protected function setUp(): void
-    {
-        $this->currencySymbolModel = Bootstrap::getObjectManager()->create(
-            \Magento\CurrencySymbol\Model\System\Currencysymbol::class
-        );
-    }
-
-    protected function tearDown(): void
-    {
-        $this->currencySymbolModel = null;
-        Bootstrap::getObjectManager()->get(\Magento\Framework\App\Config\ReinitableConfigInterface::class)->reinit();
-        Bootstrap::getObjectManager()->create(\Magento\Store\Model\StoreManagerInterface::class)->reinitStores();
-    }
 
     public function testGetCurrencySymbolsData()
     {
@@ -83,5 +72,19 @@ class CurrencysymbolTest extends \PHPUnit\Framework\TestCase
     public function testGetCurrencySymbolNonExistent()
     {
         $this->assertFalse($this->currencySymbolModel->getCurrencySymbol('AUD'));
+    }
+
+    protected function setUp(): void
+    {
+        $this->currencySymbolModel = Bootstrap::getObjectManager()->create(
+            Currencysymbol::class
+        );
+    }
+
+    protected function tearDown(): void
+    {
+        $this->currencySymbolModel = null;
+        Bootstrap::getObjectManager()->get(ReinitableConfigInterface::class)->reinit();
+        Bootstrap::getObjectManager()->create(StoreManagerInterface::class)->reinitStores();
     }
 }

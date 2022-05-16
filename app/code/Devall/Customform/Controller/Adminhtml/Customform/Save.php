@@ -19,7 +19,7 @@ class Save extends \Magento\Backend\App\Action
      * @param DataPersistorInterface $dataPersistor
      */
     public function __construct(
-        Context                   $context,
+        Context                $context,
         DataPersistorInterface $dataPersistor
     )
     {

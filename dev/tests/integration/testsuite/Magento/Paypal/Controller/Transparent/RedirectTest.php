@@ -7,7 +7,11 @@ declare(strict_types=1);
 
 namespace Magento\Paypal\Controller\Transparent;
 
+use DOMDocument;
+use DOMNode;
+use InvalidArgumentException;
 use Magento\TestFramework\TestCase\AbstractController;
+use ReflectionClass;
 use Zend\Stdlib\Parameters;
 
 /**
@@ -46,7 +50,7 @@ class RedirectTest extends AbstractController
                 $responseNvp,
                 'POST form should contain all params from POST request'
             );
-        } catch (\InvalidArgumentException $exception) {
+        } catch (InvalidArgumentException $exception) {
             $this->fail($exception->getMessage());
         }
 
@@ -65,7 +69,7 @@ class RedirectTest extends AbstractController
     private function setRequestUri(string $requestUri)
     {
         $request = $this->getRequest();
-        $reflection = new \ReflectionClass($request);
+        $reflection = new ReflectionClass($request);
         $property = $reflection->getProperty('requestUri');
         $property->setAccessible(true);
         $property->setValue($request, null);
@@ -81,11 +85,11 @@ class RedirectTest extends AbstractController
      */
     private function convertToNvp(string $response): array
     {
-        $document = new \DOMDocument();
+        $document = new DOMDocument();
 
         libxml_use_internal_errors(true);
         if (!$document->loadHTML($response)) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 __('The response format was incorrect. Should be valid HTML')
             );
         }
@@ -94,7 +98,7 @@ class RedirectTest extends AbstractController
         $document->getElementsByTagName('input');
 
         $convertedResponse = [];
-        /** @var \DOMNode $inputNode */
+        /** @var DOMNode $inputNode */
         foreach ($document->getElementsByTagName('input') as $inputNode) {
             if (!$inputNode->attributes->getNamedItem('value')
                 || !$inputNode->attributes->getNamedItem('name')

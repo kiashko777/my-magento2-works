@@ -34,7 +34,10 @@ class TaxRulesFixture extends Fixture
     const DEFAULT_TAX_RATE = 5;
 
     const DEFAULT_TAX_COUNTRY = 'US';
-
+    /**
+     * @var int
+     */
+    protected $priority = 101;
     /**
      * @var array config paths and values for tax modes
      */
@@ -57,12 +60,6 @@ class TaxRulesFixture extends Fixture
             Custom::XML_PATH_TAX_WEEE_ENABLE => 1,
         ]
     ];
-
-    /**
-     * @var int
-     */
-    protected $priority = 101;
-
     /**
      * @var TaxRuleRepositoryInterface
      */
@@ -103,14 +100,15 @@ class TaxRulesFixture extends Fixture
      * @param ConfigWriter $configWriter
      */
     public function __construct(
-        FixtureModel $fixtureModel,
+        FixtureModel               $fixtureModel,
         TaxRuleRepositoryInterface $taxRuleRepository,
-        TaxRuleInterfaceFactory $taxRuleFactory,
-        CollectionFactory $taxRateCollectionFactory,
-        TaxRateInterfaceFactory $taxRateFactory,
+        TaxRuleInterfaceFactory    $taxRuleFactory,
+        CollectionFactory          $taxRateCollectionFactory,
+        TaxRateInterfaceFactory    $taxRateFactory,
         TaxRateRepositoryInterface $taxRateRepository,
-        ConfigWriter $configWriter
-    ) {
+        ConfigWriter               $configWriter
+    )
+    {
         parent::__construct($fixtureModel);
 
         $this->taxRuleRepository = $taxRuleRepository;

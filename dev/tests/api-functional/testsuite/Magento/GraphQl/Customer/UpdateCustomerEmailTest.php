@@ -40,19 +40,6 @@ class UpdateCustomerEmailTest extends GraphQlAbstract
     private $storeRepository;
 
     /**
-     * Setting up tests
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
-        $this->customerRepository = Bootstrap::getObjectManager()->get(CustomerRepositoryInterface::class);
-        $this->updateCustomerAccount = Bootstrap::getObjectManager()->get(UpdateCustomerAccount::class);
-        $this->storeRepository = Bootstrap::getObjectManager()->get(StoreRepositoryInterface::class);
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      */
     public function testUpdateCustomerEmail(): void
@@ -84,11 +71,25 @@ QUERY;
 
         $this->assertEquals($newEmail, $response['updateCustomerEmail']['customer']['email']);
 
-/*        $this->updateCustomerAccount->execute(
-            $this->customerRepository->get($newEmail),
-            ['email' => $currentEmail, 'password' => $currentPassword],
-            $this->storeRepository->getById(1)
-        );*/
+        /*        $this->updateCustomerAccount->execute(
+                    $this->customerRepository->get($newEmail),
+                    ['email' => $currentEmail, 'password' => $currentPassword],
+                    $this->storeRepository->getById(1)
+                );*/
+    }
+
+    /**
+     * Get customer authorization headers
+     *
+     * @param string $email
+     * @param string $password
+     * @return array
+     * @throws AuthenticationException
+     */
+    private function getCustomerAuthHeaders(string $email, string $password): array
+    {
+        $customerToken = $this->customerTokenService->createCustomerAccessToken($email, $password);
+        return ['Authorization' => 'Bearer ' . $customerToken];
     }
 
     /**
@@ -156,16 +157,15 @@ QUERY;
     }
 
     /**
-     * Get customer authorization headers
-     *
-     * @param string $email
-     * @param string $password
-     * @return array
-     * @throws AuthenticationException
+     * Setting up tests
      */
-    private function getCustomerAuthHeaders(string $email, string $password): array
+    protected function setUp(): void
     {
-        $customerToken = $this->customerTokenService->createCustomerAccessToken($email, $password);
-        return ['Authorization' => 'Bearer ' . $customerToken];
+        parent::setUp();
+
+        $this->customerTokenService = Bootstrap::getObjectManager()->get(CustomerTokenServiceInterface::class);
+        $this->customerRepository = Bootstrap::getObjectManager()->get(CustomerRepositoryInterface::class);
+        $this->updateCustomerAccount = Bootstrap::getObjectManager()->get(UpdateCustomerAccount::class);
+        $this->storeRepository = Bootstrap::getObjectManager()->get(StoreRepositoryInterface::class);
     }
 }

@@ -9,25 +9,17 @@ namespace Magento\CheckoutAgreements\Model\ResourceModel\Grid;
 
 use Magento\CheckoutAgreements\Model\ResourceModel\Agreement\Grid\Collection;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Check data in collection
  */
-class CollectionTest extends \PHPUnit\Framework\TestCase
+class CollectionTest extends TestCase
 {
     /**
      * @var Collection;
      */
     private $collection;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->collection = Bootstrap::getObjectManager()
-            ->create(Collection::class);
-    }
 
     /**
      * Check that collection is filterable by store
@@ -40,5 +32,14 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
             ->load(false, false)
             ->getSize();
         $this->assertEquals(2, $collectionSize);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->collection = Bootstrap::getObjectManager()
+            ->create(Collection::class);
     }
 }

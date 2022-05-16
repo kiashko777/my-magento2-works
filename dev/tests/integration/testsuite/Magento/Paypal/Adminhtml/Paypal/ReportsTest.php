@@ -3,12 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Paypal\Adminhtml\Paypal;
+
+use Magento\Framework\Message\MessageInterface;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class ReportsTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class ReportsTest extends AbstractBackendController
 {
     /**
      * @magentoConfigFixture current_store paypal/fetch_reports/active 1
@@ -24,7 +28,7 @@ class ReportsTest extends \Magento\TestFramework\TestCase\AbstractBackendControl
         $this->dispatch('backend/paypal/paypal_reports/fetch');
         $this->assertSessionMessages(
             $this->equalTo(['We can&#039;t fetch reports from &quot;login@127.0.0.1.&quot;']),
-            \Magento\Framework\Message\MessageInterface::TYPE_ERROR
+            MessageInterface::TYPE_ERROR
         );
     }
 }

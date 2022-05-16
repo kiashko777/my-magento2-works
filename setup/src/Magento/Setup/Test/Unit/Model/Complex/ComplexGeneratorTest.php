@@ -21,6 +21,31 @@ class ComplexGeneratorTest extends TestCase
     protected $_pattern;
 
     /**
+     * Test complex generator iterator interface
+     *
+     * @return void
+     */
+    public function testIteratorInterface()
+    {
+        $model = new Generator($this->getPattern(), 2);
+        $rows = [];
+        foreach ($model as $row) {
+            $rows[] = $row;
+        }
+        $this->assertEquals(
+            [
+                ['id' => '1', 'name' => 'Static', 'calculated' => 10],
+                ['id' => '', 'name' => 'xxx 1', 'calculated' => ''],
+                ['id' => '', 'name' => 'yyy 1', 'calculated' => ''],
+                ['id' => '2', 'name' => 'Static', 'calculated' => 20],
+                ['id' => '', 'name' => 'xxx 2', 'calculated' => ''],
+                ['id' => '', 'name' => 'yyy 2', 'calculated' => ''],
+            ],
+            $rows
+        );
+    }
+
+    /**
      * Get pattern instance
      *
      * @return Pattern
@@ -48,31 +73,6 @@ class ComplexGeneratorTest extends TestCase
             $this->_pattern->setRowsSet($patternData);
         }
         return $this->_pattern;
-    }
-
-    /**
-     * Test complex generator iterator interface
-     *
-     * @return void
-     */
-    public function testIteratorInterface()
-    {
-        $model = new Generator($this->getPattern(), 2);
-        $rows = [];
-        foreach ($model as $row) {
-            $rows[] = $row;
-        }
-        $this->assertEquals(
-            [
-                ['id' => '1', 'name' => 'Static', 'calculated' => 10],
-                ['id' => '', 'name' => 'xxx 1', 'calculated' => ''],
-                ['id' => '', 'name' => 'yyy 1', 'calculated' => ''],
-                ['id' => '2', 'name' => 'Static', 'calculated' => 20],
-                ['id' => '', 'name' => 'xxx 2', 'calculated' => ''],
-                ['id' => '', 'name' => 'yyy 2', 'calculated' => ''],
-            ],
-            $rows
-        );
     }
 
     /**

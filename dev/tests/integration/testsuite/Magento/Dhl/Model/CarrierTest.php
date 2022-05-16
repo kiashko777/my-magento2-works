@@ -54,31 +54,6 @@ class CarrierTest extends TestCase
     private $restoreCountry;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->dhlCarrier = $objectManager->get(Carrier::class);
-        $this->httpClient = $objectManager->get(AsyncClientInterface::class);
-        $this->config = $objectManager->get(ReinitableConfigInterface::class);
-        $this->restoreCountry = $this->config->getValue('shipping/origin/country_id', 'store', 'default_store');
-    }
-
-    /**
-     * @inheritDoc
-     */
-    protected function tearDown(): void
-    {
-        $this->config->setValue(
-            'shipping/origin/country_id',
-            $this->restoreCountry,
-            'store',
-            'default_store'
-        );
-    }
-
-    /**
      * Test sending tracking requests.
      *
      * @magentoConfigFixture default_store carriers/dhl/id CustomerSiteID
@@ -94,7 +69,8 @@ class CarrierTest extends TestCase
         string $responseXml,
         $expectedTrackingData,
         string $expectedRequestXml = ''
-    ) {
+    )
+    {
         $this->httpClient->nextResponses([new Response(200, [], $responseXml)]);
         $trackingResult = $this->dhlCarrier->getTracking($trackingNumbers);
         $this->assertTrackingResult($expectedTrackingData, $trackingResult->getAllTrackings());
@@ -104,11 +80,54 @@ class CarrierTest extends TestCase
     }
 
     /**
+     * Assert tracking
+     *
+     * @param array|null $expectedTrackingData
+     * @param Status[]|null $trackingResults
+     * @return void
+     */
+    private function assertTrackingResult($expectedTrackingData, $trackingResults): void
+    {
+        if (null === $expectedTrackingData) {
+            $this->assertNull($trackingResults);
+        } else {
+            $ctr = 0;
+            foreach ($trackingResults as $trackingResult) {
+                $this->assertEquals($expectedTrackingData[$ctr++], $trackingResult->getData());
+            }
+        }
+    }
+
+    /**
+     * Assert request
+     *
+     * @param string $expectedRequestXml
+     * @param string $requestXml
+     */
+    private function assertRequest(string $expectedRequestXml, string $requestXml): void
+    {
+        $expectedRequestElement = new Element($expectedRequestXml);
+        $requestElement = new Element($requestXml);
+        $requestMessageTime = $requestElement->Request->ServiceHeader->MessageTime->__toString();
+        $this->assertEquals(
+            1,
+            preg_match("/\d{4}\-\d{2}\-\d{2}T\d{2}\:\d{2}\:\d{2}\+\d{2}\:\d{2}/", $requestMessageTime)
+        );
+        $expectedRequestElement->Request->ServiceHeader->MessageTime = $requestMessageTime;
+        $messageReference = $requestElement->Request->ServiceHeader->MessageReference->__toString();
+        $this->assertStringStartsWith('MAGE_TRCK_', $messageReference);
+        $this->assertGreaterThanOrEqual(28, strlen($messageReference));
+        $this->assertLessThanOrEqual(32, strlen($messageReference));
+        $requestElement->Request->ServiceHeader->MessageReference = 'MAGE_TRCK_28TO32_Char_CHECKED';
+        $this->assertXmlStringEqualsXmlString($expectedRequestElement->asXML(), $requestElement->asXML());
+    }
+
+    /**
      * Get tracking data provider
      *
      * @return array
      */
-    public function trackingDataProvider() : array
+    public function trackingDataProvider(): array
     {
         // phpcs:disable Magento2.Functions.DiscouragedFunction
         $expectedMultiAWBRequestXml = file_get_contents(__DIR__ . '/../_files/TrackingRequest_MultipleAWB.xml');
@@ -202,49 +221,6 @@ class CarrierTest extends TestCase
     }
 
     /**
-     * Assert request
-     *
-     * @param string $expectedRequestXml
-     * @param string $requestXml
-     */
-    private function assertRequest(string $expectedRequestXml, string $requestXml): void
-    {
-        $expectedRequestElement = new Element($expectedRequestXml);
-        $requestElement = new Element($requestXml);
-        $requestMessageTime = $requestElement->Request->ServiceHeader->MessageTime->__toString();
-        $this->assertEquals(
-            1,
-            preg_match("/\d{4}\-\d{2}\-\d{2}T\d{2}\:\d{2}\:\d{2}\+\d{2}\:\d{2}/", $requestMessageTime)
-        );
-        $expectedRequestElement->Request->ServiceHeader->MessageTime = $requestMessageTime;
-        $messageReference = $requestElement->Request->ServiceHeader->MessageReference->__toString();
-        $this->assertStringStartsWith('MAGE_TRCK_', $messageReference);
-        $this->assertGreaterThanOrEqual(28, strlen($messageReference));
-        $this->assertLessThanOrEqual(32, strlen($messageReference));
-        $requestElement->Request->ServiceHeader->MessageReference = 'MAGE_TRCK_28TO32_Char_CHECKED';
-        $this->assertXmlStringEqualsXmlString($expectedRequestElement->asXML(), $requestElement->asXML());
-    }
-
-    /**
-     * Assert tracking
-     *
-     * @param array|null $expectedTrackingData
-     * @param Status[]|null $trackingResults
-     * @return void
-     */
-    private function assertTrackingResult($expectedTrackingData, $trackingResults): void
-    {
-        if (null === $expectedTrackingData) {
-            $this->assertNull($trackingResults);
-        } else {
-            $ctr = 0;
-            foreach ($trackingResults as $trackingResult) {
-                $this->assertEquals($expectedTrackingData[$ctr++], $trackingResult->getData());
-            }
-        }
-    }
-
-    /**
      * Test sending shipping requests.
      *
      * @magentoConfigFixture default_store carriers/dhl/id some ID
@@ -265,8 +241,9 @@ class CarrierTest extends TestCase
         string $origCountryId,
         string $expectedRegionCode,
         string $destCountryId,
-        bool $isProductNameContainsSpecialChars = false
-    ): void {
+        bool   $isProductNameContainsSpecialChars = false
+    ): void
+    {
         $this->config->setValue(
             'shipping/origin/country_id',
             $origCountryId,
@@ -352,29 +329,6 @@ class CarrierTest extends TestCase
     }
 
     /**
-     * Cases with different countries.
-     *
-     * @return array
-     */
-    public function requestToShipmentDataProvider(): array
-    {
-        return [
-            [
-                'GB', 'EU', 'US'
-            ],
-            [
-                'SG', 'AP', 'US'
-            ],
-            [
-                'DE', 'EU', 'DE'
-            ],
-            [
-                'GB', 'EU', 'US', true
-            ],
-        ];
-    }
-
-    /**
      * Generate expected labels request XML.
      *
      * @param string $origCountryId
@@ -387,8 +341,9 @@ class CarrierTest extends TestCase
         string $origCountryId,
         string $destCountryId,
         string $regionCode,
-        bool $isProductNameContainsSpecialChars
-    ): string {
+        bool   $isProductNameContainsSpecialChars
+    ): string
+    {
         $countryNames = [
             'US' => 'United States Of America',
             'SG' => 'Singapore',
@@ -413,6 +368,29 @@ class CarrierTest extends TestCase
         }
 
         return $expectedRequestElement->asXML();
+    }
+
+    /**
+     * Cases with different countries.
+     *
+     * @return array
+     */
+    public function requestToShipmentDataProvider(): array
+    {
+        return [
+            [
+                'GB', 'EU', 'US'
+            ],
+            [
+                'SG', 'AP', 'US'
+            ],
+            [
+                'DE', 'EU', 'DE'
+            ],
+            [
+                'GB', 'EU', 'US', true
+            ],
+        ];
     }
 
     /**
@@ -467,6 +445,91 @@ class CarrierTest extends TestCase
     }
 
     /**
+     * Set next response content from file
+     *
+     * @param string $file
+     */
+    private function setNextResponse(string $file): void
+    {
+        //phpcs:disable Magento2.Functions.DiscouragedFunction
+        $response = new Response(
+            200,
+            [],
+            file_get_contents($file)
+        );
+        //phpcs:enable Magento2.Functions.DiscouragedFunction
+        $this->httpClient->nextResponses(
+            array_fill(0, Carrier::UNAVAILABLE_DATE_LOOK_FORWARD + 1, $response)
+        );
+    }
+
+    /**
+     * Create Rate Request
+     *
+     * @param array $addRequestData
+     * @return RateRequest
+     */
+    private function createRequest(array $addRequestData = []): RateRequest
+    {
+        $requestData = $this->getRequestData();
+        if (!empty($addRequestData)) {
+            $requestData = array_merge($requestData, $addRequestData);
+        }
+
+        return Bootstrap::getObjectManager()->create(RateRequest::class, ['data' => $requestData]);
+    }
+
+    /**
+     * Returns request data.
+     *
+     * @return array
+     */
+    private function getRequestData(): array
+    {
+        return [
+            'dest_country_id' => 'DE',
+            'dest_region_id' => '82',
+            'dest_region_code' => 'BER',
+            'dest_street' => 'Turmstraße 17',
+            'dest_city' => 'Berlin',
+            'dest_postcode' => '10559',
+            'dest_postal' => '10559',
+            'package_value' => '5',
+            'package_value_with_discount' => '5',
+            'package_weight' => '8.2657',
+            'package_qty' => '1',
+            'package_physical_value' => '5',
+            'free_method_weight' => '5',
+            'store_id' => '1',
+            'website_id' => '1',
+            'free_shipping' => '0',
+            'limit_carrier' => null,
+            'base_subtotal_incl_tax' => '5',
+            'orig_country_id' => 'US',
+            'orig_region_id' => '12',
+            'orig_city' => 'Fremont',
+            'orig_postcode' => '94538',
+            'dhl_id' => 'MAGEN_8501',
+            'dhl_password' => 'QR2GO1U74X',
+            'dhl_account' => '799909537',
+            'dhl_shipping_intl_key' => '54233F2B2C4E5C4B4C5E5A59565530554B405641475D5659',
+            'girth' => null,
+            'height' => null,
+            'length' => null,
+            'width' => null,
+            'weight' => 1,
+            'dhl_shipment_type' => 'P',
+            'dhl_duitable' => 0,
+            'dhl_duty_payment_type' => 'R',
+            'dhl_content_desc' => 'Big Box',
+            'limit_method' => 'IE',
+            'ship_date' => '2014-01-09',
+            'action' => 'RateEstimate',
+            'all_items' => [],
+        ];
+    }
+
+    /**
      * Tests that quotes request doesn't contain dimensions when it shouldn't.
      *
      * @param string|null $size
@@ -490,6 +553,25 @@ class CarrierTest extends TestCase
         $this->assertStringNotContainsString('<Depth>', $requestXml);
 
         $this->config->reinit();
+    }
+
+    /**
+     * Sets DHL config value.
+     *
+     * @param array $params
+     * @return void
+     */
+    private function setDhlConfig(array $params)
+    {
+        foreach ($params as $name => $val) {
+            if ($val !== null) {
+                $this->config->setValue(
+                    'carriers/dhl/' . $name,
+                    $val,
+                    ScopeInterface::SCOPE_STORE
+                );
+            }
+        }
     }
 
     /**
@@ -529,25 +611,6 @@ class CarrierTest extends TestCase
             ['size' => '1', 'height' => '1', 'width' => '', 'depth' => ''],
             ['size' => null, 'height' => null, 'width' => null, 'depth' => null],
         ];
-    }
-
-    /**
-     * Sets DHL config value.
-     *
-     * @param array $params
-     * @return void
-     */
-    private function setDhlConfig(array $params)
-    {
-        foreach ($params as $name => $val) {
-            if ($val !== null) {
-                $this->config->setValue(
-                    'carriers/dhl/' . $name,
-                    $val,
-                    ScopeInterface::SCOPE_STORE
-                );
-            }
-        }
     }
 
     /**
@@ -622,87 +685,27 @@ class CarrierTest extends TestCase
     }
 
     /**
-     * Returns request data.
-     *
-     * @return array
+     * @inheritDoc
      */
-    private function getRequestData(): array
+    protected function setUp(): void
     {
-        return [
-            'dest_country_id' => 'DE',
-            'dest_region_id' => '82',
-            'dest_region_code' => 'BER',
-            'dest_street' => 'Turmstraße 17',
-            'dest_city' => 'Berlin',
-            'dest_postcode' => '10559',
-            'dest_postal' => '10559',
-            'package_value' => '5',
-            'package_value_with_discount' => '5',
-            'package_weight' => '8.2657',
-            'package_qty' => '1',
-            'package_physical_value' => '5',
-            'free_method_weight' => '5',
-            'store_id' => '1',
-            'website_id' => '1',
-            'free_shipping' => '0',
-            'limit_carrier' => null,
-            'base_subtotal_incl_tax' => '5',
-            'orig_country_id' => 'US',
-            'orig_region_id' => '12',
-            'orig_city' => 'Fremont',
-            'orig_postcode' => '94538',
-            'dhl_id' => 'MAGEN_8501',
-            'dhl_password' => 'QR2GO1U74X',
-            'dhl_account' => '799909537',
-            'dhl_shipping_intl_key' => '54233F2B2C4E5C4B4C5E5A59565530554B405641475D5659',
-            'girth' => null,
-            'height' => null,
-            'length' => null,
-            'width' => null,
-            'weight' => 1,
-            'dhl_shipment_type' => 'P',
-            'dhl_duitable' => 0,
-            'dhl_duty_payment_type' => 'R',
-            'dhl_content_desc' => 'Big Box',
-            'limit_method' => 'IE',
-            'ship_date' => '2014-01-09',
-            'action' => 'RateEstimate',
-            'all_items' => [],
-        ];
+        $objectManager = Bootstrap::getObjectManager();
+        $this->dhlCarrier = $objectManager->get(Carrier::class);
+        $this->httpClient = $objectManager->get(AsyncClientInterface::class);
+        $this->config = $objectManager->get(ReinitableConfigInterface::class);
+        $this->restoreCountry = $this->config->getValue('shipping/origin/country_id', 'store', 'default_store');
     }
 
     /**
-     * Set next response content from file
-     *
-     * @param string $file
+     * @inheritDoc
      */
-    private function setNextResponse(string $file): void
+    protected function tearDown(): void
     {
-        //phpcs:disable Magento2.Functions.DiscouragedFunction
-        $response = new Response(
-            200,
-            [],
-            file_get_contents($file)
+        $this->config->setValue(
+            'shipping/origin/country_id',
+            $this->restoreCountry,
+            'store',
+            'default_store'
         );
-        //phpcs:enable Magento2.Functions.DiscouragedFunction
-        $this->httpClient->nextResponses(
-            array_fill(0, Carrier::UNAVAILABLE_DATE_LOOK_FORWARD + 1, $response)
-        );
-    }
-
-    /**
-     * Create Rate Request
-     *
-     * @param array $addRequestData
-     * @return RateRequest
-     */
-    private function createRequest(array $addRequestData = []): RateRequest
-    {
-        $requestData = $this->getRequestData();
-        if (!empty($addRequestData)) {
-            $requestData = array_merge($requestData, $addRequestData);
-        }
-
-        return Bootstrap::getObjectManager()->create(RateRequest::class, ['data' => $requestData]);
     }
 }

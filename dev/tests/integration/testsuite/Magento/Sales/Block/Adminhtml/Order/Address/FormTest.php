@@ -44,31 +44,6 @@ class FormTest extends TestCase
     private $countryCollectionFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Form::class);
-        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->objectManager->removeSharedInstance(Config::class);
-        $this->countryCollectionFactory = $this->objectManager->get(CollectionFactory::class);
-    }
-
-    /**
-     * @return void
-     */
-    protected function tearDown(): void
-    {
-        $this->registry->unregister('order_address');
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Sales/_files/order.php
      *
      * @return void
@@ -79,6 +54,32 @@ class FormTest extends TestCase
         $this->registerOrderAddress($address);
         $formValues = $this->block->getFormValues();
         $this->assertEquals($address->getData(), $formValues);
+    }
+
+    /**
+     * Return order billing address.
+     *
+     * @param string $orderIncrementId
+     * @return OrderAddressInterface
+     */
+    private function getOrderAddress(string $orderIncrementId): OrderAddressInterface
+    {
+        /** @var OrderInterface $order */
+        $order = $this->orderFactory->create()->loadByIncrementId($orderIncrementId);
+
+        return $order->getBillingAddress();
+    }
+
+    /**
+     * Prepares address edit from block.
+     *
+     * @param OrderAddressInterface $address
+     * @return void
+     */
+    private function registerOrderAddress(OrderAddressInterface $address): void
+    {
+        $this->registry->unregister('order_address');
+        $this->registry->register('order_address', $address);
     }
 
     /**
@@ -97,6 +98,22 @@ class FormTest extends TestCase
         $this->registerOrderAddress($address);
         $this->assertEquals('US', $address->getCountryId());
         $this->assertCountryField('US');
+    }
+
+    /**
+     * Asserts country field data.
+     *
+     * @param string $countryCode
+     * @return void
+     */
+    private function assertCountryField(string $countryCode): void
+    {
+        $countryIdField = $this->block->getForm()->getElement('country_id');
+        $this->assertEquals($countryCode, $countryIdField->getValue());
+        $options = $countryIdField->getValues();
+        $this->assertCount(1, $options);
+        $firstOption = reset($options);
+        $this->assertEquals($countryCode, $firstOption['value']);
     }
 
     /**
@@ -143,44 +160,27 @@ class FormTest extends TestCase
     }
 
     /**
-     * Prepares address edit from block.
-     *
-     * @param OrderAddressInterface $address
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->block = $this->objectManager->get(LayoutInterface::class)->createBlock(Form::class);
+        $this->orderFactory = $this->objectManager->get(OrderInterfaceFactory::class);
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->objectManager->removeSharedInstance(Config::class);
+        $this->countryCollectionFactory = $this->objectManager->get(CollectionFactory::class);
+    }
+
+    /**
      * @return void
      */
-    private function registerOrderAddress(OrderAddressInterface $address): void
+    protected function tearDown(): void
     {
         $this->registry->unregister('order_address');
-        $this->registry->register('order_address', $address);
-    }
 
-    /**
-     * Return order billing address.
-     *
-     * @param string $orderIncrementId
-     * @return OrderAddressInterface
-     */
-    private function getOrderAddress(string $orderIncrementId): OrderAddressInterface
-    {
-        /** @var OrderInterface $order */
-        $order = $this->orderFactory->create()->loadByIncrementId($orderIncrementId);
-
-        return $order->getBillingAddress();
-    }
-
-    /**
-     * Asserts country field data.
-     *
-     * @param string $countryCode
-     * @return void
-     */
-    private function assertCountryField(string $countryCode): void
-    {
-        $countryIdField = $this->block->getForm()->getElement('country_id');
-        $this->assertEquals($countryCode, $countryIdField->getValue());
-        $options = $countryIdField->getValues();
-        $this->assertCount(1, $options);
-        $firstOption = reset($options);
-        $this->assertEquals($countryCode, $firstOption['value']);
+        parent::tearDown();
     }
 }

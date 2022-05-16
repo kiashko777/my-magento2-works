@@ -3,10 +3,15 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Customer\Block\Adminhtml;
 
 use Magento\Customer\Controller\RegistryConstants;
+use Magento\Framework\App\State;
+use Magento\Framework\Registry;
+use Magento\Framework\View\LayoutInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test for \Magento\Customer\Block\Adminhtml\Edit
@@ -14,56 +19,26 @@ use Magento\TestFramework\Helper\Bootstrap;
  * @magentoAppArea Adminhtml
  * @magentoDataFixture Magento/Customer/_files/customer.php
  */
-class EditTest extends \PHPUnit\Framework\TestCase
+class EditTest extends TestCase
 {
-    /**
-     * The edit block under test.
-     *
-     * @var Edit
-     */
-    private $block;
-
-    /**
-     * Core Registry.
-     *
-     * @var \Magento\Framework\Registry
-     */
-    private $coreRegistry;
-
     /**
      * The customer Id.
      *
      * @var int
      */
     private static $customerId = 1;
-
     /**
-     * Execute per test initialization.
+     * The edit block under test.
+     *
+     * @var Edit
      */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $objectManager->get(\Magento\Framework\App\State::class)->setAreaCode('Adminhtml');
-
-        $this->coreRegistry = $objectManager->get(\Magento\Framework\Registry::class);
-        $this->coreRegistry->register(RegistryConstants::CURRENT_CUSTOMER_ID, self::$customerId);
-
-        $this->block = $objectManager->get(
-            \Magento\Framework\View\LayoutInterface::class
-        )->createBlock(
-            \Magento\Customer\Block\Adminhtml\Edit::class,
-            '',
-            ['coreRegistry' => $this->coreRegistry]
-        );
-    }
-
+    private $block;
     /**
-     * Execute post class cleanup after all tests have executed.
+     * Core Registry.
+     *
+     * @var Registry
      */
-    protected function tearDown(): void
-    {
-        $this->coreRegistry->unregister(RegistryConstants::CURRENT_CUSTOMER_ID);
-    }
+    private $coreRegistry;
 
     /**
      * Verify that the customer Id is the one that was set in the registry.
@@ -118,5 +93,33 @@ class EditTest extends \PHPUnit\Framework\TestCase
         $this->assertStringContainsString('<div class="entry-edit form-inline">', $html);
         $this->assertStringMatchesFormat('%a name="customer_id" %s value="' . self::$customerId . '" %a', $html);
         $this->assertStringContainsString('id="product_composite_configure_form"', $html);
+    }
+
+    /**
+     * Execute per test initialization.
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->get(State::class)->setAreaCode('Adminhtml');
+
+        $this->coreRegistry = $objectManager->get(Registry::class);
+        $this->coreRegistry->register(RegistryConstants::CURRENT_CUSTOMER_ID, self::$customerId);
+
+        $this->block = $objectManager->get(
+            LayoutInterface::class
+        )->createBlock(
+            Edit::class,
+            '',
+            ['coreRegistry' => $this->coreRegistry]
+        );
+    }
+
+    /**
+     * Execute post class cleanup after all tests have executed.
+     */
+    protected function tearDown(): void
+    {
+        $this->coreRegistry->unregister(RegistryConstants::CURRENT_CUSTOMER_ID);
     }
 }

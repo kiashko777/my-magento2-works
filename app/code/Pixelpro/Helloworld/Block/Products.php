@@ -2,13 +2,17 @@
 
 namespace Pixelpro\Helloworld\Block;
 
-class Products extends \Magento\Framework\View\Element\Template
+use Magento\Backend\Block\Template\Context;
+use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
+use Magento\Framework\View\Element\Template;
+
+class Products extends Template
 {
-    protected \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory $_productCollectionFactory;
+    protected CollectionFactory $_productCollectionFactory;
 
     public function __construct(
-        \Magento\Backend\Block\Template\Context                        $context,
-        \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory $productCollectionFactory,
+        Context                        $context,
+        CollectionFactory $productCollectionFactory,
         array                                                          $data = []
     )
     {

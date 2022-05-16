@@ -7,9 +7,17 @@ declare(strict_types=1);
 
 namespace Magento\Setup\Test\Unit\Model;
 
+use Magento\Framework\DB\Adapter\AdapterInterface;
+use Magento\Framework\DB\Select;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Setup\Model\ObjectManagerProvider;
 use Magento\Setup\Model\UninstallCollector;
+use Magento\Setup\Module\DataSetup;
+use Magento\Setup\Module\DataSetupFactory;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
-class UninstallCollectorTest extends \PHPUnit\Framework\TestCase
+class UninstallCollectorTest extends TestCase
 {
     /**
      * @var UninstallCollector
@@ -17,50 +25,14 @@ class UninstallCollectorTest extends \PHPUnit\Framework\TestCase
     private $collector;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject|\Magento\Framework\DB\Adapter\AdapterInterface
+     * @var MockObject|AdapterInterface
      */
     private $adapterInterface;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject|\Magento\Framework\DB\Select
+     * @var MockObject|Select
      */
     private $result;
-
-    protected function setUp(): void
-    {
-        $objectManagerProvider = $this->createMock(\Magento\Setup\Model\ObjectManagerProvider::class);
-        $objectManager =
-            $this->getMockForAbstractClass(\Magento\Framework\ObjectManagerInterface::class, [], '', false);
-        $objectManagerProvider->expects($this->once())->method('get')->willReturn($objectManager);
-
-        $setup = $this->createMock(\Magento\Setup\Module\DataSetup::class);
-        $this->adapterInterface = $this->getMockForAbstractClass(
-            \Magento\Framework\DB\Adapter\AdapterInterface::class,
-            [],
-            '',
-            false
-        );
-        $select = $this->createPartialMock(\Magento\Framework\DB\Select::class, ['from']);
-        $this->adapterInterface->expects($this->once())->method('select')->willReturn($select);
-        $setup->expects($this->exactly(2))->method('getConnection')->willReturn($this->adapterInterface);
-        $this->result = $this->createMock(\Magento\Framework\DB\Select::class);
-        $select->expects($this->once())->method('from')->willReturn($this->result);
-
-        $uninstallA = 'Uninstall Class A';
-        $uninstallB = 'Uninstall Class B';
-        $objectManager->expects($this->any())
-            ->method('create')
-            ->willReturnMap(
-                [
-                    ['Magento\A\Setup\Uninstall', [], $uninstallA],
-                    ['Magento\B\Setup\Uninstall', [], $uninstallB],
-                ]
-            );
-        $setupFactory = $this->createMock(\Magento\Setup\Module\DataSetupFactory::class);
-        $setupFactory->expects($this->once())->method('create')->willReturn($setup);
-
-        $this->collector = new UninstallCollector($objectManagerProvider, $setupFactory);
-    }
 
     public function testUninstallCollector()
     {
@@ -86,9 +58,47 @@ class UninstallCollectorTest extends \PHPUnit\Framework\TestCase
 
         $this->assertEquals(['Magento_A' => 'Uninstall Class A'], $this->collector->collectUninstall(['Magento_A']));
     }
+
+    protected function setUp(): void
+    {
+        $objectManagerProvider = $this->createMock(ObjectManagerProvider::class);
+        $objectManager =
+            $this->getMockForAbstractClass(ObjectManagerInterface::class, [], '', false);
+        $objectManagerProvider->expects($this->once())->method('get')->willReturn($objectManager);
+
+        $setup = $this->createMock(DataSetup::class);
+        $this->adapterInterface = $this->getMockForAbstractClass(
+            AdapterInterface::class,
+            [],
+            '',
+            false
+        );
+        $select = $this->createPartialMock(Select::class, ['from']);
+        $this->adapterInterface->expects($this->once())->method('select')->willReturn($select);
+        $setup->expects($this->exactly(2))->method('getConnection')->willReturn($this->adapterInterface);
+        $this->result = $this->createMock(Select::class);
+        $select->expects($this->once())->method('from')->willReturn($this->result);
+
+        $uninstallA = 'Uninstall Class A';
+        $uninstallB = 'Uninstall Class B';
+        $objectManager->expects($this->any())
+            ->method('create')
+            ->willReturnMap(
+                [
+                    ['Magento\A\Setup\Uninstall', [], $uninstallA],
+                    ['Magento\B\Setup\Uninstall', [], $uninstallB],
+                ]
+            );
+        $setupFactory = $this->createMock(DataSetupFactory::class);
+        $setupFactory->expects($this->once())->method('create')->willReturn($setup);
+
+        $this->collector = new UninstallCollector($objectManagerProvider, $setupFactory);
+    }
 }
 
 namespace Magento\Setup\Model;
+
+use Magento\Framework\Setup\UninstallInterface;
 
 /**
  * This function overrides the native function for the purpose of testing
@@ -99,10 +109,10 @@ namespace Magento\Setup\Model;
  */
 function is_subclass_of($obj, $className)
 {
-    if ($obj == 'Uninstall Class A' && $className == \Magento\Framework\Setup\UninstallInterface::class) {
+    if ($obj == 'Uninstall Class A' && $className == UninstallInterface::class) {
         return true;
     }
-    if ($obj == 'Uninstall Class B' && $className == \Magento\Framework\Setup\UninstallInterface::class) {
+    if ($obj == 'Uninstall Class B' && $className == UninstallInterface::class) {
         return true;
     }
     return false;

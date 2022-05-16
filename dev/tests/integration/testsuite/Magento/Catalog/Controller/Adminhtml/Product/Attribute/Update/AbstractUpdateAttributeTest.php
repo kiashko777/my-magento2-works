@@ -84,9 +84,10 @@ abstract class AbstractUpdateAttributeTest extends AbstractBackendController
      */
     protected function processUpdateFrontendLabelOnStores(
         string $attributeCode,
-        array $postData,
-        array $expectedData
-    ): void {
+        array  $postData,
+        array  $expectedData
+    ): void
+    {
         $this->setAttributeStorelabels($attributeCode);
         if (is_array($postData['frontend_label'])) {
             $postData['frontend_label'] = $this->prepareStoresData($postData['frontend_label']);
@@ -99,22 +100,21 @@ abstract class AbstractUpdateAttributeTest extends AbstractBackendController
     }
 
     /**
-     * Updates attribute options on stores for a given attribute type.
+     * Set default values of attribute store labels and save.
      *
      * @param string $attributeCode
-     * @param array $postData
      * @return void
      */
-    protected function processUpdateOptionsOnStores(string $attributeCode, array $postData): void
+    private function setAttributeStoreLabels(string $attributeCode): void
     {
-        $optionsData = $this->prepareStoreOptionsArray($attributeCode, $postData['options_array']);
-        $optionsPostData = $this->prepareStoreOptionsPostData($optionsData);
-        $postData['serialized_options'] = $this->serializeOptions($optionsPostData);
-        $expectedData = $this->prepareStoreOptionsExpectedData($optionsData);
-
-        $this->_objectManager->removeSharedInstance(AttributeResource::class);
-        $this->updateAttributeUsingData($attributeCode, $postData);
-        $this->assertUpdateAttributeProcess($attributeCode, $postData, $expectedData);
+        $stores = $this->storeManager->getStores();
+        $storeLabels = [];
+        foreach ($stores as $storeId => $store) {
+            $storeLabels[$storeId] = $store->getName();
+        }
+        $attribute = $this->productAttributeRepository->get($attributeCode);
+        $attribute->setStoreLabels($storeLabels);
+        $this->productAttributeRepository->save($attribute);
     }
 
     /**
@@ -148,127 +148,20 @@ abstract class AbstractUpdateAttributeTest extends AbstractBackendController
     }
 
     /**
-     * Replace the store code with an identifier in the array of option values
+     * Create or update attribute using catalog/product_attribute/save action.
      *
-     * @param array $optionsArray
-     * @return array
+     * @param array $attributeData
+     * @param int|null $attributeId
+     * @return void
      */
-    protected function replaceStoreCodeWithId(array $optionsArray): array
+    private function dispatchAttributeSave(array $attributeData, ?int $attributeId = null): void
     {
-        foreach ($optionsArray as $key => $option) {
-            $optionsArray[$key]['value'] = $this->prepareStoresData($option['value']);
+        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
+        $this->getRequest()->setPostValue($attributeData);
+        if ($attributeId) {
+            $this->getRequest()->setParam('attribute_id', $attributeId);
         }
-
-        return $optionsArray;
-    }
-
-    /**
-     * Prepare an array of attribute option values that will be saved.
-     *
-     * @param string $attributeCode
-     * @param array $optionsArray
-     * @return array
-     */
-    protected function prepareStoreOptionsArray(string $attributeCode, array $optionsArray): array
-    {
-        $attribute = $this->productAttributeRepository->get($attributeCode);
-        $replacedOptionsArray = $this->replaceStoreCodeWithId($optionsArray);
-        $actualOptionsData = $this->getActualOptionsData($attribute->getId());
-        $labeledOptionsData = [];
-        $optionLabelIds = [];
-        $i = 1;
-        foreach ($actualOptionsData as $optionId => $optionData) {
-            $optionLabelIds['option_' . $i] = $optionId;
-            $labeledOptionsData['option_' . $i] = $optionData;
-            $i++;
-        }
-
-        $combineOptionsData = array_replace_recursive($labeledOptionsData, $replacedOptionsArray);
-        $optionsData = [];
-        foreach ($optionLabelIds as $optionLabel => $optionId) {
-            $optionsData[$optionId] = $combineOptionsData[$optionLabel];
-        }
-
-        return $optionsData;
-    }
-
-    /**
-     * Get actual attribute options data.
-     *
-     * @param string $attributeId
-     * @return array
-     */
-    protected function getActualOptionsData(string $attributeId): array
-    {
-        $attributeOptions = $this->getAttributeOptions($attributeId);
-        $actualOptionsData = [];
-        foreach ($attributeOptions as $optionId => $option) {
-            $actualOptionsData[$optionId] = [
-                'order' => $option->getSortOrder(),
-                'value' => $this->getAttributeOptionValues($optionId),
-            ];
-        }
-
-        return $actualOptionsData;
-    }
-
-    /**
-     * Prepare an array of attribute option values for sending via post parameters.
-     *
-     * @param array $optionsData
-     * @return array
-     */
-    protected function prepareStoreOptionsPostData(array $optionsData): array
-    {
-        $optionsPostData = [];
-        foreach ($optionsData as $optionId => $option) {
-            $optionsPostData[$optionId]['option'] = [
-                'order' => [
-                    $optionId => $option['order'],
-                ],
-                'value' => [
-                    $optionId => $option['value'],
-                ],
-                'delete' => [
-                    $optionId => $option['delete'] ?? '',
-                ],
-            ];
-            if (isset($option['default'])) {
-                $optionsPostData[$optionId]['default'][] = $optionId;
-            }
-        }
-
-        return $optionsPostData;
-    }
-
-    /**
-     * Prepare an array of attribute option values for verification after saving the attribute.
-     *
-     * @param array $optionsData
-     * @return array
-     */
-    protected function prepareStoreOptionsExpectedData(array $optionsData): array
-    {
-        $optionsArray = [];
-        $defaultValue = '';
-
-        foreach ($optionsData as $optionId => $option) {
-            if (!empty($option['delete'])) {
-                continue;
-            }
-            $optionsArray[$optionId] = [
-                'order' => $option['order'],
-                'value' => $option['value'],
-            ];
-            if (isset($option['default'])) {
-                $defaultValue = $optionId;
-            }
-        }
-
-        return [
-            'options_array' => $optionsArray,
-            'default_value' => $defaultValue,
-        ];
+        $this->dispatch('backend/catalog/product_attribute/save');
     }
 
     /**
@@ -298,92 +191,6 @@ abstract class AbstractUpdateAttributeTest extends AbstractBackendController
     }
 
     /**
-     * Check that attribute property values match expected values.
-     *
-     * @param ProductAttributeInterface $attribute
-     * @param array $expectedData
-     * @return void
-     */
-    protected function assertUpdateAttributeData(
-        ProductAttributeInterface $attribute,
-        array $expectedData
-    ): void {
-        foreach ($expectedData as $key => $expectedValue) {
-            $this->assertEquals(
-                $expectedValue,
-                $attribute->getDataUsingMethod($key),
-                "Invalid expected value for $key field."
-            );
-        }
-    }
-
-    /**
-     * Checks that appropriate error message appears.
-     *
-     * @param string $errorMessage
-     * @return void
-     */
-    protected function assertErrorSessionMessages(string $errorMessage): void
-    {
-        $this->assertSessionMessages(
-            $this->equalTo([$this->escaper->escapeHtml($errorMessage)]),
-            MessageInterface::TYPE_ERROR
-        );
-    }
-
-    /**
-     * Create or update attribute using catalog/product_attribute/save action.
-     *
-     * @param array $attributeData
-     * @param int|null $attributeId
-     * @return void
-     */
-    private function dispatchAttributeSave(array $attributeData, ?int $attributeId = null): void
-    {
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
-        $this->getRequest()->setPostValue($attributeData);
-        if ($attributeId) {
-            $this->getRequest()->setParam('attribute_id', $attributeId);
-        }
-        $this->dispatch('backend/catalog/product_attribute/save');
-    }
-
-    /**
-     * Create serialized options string.
-     *
-     * @param array $optionsArr
-     * @return string
-     */
-    private function serializeOptions(array $optionsArr): string
-    {
-        $resultArr = [];
-
-        foreach ($optionsArr as $option) {
-            $resultArr[] = http_build_query($option);
-        }
-
-        return $this->jsonSerializer->serialize($resultArr);
-    }
-
-    /**
-     * Set default values of attribute store labels and save.
-     *
-     * @param string $attributeCode
-     * @return void
-     */
-    private function setAttributeStoreLabels(string $attributeCode): void
-    {
-        $stores = $this->storeManager->getStores();
-        $storeLabels = [];
-        foreach ($stores as $storeId => $store) {
-            $storeLabels[$storeId] = $store->getName();
-        }
-        $attribute = $this->productAttributeRepository->get($attributeCode);
-        $attribute->setStoreLabels($storeLabels);
-        $this->productAttributeRepository->save($attribute);
-    }
-
-    /**
      * Check that the attribute update was successful after adding it to the
      * new attribute set and new attribute group.
      *
@@ -393,8 +200,9 @@ abstract class AbstractUpdateAttributeTest extends AbstractBackendController
      */
     private function assertUpdateAttributeSet(
         ProductAttributeInterface $attribute,
-        array $postData
-    ): void {
+        array                     $postData
+    ): void
+    {
         $attributeSet = $this->getAttributeSetByName->execute($postData['new_attribute_set_name']);
         $this->assertNotNull(
             $attributeSet,
@@ -428,11 +236,32 @@ abstract class AbstractUpdateAttributeTest extends AbstractBackendController
      */
     private function assertUpdateAttributeOptions(
         ProductAttributeInterface $attribute,
-        array $expectedData
-    ): void {
+        array                     $expectedData
+    ): void
+    {
         $actualOptionsData = $this->getActualOptionsData($attribute->getId());
 
         $this->assertEquals($expectedData, $actualOptionsData, 'Expected attribute options does not match.');
+    }
+
+    /**
+     * Get actual attribute options data.
+     *
+     * @param string $attributeId
+     * @return array
+     */
+    protected function getActualOptionsData(string $attributeId): array
+    {
+        $attributeOptions = $this->getAttributeOptions($attributeId);
+        $actualOptionsData = [];
+        foreach ($attributeOptions as $optionId => $option) {
+            $actualOptionsData[$optionId] = [
+                'order' => $option->getSortOrder(),
+                'value' => $this->getAttributeOptionValues($optionId),
+            ];
+        }
+
+        return $actualOptionsData;
     }
 
     /**
@@ -463,10 +292,185 @@ abstract class AbstractUpdateAttributeTest extends AbstractBackendController
         $select = $connection->select()
             ->from(
                 ['main_table' => $this->attributeOptionResource->getTable('eav_attribute_option_value')],
-                ['store_id','value']
+                ['store_id', 'value']
             )
             ->where('main_table.option_id = ?', $optionId);
 
         return $connection->fetchPairs($select);
+    }
+
+    /**
+     * Check that attribute property values match expected values.
+     *
+     * @param ProductAttributeInterface $attribute
+     * @param array $expectedData
+     * @return void
+     */
+    protected function assertUpdateAttributeData(
+        ProductAttributeInterface $attribute,
+        array                     $expectedData
+    ): void
+    {
+        foreach ($expectedData as $key => $expectedValue) {
+            $this->assertEquals(
+                $expectedValue,
+                $attribute->getDataUsingMethod($key),
+                "Invalid expected value for $key field."
+            );
+        }
+    }
+
+    /**
+     * Updates attribute options on stores for a given attribute type.
+     *
+     * @param string $attributeCode
+     * @param array $postData
+     * @return void
+     */
+    protected function processUpdateOptionsOnStores(string $attributeCode, array $postData): void
+    {
+        $optionsData = $this->prepareStoreOptionsArray($attributeCode, $postData['options_array']);
+        $optionsPostData = $this->prepareStoreOptionsPostData($optionsData);
+        $postData['serialized_options'] = $this->serializeOptions($optionsPostData);
+        $expectedData = $this->prepareStoreOptionsExpectedData($optionsData);
+
+        $this->_objectManager->removeSharedInstance(AttributeResource::class);
+        $this->updateAttributeUsingData($attributeCode, $postData);
+        $this->assertUpdateAttributeProcess($attributeCode, $postData, $expectedData);
+    }
+
+    /**
+     * Prepare an array of attribute option values that will be saved.
+     *
+     * @param string $attributeCode
+     * @param array $optionsArray
+     * @return array
+     */
+    protected function prepareStoreOptionsArray(string $attributeCode, array $optionsArray): array
+    {
+        $attribute = $this->productAttributeRepository->get($attributeCode);
+        $replacedOptionsArray = $this->replaceStoreCodeWithId($optionsArray);
+        $actualOptionsData = $this->getActualOptionsData($attribute->getId());
+        $labeledOptionsData = [];
+        $optionLabelIds = [];
+        $i = 1;
+        foreach ($actualOptionsData as $optionId => $optionData) {
+            $optionLabelIds['option_' . $i] = $optionId;
+            $labeledOptionsData['option_' . $i] = $optionData;
+            $i++;
+        }
+
+        $combineOptionsData = array_replace_recursive($labeledOptionsData, $replacedOptionsArray);
+        $optionsData = [];
+        foreach ($optionLabelIds as $optionLabel => $optionId) {
+            $optionsData[$optionId] = $combineOptionsData[$optionLabel];
+        }
+
+        return $optionsData;
+    }
+
+    /**
+     * Replace the store code with an identifier in the array of option values
+     *
+     * @param array $optionsArray
+     * @return array
+     */
+    protected function replaceStoreCodeWithId(array $optionsArray): array
+    {
+        foreach ($optionsArray as $key => $option) {
+            $optionsArray[$key]['value'] = $this->prepareStoresData($option['value']);
+        }
+
+        return $optionsArray;
+    }
+
+    /**
+     * Prepare an array of attribute option values for sending via post parameters.
+     *
+     * @param array $optionsData
+     * @return array
+     */
+    protected function prepareStoreOptionsPostData(array $optionsData): array
+    {
+        $optionsPostData = [];
+        foreach ($optionsData as $optionId => $option) {
+            $optionsPostData[$optionId]['option'] = [
+                'order' => [
+                    $optionId => $option['order'],
+                ],
+                'value' => [
+                    $optionId => $option['value'],
+                ],
+                'delete' => [
+                    $optionId => $option['delete'] ?? '',
+                ],
+            ];
+            if (isset($option['default'])) {
+                $optionsPostData[$optionId]['default'][] = $optionId;
+            }
+        }
+
+        return $optionsPostData;
+    }
+
+    /**
+     * Create serialized options string.
+     *
+     * @param array $optionsArr
+     * @return string
+     */
+    private function serializeOptions(array $optionsArr): string
+    {
+        $resultArr = [];
+
+        foreach ($optionsArr as $option) {
+            $resultArr[] = http_build_query($option);
+        }
+
+        return $this->jsonSerializer->serialize($resultArr);
+    }
+
+    /**
+     * Prepare an array of attribute option values for verification after saving the attribute.
+     *
+     * @param array $optionsData
+     * @return array
+     */
+    protected function prepareStoreOptionsExpectedData(array $optionsData): array
+    {
+        $optionsArray = [];
+        $defaultValue = '';
+
+        foreach ($optionsData as $optionId => $option) {
+            if (!empty($option['delete'])) {
+                continue;
+            }
+            $optionsArray[$optionId] = [
+                'order' => $option['order'],
+                'value' => $option['value'],
+            ];
+            if (isset($option['default'])) {
+                $defaultValue = $optionId;
+            }
+        }
+
+        return [
+            'options_array' => $optionsArray,
+            'default_value' => $defaultValue,
+        ];
+    }
+
+    /**
+     * Checks that appropriate error message appears.
+     *
+     * @param string $errorMessage
+     * @return void
+     */
+    protected function assertErrorSessionMessages(string $errorMessage): void
+    {
+        $this->assertSessionMessages(
+            $this->equalTo([$this->escaper->escapeHtml($errorMessage)]),
+            MessageInterface::TYPE_ERROR
+        );
     }
 }

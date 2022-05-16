@@ -4,10 +4,14 @@
  * See COPYING.txt for license details.
  */
 
+use Magento\CatalogRule\Model\Rule;
+use Magento\CatalogRule\Model\Rule\Condition\Combine;
+use Magento\CatalogRule\Model\Rule\Condition\Product;
+use Magento\CatalogRule\Model\RuleFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var \Magento\CatalogRule\Model\Rule $rule */
-$rule = Bootstrap::getObjectManager()->get(\Magento\CatalogRule\Model\RuleFactory::class)->create();
+/** @var Rule $rule */
+$rule = Bootstrap::getObjectManager()->get(RuleFactory::class)->create();
 $rule->loadPost([
     'name' => 'test_rule',
     'is_active' => '1',
@@ -23,13 +27,13 @@ $rule->loadPost([
     'sub_discount_amount' => 0,
     'conditions' => [
         '1' => [
-            'type' => \Magento\CatalogRule\Model\Rule\Condition\Combine::class,
+            'type' => Combine::class,
             'aggregator' => 'all',
             'value' => '1',
             'new_child' => '',
         ],
         '1--1' => [
-            'type' => \Magento\CatalogRule\Model\Rule\Condition\Product::class,
+            'type' => Product::class,
             'attribute' => 'test_attribute',
             'operator' => '==',
             'value' => 'test_attribute_value',

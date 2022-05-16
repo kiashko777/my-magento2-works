@@ -27,13 +27,6 @@ class DryRunTest extends SetupTestCase
      */
     private $cliCommad;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->moduleManager = $objectManager->get(TestModuleManager::class);
-        $this->cliCommad = $objectManager->get(CliCommand::class);
-    }
-
     /**
      * @moduleName Magento_TestSetupDeclarationModule1
      * @dataProviderFromFile Magento/TestSetupDeclarationModule1/fixture/dry_run_log.php
@@ -68,5 +61,12 @@ class DryRunTest extends SetupTestCase
         self::assertFileExists($logFileName);
         $data = file_get_contents($logFileName);
         self::assertEquals($this->getData()[0], $data);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->moduleManager = $objectManager->get(TestModuleManager::class);
+        $this->cliCommad = $objectManager->get(CliCommand::class);
     }
 }

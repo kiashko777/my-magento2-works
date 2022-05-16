@@ -16,22 +16,6 @@ class AttributeMultiSelectTest extends AbstractAttributeTest
 {
     /**
      * @inheritdoc
-     */
-    protected function getAttributeCode(): string
-    {
-        return 'multiselect_attribute';
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function getDefaultAttributeValue(): string
-    {
-        return $this->getAttribute()->getSource()->getOptionId('Option 1');
-    }
-
-    /**
-     * @inheritdoc
      * @dataProvider productProvider
      */
     public function testDefaultValue(string $productSku): void
@@ -75,5 +59,21 @@ class AttributeMultiSelectTest extends AbstractAttributeTest
                 'second_product_sku' => 'simple-out-of-stock',
             ],
         ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function getAttributeCode(): string
+    {
+        return 'multiselect_attribute';
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function getDefaultAttributeValue(): string
+    {
+        return $this->getAttribute()->getSource()->getOptionId('Option 1');
     }
 }

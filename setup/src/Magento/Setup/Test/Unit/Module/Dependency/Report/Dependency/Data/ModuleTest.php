@@ -30,20 +30,6 @@ class ModuleTest extends TestCase
      */
     protected $module;
 
-    protected function setUp(): void
-    {
-        $this->dependencyFirst =
-            $this->createMock(Dependency::class);
-        $this->dependencySecond =
-            $this->createMock(Dependency::class);
-
-        $objectManagerHelper = new ObjectManager($this);
-        $this->module = $objectManagerHelper->getObject(
-            Module::class,
-            ['name' => 'name', 'dependencies' => [$this->dependencyFirst, $this->dependencySecond]]
-        );
-    }
-
     public function testGetName()
     {
         $this->assertEquals('name', $this->module->getName());
@@ -79,5 +65,19 @@ class ModuleTest extends TestCase
         $this->dependencySecond->expects($this->once())->method('isSoft')->willReturn(false);
 
         $this->assertEquals(1, $this->module->getSoftDependenciesCount());
+    }
+
+    protected function setUp(): void
+    {
+        $this->dependencyFirst =
+            $this->createMock(Dependency::class);
+        $this->dependencySecond =
+            $this->createMock(Dependency::class);
+
+        $objectManagerHelper = new ObjectManager($this);
+        $this->module = $objectManagerHelper->getObject(
+            Module::class,
+            ['name' => 'name', 'dependencies' => [$this->dependencyFirst, $this->dependencySecond]]
+        );
     }
 }

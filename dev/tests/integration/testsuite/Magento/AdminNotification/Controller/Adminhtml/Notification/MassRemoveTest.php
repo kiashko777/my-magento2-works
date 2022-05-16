@@ -3,11 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\AdminNotification\Controller\Adminhtml\Notification;
 
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\TestFramework\TestCase\AbstractBackendController;
 
-class MassRemoveTest extends \Magento\TestFramework\TestCase\AbstractBackendController
+class MassRemoveTest extends AbstractBackendController
 {
     protected function setUp(): void
     {

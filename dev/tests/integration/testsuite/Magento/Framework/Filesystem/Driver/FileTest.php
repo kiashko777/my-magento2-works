@@ -33,38 +33,6 @@ class FileTest extends TestCase
     private $generatedPath;
 
     /**
-     * Returns relative path for the test.
-     *
-     * @param $relativePath
-     * @return string
-     */
-    protected function getTestPath($relativePath)
-    {
-        return $this->absolutePath . $relativePath;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->driver = new File();
-        $this->absolutePath = dirname(__DIR__) . '/_files/';
-        $this->generatedPath = $this->getTestPath('generated');
-        $this->removeGeneratedDirectory();
-    }
-
-    /**
-     * @inheritdoc
-     *
-     * @return void
-     */
-    protected function tearDown(): void
-    {
-        $this->removeGeneratedDirectory();
-    }
-
-    /**
      * Tests read directory with symlynked folders.
      *
      * @return void
@@ -117,7 +85,7 @@ class FileTest extends TestCase
      */
     public function testReadDirectoryRecursivelyFailure(): void
     {
-        $this->expectException(\Magento\Framework\Exception\FileSystemException::class);
+        $this->expectException(FileSystemException::class);
 
         $this->driver->readDirectoryRecursively($this->getTestPath('not-existing-directory'));
     }
@@ -125,8 +93,8 @@ class FileTest extends TestCase
     /**
      * Tests of directory creating.
      *
-     * @throws FileSystemException
      * @return void
+     * @throws FileSystemException
      */
     public function testCreateDirectory(): void
     {
@@ -143,8 +111,8 @@ class FileTest extends TestCase
     /**
      * Tests creation and removing of symlinks.
      *
-     * @throws FileSystemException
      * @return void
+     * @throws FileSystemException
      */
     public function testSymlinks(): void
     {
@@ -175,15 +143,47 @@ class FileTest extends TestCase
     }
 
     /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->driver = new File();
+        $this->absolutePath = dirname(__DIR__) . '/_files/';
+        $this->generatedPath = $this->getTestPath('generated');
+        $this->removeGeneratedDirectory();
+    }
+
+    /**
+     * Returns relative path for the test.
+     *
+     * @param $relativePath
+     * @return string
+     */
+    protected function getTestPath($relativePath)
+    {
+        return $this->absolutePath . $relativePath;
+    }
+
+    /**
      * Remove generated directories.
      *
-     * @throws FileSystemException
      * @return void
+     * @throws FileSystemException
      */
     private function removeGeneratedDirectory(): void
     {
         if (is_dir($this->generatedPath)) {
             $this->driver->deleteDirectory($this->generatedPath);
         }
+    }
+
+    /**
+     * @inheritdoc
+     *
+     * @return void
+     */
+    protected function tearDown(): void
+    {
+        $this->removeGeneratedDirectory();
     }
 }

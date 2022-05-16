@@ -7,37 +7,30 @@
 /**
  * Test class for \Magento\TestFramework\EventManager.
  */
+
 namespace Magento\Test;
 
-class EventManagerTest extends \PHPUnit\Framework\TestCase
+use Magento\TestFramework\EventManager;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use stdClass;
+
+class EventManagerTest extends TestCase
 {
     /**
-     * @var \Magento\TestFramework\EventManager
+     * @var EventManager
      */
     protected $_eventManager;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     protected $_subscriberOne;
 
     /**
-     * @var \PHPUnit\Framework\MockObject\MockObject
+     * @var MockObject
      */
     protected $_subscriberTwo;
-
-    protected function setUp(): void
-    {
-        $this->_subscriberOne = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['testEvent'])
-            ->getMock();
-        $this->_subscriberTwo = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['testEvent'])
-            ->getMock();
-        $this->_eventManager = new \Magento\TestFramework\EventManager(
-            [$this->_subscriberOne, $this->_subscriberTwo]
-        );
-    }
 
     /**
      * @param bool $reverseOrder
@@ -74,5 +67,18 @@ class EventManagerTest extends \PHPUnit\Framework\TestCase
         $this->_subscriberOne->expects($this->once())->method('testEvent')->with($paramOne, $paramTwo);
         $this->_subscriberTwo->expects($this->once())->method('testEvent')->with($paramOne, $paramTwo);
         $this->_eventManager->fireEvent('testEvent', [$paramOne, $paramTwo]);
+    }
+
+    protected function setUp(): void
+    {
+        $this->_subscriberOne = $this->getMockBuilder(stdClass::class)
+            ->addMethods(['testEvent'])
+            ->getMock();
+        $this->_subscriberTwo = $this->getMockBuilder(stdClass::class)
+            ->addMethods(['testEvent'])
+            ->getMock();
+        $this->_eventManager = new EventManager(
+            [$this->_subscriberOne, $this->_subscriberTwo]
+        );
     }
 }

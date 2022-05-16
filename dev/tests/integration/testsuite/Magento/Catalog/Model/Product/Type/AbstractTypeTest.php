@@ -30,7 +30,9 @@ use Magento\TestFramework\ObjectManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use ReflectionMethod;
+use ReflectionObject;
 use StdClass;
+use Zend_File_Transfer_Adapter_Http;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
@@ -47,40 +49,6 @@ class AbstractTypeTest extends TestCase
 
     /** @var ProductRepositoryInterface */
     private $productRepository;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $catalogProductOption = $this->objectManager->get(Option::class);
-        $catalogProductType = $this->createMock(Type::class);
-        $eventManager = $this->createPartialMock(ManagerInterface::class, ['dispatch']);
-        $fileStorageDb = $this->createMock(Database::class);
-        $filesystem = $this->createMock(Filesystem::class);
-        $registry = $this->createMock(Registry::class);
-        $logger = $this->createMock(LoggerInterface::class);
-        $serializer = $this->objectManager->get(
-            Json::class
-        );
-        $this->_model = $this->getMockForAbstractClass(
-            AbstractType::class,
-            [
-                $catalogProductOption,
-                $this->objectManager->get(Config::class),
-                $catalogProductType,
-                $eventManager,
-                $fileStorageDb,
-                $filesystem,
-                $registry,
-                $logger,
-                $this->productRepository,
-                $serializer
-            ]
-        );
-    }
 
     public function testGetRelationInfo()
     {
@@ -572,40 +540,6 @@ class AbstractTypeTest extends TestCase
     }
 
     /**
-     * Test if exception occurs in case if file is not uploaded
-     *
-     * @magentoAppIsolation enabled
-     * @magentoDataFixture Magento/Catalog/_files/product_simple_with_two_custom_file_options.php
-     * @return void
-     */
-    public function testPrepareForCartAdvancedFileOptionFailedToUpload(): void
-    {
-        /** @var $product Product */
-        $product = $this->productRepository->get('simple_with_custom_file_option');
-        $optionIds = array_reduce($product->getOptions(), function ($result, $item) {
-            $result[] = $item->getOptionId();
-            return $result;
-        }, []);
-        $this->prepareEnv($optionIds);
-
-        $uploaderFactory = $this->createPartialMock(UploaderFactory::class, ['create']);
-        $uploader = $this->createPartialMock(Uploader::class, ['save']);
-        $uploaderFactory->method('create')->willReturn($uploader);
-        $this->objectManager->addSharedInstance($uploaderFactory, UploaderFactory::class);
-
-        $buyRequest = new DataObject(
-            [
-                'qty' => 5,
-                'options' => ['files_prefix' => 'item_simple_with_custom_file_option_'],
-            ]
-        );
-        $model = $this->objectManager->create(Simple::class);
-        $product->setTypeInstance($model);
-        $this->expectException(LocalizedException::class);
-        $model->prepareForCartAdvanced($buyRequest, $product);
-    }
-
-    /**
      * Prepare file upload environment
      *
      * @param array $optionIds
@@ -662,13 +596,13 @@ class AbstractTypeTest extends TestCase
     /**
      * Create prepared uploader instance for test
      *
-     * @return \Zend_File_Transfer_Adapter_Http
+     * @return Zend_File_Transfer_Adapter_Http
      * @SuppressWarnings(PHPMD.UnusedLocalVariable)
      */
-    private function getPreparedUploader(): \Zend_File_Transfer_Adapter_Http
+    private function getPreparedUploader(): Zend_File_Transfer_Adapter_Http
     {
-        $uploader = new \Zend_File_Transfer_Adapter_Http();
-        $refObject = new \ReflectionObject($uploader);
+        $uploader = new Zend_File_Transfer_Adapter_Http();
+        $refObject = new ReflectionObject($uploader);
         $validators = $refObject->getProperty('_validators');
         $validators->setAccessible(true);
         $validators->setValue($uploader, []);
@@ -681,5 +615,73 @@ class AbstractTypeTest extends TestCase
         $files->setValue($uploader, $filesValues);
 
         return $uploader;
+    }
+
+    /**
+     * Test if exception occurs in case if file is not uploaded
+     *
+     * @magentoAppIsolation enabled
+     * @magentoDataFixture Magento/Catalog/_files/product_simple_with_two_custom_file_options.php
+     * @return void
+     */
+    public function testPrepareForCartAdvancedFileOptionFailedToUpload(): void
+    {
+        /** @var $product Product */
+        $product = $this->productRepository->get('simple_with_custom_file_option');
+        $optionIds = array_reduce($product->getOptions(), function ($result, $item) {
+            $result[] = $item->getOptionId();
+            return $result;
+        }, []);
+        $this->prepareEnv($optionIds);
+
+        $uploaderFactory = $this->createPartialMock(UploaderFactory::class, ['create']);
+        $uploader = $this->createPartialMock(Uploader::class, ['save']);
+        $uploaderFactory->method('create')->willReturn($uploader);
+        $this->objectManager->addSharedInstance($uploaderFactory, UploaderFactory::class);
+
+        $buyRequest = new DataObject(
+            [
+                'qty' => 5,
+                'options' => ['files_prefix' => 'item_simple_with_custom_file_option_'],
+            ]
+        );
+        $model = $this->objectManager->create(Simple::class);
+        $product->setTypeInstance($model);
+        $this->expectException(LocalizedException::class);
+        $model->prepareForCartAdvanced($buyRequest, $product);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $catalogProductOption = $this->objectManager->get(Option::class);
+        $catalogProductType = $this->createMock(Type::class);
+        $eventManager = $this->createPartialMock(ManagerInterface::class, ['dispatch']);
+        $fileStorageDb = $this->createMock(Database::class);
+        $filesystem = $this->createMock(Filesystem::class);
+        $registry = $this->createMock(Registry::class);
+        $logger = $this->createMock(LoggerInterface::class);
+        $serializer = $this->objectManager->get(
+            Json::class
+        );
+        $this->_model = $this->getMockForAbstractClass(
+            AbstractType::class,
+            [
+                $catalogProductOption,
+                $this->objectManager->get(Config::class),
+                $catalogProductType,
+                $eventManager,
+                $fileStorageDb,
+                $filesystem,
+                $registry,
+                $logger,
+                $this->productRepository,
+                $serializer
+            ]
+        );
     }
 }

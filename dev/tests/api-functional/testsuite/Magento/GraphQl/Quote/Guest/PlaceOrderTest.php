@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Quote\Guest;
 
+use Exception;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Registry;
 use Magento\GraphQl\Quote\GetMaskedQuoteIdByReservedOrderId;
@@ -47,22 +48,6 @@ class PlaceOrderTest extends GraphQlAbstract
     private $orderFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->orderCollectionFactory = $objectManager->get(CollectionFactory::class);
-        $this->orderRepository = $objectManager->get(OrderRepositoryInterface::class);
-        $this->orderFactory = $objectManager->get(OrderFactory::class);
-        $this->registry = $objectManager->get(Registry::class);
-        /** @var ScopeConfigInterface $scopeConfig */
-        $scopeConfig = $objectManager->get(ScopeConfigInterface::class);
-        $scopeConfig->clean();
-    }
-
-    /**
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
      * @magentoConfigFixture default_store carriers/flatrate/active 1
      * @magentoConfigFixture default_store carriers/tablerate/active 1
@@ -95,6 +80,23 @@ class PlaceOrderTest extends GraphQlAbstract
         $order = $this->orderFactory->create();
         $order->loadByIncrementId($orderIncrementId);
         $this->assertNotEmpty($order->getEmailSent());
+    }
+
+    /**
+     * @param string $maskedQuoteId
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId): string
+    {
+        return <<<QUERY
+mutation {
+  placeOrder(input: {cart_id: "{$maskedQuoteId}"}) {
+    order {
+      order_number
+    }
+  }
+}
+QUERY;
     }
 
     /**
@@ -137,7 +139,7 @@ class PlaceOrderTest extends GraphQlAbstract
      */
     public function testPlaceOrderIfCartIdIsEmpty()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Required parameter "cart_id" is missing');
 
         $maskedQuoteId = '';
@@ -166,7 +168,7 @@ class PlaceOrderTest extends GraphQlAbstract
      */
     public function testPlaceOrderWithNoEmail()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Guest email for cart is missing.');
 
         $reservedOrderId = 'test_quote';
@@ -367,20 +369,19 @@ class PlaceOrderTest extends GraphQlAbstract
     }
 
     /**
-     * @param string $maskedQuoteId
-     * @return string
+     * @inheritdoc
      */
-    private function getQuery(string $maskedQuoteId): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-mutation {
-  placeOrder(input: {cart_id: "{$maskedQuoteId}"}) {
-    order {
-      order_number
-    }
-  }
-}
-QUERY;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->orderCollectionFactory = $objectManager->get(CollectionFactory::class);
+        $this->orderRepository = $objectManager->get(OrderRepositoryInterface::class);
+        $this->orderFactory = $objectManager->get(OrderFactory::class);
+        $this->registry = $objectManager->get(Registry::class);
+        /** @var ScopeConfigInterface $scopeConfig */
+        $scopeConfig = $objectManager->get(ScopeConfigInterface::class);
+        $scopeConfig->clean();
     }
 
     /**

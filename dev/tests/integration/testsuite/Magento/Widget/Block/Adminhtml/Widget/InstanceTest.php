@@ -36,18 +36,6 @@ class InstanceTest extends TestCase
     private $request;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->request = $this->objectManager->get(RequestInterface::class);
-        $this->pageFactory = $this->objectManager->get(PageFactory::class);
-    }
-
-    /**
      * @dataProvider gridFiltersDataProvider
      *
      * @magentoDataFixture Magento/Widget/_files/widgets.php
@@ -62,6 +50,53 @@ class InstanceTest extends TestCase
         $collection = $this->getGridCollection();
 
         $this->assertWidgets($expectedWidgets, $collection);
+    }
+
+    /**
+     * Get prepared grid collection
+     *
+     * @return AbstractCollection
+     */
+    private function getGridCollection(): AbstractCollection
+    {
+        $layout = $this->preparePageLayout();
+        $containerBlock = $layout->getBlock('Adminhtml.widget.instance.grid.container');
+        $grid = $containerBlock->getChildBlock('grid');
+        $this->assertNotFalse($grid);
+
+        return $grid->getPreparedCollection();
+    }
+
+    /**
+     * Prepare page layout
+     *
+     * @return LayoutInterface
+     */
+    private function preparePageLayout(): LayoutInterface
+    {
+        $page = $this->pageFactory->create();
+        $page->addHandle([
+            'default',
+            'adminhtml_widget_instance_index',
+        ]);
+
+        return $page->getLayout()->generateXml();
+    }
+
+    /**
+     * Assert widget instances
+     *
+     * @param $expectedWidgets
+     * @param AbstractCollection $collection
+     * @return void
+     */
+    private function assertWidgets($expectedWidgets, AbstractCollection $collection): void
+    {
+        $this->assertCount(count($expectedWidgets), $collection);
+        foreach ($expectedWidgets as $widgetTitle) {
+            $item = $collection->getItemByColumnValue('title', $widgetTitle);
+            $this->assertNotNull($item, sprintf('Expected widget %s is not present in grid', $widgetTitle));
+        }
     }
 
     /**
@@ -142,6 +177,25 @@ class InstanceTest extends TestCase
                 ],
             ],
         ];
+    }
+
+    /**
+     * Load theme by theme id
+     *
+     * @param string $code
+     * @return int
+     */
+    private function loadThemeIdByCode(string $code): int
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var ThemeFactory $themeFactory */
+        $themeFactory = $objectManager->get(ThemeFactory::class);
+        /** @var ThemeResource $themeResource */
+        $themeResource = $objectManager->get(ThemeResource::class);
+        $theme = $themeFactory->create();
+        $themeResource->load($theme, $code, 'code');
+
+        return (int)$theme->getId();
     }
 
     /**
@@ -250,68 +304,14 @@ class InstanceTest extends TestCase
     }
 
     /**
-     * Load theme by theme id
-     *
-     * @param string $code
-     * @return int
+     * @inheritdoc
      */
-    private function loadThemeIdByCode(string $code): int
+    protected function setUp(): void
     {
-        $objectManager = Bootstrap::getObjectManager();
-        /** @var ThemeFactory $themeFactory */
-        $themeFactory = $objectManager->get(ThemeFactory::class);
-        /** @var ThemeResource $themeResource */
-        $themeResource = $objectManager->get(ThemeResource::class);
-        $theme = $themeFactory->create();
-        $themeResource->load($theme, $code, 'code');
+        parent::setUp();
 
-        return (int)$theme->getId();
-    }
-
-    /**
-     * Assert widget instances
-     *
-     * @param $expectedWidgets
-     * @param AbstractCollection $collection
-     * @return void
-     */
-    private function assertWidgets($expectedWidgets, AbstractCollection $collection): void
-    {
-        $this->assertCount(count($expectedWidgets), $collection);
-        foreach ($expectedWidgets as $widgetTitle) {
-            $item = $collection->getItemByColumnValue('title', $widgetTitle);
-            $this->assertNotNull($item, sprintf('Expected widget %s is not present in grid', $widgetTitle));
-        }
-    }
-
-    /**
-     * Prepare page layout
-     *
-     * @return LayoutInterface
-     */
-    private function preparePageLayout(): LayoutInterface
-    {
-        $page = $this->pageFactory->create();
-        $page->addHandle([
-            'default',
-            'adminhtml_widget_instance_index',
-        ]);
-
-        return $page->getLayout()->generateXml();
-    }
-
-    /**
-     * Get prepared grid collection
-     *
-     * @return AbstractCollection
-     */
-    private function getGridCollection(): AbstractCollection
-    {
-        $layout = $this->preparePageLayout();
-        $containerBlock = $layout->getBlock('Adminhtml.widget.instance.grid.container');
-        $grid = $containerBlock->getChildBlock('grid');
-        $this->assertNotFalse($grid);
-
-        return $grid->getPreparedCollection();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->request = $this->objectManager->get(RequestInterface::class);
+        $this->pageFactory = $this->objectManager->get(PageFactory::class);
     }
 }

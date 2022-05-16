@@ -18,10 +18,10 @@ use Magento\Setup\Model\AdminAccount;
 use Magento\Setup\Model\ConfigModel;
 use Magento\Setup\Model\Installer;
 use Magento\Setup\Model\InstallerFactory;
+use Magento\Setup\Model\SearchConfigOptionsList;
 use Magento\Setup\Model\StoreConfigurationDataMapper;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Magento\Setup\Model\SearchConfigOptionsList;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Helper\HelperSet;
 use Symfony\Component\Console\Input\InputDefinition;
@@ -76,6 +76,95 @@ class InstallCommandTest extends TestCase
      * @var AdminUserCreateCommand|MockObject
      */
     private $adminUserMock;
+
+    public function testExecute()
+    {
+        $this->input['--' . AdminAccount::KEY_USER] = 'user';
+        $this->input['--' . AdminAccount::KEY_PASSWORD] = '123123q';
+        $this->input['--' . AdminAccount::KEY_EMAIL] = 'test@test.com';
+        $this->input['--' . AdminAccount::KEY_FIRST_NAME] = 'John';
+        $this->input['--' . AdminAccount::KEY_LAST_NAME] = 'Doe';
+
+        $this->adminUserMock
+            ->expects($this->once())
+            ->method('validate')
+            ->willReturn([]);
+        $this->installerFactory->expects($this->once())
+            ->method('create')
+            ->willReturn($this->installer);
+        $this->installer->expects($this->once())->method('install');
+        $this->configImportMock->expects($this->once())
+            ->method('run');
+
+        $commandTester = new CommandTester($this->command);
+        $commandTester->execute($this->input);
+    }
+
+    /**
+     * Test install command with valid sales_order_increment_prefix value
+     *
+     * @dataProvider validateDataProvider
+     * @param $prefixValue
+     */
+    public function testValidate($prefixValue)
+    {
+        $this->adminUserMock
+            ->expects($this->never())
+            ->method('validate');
+        $this->installerFactory->expects($this->once())
+            ->method('create')
+            ->willReturn($this->installer);
+        $this->installer->expects($this->once())->method('install');
+        $this->input['--' . InstallCommand::INPUT_KEY_SALES_ORDER_INCREMENT_PREFIX] = $prefixValue;
+
+        $commandTester = new CommandTester($this->command);
+        $commandTester->execute($this->input);
+    }
+
+    /**
+     * Test install command with invalid sales_order_increment_prefix value
+     *
+     * @dataProvider validateWithExceptionDataProvider
+     * @param $prefixValue
+     */
+    public function testValidateWithException($prefixValue)
+    {
+        $this->expectException('InvalidArgumentException');
+        $this->adminUserMock
+            ->expects($this->never())
+            ->method('validate');
+        $this->installerFactory->expects($this->never())
+            ->method('create')
+            ->willReturn($this->installer);
+        $this->installer->expects($this->never())->method('install');
+        $this->input['--' . InstallCommand::INPUT_KEY_SALES_ORDER_INCREMENT_PREFIX] = $prefixValue;
+
+        $commandTester = new CommandTester($this->command);
+        $commandTester->execute($this->input);
+    }
+
+    /**
+     * @return array
+     */
+    public function validateDataProvider()
+    {
+        return [
+            'without option' => ['', ''],
+            'normal case' => ['abcde', ''],
+            '20 chars' => ['12345678901234567890', ''],
+        ];
+    }
+
+    /**
+     * @return array
+     */
+    public function validateWithExceptionDataProvider()
+    {
+        return [
+            ['123456789012345678901', 'InvalidArgumentException'],
+            ['abcdefghijk12345678fdgsdfgsdfgsdfsgsdfg90abcdefgdfddgsdfg', 'InvalidArgumentException'],
+        ];
+    }
 
     protected function setUp(): void
     {
@@ -156,29 +245,6 @@ class InstallCommandTest extends TestCase
         $this->command->setApplication(
             $this->applicationMock
         );
-    }
-
-    public function testExecute()
-    {
-        $this->input['--' . AdminAccount::KEY_USER] = 'user';
-        $this->input['--' . AdminAccount::KEY_PASSWORD] = '123123q';
-        $this->input['--' . AdminAccount::KEY_EMAIL] = 'test@test.com';
-        $this->input['--' . AdminAccount::KEY_FIRST_NAME] = 'John';
-        $this->input['--' . AdminAccount::KEY_LAST_NAME] = 'Doe';
-
-        $this->adminUserMock
-            ->expects($this->once())
-            ->method('validate')
-            ->willReturn([]);
-        $this->installerFactory->expects($this->once())
-            ->method('create')
-            ->willReturn($this->installer);
-        $this->installer->expects($this->once())->method('install');
-        $this->configImportMock->expects($this->once())
-            ->method('run');
-
-        $commandTester = new CommandTester($this->command);
-        $commandTester->execute($this->input);
     }
 
     /**
@@ -277,71 +343,5 @@ class InstallCommandTest extends TestCase
             ->willReturn(AdminAccount::KEY_LAST_NAME);
 
         return [$option1, $option2, $option3, $option4, $option5];
-    }
-
-    /**
-     * Test install command with valid sales_order_increment_prefix value
-     *
-     * @dataProvider validateDataProvider
-     * @param $prefixValue
-     */
-    public function testValidate($prefixValue)
-    {
-        $this->adminUserMock
-            ->expects($this->never())
-            ->method('validate');
-        $this->installerFactory->expects($this->once())
-            ->method('create')
-            ->willReturn($this->installer);
-        $this->installer->expects($this->once())->method('install');
-        $this->input['--' . InstallCommand::INPUT_KEY_SALES_ORDER_INCREMENT_PREFIX] = $prefixValue;
-
-        $commandTester = new CommandTester($this->command);
-        $commandTester->execute($this->input);
-    }
-
-    /**
-     * Test install command with invalid sales_order_increment_prefix value
-     *
-     * @dataProvider validateWithExceptionDataProvider
-     * @param $prefixValue
-     */
-    public function testValidateWithException($prefixValue)
-    {
-        $this->expectException('InvalidArgumentException');
-        $this->adminUserMock
-            ->expects($this->never())
-            ->method('validate');
-        $this->installerFactory->expects($this->never())
-            ->method('create')
-            ->willReturn($this->installer);
-        $this->installer->expects($this->never())->method('install');
-        $this->input['--' . InstallCommand::INPUT_KEY_SALES_ORDER_INCREMENT_PREFIX] = $prefixValue;
-
-        $commandTester = new CommandTester($this->command);
-        $commandTester->execute($this->input);
-    }
-
-    /**
-     * @return array
-     */
-    public function validateDataProvider()
-    {
-        return [
-            'without option' => ['', ''],
-            'normal case' => ['abcde', ''],
-            '20 chars' => ['12345678901234567890', ''],
-        ];
-    }
-
-    /**
-     * @return array
-     */
-    public function validateWithExceptionDataProvider()
-    {
-        return [
-            ['123456789012345678901', 'InvalidArgumentException'],
-            ['abcdefghijk12345678fdgsdfgsdfgsdfsgsdfg90abcdefgdfddgsdfg', 'InvalidArgumentException'],
-        ];
     }
 }

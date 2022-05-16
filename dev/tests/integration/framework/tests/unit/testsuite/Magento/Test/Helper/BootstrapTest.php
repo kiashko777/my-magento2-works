@@ -7,12 +7,17 @@
 /**
  * Test class for \Magento\TestFramework\Helper\Bootstrap.
  */
+
 namespace Magento\Test\Helper;
 
 use Magento\Framework\App\Bootstrap;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\TestFramework\Application;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
-class BootstrapTest extends \PHPUnit\Framework\TestCase
+class BootstrapTest extends TestCase
 {
     /**
      * @var \Magento\TestFramework\Helper\Bootstrap
@@ -20,12 +25,12 @@ class BootstrapTest extends \PHPUnit\Framework\TestCase
     protected $_object;
 
     /**
-     * @var \Magento\TestFramework\Bootstrap|\PHPUnit\Framework\MockObject\MockObject
+     * @var \Magento\TestFramework\Bootstrap|MockObject
      */
     protected $_bootstrap;
 
     /**
-     * @var \Magento\TestFramework\Application|\PHPUnit\Framework\MockObject\MockObject
+     * @var Application|MockObject
      */
     protected $_application;
 
@@ -41,39 +46,11 @@ class BootstrapTest extends \PHPUnit\Framework\TestCase
         ],
     ];
 
-    protected function setUp(): void
-    {
-        $this->_application = $this->createPartialMock(
-            \Magento\TestFramework\Application::class,
-            ['getTempDir', 'getInitParams', 'reinitialize', 'run']
-        );
-        $this->_bootstrap = $this->getMockBuilder(\Magento\TestFramework\Bootstrap::class)
-            ->disableOriginalConstructor()
-            ->addMethods(['getDbVendorName'])
-            ->onlyMethods(['getApplication'])
-            ->getMock();
-        $this->_bootstrap->expects(
-            $this->any()
-        )->method(
-            'getApplication'
-        )->willReturn(
-            $this->_application
-        );
-        $this->_object = new \Magento\TestFramework\Helper\Bootstrap($this->_bootstrap);
-    }
-
-    protected function tearDown(): void
-    {
-        $this->_application = null;
-        $this->_bootstrap = null;
-        $this->_object = null;
-    }
-
     /**
      */
     public function testGetInstanceEmptyProhibited()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage('Helper instance is not defined yet.');
 
         \Magento\TestFramework\Helper\Bootstrap::getInstance();
@@ -98,7 +75,7 @@ class BootstrapTest extends \PHPUnit\Framework\TestCase
      */
     public function testSetInstanceChangeProhibited()
     {
-        $this->expectException(\Magento\Framework\Exception\LocalizedException::class);
+        $this->expectException(LocalizedException::class);
         $this->expectExceptionMessage('Helper instance cannot be redefined.');
 
         \Magento\TestFramework\Helper\Bootstrap::setInstance($this->_object);
@@ -169,5 +146,33 @@ class BootstrapTest extends \PHPUnit\Framework\TestCase
     {
         $this->_application->expects($this->once())->method('run');
         $this->_object->runApp();
+    }
+
+    protected function setUp(): void
+    {
+        $this->_application = $this->createPartialMock(
+            Application::class,
+            ['getTempDir', 'getInitParams', 'reinitialize', 'run']
+        );
+        $this->_bootstrap = $this->getMockBuilder(\Magento\TestFramework\Bootstrap::class)
+            ->disableOriginalConstructor()
+            ->addMethods(['getDbVendorName'])
+            ->onlyMethods(['getApplication'])
+            ->getMock();
+        $this->_bootstrap->expects(
+            $this->any()
+        )->method(
+            'getApplication'
+        )->willReturn(
+            $this->_application
+        );
+        $this->_object = new \Magento\TestFramework\Helper\Bootstrap($this->_bootstrap);
+    }
+
+    protected function tearDown(): void
+    {
+        $this->_application = null;
+        $this->_bootstrap = null;
+        $this->_object = null;
     }
 }

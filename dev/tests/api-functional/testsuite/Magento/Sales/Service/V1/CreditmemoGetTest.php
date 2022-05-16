@@ -3,8 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Service\V1;
 
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Sales\Model\ResourceModel\Order\Creditmemo\Collection;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
@@ -33,7 +38,7 @@ class CreditmemoGetTest extends WebapiAbstract
     const CREDITMEMO_INCREMENT_ID = '100000001';
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
 
@@ -67,29 +72,21 @@ class CreditmemoGetTest extends WebapiAbstract
     ];
 
     /**
-     * Set up
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
-
-    /**
      * Test creditmemo get service
      *
      * @magentoApiDataFixture Magento/Sales/_files/creditmemo_for_get.php
      */
     public function testCreditmemoGet()
     {
-        /** @var \Magento\Sales\Model\ResourceModel\Order\Creditmemo\Collection $creditmemoCollection */
+        /** @var Collection $creditmemoCollection */
         $creditmemoCollection =
-            $this->objectManager->get(\Magento\Sales\Model\ResourceModel\Order\Creditmemo\Collection::class);
+            $this->objectManager->get(Collection::class);
         $creditmemo = $creditmemoCollection->getFirstItem();
 
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/' . $creditmemo->getId(),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_READ_NAME,
@@ -110,5 +107,13 @@ class CreditmemoGetTest extends WebapiAbstract
         foreach ($actual as $value) {
             $this->assertNotNull($value);
         }
+    }
+
+    /**
+     * Set up
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

@@ -23,11 +23,6 @@ class SimpleDirectiveTest extends TestCase
      */
     private $objectManager;
 
-    protected function setUp(): void
-    {
-        $this->objectManager = ObjectManager::getInstance();
-    }
-
     public function testFallbackWhenDirectiveNotFound()
     {
         $filter = $this->objectManager->get(Template::class);
@@ -36,6 +31,24 @@ class SimpleDirectiveTest extends TestCase
         $template = 'blah {{foo bar}} blah';
         $result = $processor->process($this->createConstruction($processor, $template), $filter, []);
         self::assertEquals('{{foo bar}}', $result);
+    }
+
+    private function createWithProcessorsAndFilters(array $processors, array $filters): SimpleDirective
+    {
+        return $this->objectManager->create(
+            SimpleDirective::class,
+            [
+                'processorPool' => $this->objectManager->create(ProcessorPool::class, ['processors' => $processors]),
+                'filterPool' => $this->objectManager->create(FilterPool::class, ['filters' => $filters]),
+            ]
+        );
+    }
+
+    private function createConstruction(SimpleDirective $directive, string $value): array
+    {
+        preg_match($directive->getRegularExpression(), $value, $construction);
+
+        return $construction;
     }
 
     public function testProcessorAndFilterPoolsAreUsed()
@@ -53,7 +66,7 @@ class SimpleDirectiveTest extends TestCase
         $template = 'blah {{mydir "somevalue" param1=yes|foofilter|nl2br|doesntexist|foofilter}}blah '
             . "\n" . '{{var address}} blah{{/mydir}} blah';
         $result = $processor->process($this->createConstruction($processor, $template), $filter, ['foo' => 'foobar']);
-        self::assertEquals('SOMEVALUEYESBLAH ' . "\n" .'>/ RB< BLAH', $result);
+        self::assertEquals('SOMEVALUEYESBLAH ' . "\n" . '>/ RB< BLAH', $result);
     }
 
     public function testDefaultFiltersAreUsed()
@@ -86,21 +99,8 @@ class SimpleDirectiveTest extends TestCase
         self::assertEquals('HALBCBAEULAVEMOS', $result);
     }
 
-    private function createWithProcessorsAndFilters(array $processors, array $filters): SimpleDirective
+    protected function setUp(): void
     {
-        return $this->objectManager->create(
-            SimpleDirective::class,
-            [
-                'processorPool' => $this->objectManager->create(ProcessorPool::class, ['processors' => $processors]),
-                'filterPool' => $this->objectManager->create(FilterPool::class, ['filters' => $filters]),
-            ]
-        );
-    }
-
-    private function createConstruction(SimpleDirective $directive, string $value): array
-    {
-        preg_match($directive->getRegularExpression(), $value, $construction);
-
-        return $construction;
+        $this->objectManager = ObjectManager::getInstance();
     }
 }

@@ -64,7 +64,7 @@ define([
             it('returns false if data for ids is missing', function () {
                 var model = new DataStorage();
 
-                expect(model.getByIds([1,2,3])).toEqual(false);
+                expect(model.getByIds([1, 2, 3])).toEqual(false);
             });
 
             it('returns array of items', function () {
@@ -103,17 +103,17 @@ define([
 
             it('returns an array of entity_id\'s from stored data if no arguments provided', function () {
                 var model = new DataStorage({
-                        data: {
-                            1: {
-                                id_field_name: 'entity_id',
-                                entity_id: '1'
-                            },
-                            2: {
-                                id_field_name: 'entity_id',
-                                entity_id: '42'
-                            }
+                    data: {
+                        1: {
+                            id_field_name: 'entity_id',
+                            entity_id: '1'
+                        },
+                        2: {
+                            id_field_name: 'entity_id',
+                            entity_id: '42'
                         }
-                    });
+                    }
+                });
 
                 expect(model.getIds()).toEqual(['1', '42']);
             });
@@ -278,7 +278,7 @@ define([
         describe('"getRequestData" method', function () {
             it('returns request data', function () {
                 var request = {
-                        ids: [1,2],
+                        ids: [1, 2],
                         totalRecords: 2,
                         errorMessage: ''
                     },
@@ -320,7 +320,7 @@ define([
                         sorting: {},
                         paging: {}
                     },
-                    ids = ['1','2','3'],
+                    ids = ['1', '2', '3'],
                     data = {
                         items: ids,
                         totalRecords: 3,
@@ -347,7 +347,7 @@ define([
                         sorting: {},
                         paging: {}
                     },
-                    ids = ['1','2','3'],
+                    ids = ['1', '2', '3'],
                     firstData = {
                         items: ids,
                         totalRecords: 3,
@@ -392,7 +392,7 @@ define([
                     };
 
                 model._requests.push({
-                    ids: ['1','2','3','4'],
+                    ids: ['1', '2', '3', '4'],
                     params: params,
                     totalRecords: 4,
                     errorMessage: 'errorMessage'
@@ -414,7 +414,7 @@ define([
                         paging: {}
                     },
                     request = {
-                        ids: ['1','2','3'],
+                        ids: ['1', '2', '3'],
                         params: params,
                         totalRecords: 3,
                         errorMessage: ''
@@ -445,17 +445,17 @@ define([
 
             it('returns true if request is present in cache', function () {
                 var params = {
-                    namespace: 'magento',
-                    search: '',
-                    sorting: {},
-                    paging: {}
-                },
-                request = {
-                    ids: ['1','2','3'],
-                    params: params,
-                    totalRecords: 3,
-                    errorMessage: ''
-                };
+                        namespace: 'magento',
+                        search: '',
+                        sorting: {},
+                        paging: {}
+                    },
+                    request = {
+                        ids: ['1', '2', '3'],
+                        params: params,
+                        totalRecords: 3,
+                        errorMessage: ''
+                    };
 
                 model._requests = [request];
 

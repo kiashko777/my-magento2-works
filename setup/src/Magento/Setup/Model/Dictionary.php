@@ -3,7 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Model;
+
+use Magento\Setup\Exception;
+use SplFixedArray;
 
 /**
  * Provide random word from dictionary
@@ -16,13 +20,13 @@ class Dictionary
     private $dictionaryFilePath;
 
     /**
-     * @var \SplFixedArray
+     * @var SplFixedArray
      */
     private $dictionary;
 
     /**
      * @param string $dictionaryFilePath
-     * @throws \Magento\Setup\Exception
+     * @throws Exception
      */
     public function __construct($dictionaryFilePath)
     {
@@ -50,12 +54,12 @@ class Dictionary
      * Read dictionary file
      *
      * @return void
-     * @throws \Magento\Setup\Exception
+     * @throws Exception
      */
     private function readDictionary()
     {
         if (!is_readable($this->dictionaryFilePath)) {
-            throw new \Magento\Setup\Exception(
+            throw new Exception(
                 sprintf('Description file %s not found or is not readable', $this->dictionaryFilePath)
             );
         }
@@ -63,17 +67,17 @@ class Dictionary
         $rows = file($this->dictionaryFilePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 
         if ($rows === false) {
-            throw new \Magento\Setup\Exception(
+            throw new Exception(
                 sprintf('Error occurred while reading dictionary file %s', $this->dictionaryFilePath)
             );
         }
 
         if (empty($rows)) {
-            throw new \Magento\Setup\Exception(
+            throw new Exception(
                 sprintf('Dictionary file %s is empty', $this->dictionaryFilePath)
             );
         }
 
-        $this->dictionary = \SplFixedArray::fromArray($rows);
+        $this->dictionary = SplFixedArray::fromArray($rows);
     }
 }

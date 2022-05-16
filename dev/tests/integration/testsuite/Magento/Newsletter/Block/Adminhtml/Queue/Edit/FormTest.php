@@ -3,48 +3,58 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Newsletter\Block\Adminhtml\Queue\Edit;
+
+use Magento\Backend\App\Area\FrontNameResolver;
+use Magento\Framework\Config\ScopeInterface;
+use Magento\Framework\Registry;
+use Magento\Framework\View\DesignInterface;
+use Magento\Newsletter\Model\Queue;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 
 /**
  * Test class for \Magento\Newsletter\Block\Adminhtml\Queue\Edit\Form
  * @magentoAppArea Adminhtml
  */
-class FormTest extends \PHPUnit\Framework\TestCase
+class FormTest extends TestCase
 {
     /**
      * @magentoAppIsolation enabled
      */
     public function testPrepareForm()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $queue = $objectManager->get(\Magento\Newsletter\Model\Queue::class);
-        /** @var \Magento\Framework\Registry $registry */
-        $registry = $objectManager->get(\Magento\Framework\Registry::class);
+        $objectManager = Bootstrap::getObjectManager();
+        $queue = $objectManager->get(Queue::class);
+        /** @var Registry $registry */
+        $registry = $objectManager->get(Registry::class);
         $registry->register('current_queue', $queue);
 
         $objectManager->get(
-            \Magento\Framework\View\DesignInterface::class
+            DesignInterface::class
         )->setArea(
-            \Magento\Backend\App\Area\FrontNameResolver::AREA_CODE
+            FrontNameResolver::AREA_CODE
         )->setDefaultDesignTheme();
         $objectManager->get(
-            \Magento\Framework\Config\ScopeInterface::class
+            ScopeInterface::class
         )->setCurrentScope(
-            \Magento\Backend\App\Area\FrontNameResolver::AREA_CODE
+            FrontNameResolver::AREA_CODE
         );
         $block = $objectManager->create(
-            \Magento\Newsletter\Block\Adminhtml\Queue\Edit\Form::class,
+            Form::class,
             ['registry' => $registry]
         );
-        $prepareFormMethod = new \ReflectionMethod(
-            \Magento\Newsletter\Block\Adminhtml\Queue\Edit\Form::class,
+        $prepareFormMethod = new ReflectionMethod(
+            Form::class,
             '_prepareForm'
         );
         $prepareFormMethod->setAccessible(true);
 
         $statuses = [
-            \Magento\Newsletter\Model\Queue::STATUS_NEVER,
-            \Magento\Newsletter\Model\Queue::STATUS_PAUSE,
+            Queue::STATUS_NEVER,
+            Queue::STATUS_PAUSE,
         ];
         foreach ($statuses as $status) {
             $queue->setQueueStatus($status);

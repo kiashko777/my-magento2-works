@@ -4,9 +4,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Api;
 
-class ProductAttributeGroupRepositoryTest extends \Magento\TestFramework\TestCase\WebapiAbstract
+use Exception;
+use Magento\Eav\Model\Entity\Attribute\Group;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\WebapiAbstract;
+
+class ProductAttributeGroupRepositoryTest extends WebapiAbstract
 {
     const SERVICE_NAME = 'catalogProductAttributeGroupRepositoryV1';
     const SERVICE_VERSION = 'V1';
@@ -27,6 +34,41 @@ class ProductAttributeGroupRepositoryTest extends \Magento\TestFramework\TestCas
     }
 
     /**
+     * @param $attributeSetId
+     * @return array
+     */
+    protected function createGroupData($attributeSetId)
+    {
+        return [
+            'attribute_group_name' => 'empty_attribute_group',
+            'attribute_set_id' => $attributeSetId
+        ];
+    }
+
+    /**
+     * @param $attributeSetId
+     * @return array|bool|float|int|string
+     */
+    protected function createGroup($attributeSetId, $groupData = null)
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH . '/groups',
+                'httpMethod' => Request::HTTP_METHOD_POST,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'Save',
+            ],
+        ];
+        return $this->_webApiCall(
+            $serviceInfo,
+            ['group' => $groupData ? $groupData : $this->createGroupData($attributeSetId)]
+        );
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Catalog/_files/empty_attribute_group.php
      */
     public function testDeleteGroup()
@@ -36,7 +78,7 @@ class ProductAttributeGroupRepositoryTest extends \Magento\TestFramework\TestCas
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . "/groups/" . $group->getId(),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -48,10 +90,29 @@ class ProductAttributeGroupRepositoryTest extends \Magento\TestFramework\TestCas
     }
 
     /**
+     * Retrieve attribute group based on given name.
+     * This utility methods assumes that there is only one attribute group with given name,
+     *
+     * @param string $groupName
+     * @return Group|null
+     */
+    protected function getGroupByName($groupName)
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var Group */
+        $attributeGroup = $objectManager->create(Group::class)
+            ->load($groupName, 'attribute_group_name');
+        if ($attributeGroup->getId() === null) {
+            return null;
+        }
+        return $attributeGroup;
+    }
+
+    /**
      */
     public function testCreateGroupWithAttributeSetThatDoesNotExist()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
 
         $attributeSetId = -1;
         $this->createGroup($attributeSetId);
@@ -68,7 +129,7 @@ class ProductAttributeGroupRepositoryTest extends \Magento\TestFramework\TestCas
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/' . $attributeSetId . '/groups',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -112,7 +173,7 @@ class ProductAttributeGroupRepositoryTest extends \Magento\TestFramework\TestCas
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/groups/list' . '?' . http_build_query($searchCriteria),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -133,59 +194,5 @@ class ProductAttributeGroupRepositoryTest extends \Magento\TestFramework\TestCas
 
         $this->assertNotNull($response['items'][0]['attribute_group_name']);
         $this->assertNotNull($response['items'][0]['attribute_group_id']);
-    }
-
-    /**
-     * @param $attributeSetId
-     * @return array|bool|float|int|string
-     */
-    protected function createGroup($attributeSetId, $groupData = null)
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . '/groups',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'Save',
-            ],
-        ];
-        return $this->_webApiCall(
-            $serviceInfo,
-            ['group' => $groupData ? $groupData : $this->createGroupData($attributeSetId)]
-        );
-    }
-
-    /**
-     * @param $attributeSetId
-     * @return array
-     */
-    protected function createGroupData($attributeSetId)
-    {
-        return [
-            'attribute_group_name' => 'empty_attribute_group',
-            'attribute_set_id' => $attributeSetId
-        ];
-    }
-
-    /**
-     * Retrieve attribute group based on given name.
-     * This utility methods assumes that there is only one attribute group with given name,
-     *
-     * @param string $groupName
-     * @return \Magento\Eav\Model\Entity\Attribute\Group|null
-     */
-    protected function getGroupByName($groupName)
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var \Magento\Eav\Model\Entity\Attribute\Group */
-        $attributeGroup = $objectManager->create(\Magento\Eav\Model\Entity\Attribute\Group::class)
-            ->load($groupName, 'attribute_group_name');
-        if ($attributeGroup->getId() === null) {
-            return null;
-        }
-        return $attributeGroup;
     }
 }

@@ -6,11 +6,12 @@
 
 declare(strict_types=1);
 
+use Magento\Framework\ObjectManagerInterface;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\User\Model\UserFactory;
 use Magento\User\Model\User;
+use Magento\User\Model\UserFactory;
 
-/** @var \Magento\Framework\ObjectManagerInterface $objectManager */
+/** @var ObjectManagerInterface $objectManager */
 $objectManager = Bootstrap::getObjectManager();
 $userFactory = $objectManager->get(UserFactory::class);
 $userNames = ['adminUserNotExpired', 'adminUserExpired'];

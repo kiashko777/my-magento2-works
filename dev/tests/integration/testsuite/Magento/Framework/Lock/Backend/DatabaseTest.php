@@ -7,32 +7,26 @@ declare(strict_types=1);
 
 namespace Magento\Framework\Lock\Backend;
 
-use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\App\DeploymentConfig;
+use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * \Magento\Framework\Lock\Backend\Database test case.
  */
-class DatabaseTest extends \PHPUnit\Framework\TestCase
+class DatabaseTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Lock\Backend\Database
+     * @var Database
      */
     private $model;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $resourceConnection = $this->objectManager->create(ResourceConnection::class);
-        $deploymentConfig = $this->objectManager->create(DeploymentConfig::class);
-        // create object with new otherwise dummy locker is created because of di.xml preference for integration tests
-        $this->model = new Database($resourceConnection, $deploymentConfig);
-    }
 
     public function testLockAndUnlock()
     {
@@ -53,5 +47,14 @@ class DatabaseTest extends \PHPUnit\Framework\TestCase
 
         $this->assertFalse($this->model->isLocked($name));
         $this->assertFalse($this->model->unlock($name));
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $resourceConnection = $this->objectManager->create(ResourceConnection::class);
+        $deploymentConfig = $this->objectManager->create(DeploymentConfig::class);
+        // create object with new otherwise dummy locker is created because of di.xml preference for integration tests
+        $this->model = new Database($resourceConnection, $deploymentConfig);
     }
 }

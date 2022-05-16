@@ -55,22 +55,6 @@ class DescriptionGeneratorTest extends TestCase
         ]
     ];
 
-    protected function setUp(): void
-    {
-        $this->descriptionParagraphGeneratorMock =
-            $this->createMock(DescriptionParagraphGenerator::class);
-        $this->descriptionParagraphGeneratorMock
-            ->expects($this->exactly(3))
-            ->method('generate')
-            ->will($this->onConsecutiveCalls(
-                $this->paragraphs[0],
-                $this->paragraphs[1],
-                $this->paragraphs[2]
-            ));
-
-        $this->mixinManagerMock = $this->createMock(MixinManager::class);
-    }
-
     public function testGeneratorWithMixin()
     {
         $descriptionWithMixin = 'Some description with mixin';
@@ -101,5 +85,21 @@ class DescriptionGeneratorTest extends TestCase
         );
 
         $this->assertEquals(implode(PHP_EOL, $this->paragraphs), $generator->generate());
+    }
+
+    protected function setUp(): void
+    {
+        $this->descriptionParagraphGeneratorMock =
+            $this->createMock(DescriptionParagraphGenerator::class);
+        $this->descriptionParagraphGeneratorMock
+            ->expects($this->exactly(3))
+            ->method('generate')
+            ->will($this->onConsecutiveCalls(
+                $this->paragraphs[0],
+                $this->paragraphs[1],
+                $this->paragraphs[2]
+            ));
+
+        $this->mixinManagerMock = $this->createMock(MixinManager::class);
     }
 }

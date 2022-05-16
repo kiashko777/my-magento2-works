@@ -3,29 +3,43 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Helper;
 
+use Exception;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Customer\Model\Address;
+use Magento\Framework\App\MutableScopeConfig;
+use Magento\Framework\DataObject;
+use Magento\Framework\Filter\Template;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Registry;
 use Magento\Store\Model\ScopeInterface;
+use Magento\Store\Model\Store;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\Tax\Model\ClassModel;
 use Magento\Tax\Model\Config;
 use Magento\Tax\Model\TaxRuleFixtureFactory;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class DataTest extends \PHPUnit\Framework\TestCase
+class DataTest extends TestCase
 {
     /**
      * Tax helper
      *
-     * @var \Magento\Catalog\Helper\Data
+     * @var Data
      */
     private $helper;
 
     /**
      * Object Manager
      *
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
@@ -64,22 +78,9 @@ class DataTest extends \PHPUnit\Framework\TestCase
     private $taxRuleFixtureFactory;
 
     /**
-     * @var \Magento\Framework\App\MutableScopeConfig
+     * @var MutableScopeConfig
      */
     private $scopeConfig;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->helper = $this->objectManager->get(\Magento\Catalog\Helper\Data::class);
-        $this->taxRuleFixtureFactory = new TaxRuleFixtureFactory();
-        $this->scopeConfig = $this->objectManager->get(\Magento\Framework\App\MutableScopeConfig::class);
-    }
-
-    protected function tearDown(): void
-    {
-        $this->tearDownDefaultRules();
-    }
 
     /**
      * @magentoDataFixture Magento/Catalog/_files/categories.php
@@ -88,13 +89,13 @@ class DataTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetBreadcrumbPath()
     {
-        $category = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+        $category = Bootstrap::getObjectManager()->create(
             \Magento\Catalog\Model\Category::class
         );
         $category->load(5);
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $objectManager->get(\Magento\Framework\Registry::class)->register('current_category', $category);
+        /** @var $objectManager ObjectManager */
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->get(Registry::class)->register('current_category', $category);
 
         try {
             $path = $this->helper->getBreadcrumbPath();
@@ -102,43 +103,43 @@ class DataTest extends \PHPUnit\Framework\TestCase
             $this->assertEquals(['category3', 'category4', 'category5'], array_keys($path));
             $this->assertArrayHasKey('label', $path['category3']);
             $this->assertArrayHasKey('link', $path['category3']);
-            $objectManager->get(\Magento\Framework\Registry::class)->unregister('current_category');
-        } catch (\Exception $e) {
-            $objectManager->get(\Magento\Framework\Registry::class)->unregister('current_category');
+            $objectManager->get(Registry::class)->unregister('current_category');
+        } catch (Exception $e) {
+            $objectManager->get(Registry::class)->unregister('current_category');
             throw $e;
         }
     }
 
     public function testGetCategory()
     {
-        $category = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+        $category = Bootstrap::getObjectManager()->create(
             \Magento\Catalog\Model\Category::class
         );
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $objectManager->get(\Magento\Framework\Registry::class)->register('current_category', $category);
+        /** @var $objectManager ObjectManager */
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->get(Registry::class)->register('current_category', $category);
         try {
             $this->assertSame($category, $this->helper->getCategory());
-            $objectManager->get(\Magento\Framework\Registry::class)->unregister('current_category');
-        } catch (\Exception $e) {
-            $objectManager->get(\Magento\Framework\Registry::class)->unregister('current_category');
+            $objectManager->get(Registry::class)->unregister('current_category');
+        } catch (Exception $e) {
+            $objectManager->get(Registry::class)->unregister('current_category');
             throw $e;
         }
     }
 
     public function testGetProduct()
     {
-        $product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+        $product = Bootstrap::getObjectManager()->create(
             \Magento\Catalog\Model\Product::class
         );
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $objectManager->get(\Magento\Framework\Registry::class)->register('current_product', $product);
+        /** @var $objectManager ObjectManager */
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->get(Registry::class)->register('current_product', $product);
         try {
             $this->assertSame($product, $this->helper->getProduct());
-            $objectManager->get(\Magento\Framework\Registry::class)->unregister('current_product');
-        } catch (\Exception $e) {
-            $objectManager->get(\Magento\Framework\Registry::class)->unregister('current_product');
+            $objectManager->get(Registry::class)->unregister('current_product');
+        } catch (Exception $e) {
+            $objectManager->get(Registry::class)->unregister('current_product');
             throw $e;
         }
     }
@@ -152,14 +153,14 @@ class DataTest extends \PHPUnit\Framework\TestCase
     public function testGetAttributeHiddenFields()
     {
         $this->assertEquals([], $this->helper->getAttributeHiddenFields());
-        /** @var $objectManager \Magento\TestFramework\ObjectManager */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $objectManager->get(\Magento\Framework\Registry::class)->register('attribute_type_hidden_fields', 'test');
+        /** @var $objectManager ObjectManager */
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->get(Registry::class)->register('attribute_type_hidden_fields', 'test');
         try {
             $this->assertEquals('test', $this->helper->getAttributeHiddenFields());
-            $objectManager->get(\Magento\Framework\Registry::class)->unregister('attribute_type_hidden_fields');
-        } catch (\Exception $e) {
-            $objectManager->get(\Magento\Framework\Registry::class)->unregister('attribute_type_hidden_fields');
+            $objectManager->get(Registry::class)->unregister('attribute_type_hidden_fields');
+        } catch (Exception $e) {
+            $objectManager->get(Registry::class)->unregister('attribute_type_hidden_fields');
             throw $e;
         }
     }
@@ -175,7 +176,7 @@ class DataTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetPriceScope()
     {
-        $this->assertEquals(\Magento\Store\Model\Store::PRICE_SCOPE_WEBSITE, $this->helper->getPriceScope());
+        $this->assertEquals(Store::PRICE_SCOPE_WEBSITE, $this->helper->getPriceScope());
     }
 
     public function testIsPriceGlobalDefault()
@@ -205,8 +206,8 @@ class DataTest extends \PHPUnit\Framework\TestCase
     {
         $this->assertTrue($this->helper->isUsingStaticUrlsAllowed());
         $this->helper->setStoreId(
-            \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-                \Magento\Store\Model\StoreManagerInterface::class
+            Bootstrap::getObjectManager()->get(
+                StoreManagerInterface::class
             )->getStore()->getId()
         );
         $this->assertTrue($this->helper->isUsingStaticUrlsAllowed());
@@ -226,8 +227,8 @@ class DataTest extends \PHPUnit\Framework\TestCase
     {
         $this->assertFalse($this->helper->isUrlDirectivesParsingAllowed());
         $this->helper->setStoreId(
-            \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-                \Magento\Store\Model\StoreManagerInterface::class
+            Bootstrap::getObjectManager()->get(
+                StoreManagerInterface::class
             )->getStore()->getId()
         );
         $this->assertFalse($this->helper->isUrlDirectivesParsingAllowed());
@@ -235,11 +236,11 @@ class DataTest extends \PHPUnit\Framework\TestCase
 
     public function testGetPageTemplateProcessor()
     {
-        $this->assertInstanceOf(\Magento\Framework\Filter\Template::class, $this->helper->getPageTemplateProcessor());
+        $this->assertInstanceOf(Template::class, $this->helper->getPageTemplateProcessor());
     }
 
     /**
-     * @param \Magento\Framework\DataObject $input
+     * @param DataObject $input
      * @param float $expectOutputPrice
      * @param string[] $configs
      * @param string $productClassName
@@ -256,10 +257,11 @@ class DataTest extends \PHPUnit\Framework\TestCase
         $expectOutputPrice,
         $configs = [],
         $productClassName = 'DefaultProductClass'
-    ) {
+    )
+    {
         $this->setUpDefaultRules();
-        /** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-        $productRepository = $this->objectManager->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
         /** @var \Magento\Catalog\Model\Product $product */
         $product = $productRepository->get('simple');
         $product->setTaxClassId($this->taxClasses[$productClassName]);
@@ -288,25 +290,85 @@ class DataTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Helper function that sets up some default rules
+     */
+    private function setUpDefaultRules()
+    {
+        $this->taxClasses = $this->taxRuleFixtureFactory->createTaxClasses([
+            ['name' => 'DefaultCustomerClass', 'type' => ClassModel::TAX_CLASS_TYPE_CUSTOMER],
+            ['name' => 'DefaultProductClass', 'type' => ClassModel::TAX_CLASS_TYPE_PRODUCT],
+            ['name' => 'HigherProductClass', 'type' => ClassModel::TAX_CLASS_TYPE_PRODUCT],
+        ]);
+
+        $this->taxRates = $this->taxRuleFixtureFactory->createTaxRates([
+            ['percentage' => 7.5, 'country' => 'US', 'region' => 42],
+            ['percentage' => 7.5, 'country' => 'US', 'region' => 12], // Default store rate
+        ]);
+
+        $higherRates = $this->taxRuleFixtureFactory->createTaxRates([
+            ['percentage' => 22, 'country' => 'US', 'region' => 42],
+            ['percentage' => 10, 'country' => 'US', 'region' => 12], // Default store rate
+        ]);
+
+        $this->taxRules = $this->taxRuleFixtureFactory->createTaxRules([
+            [
+                'code' => 'Default Rule',
+                'customer_tax_class_ids' => [$this->taxClasses['DefaultCustomerClass'], 3],
+                'product_tax_class_ids' => [$this->taxClasses['DefaultProductClass']],
+                'tax_rate_ids' => array_values($this->taxRates),
+                'sort_order' => 0,
+                'priority' => 0,
+            ],
+            [
+                'code' => 'Higher Rate Rule',
+                'customer_tax_class_ids' => [$this->taxClasses['DefaultCustomerClass'], 3],
+                'product_tax_class_ids' => [$this->taxClasses['HigherProductClass']],
+                'tax_rate_ids' => array_values($higherRates),
+                'sort_order' => 0,
+                'priority' => 0,
+            ],
+        ]);
+
+        // For cleanup
+        $this->taxRates = array_merge($this->taxRates, $higherRates);
+    }
+
+    /**
+     * Get fixture customer address
+     *
+     * @return Address
+     */
+    private function getCustomerAddress()
+    {
+        $fixtureCustomerId = 1;
+        $customerAddress = $this->objectManager->create(
+            Address::class
+        )->load($fixtureCustomerId);
+        /** Set data which corresponds tax class fixture */
+        $customerAddress->setCountryId('US')->setRegionId(42)->save();
+        return $customerAddress;
+    }
+
+    /**
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
      */
     public function getTaxPriceDataProvider()
     {
         return [
             'price is 0' => [
-                (new \Magento\Framework\DataObject())->setPrice(0),
+                (new DataObject())->setPrice(0),
                 0,
             ],
             'no price conversion, round' => [
-                (new \Magento\Framework\DataObject())->setPrice(3.256)->setRoundPrice(true),
+                (new DataObject())->setPrice(3.256)->setRoundPrice(true),
                 '3.26',
             ],
             'no price conversion, no round' => [
-                (new \Magento\Framework\DataObject())->setPrice(3.256),
+                (new DataObject())->setPrice(3.256),
                 '3.256',
             ],
             'price conversion, display including tax, round' => [
-                (new \Magento\Framework\DataObject())->setPrice(3.256)->setRoundPrice(true),
+                (new DataObject())->setPrice(3.256)->setRoundPrice(true),
                 '3.5',
                 [
                     [
@@ -320,7 +382,7 @@ class DataTest extends \PHPUnit\Framework\TestCase
                 ],
             ],
             'price conversion, display including tax, no round' => [
-                (new \Magento\Framework\DataObject())->setPrice(3.256)->setNotEqual(true),
+                (new DataObject())->setPrice(3.256)->setNotEqual(true),
                 '3.5',  // should be not equal to rounded value (eg, 3.5045009999999999)
                 [
                     [
@@ -334,7 +396,7 @@ class DataTest extends \PHPUnit\Framework\TestCase
                 ],
             ],
             'price conversion, display including tax, high rate product tax class, cross boarder trade, round' => [
-                (new \Magento\Framework\DataObject())->setPrice(3.256)->setRoundPrice(true),
+                (new DataObject())->setPrice(3.256)->setRoundPrice(true),
                 '3.98', // rounding issue: old code expects 3.97
                 [
                     [
@@ -353,7 +415,7 @@ class DataTest extends \PHPUnit\Framework\TestCase
                 'HigherProductClass',
             ],
             'price include tax, display including tax, round' => [
-                (new \Magento\Framework\DataObject())->setPrice(3.256)->setRoundPrice(true),
+                (new DataObject())->setPrice(3.256)->setRoundPrice(true),
                 '3.26',
                 [
                     [
@@ -367,7 +429,7 @@ class DataTest extends \PHPUnit\Framework\TestCase
                 ],
             ],
             'price include tax, display excluding tax, round' => [
-                (new \Magento\Framework\DataObject())->setPrice(3.256)->setRoundPrice(true),
+                (new DataObject())->setPrice(3.256)->setRoundPrice(true),
                 '3.03',
                 [
                     [
@@ -381,7 +443,7 @@ class DataTest extends \PHPUnit\Framework\TestCase
                 ],
             ],
             'price include tax, display excluding tax, request including tax, round' => [
-                (new \Magento\Framework\DataObject())->setPrice(3.256)
+                (new DataObject())->setPrice(3.256)
                     ->setRoundPrice(true)
                     ->setIncludingTax(true),
                 '3.26',
@@ -397,7 +459,7 @@ class DataTest extends \PHPUnit\Framework\TestCase
                 ],
             ],
             'price include tax, display excluding tax, high rate product tax class, round' => [
-                (new \Magento\Framework\DataObject())->setPrice(3.256)->setRoundPrice(true),
+                (new DataObject())->setPrice(3.256)->setRoundPrice(true),
                 '2.97',
                 [
                     [
@@ -412,7 +474,7 @@ class DataTest extends \PHPUnit\Framework\TestCase
                 'HigherProductClass',
             ],
             'price include tax, display excluding tax, high rate product tax class, cross boarder trade, round' => [
-                (new \Magento\Framework\DataObject())->setPrice(3.256)->setRoundPrice(true),
+                (new DataObject())->setPrice(3.256)->setRoundPrice(true),
                 '2.67',
                 [
                     [
@@ -433,64 +495,17 @@ class DataTest extends \PHPUnit\Framework\TestCase
         ];
     }
 
-    /**
-     * Helper function that sets up some default rules
-     */
-    private function setUpDefaultRules()
+    protected function setUp(): void
     {
-        $this->taxClasses = $this->taxRuleFixtureFactory->createTaxClasses([
-                ['name' => 'DefaultCustomerClass', 'type' => ClassModel::TAX_CLASS_TYPE_CUSTOMER],
-                ['name' => 'DefaultProductClass', 'type' => ClassModel::TAX_CLASS_TYPE_PRODUCT],
-                ['name' => 'HigherProductClass', 'type' => ClassModel::TAX_CLASS_TYPE_PRODUCT],
-            ]);
-
-        $this->taxRates = $this->taxRuleFixtureFactory->createTaxRates([
-                ['percentage' => 7.5, 'country' => 'US', 'region' => 42],
-                ['percentage' => 7.5, 'country' => 'US', 'region' => 12], // Default store rate
-            ]);
-
-        $higherRates = $this->taxRuleFixtureFactory->createTaxRates([
-                ['percentage' => 22, 'country' => 'US', 'region' => 42],
-                ['percentage' => 10, 'country' => 'US', 'region' => 12], // Default store rate
-            ]);
-
-        $this->taxRules = $this->taxRuleFixtureFactory->createTaxRules([
-                [
-                    'code' => 'Default Rule',
-                    'customer_tax_class_ids' => [$this->taxClasses['DefaultCustomerClass'], 3],
-                    'product_tax_class_ids' => [$this->taxClasses['DefaultProductClass']],
-                    'tax_rate_ids' => array_values($this->taxRates),
-                    'sort_order' => 0,
-                    'priority' => 0,
-                ],
-                [
-                    'code' => 'Higher Rate Rule',
-                    'customer_tax_class_ids' => [$this->taxClasses['DefaultCustomerClass'], 3],
-                    'product_tax_class_ids' => [$this->taxClasses['HigherProductClass']],
-                    'tax_rate_ids' => array_values($higherRates),
-                    'sort_order' => 0,
-                    'priority' => 0,
-                ],
-            ]);
-
-        // For cleanup
-        $this->taxRates = array_merge($this->taxRates, $higherRates);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->helper = $this->objectManager->get(Data::class);
+        $this->taxRuleFixtureFactory = new TaxRuleFixtureFactory();
+        $this->scopeConfig = $this->objectManager->get(MutableScopeConfig::class);
     }
 
-    /**
-     * Get fixture customer address
-     *
-     * @return \Magento\Customer\Model\Address
-     */
-    private function getCustomerAddress()
+    protected function tearDown(): void
     {
-        $fixtureCustomerId = 1;
-        $customerAddress = $this->objectManager->create(
-            \Magento\Customer\Model\Address::class
-        )->load($fixtureCustomerId);
-        /** Set data which corresponds tax class fixture */
-        $customerAddress->setCountryId('US')->setRegionId(42)->save();
-        return $customerAddress;
+        $this->tearDownDefaultRules();
     }
 
     /**

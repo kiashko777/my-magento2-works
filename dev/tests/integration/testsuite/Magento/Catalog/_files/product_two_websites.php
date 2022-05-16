@@ -16,7 +16,7 @@ use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Store/_files/second_website_with_two_stores.php');
 
-$objectManager =  Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 /** @var ProductFactory $productFactory */
 $productFactory = $objectManager->create(ProductFactory::class);
 /** @var ProductRepositoryInterface $productRepository */

@@ -3,24 +3,27 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Theme\Model;
 
-use Magento\Backend\Block\Widget\Grid\Serializer;
+use Exception;
+use Magento\Framework\App\CacheInterface;
+use Magento\Framework\App\State;
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Serialize\SerializerInterface;
+use Magento\Framework\Stdlib\DateTime;
+use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
+use Magento\Framework\View\DesignInterface;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class DesignTest extends \PHPUnit\Framework\TestCase
+class DesignTest extends TestCase
 {
     /**
-     * @var \Magento\Theme\Model\Design
+     * @var Design
      */
     protected $_model;
-
-    protected function setUp(): void
-    {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Theme\Model\Design::class
-        );
-    }
 
     public function testLoadChange()
     {
@@ -33,17 +36,17 @@ class DesignTest extends \PHPUnit\Framework\TestCase
      */
     public function testChangeDesign()
     {
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\App\State::class)
+        Bootstrap::getObjectManager()->get(State::class)
             ->setAreaCode('frontend');
-        $design = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\View\DesignInterface::class
+        $design = Bootstrap::getObjectManager()->create(
+            DesignInterface::class
         );
-        $storeId = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Store\Model\StoreManagerInterface::class
+        $storeId = Bootstrap::getObjectManager()->get(
+            StoreManagerInterface::class
         )->getDefaultStoreView()->getId();
         // fixture design_change
-        $designChange = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Theme\Model\Design::class
+        $designChange = Bootstrap::getObjectManager()->create(
+            Design::class
         );
         $designChange->loadChange($storeId)->changeDesign($design);
         $this->assertEquals('Magento/luma', $design->getDesignTheme()->getThemePath());
@@ -66,8 +69,8 @@ class DesignTest extends \PHPUnit\Framework\TestCase
         $this->assertNotEmpty($this->_model->getId());
 
         try {
-            $model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-                \Magento\Theme\Model\Design::class
+            $model = Bootstrap::getObjectManager()->create(
+                Design::class
             );
             $model->loadChange(1);
             $this->assertEquals($this->_model->getId(), $model->getId());
@@ -77,17 +80,17 @@ class DesignTest extends \PHPUnit\Framework\TestCase
                 $model->setId(null);
                 $model->save();
                 $this->fail('A validation failure is expected.');
-            } catch (\Magento\Framework\Exception\LocalizedException $e) {
+            } catch (LocalizedException $e) {
             }
 
             $this->_model->delete();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->_model->delete();
             throw $e;
         }
 
-        $model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Theme\Model\Design::class
+        $model = Bootstrap::getObjectManager()->create(
+            Design::class
         );
         $model->loadChange(1);
         $this->assertEmpty($model->getId());
@@ -108,26 +111,26 @@ class DesignTest extends \PHPUnit\Framework\TestCase
      */
     public function testLoadChangeCache()
     {
-        $date = (new \DateTime())->format(\Magento\Framework\Stdlib\DateTime::DATETIME_PHP_FORMAT);
-        $storeId = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Store\Model\StoreManagerInterface::class
+        $date = (new \DateTime())->format(DateTime::DATETIME_PHP_FORMAT);
+        $storeId = Bootstrap::getObjectManager()->get(
+            StoreManagerInterface::class
         )->getDefaultStoreView()->getId();
         // fixture design_change
         // phpcs:ignore Magento2.Security.InsecureFunction
         $cacheId = 'design_change_' . md5($storeId . $date);
 
-        /** @var \Magento\Theme\Model\Design $design */
-        $design = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Theme\Model\Design::class
+        /** @var Design $design */
+        $design = Bootstrap::getObjectManager()->create(
+            Design::class
         );
         $design->loadChange($storeId, $date);
 
-        $cachedDesign = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\App\CacheInterface::class
+        $cachedDesign = Bootstrap::getObjectManager()->get(
+            CacheInterface::class
         )->load(
             $cacheId
         );
-        $serializer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(SerializerInterface::class);
+        $serializer = Bootstrap::getObjectManager()->get(SerializerInterface::class);
         $cachedDesign = $serializer->unserialize($cachedDesign);
 
         $this->assertIsArray($cachedDesign);
@@ -136,13 +139,13 @@ class DesignTest extends \PHPUnit\Framework\TestCase
 
         $design->setDesign('Magento/blank')->save();
 
-        $design = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Theme\Model\Design::class
+        $design = Bootstrap::getObjectManager()->create(
+            Design::class
         );
         $design->loadChange($storeId, $date);
 
-        $cachedDesign = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\App\CacheInterface::class
+        $cachedDesign = Bootstrap::getObjectManager()->get(
+            CacheInterface::class
         )->load(
             $cacheId
         );
@@ -178,19 +181,19 @@ class DesignTest extends \PHPUnit\Framework\TestCase
             }
         }
 
-        $store = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Store\Model\StoreManagerInterface::class
+        $store = Bootstrap::getObjectManager()->get(
+            StoreManagerInterface::class
         )->getStore(
             $storeCode
         );
-        $defaultTimeZonePath = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\Stdlib\DateTime\TimezoneInterface::class
+        $defaultTimeZonePath = Bootstrap::getObjectManager()->get(
+            TimezoneInterface::class
         )->getDefaultTimezonePath();
         $store->setConfig($defaultTimeZonePath, $storeTimezone);
         $storeId = $store->getId();
 
-        /** @var $locale \Magento\Framework\Stdlib\DateTime\TimezoneInterface */
-        $locale = $this->createMock(\Magento\Framework\Stdlib\DateTime\TimezoneInterface::class);
+        /** @var $locale TimezoneInterface */
+        $locale = $this->createMock(TimezoneInterface::class);
         $locale->expects(
             $this->once()
         )->method(
@@ -201,8 +204,8 @@ class DesignTest extends \PHPUnit\Framework\TestCase
             $storeDatetime
         );
         // store time must stay unchanged during test execution
-        $design = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Theme\Model\Design::class,
+        $design = Bootstrap::getObjectManager()->create(
+            Design::class,
             ['localeDate' => $locale]
         );
         $design->loadChange($storeId);
@@ -226,5 +229,12 @@ class DesignTest extends \PHPUnit\Framework\TestCase
             'admin store - UTC+12:00' => ['admin', 'Etc/GMT-12', '+12 hours'],
             'admin store - UTC-12:00' => ['admin', 'Etc/GMT+12', '-12 hours']
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Design::class
+        );
     }
 }

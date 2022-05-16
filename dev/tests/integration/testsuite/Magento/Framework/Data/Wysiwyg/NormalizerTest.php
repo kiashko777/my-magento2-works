@@ -3,21 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Data\Wysiwyg;
 
-class NormalizerTest extends \PHPUnit\Framework\TestCase
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class NormalizerTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Data\Wysiwyg\Normalizer
+     * @var Normalizer
      */
     private $normalizer;
-
-    protected function setUp(): void
-    {
-        $this->normalizer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\Data\Wysiwyg\Normalizer::class
-        );
-    }
 
     public function testReplaceReservedCharacters()
     {
@@ -44,6 +41,13 @@ class NormalizerTest extends \PHPUnit\Framework\TestCase
             $this->normalizer->restoreReservedCharacters(
                 $this->normalizer->replaceReservedCharacters($value)
             )
+        );
+    }
+
+    protected function setUp(): void
+    {
+        $this->normalizer = Bootstrap::getObjectManager()->create(
+            Normalizer::class
         );
     }
 }

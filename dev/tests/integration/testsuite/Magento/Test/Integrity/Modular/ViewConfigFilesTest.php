@@ -3,9 +3,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Modular;
 
-class ViewConfigFilesTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\Config\Dom;
+use Magento\Framework\Config\Dom\UrnResolver;
+use Magento\Framework\Config\ValidationStateInterface;
+use Magento\Framework\Module\Dir\Reader;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class ViewConfigFilesTest extends TestCase
 {
     /**
      * @param string $file
@@ -13,11 +21,11 @@ class ViewConfigFilesTest extends \PHPUnit\Framework\TestCase
      */
     public function testViewConfigFile($file)
     {
-        $validationStateMock = $this->createMock(\Magento\Framework\Config\ValidationStateInterface::class);
+        $validationStateMock = $this->createMock(ValidationStateInterface::class);
         $validationStateMock->method('isValidationRequired')
             ->willReturn(true);
-        $domConfig = new \Magento\Framework\Config\Dom($file, $validationStateMock);
-        $urnResolver = new \Magento\Framework\Config\Dom\UrnResolver();
+        $domConfig = new Dom($file, $validationStateMock);
+        $urnResolver = new UrnResolver();
         $result = $domConfig->validate(
             $urnResolver->getRealPath('urn:magento:framework:Config/etc/view.xsd'),
             $errors
@@ -35,8 +43,8 @@ class ViewConfigFilesTest extends \PHPUnit\Framework\TestCase
     public function viewConfigFileDataProvider()
     {
         $result = [];
-        $files = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\Module\Dir\Reader::class
+        $files = Bootstrap::getObjectManager()->get(
+            Reader::class
         )->getConfigurationFiles(
             'view.xml'
         );

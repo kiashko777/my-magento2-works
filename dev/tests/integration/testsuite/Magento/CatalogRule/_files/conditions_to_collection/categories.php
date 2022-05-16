@@ -5,12 +5,16 @@
  */
 declare(strict_types=1);
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\ResourceModel\Category\Collection;
+use Magento\TestFramework\Helper\Bootstrap;
 
-$collection = $objectManager->create(\Magento\Catalog\Model\ResourceModel\Category\Collection::class);
+$objectManager = Bootstrap::getObjectManager();
 
-/** @var $category \Magento\Catalog\Model\Category */
-$category1 = $objectManager->create(\Magento\Catalog\Model\Category::class);
+$collection = $objectManager->create(Collection::class);
+
+/** @var $category Category */
+$category1 = $objectManager->create(Category::class);
 $category1->isObjectNew(true);
 $category1
     ->setName('Category 1')
@@ -22,8 +26,8 @@ $category1
     ->setPosition(1)
     ->save();
 
-/** @var $category \Magento\Catalog\Model\Category */
-$category1_1 = $objectManager->create(\Magento\Catalog\Model\Category::class);
+/** @var $category Category */
+$category1_1 = $objectManager->create(Category::class);
 $category1_1->isObjectNew(true);
 $category1_1
     ->setName('Category 1.1')
@@ -35,7 +39,7 @@ $category1_1
     ->setPosition(1)
     ->save();
 
-$category1_2 = $objectManager->create(\Magento\Catalog\Model\Category::class);
+$category1_2 = $objectManager->create(Category::class);
 $category1_2->isObjectNew(true);
 $category1_2
     ->setName('Category 1.2')
@@ -47,8 +51,8 @@ $category1_2
     ->setPosition(2)
     ->save();
 
-/** @var $category \Magento\Catalog\Model\Category */
-$category1_1_1 = $objectManager->create(\Magento\Catalog\Model\Category::class);
+/** @var $category Category */
+$category1_1_1 = $objectManager->create(Category::class);
 $category1_1_1->isObjectNew(true);
 $category1_1_1
     ->setName('Category 1.1.1')
@@ -59,8 +63,8 @@ $category1_1_1
     ->setPosition(1)
     ->save();
 
-/** @var $category \Magento\Catalog\Model\Category */
-$category2 = $objectManager->create(\Magento\Catalog\Model\Category::class);
+/** @var $category Category */
+$category2 = $objectManager->create(Category::class);
 $category2->isObjectNew(true);
 $category2
     ->setName('Category 2')
@@ -71,8 +75,8 @@ $category2
     ->setPosition(2)
     ->save();
 
-/** @var $category \Magento\Catalog\Model\Category */
-$category3 = $objectManager->create(\Magento\Catalog\Model\Category::class);
+/** @var $category Category */
+$category3 = $objectManager->create(Category::class);
 $category3->isObjectNew(true);
 $category3
     ->setName('Category 3')

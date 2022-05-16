@@ -6,6 +6,7 @@
 declare(strict_types=1);
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Registry;
 use Magento\TestFramework\Helper\Bootstrap;
 
@@ -21,7 +22,7 @@ $registry->register('isSecureArea', true);
 
 try {
     $productRepository->deleteById('simple_product');
-} catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+} catch (NoSuchEntityException $e) {
     /**
      * Tests which are wrapped with MySQL transaction clear all data by transaction rollback.
      */

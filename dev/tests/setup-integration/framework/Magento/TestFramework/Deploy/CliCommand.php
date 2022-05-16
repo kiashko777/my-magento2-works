@@ -3,13 +3,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\Deploy;
 
+use Exception;
 use Magento\Framework\App\DeploymentConfig;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Shell;
 use Magento\Framework\Shell\CommandRenderer;
 use Magento\Setup\Console\Command\InstallCommand;
+use Magento\TestFramework\Helper\Bootstrap;
 
 /**
  * The purpose of this class is enable/disable module and upgrade commands execution.
@@ -43,8 +46,9 @@ class CliCommand
      * @internal param Shell $shell
      */
     public function __construct(
-        \Magento\TestFramework\Deploy\TestModuleManager $testEnv
-    ) {
+        TestModuleManager $testEnv
+    )
+    {
         $this->shell = new Shell(new CommandRenderer());
         $this->testEnv = $testEnv;
         $this->parametersHolder = new ParametersHolder();
@@ -79,6 +83,16 @@ class CliCommand
     }
 
     /**
+     * Get basic magento-cli command
+     *
+     * @return string
+     */
+    private function getCliScriptCommand()
+    {
+        return PHP_BINARY . ' -f ' . BP . '/bin/magento ';
+    }
+
+    /**
      * Execute upgrade magento command.
      *
      * @param array $installParams
@@ -94,6 +108,40 @@ class CliCommand
         $upgradeCommand .= ' ' . implode(" ", array_keys($installParams));
 
         return $this->shell->execute($upgradeCommand, array_values($installParams));
+    }
+
+    /**
+     * Get custom magento-cli command with additional DI configuration
+     *
+     * @return string
+     */
+    private function getCliScriptCommandWithDI(): string
+    {
+        $params['MAGE_DIRS']['base']['path'] = BP;
+        $params['INTEGRATION_TESTS_CLI_AUTOLOADER'] = TESTS_BASE_DIR . '/framework/autoload.php';
+        $params['TESTS_BASE_DIR'] = TESTS_BASE_DIR;
+        return 'INTEGRATION_TEST_PARAMS="' . urldecode(http_build_query($params)) . '"'
+            . ' ' . PHP_BINARY . ' -f ' . INTEGRATION_TESTS_BASE_DIR
+            . '/bin/magento ';
+    }
+
+    /**
+     * Convert from raw params to CLI arguments, like --admin-username.
+     *
+     * @param array $params
+     * @return array
+     */
+    private function toCliArguments(array $params)
+    {
+        $result = [];
+
+        foreach ($params as $key => $value) {
+            if (!empty($value)) {
+                $result["--{$key}=%s"] = $value;
+            }
+        }
+
+        return $result;
     }
 
     /**
@@ -189,36 +237,17 @@ class CliCommand
     }
 
     /**
-     * Convert from raw params to CLI arguments, like --admin-username.
-     *
-     * @param  array $params
-     * @return array
-     */
-    private function toCliArguments(array $params)
-    {
-        $result = [];
-
-        foreach ($params as $key => $value) {
-            if (!empty($value)) {
-                $result["--{$key}=%s"] = $value;
-            }
-        }
-
-        return $result;
-    }
-
-    /**
      * Execute install command.
      *
      * @param array $modules
      * @param array $installParams
      * @return string
-     * @throws \Exception
+     * @throws Exception
      */
     public function install(array $modules, array $installParams = [])
     {
         if (empty($modules)) {
-            throw new \Exception("Cannot install Magento without modules");
+            throw new Exception("Cannot install Magento without modules");
         }
 
         $params = $this->parametersHolder->getInitParams();
@@ -251,33 +280,8 @@ class CliCommand
     {
         //Take current deployment config in order to flush it cache after installation
         //Before installation usually we do not have any connections - so we need to add them
-        $this->deploymentConfig = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
+        $this->deploymentConfig = Bootstrap::getObjectManager()
             ->get(DeploymentConfig::class);
         $this->deploymentConfig->resetData();
-    }
-
-    /**
-     * Get custom magento-cli command with additional DI configuration
-     *
-     * @return string
-     */
-    private function getCliScriptCommandWithDI(): string
-    {
-        $params['MAGE_DIRS']['base']['path'] = BP;
-        $params['INTEGRATION_TESTS_CLI_AUTOLOADER'] = TESTS_BASE_DIR . '/framework/autoload.php';
-        $params['TESTS_BASE_DIR'] = TESTS_BASE_DIR;
-        return 'INTEGRATION_TEST_PARAMS="' . urldecode(http_build_query($params)) . '"'
-        . ' ' . PHP_BINARY . ' -f ' . INTEGRATION_TESTS_BASE_DIR
-        . '/bin/magento ';
-    }
-
-    /**
-     * Get basic magento-cli command
-     *
-     * @return string
-     */
-    private function getCliScriptCommand()
-    {
-        return PHP_BINARY . ' -f ' . BP . '/bin/magento ';
     }
 }

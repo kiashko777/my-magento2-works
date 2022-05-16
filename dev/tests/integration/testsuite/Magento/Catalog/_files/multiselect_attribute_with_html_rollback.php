@@ -5,10 +5,10 @@
  */
 declare(strict_types=1);
 
-use Magento\Framework\Exception\NoSuchEntityException;
-use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Framework\Registry;
 use Magento\Catalog\Api\ProductAttributeRepositoryInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
 
 $objectManager = Bootstrap::getObjectManager();
 $registry = $objectManager->get(Registry::class);

@@ -8,9 +8,11 @@ declare(strict_types=1);
 
 namespace Magento\Sniffs\Less;
 
+use Magento\TestFramework\CodingStandard\Tool\CodeSniffer;
 use Magento\TestFramework\CodingStandard\Tool\CodeSniffer\LessWrapper;
+use PHPUnit\Framework\TestCase;
 
-class AvoidIdSniffTest extends \PHPUnit\Framework\TestCase
+class AvoidIdSniffTest extends TestCase
 {
     /**
      * @return array
@@ -34,7 +36,7 @@ class AvoidIdSniffTest extends \PHPUnit\Framework\TestCase
     {
         $reportFile = __DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'phpcs_report.txt';
         $wrapper = new LessWrapper();
-        $codeSniffer = new \Magento\TestFramework\CodingStandard\Tool\CodeSniffer(
+        $codeSniffer = new CodeSniffer(
             'Magento',
             $reportFile,
             $wrapper

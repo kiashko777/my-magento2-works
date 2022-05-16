@@ -2532,42 +2532,42 @@ return [
     ['create_function', ''],
     ['configure', 'Magento\Framework\MessageQueue\BatchConsumer'],
     [
-            'getExchangeByTopic',
-            'Magento\Framework\MessageQueue\Config\Data',
-            '\Magento\Framework\MessageQueue\ConfigInterface::getExchangeByTopic'
-        ],
+        'getExchangeByTopic',
+        'Magento\Framework\MessageQueue\Config\Data',
+        '\Magento\Framework\MessageQueue\ConfigInterface::getExchangeByTopic'
+    ],
     [
-            'getQueuesByTopic',
-            'Magento\Framework\MessageQueue\Config\Data',
-            '\Magento\Framework\MessageQueue\ConfigInterface::getQueuesByTopic'
-        ],
+        'getQueuesByTopic',
+        'Magento\Framework\MessageQueue\Config\Data',
+        '\Magento\Framework\MessageQueue\ConfigInterface::getQueuesByTopic'
+    ],
     [
-            'getConnectionByTopic',
-            'Magento\Framework\MessageQueue\Config\Data',
-            '\Magento\Framework\MessageQueue\ConfigInterface::getConnectionByTopic'
-        ],
+        'getConnectionByTopic',
+        'Magento\Framework\MessageQueue\Config\Data',
+        '\Magento\Framework\MessageQueue\ConfigInterface::getConnectionByTopic'
+    ],
     [
-            'getConnectionByConsumer',
-            'Magento\Framework\MessageQueue\Config\Data',
-            '\Magento\Framework\MessageQueue\ConfigInterface::getConnectionByConsumer'
-        ],
+        'getConnectionByConsumer',
+        'Magento\Framework\MessageQueue\Config\Data',
+        '\Magento\Framework\MessageQueue\ConfigInterface::getConnectionByConsumer'
+    ],
     [
-            'getMessageSchemaType',
-            'Magento\Framework\MessageQueue\Config\Data',
-            '\Magento\Framework\MessageQueue\ConfigInterface::getMessageSchemaType'
-        ],
+        'getMessageSchemaType',
+        'Magento\Framework\MessageQueue\Config\Data',
+        '\Magento\Framework\MessageQueue\ConfigInterface::getMessageSchemaType'
+    ],
     [
-            'getCallback',
-            'Magento\Framework\MessageQueue\ConsumerConfiguration'
-        ],
+        'getCallback',
+        'Magento\Framework\MessageQueue\ConsumerConfiguration'
+    ],
     [
-            'getCallback',
-            'Magento\Framework\MessageQueue\ConsumerConfigurationInterface'
-        ],
+        'getCallback',
+        'Magento\Framework\MessageQueue\ConsumerConfigurationInterface'
+    ],
     [
-            'configure',
-            'Magento\Framework\MessageQueue\ConsumerInterface'
-        ],
+        'configure',
+        'Magento\Framework\MessageQueue\ConsumerInterface'
+    ],
     ['isOrderIncrementIdUsed', 'Magento\Quote\Model\ResourceModel\Quote', 'Magento\Sales\Model\OrderIncrementIdChecker::isIncrementIdUsed'],
     ['update', 'Magento\Authorization\Model\Rules', 'Magento\Authorization\Model\Rules::update'],
     ['update', 'Magento\Authorization\Model\Role', 'Magento\Authorization\Model\Role::update'],

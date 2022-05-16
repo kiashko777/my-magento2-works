@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Quote\Guest;
 
+use Exception;
 use Magento\GraphQl\Quote\GetMaskedQuoteIdByReservedOrderId;
 use Magento\GraphQl\Quote\GetQuoteItemIdByReservedQuoteIdAndSku;
 use Magento\TestFramework\Helper\Bootstrap;
@@ -27,15 +28,6 @@ class RemoveItemFromCartTest extends GraphQlAbstract
      */
     private $getQuoteItemIdByReservedQuoteIdAndSku;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-        $this->getQuoteItemIdByReservedQuoteIdAndSku = $objectManager->get(
-            GetQuoteItemIdByReservedQuoteIdAndSku::class
-        );
-    }
-
     /**
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
      * @magentoApiDataFixture Magento/GraphQl/Quote/_files/guest/create_empty_cart.php
@@ -55,10 +47,35 @@ class RemoveItemFromCartTest extends GraphQlAbstract
     }
 
     /**
+     * @param string $maskedQuoteId
+     * @param int $itemId
+     * @return string
+     */
+    private function getQuery(string $maskedQuoteId, int $itemId): string
+    {
+        return <<<QUERY
+mutation {
+  removeItemFromCart(
+    input: {
+      cart_id: "{$maskedQuoteId}"
+      cart_item_id: {$itemId}
+    }
+  ) {
+    cart {
+      items {
+        quantity
+      }
+    }
+  }
+}
+QUERY;
+    }
+
+    /**
      */
     public function testRemoveItemFromNonExistentCart()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Could not find a cart with ID "non_existent_masked_id"');
 
         $query = $this->getQuery('non_existent_masked_id', 1);
@@ -152,28 +169,12 @@ class RemoveItemFromCartTest extends GraphQlAbstract
         $this->graphQlMutation($query);
     }
 
-    /**
-     * @param string $maskedQuoteId
-     * @param int $itemId
-     * @return string
-     */
-    private function getQuery(string $maskedQuoteId, int $itemId): string
+    protected function setUp(): void
     {
-        return <<<QUERY
-mutation {
-  removeItemFromCart(
-    input: {
-      cart_id: "{$maskedQuoteId}"
-      cart_item_id: {$itemId}
-    }
-  ) {
-    cart {
-      items {
-        quantity
-      }
-    }
-  }
-}
-QUERY;
+        $objectManager = Bootstrap::getObjectManager();
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
+        $this->getQuoteItemIdByReservedQuoteIdAndSku = $objectManager->get(
+            GetQuoteItemIdByReservedQuoteIdAndSku::class
+        );
     }
 }

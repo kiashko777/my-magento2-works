@@ -7,10 +7,14 @@ declare(strict_types=1);
 
 namespace Magento\TestModuleFedex\Model;
 
+use Magento\Framework\Exception\NotFoundException;
+use SoapClient;
+use stdClass;
+
 /**
  * Mock Fedex soap client factory
  */
-class MockSoapClient extends \SoapClient
+class MockSoapClient extends SoapClient
 {
     /**
      * @var MockResponseBodyLoader
@@ -23,10 +27,11 @@ class MockSoapClient extends \SoapClient
      * @param array|null $options
      */
     public function __construct(
-        string $wsdl,
+        string                 $wsdl,
         MockResponseBodyLoader $mockResponseBodyLoader,
-        array $options = null
-    ) {
+        array                  $options = null
+    )
+    {
         parent::__construct($wsdl, $options);
         $this->mockResponseBodyLoader = $mockResponseBodyLoader;
     }
@@ -35,10 +40,10 @@ class MockSoapClient extends \SoapClient
      * Fetch mock Fedex rates
      *
      * @param array $rateRequest
-     * @return \stdClass
-     * @throws \Magento\Framework\Exception\NotFoundException
+     * @return stdClass
+     * @throws NotFoundException
      */
-    public function getRates(array $rateRequest): \stdClass
+    public function getRates(array $rateRequest): stdClass
     {
         $response = $this->mockResponseBodyLoader->loadForRequest($rateRequest);
 

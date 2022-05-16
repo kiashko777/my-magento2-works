@@ -8,6 +8,8 @@ declare(strict_types=1);
 
 namespace Magento\Catalog\Api;
 
+use Exception;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 /**
@@ -39,11 +41,32 @@ class CategoryLinkManagementTest extends WebapiAbstract
         $this->assertEquals($expected, $result);
     }
 
+    /**
+     * @param int $id category id
+     * @param string|null $storeCode
+     * @return array|string
+     */
+    private function getAssignedProducts(int $id, ?string $storeCode = null)
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH_SUFFIX . '/' . $id . '/' . self::RESOURCE_PATH_PREFIX,
+                'httpMethod' => Request::HTTP_METHOD_GET,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_WRITE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_WRITE_NAME . 'GetAssignedProducts',
+            ],
+        ];
+        return $this->_webApiCall($serviceInfo, ['categoryId' => $id], null, $storeCode);
+    }
+
     public function testInfoNoSuchEntityException()
     {
         try {
             $this->getAssignedProducts(-1);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->assertStringContainsString('No such entity with %fieldName = %fieldValue', $e->getMessage());
         }
     }
@@ -55,26 +78,5 @@ class CategoryLinkManagementTest extends WebapiAbstract
     {
         $result = $this->getAssignedProducts(3, 'all');
         $this->assertCount(3, $result);
-    }
-
-    /**
-     * @param int $id category id
-     * @param string|null $storeCode
-     * @return array|string
-     */
-    private function getAssignedProducts(int $id, ?string $storeCode = null)
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH_SUFFIX . '/' . $id . '/' . self::RESOURCE_PATH_PREFIX,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_WRITE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_WRITE_NAME . 'GetAssignedProducts',
-            ],
-        ];
-        return $this->_webApiCall($serviceInfo, ['categoryId' => $id], null, $storeCode);
     }
 }

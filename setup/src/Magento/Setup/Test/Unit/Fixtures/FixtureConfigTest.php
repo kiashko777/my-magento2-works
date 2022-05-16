@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Setup\Test\Unit\Fixtures;
 
+use DOMDocument;
 use Magento\Framework\Xml\Parser;
 use Magento\Setup\Fixtures\FixtureConfig;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -24,13 +25,6 @@ class FixtureConfigTest extends TestCase
      */
     private $fileParserMock;
 
-    protected function setUp(): void
-    {
-        $this->fileParserMock = $this->createPartialMock(Parser::class, ['getDom', 'xmlToArray']);
-
-        $this->model = new FixtureConfig($this->fileParserMock);
-    }
-
     public function testLoadConfigException()
     {
         $this->expectException('Exception');
@@ -43,10 +37,10 @@ class FixtureConfigTest extends TestCase
     public function testLoadConfig()
     {
         $this->fileParserMock->expects($this->exactly(2))->method('xmlToArray')->willReturn(
-            ['config' => [ 'profile' => ['some_key' => 'some_value']]]
+            ['config' => ['profile' => ['some_key' => 'some_value']]]
         );
 
-        $domMock = $this->createPartialMock(\DOMDocument::class, ['load', 'xinclude']);
+        $domMock = $this->createPartialMock(DOMDocument::class, ['load', 'xinclude']);
         $domMock->expects($this->once())->method('load')->with('config.file')->willReturn(
             $this->fileParserMock->xmlToArray()
         );
@@ -60,6 +54,13 @@ class FixtureConfigTest extends TestCase
     public function testGetValue()
     {
         $this->assertNull($this->model->getValue('null_key'));
+    }
+
+    protected function setUp(): void
+    {
+        $this->fileParserMock = $this->createPartialMock(Parser::class, ['getDom', 'xmlToArray']);
+
+        $this->model = new FixtureConfig($this->fileParserMock);
     }
 }
 

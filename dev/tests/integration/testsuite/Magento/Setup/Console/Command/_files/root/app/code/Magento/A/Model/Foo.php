@@ -3,7 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\A\Model;
+
+use Magento\Framework\A;
 
 class Foo
 {
@@ -12,6 +15,6 @@ class Foo
      */
     public function foo()
     {
-        $frameworkDependencies = new \Magento\Framework\A();
+        $frameworkDependencies = new A();
     }
 }

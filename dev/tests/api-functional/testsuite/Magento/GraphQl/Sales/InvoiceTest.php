@@ -7,12 +7,15 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Sales;
 
+use Magento\Framework\DB\Transaction;
 use Magento\Framework\Registry;
+use Magento\GraphQl\GetCustomerAuthenticationHeader;
+use Magento\Sales\Api\InvoiceManagementInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
+use Magento\Sales\Model\Order;
 use Magento\Sales\Model\ResourceModel\Order\Collection;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
-use Magento\GraphQl\GetCustomerAuthenticationHeader;
 
 /**
  * Tests the Invoice query
@@ -24,13 +27,6 @@ class InvoiceTest extends GraphQlAbstract
 
     /** @var OrderRepositoryInterface */
     private $orderRepository;
-
-    protected function setUp(): void
-    {
-        $this->customerAuthenticationHeader
-            = Bootstrap::getObjectManager()->get(GetCustomerAuthenticationHeader::class);
-        $this->orderRepository = Bootstrap::getObjectManager()->get(OrderRepositoryInterface::class);
-    }
 
     /**
      * @magentoApiDataFixture Magento/Sales/_files/customer_invoice_with_two_products_and_custom_options.php
@@ -115,6 +111,83 @@ class InvoiceTest extends GraphQlAbstract
     }
 
     /**
+     * Get customer order query
+     *
+     * @param string $orderNumber
+     * @return array
+     */
+    private function getCustomerInvoicesBasedOnOrderNumber($orderNumber): array
+    {
+        $query =
+            <<<QUERY
+{
+     customer {
+       email
+       orders(filter:{number:{eq:"{$orderNumber}"}}) {
+         total_count
+         items {
+           status
+           total {
+           grand_total{value currency}
+           }
+           invoices {
+              items{
+              product_name product_sku product_sale_price{value currency}quantity_invoiced
+              discounts {amount{value currency} label}
+              }
+              total {
+             base_grand_total{value currency}
+             grand_total{value currency}
+             total_tax{value currency}
+             subtotal { value currency }
+             taxes {amount{value currency} title rate}
+             discounts {amount{value currency} label}
+             total_shipping{value currency}
+             shipping_handling
+             {
+               amount_including_tax{value currency}
+               amount_excluding_tax{value currency}
+               total_amount{value currency}
+               taxes {amount{value} title rate}
+               discounts {amount{value currency}}
+             }
+           }
+            }
+         }
+       }
+     }
+   }
+QUERY;
+        $currentEmail = 'customer@example.com';
+        $currentPassword = 'password';
+        $response = $this->graphQlQuery(
+            $query,
+            [],
+            '',
+            $this->customerAuthenticationHeader->execute($currentEmail, $currentPassword)
+        );
+
+        $this->assertArrayHasKey('orders', $response['customer']);
+        $this->assertArrayHasKey('items', $response['customer']['orders']);
+        return $response['customer']['orders']['items'];
+    }
+
+    private function assertOrdersData($response, $expectedOrdersData): void
+    {
+        $actualData = $response[0];
+        $this->assertEquals(
+            $expectedOrdersData['grand_total'],
+            $actualData['total']['grand_total']['value'],
+            "grand_total is different than the expected for order"
+        );
+        $this->assertEquals(
+            $expectedOrdersData['status'],
+            $actualData['status'],
+            "status is different than the expected for order"
+        );
+    }
+
+    /**
      * @magentoApiDataFixture Magento/Sales/_files/customer_multiple_invoices_with_two_products_and_custom_options.php
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
      */
@@ -136,7 +209,7 @@ class InvoiceTest extends GraphQlAbstract
                             'currency' => 'USD'
                         ],
                         'quantity_invoiced' => 3,
-                        'discounts'=> []
+                        'discounts' => []
                     ]
                 ],
                 'total' => [
@@ -370,147 +443,6 @@ QUERY;
         );
         $this->assertTotalsAndShippingWithTaxesAndDiscounts($customerOrderItem['invoices'][0]['total']);
         $this->deleteOrder();
-    }
-
-    /**
-     * @magentoApiDataFixture Magento/Customer/_files/customer.php
-     * @magentoApiDataFixture Magento/Catalog/_files/product_simple_with_url_key.php
-     * @magentoApiDataFixture Magento/GraphQl/Tax/_files/tax_rule_for_region_1.php
-     * @magentoApiDataFixture Magento/GraphQl/Tax/_files/tax_calculation_shipping_and_order_display_settings.php
-     * @magentoApiDataFixture Magento/SalesRule/_files/cart_rule_10_percent_off_with_discount_on_shipping.php
-     */
-    public function testPartialInvoiceForCustomerWithTaxesAndDiscounts()
-    {
-        $quantity = 2;
-        $sku = 'simple1';
-        $cartId = $this->createEmptyCart();
-        $this->addProductToCart($cartId, $quantity, $sku);
-
-        $this->setBillingAddress($cartId);
-        $shippingMethod = $this->setShippingAddress($cartId);
-        $paymentMethod = $this->setShippingMethod($cartId, $shippingMethod);
-        $this->setPaymentMethod($cartId, $paymentMethod);
-
-        $orderNumber = $this->placeOrder($cartId);
-        $this->prepareInvoice($orderNumber, 1);
-        $customerOrderResponse = $this->getCustomerInvoicesBasedOnOrderNumber($orderNumber);
-        $customerOrderItem = $customerOrderResponse[0];
-        $invoice = $customerOrderItem['invoices'][0];
-        $invoiceItem = $invoice['items'][0];
-        $this->assertEquals(1, $invoiceItem['discounts'][0]['amount']['value']);
-        $this->assertEquals('USD', $invoiceItem['discounts'][0]['amount']['currency']);
-        $this->assertEquals('Discount Label for 10% off', $invoiceItem['discounts'][0]['label']);
-        $this->assertEquals(2, $invoice['total']['discounts'][0]['amount']['value']);
-        $this->assertEquals('USD', $invoice['total']['discounts'][0]['amount']['currency']);
-        $this->assertEquals(
-            'Discount Label for 10% off',
-            $invoice['total']['discounts'][0]['label']
-        );
-        $this->assertTotalsAndShippingWithTaxesAndDiscountsForOneQty($customerOrderItem['invoices'][0]['total']);
-        $this->deleteOrder();
-    }
-
-    /**
-     * Prepare invoice for the order
-     *
-     * @param string $orderNumber
-     * @param int|null $qty
-     */
-    private function prepareInvoice(string $orderNumber, int $qty = null)
-    {
-        /** @var \Magento\Sales\Model\Order $order */
-        $order = Bootstrap::getObjectManager()
-            ->create(\Magento\Sales\Model\Order::class)->loadByIncrementId($orderNumber);
-        $orderItem = current($order->getItems());
-        $orderService = Bootstrap::getObjectManager()->create(
-            \Magento\Sales\Api\InvoiceManagementInterface::class
-        );
-        $invoice = $orderService->prepareInvoice($order, [$orderItem->getId() => $qty]);
-        $invoice->register();
-        $order = $invoice->getOrder();
-        $order->setIsInProcess(true);
-        $transactionSave = Bootstrap::getObjectManager()
-            ->create(\Magento\Framework\DB\Transaction::class);
-        $transactionSave->addObject($invoice)->addObject($order)->save();
-    }
-
-    /**
-     * Check order totals an shipping amounts with taxes
-     *
-     * @param array $customerOrderItemTotal
-     */
-    private function assertTotalsAndShippingWithTaxesAndDiscounts(array $customerOrderItemTotal): void
-    {
-        $this->assertCount(1, $customerOrderItemTotal['taxes']);
-        $taxData = $customerOrderItemTotal['taxes'][0];
-        $this->assertEquals('USD', $taxData['amount']['currency']);
-        $this->assertEquals(2.03, $taxData['amount']['value']);
-        $this->assertEquals('US-TEST-*-Rate-1', $taxData['title']);
-        $this->assertEquals(7.5, $taxData['rate']);
-
-        unset($customerOrderItemTotal['taxes']);
-        $assertionMap = [
-            'base_grand_total' => ['value' => 29.1, 'currency' =>'USD'],
-            'grand_total' => ['value' => 29.1, 'currency' =>'USD'],
-            'total_tax' => ['value' => 2.03, 'currency' =>'USD'],
-            'subtotal' => ['value' => 20, 'currency' =>'USD'],
-            'total_shipping' => ['value' => 10, 'currency' =>'USD'],
-            'shipping_handling' => [
-                'amount_including_tax' => ['value' => 10.75, 'currency' =>'USD'],
-                'amount_excluding_tax' => ['value' => 10, 'currency' =>'USD'],
-                'total_amount' => ['value' => 10, 'currency' =>'USD'],
-                'taxes'=> [
-                    0 => [
-                        'amount'=>['value' => 0.68],
-                        'title' => 'US-TEST-*-Rate-1',
-                        'rate' => 7.5
-                    ]
-                ],
-                 'discounts'=> [
-                     0 => ['amount'=>['value' => 1, 'currency'=> 'USD']]
-                 ],
-            ]
-        ];
-        $this->assertResponseFields($customerOrderItemTotal, $assertionMap);
-    }
-
-    /**
-     * Check order totals an shipping amounts with taxes
-     *
-     * @param array $customerOrderItemTotal
-     */
-    private function assertTotalsAndShippingWithTaxesAndDiscountsForOneQty(array $customerOrderItemTotal): void
-    {
-        $this->assertCount(1, $customerOrderItemTotal['taxes']);
-        $taxData = $customerOrderItemTotal['taxes'][0];
-        $this->assertEquals('USD', $taxData['amount']['currency']);
-        $this->assertEquals(1.36, $taxData['amount']['value']);
-        $this->assertEquals('US-TEST-*-Rate-1', $taxData['title']);
-        $this->assertEquals(7.5, $taxData['rate']);
-
-        unset($customerOrderItemTotal['taxes']);
-        $assertionMap = [
-            'base_grand_total' => ['value' => 19.43, 'currency' =>'USD'],
-            'grand_total' => ['value' => 19.43, 'currency' =>'USD'],
-            'total_tax' => ['value' => 1.36, 'currency' =>'USD'],
-            'subtotal' => ['value' => 10, 'currency' =>'USD'],
-            'total_shipping' => ['value' => 10, 'currency' =>'USD'],
-            'shipping_handling' => [
-                'amount_including_tax' => ['value' => 10.75, 'currency' =>'USD'],
-                'amount_excluding_tax' => ['value' => 10, 'currency' =>'USD'],
-                'total_amount' => ['value' => 10, 'currency' =>'USD'],
-                'taxes'=> [
-                    0 => [
-                        'amount'=>['value' => 0.68],
-                        'title' => 'US-TEST-*-Rate-1',
-                        'rate' => 7.5
-                    ]
-                ],
-                 'discounts'=> [['amount'=>['value' => 1, 'currency'=> 'USD']]
-                 ],
-            ]
-        ];
-        $this->assertResponseFields($customerOrderItemTotal, $assertionMap);
     }
 
     /**
@@ -782,80 +714,67 @@ QUERY;
     }
 
     /**
-     * Get customer order query
+     * Prepare invoice for the order
      *
      * @param string $orderNumber
-     * @return array
+     * @param int|null $qty
      */
-    private function getCustomerInvoicesBasedOnOrderNumber($orderNumber): array
+    private function prepareInvoice(string $orderNumber, int $qty = null)
     {
-        $query =
-            <<<QUERY
-{
-     customer {
-       email
-       orders(filter:{number:{eq:"{$orderNumber}"}}) {
-         total_count
-         items {
-           status
-           total {
-           grand_total{value currency}
-           }
-           invoices {
-              items{
-              product_name product_sku product_sale_price{value currency}quantity_invoiced
-              discounts {amount{value currency} label}
-              }
-              total {
-             base_grand_total{value currency}
-             grand_total{value currency}
-             total_tax{value currency}
-             subtotal { value currency }
-             taxes {amount{value currency} title rate}
-             discounts {amount{value currency} label}
-             total_shipping{value currency}
-             shipping_handling
-             {
-               amount_including_tax{value currency}
-               amount_excluding_tax{value currency}
-               total_amount{value currency}
-               taxes {amount{value} title rate}
-               discounts {amount{value currency}}
-             }
-           }
-            }
-         }
-       }
-     }
-   }
-QUERY;
-        $currentEmail = 'customer@example.com';
-        $currentPassword = 'password';
-        $response = $this->graphQlQuery(
-            $query,
-            [],
-            '',
-            $this->customerAuthenticationHeader->execute($currentEmail, $currentPassword)
+        /** @var Order $order */
+        $order = Bootstrap::getObjectManager()
+            ->create(Order::class)->loadByIncrementId($orderNumber);
+        $orderItem = current($order->getItems());
+        $orderService = Bootstrap::getObjectManager()->create(
+            InvoiceManagementInterface::class
         );
-
-        $this->assertArrayHasKey('orders', $response['customer']);
-        $this->assertArrayHasKey('items', $response['customer']['orders']);
-        return $response['customer']['orders']['items'];
+        $invoice = $orderService->prepareInvoice($order, [$orderItem->getId() => $qty]);
+        $invoice->register();
+        $order = $invoice->getOrder();
+        $order->setIsInProcess(true);
+        $transactionSave = Bootstrap::getObjectManager()
+            ->create(Transaction::class);
+        $transactionSave->addObject($invoice)->addObject($order)->save();
     }
 
-    private function assertOrdersData($response, $expectedOrdersData): void
+    /**
+     * Check order totals an shipping amounts with taxes
+     *
+     * @param array $customerOrderItemTotal
+     */
+    private function assertTotalsAndShippingWithTaxesAndDiscounts(array $customerOrderItemTotal): void
     {
-        $actualData = $response[0];
-        $this->assertEquals(
-            $expectedOrdersData['grand_total'],
-            $actualData['total']['grand_total']['value'],
-            "grand_total is different than the expected for order"
-        );
-        $this->assertEquals(
-            $expectedOrdersData['status'],
-            $actualData['status'],
-            "status is different than the expected for order"
-        );
+        $this->assertCount(1, $customerOrderItemTotal['taxes']);
+        $taxData = $customerOrderItemTotal['taxes'][0];
+        $this->assertEquals('USD', $taxData['amount']['currency']);
+        $this->assertEquals(2.03, $taxData['amount']['value']);
+        $this->assertEquals('US-TEST-*-Rate-1', $taxData['title']);
+        $this->assertEquals(7.5, $taxData['rate']);
+
+        unset($customerOrderItemTotal['taxes']);
+        $assertionMap = [
+            'base_grand_total' => ['value' => 29.1, 'currency' => 'USD'],
+            'grand_total' => ['value' => 29.1, 'currency' => 'USD'],
+            'total_tax' => ['value' => 2.03, 'currency' => 'USD'],
+            'subtotal' => ['value' => 20, 'currency' => 'USD'],
+            'total_shipping' => ['value' => 10, 'currency' => 'USD'],
+            'shipping_handling' => [
+                'amount_including_tax' => ['value' => 10.75, 'currency' => 'USD'],
+                'amount_excluding_tax' => ['value' => 10, 'currency' => 'USD'],
+                'total_amount' => ['value' => 10, 'currency' => 'USD'],
+                'taxes' => [
+                    0 => [
+                        'amount' => ['value' => 0.68],
+                        'title' => 'US-TEST-*-Rate-1',
+                        'rate' => 7.5
+                    ]
+                ],
+                'discounts' => [
+                    0 => ['amount' => ['value' => 1, 'currency' => 'USD']]
+                ],
+            ]
+        ];
+        $this->assertResponseFields($customerOrderItemTotal, $assertionMap);
     }
 
     /**
@@ -869,12 +788,96 @@ QUERY;
         $registry = Bootstrap::getObjectManager()->get(Registry::class);
         $registry->unregister('isSecureArea');
         $registry->register('isSecureArea', true);
-        /** @var $order \Magento\Sales\Model\Order */
+        /** @var $order Order */
         $orderCollection = Bootstrap::getObjectManager()->create(Collection::class);
         foreach ($orderCollection as $order) {
             $this->orderRepository->delete($order);
         }
         $registry->unregister('isSecureArea');
         $registry->register('isSecureArea', false);
+    }
+
+    /**
+     * @magentoApiDataFixture Magento/Customer/_files/customer.php
+     * @magentoApiDataFixture Magento/Catalog/_files/product_simple_with_url_key.php
+     * @magentoApiDataFixture Magento/GraphQl/Tax/_files/tax_rule_for_region_1.php
+     * @magentoApiDataFixture Magento/GraphQl/Tax/_files/tax_calculation_shipping_and_order_display_settings.php
+     * @magentoApiDataFixture Magento/SalesRule/_files/cart_rule_10_percent_off_with_discount_on_shipping.php
+     */
+    public function testPartialInvoiceForCustomerWithTaxesAndDiscounts()
+    {
+        $quantity = 2;
+        $sku = 'simple1';
+        $cartId = $this->createEmptyCart();
+        $this->addProductToCart($cartId, $quantity, $sku);
+
+        $this->setBillingAddress($cartId);
+        $shippingMethod = $this->setShippingAddress($cartId);
+        $paymentMethod = $this->setShippingMethod($cartId, $shippingMethod);
+        $this->setPaymentMethod($cartId, $paymentMethod);
+
+        $orderNumber = $this->placeOrder($cartId);
+        $this->prepareInvoice($orderNumber, 1);
+        $customerOrderResponse = $this->getCustomerInvoicesBasedOnOrderNumber($orderNumber);
+        $customerOrderItem = $customerOrderResponse[0];
+        $invoice = $customerOrderItem['invoices'][0];
+        $invoiceItem = $invoice['items'][0];
+        $this->assertEquals(1, $invoiceItem['discounts'][0]['amount']['value']);
+        $this->assertEquals('USD', $invoiceItem['discounts'][0]['amount']['currency']);
+        $this->assertEquals('Discount Label for 10% off', $invoiceItem['discounts'][0]['label']);
+        $this->assertEquals(2, $invoice['total']['discounts'][0]['amount']['value']);
+        $this->assertEquals('USD', $invoice['total']['discounts'][0]['amount']['currency']);
+        $this->assertEquals(
+            'Discount Label for 10% off',
+            $invoice['total']['discounts'][0]['label']
+        );
+        $this->assertTotalsAndShippingWithTaxesAndDiscountsForOneQty($customerOrderItem['invoices'][0]['total']);
+        $this->deleteOrder();
+    }
+
+    /**
+     * Check order totals an shipping amounts with taxes
+     *
+     * @param array $customerOrderItemTotal
+     */
+    private function assertTotalsAndShippingWithTaxesAndDiscountsForOneQty(array $customerOrderItemTotal): void
+    {
+        $this->assertCount(1, $customerOrderItemTotal['taxes']);
+        $taxData = $customerOrderItemTotal['taxes'][0];
+        $this->assertEquals('USD', $taxData['amount']['currency']);
+        $this->assertEquals(1.36, $taxData['amount']['value']);
+        $this->assertEquals('US-TEST-*-Rate-1', $taxData['title']);
+        $this->assertEquals(7.5, $taxData['rate']);
+
+        unset($customerOrderItemTotal['taxes']);
+        $assertionMap = [
+            'base_grand_total' => ['value' => 19.43, 'currency' => 'USD'],
+            'grand_total' => ['value' => 19.43, 'currency' => 'USD'],
+            'total_tax' => ['value' => 1.36, 'currency' => 'USD'],
+            'subtotal' => ['value' => 10, 'currency' => 'USD'],
+            'total_shipping' => ['value' => 10, 'currency' => 'USD'],
+            'shipping_handling' => [
+                'amount_including_tax' => ['value' => 10.75, 'currency' => 'USD'],
+                'amount_excluding_tax' => ['value' => 10, 'currency' => 'USD'],
+                'total_amount' => ['value' => 10, 'currency' => 'USD'],
+                'taxes' => [
+                    0 => [
+                        'amount' => ['value' => 0.68],
+                        'title' => 'US-TEST-*-Rate-1',
+                        'rate' => 7.5
+                    ]
+                ],
+                'discounts' => [['amount' => ['value' => 1, 'currency' => 'USD']]
+                ],
+            ]
+        ];
+        $this->assertResponseFields($customerOrderItemTotal, $assertionMap);
+    }
+
+    protected function setUp(): void
+    {
+        $this->customerAuthenticationHeader
+            = Bootstrap::getObjectManager()->get(GetCustomerAuthenticationHeader::class);
+        $this->orderRepository = Bootstrap::getObjectManager()->get(OrderRepositoryInterface::class);
     }
 }

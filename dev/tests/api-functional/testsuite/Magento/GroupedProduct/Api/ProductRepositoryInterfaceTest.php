@@ -3,10 +3,12 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\GroupedProduct\Api;
 
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\CatalogInventory\Api\Data\StockItemInterface;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 class ProductRepositoryInterfaceTest extends WebapiAbstract
@@ -15,110 +17,10 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
     const SERVICE_VERSION = 'V1';
     const RESOURCE_PATH = '/V1/products';
 
-    /**
-     * Get Products
-     *
-     * @param $sku
-     * @return ProductInterface
-     */
-    protected function getProduct($sku)
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . '/' . $sku,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'Get',
-            ],
-        ];
-
-        $response = $this->_webApiCall($serviceInfo, ['sku' => $sku]);
-        return $response;
-    }
-
-    /**
-     * Update Products
-     *
-     * @param $product
-     * @return mixed
-     */
-    protected function updateProduct($product)
-    {
-        $sku = $product[ProductInterface::SKU];
-        if (TESTS_WEB_API_ADAPTER == self::ADAPTER_REST) {
-            $product[ProductInterface::SKU] = null;
-        }
-
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . '/' . $sku,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_PUT,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'Save',
-            ],
-        ];
-        $requestData = ['product' => $product];
-        $response =  $this->_webApiCall($serviceInfo, $requestData);
-        return $response;
-    }
-
-    /**
-     * Save Products
-     *
-     * @param $product
-     * @return mixed
-     */
-    protected function saveProduct($product)
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'Save',
-            ],
-        ];
-        $requestData = ['product' => $product];
-        return $this->_webApiCall($serviceInfo, $requestData);
-    }
-
-    /**
-     * Delete Products
-     *
-     * @param string $sku
-     * @return boolean
-     */
-    protected function deleteProduct($sku)
-    {
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . '/' . $sku,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'DeleteById',
-            ],
-        ];
-
-        return (TESTS_WEB_API_ADAPTER == self::ADAPTER_SOAP) ?
-            $this->_webApiCall($serviceInfo, ['sku' => $sku]) : $this->_webApiCall($serviceInfo);
-    }
-
     public function testProductLinks()
     {
         // Create simple product
-        $productData =  [
+        $productData = [
             ProductInterface::SKU => "product_simple_500",
             ProductInterface::NAME => "Products Simple 500",
             ProductInterface::VISIBILITY => 4,
@@ -135,9 +37,9 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
 
         // Create a group product
         $productLinkData = ["sku" => "group_product_500", "link_type" => "associated",
-                            "linked_product_sku" => "product_simple_500", "linked_product_type" => "simple",
-                            "position" => 0, "extension_attributes" => ["qty" => 1]];
-        $productWithGroupData =  [
+            "linked_product_sku" => "product_simple_500", "linked_product_type" => "simple",
+            "position" => 0, "extension_attributes" => ["qty" => 1]];
+        $productWithGroupData = [
             ProductInterface::SKU => "group_product_500",
             ProductInterface::NAME => "Group Products 500",
             ProductInterface::VISIBILITY => 4,
@@ -157,12 +59,12 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
 
         // update link information for Group Products
         $productLinkData1 = ["sku" => "group_product_500", "link_type" => "associated",
-                            "linked_product_sku" => "product_simple_500", "linked_product_type" => "simple",
-                            "position" => 0, "extension_attributes" => ["qty" => 4]];
+            "linked_product_sku" => "product_simple_500", "linked_product_type" => "simple",
+            "position" => 0, "extension_attributes" => ["qty" => 4]];
         $productLinkData2 = ["sku" => "group_product_500", "link_type" => "upsell",
-                             "linked_product_sku" => "product_simple_500", "linked_product_type" => "simple",
-                             "position" => 0];
-        $productWithGroupData =  [
+            "linked_product_sku" => "product_simple_500", "linked_product_type" => "simple",
+            "position" => 0];
+        $productWithGroupData = [
             ProductInterface::SKU => "group_product_500",
             ProductInterface::NAME => "Group Products 500",
             ProductInterface::VISIBILITY => 4,
@@ -183,7 +85,7 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
         $this->assertEquals($productLinkData2, $links[0]);
 
         // Remove link
-        $productWithNoLinkData =  [
+        $productWithNoLinkData = [
             ProductInterface::SKU => "group_product_500",
             ProductInterface::NAME => "Group Products 500",
             ProductInterface::VISIBILITY => 4,
@@ -234,5 +136,105 @@ class ProductRepositoryInterfaceTest extends WebapiAbstract
             StockItemInterface::IS_DECIMAL_DIVIDED => 0,
             StockItemInterface::STOCK_STATUS_CHANGED_AUTO => 0,
         ];
+    }
+
+    /**
+     * Save Products
+     *
+     * @param $product
+     * @return mixed
+     */
+    protected function saveProduct($product)
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH,
+                'httpMethod' => Request::HTTP_METHOD_POST,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'Save',
+            ],
+        ];
+        $requestData = ['product' => $product];
+        return $this->_webApiCall($serviceInfo, $requestData);
+    }
+
+    /**
+     * Get Products
+     *
+     * @param $sku
+     * @return ProductInterface
+     */
+    protected function getProduct($sku)
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH . '/' . $sku,
+                'httpMethod' => Request::HTTP_METHOD_GET,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'Get',
+            ],
+        ];
+
+        $response = $this->_webApiCall($serviceInfo, ['sku' => $sku]);
+        return $response;
+    }
+
+    /**
+     * Delete Products
+     *
+     * @param string $sku
+     * @return boolean
+     */
+    protected function deleteProduct($sku)
+    {
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH . '/' . $sku,
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'DeleteById',
+            ],
+        ];
+
+        return (TESTS_WEB_API_ADAPTER == self::ADAPTER_SOAP) ?
+            $this->_webApiCall($serviceInfo, ['sku' => $sku]) : $this->_webApiCall($serviceInfo);
+    }
+
+    /**
+     * Update Products
+     *
+     * @param $product
+     * @return mixed
+     */
+    protected function updateProduct($product)
+    {
+        $sku = $product[ProductInterface::SKU];
+        if (TESTS_WEB_API_ADAPTER == self::ADAPTER_REST) {
+            $product[ProductInterface::SKU] = null;
+        }
+
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH . '/' . $sku,
+                'httpMethod' => Request::HTTP_METHOD_PUT,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'Save',
+            ],
+        ];
+        $requestData = ['product' => $product];
+        $response = $this->_webApiCall($serviceInfo, $requestData);
+        return $response;
     }
 }

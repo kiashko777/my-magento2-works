@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogInventory\Model\StockItemSave\OnProductUpdate\ByProductRepository;
 
 use Magento\Catalog\Api\Data\ProductInterface;
@@ -14,8 +15,9 @@ use Magento\CatalogInventory\Api\StockItemRepositoryInterface;
 use Magento\CatalogInventory\Model\StockItemSave\StockItemDataChecker;
 use Magento\Framework\Api\DataObjectHelper;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class ByStockItemTest extends \PHPUnit\Framework\TestCase
+class ByStockItemTest extends TestCase
 {
     /**
      * @var StockItemInterfaceFactory
@@ -50,16 +52,6 @@ class ByStockItemTest extends \PHPUnit\Framework\TestCase
         StockItemInterface::MANAGE_STOCK => true,
         StockItemInterface::IS_IN_STOCK => false,
     ];
-
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->stockItemFactory = $objectManager->get(StockItemInterfaceFactory::class);
-        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
-        $this->stockItemRepository = $objectManager->get(StockItemRepositoryInterface::class);
-        $this->dataObjectHelper = $objectManager->get(DataObjectHelper::class);
-        $this->stockItemDataChecker = $objectManager->get(StockItemDataChecker::class);
-    }
 
     /**
      * Test saving of stock item by product data via product repository
@@ -119,5 +111,15 @@ class ByStockItemTest extends \PHPUnit\Framework\TestCase
         $this->productRepository->save($product);
 
         $this->stockItemDataChecker->checkStockItemData('simple', $this->stockItemData);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->stockItemFactory = $objectManager->get(StockItemInterfaceFactory::class);
+        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
+        $this->stockItemRepository = $objectManager->get(StockItemRepositoryInterface::class);
+        $this->dataObjectHelper = $objectManager->get(DataObjectHelper::class);
+        $this->stockItemDataChecker = $objectManager->get(StockItemDataChecker::class);
     }
 }

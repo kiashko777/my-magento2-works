@@ -28,17 +28,6 @@ class LinkTest extends TestCase
     private $page;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->page = $this->objectManager->get(PageFactory::class)->create();
-    }
-
-    /**
      * @return void
      */
     public function testMyDownloadableProductLink(): void
@@ -63,5 +52,16 @@ class LinkTest extends TestCase
             'customer_account',
         ]);
         $this->page->getLayout()->generateXml();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->page = $this->objectManager->get(PageFactory::class)->create();
     }
 }

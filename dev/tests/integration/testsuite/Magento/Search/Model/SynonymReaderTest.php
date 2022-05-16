@@ -3,24 +3,22 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Search\Model;
+
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoDbIsolation disabled
  * @magentoDataFixture Magento/Search/_files/synonym_reader.php
  */
-class SynonymReaderTest extends \PHPUnit\Framework\TestCase
+class SynonymReaderTest extends TestCase
 {
     /**
-     * @var \Magento\Search\Model\SynonymReader
+     * @var SynonymReader
      */
     private $model;
-
-    protected function setUp(): void
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->model = $objectManager->get(\Magento\Search\Model\SynonymReader::class);
-    }
 
     /**
      * @return array
@@ -53,7 +51,7 @@ class SynonymReaderTest extends \PHPUnit\Framework\TestCase
                 'MONARCH English', [
                 ['synonyms' => 'queen,monarch', 'store_id' => 1, 'website_id' => 0],
                 ['synonyms' => 'british,english', 'store_id' => 1, 'website_id' => 0]
-                ]
+            ]
             ],
             [
                 'query_value', []
@@ -98,5 +96,11 @@ class SynonymReaderTest extends \PHPUnit\Framework\TestCase
             $this->assertEquals($r['website_id'], $data[$i]['website_id']);
             ++$i;
         }
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->model = $objectManager->get(SynonymReader::class);
     }
 }

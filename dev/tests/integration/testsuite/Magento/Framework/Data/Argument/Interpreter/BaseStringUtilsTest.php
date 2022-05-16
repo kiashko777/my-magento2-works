@@ -6,45 +6,27 @@
 
 namespace Magento\Framework\Data\Argument\Interpreter;
 
+use InvalidArgumentException;
+use Magento\Framework\Phrase;
 use Magento\Framework\Phrase\RendererInterface;
 use Magento\Framework\Stdlib\BooleanUtils;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \Magento\Framework\Data\Argument\Interpreter\BaseStringUtils
  */
-class BaseStringUtilsTest extends \PHPUnit\Framework\TestCase
+class BaseStringUtilsTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Data\Argument\Interpreter\BaseStringUtils
+     * @var BaseStringUtils
      */
     private $model;
 
     /**
-     * @var BooleanUtils|\PHPUnit\Framework\MockObject\MockObject
+     * @var BooleanUtils|MockObject
      */
     private $booleanUtils;
-
-    /**
-     * Prepare subject for tests.
-     */
-    protected function setUp(): void
-    {
-        $this->booleanUtils = $this->createPartialMock(BooleanUtils::class, ['toBoolean']);
-        $this->booleanUtils->expects(
-            $this->any()
-        )->method(
-            'toBoolean'
-        )->willReturnMap(
-            [['true', true], ['false', false]]
-        );
-        $this->model = new BaseStringUtils($this->booleanUtils);
-        /** @var RendererInterface|\PHPUnit\Framework\MockObject\MockObject $translateRenderer */
-        $translateRenderer = $this->getMockBuilder(RendererInterface::class)
-          ->setMethods(['render'])
-          ->getMockForAbstractClass();
-        $translateRenderer->expects(self::never())->method('render');
-        \Magento\Framework\Phrase::setRenderer($translateRenderer);
-    }
 
     /**
      * Check BaseStringUtils::evaluate() will not translate incoming $input['value'].
@@ -86,7 +68,7 @@ class BaseStringUtilsTest extends \PHPUnit\Framework\TestCase
      */
     public function testEvaluateException($input)
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('String value is expected');
 
         $this->model->evaluate($input);
@@ -100,5 +82,27 @@ class BaseStringUtilsTest extends \PHPUnit\Framework\TestCase
     public function evaluateExceptionDataProvider()
     {
         return ['not a string' => [['value' => 123]]];
+    }
+
+    /**
+     * Prepare subject for tests.
+     */
+    protected function setUp(): void
+    {
+        $this->booleanUtils = $this->createPartialMock(BooleanUtils::class, ['toBoolean']);
+        $this->booleanUtils->expects(
+            $this->any()
+        )->method(
+            'toBoolean'
+        )->willReturnMap(
+            [['true', true], ['false', false]]
+        );
+        $this->model = new BaseStringUtils($this->booleanUtils);
+        /** @var RendererInterface|MockObject $translateRenderer */
+        $translateRenderer = $this->getMockBuilder(RendererInterface::class)
+            ->setMethods(['render'])
+            ->getMockForAbstractClass();
+        $translateRenderer->expects(self::never())->method('render');
+        Phrase::setRenderer($translateRenderer);
     }
 }

@@ -5,17 +5,16 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Magento\Payment\Model;
 
-class ConfigTest extends \Magento\TestFramework\Integrity\AbstractConfig
-{
-    /** @var \Magento\Framework\Config\Dom\UrnResolver */
-    protected $urnResolver;
+use Magento\Framework\Config\Dom\UrnResolver;
+use Magento\TestFramework\Integrity\AbstractConfig;
 
-    protected function setUp(): void
-    {
-        $this->urnResolver = new \Magento\Framework\Config\Dom\UrnResolver();
-    }
+class ConfigTest extends AbstractConfig
+{
+    /** @var UrnResolver */
+    protected $urnResolver;
 
     public function testSchemaUsingInvalidXml($expectedErrors = null)
     {
@@ -45,6 +44,11 @@ class ConfigTest extends \Magento\TestFramework\Integrity\AbstractConfig
             "Element 'type': Missing child element(s). Expected is ( label ).",
         ];
         parent::testSchemaUsingPartialXml($expectedErrors);
+    }
+
+    protected function setUp(): void
+    {
+        $this->urnResolver = new UrnResolver();
     }
 
     /**

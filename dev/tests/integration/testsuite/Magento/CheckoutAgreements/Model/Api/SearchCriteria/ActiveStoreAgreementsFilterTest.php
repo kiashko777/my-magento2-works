@@ -6,25 +6,21 @@
 
 namespace Magento\CheckoutAgreements\Model\Api\SearchCriteria;
 
-class ActiveStoreAgreementsFilterTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class ActiveStoreAgreementsFilterTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     private $objectManager;
 
     /**
-     * @var \Magento\CheckoutAgreements\Model\Api\SearchCriteria\ActiveStoreAgreementsFilter
+     * @var ActiveStoreAgreementsFilter
      */
     private $model;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->model = $this->objectManager->create(
-            \Magento\CheckoutAgreements\Model\Api\SearchCriteria\ActiveStoreAgreementsFilter::class
-        );
-    }
 
     public function testBuildSearchCriteria()
     {
@@ -52,5 +48,13 @@ class ActiveStoreAgreementsFilterTest extends \PHPUnit\Framework\TestCase
         ];
         $searchCriteria = $this->model->buildSearchCriteria();
         $this->assertEquals($expected, $searchCriteria->__toArray());
+    }
+
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->model = $this->objectManager->create(
+            ActiveStoreAgreementsFilter::class
+        );
     }
 }

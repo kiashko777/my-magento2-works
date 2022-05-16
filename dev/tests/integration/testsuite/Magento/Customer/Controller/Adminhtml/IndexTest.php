@@ -6,13 +6,20 @@
 
 namespace Magento\Customer\Controller\Adminhtml;
 
+use Magento\Backend\Block\Template\Context;
 use Magento\Backend\Model\Session;
 use Magento\Customer\Api\CustomerNameGenerationInterface;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Model\EmailNotification;
-use Magento\TestFramework\Helper\Bootstrap;
+use Magento\Framework\Acl\Builder;
+use Magento\Framework\App\Area;
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\Mail\Template\TransportBuilder;
+use Magento\Framework\Mail\TransportInterface;
+use Magento\Framework\Message\MessageInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\AbstractBackendController;
+use PHPUnit\Framework\MockObject\MockObject;
 
 /**
  * @magentoAppArea Adminhtml
@@ -32,32 +39,6 @@ class IndexTest extends AbstractBackendController
 
     /** @var CustomerNameGenerationInterface */
     private $customerViewHelper;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->customerRepository = $this->_objectManager->get(CustomerRepositoryInterface::class);
-        $this->customerViewHelper = $this->_objectManager->get(CustomerNameGenerationInterface::class);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    protected function tearDown(): void
-    {
-        /**
-         * Unset customer data
-         */
-        $this->_objectManager->get(Session::class)->setCustomerData(null);
-
-        /**
-         * Unset messages
-         */
-        $this->_objectManager->get(Session::class)->getMessages(true);
-    }
 
     /**
      * Ensure that an email is sent during inlineEdit action
@@ -102,7 +83,89 @@ class IndexTest extends AbstractBackendController
         /**
          * Check that no errors were generated and set to session
          */
-        $this->assertSessionMessages($this->isEmpty(), \Magento\Framework\Message\MessageInterface::TYPE_ERROR);
+        $this->assertSessionMessages($this->isEmpty(), MessageInterface::TYPE_ERROR);
+    }
+
+    /**
+     * Prepare email mock to test emails.
+     *
+     * @param int $occurrenceNumber
+     * @param string $templateId
+     * @param array $sender
+     * @param int $customerId
+     * @param string|null $newEmail
+     * @return MockObject
+     * @magentoDataFixture Magento/Customer/_files/customer.php
+     */
+    protected function prepareEmailMock(
+        int    $occurrenceNumber,
+        string $templateId,
+        array  $sender,
+        int    $customerId,
+               $newEmail = null
+    ): MockObject
+    {
+        $area = Area::AREA_FRONTEND;
+        $customer = $this->customerRepository->getById($customerId);
+        $storeId = $customer->getStoreId();
+        $name = $this->customerViewHelper->getCustomerName($customer);
+
+        $transportMock = $this->getMockBuilder(TransportInterface::class)
+            ->setMethods(['sendMessage'])
+            ->getMockForAbstractClass();
+        $transportMock->expects($this->exactly($occurrenceNumber))
+            ->method('sendMessage');
+        $transportBuilderMock = $this->getMockBuilder(TransportBuilder::class)
+            ->disableOriginalConstructor()
+            ->setMethods(
+                [
+                    'addTo',
+                    'setFrom',
+                    'setTemplateIdentifier',
+                    'setTemplateVars',
+                    'setTemplateOptions',
+                    'getTransport',
+                ]
+            )
+            ->getMock();
+        $transportBuilderMock->method('setTemplateIdentifier')
+            ->with($templateId)
+            ->willReturnSelf();
+        $transportBuilderMock->method('setTemplateOptions')
+            ->with(['area' => $area, 'store' => $storeId])
+            ->willReturnSelf();
+        $transportBuilderMock->method('setTemplateVars')
+            ->willReturnSelf();
+        $transportBuilderMock->method('setFrom')
+            ->with($sender)
+            ->willReturnSelf();
+        $transportBuilderMock->method('addTo')
+            ->with($this->logicalOr($customer->getEmail(), $newEmail), $name)
+            ->willReturnSelf();
+        $transportBuilderMock->expects($this->exactly($occurrenceNumber))
+            ->method('getTransport')
+            ->willReturn($transportMock);
+
+        return $transportBuilderMock;
+    }
+
+    /**
+     * @param MockObject $transportBuilderMock
+     * @param string $className
+     */
+    protected function addEmailMockToClass(
+        MockObject $transportBuilderMock,
+                                                 $className
+    )
+    {
+        $mocked = $this->_objectManager->create(
+            $className,
+            ['transportBuilder' => $transportBuilderMock]
+        );
+        $this->_objectManager->addSharedInstance(
+            $mocked,
+            $className
+        );
     }
 
     /**
@@ -116,18 +179,6 @@ class IndexTest extends AbstractBackendController
 
         // verify
         $this->assertStringContainsString('<h1 class="page-title">test firstname test lastname</h1>', $body);
-    }
-
-    /**
-     * Test new customer form page.
-     */
-    public function testNewAction()
-    {
-        $this->dispatch('backend/customer/index/edit');
-        $body = $this->getResponse()->getBody();
-
-        // verify
-        $this->assertStringContainsString('<h1 class="page-title">New Customer</h1>', $body);
     }
 
     /**
@@ -148,9 +199,21 @@ class IndexTest extends AbstractBackendController
                 'customer_address' => [],
             ],
         ];
-        $context = Bootstrap::getObjectManager()->get(\Magento\Backend\Block\Template\Context::class);
+        $context = Bootstrap::getObjectManager()->get(Context::class);
         $context->getBackendSession()->setCustomerData($customerData);
         $this->testNewAction();
+    }
+
+    /**
+     * Test new customer form page.
+     */
+    public function testNewAction()
+    {
+        $this->dispatch('backend/customer/index/edit');
+        $body = $this->getResponse()->getBody();
+
+        // verify
+        $this->assertStringContainsString('<h1 class="page-title">New Customer</h1>', $body);
     }
 
     /**
@@ -186,7 +249,7 @@ class IndexTest extends AbstractBackendController
         $this->dispatch('backend/customer/index/resetPassword');
         $this->assertSessionMessages(
             $this->equalTo(['The customer will receive an email with a link to reset password.']),
-            \Magento\Framework\Message\MessageInterface::TYPE_SUCCESS
+            MessageInterface::TYPE_SUCCESS
         );
         $this->assertRedirect($this->stringContains($this->baseControllerUrl . 'edit'));
     }
@@ -207,8 +270,8 @@ class IndexTest extends AbstractBackendController
      */
     public function testAclDeleteActionDeny()
     {
-        $resource= 'Magento_Customer::delete';
-        $this->_objectManager->get(\Magento\Framework\Acl\Builder::class)
+        $resource = 'Magento_Customer::delete';
+        $this->_objectManager->get(Builder::class)
             ->getAcl()
             ->deny(null, $resource);
         $this->getRequest()->setParam('id', 1);
@@ -218,82 +281,28 @@ class IndexTest extends AbstractBackendController
     }
 
     /**
-     * Prepare email mock to test emails.
-     *
-     * @param int $occurrenceNumber
-     * @param string $templateId
-     * @param array $sender
-     * @param int $customerId
-     * @param string|null $newEmail
-     * @return \PHPUnit\Framework\MockObject\MockObject
-     * @magentoDataFixture Magento/Customer/_files/customer.php
+     * @inheritDoc
      */
-    protected function prepareEmailMock(
-        int $occurrenceNumber,
-        string $templateId,
-        array $sender,
-        int $customerId,
-        $newEmail = null
-    ) : \PHPUnit\Framework\MockObject\MockObject {
-        $area = \Magento\Framework\App\Area::AREA_FRONTEND;
-        $customer = $this->customerRepository->getById($customerId);
-        $storeId = $customer->getStoreId();
-        $name = $this->customerViewHelper->getCustomerName($customer);
-
-        $transportMock = $this->getMockBuilder(\Magento\Framework\Mail\TransportInterface::class)
-            ->setMethods(['sendMessage'])
-            ->getMockForAbstractClass();
-        $transportMock->expects($this->exactly($occurrenceNumber))
-            ->method('sendMessage');
-        $transportBuilderMock = $this->getMockBuilder(\Magento\Framework\Mail\Template\TransportBuilder::class)
-            ->disableOriginalConstructor()
-            ->setMethods(
-                [
-                    'addTo',
-                    'setFrom',
-                    'setTemplateIdentifier',
-                    'setTemplateVars',
-                    'setTemplateOptions',
-                    'getTransport',
-                ]
-            )
-            ->getMock();
-        $transportBuilderMock->method('setTemplateIdentifier')
-            ->with($templateId)
-            ->willReturnSelf();
-        $transportBuilderMock->method('setTemplateOptions')
-            ->with(['area' => $area, 'store' => $storeId])
-            ->willReturnSelf();
-        $transportBuilderMock->method('setTemplateVars')
-            ->willReturnSelf();
-        $transportBuilderMock->method('setFrom')
-            ->with($sender)
-            ->willReturnSelf();
-        $transportBuilderMock->method('addTo')
-            ->with($this->logicalOr($customer->getEmail(), $newEmail), $name)
-            ->willReturnSelf();
-        $transportBuilderMock->expects($this->exactly($occurrenceNumber))
-            ->method('getTransport')
-            ->willReturn($transportMock);
-
-        return $transportBuilderMock;
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->customerRepository = $this->_objectManager->get(CustomerRepositoryInterface::class);
+        $this->customerViewHelper = $this->_objectManager->get(CustomerNameGenerationInterface::class);
     }
 
     /**
-     * @param \PHPUnit\Framework\MockObject\MockObject $transportBuilderMock
-     * @param string $className
+     * @inheritDoc
      */
-    protected function addEmailMockToClass(
-        \PHPUnit\Framework\MockObject\MockObject $transportBuilderMock,
-        $className
-    ) {
-        $mocked = $this->_objectManager->create(
-            $className,
-            ['transportBuilder' => $transportBuilderMock]
-        );
-        $this->_objectManager->addSharedInstance(
-            $mocked,
-            $className
-        );
+    protected function tearDown(): void
+    {
+        /**
+         * Unset customer data
+         */
+        $this->_objectManager->get(Session::class)->setCustomerData(null);
+
+        /**
+         * Unset messages
+         */
+        $this->_objectManager->get(Session::class)->getMessages(true);
     }
 }

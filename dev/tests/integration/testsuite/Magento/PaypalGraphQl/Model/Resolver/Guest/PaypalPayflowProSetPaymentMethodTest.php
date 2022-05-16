@@ -7,10 +7,10 @@ declare(strict_types=1);
 
 namespace Magento\PaypalGraphQl\Model\Resolver\Guest;
 
-use Magento\PaypalGraphQl\PaypalPayflowProAbstractTest;
-use Magento\Framework\Serialize\SerializerInterface;
-use Magento\Quote\Model\QuoteIdToMaskedQuoteId;
 use Magento\Framework\DataObject;
+use Magento\Framework\Serialize\SerializerInterface;
+use Magento\PaypalGraphQl\PaypalPayflowProAbstractTest;
+use Magento\Quote\Model\QuoteIdToMaskedQuoteId;
 
 /**
  * Test ExpressSetPaymentMethodTest graphql endpoint for guest
@@ -28,14 +28,6 @@ class PaypalPayflowProSetPaymentMethodTest extends PaypalPayflowProAbstractTest
      * @var QuoteIdToMaskedQuoteId
      */
     private $quoteIdToMaskedId;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->json = $this->objectManager->get(SerializerInterface::class);
-        $this->quoteIdToMaskedId = $this->objectManager->get(QuoteIdToMaskedQuoteId::class);
-    }
 
     /**
      * Test end to end test to process a paypal payflow pro order
@@ -204,5 +196,13 @@ QUERY;
             'test_quote',
             $responseData['data']['placeOrder']['order']['order_number']
         );
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->json = $this->objectManager->get(SerializerInterface::class);
+        $this->quoteIdToMaskedId = $this->objectManager->get(QuoteIdToMaskedQuoteId::class);
     }
 }

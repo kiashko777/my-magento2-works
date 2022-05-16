@@ -9,6 +9,7 @@ namespace Magento\Setup\Test\Unit\Module\I18n\Dictionary;
 
 use Magento\Setup\Module\I18n\Dictionary\Phrase;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 
 class PhraseTest extends TestCase
 {
@@ -72,7 +73,7 @@ class PhraseTest extends TestCase
         return [
             [[null, 'translation'], 'Missed phrase'],
             [['phrase', null], 'Missed translation'],
-            [['phrase', 'translation', null, new \stdClass()], 'Wrong context type']
+            [['phrase', 'translation', null, new stdClass()], 'Wrong context type']
         ];
     }
 

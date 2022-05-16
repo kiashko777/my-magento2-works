@@ -3,7 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestModule5\Service\V2;
+
+use Magento\Framework\Webapi\Exception;
 
 /**
  * Both SOAP and REST Version TWO
@@ -16,7 +19,7 @@ interface AllSoapAndRestInterface
      *
      * @param int $id
      * @return \Magento\TestModule5\Service\V2\Entity\AllSoapAndRest
-     * @throws \Magento\Framework\Webapi\Exception
+     * @throws Exception
      */
     public function item($id);
 

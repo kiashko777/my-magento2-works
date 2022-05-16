@@ -27,15 +27,6 @@ class AdvancedPricingTest extends AbstractBackendController
     private $productRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
-    }
-
-    /**
      * Assert that special price correctly saved to product.
      *
      * @magentoDataFixture Magento/Catalog/_files/product_without_options.php
@@ -54,6 +45,24 @@ class AdvancedPricingTest extends AbstractBackendController
         $this->dispatchWithData((int)$product->getEntityId(), $postData);
         $product = $this->productRepository->get('simple', false, null, true);
         $this->assertEquals(8, $product->getSpecialPrice());
+    }
+
+    /**
+     * Dispatch product save with data.
+     *
+     * @param int $productId
+     * @param array $productPostData
+     * @return void
+     */
+    private function dispatchWithData(int $productId, array $productPostData): void
+    {
+        $this->getRequest()->setPostValue($productPostData);
+        $this->getRequest()->setMethod(Http::METHOD_POST);
+        $this->dispatch('backend/catalog/product/save/id/' . $productId);
+        $this->assertSessionMessages(
+            $this->containsEqual('You saved the product.'),
+            MessageInterface::TYPE_SUCCESS
+        );
     }
 
     /**
@@ -86,20 +95,11 @@ class AdvancedPricingTest extends AbstractBackendController
     }
 
     /**
-     * Dispatch product save with data.
-     *
-     * @param int $productId
-     * @param array $productPostData
-     * @return void
+     * @inheritdoc
      */
-    private function dispatchWithData(int $productId, array $productPostData): void
+    protected function setUp(): void
     {
-        $this->getRequest()->setPostValue($productPostData);
-        $this->getRequest()->setMethod(Http::METHOD_POST);
-        $this->dispatch('backend/catalog/product/save/id/' . $productId);
-        $this->assertSessionMessages(
-            $this->containsEqual('You saved the product.'),
-            MessageInterface::TYPE_SUCCESS
-        );
+        parent::setUp();
+        $this->productRepository = $this->_objectManager->get(ProductRepositoryInterface::class);
     }
 }

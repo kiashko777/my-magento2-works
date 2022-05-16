@@ -6,28 +6,26 @@
 
 namespace Magento\Bundle\Model\Product;
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
 /**
  * Integration test for Magento\Bundle\Model\OptionList
  */
-class OptionListTest extends \PHPUnit\Framework\TestCase
+class OptionListTest extends TestCase
 {
     /**
-     * @var \Magento\Catalog\Model\Product
+     * @var Product
      */
     protected $product;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
-
-    /**
-     * Set up
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoDataFixture Magento/Bundle/_files/product.php
@@ -35,15 +33,23 @@ class OptionListTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetItems()
     {
-        /** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-        $productRepository = $this->objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+        /** @var ProductRepositoryInterface $productRepository */
+        $productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
         $this->product = $productRepository->get('bundle-product');
         /**
-         * @var \Magento\Bundle\Model\Product\OptionList $optionList
+         * @var OptionList $optionList
          */
-        $optionList = $this->objectManager->create(\Magento\Bundle\Model\Product\OptionList::class);
+        $optionList = $this->objectManager->create(OptionList::class);
         $options = $optionList->getItems($this->product);
         $this->assertCount(1, $options);
         $this->assertEquals('Bundle Products Items', $options[0]->getTitle());
+    }
+
+    /**
+     * Set up
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

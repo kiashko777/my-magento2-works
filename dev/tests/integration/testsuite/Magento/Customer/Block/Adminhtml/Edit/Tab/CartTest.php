@@ -8,6 +8,8 @@ declare(strict_types=1);
 namespace Magento\Customer\Block\Adminhtml\Edit\Tab;
 
 use Magento\Backend\Model\Session\Quote as SessionQuote;
+use Magento\Framework\Data\Collection;
+use Magento\Framework\DataObject;
 use Magento\Quote\Model\Quote;
 
 /**
@@ -57,8 +59,8 @@ class CartTest extends AbstractCartTest
         $quoteFixture = $this->objectManager->create(Quote::class);
         $quoteFixture->load('test01', 'reserved_order_id');
         $quoteFixture->setCustomerIsGuest($guest)
-                     ->setCustomerId($customerId)
-                     ->save();
+            ->setCustomerId($customerId)
+            ->save();
         $this->block->toHtml();
         if ($contains) {
             $this->assertStringContainsString(
@@ -82,14 +84,14 @@ class CartTest extends AbstractCartTest
     {
         return [
             [
-                 6,
-                 false,
-                 true
+                6,
+                false,
+                true
             ],
             [
-                 self::CUSTOMER_ID_VALUE,
-                 true,
-                 false
+                self::CUSTOMER_ID_VALUE,
+                true,
+                false
             ],
         ];
     }
@@ -121,7 +123,7 @@ class CartTest extends AbstractCartTest
      */
     public function testGetGridParentHtml(): void
     {
-        $mockCollection = $this->getMockBuilder(\Magento\Framework\Data\Collection::class)
+        $mockCollection = $this->getMockBuilder(Collection::class)
             ->disableOriginalConstructor()
             ->getMock();
         $this->block->setCollection($mockCollection);
@@ -138,7 +140,7 @@ class CartTest extends AbstractCartTest
      */
     public function testGetRowUrl(): void
     {
-        $row = new \Magento\Framework\DataObject();
+        $row = new DataObject();
         $row->setProductId(1);
         $this->assertStringContainsString('/backend/catalog/product/edit/id/1', $this->block->getRowUrl($row));
     }

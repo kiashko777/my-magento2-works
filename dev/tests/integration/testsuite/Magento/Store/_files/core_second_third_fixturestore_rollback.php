@@ -6,39 +6,43 @@
 
 declare(strict_types=1);
 
+use Magento\Framework\Registry;
+use Magento\Store\Model\Store;
+use Magento\Store\Model\Website;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\UrlRewrite\Model\ResourceModel\UrlRewriteCollection;
 use Magento\UrlRewrite\Model\ResourceModel\UrlRewriteCollectionFactory;
 use Magento\UrlRewrite\Model\UrlRewrite;
 
-/** @var \Magento\Framework\Registry $registry */
-$registry = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\Registry::class);
+/** @var Registry $registry */
+$registry = Bootstrap::getObjectManager()->get(Registry::class);
 
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
-$website = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Store\Model\Website::class);
-/** @var $website \Magento\Store\Model\Website */
+$website = Bootstrap::getObjectManager()->create(Website::class);
+/** @var $website Website */
 $websiteId = $website->load('secondwebsite', 'code')->getId();
 if ($websiteId) {
     $website->delete();
 }
-$store = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Store\Model\Store::class);
+$store = Bootstrap::getObjectManager()->create(Store::class);
 if ($store->load('secondstore', 'code')->getId()) {
     $store->delete();
 }
 
-/** @var $website \Magento\Store\Model\Website */
+/** @var $website Website */
 $websiteId = $website->load('thirdwebsite', 'code')->getId();
 if ($websiteId) {
     $website->delete();
 }
 
-$store = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Store\Model\Store::class);
+$store = Bootstrap::getObjectManager()->create(Store::class);
 if ($store->load('thirdstore', 'code')->getId()) {
     $store->delete();
 }
 
-$urlRewriteCollectionFactory = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
+$urlRewriteCollectionFactory = Bootstrap::getObjectManager()->get(
     UrlRewriteCollectionFactory::class
 );
 /** @var UrlRewriteCollection $urlRewriteCollection */
@@ -49,7 +53,7 @@ $urlRewrites = $urlRewriteCollection->getItems();
 foreach ($urlRewrites as $urlRewrite) {
     try {
         $urlRewrite->delete();
-    } catch (\Exception $exception) {
+    } catch (Exception $exception) {
         // already removed
     }
 }

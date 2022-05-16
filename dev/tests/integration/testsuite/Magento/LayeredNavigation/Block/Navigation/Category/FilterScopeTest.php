@@ -38,17 +38,6 @@ class FilterScopeTest extends AbstractFiltersTest
     private $currentStoreId;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-        $this->oldStoreId = (int)$this->storeManager->getStore()->getId();
-        $this->currentStoreId = (int)$this->storeManager->getStore('fixture_second_store')->getId();
-    }
-
-    /**
      * @magentoDataFixture Magento/Catalog/_files/product_dropdown_attribute.php
      * @magentoDataFixture Magento/Catalog/_files/category_with_different_price_products_on_two_websites.php
      * @dataProvider filtersWithScopeDataProvider
@@ -77,6 +66,33 @@ class FilterScopeTest extends AbstractFiltersTest
             $filter = $this->getFilterByCode($this->navigationBlock->getFilters(), $this->getAttributeCode());
             $this->assertNotNull($filter);
             $this->assertEquals($expectation, $this->prepareFilterItems($filter));
+        } finally {
+            $this->storeManager->setCurrentStore($this->oldStoreId);
+        }
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function getAttributeCode(): string
+    {
+        return 'dropdown_attribute';
+    }
+
+    /**
+     * Updates products data for store.
+     *
+     * @param array $productsData
+     * @return void
+     */
+    private function updateProductsOnStore(array $productsData): void
+    {
+        try {
+            foreach ($productsData as $storeCode => $products) {
+                $storeId = (int)$this->storeManager->getStore($storeCode)->getId();
+                $this->storeManager->setCurrentStore($storeId);
+                $this->updateProducts($products, $this->getAttributeCode(), $storeId);
+            }
         } finally {
             $this->storeManager->setCurrentStore($this->oldStoreId);
         }
@@ -127,35 +143,19 @@ class FilterScopeTest extends AbstractFiltersTest
     /**
      * @inheritdoc
      */
-    protected function getLayerType(): string
+    protected function setUp(): void
     {
-        return Resolver::CATALOG_LAYER_CATEGORY;
+        parent::setUp();
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
+        $this->oldStoreId = (int)$this->storeManager->getStore()->getId();
+        $this->currentStoreId = (int)$this->storeManager->getStore('fixture_second_store')->getId();
     }
 
     /**
      * @inheritdoc
      */
-    protected function getAttributeCode(): string
+    protected function getLayerType(): string
     {
-        return 'dropdown_attribute';
-    }
-
-    /**
-     * Updates products data for store.
-     *
-     * @param array $productsData
-     * @return void
-     */
-    private function updateProductsOnStore(array $productsData): void
-    {
-        try {
-            foreach ($productsData as $storeCode => $products) {
-                $storeId = (int)$this->storeManager->getStore($storeCode)->getId();
-                $this->storeManager->setCurrentStore($storeId);
-                $this->updateProducts($products, $this->getAttributeCode(), $storeId);
-            }
-        } finally {
-            $this->storeManager->setCurrentStore($this->oldStoreId);
-        }
+        return Resolver::CATALOG_LAYER_CATEGORY;
     }
 }

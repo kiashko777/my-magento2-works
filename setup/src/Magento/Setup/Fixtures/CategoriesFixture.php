@@ -9,6 +9,8 @@ namespace Magento\Setup\Fixtures;
 use Magento\Catalog\Model\Category;
 use Magento\Catalog\Model\CategoryFactory;
 use Magento\Catalog\Model\ResourceModel\Category\CollectionFactory;
+use Magento\Framework\DB\Adapter\DuplicateException;
+use Magento\Framework\Exception\AlreadyExistsException;
 use Magento\Store\Model\Store;
 use Magento\Store\Model\StoreManager;
 
@@ -24,35 +26,33 @@ use Magento\Store\Model\StoreManager;
 class CategoriesFixture extends Fixture
 {
     /**
+     * @var int
+     */
+    protected $priority = 20;
+    /**
      * @var StoreManager
      */
     private $storeManager;
-
     /**
      * @var CategoryFactory
      */
     private $categoryFactory;
-
     /**
      * @var CollectionFactory
      */
     private $collectionFactory;
-
     /**
      * @var int
      */
     private $firstLevelCategoryIndex;
-
     /**
      * @var array
      */
     private $rootCategoriesIds;
-
     /**
      * @var int
      */
     private $categoriesNumber;
-
     /**
      * @var int
      */
@@ -66,21 +66,17 @@ class CategoriesFixture extends Fixture
      * @param CollectionFactory $collectionFactory
      */
     public function __construct(
-        FixtureModel $fixtureModel,
-        StoreManager $storeManager,
-        CategoryFactory $categoryFactory,
+        FixtureModel      $fixtureModel,
+        StoreManager      $storeManager,
+        CategoryFactory   $categoryFactory,
         CollectionFactory $collectionFactory
-    ) {
+    )
+    {
         parent::__construct($fixtureModel);
         $this->storeManager = $storeManager;
         $this->categoryFactory = $categoryFactory;
         $this->collectionFactory = $collectionFactory;
     }
-
-    /**
-     * @var int
-     */
-    protected $priority = 20;
 
     /**
      * @inheritdoc
@@ -110,6 +106,44 @@ class CategoriesFixture extends Fixture
     }
 
     /**
+     * Get categories amount for generation
+     *
+     * @return int
+     */
+    private function getCategoriesAmount()
+    {
+        $categoriesAmount = $this->collectionFactory->create()->getSize();
+        $rootCategories = count($this->getRootCategoriesIds());
+        $categoriesNumber = $this->fixtureModel->getValue('categories', 0) - ($categoriesAmount - $rootCategories - 1);
+
+        return max(
+            0,
+            ceil($categoriesNumber / $rootCategories)
+        );
+    }
+
+    /**
+     * Get ids of root categories
+     *
+     * @return int[]
+     */
+    private function getRootCategoriesIds()
+    {
+        if (null === $this->rootCategoriesIds) {
+            $this->rootCategoriesIds = [];
+            foreach ($this->storeManager->getGroups() as $storeGroup) {
+                $this->rootCategoriesIds[] = $storeGroup->getRootCategoryId();
+                // in this case root category will be the same for all store groups
+                if ((bool)$this->fixtureModel->getValue('assign_entities_to_all_websites', false)) {
+                    break;
+                }
+            }
+        }
+
+        return $this->rootCategoriesIds;
+    }
+
+    /**
      * Generate categories
      *
      * @param Category $parentCategory
@@ -120,10 +154,11 @@ class CategoriesFixture extends Fixture
      */
     private function generateCategories(
         Category $parentCategory,
-        $categoriesNumberOnLevel,
-        $nestingLevel,
-        &$categoryIndex
-    ) {
+                 $categoriesNumberOnLevel,
+                 $nestingLevel,
+                 &$categoryIndex
+    )
+    {
         $maxCategoriesNumberOnLevel = $nestingLevel === 1 ? $this->categoriesNumber : $categoriesNumberOnLevel;
         for ($i = 0; $i < $maxCategoriesNumberOnLevel && $categoryIndex <= $this->categoriesNumber; $i++) {
             try {
@@ -149,10 +184,10 @@ class CategoriesFixture extends Fixture
                         $categoryIndex
                     );
                 }
-            } catch (\Magento\Framework\Exception\AlreadyExistsException $e) {
+            } catch (AlreadyExistsException $e) {
                 $categoryIndex++;
                 continue;
-            } catch (\Magento\Framework\DB\Adapter\DuplicateException $e) {
+            } catch (DuplicateException $e) {
                 $categoryIndex++;
                 continue;
             }
@@ -172,44 +207,6 @@ class CategoriesFixture extends Fixture
         $categoryNameSuffix = $nestingLevel === 1 ? $this->getFirstLevelCategoryIndex() + $index : $index + 1;
         return ($nestingLevel === 1 ? $this->getCategoryPrefix() . ' ' : $parentCategory->getName() . '.')
             . $categoryNameSuffix;
-    }
-
-    /**
-     * Get ids of root categories
-     *
-     * @return int[]
-     */
-    private function getRootCategoriesIds()
-    {
-        if (null === $this->rootCategoriesIds) {
-            $this->rootCategoriesIds = [];
-            foreach ($this->storeManager->getGroups() as $storeGroup) {
-                $this->rootCategoriesIds[] = $storeGroup->getRootCategoryId();
-                // in this case root category will be the same for all store groups
-                if ((bool)$this->fixtureModel->getValue('assign_entities_to_all_websites', false)) {
-                    break;
-                }
-            }
-        }
-
-        return $this->rootCategoriesIds;
-    }
-
-    /**
-     * Get categories amount for generation
-     *
-     * @return int
-     */
-    private function getCategoriesAmount()
-    {
-        $categoriesAmount = $this->collectionFactory->create()->getSize();
-        $rootCategories = count($this->getRootCategoriesIds());
-        $categoriesNumber = $this->fixtureModel->getValue('categories', 0) - ($categoriesAmount - $rootCategories - 1);
-
-        return max(
-            0,
-            ceil($categoriesNumber / $rootCategories)
-        );
     }
 
     /**

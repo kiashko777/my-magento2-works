@@ -62,7 +62,8 @@ class RenderOptionsTest extends AbstractRenderCustomOptionsTest
         array $optionData,
         array $optionValueData,
         array $checkArray
-    ): void {
+    ): void
+    {
         $this->assertSelectOptionRenderingOnProduct('Configurable product', $optionData, $optionValueData, $checkArray);
     }
 

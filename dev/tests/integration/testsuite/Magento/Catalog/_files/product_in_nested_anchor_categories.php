@@ -5,6 +5,12 @@
  */
 declare(strict_types=1);
 
+use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\TestFramework\Helper\Bootstrap;
+
 $categories = [
     [
         'id' => 444,
@@ -38,8 +44,8 @@ $products = [
 ];
 
 foreach ($categories as $category) {
-    $categoryModel = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-        ->create(\Magento\Catalog\Model\Category::class);
+    $categoryModel = Bootstrap::getObjectManager()
+        ->create(Category::class);
     $categoryModel->isObjectNew(true);
     $categoryModel->setId($category['id'])
         ->setName('Category ' . $category['id'])
@@ -55,9 +61,9 @@ foreach ($categories as $category) {
 }
 
 foreach ($products as $product) {
-    /** @var $product \Magento\Catalog\Model\Product */
-    $productModel = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-        ->create(\Magento\Catalog\Model\Product::class);
+    /** @var $product Product */
+    $productModel = Bootstrap::getObjectManager()
+        ->create(Product::class);
     $productModel->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
         ->setId($product['id'])
         ->setAttributeSetId(4)
@@ -69,7 +75,7 @@ foreach ($products as $product) {
         ->setWeight(18)
         ->setStockData(['use_config_manage_stock' => 0])
         ->setCategoryIds($product['categoryIDs'])
-        ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-        ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+        ->setVisibility(Visibility::VISIBILITY_BOTH)
+        ->setStatus(Status::STATUS_ENABLED)
         ->save();
 }

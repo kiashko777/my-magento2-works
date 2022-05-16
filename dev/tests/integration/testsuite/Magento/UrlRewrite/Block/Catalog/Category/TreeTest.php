@@ -6,30 +6,23 @@
 
 namespace Magento\UrlRewrite\Block\Catalog\Category;
 
+use Magento\Catalog\Model\ResourceModel\Category\Collection;
+use Magento\Framework\DataObject;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
 /**
  * Test for \Magento\UrlRewrite\Block\Catalog\Category\Tree
  *
  * @magentoAppArea Adminhtml
  */
-class TreeTest extends \PHPUnit\Framework\TestCase
+class TreeTest extends TestCase
 {
     /**
-     * @var \Magento\UrlRewrite\Block\Catalog\Category\Tree
+     * @var Tree
      */
     private $_treeBlock;
-
-    /**
-     * Set up
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->_treeBlock = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
-        )->createBlock(
-            \Magento\UrlRewrite\Block\Catalog\Category\Tree::class
-        );
-    }
 
     /**
      * Test for method \Magento\UrlRewrite\Block\Catalog\Category\Tree::getTreeArray()
@@ -85,7 +78,7 @@ class TreeTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetLoadTreeUrl()
     {
-        $row = new \Magento\Framework\DataObject(['id' => 1]);
+        $row = new DataObject(['id' => 1]);
         $this->assertStringStartsWith(
             'http://localhost/index.php',
             $this->_treeBlock->getLoadTreeUrl($row),
@@ -99,6 +92,19 @@ class TreeTest extends \PHPUnit\Framework\TestCase
     public function testGetCategoryCollection()
     {
         $collection = $this->_treeBlock->getCategoryCollection();
-        $this->assertInstanceOf(\Magento\Catalog\Model\ResourceModel\Category\Collection::class, $collection);
+        $this->assertInstanceOf(Collection::class, $collection);
+    }
+
+    /**
+     * Set up
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->_treeBlock = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
+        )->createBlock(
+            Tree::class
+        );
     }
 }

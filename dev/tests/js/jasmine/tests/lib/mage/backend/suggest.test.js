@@ -54,9 +54,9 @@ define([
                     multiselect: true
                 },
                 recentItems = [{
-                        id: '1',
-                        label: 'TestLabel1'
-                    },
+                    id: '1',
+                    label: 'TestLabel1'
+                },
                     {
                         id: '2',
                         label: 'TestLabel2'

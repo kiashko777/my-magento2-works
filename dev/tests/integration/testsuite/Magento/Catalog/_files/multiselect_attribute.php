@@ -4,12 +4,17 @@
  * See COPYING.txt for license details.
  */
 /* Create attribute */
-/** @var $installer \Magento\Catalog\Setup\CategorySetup */
-$installer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-    \Magento\Catalog\Setup\CategorySetup::class
+/** @var $installer CategorySetup */
+
+use Magento\Catalog\Setup\CategorySetup;
+use Magento\Eav\Model\Entity\Attribute\Backend\ArrayBackend;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$installer = Bootstrap::getObjectManager()->create(
+    CategorySetup::class
 );
 /** @var $attribute \Magento\Catalog\Model\ResourceModel\Eav\Attribute */
-$attribute = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+$attribute = Bootstrap::getObjectManager()->create(
     \Magento\Catalog\Model\ResourceModel\Eav\Attribute::class
 );
 $entityType = $installer->getEntityTypeId('catalog_product');
@@ -35,7 +40,7 @@ if (!$attribute->loadByCode($entityType, 'multiselect_attribute')->getAttributeI
             'used_for_sort_by' => 0,
             'frontend_label' => ['Multiselect Attribute'],
             'backend_type' => 'varchar',
-            'backend_model' => \Magento\Eav\Model\Entity\Attribute\Backend\ArrayBackend::class,
+            'backend_model' => ArrayBackend::class,
             'option' => [
                 'value' => [
                     'option_1' => ['Option 1'],

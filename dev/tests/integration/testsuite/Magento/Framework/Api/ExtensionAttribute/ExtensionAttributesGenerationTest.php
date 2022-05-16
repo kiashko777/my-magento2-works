@@ -8,15 +8,18 @@ declare(strict_types=1);
 
 namespace Magento\Framework\Api\ExtensionAttribute;
 
-use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\Data\ProductExtensionInterface;
-use Magento\Customer\Api\Data\CustomerInterface;
+use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Customer\Api\Data\CustomerExtensionInterface;
+use Magento\Customer\Api\Data\CustomerInterface;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class to test the automatic generation of extension attributes object.
  */
-class ExtensionAttributesGenerationTest extends \PHPUnit\Framework\TestCase
+class ExtensionAttributesGenerationTest extends TestCase
 {
     /**
      * Test extension attributes generation for extensible models.
@@ -28,8 +31,8 @@ class ExtensionAttributesGenerationTest extends \PHPUnit\Framework\TestCase
      */
     public function testAttributeObjectGenerationForExtensibleModel()
     {
-        /** @var \Magento\Framework\ObjectManagerInterface */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        /** @var ObjectManagerInterface */
+        $objectManager = Bootstrap::getObjectManager();
         /** @var ProductInterface $product */
         $product = $objectManager->get(ProductInterface::class);
 
@@ -48,8 +51,8 @@ class ExtensionAttributesGenerationTest extends \PHPUnit\Framework\TestCase
      */
     public function testAttributeObjectGenerationForExtensibleObject()
     {
-        /** @var \Magento\Framework\ObjectManagerInterface */
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        /** @var ObjectManagerInterface */
+        $objectManager = Bootstrap::getObjectManager();
         /** @var CustomerInterface $customer */
         $customer = $objectManager->get(CustomerInterface::class);
 

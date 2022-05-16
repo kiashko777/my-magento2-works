@@ -5,15 +5,23 @@
  */
 
 // Copy images to tmp media path
+use Magento\Catalog\Api\Data\ProductLinkInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Media\Config;
+use Magento\Catalog\Model\Product\Visibility;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Filesystem;
+use Magento\Framework\Filesystem\Directory\WriteInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-/** @var \Magento\Catalog\Model\Product\Media\Config $config */
-$config = $objectManager->get(\Magento\Catalog\Model\Product\Media\Config::class);
+$objectManager = Bootstrap::getObjectManager();
+/** @var Config $config */
+$config = $objectManager->get(Config::class);
 
-/** @var \Magento\Framework\Filesystem $filesystem */
-$filesystem = $objectManager->get(\Magento\Framework\Filesystem::class);
-/** @var \Magento\Framework\Filesystem\Directory\WriteInterface $mediaDirectory */
+/** @var Filesystem $filesystem */
+$filesystem = $objectManager->get(Filesystem::class);
+/** @var WriteInterface $mediaDirectory */
 $mediaDirectory = $filesystem->getDirectoryWrite(DirectoryList::MEDIA);
 $mediaPath = $mediaDirectory->getAbsolutePath();
 $baseTmpMediaPath = $config->getBaseTmpMediaPath();
@@ -22,7 +30,7 @@ $mediaDirectory->create($baseTmpMediaPath);
 copy(__DIR__ . '/magento_image_sitemap.png', $mediaPath . '/' . $baseTmpMediaPath . '/magento_image_sitemap.png');
 copy(__DIR__ . '/second_image.png', $mediaPath . '/' . $baseTmpMediaPath . '/second_image.png');
 
-$product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Product::class);
+$product = Bootstrap::getObjectManager()->create(Product::class);
 $product->setTypeId(
     \Magento\Catalog\Model\Product\Type::TYPE_SIMPLE
 )->setId(
@@ -36,23 +44,23 @@ $product->setTypeId(
 )->setPrice(
     10
 )->setVisibility(
-    \Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH
+    Visibility::VISIBILITY_BOTH
 )->setStatus(
-    \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED
+    Status::STATUS_ENABLED
 )->setWebsiteIds(
     [1]
 )->setStockData(
     ['qty' => 100, 'is_in_stock' => 1, 'manage_stock' => 1]
 )->save();
 
-/** @var \Magento\Catalog\Api\Data\ProductLinkInterface $productLink */
-$productLink = $objectManager->create(\Magento\Catalog\Api\Data\ProductLinkInterface::class);
+/** @var ProductLinkInterface $productLink */
+$productLink = $objectManager->create(ProductLinkInterface::class);
 $productLink->setSku('simple_invisible');
 $productLink->setLinkedProductSku('simple_no_images');
 $productLink->setPosition(1);
 $productLink->setLinkType('related');
 
-$product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Product::class);
+$product = Bootstrap::getObjectManager()->create(Product::class);
 $product->setTypeId(
     \Magento\Catalog\Model\Product\Type::TYPE_SIMPLE
 )->setId(
@@ -66,9 +74,9 @@ $product->setTypeId(
 )->setPrice(
     10
 )->setVisibility(
-    \Magento\Catalog\Model\Product\Visibility::VISIBILITY_NOT_VISIBLE
+    Visibility::VISIBILITY_NOT_VISIBLE
 )->setStatus(
-    \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED
+    Status::STATUS_ENABLED
 )->setWebsiteIds(
     [1]
 )->setStockData(
@@ -77,14 +85,14 @@ $product->setTypeId(
     [$productLink]
 )->save();
 
-/** @var \Magento\Catalog\Api\Data\ProductLinkInterface $productLink */
-$productLink = $objectManager->create(\Magento\Catalog\Api\Data\ProductLinkInterface::class);
+/** @var ProductLinkInterface $productLink */
+$productLink = $objectManager->create(ProductLinkInterface::class);
 $productLink->setSku('simple_disabled');
 $productLink->setLinkedProductSku('simple_no_images');
 $productLink->setPosition(1);
 $productLink->setLinkType('related');
 
-$product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Product::class);
+$product = Bootstrap::getObjectManager()->create(Product::class);
 $product->setTypeId(
     \Magento\Catalog\Model\Product\Type::TYPE_SIMPLE
 )->setId(
@@ -98,9 +106,9 @@ $product->setTypeId(
 )->setPrice(
     10
 )->setVisibility(
-    \Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH
+    Visibility::VISIBILITY_BOTH
 )->setStatus(
-    \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_DISABLED
+    Status::STATUS_DISABLED
 )->setWebsiteIds(
     [1]
 )->setStockData(
@@ -109,14 +117,14 @@ $product->setTypeId(
     [$productLink]
 )->save();
 
-/** @var \Magento\Catalog\Api\Data\ProductLinkInterface $productLink */
-$productLink = $objectManager->create(\Magento\Catalog\Api\Data\ProductLinkInterface::class);
+/** @var ProductLinkInterface $productLink */
+$productLink = $objectManager->create(ProductLinkInterface::class);
 $productLink->setSku('simple_with_images');
 $productLink->setLinkedProductSku('simple_no_images');
 $productLink->setPosition(1);
 $productLink->setLinkType('related');
 
-$product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Product::class);
+$product = Bootstrap::getObjectManager()->create(Product::class);
 $product->setTypeId(
     \Magento\Catalog\Model\Product\Type::TYPE_SIMPLE
 )->setId(
@@ -130,9 +138,9 @@ $product->setTypeId(
 )->setPrice(
     10
 )->setVisibility(
-    \Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH
+    Visibility::VISIBILITY_BOTH
 )->setStatus(
-    \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED
+    Status::STATUS_ENABLED
 )->setImage(
     '/s/e/second_image.png'
 )->setSmallImage(
@@ -157,14 +165,14 @@ $product->setTypeId(
     [$productLink]
 )->save();
 
-/** @var \Magento\Catalog\Api\Data\ProductLinkInterface $productLink */
-$productLink = $objectManager->create(\Magento\Catalog\Api\Data\ProductLinkInterface::class);
+/** @var ProductLinkInterface $productLink */
+$productLink = $objectManager->create(ProductLinkInterface::class);
 $productLink->setSku('simple_with_images');
 $productLink->setLinkedProductSku('simple_no_images');
 $productLink->setPosition(1);
 $productLink->setLinkType('related');
 
-$product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Product::class);
+$product = Bootstrap::getObjectManager()->create(Product::class);
 $product->setTypeId(
     \Magento\Catalog\Model\Product\Type::TYPE_SIMPLE
 )->setId(
@@ -178,9 +186,9 @@ $product->setTypeId(
 )->setPrice(
     10
 )->setVisibility(
-    \Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH
+    Visibility::VISIBILITY_BOTH
 )->setStatus(
-    \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED
+    Status::STATUS_ENABLED
 )->setImage(
     'no_selection'
 )->setSmallImage(

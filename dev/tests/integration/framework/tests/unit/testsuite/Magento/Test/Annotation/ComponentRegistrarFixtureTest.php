@@ -8,23 +8,18 @@ namespace Magento\Test\Annotation;
 
 use Magento\Framework\Component\ComponentRegistrar;
 use Magento\TestFramework\Annotation\ComponentRegistrarFixture;
+use PHPUnit\Framework\TestCase;
 
-class ComponentRegistrarFixtureTest extends \PHPUnit\Framework\TestCase
+class ComponentRegistrarFixtureTest extends TestCase
 {
-    /**
-     * @var ComponentRegistrar
-     */
-    private $componentRegistrar;
-
     const LIBRARY_NAME = 'magento/library';
     const MODULE_NAME = 'Magento_ModuleOne';
     const THEME_NAME = 'frontend/Magento/theme';
     const LANGUAGE_NAME = 'magento_language';
-
-    protected function setUp(): void
-    {
-        $this->componentRegistrar = new ComponentRegistrar();
-    }
+    /**
+     * @var ComponentRegistrar
+     */
+    private $componentRegistrar;
 
     /**
      * @magentoComponentsDir components
@@ -65,5 +60,10 @@ class ComponentRegistrarFixtureTest extends \PHPUnit\Framework\TestCase
             __DIR__ . '/_files/components/a/aa',
             $this->componentRegistrar->getPath(ComponentRegistrar::LANGUAGE, self::LANGUAGE_NAME)
         );
+    }
+
+    protected function setUp(): void
+    {
+        $this->componentRegistrar = new ComponentRegistrar();
     }
 }

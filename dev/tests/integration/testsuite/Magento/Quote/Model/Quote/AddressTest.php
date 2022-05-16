@@ -3,8 +3,10 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Quote\Model\Quote;
 
+use LogicException;
 use Magento\Customer\Api\AddressRepositoryInterface;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Api\Data\AddressInterface;
@@ -51,56 +53,11 @@ class AddressTest extends TestCase
             ->getApplication()
             ->getDbInstance();
         if (!$db->isDbDumpExists()) {
-            throw new \LogicException('DB dump does not exist.');
+            throw new LogicException('DB dump does not exist.');
         }
         $db->restoreFromDbDump();
 
         parent::setUpBeforeClass();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->_quote = Bootstrap::getObjectManager()->create(
-            Quote::class
-        );
-        $this->_quote->load('test01', 'reserved_order_id');
-        $this->_quote->setIsMultiShipping('0');
-
-        $this->customerRepository = Bootstrap::getObjectManager()->create(
-            CustomerRepositoryInterface::class
-        );
-        $this->_customer = $this->customerRepository->getById(1);
-
-        /** @var \Magento\Sales\Model\Order\Address $address */
-        $this->_address = Bootstrap::getObjectManager()->create(
-            Address::class
-        );
-        $this->_address->setId(1);
-        $this->_address->load($this->_address->getId());
-        $this->_address->setQuote($this->_quote);
-
-        $this->addressRepository = Bootstrap::getObjectManager()->create(
-            AddressRepositoryInterface::class
-        );
-
-        $this->dataProcessor = Bootstrap::getObjectManager()->create(
-            DataObjectProcessor::class
-        );
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        /** @var CustomerRegistry $customerRegistry */
-        $customerRegistry = Bootstrap::getObjectManager()
-            ->get(CustomerRegistry::class);
-        //Cleanup customer from registry
-        $customerRegistry->remove(1);
     }
 
     /**
@@ -188,6 +145,25 @@ class AddressTest extends TestCase
     }
 
     /**
+     * Assign customer address to quote address and save quote address
+     *
+     * @param bool $unsetId
+     */
+    protected function _setCustomerAddressAndSave($unsetId)
+    {
+        $shippingAddress = $this->_quote->getShippingAddress();
+        if ($unsetId) {
+            $shippingAddress->setId(null);
+        }
+        /** @var AddressRepositoryInterface $addressRepository */
+        $addressRepository = Bootstrap::getObjectManager()
+            ->create(AddressRepositoryInterface::class);
+        $shippingAddress->setSameAsBilling(0)
+            ->setCustomerAddressData($addressRepository->getById($this->_customer->getDefaultBilling()))
+            ->save();
+    }
+
+    /**
      * same_as_billing must be equal 1 if customer has the same billing and shipping address
      *
      * @param bool $unsetId
@@ -219,25 +195,6 @@ class AddressTest extends TestCase
 
         $sameAsBilling = $this->_quote->getShippingAddress()->getSameAsBilling();
         $this->assertEquals(1, $sameAsBilling);
-    }
-
-    /**
-     * Assign customer address to quote address and save quote address
-     *
-     * @param bool $unsetId
-     */
-    protected function _setCustomerAddressAndSave($unsetId)
-    {
-        $shippingAddress = $this->_quote->getShippingAddress();
-        if ($unsetId) {
-            $shippingAddress->setId(null);
-        }
-        /** @var AddressRepositoryInterface $addressRepository */
-        $addressRepository = Bootstrap::getObjectManager()
-            ->create(AddressRepositoryInterface::class);
-        $shippingAddress->setSameAsBilling(0)
-            ->setCustomerAddressData($addressRepository->getById($this->_customer->getDefaultBilling()))
-            ->save();
     }
 
     /**
@@ -358,8 +315,8 @@ class AddressTest extends TestCase
      *
      * @param $taxes
      * @param $expected
-     * @covers \Magento\Quote\Model\Quote\Address::setAppliedTaxes()
-     * @covers \Magento\Quote\Model\Quote\Address::getAppliedTaxes()
+     * @covers       \Magento\Quote\Model\Quote\Address::setAppliedTaxes()
+     * @covers       \Magento\Quote\Model\Quote\Address::getAppliedTaxes()
      * @dataProvider appliedTaxesDataProvider
      */
     public function testAppliedTaxes($taxes, $expected)
@@ -401,5 +358,50 @@ class AddressTest extends TestCase
 
         $this->assertEquals(0, $shippingAddress->getRegionId());
         $this->assertEquals(0, $shippingAddress->getRegion());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->_quote = Bootstrap::getObjectManager()->create(
+            Quote::class
+        );
+        $this->_quote->load('test01', 'reserved_order_id');
+        $this->_quote->setIsMultiShipping('0');
+
+        $this->customerRepository = Bootstrap::getObjectManager()->create(
+            CustomerRepositoryInterface::class
+        );
+        $this->_customer = $this->customerRepository->getById(1);
+
+        /** @var \Magento\Sales\Model\Order\Address $address */
+        $this->_address = Bootstrap::getObjectManager()->create(
+            Address::class
+        );
+        $this->_address->setId(1);
+        $this->_address->load($this->_address->getId());
+        $this->_address->setQuote($this->_quote);
+
+        $this->addressRepository = Bootstrap::getObjectManager()->create(
+            AddressRepositoryInterface::class
+        );
+
+        $this->dataProcessor = Bootstrap::getObjectManager()->create(
+            DataObjectProcessor::class
+        );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        /** @var CustomerRegistry $customerRegistry */
+        $customerRegistry = Bootstrap::getObjectManager()
+            ->get(CustomerRegistry::class);
+        //Cleanup customer from registry
+        $customerRegistry->remove(1);
     }
 }

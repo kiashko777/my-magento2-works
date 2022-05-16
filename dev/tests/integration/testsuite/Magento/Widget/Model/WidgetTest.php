@@ -3,21 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Widget\Model;
 
-class WidgetTest extends \PHPUnit\Framework\TestCase
+use Magento\Backend\App\Area\FrontNameResolver;
+use Magento\Catalog\Block\Product\Widget\NewWidget;
+use Magento\Framework\View\DesignInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class WidgetTest extends TestCase
 {
     /**
-     * @var \Magento\Widget\Model\Widget
+     * @var Widget
      */
     protected $_model = null;
-
-    protected function setUp(): void
-    {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Widget\Model\Widget::class
-        );
-    }
 
     public function testGetWidgetsArray()
     {
@@ -42,10 +42,10 @@ class WidgetTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetPlaceholderImageUrl($type, $expectedFile)
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        \Magento\TestFramework\Helper\Bootstrap::getInstance()
-            ->loadArea(\Magento\Backend\App\Area\FrontNameResolver::AREA_CODE);
-        $objectManager->get(\Magento\Framework\View\DesignInterface::class)->setDesignTheme('Magento/backend');
+        $objectManager = Bootstrap::getObjectManager();
+        Bootstrap::getInstance()
+            ->loadArea(FrontNameResolver::AREA_CODE);
+        $objectManager->get(DesignInterface::class)->setDesignTheme('Magento/backend');
         $expectedFilePath = "/Adminhtml/Magento/backend/en_US/{$expectedFile}";
 
         $url = $this->_model->getPlaceholderImageUrl($type);
@@ -58,10 +58,17 @@ class WidgetTest extends \PHPUnit\Framework\TestCase
     public function getPlaceholderImageUrlDataProvider()
     {
         return [
-            'custom image' => [\Magento\Catalog\Block\Product\Widget\NewWidget::class,
+            'custom image' => [NewWidget::class,
                 'Magento_Catalog/images/product_widget_new.png',
             ],
             'default image' => ['non_existing_widget_type', 'Magento_Widget/placeholder.png']
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Widget::class
+        );
     }
 }

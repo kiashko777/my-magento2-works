@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\Setup\Test\Unit\Console\Command;
 
+use LogicException;
 use Magento\Framework\App\Cache;
 use Magento\Framework\App\DeploymentConfig;
 use Magento\Framework\App\State\CleanupFiles;
@@ -19,6 +20,7 @@ use Magento\Setup\Console\Command\ModuleEnableCommand;
 use Magento\Setup\Model\ObjectManagerProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
@@ -61,30 +63,6 @@ class ModuleEnableDisableCommandTest extends TestCase
      */
     private $generatedFiles;
 
-    protected function setUp(): void
-    {
-        $this->objectManagerProviderMock = $this->createMock(ObjectManagerProvider::class);
-        $objectManager = $this->getMockForAbstractClass(ObjectManagerInterface::class);
-        $this->objectManagerProviderMock
-            ->method('get')
-            ->willReturn($objectManager);
-        $this->statusMock = $this->createMock(Status::class);
-        $this->cacheMock = $this->createMock(Cache::class);
-        $this->cleanupFilesMock = $this->createMock(CleanupFiles::class);
-        $this->fullModuleListMock = $this->createMock(FullModuleList::class);
-        $this->deploymentConfigMock = $this->createMock(DeploymentConfig::class);
-        $this->generatedFiles = $this->createMock(GeneratedFiles::class);
-        $objectManager->method('get')
-            ->willReturnMap(
-                [
-                    [Status::class, $this->statusMock],
-                    [Cache::class, $this->cacheMock],
-                    [CleanupFiles::class, $this->cleanupFilesMock],
-                    [FullModuleList::class, $this->fullModuleListMock],
-                ]
-            );
-    }
-
     /**
      * @param bool $isEnable
      * @param bool $clearStaticContent
@@ -121,6 +99,23 @@ class ModuleEnableDisableCommandTest extends TestCase
     }
 
     /**
+     * @param bool $isEnable
+     * @return CommandTester
+     */
+    private function getCommandTester($isEnable)
+    {
+        $class = $isEnable ? ModuleEnableCommand::class : ModuleDisableCommand::class;
+        $command = new $class($this->objectManagerProviderMock);
+        $deploymentConfigProperty = new ReflectionProperty($class, 'deploymentConfig');
+        $deploymentConfigProperty->setAccessible(true);
+        $deploymentConfigProperty->setValue($command, $this->deploymentConfigMock);
+        $deploymentConfigProperty = new ReflectionProperty($class, 'generatedFiles');
+        $deploymentConfigProperty->setAccessible(true);
+        $deploymentConfigProperty->setValue($command, $this->generatedFiles);
+        return new CommandTester($command);
+    }
+
+    /**
      * @return array
      */
     public function executeDataProvider()
@@ -130,15 +125,15 @@ class ModuleEnableDisableCommandTest extends TestCase
                 true,
                 false,
                 '%amodules have been enabled%aMagento_Module1%a'
-                    . "Info: Some modules might require static view files to be cleared. To do this, run "
-                    . "'module:enable' with the --clear-static-content%a"
+                . "Info: Some modules might require static view files to be cleared. To do this, run "
+                . "'module:enable' with the --clear-static-content%a"
             ],
             'disable, do not clear static content' => [
                 false,
                 false,
                 '%amodules have been disabled%aMagento_Module1%a'
-                    . "Info: Some modules might require static view files to be cleared. To do this, run "
-                    . "'module:disable' with the --clear-static-content%a"
+                . "Info: Some modules might require static view files to be cleared. To do this, run "
+                . "'module:disable' with the --clear-static-content%a"
             ],
             'enable, clear static content' => [
                 true,
@@ -158,7 +153,7 @@ class ModuleEnableDisableCommandTest extends TestCase
         $this->statusMock->expects($this->once())
             ->method('getModulesToChange')
             ->with(true, ['invalid'])
-            ->willThrowException(new \LogicException('Unknown module(s): invalid'));
+            ->willThrowException(new LogicException('Unknown module(s): invalid'));
         $commandTester = $this->getCommandTester(true);
         $input = ['module' => ['invalid']];
         $commandTester->execute($input);
@@ -170,7 +165,7 @@ class ModuleEnableDisableCommandTest extends TestCase
         $this->statusMock->expects($this->once())
             ->method('getModulesToChange')
             ->with(false, ['invalid'])
-            ->willThrowException(new \LogicException('Unknown module(s): invalid'));
+            ->willThrowException(new LogicException('Unknown module(s): invalid'));
         $commandTester = $this->getCommandTester(false);
         $input = ['module' => ['invalid']];
         $commandTester->execute($input);
@@ -225,7 +220,7 @@ class ModuleEnableDisableCommandTest extends TestCase
     public function executeAllDataProvider()
     {
         return [
-            'enable'  => [true, '%amodules have been enabled%aMagento_Module1%a'],
+            'enable' => [true, '%amodules have been enabled%aMagento_Module1%a'],
             'disable' => [false, '%amodules have been disabled%aMagento_Module1%a'],
         ];
     }
@@ -260,7 +255,7 @@ class ModuleEnableDisableCommandTest extends TestCase
     public function executeWithConstraintsDataProvider()
     {
         return [
-            'enable'  => [true],
+            'enable' => [true],
             'disable' => [false],
         ];
     }
@@ -296,7 +291,7 @@ class ModuleEnableDisableCommandTest extends TestCase
     public function executeExecuteForceDataProvider()
     {
         return [
-            'enable'  => [true, '%amodules have been enabled%aMagento_Module1%a'],
+            'enable' => [true, '%amodules have been enabled%aMagento_Module1%a'],
             'disable' => [false, '%amodules have been disabled%aMagento_Module1%a'],
         ];
     }
@@ -322,20 +317,27 @@ class ModuleEnableDisableCommandTest extends TestCase
         );
     }
 
-    /**
-     * @param bool $isEnable
-     * @return CommandTester
-     */
-    private function getCommandTester($isEnable)
+    protected function setUp(): void
     {
-        $class = $isEnable ? ModuleEnableCommand::class : ModuleDisableCommand::class;
-        $command = new $class($this->objectManagerProviderMock);
-        $deploymentConfigProperty = new \ReflectionProperty($class, 'deploymentConfig');
-        $deploymentConfigProperty->setAccessible(true);
-        $deploymentConfigProperty->setValue($command, $this->deploymentConfigMock);
-        $deploymentConfigProperty = new \ReflectionProperty($class, 'generatedFiles');
-        $deploymentConfigProperty->setAccessible(true);
-        $deploymentConfigProperty->setValue($command, $this->generatedFiles);
-        return new CommandTester($command);
+        $this->objectManagerProviderMock = $this->createMock(ObjectManagerProvider::class);
+        $objectManager = $this->getMockForAbstractClass(ObjectManagerInterface::class);
+        $this->objectManagerProviderMock
+            ->method('get')
+            ->willReturn($objectManager);
+        $this->statusMock = $this->createMock(Status::class);
+        $this->cacheMock = $this->createMock(Cache::class);
+        $this->cleanupFilesMock = $this->createMock(CleanupFiles::class);
+        $this->fullModuleListMock = $this->createMock(FullModuleList::class);
+        $this->deploymentConfigMock = $this->createMock(DeploymentConfig::class);
+        $this->generatedFiles = $this->createMock(GeneratedFiles::class);
+        $objectManager->method('get')
+            ->willReturnMap(
+                [
+                    [Status::class, $this->statusMock],
+                    [Cache::class, $this->cacheMock],
+                    [CleanupFiles::class, $this->cleanupFilesMock],
+                    [FullModuleList::class, $this->fullModuleListMock],
+                ]
+            );
     }
 }

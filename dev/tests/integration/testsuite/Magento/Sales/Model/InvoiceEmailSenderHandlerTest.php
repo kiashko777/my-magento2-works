@@ -46,29 +46,6 @@ class InvoiceEmailSenderHandlerTest extends TestCase
     private $transportBuilderMock;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->invoiceIdentity = $this->objectManager->get(InvoiceIdentity::class);
-        $this->invoiceSender = $this->objectManager->get(InvoiceSender::class);
-        $this->entityResource = $this->objectManager->get(InvoiceResourceInterface::class);
-        $this->entityCollection = $this->objectManager->create(InvoiceSearchResultInterface::class);
-        $this->emailSenderHandler = $this->objectManager->create(
-            EmailSenderHandler::class,
-            [
-                'emailSender'       => $this->invoiceSender,
-                'entityResource'    => $this->entityResource,
-                'entityCollection'  => $this->entityCollection,
-                'identityContainer' => $this->invoiceIdentity,
-            ]
-        );
-        $this->transportBuilderMock = $this->objectManager->get(TransportBuilderMock::class);
-    }
-
-    /**
      * @magentoDbIsolation disabled
      * @magentoDataFixture Magento/Sales/_files/invoice_list_different_stores.php
      * @magentoConfigFixture default/sales_email/general/async_sending 1
@@ -109,5 +86,28 @@ class InvoiceEmailSenderHandlerTest extends TestCase
             ),
             $message->getBody()->getParts()[0]->getRawContent()
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->invoiceIdentity = $this->objectManager->get(InvoiceIdentity::class);
+        $this->invoiceSender = $this->objectManager->get(InvoiceSender::class);
+        $this->entityResource = $this->objectManager->get(InvoiceResourceInterface::class);
+        $this->entityCollection = $this->objectManager->create(InvoiceSearchResultInterface::class);
+        $this->emailSenderHandler = $this->objectManager->create(
+            EmailSenderHandler::class,
+            [
+                'emailSender' => $this->invoiceSender,
+                'entityResource' => $this->entityResource,
+                'entityCollection' => $this->entityCollection,
+                'identityContainer' => $this->invoiceIdentity,
+            ]
+        );
+        $this->transportBuilderMock = $this->objectManager->get(TransportBuilderMock::class);
     }
 }

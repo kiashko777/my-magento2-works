@@ -3,20 +3,30 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Catalog\Api\CategoryLinkManagementInterface;
+use Magento\Catalog\Api\Data\ProductLinkInterface;
+use Magento\Catalog\Api\Data\ProductLinkInterfaceFactory;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\GroupedProduct\Model\Product\Type\Grouped;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/product_associated.php');
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/product_virtual_in_stock.php');
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-/** @var \Magento\Catalog\Api\ProductRepositoryInterface $productRepository */
-$productRepository = $objectManager->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+$objectManager = Bootstrap::getObjectManager();
+/** @var ProductRepositoryInterface $productRepository */
+$productRepository = $objectManager->get(ProductRepositoryInterface::class);
 
-/** @var $product \Magento\Catalog\Model\Product */
-$product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Product::class);
+/** @var $product Product */
+$product = Bootstrap::getObjectManager()->create(Product::class);
 $product->isObjectNew(true);
 $product->setTypeId(
-    \Magento\GroupedProduct\Model\Product\Type\Grouped::TYPE_CODE
+    Grouped::TYPE_CODE
 )->setAttributeSetId(
     4
 )->setWebsiteIds(
@@ -30,15 +40,15 @@ $product->setTypeId(
 )->setTaxClassId(
     0
 )->setVisibility(
-    \Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH
+    Visibility::VISIBILITY_BOTH
 )->setStatus(
-    \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED
+    Status::STATUS_ENABLED
 );
 
 $newLinks = [];
-$productLinkFactory = $objectManager->get(\Magento\Catalog\Api\Data\ProductLinkInterfaceFactory::class);
+$productLinkFactory = $objectManager->get(ProductLinkInterfaceFactory::class);
 
-/** @var \Magento\Catalog\Api\Data\ProductLinkInterface $productLink */
+/** @var ProductLinkInterface $productLink */
 $productLink = $productLinkFactory->create();
 $linkedProduct = $productRepository->getById(1);
 $productLink->setSku($product->getSku())
@@ -50,7 +60,7 @@ $productLink->setSku($product->getSku())
     ->setQty(1);
 $newLinks[] = $productLink;
 
-/** @var \Magento\Catalog\Api\Data\ProductLinkInterface $productLink */
+/** @var ProductLinkInterface $productLink */
 $productLink = $productLinkFactory->create();
 $linkedProduct = $productRepository->getById(21);
 $productLink->setSku($product->getSku())
@@ -65,9 +75,9 @@ $product->setProductLinks($newLinks);
 $product->setStockData(['use_config_manage_stock' => 1, 'is_in_stock' => 1]);
 $productRepository->save($product);
 
-/** @var \Magento\Catalog\Api\CategoryLinkManagementInterface $categoryLinkManagement */
-$categoryLinkManagement = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-    ->create(\Magento\Catalog\Api\CategoryLinkManagementInterface::class);
+/** @var CategoryLinkManagementInterface $categoryLinkManagement */
+$categoryLinkManagement = Bootstrap::getObjectManager()
+    ->create(CategoryLinkManagementInterface::class);
 
 $categoryLinkManagement->assignProductToCategories(
     $product->getSku(),

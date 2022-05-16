@@ -141,7 +141,7 @@ define([
 
             options.breakpoints.mobile.options.options.arrows = false;
             expect(JSON.stringify(gallery.settings.activeBreakpoint))
-              .toEqual(JSON.stringify(options.breakpoints.mobile.options));
+                .toEqual(JSON.stringify(options.breakpoints.mobile.options));
 
             $.fn.data = originSpy;
         });

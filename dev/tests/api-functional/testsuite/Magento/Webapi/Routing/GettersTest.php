@@ -3,11 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Webapi\Routing;
 
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestModule5\Service\V1\Entity\AllSoapAndRest;
 
-class GettersTest extends \Magento\Webapi\Routing\BaseService
+class GettersTest extends BaseService
 {
     /**
      * @var string
@@ -24,20 +26,13 @@ class GettersTest extends \Magento\Webapi\Routing\BaseService
      */
     protected $_soapService = 'testModule5AllSoapAndRest';
 
-    protected function setUp(): void
-    {
-        $this->_version = 'V1';
-        $this->_soapService = "testModule5AllSoapAndRest{$this->_version}";
-        $this->_restResourcePath = "/{$this->_version}/TestModule5/";
-    }
-
     public function testGetters()
     {
         $itemId = 1;
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => $this->_restResourcePath . $itemId,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => $this->_soapService,
@@ -51,5 +46,12 @@ class GettersTest extends \Magento\Webapi\Routing\BaseService
         $this->assertTrue($isEnabled, 'Getter with "is" prefix is processed incorrectly.');
         $hasOrder = isset($item[AllSoapAndRest::HAS_ORDERS]) && $item[AllSoapAndRest::HAS_ORDERS] === true;
         $this->assertTrue($hasOrder, 'Getter with "has" prefix is processed incorrectly.');
+    }
+
+    protected function setUp(): void
+    {
+        $this->_version = 'V1';
+        $this->_soapService = "testModule5AllSoapAndRest{$this->_version}";
+        $this->_restResourcePath = "/{$this->_version}/TestModule5/";
     }
 }

@@ -36,29 +36,6 @@ class SaveTest extends AbstractController
     private $customerRegistry;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->customerSession = $this->_objectManager->get(Session::class);
-        $this->customerRepository = $this->_objectManager->get(CustomerRepositoryInterface::class);
-        $this->formKey = $this->_objectManager->get(FormKey::class);
-        $this->customerRegistry = $this->_objectManager->get(CustomerRegistry::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->customerSession->logout();
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoDataFixture Magento/Customer/_files/new_customer.php
      *
      * @dataProvider subscriptionDataProvider
@@ -72,6 +49,45 @@ class SaveTest extends AbstractController
         $this->loginCustomer('new_customer@example.com');
         $this->dispatchSaveAction($isSubscribed);
         $this->assertSuccessSubscription($expectedMessage);
+    }
+
+    /**
+     * Login customer by email
+     *
+     * @param string $email
+     * @return void
+     */
+    private function loginCustomer(string $email): void
+    {
+        $customer = $this->customerRepository->get($email);
+        $this->customerSession->loginById($customer->getId());
+    }
+
+    /**
+     * Dispatch save action with parameters
+     *
+     * @param string $isSubscribed
+     * @return void
+     */
+    private function dispatchSaveAction(bool $isSubscribed): void
+    {
+        $this->_objectManager->removeSharedInstance(CustomerPlugin::class);
+        $this->_objectManager->removeSharedInstance(CustomerSubscriberCache::class);
+        $this->getRequest()->setParam('form_key', $this->formKey->getFormKey())
+            ->setParam('is_subscribed', $isSubscribed);
+        $this->dispatch('newsletter/manage/save');
+    }
+
+    /**
+     * Assert that action was successfully done
+     *
+     * @param string $expectedMessage
+     * @return void
+     */
+    private function assertSuccessSubscription(string $expectedMessage): void
+    {
+        $this->assertRedirect($this->stringContains('customer/account/'));
+        $this->assertSessionMessages($this->equalTo([(string)__($expectedMessage)]), MessageInterface::TYPE_SUCCESS);
     }
 
     /**
@@ -117,41 +133,25 @@ class SaveTest extends AbstractController
     }
 
     /**
-     * Dispatch save action with parameters
-     *
-     * @param string $isSubscribed
-     * @return void
+     * @inheritdoc
      */
-    private function dispatchSaveAction(bool $isSubscribed): void
+    protected function setUp(): void
     {
-        $this->_objectManager->removeSharedInstance(CustomerPlugin::class);
-        $this->_objectManager->removeSharedInstance(CustomerSubscriberCache::class);
-        $this->getRequest()->setParam('form_key', $this->formKey->getFormKey())
-            ->setParam('is_subscribed', $isSubscribed);
-        $this->dispatch('newsletter/manage/save');
+        parent::setUp();
+
+        $this->customerSession = $this->_objectManager->get(Session::class);
+        $this->customerRepository = $this->_objectManager->get(CustomerRepositoryInterface::class);
+        $this->formKey = $this->_objectManager->get(FormKey::class);
+        $this->customerRegistry = $this->_objectManager->get(CustomerRegistry::class);
     }
 
     /**
-     * Login customer by email
-     *
-     * @param string $email
-     * @return void
+     * @inheritdoc
      */
-    private function loginCustomer(string $email): void
+    protected function tearDown(): void
     {
-        $customer = $this->customerRepository->get($email);
-        $this->customerSession->loginById($customer->getId());
-    }
+        $this->customerSession->logout();
 
-    /**
-     * Assert that action was successfully done
-     *
-     * @param string $expectedMessage
-     * @return void
-     */
-    private function assertSuccessSubscription(string $expectedMessage): void
-    {
-        $this->assertRedirect($this->stringContains('customer/account/'));
-        $this->assertSessionMessages($this->equalTo([(string)__($expectedMessage)]), MessageInterface::TYPE_SUCCESS);
+        parent::tearDown();
     }
 }

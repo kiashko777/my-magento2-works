@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\MessageQueue\UseCase;
 
 use Magento\Framework\App\DeploymentConfig\FileReader;
@@ -14,52 +15,33 @@ use Magento\TestModuleAsyncAmqp\Model\AsyncTestData;
 class WaitAndNotWaitMessagesTest extends QueueTestCaseAbstract
 {
     /**
-     * @var FileReader
-     */
-    private $reader;
-
-    /**
-     * @var Filesystem
-     */
-    private $filesystem;
-
-    /**
-     * @var array
-     */
-    private $config;
-
-    /**
      * @var AsyncTestData
      */
     protected $msgObject;
-
     /**
      * {@inheritdoc}
      */
     protected $consumers = ['mixed.sync.and.async.queue.consumer'];
-
     /**
      * @var string[]
      */
     protected $messages = ['message1', 'message2', 'message3'];
-
     /**
      * @var int|null
      */
     protected $maxMessages = 4;
-
     /**
-     * @inheritdoc
+     * @var FileReader
      */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        // phpstan:ignore "Class Magento\TestModuleAsyncAmqp\Model\AsyncTestData not found."
-        $this->msgObject = $this->objectManager->create(AsyncTestData::class);
-        $this->reader = $this->objectManager->get(FileReader::class);
-        $this->filesystem = $this->objectManager->get(Filesystem::class);
-        $this->config = $this->loadConfig();
-    }
+    private $reader;
+    /**
+     * @var Filesystem
+     */
+    private $filesystem;
+    /**
+     * @var array
+     */
+    private $config;
 
     /**
      * Check if consumers wait for messages from the queue
@@ -90,6 +72,25 @@ class WaitAndNotWaitMessagesTest extends QueueTestCaseAbstract
         $this->publishMessage('message4');
         $this->waitForAsynchronousResult(count($this->messages) + 1, $this->logFilePath);
         $this->assertStringContainsString('message4', file_get_contents($this->logFilePath));
+    }
+
+    /**
+     * @param array $config
+     */
+    private function writeConfig(array $config): void
+    {
+        $writer = $this->objectManager->get(Writer::class);
+        $writer->saveConfig([ConfigFilePool::APP_ENV => $config], true);
+    }
+
+    /**
+     * @param string $message
+     */
+    private function publishMessage(string $message): void
+    {
+        $this->msgObject->setValue($message);
+        $this->msgObject->setTextFilePath($this->logFilePath);
+        $this->publisher->publish('multi.topic.queue.topic.c', $this->msgObject);
     }
 
     /**
@@ -125,13 +126,16 @@ class WaitAndNotWaitMessagesTest extends QueueTestCaseAbstract
     }
 
     /**
-     * @param string $message
+     * @inheritdoc
      */
-    private function publishMessage(string $message): void
+    protected function setUp(): void
     {
-        $this->msgObject->setValue($message);
-        $this->msgObject->setTextFilePath($this->logFilePath);
-        $this->publisher->publish('multi.topic.queue.topic.c', $this->msgObject);
+        parent::setUp();
+        // phpstan:ignore "Class Magento\TestModuleAsyncAmqp\Model\AsyncTestData not found."
+        $this->msgObject = $this->objectManager->create(AsyncTestData::class);
+        $this->reader = $this->objectManager->get(FileReader::class);
+        $this->filesystem = $this->objectManager->get(Filesystem::class);
+        $this->config = $this->loadConfig();
     }
 
     /**
@@ -140,15 +144,6 @@ class WaitAndNotWaitMessagesTest extends QueueTestCaseAbstract
     private function loadConfig(): array
     {
         return $this->reader->load(ConfigFilePool::APP_ENV);
-    }
-
-    /**
-     * @param array $config
-     */
-    private function writeConfig(array $config): void
-    {
-        $writer = $this->objectManager->get(Writer::class);
-        $writer->saveConfig([ConfigFilePool::APP_ENV => $config], true);
     }
 
     /**

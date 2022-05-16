@@ -3,12 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Paypal\Controller;
+
+use Magento\Checkout\Model\Session;
+use Magento\Quote\Model\Quote;
+use Magento\Sales\Model\Order;
+use Magento\TestFramework\TestCase\AbstractController;
 
 /**
  * @magentoDataFixture Magento/Sales/_files/order.php
  */
-class HostedproTest extends \Magento\TestFramework\TestCase\AbstractController
+class HostedproTest extends AbstractController
 {
     /**
      * @magentoDataFixture Magento/Paypal/_files/quote_payment_express.php
@@ -17,10 +23,10 @@ class HostedproTest extends \Magento\TestFramework\TestCase\AbstractController
      */
     public function testCancelAction()
     {
-        $order = $this->_objectManager->create(\Magento\Sales\Model\Order::class);
-        $session = $this->_objectManager->get(\Magento\Checkout\Model\Session::class);
+        $order = $this->_objectManager->create(Order::class);
+        $session = $this->_objectManager->get(Session::class);
 
-        $quote = $this->_objectManager->create(\Magento\Quote\Model\Quote::class);
+        $quote = $this->_objectManager->create(Quote::class);
         $quote->load('100000002', 'reserved_order_id');
         $session->setQuoteId($quote->getId());
         $session->setPaypalStandardQuoteId($quote->getId())->setLastRealOrderId('100000002');

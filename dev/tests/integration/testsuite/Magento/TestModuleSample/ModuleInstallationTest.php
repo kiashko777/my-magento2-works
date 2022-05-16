@@ -3,15 +3,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestModuleSample;
 
-class ModuleInstallationTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\Module\ModuleListInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class ModuleInstallationTest extends TestCase
 {
     public function testSampleModuleInstallation()
     {
-        /** @var \Magento\Framework\Module\ModuleListInterface $moduleList */
-        $moduleList = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\Module\ModuleListInterface::class
+        /** @var ModuleListInterface $moduleList */
+        $moduleList = Bootstrap::getObjectManager()->get(
+            ModuleListInterface::class
         );
         $this->assertTrue(
             $moduleList->has('Magento_TestModuleSample'),

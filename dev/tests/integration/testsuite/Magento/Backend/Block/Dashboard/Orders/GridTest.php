@@ -7,27 +7,16 @@
 namespace Magento\Backend\Block\Dashboard\Orders;
 
 use Magento\Backend\Block\Template\Context;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class GridTest extends \PHPUnit\Framework\TestCase
+class GridTest extends TestCase
 {
     /**
      * @var Grid
      */
     private $block;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $block = $this->createMock(\Magento\Backend\Block\Dashboard\Orders\Grid::class);
-        $layout = $this->createMock(\Magento\Framework\View\LayoutInterface::class);
-        $layout->expects($this->atLeastOnce())->method('getChildName')->willReturn('test');
-        $layout->expects($this->atLeastOnce())->method('getBlock')->willReturn($block);
-        $context = $objectManager->create(Context::class, ['layout' => $layout]);
-
-        $this->block = $objectManager->create(Grid::class, ['context' => $context]);
-    }
 
     /**
      * @magentoDataFixture Magento/Sales/_files/order.php
@@ -40,5 +29,19 @@ class GridTest extends \PHPUnit\Framework\TestCase
                 $this->assertEquals('firstname lastname', $item->getCustomer());
             }
         }
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $objectManager = Bootstrap::getObjectManager();
+        $block = $this->createMock(Grid::class);
+        $layout = $this->createMock(LayoutInterface::class);
+        $layout->expects($this->atLeastOnce())->method('getChildName')->willReturn('test');
+        $layout->expects($this->atLeastOnce())->method('getBlock')->willReturn($block);
+        $context = $objectManager->create(Context::class, ['layout' => $layout]);
+
+        $this->block = $objectManager->create(Grid::class, ['context' => $context]);
     }
 }

@@ -8,8 +8,12 @@
  * Create an admin user with an assigned role
  */
 
-/** @var $model \Magento\User\Model\User */
-$model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\User\Model\User::class);
+/** @var $model User */
+
+use Magento\TestFramework\Bootstrap;
+use Magento\User\Model\User;
+
+$model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(User::class);
 /** @var Magento\Framework\App\ResourceConnection $connection */
 $connection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
     ->create(Magento\Framework\App\ResourceConnection::class);
@@ -23,12 +27,12 @@ $roleId = $adapter->fetchOne($select);
 $model->setFirstname("Web")
     ->setLastname("Api")
     ->setUsername('webapi_user')
-    ->setPassword(\Magento\TestFramework\Bootstrap::ADMIN_PASSWORD)
+    ->setPassword(Bootstrap::ADMIN_PASSWORD)
     ->setEmail('webapi_user@example.com')
     ->setRoleType('G')
     ->setResourceId('Magento_Backend::all')
     ->setPrivileges("")
     ->setAssertId(0)
-    ->setRoleId((int) $roleId)
+    ->setRoleId((int)$roleId)
     ->setPermission('allow');
 $model->save();

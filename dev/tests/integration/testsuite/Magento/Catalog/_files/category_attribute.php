@@ -6,8 +6,8 @@
 
 /** @var Attribute $attribute */
 
-use Magento\Catalog\Model\Category\AttributeFactory;
 use Magento\Catalog\Model\Category\Attribute;
+use Magento\Catalog\Model\Category\AttributeFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 
 /** @var AttributeFactory $attributeFactory */

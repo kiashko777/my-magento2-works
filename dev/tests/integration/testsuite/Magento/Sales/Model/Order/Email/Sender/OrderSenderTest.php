@@ -19,14 +19,6 @@ class OrderSenderTest extends TestCase
     private $orderSender;
 
     /**
-     * @inheirtDoc
-     */
-    protected function setUp(): void
-    {
-        $this->orderSender = Bootstrap::getObjectManager()->create(OrderSender::class);
-    }
-
-    /**
      * @magentoDataFixture Magento/Sales/_files/order.php
      */
     public function testSendNewOrderEmail()
@@ -63,5 +55,13 @@ class OrderSenderTest extends TestCase
         $result = $this->orderSender->send($order);
         $this->assertFalse($result);
         $this->assertTrue($order->getSendEmail());
+    }
+
+    /**
+     * @inheirtDoc
+     */
+    protected function setUp(): void
+    {
+        $this->orderSender = Bootstrap::getObjectManager()->create(OrderSender::class);
     }
 }

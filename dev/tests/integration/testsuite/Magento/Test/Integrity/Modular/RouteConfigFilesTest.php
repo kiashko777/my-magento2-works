@@ -3,14 +3,21 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Modular;
 
+use Exception;
 use Magento\Framework\Component\ComponentRegistrar;
+use Magento\Framework\Config\Dom;
+use Magento\Framework\Config\Dom\UrnResolver;
+use Magento\Framework\Config\Dom\ValidationException;
+use Magento\Framework\Config\ValidationStateInterface;
+use PHPUnit\Framework\TestCase;
 
-class RouteConfigFilesTest extends \PHPUnit\Framework\TestCase
+class RouteConfigFilesTest extends TestCase
 {
     /**
-     * @var \Magento\Framework\Config\ValidationStateInterface
+     * @var ValidationStateInterface
      */
 
     protected $validationStateMock;
@@ -40,16 +47,6 @@ class RouteConfigFilesTest extends \PHPUnit\Framework\TestCase
      */
     protected $mergedSchemaFile;
 
-    protected function setUp(): void
-    {
-        $this->validationStateMock = $this->createMock(\Magento\Framework\Config\ValidationStateInterface::class);
-        $this->validationStateMock->method('isValidationRequired')
-            ->willReturn(true);
-        $urnResolver = new \Magento\Framework\Config\Dom\UrnResolver();
-        $this->schemaFile = $urnResolver->getRealPath('urn:magento:framework:App/etc/routes.xsd');
-        $this->mergedSchemaFile = $urnResolver->getRealPath('urn:magento:framework:App/etc/routes_merged.xsd');
-    }
-
     public function testRouteConfigsValidation()
     {
         $invalidFiles = [];
@@ -60,7 +57,7 @@ class RouteConfigFilesTest extends \PHPUnit\Framework\TestCase
             $mask = $moduleDir . '/etc/*/routes.xml';
             $files = array_merge($files, glob($mask));
         }
-        $mergedConfig = new \Magento\Framework\Config\Dom(
+        $mergedConfig = new Dom(
             '<config><router/></config>',
             $this->validationStateMock,
             $this->_idAttributes
@@ -69,7 +66,7 @@ class RouteConfigFilesTest extends \PHPUnit\Framework\TestCase
         foreach ($files as $file) {
             $content = file_get_contents($file);
             try {
-                new \Magento\Framework\Config\Dom(
+                new Dom(
                     $content,
                     $this->validationStateMock,
                     $this->_idAttributes,
@@ -79,7 +76,7 @@ class RouteConfigFilesTest extends \PHPUnit\Framework\TestCase
 
                 //merge won't be performed if file is invalid because of exception thrown
                 $mergedConfig->merge($content);
-            } catch (\Magento\Framework\Config\Dom\ValidationException $e) {
+            } catch (ValidationException $e) {
                 $invalidFiles[] = $file;
             }
         }
@@ -91,8 +88,18 @@ class RouteConfigFilesTest extends \PHPUnit\Framework\TestCase
         try {
             $errors = [];
             $mergedConfig->validate($this->mergedSchemaFile, $errors);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->fail('Merged routes config is invalid: ' . "\n" . implode("\n", $errors));
         }
+    }
+
+    protected function setUp(): void
+    {
+        $this->validationStateMock = $this->createMock(ValidationStateInterface::class);
+        $this->validationStateMock->method('isValidationRequired')
+            ->willReturn(true);
+        $urnResolver = new UrnResolver();
+        $this->schemaFile = $urnResolver->getRealPath('urn:magento:framework:App/etc/routes.xsd');
+        $this->mergedSchemaFile = $urnResolver->getRealPath('urn:magento:framework:App/etc/routes_merged.xsd');
     }
 }

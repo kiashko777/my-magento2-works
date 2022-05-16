@@ -3,8 +3,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Service\V1;
 
+use Magento\Framework\Api\FilterBuilder;
+use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\Api\SortOrderBuilder;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Item;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\WebapiAbstract;
 
 class OrderItemGetListTest extends WebapiAbstract
@@ -17,14 +26,9 @@ class OrderItemGetListTest extends WebapiAbstract
     const ORDER_INCREMENT_ID = '100000001';
 
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * @magentoApiDataFixture Magento/Sales/_files/order_item_list.php
@@ -32,17 +36,17 @@ class OrderItemGetListTest extends WebapiAbstract
     public function testGetList()
     {
         $expectedRowTotals = [112, 102, 92];
-        /** @var \Magento\Framework\Api\SortOrderBuilder $sortOrderBuilder */
+        /** @var SortOrderBuilder $sortOrderBuilder */
         $sortOrderBuilder = $this->objectManager->get(
-            \Magento\Framework\Api\SortOrderBuilder::class
+            SortOrderBuilder::class
         );
-        /** @var \Magento\Sales\Model\Order $order */
-        $order = $this->objectManager->create(\Magento\Sales\Model\Order::class);
+        /** @var Order $order */
+        $order = $this->objectManager->create(Order::class);
         $order->loadByIncrementId(self::ORDER_INCREMENT_ID);
-        /** @var $searchCriteriaBuilder  \Magento\Framework\Api\SearchCriteriaBuilder */
-        $searchCriteriaBuilder = $this->objectManager->create(\Magento\Framework\Api\SearchCriteriaBuilder::class);
-        /** @var $filterBuilder  \Magento\Framework\Api\FilterBuilder */
-        $filterBuilder = $this->objectManager->create(\Magento\Framework\Api\FilterBuilder::class);
+        /** @var $searchCriteriaBuilder  SearchCriteriaBuilder */
+        $searchCriteriaBuilder = $this->objectManager->create(SearchCriteriaBuilder::class);
+        /** @var $filterBuilder  FilterBuilder */
+        $filterBuilder = $this->objectManager->create(FilterBuilder::class);
 
         $filter2 = $filterBuilder->setField('product_type')
             ->setValue('configurable')
@@ -67,7 +71,7 @@ class OrderItemGetListTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '?' . http_build_query($requestData),
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -91,12 +95,17 @@ class OrderItemGetListTest extends WebapiAbstract
         $this->assertEquals($expectedRowTotals, $rowTotals);
     }
 
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+    }
+
     /**
-     * @param \Magento\Sales\Model\Order\Item $orderItem
+     * @param Item $orderItem
      * @param array $response
      * @return void
      */
-    protected function assertOrderItem(\Magento\Sales\Model\Order\Item $orderItem, array $response)
+    protected function assertOrderItem(Item $orderItem, array $response)
     {
         $this->assertEquals($orderItem->getId(), $response['item_id']);
         $this->assertEquals($orderItem->getOrderId(), $response['order_id']);

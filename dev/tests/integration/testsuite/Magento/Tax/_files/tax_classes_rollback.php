@@ -5,8 +5,16 @@
  */
 declare(strict_types=1);
 
-/** @var $objectManager \Magento\TestFramework\ObjectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+/** @var $objectManager ObjectManager */
+
+use Magento\Framework\Exception\CouldNotDeleteException;
+use Magento\Tax\Model\Calculation\Rule;
+use Magento\Tax\Model\ClassModel;
+use Magento\Tax\Model\ResourceModel\TaxClass;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
+
+$objectManager = Bootstrap::getObjectManager();
 
 $taxRules = [
     'Test Rule',
@@ -23,21 +31,21 @@ $taxClasses = [
 
 $taxRuleResource = $objectManager->get(\Magento\Tax\Model\ResourceModel\Calculation\Rule::class);
 foreach ($taxRules as $taxRuleCode) {
-    $taxRule = $objectManager->create(\Magento\Tax\Model\Calculation\Rule::class);
+    $taxRule = $objectManager->create(Rule::class);
     $taxRuleResource->load($taxRule, $taxRuleCode, 'code');
     $taxRuleResource->delete($taxRule);
 }
 
-/** @var \Magento\Tax\Model\ResourceModel\TaxClass $resourceModel */
-$resourceModel = $objectManager->get(\Magento\Tax\Model\ResourceModel\TaxClass::class);
+/** @var TaxClass $resourceModel */
+$resourceModel = $objectManager->get(TaxClass::class);
 
 foreach ($taxClasses as $taxClass) {
     try {
-        /** @var \Magento\Tax\Model\ClassModel $taxClassEntity */
-        $taxClassEntity = $objectManager->create(\Magento\Tax\Model\ClassModel::class);
+        /** @var ClassModel $taxClassEntity */
+        $taxClassEntity = $objectManager->create(ClassModel::class);
         $resourceModel->load($taxClassEntity, $taxClass, 'class_name');
         $resourceModel->delete($taxClassEntity);
-    } catch (\Magento\Framework\Exception\CouldNotDeleteException $couldNotDeleteException) {
+    } catch (CouldNotDeleteException $couldNotDeleteException) {
         // It's okay if the entity already wiped from the database
     }
 }

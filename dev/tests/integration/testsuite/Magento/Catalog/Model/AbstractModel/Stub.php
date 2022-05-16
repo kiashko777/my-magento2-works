@@ -3,9 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Model\AbstractModel;
 
-abstract class Stub extends \Magento\Catalog\Model\AbstractModel implements \Magento\Catalog\Api\Data\ProductInterface
+use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Model\AbstractModel;
+use Magento\Catalog\Model\Product;
+
+abstract class Stub extends AbstractModel implements ProductInterface
 {
     /**
      * Retrieve Store Id
@@ -14,7 +19,7 @@ abstract class Stub extends \Magento\Catalog\Model\AbstractModel implements \Mag
      */
     public function getStoreId()
     {
-        return $this->getData(\Magento\Catalog\Model\Product::STORE_ID);
+        return $this->getData(Product::STORE_ID);
     }
 
     /**
@@ -25,6 +30,6 @@ abstract class Stub extends \Magento\Catalog\Model\AbstractModel implements \Mag
      */
     public function setStoreId($storeId)
     {
-        return $this->setData(\Magento\Catalog\Model\Product::STORE_ID, $storeId);
+        return $this->setData(Product::STORE_ID, $storeId);
     }
 }

@@ -46,6 +46,14 @@ class Text extends AbstractBaseAttributeData
     /**
      * @inheritdoc
      */
+    protected function getFrontendInput(): string
+    {
+        return 'text';
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function getAttributeDataWithCheckArray(): array
     {
         return array_merge_recursive(
@@ -91,9 +99,24 @@ class Text extends AbstractBaseAttributeData
     /**
      * @inheritdoc
      */
-    protected function getFrontendInput(): string
+    protected function getUpdateExpectedData(): array
     {
-        return 'text';
+        $updatePostData = $this->getUpdatePostData();
+        unset($updatePostData['default_value_text']);
+        return array_merge(
+            $updatePostData,
+            [
+                'frontend_label' => 'Varchar Attribute Update',
+                'frontend_input' => 'text',
+                'attribute_code' => 'varchar_attribute',
+                'default_value' => 'Varchar Attribute Default',
+                'is_filterable' => '0',
+                'is_filterable_in_search' => '0',
+                'position' => '0',
+                'is_user_defined' => '1',
+                'backend_type' => 'varchar',
+            ]
+        );
     }
 
     /**
@@ -123,28 +146,5 @@ class Text extends AbstractBaseAttributeData
             'used_in_product_listing' => '0',
             'used_for_sort_by' => '1',
         ];
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function getUpdateExpectedData(): array
-    {
-        $updatePostData = $this->getUpdatePostData();
-        unset($updatePostData['default_value_text']);
-        return array_merge(
-            $updatePostData,
-            [
-                'frontend_label' => 'Varchar Attribute Update',
-                'frontend_input' => 'text',
-                'attribute_code' => 'varchar_attribute',
-                'default_value' => 'Varchar Attribute Default',
-                'is_filterable' => '0',
-                'is_filterable_in_search' => '0',
-                'position' => '0',
-                'is_user_defined' => '1',
-                'backend_type' => 'varchar',
-            ]
-        );
     }
 }

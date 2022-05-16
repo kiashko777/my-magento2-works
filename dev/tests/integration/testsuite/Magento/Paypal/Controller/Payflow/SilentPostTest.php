@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Paypal\Controller\Payflow;
 
 use Magento\Framework\Api\FilterBuilder;
@@ -36,35 +37,6 @@ class SilentPostTest extends AbstractController
     private $orderSender;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->gateway = $this->getMockBuilder(Gateway::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $this->orderSender = $this->getMockBuilder(OrderSender::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $this->_objectManager->addSharedInstance($this->gateway, Gateway::class);
-        $this->_objectManager->addSharedInstance($this->orderSender, OrderSender::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->_objectManager->removeSharedInstance(Gateway::class);
-        $this->_objectManager->removeSharedInstance(OrderSender::class);
-        parent::tearDown();
-    }
-
-    /**
      * Checks a test case when Payflow link callback action receives Silent Post notification with transaction details.
      *
      * @param int $resultCode
@@ -86,50 +58,6 @@ class SilentPostTest extends AbstractController
         $order = $this->getOrder($orderIncrementId);
         self::assertEquals($orderState, $order->getState());
         self::assertEquals($orderStatus, $order->getStatus());
-    }
-
-    /**
-     * Get list of different variations for Silent Post action testing,
-     * like different response codes from PayPal.
-     *
-     * @return array
-     */
-    public function responseCodeDataProvider()
-    {
-        return [
-            [Payflowlink::RESPONSE_CODE_APPROVED, Order::STATE_COMPLETE, Order::STATE_COMPLETE],
-            [Payflowlink::RESPONSE_CODE_FRAUDSERVICE_FILTER, Order::STATE_PAYMENT_REVIEW, Order::STATUS_FRAUD],
-        ];
-    }
-
-    /**
-     * Checks a test case when Payflow link callback receives Silent Post notification from PayPal
-     * with fraudulent transaction and PayPal gateway configured to reject this kind of transactions.
-     *
-     * @magentoDataFixture Magento/Paypal/_files/order_payflow_link.php
-     */
-    public function testFraudulentNotification()
-    {
-        $orderIncrementId = '000000045';
-        $resultCode = Payflowlink::RESPONSE_CODE_DECLINED_BY_FILTER;
-        $this->withRequest($orderIncrementId, $resultCode);
-        $this->withGatewayResponse($orderIncrementId, $resultCode);
-
-        $logger = $this->getMockBuilder(Monolog::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $this->_objectManager->addSharedInstance($logger, LoggerInterface::class, true);
-
-        $exception = new CommandException(__('Response message from PayPal gateway'));
-        $logger->expects(self::once())
-            ->method('critical')
-            ->with(self::equalTo($exception));
-
-        $this->dispatch('paypal/payflow/silentPost');
-
-        self::assertEquals(200, $this->getResponse()->getStatusCode());
-
-        $this->_objectManager->removeSharedInstance(LoggerInterface::class, true);
     }
 
     /**
@@ -197,5 +125,78 @@ class SilentPostTest extends AbstractController
 
         /** @var OrderInterface $order */
         return array_pop($orders);
+    }
+
+    /**
+     * Get list of different variations for Silent Post action testing,
+     * like different response codes from PayPal.
+     *
+     * @return array
+     */
+    public function responseCodeDataProvider()
+    {
+        return [
+            [Payflowlink::RESPONSE_CODE_APPROVED, Order::STATE_COMPLETE, Order::STATE_COMPLETE],
+            [Payflowlink::RESPONSE_CODE_FRAUDSERVICE_FILTER, Order::STATE_PAYMENT_REVIEW, Order::STATUS_FRAUD],
+        ];
+    }
+
+    /**
+     * Checks a test case when Payflow link callback receives Silent Post notification from PayPal
+     * with fraudulent transaction and PayPal gateway configured to reject this kind of transactions.
+     *
+     * @magentoDataFixture Magento/Paypal/_files/order_payflow_link.php
+     */
+    public function testFraudulentNotification()
+    {
+        $orderIncrementId = '000000045';
+        $resultCode = Payflowlink::RESPONSE_CODE_DECLINED_BY_FILTER;
+        $this->withRequest($orderIncrementId, $resultCode);
+        $this->withGatewayResponse($orderIncrementId, $resultCode);
+
+        $logger = $this->getMockBuilder(Monolog::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->_objectManager->addSharedInstance($logger, LoggerInterface::class, true);
+
+        $exception = new CommandException(__('Response message from PayPal gateway'));
+        $logger->expects(self::once())
+            ->method('critical')
+            ->with(self::equalTo($exception));
+
+        $this->dispatch('paypal/payflow/silentPost');
+
+        self::assertEquals(200, $this->getResponse()->getStatusCode());
+
+        $this->_objectManager->removeSharedInstance(LoggerInterface::class, true);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->gateway = $this->getMockBuilder(Gateway::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->orderSender = $this->getMockBuilder(OrderSender::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->_objectManager->addSharedInstance($this->gateway, Gateway::class);
+        $this->_objectManager->addSharedInstance($this->orderSender, OrderSender::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->_objectManager->removeSharedInstance(Gateway::class);
+        $this->_objectManager->removeSharedInstance(OrderSender::class);
+        parent::tearDown();
     }
 }

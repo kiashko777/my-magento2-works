@@ -3,40 +3,39 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogInventory\Model\Stock;
 
-class ItemTest extends \PHPUnit\Framework\TestCase
+use Magento\Catalog\Model\Product;
+use Magento\CatalogInventory\Api\StockItemCriteriaInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class ItemTest extends TestCase
 {
     /**
-     * @var \Magento\CatalogInventory\Model\Stock\Item
+     * @var Item
      */
     protected $_model;
-
-    protected function setUp(): void
-    {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\CatalogInventory\Model\Stock\Item::class
-        );
-    }
 
     /**
      * @magentoDataFixture Magento/Catalog/_files/products.php
      */
     public function testSaveWithNullQty()
     {
-        /** @var \Magento\Catalog\Model\Product $product */
-        $product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->get(\Magento\Catalog\Model\Product::class);
+        /** @var Product $product */
+        $product = Bootstrap::getObjectManager()
+            ->get(Product::class);
 
         $product->loadByAttribute('sku', 'simple');
 
-        /** @var \Magento\CatalogInventory\Model\Stock\StockItemRepository $stockItemRepository */
-        $stockItemRepository = $product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\CatalogInventory\Model\Stock\StockItemRepository::class);
+        /** @var StockItemRepository $stockItemRepository */
+        $stockItemRepository = $product = Bootstrap::getObjectManager()
+            ->create(StockItemRepository::class);
 
-        /** @var \Magento\CatalogInventory\Api\StockItemCriteriaInterface $stockItemCriteria */
-        $stockItemCriteria = $product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\CatalogInventory\Api\StockItemCriteriaInterface::class);
+        /** @var StockItemCriteriaInterface $stockItemCriteria */
+        $stockItemCriteria = $product = Bootstrap::getObjectManager()
+            ->create(StockItemCriteriaInterface::class);
 
         $savedStockItem = current($stockItemRepository->getList($stockItemCriteria)->getItems());
         $savedStockItemId = $savedStockItem->getItemId();
@@ -63,13 +62,13 @@ class ItemTest extends \PHPUnit\Framework\TestCase
      */
     public function testStockStatusChangedAuto()
     {
-        /** @var \Magento\CatalogInventory\Model\Stock\StockItemRepository $stockItemRepository */
-        $stockItemRepository = $product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\CatalogInventory\Model\Stock\StockItemRepository::class);
+        /** @var StockItemRepository $stockItemRepository */
+        $stockItemRepository = $product = Bootstrap::getObjectManager()
+            ->create(StockItemRepository::class);
 
-        /** @var \Magento\CatalogInventory\Api\StockItemCriteriaInterface $stockItemCriteria */
-        $stockItemCriteria = $product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-            ->create(\Magento\CatalogInventory\Api\StockItemCriteriaInterface::class);
+        /** @var StockItemCriteriaInterface $stockItemCriteria */
+        $stockItemCriteria = $product = Bootstrap::getObjectManager()
+            ->create(StockItemCriteriaInterface::class);
 
         $savedStockItem = current($stockItemRepository->getList($stockItemCriteria)->getItems());
 
@@ -92,5 +91,12 @@ class ItemTest extends \PHPUnit\Framework\TestCase
 
         $this->_model->setUseConfigEnableQtyInc(true);
         $this->assertTrue($this->_model->getEnableQtyIncrements());
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Item::class
+        );
     }
 }

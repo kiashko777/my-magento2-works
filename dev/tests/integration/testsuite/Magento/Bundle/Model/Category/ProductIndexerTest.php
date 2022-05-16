@@ -3,88 +3,46 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Bundle\Model\Category;
 
 use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\CategoryRepository;
+use Magento\Catalog\Model\ProductRepository;
+use Magento\Catalog\Model\ResourceModel\Category\Collection;
+use Magento\Catalog\Model\ResourceModel\Category\CollectionFactory;
+use Magento\Catalog\Model\ResourceModel\Product;
+use Magento\Framework\Indexer\IndexerInterface;
+use Magento\Indexer\Model\Indexer;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppIsolation enabled
  */
-class ProductIndexerTest extends \PHPUnit\Framework\TestCase
+class ProductIndexerTest extends TestCase
 {
     const DEFAULT_ROOT_CATEGORY = 2;
 
     /**
-     * @var \Magento\Framework\Indexer\IndexerInterface
+     * @var IndexerInterface
      */
     private $indexer;
 
     /**
-     * @var \Magento\Catalog\Model\ResourceModel\Product
+     * @var Product
      */
     private $productResource;
 
     /**
-     * @var \Magento\Catalog\Model\ProductRepository
+     * @var ProductRepository
      */
     private $productRepository;
 
     /**
-     * @var \Magento\Catalog\Model\CategoryRepository
+     * @var CategoryRepository
      */
     private $categoryRepository;
-
-    protected function setUp(): void
-    {
-        $this->indexer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Indexer\Model\Indexer::class
-        );
-        $this->indexer->load('catalog_category_product');
-
-        $this->productResource = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Catalog\Model\ResourceModel\Product::class
-        );
-        $this->productRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Catalog\Model\ProductRepository::class
-        );
-        $this->categoryRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Catalog\Model\CategoryRepository::class
-        );
-    }
-
-    /**
-     * @magentoAppArea Adminhtml
-     * @magentoDataFixture Magento/Bundle/_files/PriceCalculator/fixed_bundle_product.php
-     * @magentoDataFixture Magento/Catalog/_files/indexer_catalog_category.php
-     * @magentoDbIsolation disabled
-     */
-    public function testReindex()
-    {
-        $categories = $this->getCategories();
-
-        /** @var Category $categoryFourth */
-        $categoryFourth = end($categories);
-        /** @var \Magento\Catalog\Model\Product $bundleProduct */
-        $bundleProduct = $this->productRepository->get('bundle_product');
-        $bundleProduct->setCategoryIds([$categoryFourth->getId()]);
-        $this->productRepository->save($bundleProduct);
-
-        /** @var Category $categoryThird */
-        $categoryThird = $categories[2];
-        $categoryThird->setIsAnchor(true);
-        $this->categoryRepository->save($categoryThird);
-
-        $this->indexer->reindexAll();
-
-        $categories = [self::DEFAULT_ROOT_CATEGORY, $categoryThird->getId(), $categoryFourth->getId()];
-        foreach ($categories as $categoryId) {
-            $this->assertTrue((bool)$this->productResource->canBeShowInCategory($bundleProduct, $categoryId));
-        }
-
-        $this->assertTrue(
-            (bool)$this->productResource->canBeShowInCategory($bundleProduct, $categoryThird->getParentId())
-        );
-    }
 
     /**
      * @magentoAppArea Adminhtml
@@ -128,6 +86,32 @@ class ProductIndexerTest extends \PHPUnit\Framework\TestCase
         $this->assertFalse(
             (bool)$this->productResource->canBeShowInCategory($bundleProduct, $categoryThird->getId())
         );
+    }
+
+    /**
+     * Finds 4 categories
+     *
+     * @return Category[]
+     */
+    private function getCategories()
+    {
+        $collectionFactory = Bootstrap::getObjectManager()->create(
+            CollectionFactory::class
+        );
+
+        /** @var Collection $collection */
+        $collection = $collectionFactory->create();
+
+        $collection
+            ->addAttributeToSelect('name')
+            ->addAttributeToFilter('name', ['in' => [
+                'Category 1',
+                'Category 2',
+                'Category 3',
+                'Category 4',
+            ]]);
+
+        return array_values($collection->getItems());
     }
 
     /**
@@ -185,8 +169,8 @@ class ProductIndexerTest extends \PHPUnit\Framework\TestCase
         $categoryFourth = end($categories);
 
         /** @var Category $categorySixth */
-        $categorySixth = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\Category::class
+        $categorySixth = Bootstrap::getObjectManager()->create(
+            Category::class
         );
         $categorySixth->setName(
             'Category 6'
@@ -215,28 +199,54 @@ class ProductIndexerTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Finds 4 categories
-     *
-     * @return Category[]
+     * @magentoAppArea Adminhtml
+     * @magentoDataFixture Magento/Bundle/_files/PriceCalculator/fixed_bundle_product.php
+     * @magentoDataFixture Magento/Catalog/_files/indexer_catalog_category.php
+     * @magentoDbIsolation disabled
      */
-    private function getCategories()
+    public function testReindex()
     {
-        $collectionFactory = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Model\ResourceModel\Category\CollectionFactory::class
+        $categories = $this->getCategories();
+
+        /** @var Category $categoryFourth */
+        $categoryFourth = end($categories);
+        /** @var \Magento\Catalog\Model\Product $bundleProduct */
+        $bundleProduct = $this->productRepository->get('bundle_product');
+        $bundleProduct->setCategoryIds([$categoryFourth->getId()]);
+        $this->productRepository->save($bundleProduct);
+
+        /** @var Category $categoryThird */
+        $categoryThird = $categories[2];
+        $categoryThird->setIsAnchor(true);
+        $this->categoryRepository->save($categoryThird);
+
+        $this->indexer->reindexAll();
+
+        $categories = [self::DEFAULT_ROOT_CATEGORY, $categoryThird->getId(), $categoryFourth->getId()];
+        foreach ($categories as $categoryId) {
+            $this->assertTrue((bool)$this->productResource->canBeShowInCategory($bundleProduct, $categoryId));
+        }
+
+        $this->assertTrue(
+            (bool)$this->productResource->canBeShowInCategory($bundleProduct, $categoryThird->getParentId())
         );
+    }
 
-        /** @var \Magento\Catalog\Model\ResourceModel\Category\Collection $collection */
-        $collection = $collectionFactory->create();
+    protected function setUp(): void
+    {
+        $this->indexer = Bootstrap::getObjectManager()->create(
+            Indexer::class
+        );
+        $this->indexer->load('catalog_category_product');
 
-        $collection
-            ->addAttributeToSelect('name')
-            ->addAttributeToFilter('name', ['in' => [
-                'Category 1',
-                'Category 2',
-                'Category 3',
-                'Category 4',
-            ]]);
-
-        return array_values($collection->getItems());
+        $this->productResource = Bootstrap::getObjectManager()->get(
+            Product::class
+        );
+        $this->productRepository = Bootstrap::getObjectManager()->get(
+            ProductRepository::class
+        );
+        $this->categoryRepository = Bootstrap::getObjectManager()->get(
+            CategoryRepository::class
+        );
     }
 }

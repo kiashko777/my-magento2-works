@@ -3,11 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\TestFramework\TestCase\Webapi\Adapter\Rest;
 
-use Magento\TestFramework\TestCase\HttpClient\CurlClient;
-use Magento\TestFramework\Helper\JsonSerializer;
+use Exception;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\Helper\JsonSerializer;
+use Magento\TestFramework\TestCase\HttpClient\CurlClient;
 
 /**
  * Client for invoking REST API
@@ -34,12 +36,13 @@ class RestClient
      * @param JsonSerializer|null $jsonSerializer
      */
     public function __construct(
-        \Magento\TestFramework\TestCase\HttpClient\CurlClient $curlClient = null,
-        \Magento\TestFramework\Helper\JsonSerializer $jsonSerializer = null
-    ) {
+        CurlClient     $curlClient = null,
+        JsonSerializer $jsonSerializer = null
+    )
+    {
         $objectManager = Bootstrap::getObjectManager();
-        $this->curlClient = $curlClient ? : $objectManager->get(CurlClient::class);
-        $this->jsonSerializer = $jsonSerializer ? : $objectManager->get(JsonSerializer::class);
+        $this->curlClient = $curlClient ?: $objectManager->get(CurlClient::class);
+        $this->jsonSerializer = $jsonSerializer ?: $objectManager->get(JsonSerializer::class);
     }
 
     /**
@@ -59,6 +62,16 @@ class RestClient
 
         $responseBody = $this->curlClient->get($url, $data, $headers);
         return $this->jsonSerializer->jsonDecode($responseBody);
+    }
+
+    /**
+     * @param string $resourcePath Resource URL like /V1/Resource1/123
+     * @return string resource URL
+     * @throws Exception
+     */
+    public function constructResourceUrl($resourcePath)
+    {
+        return rtrim(TESTS_BASE_URL, '/') . $this->restBasePath . ltrim($resourcePath, '/');
     }
 
     /**
@@ -119,15 +132,5 @@ class RestClient
         $url = $this->constructResourceUrl($resourcePath);
         $responseBody = $this->curlClient->delete($url, $headers);
         return $this->jsonSerializer->jsonDecode($responseBody);
-    }
-
-    /**
-     * @param string $resourcePath Resource URL like /V1/Resource1/123
-     * @return string resource URL
-     * @throws \Exception
-     */
-    public function constructResourceUrl($resourcePath)
-    {
-        return rtrim(TESTS_BASE_URL, '/') . $this->restBasePath . ltrim($resourcePath, '/');
     }
 }

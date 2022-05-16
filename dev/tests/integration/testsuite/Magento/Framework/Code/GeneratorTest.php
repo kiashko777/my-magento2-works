@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\Code;
 
 use Magento\Framework\Api\Code\Generator\ExtensionAttributesInterfaceFactoryGenerator;
@@ -12,6 +13,7 @@ use Magento\Framework\Interception\Code\Generator as InterceptionGenerator;
 use Magento\Framework\ObjectManager\Code\Generator as DIGenerator;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 require_once __DIR__ . '/GeneratorTest/SourceClassWithNamespace.php';
 require_once __DIR__ . '/GeneratorTest/ParentClassWithNamespace.php';
@@ -57,54 +59,6 @@ class GeneratorTest extends TestCase
     private $testRelativePath = './Magento/Framework/Code/GeneratorTest/';
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        /** @var Filesystem $filesystem */
-        $filesystem = $objectManager->get(Filesystem::class);
-        $this->generatedDirectory = $filesystem->getDirectoryWrite(DirectoryList::GENERATED_CODE);
-        $this->generatedDirectory->create($this->testRelativePath);
-        $this->logDirectory = $filesystem->getDirectoryRead(DirectoryList::LOG);
-        $generatedDirectoryAbsolutePath = $this->generatedDirectory->getAbsolutePath();
-        $this->_ioObject = new Generator\Io(new Filesystem\Driver\File(), $generatedDirectoryAbsolutePath);
-        $this->_generator = $objectManager->create(
-            Generator::class,
-            [
-                'ioObject' => $this->_ioObject,
-                'generatedEntities' => [
-                    ExtensionAttributesInterfaceFactoryGenerator::ENTITY_TYPE =>
-                        ExtensionAttributesInterfaceFactoryGenerator::class,
-                    DIGenerator\Factory::ENTITY_TYPE => DIGenerator\Factory::class,
-                    DIGenerator\Proxy::ENTITY_TYPE => DIGenerator\Proxy::class,
-                    InterceptionGenerator\Interceptor::ENTITY_TYPE => InterceptionGenerator\Interceptor::class,
-                ]
-            ]
-        );
-        $this->_generator->setObjectManager($objectManager);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->_generator = null;
-        if ($this->generatedDirectory->isExist($this->testRelativePath)) {
-            if (!$this->generatedDirectory->isWritable($this->testRelativePath)) {
-                $this->generatedDirectory->changePermissionsRecursively($this->testRelativePath, 0775, 0664);
-            }
-            $this->generatedDirectory->delete($this->testRelativePath);
-        }
-    }
-
-    protected function _clearDocBlock($classBody)
-    {
-        return preg_replace('/(\/\*[\w\W]*)\nclass/', 'class', $classBody);
-    }
-
-    /**
      * Generates a new class Factory file and compares with the sample.
      *
      * @param $className
@@ -125,6 +79,11 @@ class GeneratorTest extends TestCase
             file_get_contents(__DIR__ . $expectedDataPath)
         );
         $this->assertEquals($expectedContent, $content);
+    }
+
+    protected function _clearDocBlock($classBody)
+    {
+        return preg_replace('/(\/\*[\w\W]*)\nclass/', 'class', $classBody);
     }
 
     /**
@@ -209,12 +168,55 @@ class GeneratorTest extends TestCase
         $msgPart = 'Class ' . $factoryClassName . ' generation error: The requested class did not generate properly, '
             . 'because the \'generated\' directory permission is read-only.';
         $regexpMsgPart = preg_quote($msgPart);
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessageMatches("/.*$regexpMsgPart.*/");
         $this->generatedDirectory->changePermissionsRecursively($this->testRelativePath, 0555, 0444);
         $generatorResult = $this->_generator->generateClass($factoryClassName);
         $this->assertFalse($generatorResult);
         $pathToSystemLog = $this->logDirectory->getAbsolutePath('system.log');
         $this->assertContains($msgPart, file_get_contents($pathToSystemLog));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var Filesystem $filesystem */
+        $filesystem = $objectManager->get(Filesystem::class);
+        $this->generatedDirectory = $filesystem->getDirectoryWrite(DirectoryList::GENERATED_CODE);
+        $this->generatedDirectory->create($this->testRelativePath);
+        $this->logDirectory = $filesystem->getDirectoryRead(DirectoryList::LOG);
+        $generatedDirectoryAbsolutePath = $this->generatedDirectory->getAbsolutePath();
+        $this->_ioObject = new Generator\Io(new Filesystem\Driver\File(), $generatedDirectoryAbsolutePath);
+        $this->_generator = $objectManager->create(
+            Generator::class,
+            [
+                'ioObject' => $this->_ioObject,
+                'generatedEntities' => [
+                    ExtensionAttributesInterfaceFactoryGenerator::ENTITY_TYPE =>
+                        ExtensionAttributesInterfaceFactoryGenerator::class,
+                    DIGenerator\Factory::ENTITY_TYPE => DIGenerator\Factory::class,
+                    DIGenerator\Proxy::ENTITY_TYPE => DIGenerator\Proxy::class,
+                    InterceptionGenerator\Interceptor::ENTITY_TYPE => InterceptionGenerator\Interceptor::class,
+                ]
+            ]
+        );
+        $this->_generator->setObjectManager($objectManager);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->_generator = null;
+        if ($this->generatedDirectory->isExist($this->testRelativePath)) {
+            if (!$this->generatedDirectory->isWritable($this->testRelativePath)) {
+                $this->generatedDirectory->changePermissionsRecursively($this->testRelativePath, 0775, 0664);
+            }
+            $this->generatedDirectory->delete($this->testRelativePath);
+        }
     }
 }

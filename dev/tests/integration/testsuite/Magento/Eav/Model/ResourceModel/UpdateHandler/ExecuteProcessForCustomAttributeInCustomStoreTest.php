@@ -6,12 +6,14 @@
 
 namespace Magento\Eav\Model\ResourceModel\UpdateHandler;
 
+use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\ResourceModel\Eav\Attribute;
+use Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection;
+use Magento\Eav\Model\ResourceModel\UpdateHandler;
 use Magento\Eav\Model\ResourceModel\UpdateHandlerAbstract;
 use Magento\Store\Model\Store;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Eav\Model\ResourceModel\UpdateHandler;
 
 /**
  * @magentoAppArea Adminhtml
@@ -20,7 +22,7 @@ use Magento\Eav\Model\ResourceModel\UpdateHandler;
 class ExecuteProcessForCustomAttributeInCustomStoreTest extends UpdateHandlerAbstract
 {
     /**
-     * @covers \Magento\Eav\Model\ResourceModel\UpdateHandler::execute
+     * @covers       \Magento\Eav\Model\ResourceModel\UpdateHandler::execute
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
      * @magentoDataFixture Magento/Catalog/_files/dropdown_attribute.php
      * @magentoDataFixture Magento/Store/_files/second_store.php
@@ -38,19 +40,20 @@ class ExecuteProcessForCustomAttributeInCustomStoreTest extends UpdateHandlerAbs
         $snapshotValue,
         $newValue,
         $expected
-    ) {
+    )
+    {
         $store = Bootstrap::getObjectManager()->create(Store::class);
         $store->load('fixture_second_store', 'code');
 
         $this->reindexAll();
 
-        $attribute = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
+        $attribute = Bootstrap::getObjectManager()->create(
             Attribute::class
         );
         $attribute->loadByCode(4, $code);
 
-        $options = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection::class
+        $options = Bootstrap::getObjectManager()->create(
+            Collection::class
         );
         $options->setAttributeFilter($attribute->getId());
         $optionIds = $options->getAllIds();
@@ -62,7 +65,7 @@ class ExecuteProcessForCustomAttributeInCustomStoreTest extends UpdateHandlerAbs
         $entity->save();
 
         if ($snapshotValue !== '-') {
-            /** @var $options \Magento\Eav\Model\ResourceModel\Entity\Attribute\Option\Collection */
+            /** @var $options Collection */
             $entity = Bootstrap::getObjectManager()->create(Product::class);
             $entity->setStoreId($store->getId());
             $entity->load(1);
@@ -86,7 +89,7 @@ class ExecuteProcessForCustomAttributeInCustomStoreTest extends UpdateHandlerAbs
         }
 
         $entityData = array_merge($entity->getData(), [$code => $newValue]);
-        $updateHandler->execute(\Magento\Catalog\Api\Data\ProductInterface::class, $entityData);
+        $updateHandler->execute(ProductInterface::class, $entityData);
 
         $resultEntity = Bootstrap::getObjectManager()->create(Product::class);
         $resultEntity->setStoreId($store->getId());

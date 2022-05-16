@@ -7,19 +7,24 @@
 /**
  * Tests for customer addresses collection
  */
+
 namespace Magento\Customer\Model\ResourceModel\Address;
 
-class CollectionTest extends \PHPUnit\Framework\TestCase
+use Magento\Customer\Model\Customer;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class CollectionTest extends TestCase
 {
     public function testSetCustomerFilter()
     {
-        $collection = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Model\ResourceModel\Address\Collection::class
+        $collection = Bootstrap::getObjectManager()->create(
+            Collection::class
         );
         $select = $collection->getSelect();
         $this->assertSame($collection, $collection->setCustomerFilter([1, 2]));
-        $customer = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Customer\Model\Customer::class
+        $customer = Bootstrap::getObjectManager()->create(
+            Customer::class
         );
         $collection->setCustomerFilter($customer);
         $customer->setId(3);

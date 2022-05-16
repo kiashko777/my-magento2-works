@@ -32,7 +32,8 @@ define([
         try {
             injector.clean();
             injector.remove();
-        } catch (e) {}
+        } catch (e) {
+        }
     });
 
     describe('Magento_Catalog/js/product/list/columns/final-price', function () {
@@ -40,12 +41,12 @@ define([
             it('Check returned value', function () {
                 var price = 100,
                     row = {
-                    'price_info': {
-                        'formatted_prices': {
-                            'final_price': price
+                        'price_info': {
+                            'formatted_prices': {
+                                'final_price': price
+                            }
                         }
-                    }
-                };
+                    };
 
                 expect(obj.getPrice(row)).toBe(price);
             });
@@ -78,11 +79,11 @@ define([
             });
             it('Check returned value with different mix_regular_price and max_regular_price', function () {
                 var row = {
-                        'price_info': {
-                            'max_regular_price': 100,
-                            'min_regular_price': 200
-                        }
-                    };
+                    'price_info': {
+                        'max_regular_price': 100,
+                        'min_regular_price': 200
+                    }
+                };
 
                 expect(obj.hasPriceRange(row)).toBe(true);
             });
@@ -90,11 +91,11 @@ define([
         describe('"hasSpecialPrice" method', function () {
             it('Check returned value with regular_price that is more than final_price', function () {
                 var row = {
-                        'price_info': {
-                            'regular_price': 200,
-                            'final_price': 100
-                        }
-                    };
+                    'price_info': {
+                        'regular_price': 200,
+                        'final_price': 100
+                    }
+                };
 
                 expect(obj.hasSpecialPrice(row)).toBe(true);
             });
@@ -135,12 +136,12 @@ define([
             it('Check returned value', function () {
                 var price = 100,
                     row = {
-                    'price_info': {
-                        'formatted_prices': {
-                            'minimal_price': price
+                        'price_info': {
+                            'formatted_prices': {
+                                'minimal_price': price
+                            }
                         }
-                    }
-                };
+                    };
 
                 expect(obj.getMinimalPrice(row)).toBe(price);
             });

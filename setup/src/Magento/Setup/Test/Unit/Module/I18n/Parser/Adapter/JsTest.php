@@ -29,14 +29,6 @@ class JsTest extends TestCase
      */
     protected $_adapter;
 
-    protected function setUp(): void
-    {
-        $this->_testFile = str_replace('\\', '/', realpath(dirname(__FILE__))) . '/_files/file.js';
-        $this->_stringsCount = count(file($this->_testFile));
-
-        $this->_adapter = (new ObjectManager($this))->getObject(Js::class);
-    }
-
     public function testParse()
     {
         $expectedResult = [
@@ -75,5 +67,13 @@ class JsTest extends TestCase
         $this->_adapter->parse($this->_testFile);
 
         $this->assertEquals($expectedResult, $this->_adapter->getPhrases());
+    }
+
+    protected function setUp(): void
+    {
+        $this->_testFile = str_replace('\\', '/', realpath(dirname(__FILE__))) . '/_files/file.js';
+        $this->_stringsCount = count(file($this->_testFile));
+
+        $this->_adapter = (new ObjectManager($this))->getObject(Js::class);
     }
 }

@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Ui\DataProvider;
 
 use Magento\Framework\Api\AttributeInterface;
@@ -22,14 +23,6 @@ class SearchResultFactoryTest extends TestCase
      * @var SearchResultFactory
      */
     private $searchResultFactory;
-
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-
-        $this->searchCriteriaBuilder = $objectManager->create(SearchCriteriaBuilder::class);
-        $this->searchResultFactory = $objectManager->create(SearchResultFactory::class);
-    }
 
     public function testCreate()
     {
@@ -71,5 +64,13 @@ class SearchResultFactoryTest extends TestCase
 
         self::assertEquals($totalCount, $searchResult->getTotalCount());
         self::assertEquals($searchCriteria, $searchResult->getSearchCriteria());
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+
+        $this->searchCriteriaBuilder = $objectManager->create(SearchCriteriaBuilder::class);
+        $this->searchResultFactory = $objectManager->create(SearchResultFactory::class);
     }
 }

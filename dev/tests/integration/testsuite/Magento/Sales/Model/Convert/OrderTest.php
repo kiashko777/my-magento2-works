@@ -7,19 +7,15 @@
 namespace Magento\Sales\Model\Convert;
 
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class OrderTest
  */
-class OrderTest extends \PHPUnit\Framework\TestCase
+class OrderTest extends TestCase
 {
     /** @var Order */
     protected $_model;
-
-    protected function setUp(): void
-    {
-        $this->_model = Bootstrap::getObjectManager()->create(\Magento\Sales\Model\Convert\Order::class);
-    }
 
     /**
      * @magentoDataFixture Magento/Sales/_files/order.php
@@ -32,5 +28,10 @@ class OrderTest extends \PHPUnit\Framework\TestCase
         //MAGETWO-45612 fix
         $order->setBaseShippingAmount(5);
         $this->assertNull($this->_model->toCreditmemo($order)->getBaseShippingAmount());
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()->create(Order::class);
     }
 }

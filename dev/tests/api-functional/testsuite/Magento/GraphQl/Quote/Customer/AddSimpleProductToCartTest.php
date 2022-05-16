@@ -29,13 +29,6 @@ class AddSimpleProductToCartTest extends GraphQlAbstract
      */
     private $getMaskedQuoteIdByReservedOrderId;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
-        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
-    }
-
     /**
      * @magentoApiDataFixture Magento/Customer/_files/customer.php
      * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
@@ -83,138 +76,6 @@ class AddSimpleProductToCartTest extends GraphQlAbstract
     }
 
     /**
-     * @magentoApiDataFixture Magento/Customer/_files/customer.php
-     */
-    public function testAddSimpleProductToCartIfCartIdIsEmpty()
-    {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Required parameter "cart_id" is missing');
-
-        $query = <<<QUERY
-mutation {
-  addSimpleProductsToCart(
-    input: {
-      cart_id: "",
-      cart_items: []
-    }
-  ) {
-    cart {
-      items {
-        id
-      }
-    }
-  }
-}
-QUERY;
-
-        $this->graphQlMutation($query, [], '', $this->getHeaderMap());
-    }
-
-    /**
-     * @magentoApiDataFixture Magento/Customer/_files/customer.php
-     */
-    public function testAddSimpleProductToCartIfCartItemsAreEmpty()
-    {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Required parameter "cart_items" is missing');
-
-        $query = <<<QUERY
-mutation {
-  addSimpleProductsToCart(
-    input: {
-      cart_id: "cart_id",
-      cart_items: []
-    }
-  ) {
-    cart {
-      items {
-        id
-      }
-    }
-  }
-}
-QUERY;
-
-        $this->graphQlMutation($query, [], '', $this->getHeaderMap());
-    }
-
-    /**
-     * @magentoApiDataFixture Magento/Customer/_files/customer.php
-     * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
-     *
-     */
-    public function testAddProductToNonExistentCart()
-    {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Could not find a cart with ID "non_existent_masked_id"');
-
-        $sku = 'simple_product';
-        $quantity = 2;
-        $maskedQuoteId = 'non_existent_masked_id';
-
-        $query = $this->getQuery($maskedQuoteId, $sku, $quantity);
-        $this->graphQlMutation($query, [], '', $this->getHeaderMap());
-    }
-
-    /**
-     * @magentoApiDataFixture Magento/Customer/_files/customer.php
-     * @magentoApiDataFixture Magento/GraphQl/Quote/_files/customer/create_empty_cart.php
-     *
-     */
-    public function testNonExistentProductToCart()
-    {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Could not find a product with SKU "simple_product"');
-
-        $sku = 'simple_product';
-        $qty = 2;
-        $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
-
-        $query = $this->getQuery($maskedQuoteId, $sku, $qty);
-        $this->graphQlMutation($query, [], '', $this->getHeaderMap());
-    }
-
-    /**
-     * _security
-     * @magentoApiDataFixture Magento/Customer/_files/customer.php
-     * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
-     * @magentoApiDataFixture Magento/GraphQl/Quote/_files/guest/create_empty_cart.php
-     */
-    public function testAddSimpleProductToGuestCart()
-    {
-        $sku = 'simple_product';
-        $qty = 2;
-        $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
-        $query = $this->getQuery($maskedQuoteId, $sku, $qty);
-
-        $this->expectExceptionMessage(
-            "The current user cannot perform operations on cart \"$maskedQuoteId\""
-        );
-
-        $this->graphQlMutation($query, [], '', $this->getHeaderMap());
-    }
-
-    /**
-     * _security
-     * @magentoApiDataFixture Magento/Customer/_files/three_customers.php
-     * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
-     * @magentoApiDataFixture Magento/GraphQl/Quote/_files/customer/create_empty_cart.php
-     */
-    public function testAddSimpleProductToAnotherCustomerCart()
-    {
-        $sku = 'simple_product';
-        $qty = 2;
-        $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
-        $query = $this->getQuery($maskedQuoteId, $sku, $qty);
-
-        $this->expectExceptionMessage(
-            "The current user cannot perform operations on cart \"$maskedQuoteId\""
-        );
-
-        $this->graphQlMutation($query, [], '', $this->getHeaderMap('customer2@search.example.com'));
-    }
-
-    /**
      * @param string $maskedQuoteId
      * @param string $sku
      * @param float $quantity
@@ -225,14 +86,14 @@ QUERY;
         return <<<QUERY
 mutation {
   addSimpleProductsToCart(input: {
-    cart_id: "{$maskedQuoteId}", 
+    cart_id: "{$maskedQuoteId}",
     cart_items: [
       {
         data: {
           quantity: {$quantity}
           sku: "{$sku}"
         }
-      }                
+      }
     ]
   }) {
     cart {
@@ -290,5 +151,144 @@ QUERY;
         $customerToken = $this->customerTokenService->createCustomerAccessToken($username, $password);
         $headerMap = ['Authorization' => 'Bearer ' . $customerToken];
         return $headerMap;
+    }
+
+    /**
+     * @magentoApiDataFixture Magento/Customer/_files/customer.php
+     */
+    public function testAddSimpleProductToCartIfCartIdIsEmpty()
+    {
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Required parameter "cart_id" is missing');
+
+        $query = <<<QUERY
+mutation {
+  addSimpleProductsToCart(
+    input: {
+      cart_id: "",
+      cart_items: []
+    }
+  ) {
+    cart {
+      items {
+        id
+      }
+    }
+  }
+}
+QUERY;
+
+        $this->graphQlMutation($query, [], '', $this->getHeaderMap());
+    }
+
+    /**
+     * @magentoApiDataFixture Magento/Customer/_files/customer.php
+     */
+    public function testAddSimpleProductToCartIfCartItemsAreEmpty()
+    {
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Required parameter "cart_items" is missing');
+
+        $query = <<<QUERY
+mutation {
+  addSimpleProductsToCart(
+    input: {
+      cart_id: "cart_id",
+      cart_items: []
+    }
+  ) {
+    cart {
+      items {
+        id
+      }
+    }
+  }
+}
+QUERY;
+
+        $this->graphQlMutation($query, [], '', $this->getHeaderMap());
+    }
+
+    /**
+     * @magentoApiDataFixture Magento/Customer/_files/customer.php
+     * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
+     *
+     */
+    public function testAddProductToNonExistentCart()
+    {
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Could not find a cart with ID "non_existent_masked_id"');
+
+        $sku = 'simple_product';
+        $quantity = 2;
+        $maskedQuoteId = 'non_existent_masked_id';
+
+        $query = $this->getQuery($maskedQuoteId, $sku, $quantity);
+        $this->graphQlMutation($query, [], '', $this->getHeaderMap());
+    }
+
+    /**
+     * @magentoApiDataFixture Magento/Customer/_files/customer.php
+     * @magentoApiDataFixture Magento/GraphQl/Quote/_files/customer/create_empty_cart.php
+     *
+     */
+    public function testNonExistentProductToCart()
+    {
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Could not find a product with SKU "simple_product"');
+
+        $sku = 'simple_product';
+        $qty = 2;
+        $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
+
+        $query = $this->getQuery($maskedQuoteId, $sku, $qty);
+        $this->graphQlMutation($query, [], '', $this->getHeaderMap());
+    }
+
+    /**
+     * _security
+     * @magentoApiDataFixture Magento/Customer/_files/customer.php
+     * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
+     * @magentoApiDataFixture Magento/GraphQl/Quote/_files/guest/create_empty_cart.php
+     */
+    public function testAddSimpleProductToGuestCart()
+    {
+        $sku = 'simple_product';
+        $qty = 2;
+        $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
+        $query = $this->getQuery($maskedQuoteId, $sku, $qty);
+
+        $this->expectExceptionMessage(
+            "The current user cannot perform operations on cart \"$maskedQuoteId\""
+        );
+
+        $this->graphQlMutation($query, [], '', $this->getHeaderMap());
+    }
+
+    /**
+     * _security
+     * @magentoApiDataFixture Magento/Customer/_files/three_customers.php
+     * @magentoApiDataFixture Magento/GraphQl/Catalog/_files/simple_product.php
+     * @magentoApiDataFixture Magento/GraphQl/Quote/_files/customer/create_empty_cart.php
+     */
+    public function testAddSimpleProductToAnotherCustomerCart()
+    {
+        $sku = 'simple_product';
+        $qty = 2;
+        $maskedQuoteId = $this->getMaskedQuoteIdByReservedOrderId->execute('test_quote');
+        $query = $this->getQuery($maskedQuoteId, $sku, $qty);
+
+        $this->expectExceptionMessage(
+            "The current user cannot perform operations on cart \"$maskedQuoteId\""
+        );
+
+        $this->graphQlMutation($query, [], '', $this->getHeaderMap('customer2@search.example.com'));
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->customerTokenService = $objectManager->get(CustomerTokenServiceInterface::class);
+        $this->getMaskedQuoteIdByReservedOrderId = $objectManager->get(GetMaskedQuoteIdByReservedOrderId::class);
     }
 }

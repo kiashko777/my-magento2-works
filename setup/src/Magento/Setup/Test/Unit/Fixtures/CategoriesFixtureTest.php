@@ -45,25 +45,6 @@ class CategoriesFixtureTest extends TestCase
      */
     private $categoryFactoryMock;
 
-    /**
-     * @inhertidoc
-     */
-    protected function setUp(): void
-    {
-        $this->fixtureModelMock = $this->createMock(FixtureModel::class);
-        $this->collectionFactoryMock = $this->createPartialMock(CollectionFactory::class, ['create']);
-        $this->collectionMock = $this->createMock(Collection::class);
-        $this->categoryFactoryMock = $this->createPartialMock(CategoryFactory::class, ['create']);
-
-        $this->model = (new ObjectManager($this))->getObject(CategoriesFixture::class, [
-            'fixtureModel' => $this->fixtureModelMock,
-            'collectionFactory' => $this->collectionFactoryMock,
-            'rootCategoriesIds' => [2],
-            'categoryFactory' => $this->categoryFactoryMock,
-            'firstLevelCategoryIndex' => 1,
-        ]);
-    }
-
     public function testDoNoExecuteIfCategoriesAlreadyGenerated()
     {
         $this->collectionFactoryMock->expects($this->once())->method('create')->willReturn($this->collectionMock);
@@ -176,5 +157,24 @@ class CategoriesFixtureTest extends TestCase
         $this->assertSame([
             'categories' => 'Categories'
         ], $this->model->introduceParamLabels());
+    }
+
+    /**
+     * @inhertidoc
+     */
+    protected function setUp(): void
+    {
+        $this->fixtureModelMock = $this->createMock(FixtureModel::class);
+        $this->collectionFactoryMock = $this->createPartialMock(CollectionFactory::class, ['create']);
+        $this->collectionMock = $this->createMock(Collection::class);
+        $this->categoryFactoryMock = $this->createPartialMock(CategoryFactory::class, ['create']);
+
+        $this->model = (new ObjectManager($this))->getObject(CategoriesFixture::class, [
+            'fixtureModel' => $this->fixtureModelMock,
+            'collectionFactory' => $this->collectionFactoryMock,
+            'rootCategoriesIds' => [2],
+            'categoryFactory' => $this->categoryFactoryMock,
+            'firstLevelCategoryIndex' => 1,
+        ]);
     }
 }

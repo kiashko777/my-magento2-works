@@ -5,23 +5,30 @@
  */
 declare(strict_types=1);
 
-/** @var \Magento\Framework\ObjectManagerInterface $objectManager */
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+/** @var ObjectManagerInterface $objectManager */
 
-/** @var \Magento\Framework\Registry $registry */
-$registry = $objectManager->get(\Magento\Framework\Registry::class);
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
+
+$objectManager = Bootstrap::getObjectManager();
+
+/** @var Registry $registry */
+$registry = $objectManager->get(Registry::class);
 
 $registry->unregister('isSecureArea');
 $registry->register('isSecureArea', true);
 
 try {
-    $productRepository = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()
-        ->get(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+    $productRepository = Bootstrap::getObjectManager()
+        ->get(ProductRepositoryInterface::class);
     $product = $productRepository->get('product-with-xss', true);
     if ($product->getId()) {
         $productRepository->delete($product);
     }
-} catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+} catch (NoSuchEntityException $e) {
     //Products already removed
 }
 

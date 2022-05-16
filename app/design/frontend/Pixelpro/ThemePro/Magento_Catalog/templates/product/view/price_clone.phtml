@@ -3,13 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
+use Magento\Catalog\Block\Product\AbstractProduct;
+use Magento\Catalog\Pricing\Price\FinalPrice;
+use Magento\Framework\Pricing\Render;
+
 ?>
-<?php /** @var \Magento\Catalog\Block\Product\AbstractProduct $block */ ?>
+<?php /** @var AbstractProduct $block */ ?>
 <?php $_product = $block->getProduct() ?>
 <?= $block->getProductPriceHtml(
     $_product,
-    \Magento\Catalog\Pricing\Price\FinalPrice::PRICE_CODE,
-    \Magento\Framework\Pricing\Render::ZONE_ITEM_VIEW,
+    FinalPrice::PRICE_CODE,
+    Render::ZONE_ITEM_VIEW,
     [
         'price_id_suffix' => '_clone'
     ]

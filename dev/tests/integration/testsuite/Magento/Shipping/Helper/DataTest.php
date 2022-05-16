@@ -3,23 +3,25 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Shipping\Helper;
 
+use Magento\Sales\Api\OrderRepositoryInterface;
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Shipment;
+use Magento\Sales\Model\Order\Shipment\Track;
+use Magento\Sales\Model\Order\ShipmentRepository;
 use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
-class DataTest extends \PHPUnit\Framework\TestCase
+class DataTest extends TestCase
 {
     /**
-     * @var \Magento\Shipping\Helper\Data
+     * @var Data
      */
     private $helper;
-
-    protected function setUp(): void
-    {
-        $this->helper = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Shipping\Helper\Data::class
-        );
-    }
 
     /**
      * @param string $modelName
@@ -31,12 +33,12 @@ class DataTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetTrackingPopupUrlBySalesModel($modelName, $getIdMethod, $entityId, $code, $expected)
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
         $constructArgs = [];
-        if (\Magento\Sales\Model\Order\Shipment::class === $modelName) {
+        if (Shipment::class === $modelName) {
             $orderRepository = $this->getMockOrderRepository($code);
             $constructArgs['orderRepository'] = $orderRepository;
-        } elseif (\Magento\Sales\Model\Order\Shipment\Track::class === $modelName) {
+        } elseif (Track::class === $modelName) {
             $shipmentRepository = $this->getMockShipmentRepository($code);
             $constructArgs['shipmentRepository'] = $shipmentRepository;
         }
@@ -44,15 +46,45 @@ class DataTest extends \PHPUnit\Framework\TestCase
         $model = $objectManager->create($modelName, $constructArgs);
         $model->{$getIdMethod}($entityId);
 
-        if (\Magento\Sales\Model\Order::class === $modelName) {
+        if (Order::class === $modelName) {
             $model->setProtectCode($code);
         }
-        if (\Magento\Sales\Model\Order\Shipment\Track::class === $modelName) {
+        if (Track::class === $modelName) {
             $model->setParentId(1);
         }
 
         $actual = $this->helper->getTrackingPopupUrlBySalesModel($model);
         $this->assertEquals($expected, $actual);
+    }
+
+    /**
+     * @param $code
+     * @return OrderRepositoryInterface|MockObject
+     */
+    private function getMockOrderRepository($code)
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $order = $objectManager->create(Order::class);
+        $order->setProtectCode($code);
+        $orderRepository = $this->createMock(OrderRepositoryInterface::class);
+        $orderRepository->expects($this->atLeastOnce())->method('get')->willReturn($order);
+        return $orderRepository;
+    }
+
+    /**
+     * @param $code
+     * @return ShipmentRepository|MockObject
+     */
+    private function getMockShipmentRepository($code)
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $orderRepository = $this->getMockOrderRepository($code);
+        $shipmentArgs = ['orderRepository' => $orderRepository];
+
+        $shipment = $objectManager->create(Shipment::class, $shipmentArgs);
+        $shipmentRepository = $this->createPartialMock(ShipmentRepository::class, ['get']);
+        $shipmentRepository->expects($this->atLeastOnce())->method('get')->willReturn($shipment);
+        return $shipmentRepository;
     }
 
     /**
@@ -69,17 +101,17 @@ class DataTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetTrackingPopupUrlBySalesModelFromAdmin($modelName, $getIdMethod, $entityId, $code, $expected)
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
 
         /** @var StoreManagerInterface $storeManager */
         $storeManager = $objectManager->create(StoreManagerInterface::class);
         $storeManager->reinitStores();
 
         $constructArgs = [];
-        if (\Magento\Sales\Model\Order\Shipment::class === $modelName) {
+        if (Shipment::class === $modelName) {
             $orderRepository = $this->getMockOrderRepository($code);
             $constructArgs['orderRepository'] = $orderRepository;
-        } elseif (\Magento\Sales\Model\Order\Shipment\Track::class === $modelName) {
+        } elseif (Track::class === $modelName) {
             $shipmentRepository = $this->getMockShipmentRepository($code);
             $constructArgs['shipmentRepository'] = $shipmentRepository;
         }
@@ -87,10 +119,10 @@ class DataTest extends \PHPUnit\Framework\TestCase
         $model = $objectManager->create($modelName, $constructArgs);
         $model->{$getIdMethod}($entityId);
 
-        if (\Magento\Sales\Model\Order::class === $modelName) {
+        if (Order::class === $modelName) {
             $model->setProtectCode($code);
         }
-        if (\Magento\Sales\Model\Order\Shipment\Track::class === $modelName) {
+        if (Track::class === $modelName) {
             $model->setParentId(1);
         }
 
@@ -100,59 +132,36 @@ class DataTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @param $code
-     * @return \Magento\Sales\Api\OrderRepositoryInterface|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private function getMockOrderRepository($code)
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $order = $objectManager->create(\Magento\Sales\Model\Order::class);
-        $order->setProtectCode($code);
-        $orderRepository = $this->createMock(\Magento\Sales\Api\OrderRepositoryInterface::class);
-        $orderRepository->expects($this->atLeastOnce())->method('get')->willReturn($order);
-        return $orderRepository;
-    }
-
-    /**
-     * @param $code
-     * @return \Magento\Sales\Model\Order\ShipmentRepository|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private function getMockShipmentRepository($code)
-    {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $orderRepository = $this->getMockOrderRepository($code);
-        $shipmentArgs = ['orderRepository' => $orderRepository];
-
-        $shipment = $objectManager->create(\Magento\Sales\Model\Order\Shipment::class, $shipmentArgs);
-        $shipmentRepository = $this->createPartialMock(\Magento\Sales\Model\Order\ShipmentRepository::class, ['get']);
-        $shipmentRepository->expects($this->atLeastOnce())->method('get')->willReturn($shipment);
-        return $shipmentRepository;
-    }
-
-    /**
      * @return array
      */
     public function getTrackingPopupUrlBySalesModelDataProvider()
     {
         return [
-            [\Magento\Sales\Model\Order::class,
+            [Order::class,
                 'setId',
                 42,
                 'abc',
                 'http://localhost/index.php/shipping/tracking/popup?hash=b3JkZXJfaWQ6NDI6YWJj',
             ],
-            [\Magento\Sales\Model\Order\Shipment::class,
+            [Shipment::class,
                 'setId',
                 42,
                 'abc',
                 'http://localhost/index.php/shipping/tracking/popup?hash=c2hpcF9pZDo0MjphYmM%2C'
             ],
-            [\Magento\Sales\Model\Order\Shipment\Track::class,
+            [Track::class,
                 'setEntityId',
                 42,
                 'abc',
                 'http://localhost/index.php/shipping/tracking/popup?hash=dHJhY2tfaWQ6NDI6YWJj'
             ]
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $this->helper = Bootstrap::getObjectManager()->get(
+            Data::class
+        );
     }
 }

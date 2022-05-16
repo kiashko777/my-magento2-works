@@ -6,29 +6,23 @@
 
 namespace Magento\Security\Model\ResourceModel\AdminSessionInfo;
 
+use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\Stdlib\DateTime\DateTime;
+use Magento\Security\Model\AdminSessionInfo;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class CollectionTest extends \PHPUnit\Framework\TestCase
+class CollectionTest extends TestCase
 {
     /**
-     * @var \Magento\Security\Model\ResourceModel\AdminSessionInfo\Collection
+     * @var Collection
      */
     protected $collectionModel;
 
     /**
-     * @var \Magento\Framework\ObjectManagerInterface
+     * @var ObjectManagerInterface
      */
     protected $objectManager;
-
-    /**
-     * Set up
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->collectionModel = $this->objectManager
-            ->create(\Magento\Security\Model\ResourceModel\AdminSessionInfo\Collection::class);
-    }
 
     /**
      * updateActiveSessionsStatus() test
@@ -38,7 +32,7 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
     public function testUpdateActiveSessionsStatus()
     {
         $quantity = $this->collectionModel->updateActiveSessionsStatus(
-            \Magento\Security\Model\AdminSessionInfo::LOGGED_OUT_BY_LOGIN,
+            AdminSessionInfo::LOGGED_OUT_BY_LOGIN,
             1,
             '569e2277752e9'
         );
@@ -54,7 +48,7 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
     {
         $this->collectionModel->filterByUser(
             1,
-            \Magento\Security\Model\AdminSessionInfo::LOGGED_IN,
+            AdminSessionInfo::LOGGED_IN,
             '569e2e3d752e9'
         );
         $this->collectionModel->load();
@@ -90,5 +84,15 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
         $this->collectionModel->deleteSessionsOlderThen($startTime);
         $this->collectionModel->load();
         $this->assertGreaterThanOrEqual(1, $this->collectionModel->getSize());
+    }
+
+    /**
+     * Set up
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->collectionModel = $this->objectManager
+            ->create(Collection::class);
     }
 }

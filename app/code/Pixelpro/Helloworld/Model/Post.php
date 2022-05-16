@@ -7,11 +7,6 @@ class Post extends \Magento\Framework\Model\AbstractModel implements \Magento\Fr
     protected $_cacheTag = 'pixelpro_helloworld_post';
     protected $_eventPrefix = 'pixelpro_helloworld_post';
 
-    protected function _construct()
-    {
-        $this->_init('Pixelpro\Helloworld\Model\ResourceModel\Post');
-    }
-
     public function getIdentities()
     {
         return [self::CACHE_TAG . '_' . $this->getId()];
@@ -21,5 +16,10 @@ class Post extends \Magento\Framework\Model\AbstractModel implements \Magento\Fr
     {
         $values = [];
         return $values;
+    }
+
+    protected function _construct()
+    {
+        $this->_init('Pixelpro\Helloworld\Model\ResourceModel\Post');
     }
 }

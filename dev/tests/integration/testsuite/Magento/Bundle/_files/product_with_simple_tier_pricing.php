@@ -5,7 +5,12 @@
  */
 declare(strict_types=1);
 
+use Magento\Bundle\Model\Product\Price;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Catalog\Model\ProductFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
@@ -13,21 +18,21 @@ Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/product_simp
 
 $objectManager = Bootstrap::getObjectManager();
 /** @var $productFactory Magento\Catalog\Model\ProductFactory */
-$productFactory = $objectManager->create(\Magento\Catalog\Model\ProductFactory::class);
+$productFactory = $objectManager->create(ProductFactory::class);
 /** @var ProductRepositoryInterface $productRepository */
 $productRepository = $objectManager->create(ProductRepositoryInterface::class);
 $product = $productRepository->get('simple');
-/** @var $bundleProduct \Magento\Catalog\Model\Product */
+/** @var $bundleProduct Product */
 $bundleProduct = $productFactory->create();
 $bundleProduct->setTypeId('bundle')
     ->setAttributeSetId($product->getDefaultAttributeSetId())
     ->setWebsiteIds([1])
-    ->setPriceType(\Magento\Bundle\Model\Product\Price::PRICE_TYPE_DYNAMIC)
+    ->setPriceType(Price::PRICE_TYPE_DYNAMIC)
     ->setPriceView(1)
     ->setName('Bundle Products')
     ->setSku('bundle-product')
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->setStockData([
         'use_config_manage_stock' => 1,
         'qty' => 100,

@@ -6,8 +6,8 @@
 
 namespace Magento\Customer\Model\Group;
 
-use PHPUnit\Framework\TestCase;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 class ResolverTest extends TestCase
 {

@@ -7,25 +7,19 @@
 /**
  * Test class for \Magento\TestFramework\App\Config.
  */
+
 namespace Magento\Test\App;
 
 use Magento\Framework\App\Config\ScopeCodeResolver;
 use Magento\TestFramework\App\Config;
+use PHPUnit\Framework\TestCase;
 
-class ConfigTest extends \PHPUnit\Framework\TestCase
+class ConfigTest extends TestCase
 {
     /**
      * @var Config
      */
     private $model;
-
-    protected function setUp(): void
-    {
-        $scopeCodeResolver = $this->getMockBuilder(ScopeCodeResolver::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $this->model = new Config($scopeCodeResolver);
-    }
 
     public function testGet()
     {
@@ -46,5 +40,13 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($value, $this->model->get($configType, 'default/stores/one'));
         $this->model->clean();
         $this->assertNull($this->model->get($configType, 'default/stores/one'));
+    }
+
+    protected function setUp(): void
+    {
+        $scopeCodeResolver = $this->getMockBuilder(ScopeCodeResolver::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->model = new Config($scopeCodeResolver);
     }
 }

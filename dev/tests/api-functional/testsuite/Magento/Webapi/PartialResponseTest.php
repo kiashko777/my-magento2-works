@@ -7,10 +7,12 @@
 namespace Magento\Webapi;
 
 use Magento\Customer\Api\AccountManagementTest;
+use Magento\Framework\Webapi\Rest\Request;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Helper\Customer as CustomerHelper;
+use Magento\TestFramework\TestCase\WebapiAbstract;
 
-class PartialResponseTest extends \Magento\TestFramework\TestCase\WebapiAbstract
+class PartialResponseTest extends WebapiAbstract
 {
     /** @var CustomerHelper */
     protected $customerHelper;
@@ -18,22 +20,32 @@ class PartialResponseTest extends \Magento\TestFramework\TestCase\WebapiAbstract
     /** @var string */
     protected $customerData;
 
-    protected function setUp(): void
-    {
-        $this->_markTestAsRestOnly('Partial response functionality available in REST mode only.');
-
-        $this->customerHelper = Bootstrap::getObjectManager()
-            ->get(\Magento\TestFramework\Helper\Customer::class);
-
-        $this->customerData = $this->customerHelper->createSampleCustomer();
-    }
-
     public function testCustomerWithEmailFilter()
     {
         $filter = 'email';
         $expected = ['email' => $this->customerData['email']];
         $result = $this->_getCustomerWithFilter($filter, $this->customerData['id']);
         $this->assertEquals($expected, $result);
+    }
+
+    protected function _getCustomerWithFilter($filter, $customerId, $path = '')
+    {
+        $resourcePath = sprintf(
+            '%s/%d%s?fields=%s',
+            AccountManagementTest::RESOURCE_PATH,
+            $customerId,
+            $path,
+            $filter
+        );
+
+        $serviceInfo = [
+            'rest' => [
+                'resourcePath' => $resourcePath,
+                'httpMethod' => Request::HTTP_METHOD_GET,
+            ],
+        ];
+
+        return $this->_webApiCall($serviceInfo);
     }
 
     public function testCustomerWithEmailAndAddressFilter()
@@ -77,23 +89,13 @@ class PartialResponseTest extends \Magento\TestFramework\TestCase\WebapiAbstract
         $this->assertFalse($result);
     }
 
-    protected function _getCustomerWithFilter($filter, $customerId, $path = '')
+    protected function setUp(): void
     {
-        $resourcePath = sprintf(
-            '%s/%d%s?fields=%s',
-            AccountManagementTest::RESOURCE_PATH,
-            $customerId,
-            $path,
-            $filter
-        );
+        $this->_markTestAsRestOnly('Partial response functionality available in REST mode only.');
 
-        $serviceInfo = [
-            'rest' => [
-                'resourcePath' => $resourcePath,
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
-            ],
-        ];
+        $this->customerHelper = Bootstrap::getObjectManager()
+            ->get(CustomerHelper::class);
 
-        return $this->_webApiCall($serviceInfo);
+        $this->customerData = $this->customerHelper->createSampleCustomer();
     }
 }

@@ -31,6 +31,14 @@ abstract class AbstractDeleteAttributeControllerTest extends AbstractBackendCont
     /**
      * @inheritdoc
      */
+    public function testAclHasAccess()
+    {
+        $this->markTestIncomplete('AclHasAccess test is not complete');
+    }
+
+    /**
+     * @inheritdoc
+     */
     protected function setUp(): void
     {
         parent::setUp();
@@ -71,13 +79,5 @@ abstract class AbstractDeleteAttributeControllerTest extends AbstractBackendCont
             )
         );
         $this->productAttributeRepository->get($attributeCode);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function testAclHasAccess()
-    {
-        $this->markTestIncomplete('AclHasAccess test is not complete');
     }
 }

@@ -7,9 +7,9 @@
 use Magento\Framework\Registry;
 use Magento\Store\Model\Store;
 use Magento\TestFramework\Helper\Bootstrap;
+use Magento\UrlRewrite\Model\ResourceModel\UrlRewrite;
 use Magento\UrlRewrite\Model\ResourceModel\UrlRewriteCollection;
 use Magento\UrlRewrite\Model\ResourceModel\UrlRewriteCollectionFactory;
-use Magento\UrlRewrite\Model\ResourceModel\UrlRewrite;
 
 $objectManager = Bootstrap::getObjectManager();
 
@@ -33,7 +33,7 @@ if ($store->getId()) {
 }
 
 /** @var UrlRewriteCollectionFactory $urlRewriteCollectionFactory */
-$urlRewriteCollectionFactory = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
+$urlRewriteCollectionFactory = Bootstrap::getObjectManager()->get(
     UrlRewriteCollectionFactory::class
 );
 /** @var UrlRewriteCollection $urlRewriteCollection */
@@ -45,7 +45,7 @@ $urlRewrites = $urlRewriteCollection->getItems();
 foreach ($urlRewrites as $urlRewrite) {
     try {
         $urlRewrite->delete();
-    } catch (\Exception $exception) {
+    } catch (Exception $exception) {
         // already removed
     }
 }

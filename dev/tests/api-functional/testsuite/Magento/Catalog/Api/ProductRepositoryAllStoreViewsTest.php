@@ -71,39 +71,6 @@ class ProductRepositoryAllStoreViewsTest extends WebapiAbstract
     private $productSku = 'simple';
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->eavConfig = $this->objectManager->get(Config::class);
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-        $this->productWebsiteLink = $this->objectManager->get(Link::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        $this->registry->unregister('isSecureArea');
-        $this->registry->register('isSecureArea', true);
-        try {
-            $this->productRepository->deleteById($this->productSku);
-        } catch (NoSuchEntityException $e) {
-            //already deleted
-        }
-        $this->registry->unregister('isSecureArea');
-        $this->registry->register('isSecureArea', false);
-
-        parent::tearDown();
-    }
-
-    /**
      * @magentoApiDataFixture Magento/Catalog/_files/category.php
      * @return void
      */
@@ -113,39 +80,6 @@ class ProductRepositoryAllStoreViewsTest extends WebapiAbstract
         $resultData = $this->saveProduct($productData);
         $this->assertProductWebsites($this->productSku, $this->getAllWebsiteIds());
         $this->assertProductData($productData, $resultData, $this->getAllWebsiteIds());
-    }
-
-    /**
-     * @magentoApiDataFixture Magento/Catalog/_files/category.php
-     * @magentoApiDataFixture Magento/Store/_files/second_website_with_store_group_and_store.php
-     * @return void
-     */
-    public function testCreateProductOnMultipleWebsites(): void
-    {
-        $productData = $this->getProductData();
-        $resultData = $this->saveProduct($productData);
-        $this->assertProductWebsites($this->productSku, $this->getAllWebsiteIds());
-        $this->assertProductData($productData, $resultData, $this->getAllWebsiteIds());
-    }
-
-    /**
-     * Saves product via API.
-     *
-     * @param array $product
-     * @return array
-     */
-    private function saveProduct(array $product): array
-    {
-        $serviceInfo = [
-            'rest' => ['resourcePath' =>self::PRODUCTS_RESOURCE_PATH, 'httpMethod' => Request::HTTP_METHOD_POST],
-            'soap' => [
-                'service' => self::PRODUCT_SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::PRODUCT_SERVICE_NAME . 'Save'
-            ]
-        ];
-        $requestData = ['product' => $product];
-        return $this->_webApiCall($serviceInfo, $requestData, null, 'all');
     }
 
     /**
@@ -159,47 +93,67 @@ class ProductRepositoryAllStoreViewsTest extends WebapiAbstract
             ->getDefaultAttributeSetId();
 
         return [
-                ProductInterface::SKU => $this->productSku,
-                ProductInterface::NAME => 'simple',
-                ProductInterface::TYPE_ID => Type::TYPE_SIMPLE,
-                ProductInterface::WEIGHT => 1,
-                ProductInterface::ATTRIBUTE_SET_ID => $setId,
-                ProductInterface::PRICE => 10,
-                ProductInterface::STATUS => Status::STATUS_ENABLED,
-                ProductInterface::VISIBILITY => Visibility::VISIBILITY_BOTH,
-                ProductInterface::EXTENSION_ATTRIBUTES_KEY => [
-                    'stock_item' => [
-                        StockItemInterface::IS_IN_STOCK => 1,
-                        StockItemInterface::QTY => 1000,
-                        StockItemInterface::IS_QTY_DECIMAL => 0,
-                        StockItemInterface::SHOW_DEFAULT_NOTIFICATION_MESSAGE => 0,
-                        StockItemInterface::USE_CONFIG_MIN_QTY => 0,
-                        StockItemInterface::USE_CONFIG_MIN_SALE_QTY => 0,
-                        StockItemInterface::MIN_QTY => 1,
-                        StockItemInterface::MIN_SALE_QTY => 1,
-                        StockItemInterface::MAX_SALE_QTY => 100,
-                        StockItemInterface::USE_CONFIG_MAX_SALE_QTY => 0,
-                        StockItemInterface::USE_CONFIG_BACKORDERS => 0,
-                        StockItemInterface::BACKORDERS => 0,
-                        StockItemInterface::USE_CONFIG_NOTIFY_STOCK_QTY => 0,
-                        StockItemInterface::NOTIFY_STOCK_QTY => 0,
-                        StockItemInterface::USE_CONFIG_QTY_INCREMENTS => 0,
-                        StockItemInterface::QTY_INCREMENTS => 0,
-                        StockItemInterface::USE_CONFIG_ENABLE_QTY_INC => 0,
-                        StockItemInterface::ENABLE_QTY_INCREMENTS => 0,
-                        StockItemInterface::USE_CONFIG_MANAGE_STOCK => 1,
-                        StockItemInterface::MANAGE_STOCK => 1,
-                        StockItemInterface::LOW_STOCK_DATE => null,
-                        StockItemInterface::IS_DECIMAL_DIVIDED => 0,
-                        StockItemInterface::STOCK_STATUS_CHANGED_AUTO => 0,
-                    ],
+            ProductInterface::SKU => $this->productSku,
+            ProductInterface::NAME => 'simple',
+            ProductInterface::TYPE_ID => Type::TYPE_SIMPLE,
+            ProductInterface::WEIGHT => 1,
+            ProductInterface::ATTRIBUTE_SET_ID => $setId,
+            ProductInterface::PRICE => 10,
+            ProductInterface::STATUS => Status::STATUS_ENABLED,
+            ProductInterface::VISIBILITY => Visibility::VISIBILITY_BOTH,
+            ProductInterface::EXTENSION_ATTRIBUTES_KEY => [
+                'stock_item' => [
+                    StockItemInterface::IS_IN_STOCK => 1,
+                    StockItemInterface::QTY => 1000,
+                    StockItemInterface::IS_QTY_DECIMAL => 0,
+                    StockItemInterface::SHOW_DEFAULT_NOTIFICATION_MESSAGE => 0,
+                    StockItemInterface::USE_CONFIG_MIN_QTY => 0,
+                    StockItemInterface::USE_CONFIG_MIN_SALE_QTY => 0,
+                    StockItemInterface::MIN_QTY => 1,
+                    StockItemInterface::MIN_SALE_QTY => 1,
+                    StockItemInterface::MAX_SALE_QTY => 100,
+                    StockItemInterface::USE_CONFIG_MAX_SALE_QTY => 0,
+                    StockItemInterface::USE_CONFIG_BACKORDERS => 0,
+                    StockItemInterface::BACKORDERS => 0,
+                    StockItemInterface::USE_CONFIG_NOTIFY_STOCK_QTY => 0,
+                    StockItemInterface::NOTIFY_STOCK_QTY => 0,
+                    StockItemInterface::USE_CONFIG_QTY_INCREMENTS => 0,
+                    StockItemInterface::QTY_INCREMENTS => 0,
+                    StockItemInterface::USE_CONFIG_ENABLE_QTY_INC => 0,
+                    StockItemInterface::ENABLE_QTY_INCREMENTS => 0,
+                    StockItemInterface::USE_CONFIG_MANAGE_STOCK => 1,
+                    StockItemInterface::MANAGE_STOCK => 1,
+                    StockItemInterface::LOW_STOCK_DATE => null,
+                    StockItemInterface::IS_DECIMAL_DIVIDED => 0,
+                    StockItemInterface::STOCK_STATUS_CHANGED_AUTO => 0,
                 ],
-                ProductInterface::CUSTOM_ATTRIBUTES => [
-                    ['attribute_code' => 'url_key', 'value' => 'simple'],
-                    ['attribute_code' => 'tax_class_id', 'value' => 2],
-                    ['attribute_code' => 'category_ids', 'value' => [333]]
-                ]
+            ],
+            ProductInterface::CUSTOM_ATTRIBUTES => [
+                ['attribute_code' => 'url_key', 'value' => 'simple'],
+                ['attribute_code' => 'tax_class_id', 'value' => 2],
+                ['attribute_code' => 'category_ids', 'value' => [333]]
+            ]
         ];
+    }
+
+    /**
+     * Saves product via API.
+     *
+     * @param array $product
+     * @return array
+     */
+    private function saveProduct(array $product): array
+    {
+        $serviceInfo = [
+            'rest' => ['resourcePath' => self::PRODUCTS_RESOURCE_PATH, 'httpMethod' => Request::HTTP_METHOD_POST],
+            'soap' => [
+                'service' => self::PRODUCT_SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::PRODUCT_SERVICE_NAME . 'Save'
+            ]
+        ];
+        $requestData = ['product' => $product];
+        return $this->_webApiCall($serviceInfo, $requestData, null, 'all');
     }
 
     /**
@@ -213,6 +167,21 @@ class ProductRepositoryAllStoreViewsTest extends WebapiAbstract
     {
         $productId = $this->productRepository->get($sku)->getId();
         $this->assertEquals($websiteIds, $this->productWebsiteLink->getWebsiteIdsByProductId($productId));
+    }
+
+    /**
+     * Get list of all websites IDs.
+     *
+     * @return array
+     */
+    private function getAllWebsiteIds(): array
+    {
+        $websiteIds = [];
+        foreach ($this->storeManager->getWebsites() as $website) {
+            $websiteIds[] = $website->getId();
+        }
+
+        return $websiteIds;
     }
 
     /**
@@ -249,21 +218,6 @@ class ProductRepositoryAllStoreViewsTest extends WebapiAbstract
     }
 
     /**
-     * Get list of all websites IDs.
-     *
-     * @return array
-     */
-    private function getAllWebsiteIds(): array
-    {
-        $websiteIds = [];
-        foreach ($this->storeManager->getWebsites() as $website) {
-            $websiteIds[] = $website->getId();
-        }
-
-        return $websiteIds;
-    }
-
-    /**
      * Returns custom attribute data by given code.
      *
      * @param array $attributes
@@ -280,5 +234,51 @@ class ProductRepositoryAllStoreViewsTest extends WebapiAbstract
         );
 
         return reset($items);
+    }
+
+    /**
+     * @magentoApiDataFixture Magento/Catalog/_files/category.php
+     * @magentoApiDataFixture Magento/Store/_files/second_website_with_store_group_and_store.php
+     * @return void
+     */
+    public function testCreateProductOnMultipleWebsites(): void
+    {
+        $productData = $this->getProductData();
+        $resultData = $this->saveProduct($productData);
+        $this->assertProductWebsites($this->productSku, $this->getAllWebsiteIds());
+        $this->assertProductData($productData, $resultData, $this->getAllWebsiteIds());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->eavConfig = $this->objectManager->get(Config::class);
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
+        $this->productWebsiteLink = $this->objectManager->get(Link::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function tearDown(): void
+    {
+        $this->registry->unregister('isSecureArea');
+        $this->registry->register('isSecureArea', true);
+        try {
+            $this->productRepository->deleteById($this->productSku);
+        } catch (NoSuchEntityException $e) {
+            //already deleted
+        }
+        $this->registry->unregister('isSecureArea');
+        $this->registry->register('isSecureArea', false);
+
+        parent::tearDown();
     }
 }

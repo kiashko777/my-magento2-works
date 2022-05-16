@@ -6,7 +6,11 @@
 
 namespace Magento\TestFramework\Annotation;
 
+use Exception;
+use Magento\Framework\App\Cache\StateInterface;
+use Magento\Framework\App\Cache\TypeListInterface;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Implementation of the @magentoCache DocBlock annotation
@@ -23,10 +27,10 @@ class Cache
     /**
      * Handler for 'startTest' event
      *
-     * @param \PHPUnit\Framework\TestCase $test
+     * @param TestCase $test
      * @return void
      */
-    public function startTest(\PHPUnit\Framework\TestCase $test)
+    public function startTest(TestCase $test)
     {
         $source = $test->getAnnotations();
         if (isset($source['method']['magentoCache'])) {
@@ -40,27 +44,61 @@ class Cache
     }
 
     /**
-     * Handler for 'endTest' event
+     * Sets the values of cache types
      *
-     * @param \PHPUnit\Framework\TestCase $test
-     * @return void
+     * @param array $values
+     * @param TestCase $test
      */
-    public function endTest(\PHPUnit\Framework\TestCase $test)
+    private function setValues($values, TestCase $test)
     {
-        if ($this->origValues) {
-            $this->setValues($this->origValues, $test);
+        $typeList = self::getTypeList();
+        if (!$this->origValues) {
             $this->origValues = [];
+            foreach ($typeList->getTypes() as $type => $row) {
+                $this->origValues[$type] = $row['status'];
+            }
         }
+        /** @var StateInterface $states */
+        $states = Bootstrap::getInstance()->getObjectManager()->get(StateInterface::class);
+        foreach ($values as $type => $isEnabled) {
+            if (!isset($this->origValues[$type])) {
+                self::fail("Unknown cache type specified: '{$type}' in @magentoCache", $test);
+            }
+            $states->setEnabled($type, $isEnabled);
+        }
+    }
+
+    /**
+     * Getter for cache types list
+     *
+     * @return TypeListInterface
+     */
+    private static function getTypeList()
+    {
+        return Bootstrap::getInstance()->getObjectManager()->get(TypeListInterface::class);
+    }
+
+    /**
+     * Fails the test with specified error message
+     *
+     * @param string $message
+     * @param TestCase $test
+     * @throws Exception
+     */
+    private static function fail($message, TestCase $test)
+    {
+        $test->fail("{$message} in the test '{$test->toString()}'");
+        throw new Exception('The above line was supposed to throw an exception.');
     }
 
     /**
      * Determines from docblock annotations which cache types to set
      *
      * @param array $annotations
-     * @param \PHPUnit\Framework\TestCase $test
+     * @param TestCase $test
      * @return array
      */
-    private function parseValues($annotations, \PHPUnit\Framework\TestCase $test)
+    private function parseValues($annotations, TestCase $test)
     {
         $result = [];
         $typeList = self::getTypeList();
@@ -83,50 +121,16 @@ class Cache
     }
 
     /**
-     * Sets the values of cache types
+     * Handler for 'endTest' event
      *
-     * @param array $values
-     * @param \PHPUnit\Framework\TestCase $test
+     * @param TestCase $test
+     * @return void
      */
-    private function setValues($values, \PHPUnit\Framework\TestCase $test)
+    public function endTest(TestCase $test)
     {
-        $typeList = self::getTypeList();
-        if (!$this->origValues) {
+        if ($this->origValues) {
+            $this->setValues($this->origValues, $test);
             $this->origValues = [];
-            foreach ($typeList->getTypes() as $type => $row) {
-                $this->origValues[$type] = $row['status'];
-            }
         }
-        /** @var \Magento\Framework\App\Cache\StateInterface $states */
-        $states = Bootstrap::getInstance()->getObjectManager()->get(\Magento\Framework\App\Cache\StateInterface::class);
-        foreach ($values as $type => $isEnabled) {
-            if (!isset($this->origValues[$type])) {
-                self::fail("Unknown cache type specified: '{$type}' in @magentoCache", $test);
-            }
-            $states->setEnabled($type, $isEnabled);
-        }
-    }
-
-    /**
-     * Getter for cache types list
-     *
-     * @return \Magento\Framework\App\Cache\TypeListInterface
-     */
-    private static function getTypeList()
-    {
-        return Bootstrap::getInstance()->getObjectManager()->get(\Magento\Framework\App\Cache\TypeListInterface::class);
-    }
-
-    /**
-     * Fails the test with specified error message
-     *
-     * @param string $message
-     * @param \PHPUnit\Framework\TestCase $test
-     * @throws \Exception
-     */
-    private static function fail($message, \PHPUnit\Framework\TestCase $test)
-    {
-        $test->fail("{$message} in the test '{$test->toString()}'");
-        throw new \Exception('The above line was supposed to throw an exception.');
     }
 }

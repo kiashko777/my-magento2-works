@@ -6,9 +6,9 @@
 
 use Magento\Catalog\Model\ResourceModel\Eav\Attribute;
 use Magento\Catalog\Setup\CategorySetup;
+use Magento\Eav\Api\AttributeRepositoryInterface;
 use Magento\Eav\Model\Config;
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Eav\Api\AttributeRepositoryInterface;
 
 Bootstrap::getInstance()->reinitialize();
 

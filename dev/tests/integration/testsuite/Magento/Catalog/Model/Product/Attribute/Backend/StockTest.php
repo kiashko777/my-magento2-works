@@ -34,6 +34,18 @@ class StockTest extends TestCase
     private $model;
 
     /**
+     * @return void
+     */
+    public function testValidate(): void
+    {
+        $this->expectException(LocalizedException::class);
+        $this->expectErrorMessage((string)__('Please enter a valid number in this field.'));
+        $product = $this->productFactory->create();
+        $product->setQuantityAndStockStatus(['qty' => 'string']);
+        $this->model->validate($product);
+    }
+
+    /**
      * @inheritdoc
      */
     protected function setUp(): void
@@ -46,17 +58,5 @@ class StockTest extends TestCase
         $this->model->setAttribute(
             $this->objectManager->get(Config::class)->getAttribute(Product::ENTITY, 'quantity_and_stock_status')
         );
-    }
-
-    /**
-     * @return void
-     */
-    public function testValidate(): void
-    {
-        $this->expectException(LocalizedException::class);
-        $this->expectErrorMessage((string)__('Please enter a valid number in this field.'));
-        $product = $this->productFactory->create();
-        $product->setQuantityAndStockStatus(['qty' => 'string']);
-        $this->model->validate($product);
     }
 }

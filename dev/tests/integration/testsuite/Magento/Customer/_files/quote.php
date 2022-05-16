@@ -4,12 +4,21 @@
  * See COPYING.txt for license details.
  */
 
-\Magento\TestFramework\Helper\Bootstrap::getInstance()->loadArea(
-    \Magento\Backend\App\Area\FrontNameResolver::AREA_CODE
+use Magento\Backend\App\Area\FrontNameResolver;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\Quote\Item;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+
+Bootstrap::getInstance()->loadArea(
+    FrontNameResolver::AREA_CODE
 );
 
-/** @var $product \Magento\Catalog\Model\Product */
-$product = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Catalog\Model\Product::class);
+/** @var $product Product */
+$product = Bootstrap::getObjectManager()->create(Product::class);
 $product->setTypeId(
     'virtual'
 )->setId(
@@ -27,19 +36,19 @@ $product->setTypeId(
 )->setStockData(
     ['use_config_manage_stock' => 1, 'qty' => 100, 'is_qty_decimal' => 0, 'is_in_stock' => 100]
 )->setVisibility(
-    \Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH
+    Visibility::VISIBILITY_BOTH
 )->setStatus(
-    \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED
+    Status::STATUS_ENABLED
 )->save();
 $product->load(1);
 
-/** @var $quote \Magento\Quote\Model\Quote */
-$quote = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(\Magento\Quote\Model\Quote::class);
+/** @var $quote Quote */
+$quote = Bootstrap::getObjectManager()->create(Quote::class);
 $quoteItem = $quote->setCustomerId(
     1
 )->setStoreId(
-    \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-        \Magento\Store\Model\StoreManagerInterface::class
+    Bootstrap::getObjectManager()->get(
+        StoreManagerInterface::class
     )->getStore()->getId()
 )->setReservedOrderId(
     'test01'
@@ -47,7 +56,7 @@ $quoteItem = $quote->setCustomerId(
     $product,
     10
 );
-/** @var $quoteItem \Magento\Quote\Model\Quote\Item */
+/** @var $quoteItem Item */
 $quoteItem->setQty(1);
 $quote->getPayment()->setMethod('checkmo');
 $quote->getBillingAddress();

@@ -30,26 +30,6 @@ class AreaTest extends TestCase
      */
     private $model;
 
-    protected function setUp(): void
-    {
-        $this->classesScannerMock = $this->getMockBuilder(ClassesScanner::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['getList'])
-            ->getMock();
-
-        $this->classReaderDecoratorMock = $this->getMockBuilder(
-            ClassReaderDecorator::class
-        )
-            ->disableOriginalConstructor()
-            ->setMethods(['getConstructor'])
-            ->getMock();
-
-        $this->model = new Area(
-            $this->classesScannerMock,
-            $this->classReaderDecoratorMock
-        );
-    }
-
     public function testGetList()
     {
         $path = '/tmp/test';
@@ -78,5 +58,25 @@ class AreaTest extends TestCase
         ];
 
         $this->assertEquals($result, $expected);
+    }
+
+    protected function setUp(): void
+    {
+        $this->classesScannerMock = $this->getMockBuilder(ClassesScanner::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['getList'])
+            ->getMock();
+
+        $this->classReaderDecoratorMock = $this->getMockBuilder(
+            ClassReaderDecorator::class
+        )
+            ->disableOriginalConstructor()
+            ->setMethods(['getConstructor'])
+            ->getMock();
+
+        $this->model = new Area(
+            $this->classesScannerMock,
+            $this->classReaderDecoratorMock
+        );
     }
 }

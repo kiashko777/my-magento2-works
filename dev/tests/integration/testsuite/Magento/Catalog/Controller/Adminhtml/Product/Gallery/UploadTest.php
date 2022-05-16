@@ -54,19 +54,6 @@ class UploadTest extends AbstractBackendController
     private $config;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->httpMethod = HttpRequest::METHOD_POST;
-        $this->filesystem = $this->_objectManager->get(Filesystem::class);
-        $this->serializer = $this->_objectManager->get(Json::class);
-        $this->mediaDirectory = $this->filesystem->getDirectoryWrite(AppDirectoryList::MEDIA);
-        $this->config = $this->_objectManager->get(Config::class);
-    }
-
-    /**
      * Test upload image on admin product page.
      *
      * @dataProvider uploadActionDataProvider
@@ -90,6 +77,39 @@ class UploadTest extends AbstractBackendController
         $this->assertFileExists(
             $this->getFileAbsolutePath($expectation['tmp_media_path'])
         );
+    }
+
+    /**
+     * Copies file to tmp dir.
+     *
+     * @param array $file
+     * @return void
+     */
+    private function copyFileToSysTmpDir(array $file): void
+    {
+        if (!empty($file)) {
+            $tmpDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::SYS_TMP);
+            $fixtureDir = realpath(__DIR__ . $file['current_path']);
+            $filePath = $tmpDirectory->getAbsolutePath($file['name']);
+            copy($fixtureDir . DIRECTORY_SEPARATOR . $file['name'], $filePath);
+
+            $_FILES['image'] = [
+                'name' => $file['name'],
+                'type' => $file['type'],
+                'tmp_name' => $filePath,
+            ];
+        }
+    }
+
+    /**
+     * Returns absolute path to file in media tmp dir.
+     *
+     * @param string $tmpPath
+     * @return string
+     */
+    private function getFileAbsolutePath(string $tmpPath): string
+    {
+        return $this->mediaDirectory->getAbsolutePath($this->config->getBaseTmpMediaPath() . $tmpPath);
     }
 
     /**
@@ -174,6 +194,26 @@ class UploadTest extends AbstractBackendController
     }
 
     /**
+     * Creates txt file with given name and copies to tmp dir.
+     *
+     * @param string $name
+     * @return void
+     */
+    private function createFileInSysTmpDir(string $name): void
+    {
+        $tmpDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::SYS_TMP);
+        $filePath = $tmpDirectory->getAbsolutePath($name);
+        $file = fopen($filePath, "wb");
+        fwrite($file, 'some text');
+
+        $_FILES['image'] = [
+            'name' => $name,
+            'type' => 'text/plain',
+            'tmp_name' => $filePath,
+        ];
+    }
+
+    /**
      * @return array
      */
     public function uploadActionWithErrorsDataProvider(): array
@@ -229,63 +269,23 @@ class UploadTest extends AbstractBackendController
     /**
      * @inheritdoc
      */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->httpMethod = HttpRequest::METHOD_POST;
+        $this->filesystem = $this->_objectManager->get(Filesystem::class);
+        $this->serializer = $this->_objectManager->get(Json::class);
+        $this->mediaDirectory = $this->filesystem->getDirectoryWrite(AppDirectoryList::MEDIA);
+        $this->config = $this->_objectManager->get(Config::class);
+    }
+
+    /**
+     * @inheritdoc
+     */
     protected function tearDown(): void
     {
         $_FILES = [];
         $this->mediaDirectory->delete('tmp');
         parent::tearDown();
-    }
-
-    /**
-     * Copies file to tmp dir.
-     *
-     * @param array $file
-     * @return void
-     */
-    private function copyFileToSysTmpDir(array $file): void
-    {
-        if (!empty($file)) {
-            $tmpDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::SYS_TMP);
-            $fixtureDir = realpath(__DIR__ . $file['current_path']);
-            $filePath = $tmpDirectory->getAbsolutePath($file['name']);
-            copy($fixtureDir . DIRECTORY_SEPARATOR . $file['name'], $filePath);
-
-            $_FILES['image'] = [
-                'name' => $file['name'],
-                'type' => $file['type'],
-                'tmp_name' => $filePath,
-            ];
-        }
-    }
-
-    /**
-     * Creates txt file with given name and copies to tmp dir.
-     *
-     * @param string $name
-     * @return void
-     */
-    private function createFileInSysTmpDir(string $name): void
-    {
-        $tmpDirectory = $this->filesystem->getDirectoryWrite(DirectoryList::SYS_TMP);
-        $filePath = $tmpDirectory->getAbsolutePath($name);
-        $file = fopen($filePath, "wb");
-        fwrite($file, 'some text');
-
-        $_FILES['image'] = [
-            'name' => $name,
-            'type' => 'text/plain',
-            'tmp_name' => $filePath,
-        ];
-    }
-
-    /**
-     * Returns absolute path to file in media tmp dir.
-     *
-     * @param string $tmpPath
-     * @return string
-     */
-    private function getFileAbsolutePath(string $tmpPath): string
-    {
-        return $this->mediaDirectory->getAbsolutePath($this->config->getBaseTmpMediaPath() . $tmpPath);
     }
 }

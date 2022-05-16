@@ -34,8 +34,9 @@ class MockAsyncClient implements AsyncClientInterface
      */
     public function __construct(
         MockResponseBodyLoader $mockResponseBodyLoader,
-        ResponseFactory $responseFactory
-    ) {
+        ResponseFactory        $responseFactory
+    )
+    {
         $this->mockResponseBodyLoader = $mockResponseBodyLoader;
         $this->responseFactory = $responseFactory;
     }

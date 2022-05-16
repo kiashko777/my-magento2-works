@@ -6,18 +6,21 @@
 
 namespace Magento\Integration\Model;
 
+use Magento\Framework\Exception\AuthenticationException;
 use Magento\Framework\Exception\InputException;
+use Magento\Integration\Api\AdminTokenServiceInterface;
 use Magento\Integration\Model\Oauth\Token as TokenModel;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\User\Model\User as UserModel;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test class for \Magento\Integration\Model\AdminTokenService.
  */
-class AdminTokenServiceTest extends \PHPUnit\Framework\TestCase
+class AdminTokenServiceTest extends TestCase
 {
     /**
-     * @var \Magento\Integration\Api\AdminTokenServiceInterface
+     * @var AdminTokenServiceInterface
      */
     private $tokenService;
 
@@ -30,16 +33,6 @@ class AdminTokenServiceTest extends \PHPUnit\Framework\TestCase
      * @var UserModel
      */
     private $userModel;
-
-    /**
-     * Setup AdminTokenService
-     */
-    protected function setUp(): void
-    {
-        $this->tokenService = Bootstrap::getObjectManager()->get(\Magento\Integration\Model\AdminTokenService::class);
-        $this->tokenModel = Bootstrap::getObjectManager()->get(\Magento\Integration\Model\Oauth\Token::class);
-        $this->userModel = Bootstrap::getObjectManager()->get(\Magento\User\Model\User::class);
-    }
 
     /**
      * @magentoDataFixture Magento/User/_files/user_with_role.php
@@ -64,7 +57,7 @@ class AdminTokenServiceTest extends \PHPUnit\Framework\TestCase
      */
     public function testCreateAdminAccessTokenExpiredUser()
     {
-        $this->expectException(\Magento\Framework\Exception\AuthenticationException::class);
+        $this->expectException(AuthenticationException::class);
 
         $adminUserNameFromFixture = 'adminUserExpired';
         $this->tokenService->createAdminAccessToken(
@@ -91,10 +84,24 @@ class AdminTokenServiceTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Assert for presence of Input exception messages
+     *
+     * @param InputException $e
+     */
+    private function assertInputExceptionMessages($e)
+    {
+        $this->assertEquals('One or more input exceptions have occurred.', $e->getMessage());
+        $errors = $e->getErrors();
+        $this->assertCount(2, $errors);
+        $this->assertEquals('"username" is required. Enter and try again.', $errors[0]->getLogMessage());
+        $this->assertEquals('"password" is required. Enter and try again.', $errors[1]->getLogMessage());
+    }
+
+    /**
      */
     public function testCreateAdminAccessTokenInvalidCustomer()
     {
-        $this->expectException(\Magento\Framework\Exception\AuthenticationException::class);
+        $this->expectException(AuthenticationException::class);
 
         $adminUserName = 'invalid';
         $password = 'invalid';
@@ -120,16 +127,12 @@ class AdminTokenServiceTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Assert for presence of Input exception messages
-     *
-     * @param InputException $e
+     * Setup AdminTokenService
      */
-    private function assertInputExceptionMessages($e)
+    protected function setUp(): void
     {
-        $this->assertEquals('One or more input exceptions have occurred.', $e->getMessage());
-        $errors = $e->getErrors();
-        $this->assertCount(2, $errors);
-        $this->assertEquals('"username" is required. Enter and try again.', $errors[0]->getLogMessage());
-        $this->assertEquals('"password" is required. Enter and try again.', $errors[1]->getLogMessage());
+        $this->tokenService = Bootstrap::getObjectManager()->get(AdminTokenService::class);
+        $this->tokenModel = Bootstrap::getObjectManager()->get(TokenModel::class);
+        $this->userModel = Bootstrap::getObjectManager()->get(UserModel::class);
     }
 }

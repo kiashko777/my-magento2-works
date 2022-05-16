@@ -3,29 +3,38 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Backend\Block\Widget\Form;
+
+use Magento\Backend\Block\Widget\Context;
+use Magento\Framework\View\Element\Text;
+use Magento\Framework\View\Layout;
+use Magento\Framework\View\LayoutInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\User\Block\User\Edit\Form;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class ContainerTest extends \PHPUnit\Framework\TestCase
+class ContainerTest extends TestCase
 {
     public function testGetFormHtml()
     {
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var $layout \Magento\Framework\View\Layout */
-        $layout = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var $layout Layout */
+        $layout = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
         );
         // Create block with blocking _prepateLayout(), which is used by block to instantly add 'form' child
-        /** @var $block \Magento\Backend\Block\Widget\Form\Container */
-        $block = $this->getMockBuilder(\Magento\Backend\Block\Widget\Form\Container::class)
+        /** @var $block Container */
+        $block = $this->getMockBuilder(Container::class)
             ->setMethods(['_prepareLayout'])
-            ->setConstructorArgs([$objectManager->create(\Magento\Backend\Block\Widget\Context::class)])
+            ->setConstructorArgs([$objectManager->create(Context::class)])
             ->getMock();
 
         $layout->addBlock($block, 'block');
-        $form = $layout->addBlock(\Magento\Framework\View\Element\Text::class, 'form', 'block');
+        $form = $layout->addBlock(Text::class, 'form', 'block');
 
         $expectedHtml = '<b>html</b>';
         $this->assertNotEquals($expectedHtml, $block->getFormHtml());
@@ -35,20 +44,20 @@ class ContainerTest extends \PHPUnit\Framework\TestCase
 
     public function testPseudoConstruct()
     {
-        /** @var $block \Magento\Backend\Block\Widget\Form\Container */
-        $block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
+        /** @var $block Container */
+        $block = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
         )->createBlock(
-            \Magento\Backend\Block\Widget\Form\Container::class,
+            Container::class,
             '',
             [
                 'data' => [
                     \Magento\Backend\Block\Widget\Container::PARAM_CONTROLLER => 'user',
-                    \Magento\Backend\Block\Widget\Form\Container::PARAM_MODE => 'edit',
-                    \Magento\Backend\Block\Widget\Form\Container::PARAM_BLOCK_GROUP => 'Magento_User'
+                    Container::PARAM_MODE => 'edit',
+                    Container::PARAM_BLOCK_GROUP => 'Magento_User'
                 ]
             ]
         );
-        $this->assertInstanceOf(\Magento\User\Block\User\Edit\Form::class, $block->getChildBlock('form'));
+        $this->assertInstanceOf(Form::class, $block->getChildBlock('form'));
     }
 }

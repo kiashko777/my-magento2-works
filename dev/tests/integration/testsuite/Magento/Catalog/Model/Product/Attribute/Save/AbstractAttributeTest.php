@@ -34,18 +34,6 @@ abstract class AbstractAttributeTest extends TestCase
     protected $attribute;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
-        $this->attributeRepository = $this->objectManager->create(AttributeRepositoryInterface::class);
-    }
-
-    /**
      * @dataProvider productProvider
      * @param $productSku
      * @return void
@@ -56,6 +44,36 @@ abstract class AbstractAttributeTest extends TestCase
         $product = $this->productRepository->save($product);
         $this->assertEquals($this->getDefaultAttributeValue(), $product->getData($this->getAttributeCode()));
     }
+
+    /**
+     * Set attribute value to product and validate the product
+     *
+     * @param string $attributeValue
+     * @param string $productSku
+     * @return ProductInterface
+     */
+    protected function setAttributeValueAndValidate(string $productSku, string $attributeValue): ProductInterface
+    {
+        $product = $this->productRepository->get($productSku);
+        $product->addData([$this->getAttributeCode() => $attributeValue]);
+        $product->validate();
+
+        return $product;
+    }
+
+    /**
+     * Returns attribute code for current test
+     *
+     * @return string
+     */
+    abstract protected function getAttributeCode(): string;
+
+    /**
+     * Get default value for current attribute
+     *
+     * @return string
+     */
+    abstract protected function getDefaultAttributeValue(): string;
 
     /**
      * @dataProvider productProvider
@@ -71,6 +89,51 @@ abstract class AbstractAttributeTest extends TestCase
         );
         $this->prepareAttribute(['is_required' => true]);
         $this->unsetAttributeValueAndValidate($productSku);
+    }
+
+    /**
+     * Get attribute
+     *
+     * @return ProductAttributeInterface
+     */
+    protected function getAttribute(): ProductAttributeInterface
+    {
+        if ($this->attribute === null) {
+            $this->attribute = $this->attributeRepository->get(
+                ProductAttributeInterface::ENTITY_TYPE_CODE,
+                $this->getAttributeCode()
+            );
+        }
+
+        return $this->attribute;
+    }
+
+    /**
+     * Prepare attribute to test
+     *
+     * @param array $data
+     * @return void
+     */
+    private function prepareAttribute(array $data): void
+    {
+        $attribute = $this->getAttribute();
+        $attribute->addData($data);
+        $this->attributeRepository->save($attribute);
+    }
+
+    /**
+     * Unset attribute value of the product and validate the product
+     *
+     * @param string $productSku
+     * @return ProductInterface
+     */
+    private function unsetAttributeValueAndValidate(string $productSku): ProductInterface
+    {
+        $product = $this->productRepository->get($productSku);
+        $product->unsetData($this->getAttributeCode());
+        $product->validate();
+
+        return $product;
     }
 
     /**
@@ -106,81 +169,6 @@ abstract class AbstractAttributeTest extends TestCase
     }
 
     /**
-     * Get attribute
-     *
-     * @return ProductAttributeInterface
-     */
-    protected function getAttribute(): ProductAttributeInterface
-    {
-        if ($this->attribute === null) {
-            $this->attribute = $this->attributeRepository->get(
-                ProductAttributeInterface::ENTITY_TYPE_CODE,
-                $this->getAttributeCode()
-            );
-        }
-
-        return $this->attribute;
-    }
-
-    /**
-     * Set attribute value to product and validate the product
-     *
-     * @param string $attributeValue
-     * @param string $productSku
-     * @return ProductInterface
-     */
-    protected function setAttributeValueAndValidate(string $productSku, string $attributeValue): ProductInterface
-    {
-        $product = $this->productRepository->get($productSku);
-        $product->addData([$this->getAttributeCode() => $attributeValue]);
-        $product->validate();
-
-        return $product;
-    }
-
-    /**
-     * Unset attribute value of the product and validate the product
-     *
-     * @param string $productSku
-     * @return ProductInterface
-     */
-    private function unsetAttributeValueAndValidate(string $productSku): ProductInterface
-    {
-        $product = $this->productRepository->get($productSku);
-        $product->unsetData($this->getAttributeCode());
-        $product->validate();
-
-        return $product;
-    }
-
-    /**
-     * Prepare attribute to test
-     *
-     * @param array $data
-     * @return void
-     */
-    private function prepareAttribute(array $data): void
-    {
-        $attribute = $this->getAttribute();
-        $attribute->addData($data);
-        $this->attributeRepository->save($attribute);
-    }
-
-    /**
-     * Returns attribute code for current test
-     *
-     * @return string
-     */
-    abstract protected function getAttributeCode(): string;
-
-    /**
-     * Get default value for current attribute
-     *
-     * @return string
-     */
-    abstract protected function getDefaultAttributeValue(): string;
-
-    /**
      * Products provider for tests
      *
      * @return array
@@ -193,4 +181,16 @@ abstract class AbstractAttributeTest extends TestCase
      * @return array
      */
     abstract public function uniqueAttributeValueProvider(): array;
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+        $this->attributeRepository = $this->objectManager->create(AttributeRepositoryInterface::class);
+    }
 }

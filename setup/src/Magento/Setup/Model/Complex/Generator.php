@@ -73,18 +73,6 @@ class Generator extends AbstractSource
     }
 
     /**
-     * Get row index for template
-     *
-     * @param int $key
-     *
-     * @return float
-     */
-    public function getIndex($key)
-    {
-        return floor($key / $this->_patternRowsCount) + 1;
-    }
-
-    /**
      * Whether limit of generated elements is reached (according to "Iterator" interface)
      *
      * @return bool
@@ -92,6 +80,18 @@ class Generator extends AbstractSource
     public function valid()
     {
         return $this->_key + 1 <= $this->_limit;
+    }
+
+    /**
+     * Return the current element
+     *
+     * Returns the row in associative array format: array(<col_name> => <value>, ...)
+     *
+     * @return array
+     */
+    public function current()
+    {
+        return $this->_row;
     }
 
     /**
@@ -111,14 +111,14 @@ class Generator extends AbstractSource
     }
 
     /**
-     * Return the current element
+     * Get row index for template
      *
-     * Returns the row in associative array format: array(<col_name> => <value>, ...)
+     * @param int $key
      *
-     * @return array
+     * @return float
      */
-    public function current()
+    public function getIndex($key)
     {
-        return $this->_row;
+        return floor($key / $this->_patternRowsCount) + 1;
     }
 }

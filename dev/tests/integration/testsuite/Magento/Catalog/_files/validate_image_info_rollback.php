@@ -4,16 +4,22 @@
  * See COPYING.txt for license details.
  */
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+use Magento\Catalog\Model\Product\Media\Config;
+use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Filesystem;
+use Magento\Framework\Filesystem\Directory\WriteInterface;
+use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var \Magento\Framework\Filesystem $filesystem */
-$filesystem = $objectManager->create(\Magento\Framework\Filesystem::class);
+$objectManager = Bootstrap::getObjectManager();
 
-/** @var \Magento\Catalog\Model\Product\Media\Config $config */
-$config = $objectManager->get(\Magento\Catalog\Model\Product\Media\Config::class);
+/** @var Filesystem $filesystem */
+$filesystem = $objectManager->create(Filesystem::class);
 
-/** @var $tmpDirectory \Magento\Framework\Filesystem\Directory\WriteInterface */
-$tmpDirectory = $filesystem->getDirectoryRead(\Magento\Framework\App\Filesystem\DirectoryList::MEDIA);
+/** @var Config $config */
+$config = $objectManager->get(Config::class);
+
+/** @var $tmpDirectory WriteInterface */
+$tmpDirectory = $filesystem->getDirectoryRead(DirectoryList::MEDIA);
 
 $targetTmpFilePath = $tmpDirectory->getAbsolutePath($config->getBaseTmpMediaPath() . '/magento_small_image.jpg');
 if (file_exists($targetTmpFilePath)) {

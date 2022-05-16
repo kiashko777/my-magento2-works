@@ -6,10 +6,13 @@
 
 namespace Magento\Test\Legacy\Magento\Framework\Module;
 
+use Magento\Framework\App\Utility\Files;
+use PHPUnit\Framework\TestCase;
+
 /**
  * Test for obsolete nodes/attributes in the module.xml
  */
-class ModuleXMLTest extends \PHPUnit\Framework\TestCase
+class ModuleXMLTest extends TestCase
 {
     /**
      * @param string $file
@@ -33,6 +36,6 @@ class ModuleXMLTest extends \PHPUnit\Framework\TestCase
      */
     public function moduleXmlDataProvider()
     {
-        return \Magento\Framework\App\Utility\Files::init()->getConfigFiles('module.xml');
+        return Files::init()->getConfigFiles('module.xml');
     }
 }

@@ -6,11 +6,12 @@
 
 namespace Magento\Setup\Console\Command;
 
+use Magento\Framework\Console\Cli;
+use Magento\Framework\Setup\ConsoleLogger;
+use Magento\Setup\Model\InstallerFactory;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
-use Magento\Setup\Model\InstallerFactory;
-use Magento\Framework\Setup\ConsoleLogger;
 
 class UninstallCommand extends AbstractSetupCommand
 {
@@ -50,6 +51,6 @@ class UninstallCommand extends AbstractSetupCommand
             $installer = $this->installerFactory->create(new ConsoleLogger($output));
             $installer->uninstall();
         }
-        return \Magento\Framework\Console\Cli::RETURN_SUCCESS;
+        return Cli::RETURN_SUCCESS;
     }
 }

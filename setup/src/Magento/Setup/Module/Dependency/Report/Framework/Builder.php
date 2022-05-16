@@ -3,10 +3,13 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Setup\Module\Dependency\Report\Framework;
 
+use InvalidArgumentException;
 use Magento\Setup\Module\Dependency\ParserInterface;
 use Magento\Setup\Module\Dependency\Report\Builder\AbstractBuilder;
+use Magento\Setup\Module\Dependency\Report\Framework\Data\Config;
 use Magento\Setup\Module\Dependency\Report\WriterInterface;
 
 /**
@@ -17,7 +20,7 @@ class Builder extends AbstractBuilder
     /**
      * Config parser
      *
-     * @var \Magento\Setup\Module\Dependency\ParserInterface
+     * @var ParserInterface
      */
     protected $configParser;
 
@@ -32,7 +35,8 @@ class Builder extends AbstractBuilder
         ParserInterface $dependenciesParser,
         WriterInterface $reportWriter,
         ParserInterface $configParser
-    ) {
+    )
+    {
         parent::__construct($dependenciesParser, $reportWriter);
 
         $this->configParser = $configParser;
@@ -43,14 +47,14 @@ class Builder extends AbstractBuilder
      *
      * @param array $options
      * @return void
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     protected function checkOptions($options)
     {
         parent::checkOptions($options);
 
         if (!isset($options['parse']['config_files']) || empty($options['parse']['config_files'])) {
-            throw new \InvalidArgumentException('Parse error. Passed option "config_files" is wrong.');
+            throw new InvalidArgumentException('Parse error. Passed option "config_files" is wrong.');
         }
     }
 
@@ -58,7 +62,7 @@ class Builder extends AbstractBuilder
      * Template method. Prepare data for writer step
      *
      * @param array $modulesData
-     * @return \Magento\Setup\Module\Dependency\Report\Framework\Data\Config
+     * @return Config
      */
     protected function buildData($modulesData)
     {

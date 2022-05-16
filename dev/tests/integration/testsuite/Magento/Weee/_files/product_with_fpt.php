@@ -5,14 +5,18 @@
  */
 
 use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Catalog\Setup\CategorySetup;
+use Magento\Eav\Model\Entity;
 use Magento\TestFramework\Helper\Bootstrap;
 
-/** @var \Magento\Catalog\Setup\CategorySetup $installer */
+/** @var CategorySetup $installer */
 $installer = Bootstrap::getObjectManager()->create(
-    \Magento\Catalog\Setup\CategorySetup::class
+    CategorySetup::class
 );
 $attributeSetId = $installer->getAttributeSetId('catalog_product', 'Default');
-$entityModel = Bootstrap::getObjectManager()->create(\Magento\Eav\Model\Entity::class);
+$entityModel = Bootstrap::getObjectManager()->create(Entity::class);
 $entityTypeId = $entityModel->setType(Product::ENTITY)->getTypeId();
 $groupId = $installer->getDefaultAttributeGroupId($entityTypeId, $attributeSetId);
 
@@ -47,9 +51,9 @@ $product->setTypeId(
 )->setWebsiteIds(
     [1]
 )->setVisibility(
-    \Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH
+    Visibility::VISIBILITY_BOTH
 )->setStatus(
-    \Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED
+    Status::STATUS_ENABLED
 )->setStockData(
     ['qty' => 100, 'is_in_stock' => 1, 'manage_stock' => 1]
 )->setName(

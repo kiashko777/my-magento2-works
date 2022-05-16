@@ -6,11 +6,12 @@
 declare(strict_types=1);
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Catalog\Model\Product;
 use Magento\Framework\Registry;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 
-/** @var \Magento\TestFramework\ObjectManager $objectManager */
+/** @var ObjectManager $objectManager */
 $objectManager = Bootstrap::getObjectManager();
 
 /** @var ProductRepositoryInterface $productRepository */
@@ -24,7 +25,7 @@ try {
     /** @var Product $product */
     $product = $productRepository->get('simple_with_com');
     $productRepository->delete($product);
-} catch (\Exception $e) {
+} catch (Exception $e) {
     // In case of test run with DB isolation there is already no object in database
     // since rollback fixtures called after transaction rollback.
 }

@@ -3,17 +3,20 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Swatches\Model;
 
 use Magento\Catalog\Api\Data\ProductAttributeInterfaceFactory;
 use Magento\Catalog\Api\ProductAttributeRepositoryInterface;
 use Magento\Eav\Api\Data\AttributeOptionInterfaceFactory;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test save of swatch attribute
  *
  */
-class AttributeCreateTest extends \PHPUnit\Framework\TestCase
+class AttributeCreateTest extends TestCase
 {
     /**
      * @magentoAppArea Adminhtml
@@ -21,7 +24,7 @@ class AttributeCreateTest extends \PHPUnit\Framework\TestCase
      */
     public function testSetScopeDefault()
     {
-        $om = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $om = Bootstrap::getObjectManager();
 
         $data = [
             'is_required' => 1,

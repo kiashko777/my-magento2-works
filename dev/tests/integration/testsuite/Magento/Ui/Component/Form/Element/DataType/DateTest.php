@@ -27,18 +27,6 @@ class DateTest extends TestCase
     private $localeResolver;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->dateFactory = $this->objectManager->get(DateFactory::class);
-        $this->localeResolver = $this->objectManager->get(ResolverInterface::class);
-    }
-
-    /**
      * @dataProvider localeDataProvider
      *
      * @param string $locale
@@ -61,5 +49,17 @@ class DateTest extends TestCase
         return [
             ['en_GB', 'dd/MM/y'], ['en_US', 'M/d/yy'],
         ];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->dateFactory = $this->objectManager->get(DateFactory::class);
+        $this->localeResolver = $this->objectManager->get(ResolverInterface::class);
     }
 }

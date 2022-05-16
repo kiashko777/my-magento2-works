@@ -8,11 +8,13 @@ declare(strict_types=1);
 namespace Magento\Setup\Test\Unit\Model\ConfigOptionsList;
 
 use Magento\Framework\App\DeploymentConfig;
+use Magento\Framework\Cache\Backend\Redis;
 use Magento\Framework\Setup\Option\SelectConfigOption;
 use Magento\Framework\Setup\Option\TextConfigOption;
 use Magento\Setup\Model\ConfigOptionsList\PageCache;
 use Magento\Setup\Validator\RedisConnectionValidator;
 use PHPUnit\Framework\TestCase;
+use function hash;
 
 class PageCacheTest extends TestCase
 {
@@ -30,14 +32,6 @@ class PageCacheTest extends TestCase
      * @var DeploymentConfig
      */
     private $deploymentConfigMock;
-
-    protected function setUp(): void
-    {
-        $this->validatorMock = $this->createMock(RedisConnectionValidator::class);
-        $this->deploymentConfigMock = $this->createMock(DeploymentConfig::class);
-
-        $this->configList = new PageCache($this->validatorMock);
-    }
 
     /**
      * testGetOptions
@@ -91,7 +85,7 @@ class PageCacheTest extends TestCase
             'cache' => [
                 'frontend' => [
                     'page_cache' => [
-                        'backend' => \Magento\Framework\Cache\Backend\Redis::class,
+                        'backend' => Redis::class,
                         'backend_options' => [
                             'server' => '',
                             'port' => '',
@@ -112,6 +106,16 @@ class PageCacheTest extends TestCase
     }
 
     /**
+     * The default ID prefix, based on installation directory
+     *
+     * @return string
+     */
+    private function expectedIdPrefix(): string
+    {
+        return substr(hash('sha256', dirname(__DIR__, 8)), 0, 3) . '_';
+    }
+
+    /**
      * testCreateConfigWithRedisConfiguration
      */
     public function testCreateConfigWithRedisConfiguration()
@@ -120,7 +124,7 @@ class PageCacheTest extends TestCase
             'cache' => [
                 'frontend' => [
                     'page_cache' => [
-                        'backend' => \Magento\Framework\Cache\Backend\Redis::class,
+                        'backend' => Redis::class,
                         'backend_options' => [
                             'server' => 'foo.bar',
                             'port' => '9000',
@@ -231,13 +235,11 @@ class PageCacheTest extends TestCase
         $this->assertEquals('Invalid cache handler \'foobar\'', $errors[0]);
     }
 
-    /**
-     * The default ID prefix, based on installation directory
-     *
-     * @return string
-     */
-    private function expectedIdPrefix(): string
+    protected function setUp(): void
     {
-        return substr(\hash('sha256', dirname(__DIR__, 8)), 0, 3) . '_';
+        $this->validatorMock = $this->createMock(RedisConnectionValidator::class);
+        $this->deploymentConfigMock = $this->createMock(DeploymentConfig::class);
+
+        $this->configList = new PageCache($this->validatorMock);
     }
 }

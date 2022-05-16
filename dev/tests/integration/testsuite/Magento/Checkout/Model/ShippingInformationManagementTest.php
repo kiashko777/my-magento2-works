@@ -6,7 +6,6 @@
 
 namespace Magento\Checkout\Model;
 
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\Checkout\Api\Data\ShippingInformationInterface;
 use Magento\Checkout\Api\PaymentInformationManagementInterface;
 use Magento\Checkout\Api\ShippingInformationManagementInterface;
@@ -17,12 +16,15 @@ use Magento\Quote\Api\Data\AddressInterfaceFactory;
 use Magento\Quote\Api\Data\CartItemInterface;
 use Magento\Quote\Api\Data\PaymentInterface;
 use Magento\Quote\Api\ShipmentEstimationInterface;
+use Magento\Quote\Model\Quote\Address;
 use Magento\Sales\Api\InvoiceOrderInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Shipping information managment test.
  */
-class ShippingInformationManagementTest extends \PHPUnit\Framework\TestCase
+class ShippingInformationManagementTest extends TestCase
 {
     /** @var CartManagementInterface */
     private $cartManagement;
@@ -57,23 +59,6 @@ class ShippingInformationManagementTest extends \PHPUnit\Framework\TestCase
     /** @var InvoiceOrderInterface */
     private $invoiceOrder;
 
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-
-        $this->cartManagement = $objectManager->create(CartManagementInterface::class);
-        $this->cartItemRepository = $objectManager->create(CartItemRepositoryInterface::class);
-        $this->cartItem = $objectManager->create(CartItemInterface::class);
-        $this->shippingInformationManagement = $objectManager->create(ShippingInformationManagementInterface::class);
-        $this->shippingInformation = $objectManager->create(ShippingInformationInterface::class);
-        $this->customerRepository = $objectManager->create(CustomerRepositoryInterface::class);
-        $this->apiAddressFactory = $objectManager->create(AddressInterfaceFactory::class);
-        $this->shipmentEstimation = $objectManager->create(ShipmentEstimationInterface::class);
-        $this->paymentInformationManagement = $objectManager->create(PaymentInformationManagementInterface::class);
-        $this->payment = $objectManager->create(PaymentInterface::class);
-        $this->invoiceOrder = $objectManager->create(InvoiceOrderInterface::class);
-    }
-
     /**
      * @magentoDataFixture Magento/Customer/_files/customer.php
      * @magentoDataFixture Magento/Customer/_files/customer_address.php
@@ -101,7 +86,7 @@ class ShippingInformationManagementTest extends \PHPUnit\Framework\TestCase
             break;
         }
 
-        /** @var \Magento\Quote\Model\Quote\Address $apiBillingAddress */
+        /** @var Address $apiBillingAddress */
         $apiBillingAddress = $this->apiAddressFactory->create();
         $apiBillingAddress->setRegion($billingAddress->getRegion())
             ->setRegionId($billingAddress->getRegionId())
@@ -114,7 +99,7 @@ class ShippingInformationManagementTest extends \PHPUnit\Framework\TestCase
             ->setEmail($customer->getEmail())
             ->setTelephone($billingAddress->getTelephone());
 
-        /** @var \Magento\Quote\Model\Quote\Address $apiShippingAddress */
+        /** @var Address $apiShippingAddress */
         $apiShippingAddress = $this->apiAddressFactory->create();
         $apiShippingAddress->setRegion($shippingAddress->getRegion())
             ->setRegionId($shippingAddress->getRegionId())
@@ -138,5 +123,22 @@ class ShippingInformationManagementTest extends \PHPUnit\Framework\TestCase
 
         // Set address information on quote
         $this->shippingInformationManagement->saveAddressInformation($quoteId, $addressInformation);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+
+        $this->cartManagement = $objectManager->create(CartManagementInterface::class);
+        $this->cartItemRepository = $objectManager->create(CartItemRepositoryInterface::class);
+        $this->cartItem = $objectManager->create(CartItemInterface::class);
+        $this->shippingInformationManagement = $objectManager->create(ShippingInformationManagementInterface::class);
+        $this->shippingInformation = $objectManager->create(ShippingInformationInterface::class);
+        $this->customerRepository = $objectManager->create(CustomerRepositoryInterface::class);
+        $this->apiAddressFactory = $objectManager->create(AddressInterfaceFactory::class);
+        $this->shipmentEstimation = $objectManager->create(ShipmentEstimationInterface::class);
+        $this->paymentInformationManagement = $objectManager->create(PaymentInformationManagementInterface::class);
+        $this->payment = $objectManager->create(PaymentInterface::class);
+        $this->invoiceOrder = $objectManager->create(InvoiceOrderInterface::class);
     }
 }

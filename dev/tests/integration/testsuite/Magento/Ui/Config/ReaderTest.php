@@ -3,17 +3,30 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Ui\Config;
 
 use Magento\TestFramework\Helper\Bootstrap;
-use Magento\Ui\Config\FileResolverStub;
+use Magento\Ui\Config\Reader\FileResolver;
+use PHPUnit\Framework\TestCase;
 
-class ReaderTest extends \PHPUnit\Framework\TestCase
+class ReaderTest extends TestCase
 {
     /**
      * @var Reader
      */
     private $reader;
+
+    /**
+     * @return void
+     */
+    public function testReader()
+    {
+        $mergedConfiguration = include __DIR__ . '/../_files/expected_result_configuration.php';
+        $readConfiguration = $this->reader->read();
+
+        $this->assertEquals($mergedConfiguration, $readConfiguration);
+    }
 
     protected function setUp(): void
     {
@@ -22,7 +35,7 @@ class ReaderTest extends \PHPUnit\Framework\TestCase
         $objectManager->configure(
             [
                 'preferences' => [
-                    \Magento\Ui\Config\Reader\FileResolver::class => FileResolverStub::class
+                    FileResolver::class => FileResolverStub::class
                 ]
             ]
         );
@@ -42,22 +55,11 @@ class ReaderTest extends \PHPUnit\Framework\TestCase
         $objectManager->configure(
             [
                 'preferences' => [
-                    \Magento\Ui\Config\Reader\FileResolver::class => \Magento\Ui\Config\Reader\FileResolver::class
+                    FileResolver::class => FileResolver::class
                 ]
             ]
         );
 
         parent::tearDown();
-    }
-
-    /**
-     * @return void
-     */
-    public function testReader()
-    {
-        $mergedConfiguration = include __DIR__ . '/../_files/expected_result_configuration.php';
-        $readConfiguration = $this->reader->read();
-
-        $this->assertEquals($mergedConfiguration, $readConfiguration);
     }
 }

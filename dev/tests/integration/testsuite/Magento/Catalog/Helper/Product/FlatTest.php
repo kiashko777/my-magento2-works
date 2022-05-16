@@ -3,29 +3,25 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Catalog\Helper\Product;
 
-class FlatTest extends \PHPUnit\Framework\TestCase
+use Magento\Catalog\Helper\Product\Flat\Indexer;
+use Magento\Catalog\Model\Indexer\Product\Flat\State;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class FlatTest extends TestCase
 {
     /**
-     * @var \Magento\Catalog\Helper\Product\Flat\Indexer
+     * @var Indexer
      */
     protected $_helper;
 
     /**
-     * @var \Magento\Catalog\Model\Indexer\Product\Flat\State
+     * @var State
      */
     protected $_state;
-
-    protected function setUp(): void
-    {
-        $this->_helper = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Catalog\Helper\Product\Flat\Indexer::class
-        );
-        $this->_state = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Catalog\Model\Indexer\Product\Flat\State::class
-        );
-    }
 
     /**
      * @magentoConfigFixture current_store catalog/frontend/flat_catalog_product 1
@@ -42,8 +38,8 @@ class FlatTest extends \PHPUnit\Framework\TestCase
 
     public function testIsAddFilterableAttributes()
     {
-        $helper = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Helper\Product\Flat\Indexer::class,
+        $helper = Bootstrap::getObjectManager()->create(
+            Indexer::class,
             ['addFilterableAttrs' => 1]
         );
         $this->assertEquals(1, $helper->isAddFilterableAttributes());
@@ -56,10 +52,20 @@ class FlatTest extends \PHPUnit\Framework\TestCase
 
     public function testIsAddChildData()
     {
-        $helper = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Catalog\Helper\Product\Flat\Indexer::class,
+        $helper = Bootstrap::getObjectManager()->create(
+            Indexer::class,
             ['addChildData' => 1]
         );
         $this->assertEquals(1, $helper->isAddChildData());
+    }
+
+    protected function setUp(): void
+    {
+        $this->_helper = Bootstrap::getObjectManager()->get(
+            Indexer::class
+        );
+        $this->_state = Bootstrap::getObjectManager()->get(
+            State::class
+        );
     }
 }

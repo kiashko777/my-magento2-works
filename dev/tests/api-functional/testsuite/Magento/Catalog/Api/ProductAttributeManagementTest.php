@@ -7,10 +7,16 @@
 
 namespace Magento\Catalog\Api;
 
-use Magento\TestFramework\Helper\Bootstrap;
+use Exception;
+use Magento\Catalog\Api\Data\ProductAttributeInterface;
+use Magento\Eav\Model\AttributeManagement;
 use Magento\Framework\Webapi\Exception as HTTPExceptionCodes;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\WebapiAbstract;
+use SoapFault;
 
-class ProductAttributeManagementTest extends \Magento\TestFramework\TestCase\WebapiAbstract
+class ProductAttributeManagementTest extends WebapiAbstract
 {
     const SERVICE_NAME = 'catalogProductAttributeManagementV1';
     const SERVICE_VERSION = 'V1';
@@ -23,7 +29,7 @@ class ProductAttributeManagementTest extends \Magento\TestFramework\TestCase\Web
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => self::RESOURCE_PATH . '/' . $attributeSetId . '/attributes',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_GET,
+                'httpMethod' => Request::HTTP_METHOD_GET,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -52,6 +58,31 @@ class ProductAttributeManagementTest extends \Magento\TestFramework\TestCase\Web
         );
     }
 
+    protected function getAssignServiceInfo()
+    {
+        return [
+            'rest' => [
+                'resourcePath' => self::RESOURCE_PATH . '/attributes',
+                'httpMethod' => Request::HTTP_METHOD_POST,
+            ],
+            'soap' => [
+                'service' => self::SERVICE_NAME,
+                'serviceVersion' => self::SERVICE_VERSION,
+                'operation' => self::SERVICE_NAME . 'Assign',
+            ],
+        ];
+    }
+
+    protected function getAttributeData()
+    {
+        return [
+            'attributeSetId' => 4,
+            'attributeGroupId' => 8,
+            'attributeCode' => 'cost',
+            'sortOrder' => 3,
+        ];
+    }
+
     public function testAssignAttributeWrongAttributeSet()
     {
         $payload = $this->getAttributeData();
@@ -62,13 +93,13 @@ class ProductAttributeManagementTest extends \Magento\TestFramework\TestCase\Web
         try {
             $this->_webApiCall($this->getAssignServiceInfo(), $payload);
             $this->fail("Expected exception");
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString(
                 $expectedMessage,
                 $e->getMessage(),
                 "SoapFault does not contain expected message."
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $errorObj = $this->processRestExceptionResult($e);
             $this->assertEquals($expectedMessage, $errorObj['message']);
             $this->assertEquals([$payload['attributeSetId']], $errorObj['parameters']);
@@ -85,13 +116,13 @@ class ProductAttributeManagementTest extends \Magento\TestFramework\TestCase\Web
         try {
             $this->_webApiCall($this->getAssignServiceInfo(), $payload);
             $this->fail("Expected exception");
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString(
                 $expectedMessage,
                 $e->getMessage(),
                 "SoapFault does not contain expected message."
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $errorObj = $this->processRestExceptionResult($e);
             $this->assertEquals($expectedMessage, $errorObj['message']);
             $this->assertEquals([$payload['attributeGroupId']], $errorObj['parameters']);
@@ -109,13 +140,13 @@ class ProductAttributeManagementTest extends \Magento\TestFramework\TestCase\Web
         try {
             $this->_webApiCall($this->getAssignServiceInfo(), $payload);
             $this->fail("Expected exception");
-        } catch (\SoapFault $e) {
+        } catch (SoapFault $e) {
             $this->assertStringContainsString(
                 $expectedMessage,
                 $e->getMessage(),
                 "SoapFault does not contain expected message."
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $errorObj = $this->processRestExceptionResult($e);
             $this->assertEquals($expectedMessage, $errorObj['message']);
             $this->assertEquals([$payload['attributeCode']], $errorObj['parameters']);
@@ -128,10 +159,10 @@ class ProductAttributeManagementTest extends \Magento\TestFramework\TestCase\Web
         $payload = $this->getAttributeData();
 
         //Assign attribute to attribute set
-        /** @var \Magento\Eav\Model\AttributeManagement $attributeManagement */
-        $attributeManagement = Bootstrap::getObjectManager()->get(\Magento\Eav\Model\AttributeManagement::class);
+        /** @var AttributeManagement $attributeManagement */
+        $attributeManagement = Bootstrap::getObjectManager()->get(AttributeManagement::class);
         $attributeManagement->assign(
-            \Magento\Catalog\Api\Data\ProductAttributeInterface::ENTITY_TYPE_CODE,
+            ProductAttributeInterface::ENTITY_TYPE_CODE,
             $payload['attributeSetId'],
             $payload['attributeGroupId'],
             $payload['attributeCode'],
@@ -144,7 +175,7 @@ class ProductAttributeManagementTest extends \Magento\TestFramework\TestCase\Web
                     '/' . $payload['attributeSetId'] .
                     '/attributes/' .
                     $payload['attributeCode'],
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_DELETE,
+                'httpMethod' => Request::HTTP_METHOD_DELETE,
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -161,30 +192,5 @@ class ProductAttributeManagementTest extends \Magento\TestFramework\TestCase\Web
                 ]
             )
         );
-    }
-
-    protected function getAttributeData()
-    {
-        return [
-            'attributeSetId' => 4,
-            'attributeGroupId' => 8,
-            'attributeCode' => 'cost',
-            'sortOrder' => 3,
-        ];
-    }
-
-    protected function getAssignServiceInfo()
-    {
-        return [
-            'rest' => [
-                'resourcePath' => self::RESOURCE_PATH . '/attributes',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST,
-            ],
-            'soap' => [
-                'service' => self::SERVICE_NAME,
-                'serviceVersion' => self::SERVICE_VERSION,
-                'operation' => self::SERVICE_NAME . 'Assign',
-            ],
-        ];
     }
 }

@@ -49,6 +49,27 @@ class CreatePasswordTest extends AbstractController
     private $customerId;
 
     /**
+     * @magentoDataFixture Magento/Customer/_files/customer_with_website.php
+     *
+     * @return void
+     */
+    public function testCreatePassword(): void
+    {
+        $defaultWebsite = $this->websiteRepository->get('base')->getId();
+        $customer = $this->customerRegistry->retrieveByEmail('john.doe@magento.com', $defaultWebsite);
+        $this->customerId = $customer->getId();
+        $token = $this->random->getUniqueHash();
+        $customer->changeResetPasswordLinkToken($token);
+        $customer->setData('confirmation', 'confirmation');
+        $this->customerResource->save($customer);
+        $this->session->setRpToken($token);
+        $this->session->setRpCustomerId($customer->getId());
+        $this->dispatch('customer/account/createPassword');
+        $block = $this->layout->getBlock('resetPassword');
+        $this->assertEquals($token, $block->getResetPasswordLinkToken());
+    }
+
+    /**
      * @inheritdoc
      */
     protected function setUp(): void
@@ -72,26 +93,5 @@ class CreatePasswordTest extends AbstractController
         $this->customerRegistry->remove($this->customerId);
 
         parent::tearDown();
-    }
-
-    /**
-     * @magentoDataFixture Magento/Customer/_files/customer_with_website.php
-     *
-     * @return void
-     */
-    public function testCreatePassword(): void
-    {
-        $defaultWebsite = $this->websiteRepository->get('base')->getId();
-        $customer = $this->customerRegistry->retrieveByEmail('john.doe@magento.com', $defaultWebsite);
-        $this->customerId = $customer->getId();
-        $token = $this->random->getUniqueHash();
-        $customer->changeResetPasswordLinkToken($token);
-        $customer->setData('confirmation', 'confirmation');
-        $this->customerResource->save($customer);
-        $this->session->setRpToken($token);
-        $this->session->setRpCustomerId($customer->getId());
-        $this->dispatch('customer/account/createPassword');
-        $block = $this->layout->getBlock('resetPassword');
-        $this->assertEquals($token, $block->getResetPasswordLinkToken());
     }
 }

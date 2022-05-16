@@ -3,9 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\View\Layout\Reader;
 
-class BlockTest extends \PHPUnit\Framework\TestCase
+use Magento\Framework\View\Layout\Element;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class BlockTest extends TestCase
 {
     const IDX_TYPE = 0;
     const IDX_PARENT = 2;
@@ -30,24 +35,14 @@ class BlockTest extends \PHPUnit\Framework\TestCase
      */
     private $childBlockName = 'test.child.block';
 
-    protected function setUp(): void
-    {
-        $this->block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\View\Layout\Reader\Block::class
-        );
-        $this->readerContext = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Framework\View\Layout\Reader\Context::class
-        );
-    }
-
     public function testInterpretBlockDirective()
     {
-        $pageXml = new \Magento\Framework\View\Layout\Element(
+        $pageXml = new Element(
             __DIR__ . '/_files/_layout_update_block.xml',
             0,
             true
         );
-        $parentElement = new \Magento\Framework\View\Layout\Element('<page></page>');
+        $parentElement = new Element('<page></page>');
 
         foreach ($pageXml->xpath('body/block') as $blockElement) {
             $this->assertTrue(in_array($blockElement->getName(), $this->block->getSupportedNodes()));
@@ -83,12 +78,12 @@ class BlockTest extends \PHPUnit\Framework\TestCase
 
     public function testInterpretReferenceBlockDirective()
     {
-        $pageXml = new \Magento\Framework\View\Layout\Element(
+        $pageXml = new Element(
             __DIR__ . '/_files/_layout_update_reference.xml',
             0,
             true
         );
-        $parentElement = new \Magento\Framework\View\Layout\Element('<page></page>');
+        $parentElement = new Element('<page></page>');
 
         foreach ($pageXml->xpath('body/*') as $element) {
             $this->assertTrue(in_array($element->getName(), $this->block->getSupportedNodes()));
@@ -104,6 +99,16 @@ class BlockTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(
             ['test_arg' => 'test-argument-value'],
             $resultElementData['arguments']
+        );
+    }
+
+    protected function setUp(): void
+    {
+        $this->block = Bootstrap::getObjectManager()->create(
+            Block::class
+        );
+        $this->readerContext = Bootstrap::getObjectManager()->create(
+            Context::class
         );
     }
 }

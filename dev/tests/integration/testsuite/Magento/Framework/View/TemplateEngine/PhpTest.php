@@ -23,15 +23,6 @@ class PhpTest extends TestCase
     private $templateEngine;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->templateEngine = $objectManager->get(Php::class);
-    }
-
-    /**
      * See that templates get access to certain variables.
      *
      * @return void
@@ -48,11 +39,20 @@ class PhpTest extends TestCase
             }
         };
 
-        $rendered = $this->templateEngine->render($block, __DIR__ .'/../_files/test_template.phtml');
+        $rendered = $this->templateEngine->render($block, __DIR__ . '/../_files/test_template.phtml');
         $this->assertEquals(
             '<p>This template has access to &lt;b&gt;$escaper&lt;/b&gt; and $block &quot;<b>BLOCK</b>&quot;</p>'
-            .PHP_EOL,
+            . PHP_EOL,
             $rendered
         );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->templateEngine = $objectManager->get(Php::class);
     }
 }

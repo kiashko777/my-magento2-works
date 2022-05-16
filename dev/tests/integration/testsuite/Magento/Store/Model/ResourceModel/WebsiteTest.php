@@ -3,15 +3,19 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Store\Model\ResourceModel;
 
-class WebsiteTest extends \PHPUnit\Framework\TestCase
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class WebsiteTest extends TestCase
 {
     public function testCountAll()
     {
-        /** @var $model \Magento\Store\Model\ResourceModel\Website */
-        $model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Store\Model\ResourceModel\Website::class
+        /** @var $model Website */
+        $model = Bootstrap::getObjectManager()->create(
+            Website::class
         );
         $this->assertEquals(1, $model->countAll());
         $this->assertEquals(1, $model->countAll(false));

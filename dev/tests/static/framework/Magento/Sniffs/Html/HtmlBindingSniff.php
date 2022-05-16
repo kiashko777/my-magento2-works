@@ -6,8 +6,11 @@
 
 namespace Magento\Sniffs\Html;
 
-use PHP_CodeSniffer\Sniffs\Sniff;
+use DOMDocument;
+use DOMXPath;
 use PHP_CodeSniffer\Files\File;
+use PHP_CodeSniffer\Sniffs\Sniff;
+use Throwable;
 
 /**
  * Sniffing improper HTML bindings.
@@ -23,30 +26,6 @@ class HtmlBindingSniff implements Sniff
     }
 
     /**
-     * Load HTML document to validate.
-     *
-     * @param int $stackPointer
-     * @param File $file
-     * @return \DOMDocument|null
-     */
-    private function loadHtmlDocument(int $stackPointer, File $file): ?\DOMDocument
-    {
-        if ($stackPointer === 0) {
-            $html = $file->getTokensAsString($stackPointer, count($file->getTokens()));
-            $dom = new \DOMDocument();
-            try {
-                // phpcs:disable Generic.PHP.NoSilencedErrors
-                @$dom->loadHTML($html);
-                return $dom;
-            } catch (\Throwable $exception) {
-                return null;
-            }
-        }
-
-        return null;
-    }
-
-    /**
      * @inheritDoc
      *
      * Find HTML data bindings and check variables used.
@@ -59,7 +38,7 @@ class HtmlBindingSniff implements Sniff
 
         /** @var string[] $htmlBindings */
         $htmlBindings = [];
-        $domXpath = new \DOMXPath($dom);
+        $domXpath = new DOMXPath($dom);
         $dataBindAttributes = $domXpath->query('//@*[name() = "data-bind"]');
         foreach ($dataBindAttributes as $dataBindAttribute) {
             $knockoutBinding = $dataBindAttribute->nodeValue;
@@ -87,5 +66,29 @@ class HtmlBindingSniff implements Sniff
                 );
             }
         }
+    }
+
+    /**
+     * Load HTML document to validate.
+     *
+     * @param int $stackPointer
+     * @param File $file
+     * @return DOMDocument|null
+     */
+    private function loadHtmlDocument(int $stackPointer, File $file): ?DOMDocument
+    {
+        if ($stackPointer === 0) {
+            $html = $file->getTokensAsString($stackPointer, count($file->getTokens()));
+            $dom = new DOMDocument();
+            try {
+                // phpcs:disable Generic.PHP.NoSilencedErrors
+                @$dom->loadHTML($html);
+                return $dom;
+            } catch (Throwable $exception) {
+                return null;
+            }
+        }
+
+        return null;
     }
 }

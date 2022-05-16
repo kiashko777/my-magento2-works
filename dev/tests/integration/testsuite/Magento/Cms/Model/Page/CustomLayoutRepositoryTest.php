@@ -8,16 +8,17 @@ declare(strict_types=1);
 
 namespace Magento\Cms\Model\Page;
 
+use InvalidArgumentException;
 use Magento\Cms\Model\Page;
-use Magento\Cms\Model\PageFactory;
 use Magento\Cms\Model\Page\CustomLayout\Data\CustomLayoutSelected;
+use Magento\Cms\Model\PageFactory;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
-use Magento\Framework\View\Model\Layout\Merge;
 use Magento\Framework\View\Model\Layout\MergeFactory;
 use Magento\TestFramework\Cms\Model\CustomLayoutManager;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
+use Throwable;
 
 /**
  * Test the repository.
@@ -47,39 +48,6 @@ class CustomLayoutRepositoryTest extends TestCase
     private $identityMap;
 
     /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $objectManager->configure([
-            'preferences' => [
-                \Magento\Cms\Model\Page\CustomLayoutManagerInterface::class =>
-                    \Magento\TestFramework\Cms\Model\CustomLayoutManager::class
-            ]
-        ]);
-        $this->fakeManager = $objectManager->get(CustomLayoutManager::class);
-        $this->repo = $objectManager->create(CustomLayoutRepositoryInterface::class, ['manager' => $this->fakeManager]);
-        $this->pageFactory = $objectManager->get(PageFactory::class);
-        $this->identityMap = $objectManager->get(IdentityMap::class);
-    }
-
-    /**
-     * Create page instance.
-     *
-     * @param string $id
-     * @return Page
-     */
-    private function createPage(string $id): Page
-    {
-        $page = $this->pageFactory->create(['customLayoutRepository' => $this->repo]);
-        $page->load($id, 'identifier');
-        $this->identityMap->add($page);
-
-        return $page;
-    }
-
-    /**
      * Test updating a page's custom layout.
      *
      * @magentoDataFixture Magento/Cms/_files/pages.php
@@ -95,11 +63,11 @@ class CustomLayoutRepositoryTest extends TestCase
         $exceptionRaised = null;
         try {
             $this->repo->save(new CustomLayoutSelected($pageId, 'some_file'));
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             $exceptionRaised = $exception;
         }
         $this->assertNotEmpty($exceptionRaised);
-        $this->assertInstanceOf(\InvalidArgumentException::class, $exceptionRaised);
+        $this->assertInstanceOf(InvalidArgumentException::class, $exceptionRaised);
 
         //Set file ID
         $this->repo->save(new CustomLayoutSelected($pageId, 'select2'));
@@ -119,6 +87,21 @@ class CustomLayoutRepositoryTest extends TestCase
             $notFound = true;
         }
         $this->assertTrue($notFound);
+    }
+
+    /**
+     * Create page instance.
+     *
+     * @param string $id
+     * @return Page
+     */
+    private function createPage(string $id): Page
+    {
+        $page = $this->pageFactory->create(['customLayoutRepository' => $this->repo]);
+        $page->load($id, 'identifier');
+        $this->identityMap->add($page);
+
+        return $page;
     }
 
     /**
@@ -151,10 +134,28 @@ class CustomLayoutRepositoryTest extends TestCase
         $page->setData('layout_update_selected', 'nonExisting');
         try {
             $page->save();
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             $caught = $exception;
         }
         $this->assertInstanceOf(LocalizedException::class, $caught);
         $this->assertEquals($caught->getMessage(), 'Invalid Custom Layout Update selected');
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $objectManager->configure([
+            'preferences' => [
+                CustomLayoutManagerInterface::class =>
+                    CustomLayoutManager::class
+            ]
+        ]);
+        $this->fakeManager = $objectManager->get(CustomLayoutManager::class);
+        $this->repo = $objectManager->create(CustomLayoutRepositoryInterface::class, ['manager' => $this->fakeManager]);
+        $this->pageFactory = $objectManager->get(PageFactory::class);
+        $this->identityMap = $objectManager->get(IdentityMap::class);
     }
 }

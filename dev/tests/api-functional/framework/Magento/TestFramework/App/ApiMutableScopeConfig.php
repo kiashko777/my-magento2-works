@@ -40,11 +40,12 @@ class ApiMutableScopeConfig implements MutableScopeConfigInterface
      * @param ConfigFactory $configFactory
      */
     public function __construct(
-        ScopeConfigInterface $config,
-        StoreRepositoryInterface $storeRepository,
+        ScopeConfigInterface       $config,
+        StoreRepositoryInterface   $storeRepository,
         WebsiteRepositoryInterface $websiteRepository,
-        ConfigFactory $configFactory
-    ) {
+        ConfigFactory              $configFactory
+    )
+    {
         $this->testAppConfig = $config;
         $this->storeRepository = $storeRepository;
         $this->websiteRepository = $websiteRepository;
@@ -75,19 +76,10 @@ class ApiMutableScopeConfig implements MutableScopeConfigInterface
         $value,
         $scopeType = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
         $scopeCode = null
-    ) {
+    )
+    {
         $this->persistConfig($path, $value, $scopeType, $scopeCode);
         return $this->testAppConfig->setValue($path, $value, $scopeType, $scopeCode);
-    }
-
-    /**
-     * Clean app config cache
-     *
-     * @return void
-     */
-    public function clean()
-    {
-        $this->testAppConfig->clean();
     }
 
     /**
@@ -127,5 +119,15 @@ class ApiMutableScopeConfig implements MutableScopeConfigInterface
         }
 
         $this->configFactory->create(['data' => $configData])->save();
+    }
+
+    /**
+     * Clean app config cache
+     *
+     * @return void
+     */
+    public function clean()
+    {
+        $this->testAppConfig->clean();
     }
 }

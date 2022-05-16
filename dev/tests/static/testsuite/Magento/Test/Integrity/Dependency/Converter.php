@@ -3,12 +3,17 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Test\Integrity\Dependency;
+
+use DOMElement;
+use DOMNodeList;
+use Magento\Framework\Config\ConverterInterface;
 
 /**
  * Converter of webapi.xml content into array format.
  */
-class Converter implements \Magento\Framework\Config\ConverterInterface
+class Converter implements ConverterInterface
 {
     /**#@+
      * Array keys for config internal representation.
@@ -27,14 +32,14 @@ class Converter implements \Magento\Framework\Config\ConverterInterface
     public function convert($source)
     {
         $result = [];
-        /** @var \DOMNodeList $routes */
+        /** @var DOMNodeList $routes */
         $routes = $source->getElementsByTagName(self::KEY_ROUTE);
-        /** @var \DOMElement $route */
+        /** @var DOMElement $route */
         foreach ($routes as $route) {
             if ($route->nodeType != XML_ELEMENT_NODE) {
                 continue;
             }
-            /** @var \DOMElement $service */
+            /** @var DOMElement $service */
             $service = $route->getElementsByTagName(self::KEY_SERVICE)->item(0);
             $serviceClass = $service->attributes->getNamedItem(self::KEY_CLASS)->nodeValue;
             $serviceMethod = $service->attributes->getNamedItem(self::KEY_METHOD)->nodeValue;

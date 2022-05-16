@@ -53,7 +53,8 @@ define([
                 setTotals: jasmine.createSpy()
             },
             'mage/storage': {
-                post: function () {}
+                post: function () {
+                }
             },
             'Magento_Checkout/js/model/totals': {
                 isLoading: jasmine.createSpy()
@@ -62,8 +63,10 @@ define([
                 process: jasmine.createSpy()
             },
             'Magento_Checkout/js/model/cart/cache': {
-                isChanged: function () {},
-                get: function () {},
+                isChanged: function () {
+                },
+                get: function () {
+                },
                 set: jasmine.createSpy()
             },
             'Magento_Customer/js/customer-data': {
@@ -90,7 +93,8 @@ define([
         try {
             injector.clean();
             injector.remove();
-        } catch (e) {}
+        } catch (e) {
+        }
     });
 
     describe('Magento_Checkout/js/model/cart/totals-processor/default', function () {

@@ -5,7 +5,13 @@
  */
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Customer\Api\AddressRepositoryInterface;
+use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Model\CustomerRegistry;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\Quote\Address;
+use Magento\Quote\Model\QuoteIdMask;
+use Magento\Quote\Model\QuoteIdMaskFactory;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
@@ -14,17 +20,17 @@ Resolver::getInstance()->requireDataFixture('Magento/Customer/_files/customer_ad
 Resolver::getInstance()->requireDataFixture('Magento/Catalog/_files/product_virtual.php');
 
 $objectManager = Bootstrap::getObjectManager();
-/** @var \Magento\Quote\Model\Quote\Address $quoteShippingAddress */
+/** @var Address $quoteShippingAddress */
 $quoteShippingAddress = $objectManager->create(
-    \Magento\Quote\Model\Quote\Address::class
+    Address::class
 );
-/** @var \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository */
+/** @var CustomerRepositoryInterface $customerRepository */
 $customerRepository = $objectManager->create(
-    \Magento\Customer\Api\CustomerRepositoryInterface::class
+    CustomerRepositoryInterface::class
 );
-/** @var \Magento\Customer\Api\AddressRepositoryInterface $addressRepository */
+/** @var AddressRepositoryInterface $addressRepository */
 $addressRepository = $objectManager->create(
-    \Magento\Customer\Api\AddressRepositoryInterface::class
+    AddressRepositoryInterface::class
 );
 /** @var ProductRepositoryInterface $productRepository */
 $productRepository = $objectManager->create(ProductRepositoryInterface::class);
@@ -33,8 +39,8 @@ $quoteShippingAddress->importCustomerAddressData($addressRepository->getById(1))
 /** @var CustomerRegistry $customerRegistry */
 $customerRegistry = Bootstrap::getObjectManager()->create(CustomerRegistry::class);
 $customer = $customerRegistry->retrieve(1);
-/** @var \Magento\Quote\Model\Quote $quote */
-$quote = $objectManager->create(\Magento\Quote\Model\Quote::class);
+/** @var Quote $quote */
+$quote = $objectManager->create(Quote::class);
 $quote->setStoreId(1)
     ->setIsActive(true)
     ->setIsMultiShipping(false)
@@ -49,9 +55,9 @@ $quote->setStoreId(1)
 
 $quote->collectTotals()->save();
 
-/** @var \Magento\Quote\Model\QuoteIdMask $quoteIdMask */
+/** @var QuoteIdMask $quoteIdMask */
 $quoteIdMask = $objectManager
-    ->create(\Magento\Quote\Model\QuoteIdMaskFactory::class)
+    ->create(QuoteIdMaskFactory::class)
     ->create();
 $quoteIdMask->setQuoteId($quote->getId());
 $quoteIdMask->setDataChanges(true);

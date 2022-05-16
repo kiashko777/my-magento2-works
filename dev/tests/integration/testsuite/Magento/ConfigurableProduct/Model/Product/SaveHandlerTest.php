@@ -9,8 +9,9 @@ namespace Magento\ConfigurableProduct\Model\Product;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product;
-use Magento\TestFramework\Helper\Bootstrap;
 use Magento\ConfigurableProduct\Model\ResourceModel\Product\Type\Configurable as ConfigurableResource;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Tests for \Magento\ConfigurableProduct\Model\Products\SaveHandler.
@@ -18,7 +19,7 @@ use Magento\ConfigurableProduct\Model\ResourceModel\Product\Type\Configurable as
  * @magentoAppIsolation enabled
  * @magentoDataFixture Magento/ConfigurableProduct/_files/product_configurable.php
  */
-class SaveHandlerTest extends \PHPUnit\Framework\TestCase
+class SaveHandlerTest extends TestCase
 {
     /**
      * Object under test
@@ -41,17 +42,6 @@ class SaveHandlerTest extends \PHPUnit\Framework\TestCase
      * @var ConfigurableResource
      */
     private $resource;
-
-    /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $this->productRepository = Bootstrap::getObjectManager()->create(ProductRepositoryInterface::class);
-        $this->product = $this->productRepository->get('configurable');
-        $this->resource = Bootstrap::getObjectManager()->create(ConfigurableResource::class);
-        $this->handler = Bootstrap::getObjectManager()->create(SaveHandler::class);
-    }
 
     /**
      * @return void
@@ -96,5 +86,16 @@ class SaveHandlerTest extends \PHPUnit\Framework\TestCase
         $select = $this->resource->getConnection()->select()->from(['l' => $this->resource->getMainTable()]);
 
         return $this->resource->getConnection()->fetchAll($select);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $this->productRepository = Bootstrap::getObjectManager()->create(ProductRepositoryInterface::class);
+        $this->product = $this->productRepository->get('configurable');
+        $this->resource = Bootstrap::getObjectManager()->create(ConfigurableResource::class);
+        $this->handler = Bootstrap::getObjectManager()->create(SaveHandler::class);
     }
 }

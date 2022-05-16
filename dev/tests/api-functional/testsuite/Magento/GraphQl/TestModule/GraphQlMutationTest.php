@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\TestModule;
 
+use Exception;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
 
 /**
@@ -39,7 +40,7 @@ MUTATION;
      */
     public function testMutationIsNotAllowedViaGetRequest()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Mutation requests allowed only for POST requests');
 
         $id = 3;

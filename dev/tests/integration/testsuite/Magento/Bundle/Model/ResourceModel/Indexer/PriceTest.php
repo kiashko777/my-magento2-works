@@ -8,12 +8,12 @@ namespace Magento\Bundle\Model\ResourceModel\Indexer;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Indexer\Product\Price;
+use Magento\CatalogInventory\Model\Indexer\Stock;
 use Magento\Customer\Model\Group;
 use Magento\Framework\Indexer\ActionInterface;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Store\Api\WebsiteRepositoryInterface;
 use Magento\TestFramework\Catalog\Model\Product\Price\GetPriceIndexDataByProductId;
-use Magento\CatalogInventory\Model\Indexer\Stock;
 use Magento\TestFramework\Helper\Bootstrap;
 use PHPUnit\Framework\TestCase;
 
@@ -48,19 +48,6 @@ class PriceTest extends TestCase
      * @var Stock
      */
     private $stockIndexer;
-
-    /**
-     * @inheritDoc
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->indexer = $this->objectManager->get(Price::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->getPriceIndexDataByProductId = $this->objectManager->get(GetPriceIndexDataByProductId::class);
-        $this->websiteRepository = $this->objectManager->get(WebsiteRepositoryInterface::class);
-        $this->stockIndexer = $this->objectManager->get(Stock::class);
-    }
 
     /**
      * Test get bundle index price if enabled show out off stock
@@ -109,5 +96,18 @@ class PriceTest extends TestCase
         foreach ($expectedPrices as $column => $price) {
             $this->assertEquals($price, $data[$column]);
         }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->indexer = $this->objectManager->get(Price::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->getPriceIndexDataByProductId = $this->objectManager->get(GetPriceIndexDataByProductId::class);
+        $this->websiteRepository = $this->objectManager->get(WebsiteRepositoryInterface::class);
+        $this->stockIndexer = $this->objectManager->get(Stock::class);
     }
 }

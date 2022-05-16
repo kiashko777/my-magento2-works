@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sales\Controller\Adminhtml\Order\Create;
 
 use Magento\Backend\Model\Session\Quote;
@@ -13,6 +14,7 @@ use Magento\Framework\Data\Form\FormKey;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Message\MessageInterface;
 use Magento\Quote\Api\CartRepositoryInterface;
+use Magento\Quote\Api\Data\CartInterface;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Model\OrderRepository;
 use Magento\Sales\Model\Service\OrderService;
@@ -30,34 +32,21 @@ use PHPUnit\Framework\MockObject\MockObject as MockObject;
 class SaveTest extends AbstractBackendController
 {
     /**
-     * @var TransportBuilderMock
-     */
-    private $transportBuilder;
-
-    /**
-     * @var FormKey
-     */
-    private $formKey;
-
-    /**
      * @var string
      */
     protected $resource = 'Magento_Sales::create';
-
     /**
      * @var string
      */
     protected $uri = 'backend/sales/order_create/save';
-
     /**
-     * @inheritdoc
+     * @var TransportBuilderMock
      */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->transportBuilder = $this->_objectManager->get(TransportBuilderMock::class);
-        $this->formKey = $this->_objectManager->get(FormKey::class);
-    }
+    private $transportBuilder;
+    /**
+     * @var FormKey
+     */
+    private $formKey;
 
     /**
      * Checks a case when order creation is failed on payment method processing but new customer already created
@@ -107,6 +96,26 @@ class SaveTest extends AbstractBackendController
     }
 
     /**
+     * Gets quote by reserved order id.
+     *
+     * @param string $reservedOrderId
+     * @return CartInterface
+     */
+    private function getQuote(string $reservedOrderId): CartInterface
+    {
+        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
+        $searchCriteriaBuilder = $this->_objectManager->get(SearchCriteriaBuilder::class);
+        $searchCriteria = $searchCriteriaBuilder->addFilter('reserved_order_id', $reservedOrderId)
+            ->create();
+
+        /** @var CartRepositoryInterface $quoteRepository */
+        $quoteRepository = $this->_objectManager->get(CartRepositoryInterface::class);
+        $items = $quoteRepository->getList($searchCriteria)->getItems();
+
+        return array_pop($items);
+    }
+
+    /**
      * @magentoDbIsolation enabled
      * @magentoDataFixture Magento/Sales/_files/guest_quote_with_addresses.php
      *
@@ -143,59 +152,6 @@ class SaveTest extends AbstractBackendController
 
         $this->assertEquals($message->getSubject(), $subject);
         $this->assertThat($message->getBody()->getParts()[0]->getRawContent(), $assert);
-    }
-
-    /**
-     * Gets quote by reserved order id.
-     *
-     * @param string $reservedOrderId
-     * @return \Magento\Quote\Api\Data\CartInterface
-     */
-    private function getQuote(string $reservedOrderId): \Magento\Quote\Api\Data\CartInterface
-    {
-        /** @var SearchCriteriaBuilder $searchCriteriaBuilder */
-        $searchCriteriaBuilder = $this->_objectManager->get(SearchCriteriaBuilder::class);
-        $searchCriteria = $searchCriteriaBuilder->addFilter('reserved_order_id', $reservedOrderId)
-            ->create();
-
-        /** @var CartRepositoryInterface $quoteRepository */
-        $quoteRepository = $this->_objectManager->get(CartRepositoryInterface::class);
-        $items = $quoteRepository->getList($searchCriteria)->getItems();
-
-        return array_pop($items);
-    }
-
-    /**
-     * @inheritdoc
-     * @magentoDbIsolation enabled
-     * @magentoDataFixture Magento/Sales/_files/guest_quote_with_addresses.php
-     */
-    public function testAclHasAccess()
-    {
-        $this->prepareRequest();
-
-        parent::testAclHasAccess();
-    }
-
-    /**
-     * @inheritdoc
-     * @magentoDbIsolation enabled
-     * @magentoDataFixture Magento/Sales/_files/guest_quote_with_addresses.php
-     */
-    public function testAclNoAccess()
-    {
-        $this->prepareRequest();
-
-        parent::testAclNoAccess();
-    }
-
-    /**
-     * @param int $orderId
-     * @return OrderInterface
-     */
-    private function getOrder(int $orderId): OrderInterface
-    {
-        return $this->_objectManager->get(OrderRepository::class)->get($orderId);
     }
 
     /**
@@ -237,5 +193,48 @@ class SaveTest extends AbstractBackendController
         }
 
         return $orderId;
+    }
+
+    /**
+     * @param int $orderId
+     * @return OrderInterface
+     */
+    private function getOrder(int $orderId): OrderInterface
+    {
+        return $this->_objectManager->get(OrderRepository::class)->get($orderId);
+    }
+
+    /**
+     * @inheritdoc
+     * @magentoDbIsolation enabled
+     * @magentoDataFixture Magento/Sales/_files/guest_quote_with_addresses.php
+     */
+    public function testAclHasAccess()
+    {
+        $this->prepareRequest();
+
+        parent::testAclHasAccess();
+    }
+
+    /**
+     * @inheritdoc
+     * @magentoDbIsolation enabled
+     * @magentoDataFixture Magento/Sales/_files/guest_quote_with_addresses.php
+     */
+    public function testAclNoAccess()
+    {
+        $this->prepareRequest();
+
+        parent::testAclNoAccess();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->transportBuilder = $this->_objectManager->get(TransportBuilderMock::class);
+        $this->formKey = $this->_objectManager->get(FormKey::class);
     }
 }

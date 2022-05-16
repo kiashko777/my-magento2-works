@@ -3,10 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Sniffs\Less;
 
-use PHP_CodeSniffer\Sniffs\Sniff;
 use PHP_CodeSniffer\Files\File;
+use PHP_CodeSniffer\Sniffs\Sniff;
 
 /**
  * Class TypeSelectorsSniff
@@ -22,6 +23,12 @@ use PHP_CodeSniffer\Files\File;
  */
 class TypeSelectorsSniff implements Sniff
 {
+    /**
+     * A list of tokenizers this sniff supports.
+     *
+     * @var array
+     */
+    public $supportedTokenizers = [TokenizerSymbolsInterface::TOKENIZER_CSS];
     /**
      * Tags that are not allowed as type selector
      *
@@ -39,20 +46,13 @@ class TypeSelectorsSniff implements Sniff
         'small', 'span', 'strong', 'style', 'sub', 'sup', 'table',
         'tbody', 'td', 'textarea', 'tfoot', 'th', 'thead', 'title',
         'tr', 'tt', 'ul', 'var',
-            // HTML5
+        // HTML5
         'article', 'aside', 'audio', 'bdi', 'canvas', 'command',
         'datalist', 'details', 'dialog', 'embed', 'figure', 'figcaption',
         'footer', 'header', 'hgroup', 'keygen', 'mark', 'meter', 'nav',
         'output', 'progress', 'ruby', 'rt', 'rp', 'track', 'section',
         'source', 'summary', 'time', 'video', 'wbr'
     ];
-
-    /**
-     * A list of tokenizers this sniff supports.
-     *
-     * @var array
-     */
-    public $supportedTokenizers = [TokenizerSymbolsInterface::TOKENIZER_CSS];
 
     /**
      * @inheritdoc

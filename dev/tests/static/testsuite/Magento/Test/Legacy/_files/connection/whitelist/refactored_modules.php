@@ -22,5 +22,5 @@ return [
     'Magento_CatalogSearch',
     'Magento_CatalogUrlRewrite',
     'Magento_CatalogWidget',
-   // example 'Magento_Catalog',
+    // example 'Magento_Catalog',
 ];

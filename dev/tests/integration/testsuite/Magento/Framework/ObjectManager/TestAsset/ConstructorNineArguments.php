@@ -3,42 +3,44 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Framework\ObjectManager\TestAsset;
 
 /**
  * @SuppressWarnings(PHPMD.DepthOfInheritance)
  */
-class ConstructorNineArguments extends \Magento\Framework\ObjectManager\TestAsset\ConstructorEightArguments
+class ConstructorNineArguments extends ConstructorEightArguments
 {
     /**
-     * @var \Magento\Framework\ObjectManager\TestAsset\Basic
+     * @var Basic
      */
     protected $_nine;
 
     /**
      * Nine arguments
      *
-     * @param \Magento\Framework\ObjectManager\TestAsset\Basic $one
-     * @param \Magento\Framework\ObjectManager\TestAsset\Basic $two
-     * @param \Magento\Framework\ObjectManager\TestAsset\Basic $three
-     * @param \Magento\Framework\ObjectManager\TestAsset\Basic $four
-     * @param \Magento\Framework\ObjectManager\TestAsset\Basic $five
-     * @param \Magento\Framework\ObjectManager\TestAsset\Basic $six
-     * @param \Magento\Framework\ObjectManager\TestAsset\Basic $seven
-     * @param \Magento\Framework\ObjectManager\TestAsset\Basic $eight
-     * @param \Magento\Framework\ObjectManager\TestAsset\Basic $nine
+     * @param Basic $one
+     * @param Basic $two
+     * @param Basic $three
+     * @param Basic $four
+     * @param Basic $five
+     * @param Basic $six
+     * @param Basic $seven
+     * @param Basic $eight
+     * @param Basic $nine
      */
     public function __construct(
-        \Magento\Framework\ObjectManager\TestAsset\Basic $one,
-        \Magento\Framework\ObjectManager\TestAsset\Basic $two,
-        \Magento\Framework\ObjectManager\TestAsset\Basic $three,
-        \Magento\Framework\ObjectManager\TestAsset\Basic $four,
-        \Magento\Framework\ObjectManager\TestAsset\Basic $five,
-        \Magento\Framework\ObjectManager\TestAsset\Basic $six,
-        \Magento\Framework\ObjectManager\TestAsset\Basic $seven,
-        \Magento\Framework\ObjectManager\TestAsset\Basic $eight,
-        \Magento\Framework\ObjectManager\TestAsset\Basic $nine
-    ) {
+        Basic $one,
+        Basic $two,
+        Basic $three,
+        Basic $four,
+        Basic $five,
+        Basic $six,
+        Basic $seven,
+        Basic $eight,
+        Basic $nine
+    )
+    {
         parent::__construct($one, $two, $three, $four, $five, $six, $seven, $eight);
         $this->_nine = $nine;
     }

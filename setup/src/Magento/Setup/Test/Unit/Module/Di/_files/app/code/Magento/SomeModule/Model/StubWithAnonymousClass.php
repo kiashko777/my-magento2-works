@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Magento\SomeModule\Model;
 
+use JsonSerializable;
 use Magento\SomeModule\DummyFactory;
 
 class StubWithAnonymousClass
@@ -21,9 +22,9 @@ class StubWithAnonymousClass
         $this->factory = $factory;
     }
 
-    public function getSerializable(): \JsonSerializable
+    public function getSerializable(): JsonSerializable
     {
-        return new class() implements \JsonSerializable {
+        return new class() implements JsonSerializable {
             /**
              * @inheritDoc
              */

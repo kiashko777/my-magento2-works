@@ -50,19 +50,6 @@ class RewriteUrlTest extends TestCase
     private $storeManager;
 
     /**
-     * Class dependencies initialization
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->storeSwitcher = $this->objectManager->get(StoreSwitcher::class);
-        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
-        $this->storeManager = $this->objectManager->create(StoreManagerInterface::class);
-    }
-
-    /**
      * Test switching stores with non-existent cms pages and then redirecting to the homepage
      *
      * @magentoDataFixture Magento/Catalog/_files/category_product.php
@@ -87,6 +74,41 @@ class RewriteUrlTest extends TestCase
 
         $this->assertEquals($expectedUrl, $this->storeSwitcher->switch($fromStore, $toStore, $redirectUrl));
         $this->setBaseUrl($toStore, 'http://localhost/');
+    }
+
+    /**
+     * Get store object by storeCode
+     *
+     * @param string $storeCode
+     * @return StoreInterface
+     */
+    private function getStoreByCode(string $storeCode): StoreInterface
+    {
+        /** @var StoreRepositoryInterface */
+        return $this->storeManager->getStore($storeCode);
+    }
+
+    /**
+     * Set base url to store.
+     *
+     * @param StoreInterface $targetStore
+     * @param string $baseUrl
+     * @return void
+     */
+    private function setBaseUrl(StoreInterface $targetStore, string $baseUrl): void
+    {
+        $configValue = $this->objectManager->create(Value::class);
+        $configValue->load('web/unsecure/base_url', 'path');
+        if (!$configValue->getPath()) {
+            $configValue->setPath('web/unsecure/base_url');
+        }
+        $configValue->setValue($baseUrl);
+        $configValue->setScope(ScopeInterface::SCOPE_STORES);
+        $configValue->setScopeId($targetStore->getId());
+        $configValue->save();
+
+        $reinitibleConfig = $this->objectManager->create(ReinitableConfigInterface::class);
+        $reinitibleConfig->reinit();
     }
 
     /**
@@ -162,37 +184,15 @@ class RewriteUrlTest extends TestCase
     }
 
     /**
-     * Set base url to store.
+     * Class dependencies initialization
      *
-     * @param StoreInterface $targetStore
-     * @param string $baseUrl
      * @return void
      */
-    private function setBaseUrl(StoreInterface $targetStore, string $baseUrl): void
+    protected function setUp(): void
     {
-        $configValue = $this->objectManager->create(Value::class);
-        $configValue->load('web/unsecure/base_url', 'path');
-        if (!$configValue->getPath()) {
-            $configValue->setPath('web/unsecure/base_url');
-        }
-        $configValue->setValue($baseUrl);
-        $configValue->setScope(ScopeInterface::SCOPE_STORES);
-        $configValue->setScopeId($targetStore->getId());
-        $configValue->save();
-
-        $reinitibleConfig = $this->objectManager->create(ReinitableConfigInterface::class);
-        $reinitibleConfig->reinit();
-    }
-
-    /**
-     * Get store object by storeCode
-     *
-     * @param string $storeCode
-     * @return StoreInterface
-     */
-    private function getStoreByCode(string $storeCode): StoreInterface
-    {
-        /** @var StoreRepositoryInterface */
-        return $this->storeManager->getStore($storeCode);
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->storeSwitcher = $this->objectManager->get(StoreSwitcher::class);
+        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+        $this->storeManager = $this->objectManager->create(StoreManagerInterface::class);
     }
 }

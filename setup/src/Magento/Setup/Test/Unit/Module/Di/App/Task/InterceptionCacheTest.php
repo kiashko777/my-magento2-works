@@ -25,20 +25,6 @@ class InterceptionCacheTest extends TestCase
      */
     private $interceptionsListMock;
 
-    protected function setUp(): void
-    {
-        $this->configMock = $this->getMockBuilder(Config::class)
-            ->setMethods([])
-            ->disableOriginalConstructor()
-            ->getMock();
-        $this->interceptionsListMock = $this->getMockBuilder(
-            Interceptions::class
-        )
-            ->setMethods([])
-            ->disableOriginalConstructor()
-            ->getMock();
-    }
-
     public function testDoOperationEmptyData()
     {
         $data = [];
@@ -83,5 +69,19 @@ class InterceptionCacheTest extends TestCase
             ->with($definitions);
 
         $this->assertNull($operation->doOperation());
+    }
+
+    protected function setUp(): void
+    {
+        $this->configMock = $this->getMockBuilder(Config::class)
+            ->setMethods([])
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->interceptionsListMock = $this->getMockBuilder(
+            Interceptions::class
+        )
+            ->setMethods([])
+            ->disableOriginalConstructor()
+            ->getMock();
     }
 }

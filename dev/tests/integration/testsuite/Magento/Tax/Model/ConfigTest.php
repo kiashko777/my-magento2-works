@@ -3,21 +3,18 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Tax\Model;
 
-class ConfigTest extends \PHPUnit\Framework\TestCase
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
+
+class ConfigTest extends TestCase
 {
     /**
-     * @var \Magento\Tax\Model\Config
+     * @var Config
      */
     protected $_model = null;
-
-    protected function setUp(): void
-    {
-        $this->_model = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            \Magento\Tax\Model\Config::class
-        );
-    }
 
     public function testSetPriceIncludesTax()
     {
@@ -34,5 +31,12 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
     public function testPriceIncludesTaxNonDefault()
     {
         $this->assertTrue($this->_model->priceIncludesTax());
+    }
+
+    protected function setUp(): void
+    {
+        $this->_model = Bootstrap::getObjectManager()->create(
+            Config::class
+        );
     }
 }

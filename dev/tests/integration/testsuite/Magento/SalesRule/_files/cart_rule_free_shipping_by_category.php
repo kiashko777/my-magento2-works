@@ -25,13 +25,13 @@ $row =
         'coupon_type' => Rule::COUPON_TYPE_NO_COUPON,
         'conditions' => [
             1 => [
-                    'type' => Rule\Condition\Combine::class,
-                    'attribute' => null,
-                    'operator' => null,
-                    'value' => '1',
-                    'is_value_processed' => null,
-                    'aggregator' => 'all',
-                ]
+                'type' => Rule\Condition\Combine::class,
+                'attribute' => null,
+                'operator' => null,
+                'value' => '1',
+                'is_value_processed' => null,
+                'aggregator' => 'all',
+            ]
         ],
         'actions' => [
             1 => [
@@ -43,7 +43,7 @@ $row =
                 'aggregator' => 'all',
                 'conditions' => [],
                 'actions' => [
-                   1 => [
+                    1 => [
                         'type' => Product::class,
                         'attribute' => 'category_ids',
                         'operator' => '==',

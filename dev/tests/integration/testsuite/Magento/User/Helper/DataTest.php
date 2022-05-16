@@ -3,25 +3,23 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\User\Helper;
+
+use Magento\Backend\App\ConfigInterface;
+use Magento\Framework\App\Config\MutableScopeConfigInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea Adminhtml
  */
-class DataTest extends \PHPUnit\Framework\TestCase
+class DataTest extends TestCase
 {
     /**
      * @var \Magento\Backend\Helper\Data
      */
     protected $_helper;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->_helper = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\User\Helper\Data::class
-        );
-    }
 
     /**
      * Test generate unique token for reset password confirmation link
@@ -40,15 +38,23 @@ class DataTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetResetPasswordLinkExpirationPeriod()
     {
-        /** @var $configModel \Magento\Backend\App\ConfigInterface */
-        $configModel = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\App\Config\MutableScopeConfigInterface::class
+        /** @var $configModel ConfigInterface */
+        $configModel = Bootstrap::getObjectManager()->get(
+            MutableScopeConfigInterface::class
         );
         $this->assertEquals(
             2,
             (int)$configModel->getValue(
-                \Magento\User\Helper\Data::XML_PATH_ADMIN_RESET_PASSWORD_LINK_EXPIRATION_PERIOD
+                Data::XML_PATH_ADMIN_RESET_PASSWORD_LINK_EXPIRATION_PERIOD
             )
+        );
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->_helper = Bootstrap::getObjectManager()->get(
+            Data::class
         );
     }
 }

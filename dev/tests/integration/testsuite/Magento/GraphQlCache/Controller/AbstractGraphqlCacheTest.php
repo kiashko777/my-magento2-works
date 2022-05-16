@@ -34,32 +34,11 @@ abstract class AbstractGraphqlCacheTest extends TestCase
         $this->enableCachebleQueryTestProxy();
     }
 
-    protected function tearDown(): void
-    {
-        $this->disableCacheableQueryTestProxy();
-        $this->disablePageCachePlugin();
-        $this->flushPageCache();
-    }
-
     protected function enablePageCachePlugin(): void
     {
         /** @var  $registry Registry */
         $registry = $this->objectManager->get(Registry::class);
         $registry->register('use_page_cache_plugin', true, true);
-    }
-
-    protected function disablePageCachePlugin(): void
-    {
-        /** @var  $registry Registry */
-        $registry = $this->objectManager->get(Registry::class);
-        $registry->unregister('use_page_cache_plugin');
-    }
-
-    protected function flushPageCache(): void
-    {
-        /** @var PageCache $fullPageCache */
-        $fullPageCache = $this->objectManager->get(PageCache::class);
-        $fullPageCache->clean();
     }
 
     /**
@@ -111,6 +90,13 @@ abstract class AbstractGraphqlCacheTest extends TestCase
         $this->objectManager->addSharedInstance($cacheableQueryProxy, CacheableQuery::class);
     }
 
+    protected function tearDown(): void
+    {
+        $this->disableCacheableQueryTestProxy();
+        $this->disablePageCachePlugin();
+        $this->flushPageCache();
+    }
+
     private function disableCacheableQueryTestProxy(): void
     {
         $this->resetQueryCacheTags();
@@ -120,6 +106,20 @@ abstract class AbstractGraphqlCacheTest extends TestCase
     protected function resetQueryCacheTags(): void
     {
         $this->objectManager->get(CacheableQuery::class)->reset($this->objectManager);
+    }
+
+    protected function disablePageCachePlugin(): void
+    {
+        /** @var  $registry Registry */
+        $registry = $this->objectManager->get(Registry::class);
+        $registry->unregister('use_page_cache_plugin');
+    }
+
+    protected function flushPageCache(): void
+    {
+        /** @var PageCache $fullPageCache */
+        $fullPageCache = $this->objectManager->get(PageCache::class);
+        $fullPageCache->clean();
     }
 
     protected function dispatchGraphQlGETRequest(array $queryParams): HttpResponse

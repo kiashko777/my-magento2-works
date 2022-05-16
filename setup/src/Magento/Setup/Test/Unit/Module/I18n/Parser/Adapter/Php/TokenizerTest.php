@@ -9,7 +9,6 @@ namespace Magento\Setup\Test\Unit\Module\I18n\Parser\Adapter\Php;
 
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager;
 use Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer;
-
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -26,14 +25,6 @@ class TokenizerTest extends TestCase
      * @var ObjectManager
      */
     protected $objectManager;
-
-    protected function setUp(): void
-    {
-        $this->objectManager = new ObjectManager($this);
-        $this->tokenizer = $this->objectManager->getObject(
-            Tokenizer::class
-        );
-    }
 
     /**
      * @covers \Magento\Setup\Module\I18n\Parser\Adapter\Php\Tokenizer::isMatchingClass
@@ -56,6 +47,12 @@ class TokenizerTest extends TestCase
         $this->assertFalse($this->tokenizer->isMatchingClass($class)); // \Magento\Framework\DataObject(
         $this->assertFalse($this->tokenizer->isMatchingClass($class)); // )
         $this->assertFalse($this->tokenizer->isMatchingClass($class)); // ;
+    }
+
+    protected function parseFile()
+    {
+        $file = __DIR__ . '/_files/objectsCode.php.txt';
+        $this->tokenizer->parse($file);
     }
 
     /**
@@ -92,9 +89,11 @@ class TokenizerTest extends TestCase
         $this->assertTrue($this->tokenizer->isEndOfLoop());
     }
 
-    protected function parseFile()
+    protected function setUp(): void
     {
-        $file = __DIR__ . '/_files/objectsCode.php.txt';
-        $this->tokenizer->parse($file);
+        $this->objectManager = new ObjectManager($this);
+        $this->tokenizer = $this->objectManager->getObject(
+            Tokenizer::class
+        );
     }
 }

@@ -28,18 +28,6 @@ class SalableTest extends TestCase
     private $productRepository;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-    }
-
-    /**
      * @magentoDataFixture Magento/ConfigurableProduct/_files/product_configurable.php
      *
      * @dataProvider salableDataProvider
@@ -55,6 +43,24 @@ class SalableTest extends TestCase
         $configurableProduct = $this->productRepository->get('configurable', false, null, true);
 
         $this->assertEquals($expectedValue, $configurableProduct->getIsSalable());
+    }
+
+    /**
+     * Update product with data
+     *
+     * @param array $skus
+     * @param array $data
+     * @return void
+     */
+    private function updateProduct(array $skus, array $data): void
+    {
+        if (!empty($skus)) {
+            foreach ($skus as $sku) {
+                $product = $this->productRepository->get($sku);
+                $product->addData($data);
+                $this->productRepository->save($product);
+            }
+        }
     }
 
     /**
@@ -102,20 +108,14 @@ class SalableTest extends TestCase
     }
 
     /**
-     * Update product with data
-     *
-     * @param array $skus
-     * @param array $data
-     * @return void
+     * @inheritdoc
      */
-    private function updateProduct(array $skus, array $data): void
+    protected function setUp(): void
     {
-        if (!empty($skus)) {
-            foreach ($skus as $sku) {
-                $product = $this->productRepository->get($sku);
-                $product->addData($data);
-                $this->productRepository->save($product);
-            }
-        }
+        parent::setUp();
+
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
     }
 }

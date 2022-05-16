@@ -7,7 +7,10 @@ declare(strict_types=1);
 
 namespace Magento\Developer\Console\Command;
 
+use DOMDocument;
+use Exception;
 use Magento\Framework\Component\ComponentRegistrar;
+use Magento\Framework\Module\Dir;
 use Magento\TestFramework\Deploy\CliCommand;
 use Magento\TestFramework\Deploy\TestModuleManager;
 use Magento\TestFramework\Helper\Bootstrap;
@@ -34,22 +37,9 @@ class SetupUpgradeTest extends SetupTestCase
     private $componentRegistrar;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->cliCommand = $objectManager->get(CliCommand::class);
-        $this->moduleManager = $objectManager->get(TestModuleManager::class);
-        $this->componentRegistrar = $objectManager->create(
-            ComponentRegistrar::class
-        );
-    }
-
-    /**
      * @moduleName Magento_TestSetupDeclarationModule8
      * @moduleName Magento_TestSetupDeclarationModule9
-     * @throws \Exception
+     * @throws Exception
      */
     public function testUpgradeWithConverting()
     {
@@ -96,22 +86,6 @@ class SetupUpgradeTest extends SetupTestCase
     }
 
     /**
-     * Convert file content in the DOM document.
-     *
-     * @param string $schemaFileName
-     * @return \DOMDocument
-     */
-    private function getSchemaDocument(string $schemaFileName): \DOMDocument
-    {
-        $schemaDocument = new \DOMDocument();
-        $schemaDocument->preserveWhiteSpace = false;
-        $schemaDocument->formatOutput = true;
-        $schemaDocument->loadXML(file_get_contents($schemaFileName));
-
-        return $schemaDocument;
-    }
-
-    /**
      * @param string $moduleName
      */
     private function assertInstallScriptChanges(string $moduleName): void
@@ -124,29 +98,34 @@ class SetupUpgradeTest extends SetupTestCase
 
     /**
      * @param string $moduleName
+     * @return DOMDocument
      */
-    private function assertUpgradeScriptChanges(string $moduleName): void
-    {
-        $generatedSchema = $this->getGeneratedSchema($moduleName);
-        $expectedSchema = $this->getSchemaDocument($this->getSchemaFixturePath($moduleName, 'upgrade'));
-
-        $this->assertEquals($expectedSchema->saveXML(), $generatedSchema->saveXML());
-    }
-
-    /**
-     * @param string $moduleName
-     * @return \DOMDocument
-     */
-    private function getGeneratedSchema(string $moduleName): \DOMDocument
+    private function getGeneratedSchema(string $moduleName): DOMDocument
     {
         $modulePath = $this->componentRegistrar->getPath('module', $moduleName);
         $schemaFileName = $modulePath
             . DIRECTORY_SEPARATOR
-            . \Magento\Framework\Module\Dir::MODULE_ETC_DIR
+            . Dir::MODULE_ETC_DIR
             . DIRECTORY_SEPARATOR
             . 'db_schema.xml';
 
         return $this->getSchemaDocument($schemaFileName);
+    }
+
+    /**
+     * Convert file content in the DOM document.
+     *
+     * @param string $schemaFileName
+     * @return DOMDocument
+     */
+    private function getSchemaDocument(string $schemaFileName): DOMDocument
+    {
+        $schemaDocument = new DOMDocument();
+        $schemaDocument->preserveWhiteSpace = false;
+        $schemaDocument->formatOutput = true;
+        $schemaDocument->loadXML(file_get_contents($schemaFileName));
+
+        return $schemaDocument;
     }
 
     /**
@@ -169,5 +148,29 @@ class SetupUpgradeTest extends SetupTestCase
             );
 
         return $schemaFixturePath;
+    }
+
+    /**
+     * @param string $moduleName
+     */
+    private function assertUpgradeScriptChanges(string $moduleName): void
+    {
+        $generatedSchema = $this->getGeneratedSchema($moduleName);
+        $expectedSchema = $this->getSchemaDocument($this->getSchemaFixturePath($moduleName, 'upgrade'));
+
+        $this->assertEquals($expectedSchema->saveXML(), $generatedSchema->saveXML());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->cliCommand = $objectManager->get(CliCommand::class);
+        $this->moduleManager = $objectManager->get(TestModuleManager::class);
+        $this->componentRegistrar = $objectManager->create(
+            ComponentRegistrar::class
+        );
     }
 }

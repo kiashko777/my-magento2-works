@@ -104,38 +104,6 @@ abstract class CombinationAbstract extends TestCase
     private $productCustomOptionFactory;
 
     /**
-     * @inheritdoc
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->objectManager = Bootstrap::getObjectManager();
-        $this->page = $this->objectManager->get(PageFactory::class)->create();
-        $this->registry = $this->objectManager->get(Registry::class);
-        $this->indexBuilder = $this->objectManager->get(IndexBuilder::class);
-        $this->customerSession = $this->objectManager->get(Session::class);
-        $this->websiteRepository = $this->objectManager->get(WebsiteRepositoryInterface::class);
-        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
-        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
-        $this->productRepository->cleanCache();
-        $this->catalogRuleFactory = $this->objectManager->get(RuleInterfaceFactory::class);
-        $this->catalogRuleRepository = $this->objectManager->get(CatalogRuleRepositoryInterface::class);
-        $this->productTierPriceFactory = $this->objectManager->get(ProductTierPriceInterfaceFactory::class);
-        $this->productTierPriceExtensionFactory = $this->objectManager->get(ProductTierPriceExtensionFactory::class);
-        $this->productCustomOptionFactory = $this->objectManager->get(ProductCustomOptionInterfaceFactory::class);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function tearDown(): void
-    {
-        parent::tearDown();
-        $this->registry->unregister('product');
-        $this->registry->unregister('current_product');
-    }
-
-    /**
      * Data provider with tier prices which are for all customers groups.
      *
      * @return array
@@ -320,6 +288,133 @@ abstract class CombinationAbstract extends TestCase
     }
 
     /**
+     * Process test with combination of special and tier price.
+     *
+     * @param string $sku
+     * @param float $specialPrice
+     * @param float $regularPrice
+     * @param array $tierData
+     * @param int $websiteId
+     * @return void
+     */
+    public function assertRenderedPrices(
+        string $sku,
+        float  $specialPrice,
+        float  $regularPrice,
+        array  $tierData,
+        int    $websiteId = 0
+    ): void
+    {
+        $product = $this->getProduct($sku);
+        $product = $this->createTierPricesForProduct($product, $tierData['prices'], $websiteId);
+        $priceHtml = $this->getPriceHtml($product);
+        $this->checkPrices($priceHtml, $specialPrice, $regularPrice);
+        if (null !== $tierData['message_config']) {
+            $this->checkTierPriceMessage($priceHtml, $tierData['message_config']);
+        }
+    }
+
+    /**
+     * Loads product by sku.
+     *
+     * @param string $sku
+     * @return ProductInterface
+     */
+    protected function getProduct(string $sku): ProductInterface
+    {
+        return $this->productRepository->get(
+            $sku,
+            false,
+            null,
+            true
+        );
+    }
+
+    /**
+     * Create provided tier prices for product.
+     *
+     * @param ProductInterface $product
+     * @param array $tierPrices
+     * @param int $websiteId
+     * @return ProductInterface
+     */
+    protected function createTierPricesForProduct(
+        ProductInterface $product,
+        array            $tierPrices,
+        int              $websiteId
+    ): ProductInterface
+    {
+        if (empty($tierPrices)) {
+            return $product;
+        }
+
+        $createdTierPrices = [];
+        foreach ($tierPrices as $tierPrice) {
+            $tierPriceExtensionAttribute = $this->productTierPriceExtensionFactory->create();
+            $tierPriceExtensionAttribute->setWebsiteId($websiteId);
+
+            if (isset($tierPrice['percent_value'])) {
+                $tierPriceExtensionAttribute->setPercentageValue($tierPrice['percent_value']);
+                unset($tierPrice['percent_value']);
+            }
+
+            $createdTierPrices[] = $this->productTierPriceFactory->create(
+                [
+                    'data' => $tierPrice
+                ]
+            )->setExtensionAttributes($tierPriceExtensionAttribute);
+        }
+        $product->setTierPrices($createdTierPrices);
+
+        return $this->productRepository->save($product);
+    }
+
+    /**
+     * Render price render template with product.
+     *
+     * @param ProductInterface $product
+     * @return string
+     */
+    protected function getPriceHtml(ProductInterface $product): string
+    {
+        $this->preparePageLayout($product);
+        $priceHtml = $this->page->getLayout()->renderElement('product.info.price', false);
+        $priceHtml .= $this->page->getLayout()->renderElement('product.price.tier', false);
+
+        return $priceHtml;
+    }
+
+    /**
+     * Prepares product page layout.
+     *
+     * @param ProductInterface $product
+     * @return void
+     */
+    private function preparePageLayout(ProductInterface $product): void
+    {
+        $this->registerProduct($product);
+        $this->page->addHandle([
+            'default',
+            'catalog_product_view',
+        ]);
+        $this->page->getLayout()->generateXml();
+    }
+
+    /**
+     * Add product to the registry.
+     *
+     * @param ProductInterface $product
+     * @return void
+     */
+    protected function registerProduct(ProductInterface $product): void
+    {
+        $this->registry->unregister('product');
+        $this->registry->register('product', $product);
+        $this->registry->unregister('current_product');
+        $this->registry->register('current_product', $product);
+    }
+
+    /**
      * Check that price html contain all provided prices.
      *
      * @param string $priceHtml
@@ -347,6 +442,58 @@ abstract class CombinationAbstract extends TestCase
     }
 
     /**
+     * Returns xpath for special price.
+     *
+     * @param float $specialPrice
+     * @return string
+     */
+    protected function getSpecialPriceXpath(float $specialPrice): string
+    {
+        $pathsForSearch = [
+            "//div[contains(@class, 'price-box') and contains(@class, 'price-final_price')]",
+            "//span[contains(@class, 'special-price')]",
+            sprintf("//span[contains(@class, 'price') and text()='$%01.2f']", $specialPrice),
+        ];
+
+        return implode('', $pathsForSearch);
+    }
+
+    /**
+     * Returns xpath for regular price label.
+     *
+     * @return string
+     */
+    protected function getRegularPriceLabelXpath(): string
+    {
+        $pathsForSearch = [
+            "//div[contains(@class, 'price-box') and contains(@class, 'price-final_price')]",
+            "//span[contains(@class, 'old-price')]",
+            "//span[contains(@class, 'price-container')]",
+            sprintf("//span[normalize-space(text())='%s']", __('Regular Price')),
+        ];
+
+        return implode('', $pathsForSearch);
+    }
+
+    /**
+     * Returns xpath for regular price.
+     *
+     * @param float $regularPrice
+     * @return string
+     */
+    protected function getRegularPriceXpath(float $regularPrice): string
+    {
+        $pathsForSearch = [
+            "//div[contains(@class, 'price-box') and contains(@class, 'price-final_price')]",
+            "//span[contains(@class, 'old-price')]",
+            "//span[contains(@class, 'price-container')]",
+            sprintf("//span[contains(@class, 'price') and text()='$%01.2f']", $regularPrice),
+        ];
+
+        return implode('', $pathsForSearch);
+    }
+
+    /**
      * Assert that tier price message.
      *
      * @param string $priceHtml
@@ -363,83 +510,46 @@ abstract class CombinationAbstract extends TestCase
     }
 
     /**
-     * Render price render template with product.
+     * Return tier price message xpath. Message must contain expected quantity, price and discount percent.
      *
-     * @param ProductInterface $product
+     * @param array $expectedMessage
      * @return string
      */
-    protected function getPriceHtml(ProductInterface $product): string
+    protected function getTierPriceMessageXpath(array $expectedMessage): string
     {
-        $this->preparePageLayout($product);
-        $priceHtml = $this->page->getLayout()->renderElement('product.info.price', false);
-        $priceHtml .= $this->page->getLayout()->renderElement('product.price.tier', false);
+        [$qty, $price, $percent] = array_values($expectedMessage);
+        $liPaths = [
+            "contains(@class, 'item') and contains(text(), 'Buy {$qty} for')",
+            sprintf("//span[contains(@class, 'price') and text()='$%01.2f']", $price),
+            "//span[contains(@class, 'percent') and contains(text(), '{$percent}')]",
+        ];
 
-        return $priceHtml;
+        return sprintf(
+            "//ul[contains(@class, 'prices-tier') and contains(@class, 'items')]//li[%s]",
+            implode(' and ', $liPaths)
+        );
     }
 
     /**
-     * Render custom options price render template with product.
+     * Process test with combination of special and custom option price.
      *
-     * @param ProductInterface $product
-     * @return string
-     */
-    protected function getCustomOptionsPriceHtml(ProductInterface $product): string
-    {
-        $this->preparePageLayout($product);
-
-        return  $this->page->getLayout()->renderElement('product.info.options', false);
-    }
-
-    /**
-     * Add product to the registry.
-     *
-     * @param ProductInterface $product
+     * @param string $sku
+     * @param float $optionPrice
+     * @param array $productPrices
      * @return void
      */
-    protected function registerProduct(ProductInterface $product): void
+    public function assertRenderedCustomOptionPrices(
+        string $sku,
+        float  $optionPrice,
+        array  $productPrices
+    ): void
     {
-        $this->registry->unregister('product');
-        $this->registry->register('product', $product);
-        $this->registry->unregister('current_product');
-        $this->registry->register('current_product', $product);
-    }
-
-    /**
-     * Create provided tier prices for product.
-     *
-     * @param ProductInterface $product
-     * @param array $tierPrices
-     * @param int $websiteId
-     * @return ProductInterface
-     */
-    protected function createTierPricesForProduct(
-        ProductInterface $product,
-        array $tierPrices,
-        int $websiteId
-    ): ProductInterface {
-        if (empty($tierPrices)) {
-            return $product;
-        }
-
-        $createdTierPrices = [];
-        foreach ($tierPrices as $tierPrice) {
-            $tierPriceExtensionAttribute = $this->productTierPriceExtensionFactory->create();
-            $tierPriceExtensionAttribute->setWebsiteId($websiteId);
-
-            if (isset($tierPrice['percent_value'])) {
-                $tierPriceExtensionAttribute->setPercentageValue($tierPrice['percent_value']);
-                unset($tierPrice['percent_value']);
-            }
-
-            $createdTierPrices[] = $this->productTierPriceFactory->create(
-                [
-                    'data' => $tierPrice
-                ]
-            )->setExtensionAttributes($tierPriceExtensionAttribute);
-        }
-        $product->setTierPrices($createdTierPrices);
-
-        return $this->productRepository->save($product);
+        $product = $this->getProduct($sku);
+        $product->addData($productPrices);
+        $this->addOptionToProduct($product);
+        $this->productRepository->save($product);
+        $priceHtml = $this->getCustomOptionsPriceHtml($this->getProduct($sku));
+        $this->assertStringContainsString(sprintf('data-price-amount="%s"', $optionPrice), $priceHtml);
     }
 
     /**
@@ -466,123 +576,48 @@ abstract class CombinationAbstract extends TestCase
     }
 
     /**
-     * Returns xpath for special price.
+     * Render custom options price render template with product.
      *
-     * @param float $specialPrice
+     * @param ProductInterface $product
      * @return string
      */
-    protected function getSpecialPriceXpath(float $specialPrice): string
+    protected function getCustomOptionsPriceHtml(ProductInterface $product): string
     {
-        $pathsForSearch = [
-            "//div[contains(@class, 'price-box') and contains(@class, 'price-final_price')]",
-            "//span[contains(@class, 'special-price')]",
-            sprintf("//span[contains(@class, 'price') and text()='$%01.2f']", $specialPrice),
-        ];
+        $this->preparePageLayout($product);
 
-        return implode('', $pathsForSearch);
+        return $this->page->getLayout()->renderElement('product.info.options', false);
     }
 
     /**
-     * Returns xpath for regular price.
-     *
-     * @param float $regularPrice
-     * @return string
+     * @inheritdoc
      */
-    protected function getRegularPriceXpath(float $regularPrice): string
+    protected function setUp(): void
     {
-        $pathsForSearch = [
-            "//div[contains(@class, 'price-box') and contains(@class, 'price-final_price')]",
-            "//span[contains(@class, 'old-price')]",
-            "//span[contains(@class, 'price-container')]",
-            sprintf("//span[contains(@class, 'price') and text()='$%01.2f']", $regularPrice),
-        ];
-
-        return implode('', $pathsForSearch);
+        parent::setUp();
+        $this->objectManager = Bootstrap::getObjectManager();
+        $this->page = $this->objectManager->get(PageFactory::class)->create();
+        $this->registry = $this->objectManager->get(Registry::class);
+        $this->indexBuilder = $this->objectManager->get(IndexBuilder::class);
+        $this->customerSession = $this->objectManager->get(Session::class);
+        $this->websiteRepository = $this->objectManager->get(WebsiteRepositoryInterface::class);
+        $this->storeManager = $this->objectManager->get(StoreManagerInterface::class);
+        $this->productRepository = $this->objectManager->get(ProductRepositoryInterface::class);
+        $this->productRepository->cleanCache();
+        $this->catalogRuleFactory = $this->objectManager->get(RuleInterfaceFactory::class);
+        $this->catalogRuleRepository = $this->objectManager->get(CatalogRuleRepositoryInterface::class);
+        $this->productTierPriceFactory = $this->objectManager->get(ProductTierPriceInterfaceFactory::class);
+        $this->productTierPriceExtensionFactory = $this->objectManager->get(ProductTierPriceExtensionFactory::class);
+        $this->productCustomOptionFactory = $this->objectManager->get(ProductCustomOptionInterfaceFactory::class);
     }
 
     /**
-     * Returns xpath for regular price label.
-     *
-     * @return string
+     * @inheritdoc
      */
-    protected function getRegularPriceLabelXpath(): string
+    protected function tearDown(): void
     {
-        $pathsForSearch = [
-            "//div[contains(@class, 'price-box') and contains(@class, 'price-final_price')]",
-            "//span[contains(@class, 'old-price')]",
-            "//span[contains(@class, 'price-container')]",
-            sprintf("//span[normalize-space(text())='%s']", __('Regular Price')),
-        ];
-
-        return implode('', $pathsForSearch);
-    }
-
-    /**
-     * Return tier price message xpath. Message must contain expected quantity, price and discount percent.
-     *
-     * @param array $expectedMessage
-     * @return string
-     */
-    protected function getTierPriceMessageXpath(array $expectedMessage): string
-    {
-        [$qty, $price, $percent] = array_values($expectedMessage);
-        $liPaths = [
-            "contains(@class, 'item') and contains(text(), 'Buy {$qty} for')",
-            sprintf("//span[contains(@class, 'price') and text()='$%01.2f']", $price),
-            "//span[contains(@class, 'percent') and contains(text(), '{$percent}')]",
-        ];
-
-        return sprintf(
-            "//ul[contains(@class, 'prices-tier') and contains(@class, 'items')]//li[%s]",
-            implode(' and ', $liPaths)
-        );
-    }
-
-    /**
-     * Process test with combination of special and tier price.
-     *
-     * @param string $sku
-     * @param float $specialPrice
-     * @param float $regularPrice
-     * @param array $tierData
-     * @param int $websiteId
-     * @return void
-     */
-    public function assertRenderedPrices(
-        string $sku,
-        float $specialPrice,
-        float $regularPrice,
-        array $tierData,
-        int $websiteId = 0
-    ): void {
-        $product = $this->getProduct($sku);
-        $product = $this->createTierPricesForProduct($product, $tierData['prices'], $websiteId);
-        $priceHtml = $this->getPriceHtml($product);
-        $this->checkPrices($priceHtml, $specialPrice, $regularPrice);
-        if (null !== $tierData['message_config']) {
-            $this->checkTierPriceMessage($priceHtml, $tierData['message_config']);
-        }
-    }
-
-    /**
-     * Process test with combination of special and custom option price.
-     *
-     * @param string $sku
-     * @param float $optionPrice
-     * @param array $productPrices
-     * @return void
-     */
-    public function assertRenderedCustomOptionPrices(
-        string $sku,
-        float $optionPrice,
-        array $productPrices
-    ): void {
-        $product = $this->getProduct($sku);
-        $product->addData($productPrices);
-        $this->addOptionToProduct($product);
-        $this->productRepository->save($product);
-        $priceHtml = $this->getCustomOptionsPriceHtml($this->getProduct($sku));
-        $this->assertStringContainsString(sprintf('data-price-amount="%s"', $optionPrice), $priceHtml);
+        parent::tearDown();
+        $this->registry->unregister('product');
+        $this->registry->unregister('current_product');
     }
 
     /**
@@ -612,37 +647,5 @@ abstract class CombinationAbstract extends TestCase
             $catalogRule = $this->catalogRuleFactory->create(['data' => $catalogRule]);
             $this->catalogRuleRepository->save($catalogRule);
         }
-    }
-
-    /**
-     * Loads product by sku.
-     *
-     * @param string $sku
-     * @return ProductInterface
-     */
-    protected function getProduct(string $sku): ProductInterface
-    {
-        return $this->productRepository->get(
-            $sku,
-            false,
-            null,
-            true
-        );
-    }
-
-    /**
-     * Prepares product page layout.
-     *
-     * @param ProductInterface $product
-     * @return void
-     */
-    private function preparePageLayout(ProductInterface $product): void
-    {
-        $this->registerProduct($product);
-        $this->page->addHandle([
-            'default',
-            'catalog_product_view',
-        ]);
-        $this->page->getLayout()->generateXml();
     }
 }

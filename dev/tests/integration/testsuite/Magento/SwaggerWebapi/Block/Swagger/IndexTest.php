@@ -3,40 +3,25 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\SwaggerWebapi\Block\Swagger;
+
+use Magento\Framework\App\State;
+use Magento\Framework\View\LayoutInterface;
+use Magento\Swagger\Block\Index;
+use Magento\SwaggerWebapi\Model\SchemaType\Rest;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @magentoAppArea frontend
  */
-class IndexTest extends \PHPUnit\Framework\TestCase
+class IndexTest extends TestCase
 {
     /**
-     * @var \Magento\Swagger\Block\Index
+     * @var Index
      */
     private $block;
-
-    protected function setUp(): void
-    {
-        \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(\Magento\Framework\App\State::class)
-            ->setAreaCode('frontend');
-
-        $this->block = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-            \Magento\Framework\View\LayoutInterface::class
-        )->createBlock(
-            \Magento\Swagger\Block\Index::class,
-            '',
-            [
-                'data' => [
-                    'schema_types' => [
-                        'rest' => \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
-                            \Magento\SwaggerWebapi\Model\SchemaType\Rest::class
-                        )
-                    ],
-                    'default_schema_type_code' => 'rest'
-                ]
-            ]
-        );
-    }
 
     /**
      * Test that the Swagger UI outputs rest as the default when there is no type parameter supplied via URL.
@@ -56,5 +41,28 @@ class IndexTest extends \PHPUnit\Framework\TestCase
         ]);
 
         $this->assertStringEndsWith('/rest/custom/schema?services=all', $this->block->getSchemaUrl());
+    }
+
+    protected function setUp(): void
+    {
+        Bootstrap::getObjectManager()->get(State::class)
+            ->setAreaCode('frontend');
+
+        $this->block = Bootstrap::getObjectManager()->get(
+            LayoutInterface::class
+        )->createBlock(
+            Index::class,
+            '',
+            [
+                'data' => [
+                    'schema_types' => [
+                        'rest' => Bootstrap::getObjectManager()->get(
+                            Rest::class
+                        )
+                    ],
+                    'default_schema_type_code' => 'rest'
+                ]
+            ]
+        );
     }
 }

@@ -12,8 +12,8 @@
                 <span class="label">
                     <span translate="'Rating'"/>
                 </span>
-                <div class="rating-result"
-                     atrr="title: ratingAmount">
+                <div atrr="title: ratingAmount"
+                     class="rating-result">
                     <span style="width: 0">
                         <span translate="ratingAmount"/>
                     </span>
@@ -22,9 +22,9 @@
         </if>
         <if args="showReviewsActions()">
             <div class="reviews-actions">
-                <a if="showViewReviewAction()"
-                   class="action view"
-                   href="">
+                <a class="action view"
+                   href=""
+                   if="showViewReviewAction()">
                     <text args="reviewsCount()"/>
                     <span text="reviewsCountText()"></span>
                 </a>

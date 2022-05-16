@@ -3,27 +3,33 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\PageCache\Model\Layout;
 
+use LogicException;
+use Magento\Framework\Cache\FrontendInterface;
 use Magento\Framework\View\EntitySpecificHandlesList;
+use Magento\Framework\View\Model\Layout\Merge;
+use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class MergeTest extends \PHPUnit\Framework\TestCase
+class MergeTest extends TestCase
 {
     /**
      * @magentoAppArea frontend
      */
     public function testLoadEntitySpecificHandleWithEsiBlock()
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
         $this->expectExceptionMessage('Handle \'default\' must not contain blocks with \'ttl\' attribute specified');
 
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+        $objectManager = Bootstrap::getObjectManager();
 
         // Mock cache to avoid layout being read from existing cache
-        $cacheMock = $this->createMock(\Magento\Framework\Cache\FrontendInterface::class);
-        /** @var \Magento\Framework\View\Model\Layout\Merge $layoutMerge */
+        $cacheMock = $this->createMock(FrontendInterface::class);
+        /** @var Merge $layoutMerge */
         $layoutMerge = $objectManager->create(
-            \Magento\Framework\View\Model\Layout\Merge::class,
+            Merge::class,
             ['cache' => $cacheMock]
         );
 

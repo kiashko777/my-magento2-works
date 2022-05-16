@@ -3,8 +3,11 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Phpserver;
 
+use Laminas\Http\Client;
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\Process\PhpExecutableFinder;
 use Symfony\Component\Process\Process;
 
@@ -18,7 +21,7 @@ use Symfony\Component\Process\Process;
  *
  * @magentoAppArea frontend
  */
-class PhpserverTest extends \PHPUnit\Framework\TestCase
+class PhpserverTest extends TestCase
 {
     const BASE_URL = '127.0.0.1:8082';
 
@@ -28,13 +31,43 @@ class PhpserverTest extends \PHPUnit\Framework\TestCase
     private $serverProcess;
 
     /**
-     * @var \Laminas\Http\Client
+     * @var Client
      */
     private $httpClient;
+
+    public function testServerHasPid()
+    {
+        $this->assertTrue($this->serverProcess->getPid() > 0);
+    }
+
+    public function testServerResponds()
+    {
+        $this->httpClient->setUri($this->getUrl('/'));
+        $response = $this->httpClient->send();
+        $this->assertFalse($response->isClientError());
+    }
 
     private function getUrl($url)
     {
         return sprintf('http://%s/%s', self::BASE_URL, ltrim($url, '/'));
+    }
+
+    public function testStaticCssFile()
+    {
+        $this->httpClient->setUri($this->getUrl('/errors/default/css/styles.css'));
+        $response = $this->httpClient->send();
+
+        $this->assertFalse($response->isClientError());
+        $this->assertStringStartsWith('text/css', $response->getHeaders()->get('Content-Type')->getMediaType());
+    }
+
+    public function testStaticImageFile()
+    {
+        $this->httpClient->setUri($this->getUrl('/errors/default/images/logo.gif'));
+        $response = $this->httpClient->send();
+
+        $this->assertFalse($response->isClientError());
+        $this->assertStringStartsWith('image/gif', $response->getHeaders()->get('Content-Type')->getMediaType());
     }
 
     /**
@@ -42,7 +75,7 @@ class PhpserverTest extends \PHPUnit\Framework\TestCase
      */
     protected function setUp(): void
     {
-        $this->httpClient = new \Laminas\Http\Client(null, ['timeout' => 10]);
+        $this->httpClient = new Client(null, ['timeout' => 10]);
 
         /** @var Process $process */
         $phpBinaryFinder = new PhpExecutableFinder();
@@ -65,35 +98,5 @@ class PhpserverTest extends \PHPUnit\Framework\TestCase
     protected function tearDown(): void
     {
         $this->serverProcess->stop();
-    }
-
-    public function testServerHasPid()
-    {
-        $this->assertTrue($this->serverProcess->getPid() > 0);
-    }
-
-    public function testServerResponds()
-    {
-        $this->httpClient->setUri($this->getUrl('/'));
-        $response = $this->httpClient->send();
-        $this->assertFalse($response->isClientError());
-    }
-
-    public function testStaticCssFile()
-    {
-        $this->httpClient->setUri($this->getUrl('/errors/default/css/styles.css'));
-        $response = $this->httpClient->send();
-
-        $this->assertFalse($response->isClientError());
-        $this->assertStringStartsWith('text/css', $response->getHeaders()->get('Content-Type')->getMediaType());
-    }
-
-    public function testStaticImageFile()
-    {
-        $this->httpClient->setUri($this->getUrl('/errors/default/images/logo.gif'));
-        $response = $this->httpClient->send();
-
-        $this->assertFalse($response->isClientError());
-        $this->assertStringStartsWith('image/gif', $response->getHeaders()->get('Content-Type')->getMediaType());
     }
 }

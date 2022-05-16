@@ -6,8 +6,11 @@
 
 namespace Magento\Catalog\Api;
 
+use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Framework\Webapi\Rest\Request;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\WebapiAbstract;
-use Magento\Framework\Webapi\Exception as HTTPExceptionCodes;
 
 /**
  * Catalog Cost Storage API test.
@@ -19,17 +22,9 @@ class CostStorageTest extends WebapiAbstract
     const SIMPLE_PRODUCT_SKU = 'simple';
 
     /**
-     * @var \Magento\TestFramework\ObjectManager
+     * @var ObjectManager
      */
     private $objectManager;
-
-    /**
-     * Set up.
-     */
-    protected function setUp(): void
-    {
-        $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-    }
 
     /**
      * Test get method.
@@ -39,12 +34,12 @@ class CostStorageTest extends WebapiAbstract
     public function testGet()
     {
         $cost = 3057;
-        $productRepository = $this->objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+        $productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
         $productRepository->save($productRepository->get(self::SIMPLE_PRODUCT_SKU)->setData('cost', $cost));
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/products/cost-information',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST
+                'httpMethod' => Request::HTTP_METHOD_POST
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -54,7 +49,7 @@ class CostStorageTest extends WebapiAbstract
         ];
         $response = $this->_webApiCall($serviceInfo, ['skus' => [self::SIMPLE_PRODUCT_SKU]]);
 
-        /** @var \Magento\Catalog\Api\Data\ProductInterface $product */
+        /** @var ProductInterface $product */
         $product = $productRepository->get(self::SIMPLE_PRODUCT_SKU);
 
         $this->assertNotEmpty($response);
@@ -71,7 +66,7 @@ class CostStorageTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/products/cost',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST
+                'httpMethod' => Request::HTTP_METHOD_POST
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -93,8 +88,8 @@ class CostStorageTest extends WebapiAbstract
                 ]
             ]
         );
-        $productRepository = $this->objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
-        /** @var \Magento\Catalog\Api\Data\ProductInterface $product */
+        $productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+        /** @var ProductInterface $product */
         $product = $productRepository->get(self::SIMPLE_PRODUCT_SKU);
         $this->assertEmpty($response);
         $this->assertEquals($newCost, (int)$product->getCost());
@@ -108,7 +103,7 @@ class CostStorageTest extends WebapiAbstract
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/products/cost',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST
+                'httpMethod' => Request::HTTP_METHOD_POST
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -166,12 +161,12 @@ class CostStorageTest extends WebapiAbstract
      */
     public function testDelete()
     {
-        $productRepository = $this->objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
+        $productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
         $productRepository->save($productRepository->get(self::SIMPLE_PRODUCT_SKU)->setData('cost', 777));
         $serviceInfo = [
             'rest' => [
                 'resourcePath' => '/V1/products/cost-delete',
-                'httpMethod' => \Magento\Framework\Webapi\Rest\Request::HTTP_METHOD_POST
+                'httpMethod' => Request::HTTP_METHOD_POST
             ],
             'soap' => [
                 'service' => self::SERVICE_NAME,
@@ -180,10 +175,18 @@ class CostStorageTest extends WebapiAbstract
             ],
         ];
         $response = $this->_webApiCall($serviceInfo, ['skus' => [self::SIMPLE_PRODUCT_SKU]]);
-        $productRepository = $this->objectManager->create(\Magento\Catalog\Api\ProductRepositoryInterface::class);
-        /** @var \Magento\Catalog\Api\Data\ProductInterface $product */
+        $productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
+        /** @var ProductInterface $product */
         $product = $productRepository->get(self::SIMPLE_PRODUCT_SKU);
         $this->assertTrue($response);
         $this->assertNull($product->getCost());
+    }
+
+    /**
+     * Set up.
+     */
+    protected function setUp(): void
+    {
+        $this->objectManager = Bootstrap::getObjectManager();
     }
 }

@@ -3,6 +3,7 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\CatalogInventory\Model\StockItemSave\OnProductUpdate\ByProductModel;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
@@ -10,8 +11,9 @@ use Magento\Catalog\Model\Product;
 use Magento\CatalogInventory\Api\Data\StockItemInterface;
 use Magento\CatalogInventory\Model\StockItemSave\StockItemDataChecker;
 use Magento\TestFramework\Helper\Bootstrap;
+use PHPUnit\Framework\TestCase;
 
-class ByQuantityAndStockStatusTest extends \PHPUnit\Framework\TestCase
+class ByQuantityAndStockStatusTest extends TestCase
 {
     /**
      * @var ProductRepositoryInterface
@@ -31,13 +33,6 @@ class ByQuantityAndStockStatusTest extends \PHPUnit\Framework\TestCase
         StockItemInterface::MANAGE_STOCK => true,
         StockItemInterface::IS_IN_STOCK => false,
     ];
-
-    protected function setUp(): void
-    {
-        $objectManager = Bootstrap::getObjectManager();
-        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
-        $this->stockItemDataChecker = $objectManager->get(StockItemDataChecker::class);
-    }
 
     /**
      * Test saving of stock item on product save by 'setQuantityAndStockStatus' method (deprecated) via product
@@ -71,5 +66,12 @@ class ByQuantityAndStockStatusTest extends \PHPUnit\Framework\TestCase
         $product->save();
 
         $this->stockItemDataChecker->checkStockItemData('simple', $this->stockItemData);
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $this->productRepository = $objectManager->get(ProductRepositoryInterface::class);
+        $this->stockItemDataChecker = $objectManager->get(StockItemDataChecker::class);
     }
 }

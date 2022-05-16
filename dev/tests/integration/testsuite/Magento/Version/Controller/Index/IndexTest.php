@@ -3,9 +3,14 @@
  * Copyright © Magento, Inc. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Magento\Version\Controller\Index;
 
-class IndexTest extends \Magento\TestFramework\TestCase\AbstractController
+use Magento\Framework\App\ProductMetadataInterface;
+use Magento\TestFramework\Helper\Bootstrap;
+use Magento\TestFramework\TestCase\AbstractController;
+
+class IndexTest extends AbstractController
 {
     public function testIndexAction()
     {
@@ -13,9 +18,9 @@ class IndexTest extends \Magento\TestFramework\TestCase\AbstractController
         $this->dispatch('magento_version/index/index');
         $body = $this->getResponse()->getBody();
 
-        $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        /** @var \Magento\Framework\App\ProductMetadataInterface $productMetadata */
-        $productMetadata = $objectManager->get(\Magento\Framework\App\ProductMetadataInterface::class);
+        $objectManager = Bootstrap::getObjectManager();
+        /** @var ProductMetadataInterface $productMetadata */
+        $productMetadata = $objectManager->get(ProductMetadataInterface::class);
         $name = $productMetadata->getName();
         $edition = $productMetadata->getEdition();
 

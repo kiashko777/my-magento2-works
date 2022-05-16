@@ -5,29 +5,36 @@
  */
 declare(strict_types=1);
 
+use Magento\Catalog\Api\CategoryLinkManagementInterface;
+use Magento\Catalog\Api\CategoryLinkRepositoryInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Category;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\Workaround\Override\Fixture\Resolver;
 
 Resolver::getInstance()->requireDataFixture('Magento/Framework/Search/_files/products.php');
 
-$objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
+$objectManager = Bootstrap::getObjectManager();
 
 /** @var ProductRepositoryInterface $productRepository */
 $productRepository = $objectManager->get(ProductRepositoryInterface::class);
 $categoryLinkRepository = $objectManager->create(
-    \Magento\Catalog\Api\CategoryLinkRepositoryInterface::class,
+    CategoryLinkRepositoryInterface::class,
     [
         'productRepository' => $productRepository
     ]
 );
 $categoryLinkManagement = $objectManager->create(
-    \Magento\Catalog\Api\CategoryLinkManagementInterface::class,
+    CategoryLinkManagementInterface::class,
     [
         'productRepository' => $productRepository,
         'categoryLinkRepository' => $categoryLinkRepository
     ]
 );
-$category = $objectManager->create(\Magento\Catalog\Model\Category::class);
+$category = $objectManager->create(Category::class);
 $category->isObjectNew(true);
 $category->setId(
     330
@@ -55,8 +62,8 @@ $defaultAttributeSet = $objectManager->get(Magento\Eav\Model\Config::class)
     ->getEntityType('catalog_product')
     ->getDefaultAttributeSetId();
 
-/** @var $product \Magento\Catalog\Model\Product */
-$product = $objectManager->create(\Magento\Catalog\Model\Product::class);
+/** @var $product Product */
+$product = $objectManager->create(Product::class);
 $product->isObjectNew(true);
 $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setAttributeSetId($defaultAttributeSet)
@@ -71,12 +78,12 @@ $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setMetaKeyword('blue, navy, striped , women, kids')
     ->setMetaDescription('blue shoes women kids meta description')
     ->setStockData(['use_config_manage_stock' => 0])
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->save();
 
-/** @var $product \Magento\Catalog\Model\Product */
-$product = $objectManager->create(\Magento\Catalog\Model\Product::class);
+/** @var $product Product */
+$product = $objectManager->create(Product::class);
 $product->isObjectNew(true);
 $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setAttributeSetId($defaultAttributeSet)
@@ -91,20 +98,20 @@ $product->setTypeId(\Magento\Catalog\Model\Product\Type::TYPE_SIMPLE)
     ->setMetaKeyword('light, green , women, kids')
     ->setMetaDescription('shoes women kids meta description')
     ->setStockData(['use_config_manage_stock' => 0])
-    ->setVisibility(\Magento\Catalog\Model\Product\Visibility::VISIBILITY_BOTH)
-    ->setStatus(\Magento\Catalog\Model\Product\Attribute\Source\Status::STATUS_ENABLED)
+    ->setVisibility(Visibility::VISIBILITY_BOTH)
+    ->setStatus(Status::STATUS_ENABLED)
     ->save();
 
-/** @var \Magento\Catalog\Model\Product $greyProduct */
+/** @var Product $greyProduct */
 $greyProduct = $productRepository->get('grey_shorts');
 $greyProduct->setDescription('Description with Blue lines');
 $productRepository->save($greyProduct);
 
-$skus = ['green_socks', 'white_shorts','red_trousers','blue_briefs','grey_shorts',
+$skus = ['green_socks', 'white_shorts', 'red_trousers', 'blue_briefs', 'grey_shorts',
     'navy-striped-shoes', 'light-green-shoes'];
 
-/** @var \Magento\Catalog\Api\CategoryLinkManagementInterface $categoryLinkManagement */
-$categoryLinkManagement = $objectManager->create(\Magento\Catalog\Api\CategoryLinkManagementInterface::class);
+/** @var CategoryLinkManagementInterface $categoryLinkManagement */
+$categoryLinkManagement = $objectManager->create(CategoryLinkManagementInterface::class);
 foreach ($skus as $sku) {
     $categoryLinkManagement->assignProductToCategories(
         $sku,

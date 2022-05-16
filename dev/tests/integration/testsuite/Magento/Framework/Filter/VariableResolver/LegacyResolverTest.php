@@ -25,13 +25,6 @@ class LegacyResolverTest extends TestCase
      */
     private $filter;
 
-    protected function setUp(): void
-    {
-        $objectManager = ObjectManager::getInstance();
-        $this->variableResolver = $objectManager->get(LegacyResolver::class);
-        $this->filter = $objectManager->get(Template::class);
-    }
-
     /**
      * @dataProvider useCasesProvider
      */
@@ -52,10 +45,12 @@ class LegacyResolverTest extends TestCase
                 }
                 return $result;
             }
+
             public function doThing()
             {
                 return 'abc';
             }
+
             public function getThing()
             {
                 return 'abc';
@@ -66,6 +61,7 @@ class LegacyResolverTest extends TestCase
             {
                 return 'abc';
             }
+
             public function doParams($arg1, $args)
             {
                 $result = $arg1;
@@ -74,6 +70,7 @@ class LegacyResolverTest extends TestCase
                 }
                 return $result;
             }
+
             public function getThing()
             {
                 return 'abc';
@@ -83,18 +80,18 @@ class LegacyResolverTest extends TestCase
 
         return [
             ['', [], null],
-            ['foo',['foo' => true], true],
-            ['foo',['foo' => 123], 123],
-            ['foo',['foo' => 'abc'], 'abc'],
-            ['foo',['foo' => false], false],
-            ['foo',['foo' => null], null],
-            ['foo',['foo' => ''], ''],
-            ['foo.bar',['foo' => ['bar' => 123]], 123],
-            'nested array' => ['foo.bar.baz',['foo' => ['bar' => ['baz' => 123]]], 123],
+            ['foo', ['foo' => true], true],
+            ['foo', ['foo' => 123], 123],
+            ['foo', ['foo' => 'abc'], 'abc'],
+            ['foo', ['foo' => false], false],
+            ['foo', ['foo' => null], null],
+            ['foo', ['foo' => ''], ''],
+            ['foo.bar', ['foo' => ['bar' => 123]], 123],
+            'nested array' => ['foo.bar.baz', ['foo' => ['bar' => ['baz' => 123]]], 123],
             'getter data object with mixed array usage' =>
-                ['foo.getBar().baz',['foo' => new DataObject(['bar' => ['baz' => 'abc']])], 'abc'],
-            'allow method' => ['foo.doThing()',['foo' => $classStub], 'abc'],
-            'allow getter method' => ['foo.getThing()',['foo' => $classStub], 'abc'],
+                ['foo.getBar().baz', ['foo' => new DataObject(['bar' => ['baz' => 'abc']])], 'abc'],
+            'allow method' => ['foo.doThing()', ['foo' => $classStub], 'abc'],
+            'allow getter method' => ['foo.getThing()', ['foo' => $classStub], 'abc'],
             'arguments for normal class' => [
                 'foo.doParams("f", [a:123,b:321])',
                 ['foo' => $classStub],
@@ -105,8 +102,8 @@ class LegacyResolverTest extends TestCase
                 ['foo' => $classStub, 'g' => ['h' => ['i' => 'abc']]],
                 'abca=123,b=321,'
             ],
-            'allow normal method for DataObject' => ['foo.doThing()',['foo' => $dataClassStub], 'abc'],
-            'allow getter method for DataObject' => ['foo.getThing()',['foo' => $dataClassStub], 'abc'],
+            'allow normal method for DataObject' => ['foo.doThing()', ['foo' => $dataClassStub], 'abc'],
+            'allow getter method for DataObject' => ['foo.getThing()', ['foo' => $dataClassStub], 'abc'],
             'arguments for DataObject' => [
                 'foo.doParams(\'f\', [a:123,b:321])',
                 ['foo' => $dataClassStub],
@@ -117,7 +114,14 @@ class LegacyResolverTest extends TestCase
                 ['foo' => $dataClassStub, 'g' => ['h' => ['i' => 'abc']]],
                 'abca=123,b=321,'
             ],
-            'disallow __callParent method' => ['foo.___callParent()',['foo' => $classStub], null],
+            'disallow __callParent method' => ['foo.___callParent()', ['foo' => $classStub], null],
         ];
+    }
+
+    protected function setUp(): void
+    {
+        $objectManager = ObjectManager::getInstance();
+        $this->variableResolver = $objectManager->get(LegacyResolver::class);
+        $this->filter = $objectManager->get(Template::class);
     }
 }
